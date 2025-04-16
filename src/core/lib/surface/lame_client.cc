@@ -26,8 +26,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -46,6 +44,8 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 // Avoid some IWYU confusion:
 // IWYU pragma: no_include "src/core/util/orphanable.h"

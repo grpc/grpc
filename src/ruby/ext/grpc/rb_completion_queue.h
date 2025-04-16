@@ -19,9 +19,8 @@
 #ifndef GRPC_RB_COMPLETION_QUEUE_H_
 #define GRPC_RB_COMPLETION_QUEUE_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
 void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq);
 

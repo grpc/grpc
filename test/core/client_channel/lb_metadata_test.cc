@@ -18,11 +18,11 @@
 
 #include <string>
 
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace testing {

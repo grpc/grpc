@@ -14,7 +14,6 @@
 // limitations under the License.
 //
 
-#include <google/protobuf/text_format.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpcpp/impl/codegen/config_protobuf.h>
@@ -28,14 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "fuzztest/fuzztest.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
@@ -68,6 +59,15 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/load_balancing/pick_first_fuzzer.pb.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include <google/protobuf/text_format.h>
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;

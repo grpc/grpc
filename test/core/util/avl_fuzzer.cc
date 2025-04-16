@@ -19,9 +19,9 @@
 #include <map>
 #include <utility>
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/util/avl.h"
 #include "test/core/util/avl_fuzzer.pb.h"
+#include "fuzztest/fuzztest.h"
 
 bool squelch = true;
 bool leak_check = true;

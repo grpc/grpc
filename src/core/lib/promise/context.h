@@ -19,9 +19,9 @@
 
 #include <utility>
 
+#include "src/core/util/down_cast.h"
 #include "absl/log/check.h"
 #include "absl/meta/type_traits.h"
-#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 

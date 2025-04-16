@@ -22,9 +22,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/log.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -35,6 +32,9 @@
 #include "src/core/util/orphanable.h"
 #include "test/core/event_engine/mock_event_engine.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::GetDefaultEventEngine;

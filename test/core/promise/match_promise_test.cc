@@ -16,10 +16,10 @@
 
 #include <memory>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/promise.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

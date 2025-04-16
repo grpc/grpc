@@ -19,9 +19,8 @@
 #ifndef GRPC_RB_BYTE_BUFFER_H_
 #define GRPC_RB_BYTE_BUFFER_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
 /* Converts a char* with a length to a grpc_byte_buffer */
 grpc_byte_buffer* grpc_rb_s_to_byte_buffer(char* string, size_t length);

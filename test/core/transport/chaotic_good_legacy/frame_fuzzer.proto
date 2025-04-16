@@ -17,6 +17,6 @@ syntax = "proto3";
 package frame_fuzzer;
 
 message Test {
-    bytes header = 1;
-    bytes payload = 2;
+  bytes header = 1;
+  bytes payload = 2;
 }

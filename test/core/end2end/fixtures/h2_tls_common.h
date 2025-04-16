@@ -31,8 +31,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
@@ -40,6 +38,8 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 // For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"

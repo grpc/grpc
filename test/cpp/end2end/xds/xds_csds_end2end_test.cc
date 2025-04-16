@@ -20,6 +20,14 @@
 #include <string>
 #include <vector>
 
+#include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_config.h"
+#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
+#include "test/cpp/util/credentials.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -29,14 +37,6 @@
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/core/client_channel/backup_poller.h"
-#include "src/core/config/config_vars.h"
-#include "test/core/test_util/resolve_localhost_ip46.h"
-#include "test/core/test_util/test_config.h"
-#include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
-#include "test/cpp/util/credentials.h"
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 

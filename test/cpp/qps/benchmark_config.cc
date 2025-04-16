@@ -21,10 +21,10 @@
 #include <grpcpp/create_channel.h>
 #include <grpcpp/security/credentials.h>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
 
 ABSL_FLAG(bool, enable_log_reporter, true,
           "Enable reporting of benchmark results through GprLog");

@@ -34,10 +34,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -53,6 +49,10 @@
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
 
 typedef struct freereq {
   gpr_mu* mu = nullptr;

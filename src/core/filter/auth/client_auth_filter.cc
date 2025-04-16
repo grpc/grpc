@@ -29,8 +29,6 @@
 #include <type_traits>  // IWYU pragma: keep
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/security_context.h"
 #include "src/core/call/status_util.h"
@@ -51,6 +49,8 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #define MAX_CREDENTIALS_METADATA_COUNT 4
 

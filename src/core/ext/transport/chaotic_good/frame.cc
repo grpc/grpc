@@ -23,9 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/promise/context.h"
@@ -36,12 +33,14 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {
 
-absl::Status ReadProto(SliceBuffer payload,
-                       google::protobuf::MessageLite& msg) {
+absl::Status ReadProto(SliceBuffer payload, google::protobuf::MessageLite& msg) {
   auto payload_slice = payload.JoinIntoSlice();
   const bool ok =
       msg.ParseFromArray(payload_slice.data(), payload_slice.length());
@@ -70,8 +69,7 @@ absl::Status ReadTransportProto(const FrameHeader& header, SliceBuffer payload,
 }
 
 absl::Status ReadStreamProto(const FrameHeader& header, SliceBuffer payload,
-                             google::protobuf::MessageLite& body,
-                             uint32_t& stream_id) {
+                             google::protobuf::MessageLite& body, uint32_t& stream_id) {
   if (header.stream_id == 0) {
     return absl::InternalError("Expected non-zero stream id");
   }

@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -31,6 +30,7 @@
 #include "src/core/tsi/local_transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

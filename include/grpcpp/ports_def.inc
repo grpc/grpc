@@ -37,7 +37,6 @@
 #endif
 #define GRPC_PORT_
 
-
 // Windows declares several inconvenient macro names.  We #undef them and then
 // restore them in port_undef.inc.
 #ifdef _WIN32
@@ -134,4 +133,3 @@
 #pragma push_macro("GID_MAX")
 #undef GID_MAX
 #endif  // defined(ANDROID) || defined(__ANDROID__)
-

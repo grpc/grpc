@@ -25,9 +25,9 @@
 #include <zconf.h>
 #include <zlib.h>
 
+#include "src/core/lib/slice/slice.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "src/core/lib/slice/slice.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
 

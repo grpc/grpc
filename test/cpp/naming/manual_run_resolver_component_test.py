@@ -24,21 +24,19 @@ os.chdir(os.path.join("..", "..", os.getcwd()))
 # This port is arbitrary, but it needs to be available.
 _DNS_SERVER_PORT = 15353
 
-subprocess.call(
-    [
-        sys.executable,
-        "test\\cpp\\naming\\resolver_component_tests_runner.py",
-        "--test_bin_path",
-        "cmake\\build\\%s\\resolver_component_test.exe" % _MSBUILD_CONFIG,
-        "--dns_server_bin_path",
-        "test\\cpp\\naming\\utils\\dns_server.py",
-        "--records_config_path",
-        "test\\cpp\\naming\\resolver_test_record_groups.yaml",
-        "--dns_server_port",
-        str(_DNS_SERVER_PORT),
-        "--dns_resolver_bin_path",
-        "test\\cpp\\naming\\utils\\dns_resolver.py",
-        "--tcp_connect_bin_path",
-        "test\\cpp\\naming\\utils\\tcp_connect.py",
-    ]
-)
+subprocess.call([
+    sys.executable,
+    "test\\cpp\\naming\\resolver_component_tests_runner.py",
+    "--test_bin_path",
+    "cmake\\build\\%s\\resolver_component_test.exe" % _MSBUILD_CONFIG,
+    "--dns_server_bin_path",
+    "test\\cpp\\naming\\utils\\dns_server.py",
+    "--records_config_path",
+    "test\\cpp\\naming\\resolver_test_record_groups.yaml",
+    "--dns_server_port",
+    str(_DNS_SERVER_PORT),
+    "--dns_resolver_bin_path",
+    "test\\cpp\\naming\\utils\\dns_resolver.py",
+    "--tcp_connect_bin_path",
+    "test\\cpp\\naming\\utils\\tcp_connect.py",
+])

@@ -15,9 +15,9 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TEST_FRAME_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_TEST_FRAME_H
 
-#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "test/core/transport/chaotic_good/test_frame.pb.h"
+#include "fuzztest/fuzztest.h"
 
 namespace grpc_core {
 namespace chaotic_good {

@@ -28,11 +28,11 @@
 #include <set>
 #include <tuple>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
 
@@ -290,9 +290,8 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   return feedback;
 }
 
-::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load>
-LoadReporter::GenerateLoads(const std::string& hostname,
-                            const std::string& lb_id) {
+::google::protobuf::RepeatedPtrField<grpc::lb::v1::Load> LoadReporter::GenerateLoads(
+    const std::string& hostname, const std::string& lb_id) {
   grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   CHECK_NE(assigned_stores, nullptr);

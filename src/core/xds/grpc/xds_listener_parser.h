@@ -17,9 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_PARSER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_PARSER_H
 
-#include "absl/strings/string_view.h"
-#include "envoy/config/listener/v3/listener.upbdefs.h"
-#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
@@ -27,6 +24,9 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/listener/v3/listener.upbdefs.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "upb/reflection/def.h"
 
 namespace grpc_core {

@@ -19,10 +19,10 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/check.h"
 
 #define PFX_STR                                                            \
   "\x00\x00\x00\x04\x01\x00\x00\x00\x00"                                   \

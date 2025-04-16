@@ -26,14 +26,14 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "test/core/test_util/test_config.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/check.h"
 
 const char* StrPtr(const std::optional<std::string>& str) {
   return str.has_value() ? str->c_str() : nullptr;

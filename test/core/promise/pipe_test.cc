@@ -21,10 +21,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/functional/function_ref.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
@@ -34,6 +30,10 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/functional/function_ref.h"
+#include "absl/status/status.h"
 
 using testing::MockFunction;
 using testing::StrictMock;

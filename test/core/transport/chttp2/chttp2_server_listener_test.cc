@@ -20,8 +20,6 @@
 
 #include <thread>
 
-#include "absl/synchronization/notification.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/insecure/insecure_credentials.h"
 #include "src/core/credentials/transport/tls/grpc_tls_credentials_options.h"
@@ -35,6 +33,8 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gtest/gtest.h"
+#include "absl/synchronization/notification.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -296,12 +296,12 @@ TEST_F(Chttp2ActiveConnectionTest, CloseWithoutHandshakeStarting) {
 }
 
 RefCountedPtr<grpc_server_credentials> CreateSecureServerCredentials() {
-  std::string ca_cert =
-      testing::GetFileContents("src/core/tsi/test_creds/client.pem");
-  std::string server_cert =
-      testing::GetFileContents("src/core/tsi/test_creds/server1.pem");
-  std::string server_key =
-      testing::GetFileContents("src/core/tsi/test_creds/server1.key");
+  std::string ca_cert = testing::GetFileContents(
+      "src/core/tsi/test_creds/client.pem");
+  std::string server_cert = testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.pem");
+  std::string server_key = testing::GetFileContents(
+      "src/core/tsi/test_creds/server1.key");
   grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
   // Set credential provider.
   grpc_tls_identity_pairs* server_pairs = grpc_tls_identity_pairs_create();

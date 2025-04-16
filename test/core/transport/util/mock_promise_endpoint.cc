@@ -16,9 +16,9 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/util/notification.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "src/core/util/notification.h"
 
 using EventEngineSlice = grpc_event_engine::experimental::Slice;
 using grpc_event_engine::experimental::EventEngine;

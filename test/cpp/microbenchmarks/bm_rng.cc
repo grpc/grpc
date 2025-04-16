@@ -20,8 +20,8 @@
 
 #include <benchmark/benchmark.h>
 
-#include "absl/random/random.h"
 #include "src/core/util/sync.h"
+#include "absl/random/random.h"
 
 static void BM_OneRngFromFreshBitSet(benchmark::State& state) {
   for (auto _ : state) {

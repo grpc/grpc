@@ -25,11 +25,11 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 namespace testing {

@@ -26,15 +26,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "envoy/config/core/v3/address.pb.h"
-#include "envoy/config/core/v3/base.pb.h"
-#include "envoy/config/core/v3/health_check.pb.h"
-#include "envoy/config/endpoint/v3/endpoint.pb.h"
-#include "envoy/type/v3/percent.pb.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -53,6 +44,15 @@
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "envoy/config/core/v3/address.pb.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/health_check.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/type/v3/percent.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
 

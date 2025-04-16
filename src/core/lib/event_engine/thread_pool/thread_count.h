@@ -24,10 +24,10 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_event_engine::experimental {
 

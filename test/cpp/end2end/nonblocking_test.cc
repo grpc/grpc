@@ -25,12 +25,12 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"

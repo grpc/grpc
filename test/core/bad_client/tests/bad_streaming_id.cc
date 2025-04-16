@@ -20,11 +20,11 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "src/core/server/server.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 #define HEADER_FRAME_ID_1                                                  \
   "\x00\x00\xc9\x01\x05\x00\x00\x00\x01" /* headers: generated from        \

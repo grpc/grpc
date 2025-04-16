@@ -20,7 +20,6 @@
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel.h"
 #include "src/core/client_channel/direct_channel.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

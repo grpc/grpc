@@ -23,9 +23,9 @@
 #include <algorithm>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace channelz {

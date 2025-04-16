@@ -22,13 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "envoy/config/core/v3/base.pb.h"
-#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
@@ -41,6 +34,13 @@
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/extensions/filters/http/gcp_authn/v3/gcp_authn.pb.h"
 
 using envoy::config::core::v3::Metadata;
 using envoy::extensions::filters::http::gcp_authn::v3::Audience;

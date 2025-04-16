@@ -24,11 +24,11 @@
 #include <utility>
 #include <variant>
 
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_reader.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/json/json_reader.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upb.h"
 #include "src/proto/grpc/lookup/v1/rls_config.upbdefs.h"
 #include "upb/base/status.hpp"

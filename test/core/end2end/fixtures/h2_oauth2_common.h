@@ -24,7 +24,6 @@
 #include <grpc/status.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/ssl/ssl_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -33,13 +32,16 @@
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/check.h"
 
 class Oauth2Fixture : public SecureFixture {
  public:
   explicit Oauth2Fixture(grpc_tls_version tls_version)
       : tls_version_(tls_version) {}
 
-  static const char* CaCertPath() { return "src/core/tsi/test_creds/ca.pem"; }
+  static const char* CaCertPath() {
+    return "src/core/tsi/test_creds/ca.pem";
+  }
   static const char* ServerCertPath() {
     return "src/core/tsi/test_creds/server1.pem";
   }

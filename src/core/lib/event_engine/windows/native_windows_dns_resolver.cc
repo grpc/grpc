@@ -21,12 +21,12 @@
 
 #include <string>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/windows/native_windows_dns_resolver.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/status_helper.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_event_engine::experimental {
 

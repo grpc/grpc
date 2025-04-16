@@ -22,9 +22,9 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 using grpc_core::http2::Http2ErrorCode;
 

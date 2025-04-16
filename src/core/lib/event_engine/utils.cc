@@ -19,11 +19,11 @@
 
 #include <algorithm>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_event_engine::experimental {
 

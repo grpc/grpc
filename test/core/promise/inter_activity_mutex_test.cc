@@ -14,15 +14,12 @@
 
 #include "src/core/lib/promise/inter_activity_mutex.h"
 
-#include <google/protobuf/text_format.h>
 #include <grpc/grpc.h>
 
 #include <limits>
 #include <optional>
 #include <thread>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
@@ -30,6 +27,9 @@
 #include "src/core/util/notification.h"
 #include "test/core/promise/inter_activity_mutex_test.pb.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include <google/protobuf/text_format.h>
 
 using ::testing::Mock;
 using ::testing::StrictMock;

@@ -27,15 +27,15 @@ Enabling parallel build helps a lot.
 import os
 
 try:
-    BUILD_EXT_COMPILER_JOBS = int(
-        os.environ["GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS"]
-    )
+  BUILD_EXT_COMPILER_JOBS = int(
+      os.environ["GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS"]
+  )
 except KeyError:
-    import multiprocessing
+  import multiprocessing
 
-    BUILD_EXT_COMPILER_JOBS = multiprocessing.cpu_count()
+  BUILD_EXT_COMPILER_JOBS = multiprocessing.cpu_count()
 except ValueError:
-    BUILD_EXT_COMPILER_JOBS = 1
+  BUILD_EXT_COMPILER_JOBS = 1
 
 
 # monkey-patch for parallel compilation
@@ -50,36 +50,36 @@ def _parallel_compile(
     extra_postargs=None,
     depends=None,
 ):
-    # setup the same way as distutils.ccompiler.CCompiler
-    # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
-    macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
-        str(output_dir), macros, include_dirs, sources, depends, extra_postargs
-    )
-    cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
+  # setup the same way as distutils.ccompiler.CCompiler
+  # https://github.com/python/cpython/blob/31368a4f0e531c19affe2a1becd25fc316bc7501/Lib/distutils/ccompiler.py#L564
+  macros, objects, extra_postargs, pp_opts, build = self._setup_compile(
+      str(output_dir), macros, include_dirs, sources, depends, extra_postargs
+  )
+  cc_args = self._get_cc_args(pp_opts, debug, extra_preargs)
 
-    def _compile_single_file(obj):
-        try:
-            src, ext = build[obj]
-        except KeyError:
-            return
-        self._compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
+  def _compile_single_file(obj):
+    try:
+      src, ext = build[obj]
+    except KeyError:
+      return
+    self._compile(obj, src, ext, cc_args, extra_postargs, pp_opts)
 
-    # run compilation of individual files in parallel
-    import multiprocessing.pool
+  # run compilation of individual files in parallel
+  import multiprocessing.pool
 
-    multiprocessing.pool.ThreadPool(BUILD_EXT_COMPILER_JOBS).map(
-        _compile_single_file, objects
-    )
-    return objects
+  multiprocessing.pool.ThreadPool(BUILD_EXT_COMPILER_JOBS).map(
+      _compile_single_file, objects
+  )
+  return objects
 
 
 def monkeypatch_compile_maybe():
-    """
-    Monkeypatching is dumb, but the build speed gain is worth it.
-    After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
-    """
-    use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
-    if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != "stdlib":
-        import distutils.ccompiler  # pylint: disable=wrong-import-position
+  """Monkeypatching is dumb, but the build speed gain is worth it.
 
-        distutils.ccompiler.CCompiler.compile = _parallel_compile
+  After python 3.12, we won't find distutils if SETUPTOOLS_USE_DISTUTILS=stdlib.
+  """
+  use_distutils = os.environ.get("SETUPTOOLS_USE_DISTUTILS", "")
+  if BUILD_EXT_COMPILER_JOBS > 1 and use_distutils != "stdlib":
+    import distutils.ccompiler  # pylint: disable=wrong-import-position
+
+    distutils.ccompiler.CCompiler.compile = _parallel_compile

@@ -21,12 +21,12 @@
 #include <tuple>
 #include <vector>
 
-#include "absl/container/flat_hash_set.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/container/flat_hash_set.h"
 
 #ifdef GRPC_NO_ZTRACE
 namespace grpc_core::channelz {

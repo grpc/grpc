@@ -31,10 +31,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
@@ -54,6 +50,10 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 void grpc_alts_set_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* rpc_versions) {

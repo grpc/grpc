@@ -27,10 +27,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -51,6 +47,10 @@
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/status_helper.h"
+#include "absl/functional/bind_front.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 

@@ -21,11 +21,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/uri.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 namespace grpc_core {
 namespace {

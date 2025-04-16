@@ -16,21 +16,20 @@
  *
  */
 
-#include <google/protobuf/compiler/php/names.h>
-
 #include <map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
 #include "src/compiler/php_generator_helpers.h"
+#include <google/protobuf/compiler/php/names.h>
 
-using google::protobuf::compiler::php::GeneratedClassName;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
+using google::protobuf::compiler::php::GeneratedClassName;
 using std::map;
 
 namespace grpc_php_generator {

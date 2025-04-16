@@ -20,10 +20,10 @@
 
 #include <tuple>
 
-#include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/detail/join_state.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/map.h"
+#include "absl/meta/type_traits.h"
 
 namespace grpc_core {
 namespace promise_detail {

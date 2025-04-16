@@ -33,10 +33,6 @@
 #include <sstream>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -47,6 +43,10 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
 
 namespace grpc {
 namespace testing {

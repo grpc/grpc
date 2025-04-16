@@ -39,11 +39,6 @@
 #include <set>
 #include <thread>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "gmock/gmock.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -59,6 +54,11 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 
 namespace {
 

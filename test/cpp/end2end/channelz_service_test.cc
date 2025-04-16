@@ -29,10 +29,6 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "absl/log/check.h"
-#include "absl/memory/memory.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -49,6 +45,10 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/memory/memory.h"
 
 using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
@@ -128,11 +128,16 @@ enum class CredentialsType {
   kMtls = 2,
 };
 
-constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
-constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+constexpr char kCaCertPath[] =
+    "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] =
+    "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] =
+    "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] =
+    "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] =
+    "src/core/tsi/test_creds/client.key";
 
 std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
     CredentialsType type, ChannelArguments* args) {

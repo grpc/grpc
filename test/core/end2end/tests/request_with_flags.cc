@@ -27,11 +27,11 @@
 #include <optional>
 #include <utility>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace {

@@ -22,10 +22,6 @@
 #include <grpc/support/log_windows.h>
 #include <winsock2.h>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
@@ -35,6 +31,10 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/sync.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.
 // Our grpc/c-ares code on Windows uses the ares_set_socket_functions API,

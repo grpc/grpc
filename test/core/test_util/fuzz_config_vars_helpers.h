@@ -26,12 +26,12 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "test/core/test_util/fuzz_config_vars.pb.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc_core {
 

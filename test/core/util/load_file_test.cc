@@ -20,9 +20,9 @@
 
 #include <cstdint>
 
-#include "gtest/gtest.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 static const char prefix[] = "file_test";
 

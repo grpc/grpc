@@ -24,8 +24,8 @@
 #include <sstream>
 #include <string>
 
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "absl/log/log.h"
 #ifdef __linux__
 #include <sys/resource.h>
 #include <sys/time.h>

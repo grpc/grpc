@@ -25,10 +25,10 @@
 #include <thread>
 #include <vector>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 namespace testing {

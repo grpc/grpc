@@ -18,16 +18,14 @@
 
 // Generates Objective C gRPC service interface out of Protobuf IDL.
 
-#include <google/protobuf/compiler/objectivec/names.h>
-
 #include <memory>
 
 #include "src/compiler/config.h"
 #include "src/compiler/objective_c_generator.h"
 #include "src/compiler/objective_c_generator_helpers.h"
+#include <google/protobuf/compiler/objectivec/names.h>
 
-using ::google::protobuf::compiler::objectivec::
-    IsProtobufLibraryBundledProtoFile;
+using ::google::protobuf::compiler::objectivec::IsProtobufLibraryBundledProtoFile;
 using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
 #ifdef SUPPORT_OBJC_PREFIX_VALIDATION
 using ::google::protobuf::compiler::objectivec::ValidateObjCClassPrefixes;
@@ -158,8 +156,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     static const ::std::string kForwardDeclare =
         "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO";
 
-    ::std::string file_name =
-        google::protobuf::compiler::objectivec::FilePath(file);
+    ::std::string file_name = google::protobuf::compiler::objectivec::FilePath(file);
 
     grpc_objective_c_generator::Parameters generator_params;
     generator_params.no_v1_compatibility = false;

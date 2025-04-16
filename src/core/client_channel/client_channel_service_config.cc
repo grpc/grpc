@@ -22,11 +22,11 @@
 #include <optional>
 #include <utility>
 
+#include "src/core/load_balancing/lb_policy_registry.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/load_balancing/lb_policy_registry.h"
 
 // As per the retry design, we do not allow more than 5 retry attempts.
 #define MAX_MAX_RETRY_ATTEMPTS 5

@@ -24,10 +24,10 @@
 #include <optional>
 #include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 
 using testing::Mock;
 using testing::Return;

@@ -40,12 +40,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/host_port.h"
@@ -54,6 +48,12 @@
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/base/attributes.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 ABSL_FLAG(std::string, bind, "", "Bind host:port");
 ABSL_FLAG(bool, secure, false, "Use security");

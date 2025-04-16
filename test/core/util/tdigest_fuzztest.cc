@@ -16,9 +16,9 @@
 #include <utility>
 #include <vector>
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/util/tdigest.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 using fuzztest::InRange;
 using fuzztest::VectorOf;

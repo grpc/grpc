@@ -26,17 +26,6 @@
 
 #include <string>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "envoy/config/cluster/v3/cluster.pb.h"
-#include "envoy/config/core/v3/extension.pb.h"
-#include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.pb.h"
-#include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.pb.h"
-#include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.pb.h"
-#include "envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.pb.h"
-#include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/load_balancing/lb_policy_factory.h"
@@ -47,9 +36,20 @@
 #include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/extensions/load_balancing_policies/client_side_weighted_round_robin/v3/client_side_weighted_round_robin.pb.h"
+#include "envoy/extensions/load_balancing_policies/pick_first/v3/pick_first.pb.h"
+#include "envoy/extensions/load_balancing_policies/ring_hash/v3/ring_hash.pb.h"
+#include "envoy/extensions/load_balancing_policies/round_robin/v3/round_robin.pb.h"
+#include "envoy/extensions/load_balancing_policies/wrr_locality/v3/wrr_locality.pb.h"
+#include "xds/type/v3/typed_struct.pb.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"
-#include "xds/type/v3/typed_struct.pb.h"
 
 namespace grpc_core {
 namespace testing {

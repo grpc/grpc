@@ -28,10 +28,6 @@
 
 #include <optional>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -48,6 +44,10 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 typedef void (*grpc_ioreq_completion_func)(grpc_call* call, int success,
                                            void* user_data);

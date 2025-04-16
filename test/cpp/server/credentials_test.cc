@@ -23,17 +23,18 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
-#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
+#define MALFORMED_CERT_PATH \
+  "src/core/tsi/test_creds/malformed-cert.pem"
 
 namespace {
 

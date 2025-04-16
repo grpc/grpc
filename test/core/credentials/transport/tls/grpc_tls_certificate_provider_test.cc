@@ -23,24 +23,28 @@
 #include <deque>
 #include <list>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "gmock/gmock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/tmpfile.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
-#define CA_CERT_PATH_2 "src/core/tsi/test_creds/multi-domain.pem"
-#define SERVER_CERT_PATH_2 "src/core/tsi/test_creds/server0.pem"
+#define CA_CERT_PATH_2 \
+  "src/core/tsi/test_creds/multi-domain.pem"
+#define SERVER_CERT_PATH_2 \
+  "src/core/tsi/test_creds/server0.pem"
 #define SERVER_KEY_PATH_2 "src/core/tsi/test_creds/server0.key"
 #define INVALID_PATH "invalid/path"
-#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
-#define MALFORMED_KEY_PATH "src/core/tsi/test_creds/malformed-key.pem"
+#define MALFORMED_CERT_PATH \
+  "src/core/tsi/test_creds/malformed-cert.pem"
+#define MALFORMED_KEY_PATH \
+  "src/core/tsi/test_creds/malformed-key.pem"
 
 namespace grpc_core {
 

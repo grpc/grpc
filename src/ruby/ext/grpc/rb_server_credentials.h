@@ -19,10 +19,9 @@
 #ifndef GRPC_RB_SERVER_CREDENTIALS_H_
 #define GRPC_RB_SERVER_CREDENTIALS_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
+#include <ruby/ruby.h>
 #include <stdbool.h>
 
 /* Initializes the ruby ServerCredentials class. */

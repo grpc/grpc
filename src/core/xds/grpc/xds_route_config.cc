@@ -22,12 +22,12 @@
 #include <variant>
 #include <vector>
 
+#include "src/core/util/match.h"
+#include "src/core/util/matchers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "re2/re2.h"
-#include "src/core/util/match.h"
-#include "src/core/util/matchers.h"
 
 namespace grpc_core {
 

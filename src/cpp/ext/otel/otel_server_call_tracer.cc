@@ -26,12 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
 #include "src/core/call/metadata_batch.h"
@@ -46,6 +40,12 @@
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {

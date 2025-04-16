@@ -24,11 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/random/bit_gen_ref.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/experiments/config.h"
@@ -44,6 +39,11 @@
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/transport/chttp2/hpack_parser_fuzzer.pb.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/random/bit_gen_ref.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 

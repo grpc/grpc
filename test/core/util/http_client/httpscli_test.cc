@@ -31,13 +31,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_format.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "gtest/gtest.h"
 #include "src/core/credentials/transport/transport_credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -59,6 +52,13 @@
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/util/http_client/httpcli_test_util.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_format.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 namespace {
 

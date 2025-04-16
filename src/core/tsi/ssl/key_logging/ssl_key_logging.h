@@ -24,10 +24,10 @@
 #include <iostream>
 #include <map>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace tsi {
 

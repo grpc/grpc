@@ -26,9 +26,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
@@ -47,6 +44,9 @@
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

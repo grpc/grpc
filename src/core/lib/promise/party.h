@@ -25,9 +25,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
@@ -40,6 +37,9 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

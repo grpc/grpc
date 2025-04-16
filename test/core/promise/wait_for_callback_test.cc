@@ -14,11 +14,11 @@
 
 #include "src/core/lib/promise/wait_for_callback.h"
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/util/notification.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

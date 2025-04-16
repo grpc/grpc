@@ -28,8 +28,8 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/log.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
+#include "absl/log/log.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "upb/mem/arena.hpp"
 

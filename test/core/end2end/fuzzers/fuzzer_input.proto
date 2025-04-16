@@ -16,227 +16,228 @@ syntax = "proto3";
 
 package fuzzer_input;
 
+import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
 import "test/core/end2end/fuzzers/api_fuzzer.proto";
 import "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto";
 import "test/core/test_util/fuzz_config_vars.proto";
 import "test/core/test_util/fuzzing_channel_args.proto";
-import "src/core/ext/transport/chaotic_good/chaotic_good_frame.proto";
 
-message Empty{};
+message Empty {}
 
 message H2DataFrame {
-    uint32 stream_id = 1;
-    bool end_of_stream = 2;
-    bytes payload = 3;
+  uint32 stream_id = 1;
+  bool end_of_stream = 2;
+  bytes payload = 3;
 }
 
 message SimpleHeader {
-    // If key & value are set, then a literal unencoded header is added.
-    optional string key = 1;
-    optional string value = 2;
-    // If raw_bytes is set, then after the key/value pair (if emitted) the raw bytes are emitted.
-    optional bytes raw_bytes = 3;
+  // If key & value are set, then a literal unencoded header is added.
+  optional string key = 1;
+  optional string value = 2;
+  // If raw_bytes is set, then after the key/value pair (if emitted) the raw
+  // bytes are emitted.
+  optional bytes raw_bytes = 3;
 }
 
 message SimpleHeaders {
-    repeated SimpleHeader headers = 1;
+  repeated SimpleHeader headers = 1;
 
-    optional string grpc_timeout = 2;
-    optional string te = 3;
-    optional string content_type = 4;
-    optional string scheme = 5; 
-    optional string method = 6;
-    optional string grpc_encoding = 7;
-    optional string grpc_internal_encoding_request = 8;
-    optional string grpc_accept_encoding = 9;
-    optional string user_agent = 10;
-    optional string grpc_message = 11;
-    optional string host = 12;
-    optional string endpoint_load_metrics_bin = 13;
-    optional string grpc_server_stats_bin = 14;
-    optional string grpc_trace_bin = 15;
-    optional string grpc_tags_bin = 16;
-    optional string x_envoy_peer_metadata = 17;
-    optional string authority = 18;
-    optional string path = 19;
-    optional string grpc_status = 20;
-    optional string grpc_previous_rpc_attempts = 21;
-    optional string grpc_retry_pushback_ms = 22;
-    optional string status = 23;
-    optional string grpclb_client_stats = 24;
-    optional string lb_token = 25;
-    optional string lb_cost_bin = 26;
+  optional string grpc_timeout = 2;
+  optional string te = 3;
+  optional string content_type = 4;
+  optional string scheme = 5;
+  optional string method = 6;
+  optional string grpc_encoding = 7;
+  optional string grpc_internal_encoding_request = 8;
+  optional string grpc_accept_encoding = 9;
+  optional string user_agent = 10;
+  optional string grpc_message = 11;
+  optional string host = 12;
+  optional string endpoint_load_metrics_bin = 13;
+  optional string grpc_server_stats_bin = 14;
+  optional string grpc_trace_bin = 15;
+  optional string grpc_tags_bin = 16;
+  optional string x_envoy_peer_metadata = 17;
+  optional string authority = 18;
+  optional string path = 19;
+  optional string grpc_status = 20;
+  optional string grpc_previous_rpc_attempts = 21;
+  optional string grpc_retry_pushback_ms = 22;
+  optional string status = 23;
+  optional string grpclb_client_stats = 24;
+  optional string lb_token = 25;
+  optional string lb_cost_bin = 26;
 
-    optional string chaotic_good_connection_type = 27;
-    optional string chaotic_good_connection_id = 28;
-    optional string chaotic_good_alignment = 29;
+  optional string chaotic_good_connection_type = 27;
+  optional string chaotic_good_connection_id = 28;
+  optional string chaotic_good_alignment = 29;
 }
 
 message H2HeaderFrame {
-    uint32 stream_id = 1;
-    bool end_headers =  2;
-    bool end_stream = 3;
-    oneof payload {
-        bytes raw_bytes = 5;
-        SimpleHeaders simple_header = 6;
-    }
+  uint32 stream_id = 1;
+  bool end_headers = 2;
+  bool end_stream = 3;
+  oneof payload {
+    bytes raw_bytes = 5;
+    SimpleHeaders simple_header = 6;
+  }
 }
 
 message H2ContinuationFrame {
-    uint32 stream_id = 1;
-    bool end_headers =  2;
-    oneof payload {
-        bytes raw_bytes = 5;
-        SimpleHeaders simple_header = 6;
-    }
+  uint32 stream_id = 1;
+  bool end_headers = 2;
+  oneof payload {
+    bytes raw_bytes = 5;
+    SimpleHeaders simple_header = 6;
+  }
 }
 
 message H2RstStreamFrame {
-    uint32 stream_id = 1;
-    uint32 error_code = 2;
+  uint32 stream_id = 1;
+  uint32 error_code = 2;
 }
 
 message H2Setting {
-    uint32 id = 1;
-    uint32 value = 2;
+  uint32 id = 1;
+  uint32 value = 2;
 }
 
 message H2SettingsFrame {
-    bool ack = 1;
-    repeated H2Setting settings = 2;
+  bool ack = 1;
+  repeated H2Setting settings = 2;
 }
 
 message H2PingFrame {
-    bool ack = 1;
-    uint64 opaque = 2;
+  bool ack = 1;
+  uint64 opaque = 2;
 }
 
 message H2GoawayFrame {
-    uint32 last_stream_id = 1;
-    uint32 error_code = 2;
-    bytes debug_data = 3;
+  uint32 last_stream_id = 1;
+  uint32 error_code = 2;
+  bytes debug_data = 3;
 }
 
 message H2WindowUpdateFrame {
-    uint32 stream_id = 1;
-    uint32 increment = 2;
+  uint32 stream_id = 1;
+  uint32 increment = 2;
 }
 
 message H2SecurityFrame {
-    bytes payload = 1;
+  bytes payload = 1;
 }
 
 message H2ClientPrefix {}
 
 message ChaoticGoodServerFragment {
-    uint32 stream_id = 1;
-    oneof headers {
-        Empty headers_none = 11;
-        bytes headers_raw_bytes = 12;
-        SimpleHeaders headers_simple_header = 13;
-    }
-    oneof data {
-        Empty none = 21;
-        uint32 length = 22;
-    }
-    oneof trailers {
-        Empty trailers_none = 31;
-        bytes trailers_raw_bytes = 32;
-        SimpleHeaders trailers_simple_header = 33;
-    }
+  uint32 stream_id = 1;
+  oneof headers {
+    Empty headers_none = 11;
+    bytes headers_raw_bytes = 12;
+    SimpleHeaders headers_simple_header = 13;
+  }
+  oneof data {
+    Empty none = 21;
+    uint32 length = 22;
+  }
+  oneof trailers {
+    Empty trailers_none = 31;
+    bytes trailers_raw_bytes = 32;
+    SimpleHeaders trailers_simple_header = 33;
+  }
 }
 
 message ChaoticGoodPayloadOtherConnection {
-    uint32 connection_id = 1;
-    uint32 length = 2;
+  uint32 connection_id = 1;
+  uint32 length = 2;
 }
 
 message ChaoticGoodFrame {
-    enum FrameType {
-        SETTINGS = 0;
-        CLIENT_INITIAL_METADATA = 1;
-        MESSAGE = 2;
-        CLIENT_END_OF_STREAM = 3;
-        SERVER_INITIAL_METADATA = 4;
-        SERVER_TRAILING_METADATA = 5;
-        CANCEL = 6;
-    };
-    uint32 stream_id = 1;
-    oneof frame_type {
-        FrameType known_type = 2;
-        uint32 unknown_type = 3;
-    }
-    oneof payload {
-        ChaoticGoodPayloadOtherConnection payload_other_connection_id = 10;
-        Empty payload_none = 11;
-        bytes payload_raw_bytes = 12;
-        uint32 payload_empty_of_length = 13;
-        chaotic_good_frame.Settings settings = 14;
-        chaotic_good_frame.ClientMetadata client_metadata = 15;
-        chaotic_good_frame.ServerMetadata server_metadata = 16;
-    }
+  enum FrameType {
+    SETTINGS = 0;
+    CLIENT_INITIAL_METADATA = 1;
+    MESSAGE = 2;
+    CLIENT_END_OF_STREAM = 3;
+    SERVER_INITIAL_METADATA = 4;
+    SERVER_TRAILING_METADATA = 5;
+    CANCEL = 6;
+  }
+  uint32 stream_id = 1;
+  oneof frame_type {
+    FrameType known_type = 2;
+    uint32 unknown_type = 3;
+  }
+  oneof payload {
+    ChaoticGoodPayloadOtherConnection payload_other_connection_id = 10;
+    Empty payload_none = 11;
+    bytes payload_raw_bytes = 12;
+    uint32 payload_empty_of_length = 13;
+    chaotic_good_frame.Settings settings = 14;
+    chaotic_good_frame.ClientMetadata client_metadata = 15;
+    chaotic_good_frame.ServerMetadata server_metadata = 16;
+  }
 }
 
 message FakeTransportFrame {
-    enum MessageString {
-        CLIENT_INIT = 0;
-        SERVER_INIT = 1;
-        CLIENT_FINISHED = 2;
-        SERVER_FINISHED = 3;
-    }
+  enum MessageString {
+    CLIENT_INIT = 0;
+    SERVER_INIT = 1;
+    CLIENT_FINISHED = 2;
+    SERVER_FINISHED = 3;
+  }
 
-    oneof payload {
-        bytes raw_bytes = 1;
-        MessageString message_string = 2;
-    }
+  oneof payload {
+    bytes raw_bytes = 1;
+    MessageString message_string = 2;
+  }
 }
 
 message InputSegment {
-    int32 delay_ms = 1;
-    oneof payload {
-        bytes raw_bytes = 2;
-        H2DataFrame data = 3;
-        H2HeaderFrame header = 4;
-        H2ContinuationFrame continuation = 5;
-        H2RstStreamFrame rst_stream = 6;
-        H2SettingsFrame settings = 7;
-        H2PingFrame ping = 8;
-        H2GoawayFrame goaway = 9;
-        H2WindowUpdateFrame window_update = 10;
-        H2ClientPrefix client_prefix = 11;
-        uint32 repeated_zeros = 12;
-        ChaoticGoodFrame chaotic_good = 13;
-        FakeTransportFrame fake_transport_frame = 14;
-        H2SecurityFrame security_frame = 15;
-    }
+  int32 delay_ms = 1;
+  oneof payload {
+    bytes raw_bytes = 2;
+    H2DataFrame data = 3;
+    H2HeaderFrame header = 4;
+    H2ContinuationFrame continuation = 5;
+    H2RstStreamFrame rst_stream = 6;
+    H2SettingsFrame settings = 7;
+    H2PingFrame ping = 8;
+    H2GoawayFrame goaway = 9;
+    H2WindowUpdateFrame window_update = 10;
+    H2ClientPrefix client_prefix = 11;
+    uint32 repeated_zeros = 12;
+    ChaoticGoodFrame chaotic_good = 13;
+    FakeTransportFrame fake_transport_frame = 14;
+    H2SecurityFrame security_frame = 15;
+  }
 }
 
 message InputSegments {
-    repeated InputSegment segments = 1;
+  repeated InputSegment segments = 1;
 }
 
 message NetworkInput {
-    int32 connect_delay_ms = 3;
-    int32 connect_timeout_ms = 4;
-    grpc.testing.FuzzingChannelArgs endpoint_config = 5;
-    oneof value {
-        bytes single_read_bytes = 1;
-        InputSegments input_segments = 2;
-    }
+  int32 connect_delay_ms = 3;
+  int32 connect_timeout_ms = 4;
+  grpc.testing.FuzzingChannelArgs endpoint_config = 5;
+  oneof value {
+    bytes single_read_bytes = 1;
+    InputSegments input_segments = 2;
+  }
 }
 
 // Only for connector fuzzer, when to drop the connector
 message ShutdownConnector {
-    int32 delay_ms = 1;
-    int32 shutdown_status = 2;
-    string shutdown_message = 3;
+  int32 delay_ms = 1;
+  int32 shutdown_status = 2;
+  string shutdown_message = 3;
 }
 
 message Msg {
-    repeated NetworkInput network_input = 1;
-    repeated api_fuzzer.Action api_actions = 2;
-    fuzzing_event_engine.Actions event_engine_actions = 3;
-    grpc.testing.FuzzConfigVars config_vars = 4;
-    grpc.testing.FuzzingChannelArgs channel_args = 5;
-    ShutdownConnector shutdown_connector = 6;
+  repeated NetworkInput network_input = 1;
+  repeated api_fuzzer.Action api_actions = 2;
+  fuzzing_event_engine.Actions event_engine_actions = 3;
+  grpc.testing.FuzzConfigVars config_vars = 4;
+  grpc.testing.FuzzingChannelArgs channel_args = 5;
+  ShutdownConnector shutdown_connector = 6;
 }

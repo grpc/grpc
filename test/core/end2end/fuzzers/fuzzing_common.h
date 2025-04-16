@@ -29,8 +29,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/types/span.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -38,6 +36,8 @@
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
+#include "absl/log/check.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 namespace testing {

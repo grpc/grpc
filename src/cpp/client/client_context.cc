@@ -37,9 +37,9 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/util/crash.h"
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-#include "src/core/util/crash.h"
 
 namespace grpc {
 

@@ -23,9 +23,6 @@
 #include <memory>
 #include <set>
 
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
@@ -35,6 +32,9 @@
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 ABSL_FLAG(std::string, scenarios_file, "",
           "JSON file containing an array of Scenario objects");

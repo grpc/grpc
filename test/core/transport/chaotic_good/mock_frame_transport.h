@@ -15,12 +15,11 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_FRAME_TRANSPORT_H
 #define GRPC_TEST_CORE_TRANSPORT_CHAOTIC_GOOD_MOCK_FRAME_TRANSPORT_H
 
-#include <google/protobuf/text_format.h>
-
 #include <queue>
 
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
+#include <google/protobuf/text_format.h>
 
 namespace grpc_core {
 namespace chaotic_good {

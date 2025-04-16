@@ -27,10 +27,10 @@
 #include <set>
 #include <unordered_map>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/cpp/server/load_reporter/constants.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc {
 namespace load_reporter {

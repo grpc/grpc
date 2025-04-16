@@ -21,14 +21,14 @@
 #include <atomic>
 #include <string>
 
+#include "metadata_exchange.h"
+#include "python_observability_context.h"
+#include "src/core/telemetry/call_tracer.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "metadata_exchange.h"
-#include "python_observability_context.h"
-#include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
 

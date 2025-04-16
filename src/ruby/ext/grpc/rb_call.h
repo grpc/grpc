@@ -19,9 +19,8 @@
 #ifndef GRPC_RB_CALL_H_
 #define GRPC_RB_CALL_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/grpc.h>
+#include <ruby/ruby.h>
 
 extern const rb_data_type_t grpc_rb_md_ary_data_type;
 

@@ -22,8 +22,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;

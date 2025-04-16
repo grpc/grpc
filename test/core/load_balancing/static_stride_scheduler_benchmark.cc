@@ -22,12 +22,12 @@
 #include <optional>
 #include <vector>
 
+#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/util/no_destruct.h"
 #include "absl/algorithm/container.h"
 #include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/types/span.h"
-#include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
-#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 namespace {

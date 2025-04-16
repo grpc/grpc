@@ -25,13 +25,13 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 void grpc_auth_context_release(grpc_auth_context* context) {
   GRPC_TRACE_LOG(api, INFO)

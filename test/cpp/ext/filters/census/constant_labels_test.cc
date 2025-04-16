@@ -23,9 +23,6 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "opencensus/tags/tag_map.h"
@@ -34,6 +31,9 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/ext/filters/census/library.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace testing {

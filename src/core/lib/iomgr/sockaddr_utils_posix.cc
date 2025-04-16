@@ -39,9 +39,9 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
 
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 

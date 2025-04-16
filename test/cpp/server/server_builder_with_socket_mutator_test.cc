@@ -23,11 +23,11 @@
 
 #include <memory>
 
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
 
 // This test does a sanity check that grpc_socket_mutator's
 // are used by servers. It's meant to protect code and end-to-end

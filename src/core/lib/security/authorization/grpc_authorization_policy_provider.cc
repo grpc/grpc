@@ -25,8 +25,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
@@ -36,6 +34,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

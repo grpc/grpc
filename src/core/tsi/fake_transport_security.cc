@@ -23,13 +23,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/tsi/transport_security_grpc.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 // --- Constants. ---
 #define TSI_FAKE_FRAME_HEADER_SIZE 4

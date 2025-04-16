@@ -20,8 +20,8 @@
 
 #include <atomic>
 
-#include "absl/functional/function_ref.h"
 #include "src/core/util/time.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 

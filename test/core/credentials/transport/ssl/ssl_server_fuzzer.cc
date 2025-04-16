@@ -21,9 +21,6 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "absl/log/check.h"
-#include "absl/synchronization/notification.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
@@ -31,6 +28,9 @@
 #include "test/core/test_util/mock_endpoint.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/log/check.h"
+#include "absl/synchronization/notification.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"

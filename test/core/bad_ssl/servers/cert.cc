@@ -21,10 +21,10 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/test_util/tls_utils.h"
+#include "absl/log/check.h"
 
 // This server will present an untrusted cert to the connecting client,
 // causing the SSL handshake to fail

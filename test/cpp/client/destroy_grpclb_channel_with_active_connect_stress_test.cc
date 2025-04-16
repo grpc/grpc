@@ -34,7 +34,6 @@
 #include <sstream>
 #include <thread>
 
-#include "gmock/gmock.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -47,6 +46,7 @@
 #include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
 
 namespace {
 

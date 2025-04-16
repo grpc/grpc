@@ -22,9 +22,9 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/util/status_helper.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <arpa/nameser.h>
@@ -47,12 +47,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -67,6 +61,12 @@
 #include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 using grpc_core::EndpointAddresses;
 using grpc_core::EndpointAddressesList;

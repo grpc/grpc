@@ -14,9 +14,9 @@
 
 #include "test/core/test_util/postmortem.h"
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/telemetry/stats.h"
+#include "gtest/gtest.h"
 
 namespace grpc_core {
 

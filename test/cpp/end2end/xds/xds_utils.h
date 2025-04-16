@@ -19,13 +19,13 @@
 #include <string>
 #include <vector>
 
+#include "test/cpp/end2end/xds/xds_server.h"
 #include "absl/strings/string_view.h"
 #include "envoy/config/cluster/v3/cluster.pb.h"
 #include "envoy/config/endpoint/v3/endpoint.pb.h"
 #include "envoy/config/listener/v3/listener.pb.h"
 #include "envoy/config/route/v3/route.pb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
-#include "test/cpp/end2end/xds/xds_server.h"
 
 namespace grpc {
 namespace testing {

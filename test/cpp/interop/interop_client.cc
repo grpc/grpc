@@ -34,12 +34,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/util/crash.h"
@@ -49,6 +43,12 @@
 #include "test/core/test_util/histogram.h"
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 #include "test/cpp/interop/client_helper.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace grpc {
 namespace testing {

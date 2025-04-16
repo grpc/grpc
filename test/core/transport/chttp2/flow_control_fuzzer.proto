@@ -18,33 +18,33 @@ package flow_control_fuzzer;
 
 import "test/core/test_util/fuzz_config_vars.proto";
 
-message Empty {};
+message Empty {}
 
 message StreamWrite {
-    uint32 id = 1;
-    uint32 size = 2;
+  uint32 id = 1;
+  uint32 size = 2;
 }
 
 message Action {
-    oneof action {
-        uint64 set_memory_quota = 1;
-        uint64 step_time_ms = 2;
-        Empty periodic_update = 3;
-        Empty perform_send_to_remote = 4;
-        Empty read_send_to_remote = 5;
-        Empty read_send_from_remote = 6;
-        StreamWrite stream_write = 7;
-        Empty perform_send_from_remote = 8;
-        StreamWrite set_min_progress_size = 9;
-        uint32 allocate_memory = 10;
-        uint32 deallocate_memory = 11;
-        Empty perform_send_to_remote_with_payload = 12;
-        StreamWrite set_pending_size = 13;
-    }
+  oneof action {
+    uint64 set_memory_quota = 1;
+    uint64 step_time_ms = 2;
+    Empty periodic_update = 3;
+    Empty perform_send_to_remote = 4;
+    Empty read_send_to_remote = 5;
+    Empty read_send_from_remote = 6;
+    StreamWrite stream_write = 7;
+    Empty perform_send_from_remote = 8;
+    StreamWrite set_min_progress_size = 9;
+    uint32 allocate_memory = 10;
+    uint32 deallocate_memory = 11;
+    Empty perform_send_to_remote_with_payload = 12;
+    StreamWrite set_pending_size = 13;
+  }
 }
 
 message Msg {
-    bool enable_bdp = 1;
-    repeated Action actions = 2;
-    grpc.testing.FuzzConfigVars config_vars = 3;
+  bool enable_bdp = 1;
+  repeated Action actions = 2;
+  grpc.testing.FuzzConfigVars config_vars = 3;
 }

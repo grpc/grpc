@@ -17,8 +17,6 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
 #include "src/core/ext/transport/chaotic_good/client_transport.h"
 #include "src/core/ext/transport/chaotic_good/server_transport.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
@@ -26,6 +24,8 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "test/core/transport/test_suite/transport_test.h"
+#include "gmock/gmock.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

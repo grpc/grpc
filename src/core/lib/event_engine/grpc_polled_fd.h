@@ -24,9 +24,9 @@
 
 #include <ares.h>
 
+#include "src/core/util/sync.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_event_engine::experimental {
 

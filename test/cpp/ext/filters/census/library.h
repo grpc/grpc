@@ -26,8 +26,6 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
 #include "opencensus/stats/stats.h"
 #include "opencensus/trace/exporter/span_exporter.h"
 #include "src/core/config/core_configuration.h"
@@ -37,6 +35,8 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_lb_policies.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "gtest/gtest.h"
+#include "absl/strings/str_cat.h"
 
 namespace opencensus {
 namespace trace {

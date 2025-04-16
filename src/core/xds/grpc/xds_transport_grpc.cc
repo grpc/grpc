@@ -31,8 +31,6 @@
 #include <string_view>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
@@ -59,6 +57,8 @@
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_server_grpc_interface.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

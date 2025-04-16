@@ -24,13 +24,13 @@
 #include <thread>  // NOLINT
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/util/env.h"
 #include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/strings/string_view.h"
+#include "absl/synchronization/notification.h"
 
 namespace grpc {
 namespace testing {

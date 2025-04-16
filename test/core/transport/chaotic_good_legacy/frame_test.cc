@@ -16,13 +16,13 @@
 
 #include <cstdint>
 
+#include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 
 namespace grpc_core {
 namespace chaotic_good_legacy {

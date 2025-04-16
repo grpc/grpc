@@ -29,8 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -40,6 +38,8 @@
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "upb/mem/arena.hpp"
 
 // Main struct for ALTS TSI handshaker.

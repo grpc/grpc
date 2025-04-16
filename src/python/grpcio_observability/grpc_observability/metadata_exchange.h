@@ -27,10 +27,10 @@
 #include <string>
 #include <utility>
 
-#include "absl/strings/string_view.h"
 #include "constants.h"
 #include "python_observability_context.h"
 #include "src/core/call/metadata_batch.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_observability {
 

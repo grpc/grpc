@@ -21,14 +21,14 @@
 #include <optional>
 #include <vector>
 
-#include "absl/random/random.h"
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/time.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/random/random.h"
 
 namespace grpc_core {
 

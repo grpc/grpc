@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "fuzztest/fuzztest.h"
-#include "gtest/gtest.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/handshake/test_handshake.h"
 #include "test/core/test_util/fuzzing_channel_args.h"
 #include "test/core/test_util/fuzzing_channel_args.pb.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 namespace grpc_core {
 namespace {

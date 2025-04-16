@@ -21,9 +21,9 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/load_balancing/lb_policy.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

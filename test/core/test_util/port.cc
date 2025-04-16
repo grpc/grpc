@@ -26,10 +26,10 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/port_server_client.h"
+#include "absl/log/check.h"
 
 static int* chosen_ports = nullptr;
 static size_t num_chosen_ports = 0;

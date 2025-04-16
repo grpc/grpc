@@ -24,6 +24,11 @@
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/event_engine/time_util.h"
+#include "src/core/util/sync.h"
+#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/functional/bind_front.h"
@@ -31,11 +36,6 @@
 #include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/event_engine/time_util.h"
-#include "src/core/util/sync.h"
-#include "test/core/event_engine/test_suite/event_engine_test_framework.h"
 
 using ::testing::ElementsAre;
 using namespace std::chrono_literals;

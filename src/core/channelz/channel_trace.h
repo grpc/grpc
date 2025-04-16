@@ -26,10 +26,10 @@
 #include <stdint.h>
 #include <sys/types.h>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 namespace channelz {

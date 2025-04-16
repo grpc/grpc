@@ -19,9 +19,8 @@
 #ifndef GRPC_RB_H_
 #define GRPC_RB_H_
 
-#include <ruby/ruby.h>
-
 #include <grpc/support/time.h>
+#include <ruby/ruby.h>
 #include <stdlib.h>
 
 /* grpc_rb_mGrpcCore is the module containing the ruby wrapper GRPC classes. */

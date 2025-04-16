@@ -38,11 +38,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/algorithm/container.h"
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
@@ -55,6 +50,11 @@
 #include "test/cpp/interop/rpc_behavior_lb_policy.h"
 #include "test/cpp/interop/xds_stats_watcher.h"
 #include "test/cpp/util/test_config.h"
+#include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_split.h"
 
 ABSL_FLAG(bool, fail_on_failed_rpc, false,
           "Fail client if any RPCs fail after first successful RPC.");

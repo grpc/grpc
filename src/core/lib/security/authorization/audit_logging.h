@@ -26,10 +26,10 @@
 #include <map>
 #include <memory>
 
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace experimental {

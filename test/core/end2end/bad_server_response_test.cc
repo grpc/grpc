@@ -35,8 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -54,6 +52,8 @@
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_tcp_server.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #define HTTP1_RESP_400                       \
   "HTTP/1.0 400 Bad Request\n"               \

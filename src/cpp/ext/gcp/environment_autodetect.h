@@ -25,10 +25,10 @@
 #include <string>
 #include <vector>
 
+#include "src/core/util/sync.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "src/core/util/sync.h"
 
 namespace grpc {
 

@@ -21,12 +21,12 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "src/core/lib/iomgr/port.h"
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
 // clang-format off
@@ -40,11 +40,11 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/test_util/test_config.h"
+#include "absl/log/check.h"
 
 namespace {
 

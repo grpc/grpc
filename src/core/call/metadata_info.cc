@@ -19,8 +19,8 @@
 #include <cstddef>
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

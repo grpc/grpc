@@ -34,14 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/util/crash.h"
@@ -49,6 +41,14 @@
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 // a set of metadata we expect to find on an event
 typedef struct metadata {

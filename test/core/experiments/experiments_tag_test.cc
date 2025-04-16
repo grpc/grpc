@@ -16,15 +16,15 @@
 
 #include <string>
 
+#include "src/core/config/config_vars.h"
+#include "src/core/lib/experiments/config.h"
+#include "test/core/experiments/fixtures/experiments.h"
+#include "gtest/gtest.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "gtest/gtest.h"
-#include "src/core/config/config_vars.h"
-#include "src/core/lib/experiments/config.h"
-#include "test/core/experiments/fixtures/experiments.h"
 
 // This test is coupled with bazel/test_experiments.bzl because it is tagged
 // with test_experiments. If the

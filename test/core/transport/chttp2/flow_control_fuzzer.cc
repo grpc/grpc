@@ -28,11 +28,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_join.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -43,6 +38,11 @@
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
 #include "test/core/transport/chttp2/flow_control_fuzzer.pb.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 
 // IWYU pragma: no_include <google/protobuf/repeated_ptr_field.h>
 

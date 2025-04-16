@@ -26,12 +26,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "envoy/config/cluster/v3/cluster.pb.h"
-#include "envoy/config/endpoint/v3/endpoint.pb.h"
-#include "envoy/config/listener/v3/listener.pb.h"
-#include "envoy/config/route/v3/route.pb.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
@@ -40,6 +34,12 @@
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
 
 namespace grpc {
 namespace testing {
