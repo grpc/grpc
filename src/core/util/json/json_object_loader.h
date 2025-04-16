@@ -81,6 +81,9 @@ class LoaderInterface {
   virtual void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                         ValidationErrors* errors) const = 0;
 
+  // Convert an object into json.
+  virtual Json Convert(const void* src) const = 0;
+
  protected:
   ~LoaderInterface() = default;
 };
@@ -90,6 +93,7 @@ class LoadScalar : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadScalar() = default;
@@ -99,9 +103,9 @@ class LoadScalar : public LoaderInterface {
   // We use a virtual function to store this decision in a vtable instead of
   // needing an instance variable.
   virtual bool IsNumber() const = 0;
-
   virtual void LoadInto(const std::string& json, void* dst,
                         ValidationErrors* errors) const = 0;
+  virtual std::string ToString(const void* src) const = 0;
 };
 
 // Load a string.
@@ -113,6 +117,7 @@ class LoadString : public LoadScalar {
   bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
                 ValidationErrors* errors) const override;
+  std::string ToString(const void* src) const override;
 };
 
 // Load a Duration.
@@ -124,6 +129,19 @@ class LoadDuration : public LoadScalar {
   bool IsNumber() const override;
   void LoadInto(const std::string& value, void* dst,
                 ValidationErrors* errors) const override;
+  std::string ToString(const void* src) const override;
+};
+
+// Load a Timestamp.
+class LoadTimestamp : public LoadScalar {
+ protected:
+  ~LoadTimestamp() = default;
+
+ private:
+  bool IsNumber() const override;
+  void LoadInto(const std::string& value, void* dst,
+                ValidationErrors* errors) const override;
+  std::string ToString(const void* src) const override;
 };
 
 // Load a number.
@@ -148,6 +166,9 @@ class TypedLoadSignedNumber : public LoadNumber {
       errors->AddError("failed to parse number");
     }
   }
+  std::string ToString(const void* src) const override {
+    return std::to_string(*static_cast<const T*>(src));
+  }
 };
 
 // Load an unsigned number of type T.
@@ -163,6 +184,9 @@ class TypedLoadUnsignedNumber : public LoadNumber {
       errors->AddError("failed to parse non-negative number");
     }
   }
+  std::string ToString(const void* src) const override {
+    return std::to_string(*static_cast<const T*>(src));
+  }
 };
 
 // Load a float.
@@ -176,6 +200,9 @@ class LoadFloat : public LoadNumber {
     if (!absl::SimpleAtof(value, static_cast<float*>(dst))) {
       errors->AddError("failed to parse floating-point number");
     }
+  }
+  std::string ToString(const void* src) const override {
+    return std::to_string(*static_cast<const float*>(src));
   }
 };
 
@@ -191,6 +218,9 @@ class LoadDouble : public LoadNumber {
       errors->AddError("failed to parse floating-point number");
     }
   }
+  std::string ToString(const void* src) const override {
+    return std::to_string(*static_cast<const double*>(src));
+  }
 };
 
 // Load a bool.
@@ -198,6 +228,7 @@ class LoadBool : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadBool() = default;
@@ -208,6 +239,7 @@ class LoadUnprocessedJsonObject : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadUnprocessedJsonObject() = default;
@@ -218,6 +250,7 @@ class LoadUnprocessedJsonArray : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadUnprocessedJsonArray() = default;
@@ -228,6 +261,7 @@ class LoadVector : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadVector() = default;
@@ -235,6 +269,7 @@ class LoadVector : public LoaderInterface {
  private:
   virtual void* EmplaceBack(void* dst) const = 0;
   virtual const LoaderInterface* ElementLoader() const = 0;
+  virtual std::vector<const void*> ToPointerVec(const void* src) const = 0;
 };
 
 // Load a map of string->some type.
@@ -242,6 +277,7 @@ class LoadMap : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadMap() = default;
@@ -249,6 +285,8 @@ class LoadMap : public LoaderInterface {
  private:
   virtual void* Insert(const std::string& name, void* dst) const = 0;
   virtual const LoaderInterface* ElementLoader() const = 0;
+  virtual std::map<std::string, const void*> ToPointerMap(
+      const void* src) const = 0;
 };
 
 // Load a wrapped value of some type.
@@ -256,6 +294,7 @@ class LoadWrapped : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  protected:
   ~LoadWrapped() = default;
@@ -281,6 +320,9 @@ class AutoLoader final : public LoaderInterface {
                 ValidationErrors* errors) const override {
     T::JsonLoader(args)->LoadInto(json, args, dst, errors);
   }
+  Json Convert(const void* src) const override {
+    return T::JsonLoader(JsonArgs())->Convert(src);
+  }
 
  private:
   ~AutoLoader() = default;
@@ -294,6 +336,11 @@ class AutoLoader<std::string> final : public LoadString {
 };
 template <>
 class AutoLoader<Duration> final : public LoadDuration {
+ private:
+  ~AutoLoader() = default;
+};
+template <>
+class AutoLoader<Timestamp> final : public LoadTimestamp {
  private:
   ~AutoLoader() = default;
 };
@@ -356,6 +403,13 @@ class AutoLoader<std::vector<T>> final : public LoadVector {
   const LoaderInterface* ElementLoader() const final {
     return LoaderForType<T>();
   }
+  std::vector<const void*> ToPointerVec(const void* src) const final {
+    auto* vec = static_cast<const std::vector<T>*>(src);
+    std::vector<const void*> result;
+    result.reserve(vec->size());
+    for (const auto& elem : *vec) result.push_back(&elem);
+    return result;
+  }
 };
 
 // Specialization of AutoLoader for vector<bool> - we need a different
@@ -367,6 +421,7 @@ class AutoLoader<std::vector<bool>> final : public LoaderInterface {
  public:
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override;
+  Json Convert(const void* src) const override;
 
  private:
   ~AutoLoader() = default;
@@ -383,6 +438,12 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   };
   const LoaderInterface* ElementLoader() const final {
     return LoaderForType<T>();
+  }
+  std::map<std::string, const void*> ToPointerMap(const void* src) const final {
+    auto* map = static_cast<const std::map<std::string, T>*>(src);
+    std::map<std::string, const void*> result;
+    for (const auto& elem : *map) result.emplace(elem.first, &elem.second);
+    return result;
   }
 
   ~AutoLoader() = default;
@@ -507,6 +568,8 @@ class Vec<T, 0> {
 // Returns false if the JSON object was not of type Json::Type::kObject.
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
                 size_t num_elements, void* dst, ValidationErrors* errors);
+Json ConvertObject(const Element* elements, size_t num_elements,
+                   const void* src);
 
 // Adaptor type - takes a compile time computed list of elements and
 // implements LoaderInterface by calling LoadObject.
@@ -519,6 +582,10 @@ class FinishedJsonObjectLoader final : public LoaderInterface {
   void LoadInto(const Json& json, const JsonArgs& args, void* dst,
                 ValidationErrors* errors) const override {
     LoadObject(json, args, elements_.data(), elements_.size(), dst, errors);
+  }
+
+  Json Convert(const void* src) const override {
+    return ConvertObject(elements_.data(), elements_.size(), src);
   }
 
  private:
@@ -541,6 +608,10 @@ class FinishedJsonObjectLoader<T, kElemCount,
                    errors)) {
       static_cast<T*>(dst)->JsonPostLoad(json, args, errors);
     }
+  }
+
+  Json Convert(const void* src) const override {
+    return ConvertObject(elements_.data(), elements_.size(), src);
   }
 
  private:
@@ -600,6 +671,11 @@ template <typename T>
 using JsonObjectLoader = json_detail::JsonObjectLoader<T>;
 
 using JsonLoaderInterface = json_detail::LoaderInterface;
+
+template <typename T>
+Json ConvertToJson(const T& value) {
+  return json_detail::LoaderForType<T>()->Convert(&value);
+}
 
 template <typename T>
 absl::StatusOr<T> LoadFromJson(

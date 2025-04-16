@@ -17,11 +17,13 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include <string>
 #include <utility>
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 namespace json_detail {
@@ -39,11 +41,21 @@ void LoadScalar::LoadInto(const Json& json, const JsonArgs& /*args*/, void* dst,
   return LoadInto(json.string(), dst, errors);
 }
 
+Json LoadScalar::Convert(const void* src) const {
+  std::string x = ToString(src);
+  if (IsNumber()) return Json::FromNumber(std::move(x));
+  return Json::FromString(std::move(x));
+}
+
 bool LoadString::IsNumber() const { return false; }
 
 void LoadString::LoadInto(const std::string& value, void* dst,
                           ValidationErrors*) const {
   *static_cast<std::string*>(dst) = value;
+}
+
+std::string LoadString::ToString(const void* src) const {
+  return *static_cast<const std::string*>(src);
 }
 
 bool LoadDuration::IsNumber() const { return false; }
@@ -88,6 +100,23 @@ void LoadDuration::LoadInto(const std::string& value, void* dst,
       Duration::FromSecondsAndNanoseconds(seconds, nanos);
 }
 
+std::string LoadDuration::ToString(const void* src) const {
+  Duration d = *static_cast<const Duration*>(src);
+  return d.ToJsonString();
+}
+
+void LoadTimestamp::LoadInto(const std::string& value, void* dst,
+                             ValidationErrors* errors) const {
+  errors->AddError("Loading timestamps is not supported yet");
+}
+
+bool LoadTimestamp::IsNumber() const { return false; }
+
+std::string LoadTimestamp::ToString(const void* src) const {
+  Timestamp t = *static_cast<const Timestamp*>(src);
+  return gpr_format_timespec(t.as_timespec(GPR_CLOCK_REALTIME));
+}
+
 bool LoadNumber::IsNumber() const { return true; }
 
 void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
@@ -97,6 +126,10 @@ void LoadBool::LoadInto(const Json& json, const JsonArgs&, void* dst,
     return;
   }
   *static_cast<bool*>(dst) = json.boolean();
+}
+
+Json LoadBool::Convert(const void* src) const {
+  return Json::FromBool(*static_cast<const bool*>(src));
 }
 
 void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
@@ -109,6 +142,10 @@ void LoadUnprocessedJsonObject::LoadInto(const Json& json, const JsonArgs&,
   *static_cast<Json::Object*>(dst) = json.object();
 }
 
+Json LoadUnprocessedJsonObject::Convert(const void* src) const {
+  return Json::FromObject(*static_cast<const Json::Object*>(src));
+}
+
 void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
                                         void* dst,
                                         ValidationErrors* errors) const {
@@ -117,6 +154,10 @@ void LoadUnprocessedJsonArray::LoadInto(const Json& json, const JsonArgs&,
     return;
   }
   *static_cast<Json::Array*>(dst) = json.array();
+}
+
+Json LoadUnprocessedJsonArray::Convert(const void* src) const {
+  return Json::FromArray(*static_cast<const Json::Array*>(src));
 }
 
 void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
@@ -132,6 +173,15 @@ void LoadVector::LoadInto(const Json& json, const JsonArgs& args, void* dst,
     void* element = EmplaceBack(dst);
     element_loader->LoadInto(array[i], args, element, errors);
   }
+}
+
+Json LoadVector::Convert(const void* src) const {
+  const std::vector<const void*> vec = ToPointerVec(src);
+  Json::Array array;
+  for (size_t i = 0; i < vec.size(); ++i) {
+    array.emplace_back(ElementLoader()->Convert(vec[i]));
+  }
+  return Json::FromArray(std::move(array));
 }
 
 void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
@@ -152,6 +202,15 @@ void AutoLoader<std::vector<bool>>::LoadInto(const Json& json,
   }
 }
 
+Json AutoLoader<std::vector<bool>>::Convert(const void* src) const {
+  const std::vector<bool>* vec = static_cast<const std::vector<bool>*>(src);
+  Json::Array array;
+  for (size_t i = 0; i < vec->size(); ++i) {
+    array.emplace_back(Json::FromBool((*vec)[i]));
+  }
+  return Json::FromArray(std::move(array));
+}
+
 void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                        ValidationErrors* errors) const {
   if (json.type() != Json::Type::kObject) {
@@ -167,12 +226,25 @@ void LoadMap::LoadInto(const Json& json, const JsonArgs& args, void* dst,
   }
 }
 
+Json LoadMap::Convert(const void* src) const {
+  std::map<std::string, const void*> map = ToPointerMap(src);
+  Json::Object object;
+  for (const auto& [key, value] : map) {
+    object.emplace(key, ElementLoader()->Convert(value));
+  }
+  return Json::FromObject(std::move(object));
+}
+
 void LoadWrapped::LoadInto(const Json& json, const JsonArgs& args, void* dst,
                            ValidationErrors* errors) const {
   void* element = Emplace(dst);
   size_t starting_error_size = errors->size();
   ElementLoader()->LoadInto(json, args, element, errors);
   if (errors->size() > starting_error_size) Reset(dst);
+}
+
+Json LoadWrapped::Convert(const void* src) const {
+  return ElementLoader()->Convert(src);
 }
 
 bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
@@ -198,6 +270,18 @@ bool LoadObject(const Json& json, const JsonArgs& args, const Element* elements,
     element.loader->LoadInto(it->second, args, field_dst, errors);
   }
   return true;
+}
+
+Json ConvertObject(const Element* elements, size_t num_elements,
+                   const void* src) {
+  Json::Object out;
+  for (size_t i = 0; i < num_elements; i++) {
+    const Element& element = elements[i];
+    const char* field_src =
+        static_cast<const char*>(src) + element.member_offset;
+    out.emplace(element.name, element.loader->Convert(field_src));
+  }
+  return Json::FromObject(out);
 }
 
 const Json* GetJsonObjectField(const Json::Object& json,

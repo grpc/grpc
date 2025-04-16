@@ -110,6 +110,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/shared_bit_gen.h"
@@ -597,59 +598,132 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
     grpc_core::ExecCtx exec_ctx;
     t->combiner->Run(
         grpc_core::NewClosure([t, &n, &sink](grpc_error_handle) {
-          Json::Object http2_info;
-          http2_info["flowControl"] =
-              Json::FromObject(t->flow_control.stats().ToJsonObject());
-          Json::Object misc;
-          misc["maxRequestsPerRead"] =
-              Json::FromNumber(static_cast<int64_t>(t->max_requests_per_read));
-          misc["nextStreamId"] = Json::FromNumber(t->next_stream_id);
-          misc["lastNewStreamId"] = Json::FromNumber(t->last_new_stream_id);
-          misc["numIncomingStreamsBeforeSettingsAck"] =
-              Json::FromNumber(t->num_incoming_streams_before_settings_ack);
-          misc["pingAckCount"] =
-              Json::FromNumber(static_cast<int64_t>(t->ping_ack_count));
-          misc["allowTarpit"] = Json::FromBool(t->allow_tarpit);
-          if (t->allow_tarpit) {
-            misc["minTarpitDurationMs"] =
-                Json::FromNumber(t->min_tarpit_duration_ms);
-            misc["maxTarpitDurationMs"] =
-                Json::FromNumber(t->max_tarpit_duration_ms);
-          }
-          misc["keepaliveTime"] =
-              Json::FromString(t->keepalive_time.ToJsonString());
-          misc["nextAdjustedKeepaliveTimestamp"] =
-              Json::FromString((t->next_adjusted_keepalive_timestamp -
-                                grpc_core::Timestamp::Now())
-                                   .ToJsonString());
-          misc["numMessagesInNextWrite"] =
-              Json::FromNumber(t->num_messages_in_next_write);
-          misc["numPendingInducedFrames"] =
-              Json::FromNumber(t->num_pending_induced_frames);
-          misc["writeBufferSize"] = Json::FromNumber(t->write_buffer_size);
-          misc["readingPausedOnPendingInducedFrames"] =
-              Json::FromBool(t->reading_paused_on_pending_induced_frames);
-          misc["enablePreferredRxCryptoFrameAdvertisement"] =
-              Json::FromBool(t->enable_preferred_rx_crypto_frame_advertisement);
-          misc["keepalivePermitWithoutCalls"] =
-              Json::FromBool(t->keepalive_permit_without_calls);
-          misc["bdpPingBlocked"] = Json::FromBool(t->bdp_ping_blocked);
-          misc["bdpPingStarted"] = Json::FromBool(t->bdp_ping_started);
-          misc["ackPings"] = Json::FromBool(t->ack_pings);
-          misc["keepaliveIncomingDataWanted"] =
-              Json::FromBool(t->keepalive_incoming_data_wanted);
-          misc["maxConcurrentStreamsOverloadProtection"] =
-              Json::FromBool(t->max_concurrent_streams_overload_protection);
-          misc["maxConcurrentStreamsRejectOnClient"] =
-              Json::FromBool(t->max_concurrent_streams_reject_on_client);
-          misc["pingOnRstStreamPercent"] =
-              Json::FromNumber(t->ping_on_rst_stream_percent);
-          misc["lastWindowUpdateAge"] = Json::FromString(
-              (grpc_core::Timestamp::Now() - t->last_window_update_time)
-                  .ToJsonString());
-          http2_info["misc"] = Json::FromObject(std::move(misc));
-          http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
-          sink.AddAdditionalInfo("http2", std::move(http2_info));
+          struct Misc {
+            explicit Misc(grpc_chttp2_transport* t)
+                : max_requests_per_read(t->max_requests_per_read),
+                  next_stream_id(t->next_stream_id),
+                  last_new_stream_id(t->last_new_stream_id),
+                  num_incoming_streams_before_settings_ack(
+                      t->num_incoming_streams_before_settings_ack),
+                  ping_ack_count(t->ping_ack_count),
+                  allow_tarpit(t->allow_tarpit),
+                  min_tarpit_duration_ms(t->min_tarpit_duration_ms),
+                  max_tarpit_duration_ms(t->max_tarpit_duration_ms),
+                  keepalive_time(t->keepalive_time),
+                  next_adjusted_keepalive_timestamp(
+                      t->next_adjusted_keepalive_timestamp),
+                  num_messages_in_next_write(t->num_messages_in_next_write),
+                  num_pending_induced_frames(t->num_pending_induced_frames),
+                  write_buffer_size(t->write_buffer_size),
+                  reading_paused_on_pending_induced_frames(
+                      t->reading_paused_on_pending_induced_frames),
+                  enable_preferred_rx_crypto_frame_advertisement(
+                      t->enable_preferred_rx_crypto_frame_advertisement),
+                  keepalive_permit_without_calls(
+                      t->keepalive_permit_without_calls),
+                  bdp_ping_blocked(t->bdp_ping_blocked),
+                  bdp_ping_started(t->bdp_ping_started),
+                  ack_pings(t->ack_pings),
+                  keepalive_incoming_data_wanted(
+                      t->keepalive_incoming_data_wanted),
+                  max_concurrent_streams_overload_protection(
+                      t->max_concurrent_streams_overload_protection),
+                  max_concurrent_streams_reject_on_client(
+                      t->max_concurrent_streams_reject_on_client),
+                  ping_on_rst_stream_percent(t->ping_on_rst_stream_percent),
+                  last_window_update_time(t->last_window_update_time) {}
+            uint32_t max_requests_per_read;
+            uint32_t next_stream_id;
+            uint32_t last_new_stream_id;
+            uint32_t num_incoming_streams_before_settings_ack;
+            uint32_t ping_ack_count;
+            bool allow_tarpit;
+            int min_tarpit_duration_ms;
+            int max_tarpit_duration_ms;
+            grpc_core::Duration keepalive_time;
+            grpc_core::Timestamp next_adjusted_keepalive_timestamp;
+            uint32_t num_messages_in_next_write;
+            uint32_t num_pending_induced_frames;
+            uint32_t write_buffer_size;
+            bool reading_paused_on_pending_induced_frames;
+            bool enable_preferred_rx_crypto_frame_advertisement;
+            bool keepalive_permit_without_calls;
+            bool bdp_ping_blocked;
+            bool bdp_ping_started;
+            bool ack_pings;
+            bool keepalive_incoming_data_wanted;
+            bool max_concurrent_streams_overload_protection;
+            bool max_concurrent_streams_reject_on_client;
+            uint32_t ping_on_rst_stream_percent;
+            grpc_core::Timestamp last_window_update_time;
+            static const grpc_core::JsonLoaderInterface* JsonLoader(
+                const grpc_core::JsonArgs& args) {
+              static const auto* loader =
+                  grpc_core::JsonObjectLoader<Misc>()
+                      .Field("maxRequestsPerRead", &Misc::max_requests_per_read)
+                      .Field("nextStreamId", &Misc::next_stream_id)
+                      .Field("lastNewStreamId", &Misc::last_new_stream_id)
+                      .Field("numIncomingStreamsBeforeSettingsAck",
+                             &Misc::num_incoming_streams_before_settings_ack)
+                      .Field("pingAckCount", &Misc::ping_ack_count)
+                      .Field("allowTarpit", &Misc::allow_tarpit)
+                      .Field("minTarpitDurationMs",
+                             &Misc::min_tarpit_duration_ms)
+                      .Field("maxTarpitDurationMs",
+                             &Misc::max_tarpit_duration_ms)
+                      .Field("keepaliveTime", &Misc::keepalive_time)
+                      .Field("nextAdjustedKeepaliveTimestamp",
+                             &Misc::next_adjusted_keepalive_timestamp)
+                      .Field("numMessagesInNextWrite",
+                             &Misc::num_messages_in_next_write)
+                      .Field("numPendingInducedFrames",
+                             &Misc::num_pending_induced_frames)
+                      .Field("writeBufferSize", &Misc::write_buffer_size)
+                      .Field("readingPausedOnPendingInducedFrames",
+                             &Misc::reading_paused_on_pending_induced_frames)
+                      .Field(
+                          "enablePreferredRxCryptoFrameAdvertisement",
+                          &Misc::enable_preferred_rx_crypto_frame_advertisement)
+                      .Field("keepalivePermitWithoutCalls",
+                             &Misc::keepalive_permit_without_calls)
+                      .Field("bdpPingBlocked", &Misc::bdp_ping_blocked)
+                      .Field("bdpPingStarted", &Misc::bdp_ping_started)
+                      .Field("ackPings", &Misc::ack_pings)
+                      .Field("keepaliveIncomingDataWanted",
+                             &Misc::keepalive_incoming_data_wanted)
+                      .Field("maxConcurrentStreamsOverloadProtection",
+                             &Misc::max_concurrent_streams_overload_protection)
+                      .Field("maxConcurrentStreamsRejectOnClient",
+                             &Misc::max_concurrent_streams_reject_on_client)
+                      .Field("pingOnRstStreamPercent",
+                             &Misc::ping_on_rst_stream_percent)
+                      .Field("lastWindowUpdateAge",
+                             &Misc::last_window_update_time)
+                      .Finish();
+              return loader;
+            }
+          };
+          struct Info {
+            explicit Info(grpc_chttp2_transport* t)
+                : flow_control(t->flow_control.stats()),
+                  misc(t),
+                  settings(t->settings) {}
+            grpc_core::chttp2::TransportFlowControl::Stats flow_control;
+            Misc misc;
+            grpc_core::Http2SettingsManager settings;
+            static const grpc_core::JsonLoaderInterface* JsonLoader(
+                const grpc_core::JsonArgs& args) {
+              static const auto* loader =
+                  grpc_core::JsonObjectLoader<Info>()
+                      .Field("flowControl", &Info::flow_control)
+                      .Field("misc", &Info::misc)
+                      .Field("settings", &Info::settings)
+                      .Finish();
+              return loader;
+            }
+          };
+          sink.AddAdditionalInfo(
+              "http2", grpc_core::ConvertToJson(Info(t.get())).object());
           n.Notify();
         }),
         absl::OkStatus());
