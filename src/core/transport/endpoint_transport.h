@@ -79,4 +79,4 @@ class EndpointTransportRegistry {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_H
