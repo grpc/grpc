@@ -47,7 +47,7 @@ class AresResolverTest : public testing::Test {
 
   std::unique_ptr<GrpcPolledFdFactory> MakePolledFdFactory() {
     return std::make_unique<GrpcPolledFdFactoryPosix>(
-        event_engine_->PollerForTests());
+        event_engine_->poller_manager_.Poller());
   }
 
   std::shared_ptr<PosixEventEngine> event_engine_;

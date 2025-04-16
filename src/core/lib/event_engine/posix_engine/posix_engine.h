@@ -204,7 +204,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
   void BeforeFork();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
-  PosixEventPoller* PollerForTests() const;
   // The posix EventEngine returned by this method would have a shared ownership
   // of the poller and would not be in-charge of driving the poller by calling
   // its Work(..) method. Instead its upto the test to drive the poller. The
@@ -216,6 +215,7 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #endif  // GRPC_POSIX_SOCKET_TCP
 
  private:
+  friend class AresResolverTest;
   struct ClosureData;
 
   PosixEventEngine();

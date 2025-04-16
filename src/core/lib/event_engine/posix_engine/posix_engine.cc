@@ -177,6 +177,8 @@ void DeregisterEventEngineForFork(PosixEventEngine* /* engine */) {}
 
 }  // namespace
 
+#ifdef GRPC_POSIX_SOCKET_TCP
+
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 PosixEventEngine::PollingCycle::PollingCycle(
@@ -543,6 +545,8 @@ PosixEventEngine::PosixEventEngine()
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
+#endif  // GRPC_POSIX_SOCKET_TCP
+
 struct PosixEventEngine::ClosureData final : public EventEngine::Closure {
   absl::AnyInvocable<void()> cb;
   Timer timer;
@@ -865,14 +869,6 @@ PosixEventEngine::CreatePosixListener(
 
 #if GRPC_POSIX_SOCKET_TCP && GRPC_ENABLE_FORK_SUPPORT && \
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-
-PosixEventPoller* PosixEventEngine::PollerForTests() const {
-  return poller_manager_.Poller();
-}
-
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
