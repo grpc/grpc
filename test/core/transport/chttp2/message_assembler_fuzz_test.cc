@@ -56,6 +56,8 @@ SliceBuffer GetFuzzedPayload(
 
 void AssemblerFuzzer(
     std::vector<std::variant<std::vector<uint8_t>, uint8_t>> steps) {
+  // Fuzzing tests for class GrpcMessageAssembler
+  // This tests AppendNewDataFrame and ExtractMessage methods.
   GrpcMessageAssembler assembler;
   LOG(INFO) << "AssemblerFuzzer num_steps: " << steps.size();
   size_t count_steps = 0;
