@@ -277,10 +277,6 @@ std::string PythonOpenCensusServerCallTracer::SpanId() {
       absl::string_view(context_.GetSpanContext().SpanId()));
 }
 
-bool PythonOpenCensusServerCallTracer::IsSampled() {
-  return context_.GetSpanContext().IsSampled();
-}
-
 //
 // PythonOpenCensusServerCallTracerFactory
 //
