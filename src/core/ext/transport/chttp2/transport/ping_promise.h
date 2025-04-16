@@ -49,7 +49,7 @@ class KeepAliveSystem {
         TrySeq(
             Sleep(keepalive_timeout_),
             [this] { return keep_alive_interface_->KeepAliveTimeout(); },
-            [] { return absl::CancelledError("KeepAlive timeout"); }),
+            [] { return absl::CancelledError("keepalive timeout"); }),
         SendPing());
   }
   // If no data is received in the last keepalive_interval, we should send a
@@ -65,9 +65,10 @@ class KeepAliveSystem {
                         // TODO(akshitpatel) : [PH2][P0] : Should we wait for
                         // ping ack if some data is received after the ping is
                         // sent?
-                        return If(keepalive_timeout_ != Duration::Infinity(),
-                                  TimeoutAndSendPing(),
-                                  [this] { return SendPing(); });
+                        return If(
+                            keepalive_timeout_ != Duration::Infinity(),
+                            [this] { return TimeoutAndSendPing(); },
+                            [this] { return SendPing(); });
                       },
                       []() { return Immediate(absl::OkStatus()); }),
                   [this] {
