@@ -1252,7 +1252,8 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(
-        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node));
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1271,7 +1272,8 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
-        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node),
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
