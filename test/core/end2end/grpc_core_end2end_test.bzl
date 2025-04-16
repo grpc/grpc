@@ -29,23 +29,32 @@ _DATA = [
 ]
 
 _DEPS = [
-    "cq_verifier",
-    "http_proxy",
-    "proxy",
+    "//test/core/end2end:cq_verifier",
+    "//test/core/end2end:http_proxy",
+    "//test/core/end2end:proxy",
+    "//:call_combiner",
+    "//:call_tracer",
+    "//:channel_arg_names",
     "//:channel_stack_builder",
+    "//:channelz",
+    "//:channel",
     "//:config",
     "//:config_vars",
     "//:debug_location",
     "//:exec_ctx",
     "//:gpr",
+    "//:grpc_core_credentials_header",
     "//:grpc_authorization_provider",
     "//:grpc_public_hdrs",
     "//:grpc_security_base",
     "//:grpc_trace",
+    "//:grpc_base",
+    "//:grpc_transport_chttp2",
     "//:grpc",
     "//:orphanable",
     "//:promise",
     "//:ref_counted_ptr",
+    "//:server",
     "//:stats",
     "//src/core:arena_promise",
     "//src/core:bitset",
@@ -62,16 +71,36 @@ _DEPS = [
     "//src/core:json",
     "//src/core:lb_policy",
     "//src/core:lb_policy_factory",
+    "//src/core:metadata_batch",
     "//src/core:no_destruct",
     "//src/core:notification",
     "//src/core:slice",
     "//src/core:stats_data",
     "//src/core:status_helper",
+    "//:tcp_tracer",
     "//src/core:time",
+    "//src/core:unique_type_name",
     "//test/core/test_util:fail_first_call_filter",
     "//test/core/test_util:fake_stats_plugin",
     "//test/core/test_util:grpc_test_util",
+    "//test/core/test_util:test_call_creds",
     "//test/core/test_util:test_lb_policies",
+]
+
+_EXTERNAL_DEPS = [
+    "absl/base:core_headers",
+    "absl/log",
+    "absl/log:check",
+    "absl/log:globals",
+    "absl/log:log_entry",
+    "absl/log:log_sink",
+    "absl/log:log_sink_registry",
+    "absl/status",
+    "absl/status:statusor",
+    "absl/strings",
+    "absl/strings:str_format",
+    "absl/time",
+    "gtest",
 ]
 
 _TESTS = [
@@ -166,7 +195,16 @@ _TESTS = [
     "write_buffering_at_end",
 ]
 
-def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, enable_fuzzing = True, tags = [], flaky = False, with_no_logging_test = True):
+def grpc_core_end2end_test_suite(
+        name,
+        config_src,
+        deps = [],
+        shard_count = 50,
+        enable_fuzzing = True,
+        tags = [],
+        flaky = False,
+        with_no_logging_test = True,
+        **kwargs):
     """Generate one core end2end test
 
     Args:
@@ -178,6 +216,7 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
         flaky: per bazel
         enable_fuzzing: also create a fuzzer
         with_no_logging_test: also create variants with the no_logging test
+        **kwargs: per bazel
     """
 
     if len(name) > 60:
@@ -186,66 +225,60 @@ def grpc_core_end2end_test_suite(name, config_src, deps = [], shard_count = 50, 
     grpc_cc_test(
         name = name + "_test",
         srcs = [config_src] + [
-            "tests/%s.cc" % t
+            "//test/core/end2end:tests/%s.cc" % t
             for t in _TESTS
         ],
-        external_deps = [
-            "absl/log:log",
-            "gtest",
-            "gtest_main",
+        external_deps = _EXTERNAL_DEPS + ["gtest_main"],
+        deps = _DEPS + deps + [
+            "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
         ],
-        deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
         data = _DATA,
         shard_count = shard_count,
         tags = tags + ["core_end2end_test"],
         flaky = flaky,
+        **kwargs
     )
 
     if enable_fuzzing:
         grpc_fuzz_test(
             name = name + "_fuzzer",
             srcs = [config_src] + [
-                "tests/%s.cc" % t
+                "//test/core/end2end:tests/%s.cc" % t
                 for t in _TESTS
             ],
-            external_deps = [
-                "absl/log:log",
-                "gtest",
-                "fuzztest",
-                "fuzztest_main",
-            ],
+            external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
             shard_count = shard_count,
-            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
+            deps = _DEPS + deps + [
+                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+            ],
             data = _DATA,
+            **kwargs
         )
 
     if with_no_logging_test:
         grpc_cc_test(
             name = name + "_no_logging_test",
-            srcs = [config_src, "tests/no_logging.cc"],
-            external_deps = [
-                "absl/log:log",
-                "gtest",
-                "gtest_main",
+            srcs = [config_src, "//test/core/end2end:tests/no_logging.cc"],
+            external_deps = _EXTERNAL_DEPS + ["gtest_main"],
+            deps = _DEPS + deps + [
+                "//test/core/end2end:end2end_test_lib_no_fuzztest_gtest",
             ],
-            deps = _DEPS + deps + ["end2end_test_lib_no_fuzztest_gtest"],
             data = _DATA,
             shard_count = shard_count,
             tags = tags + ["core_end2end_test", "grpc:fails-internally", "grpc:no-internal-poller"],
             flaky = flaky,
+            **kwargs
         )
 
     if enable_fuzzing and with_no_logging_test:
         grpc_fuzz_test(
             name = name + "_no_logging_fuzzer",
-            srcs = [config_src, "tests/no_logging.cc"],
-            external_deps = [
-                "absl/log:log",
-                "gtest",
-                "fuzztest",
-                "fuzztest_main",
-            ],
+            srcs = [config_src, "//test/core/end2end:tests/no_logging.cc"],
+            external_deps = _EXTERNAL_DEPS + ["fuzztest", "fuzztest_main"],
             shard_count = shard_count,
-            deps = _DEPS + deps + ["end2end_test_lib_fuzztest_no_gtest"],
+            deps = _DEPS + deps + [
+                "//test/core/end2end:end2end_test_lib_fuzztest_no_gtest",
+            ],
             data = _DATA,
+            **kwargs
         )

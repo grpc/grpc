@@ -15,8 +15,27 @@
 FROM alpine:3.18
 
 # Install Git and basic packages.
-RUN apk update && apk add   autoconf   automake   bash \
-  bzip2   build-base   cmake   ccache   curl   gcc   git   libtool   linux-headers   make   perl   strace   python3-dev   py3-pip   unzip   wget   zip
+RUN apk update && apk add \
+  autoconf \
+  automake \
+  bash \
+  bzip2 \
+  build-base \
+  cmake \
+  ccache \
+  curl \
+  gcc \
+  git \
+  libtool \
+  linux-headers \
+  make \
+  perl \
+  strace \
+  python3-dev \
+  py3-pip \
+  unzip \
+  wget \
+  zip
 
 #=================
 # Setup git to access working directory across docker boundary.
@@ -50,4 +69,5 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
 
 
 RUN mkdir /var/local/jenkins
+
 

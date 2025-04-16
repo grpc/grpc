@@ -980,7 +980,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
   }
 
   GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
-    return *chand_->owning_stack_->stats_plugin_group;
+    return **chand_->owning_stack_->stats_plugin_group;
   }
 
   void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
@@ -2428,9 +2428,7 @@ void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
 void ClientChannelFilter::LoadBalancedCall::RecordLatency() {
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer() != nullptr) {
-    gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
-    call_attempt_tracer()->RecordEnd(latency);
+    call_attempt_tracer()->RecordEnd();
   }
 }
 

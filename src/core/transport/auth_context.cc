@@ -31,7 +31,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/surface/call.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 void grpc_auth_context_release(grpc_auth_context* context) {

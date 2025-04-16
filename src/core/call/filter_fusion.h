@@ -19,8 +19,11 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/type_list.h"
 
@@ -39,9 +42,9 @@ enum class MethodVariant {
   kChannelAccess,
 };
 
-template <auto... Ts>
+template <typename... Ts>
 constexpr MethodVariant MethodVariantForFilters() {
-  if constexpr (AllNoInterceptor<decltype(Ts)...>) {
+  if constexpr (AllNoInterceptor<Ts...>) {
     return MethodVariant::kNoInterceptor;
   } else if constexpr (!AnyMethodHasChannelAccess<Ts...>) {
     return MethodVariant::kSimple;
@@ -501,6 +504,103 @@ class AdaptMethod<T, ServerMetadataHandle (Call::*)(A, Derived*), method,
   Derived* filter_;
 };
 
+template <typename T, typename MethodType, MethodType method,
+          typename Ignored = void>
+class AdaptOnServerTrailingMetadataMethod;
+
+template <typename T, const NoInterceptor* method>
+class AdaptOnServerTrailingMetadataMethod<T, const NoInterceptor*, method> {
+ public:
+  explicit AdaptOnServerTrailingMetadataMethod(void* /*call*/,
+                                               void* /*filter*/ = nullptr) {}
+  auto operator()(T& x) {}
+  void operator()(T* /*x*/) {}
+};
+
+template <typename T, typename A, typename Call, typename Derived,
+          void (Call::*method)(A, Derived*)>
+class AdaptOnServerTrailingMetadataMethod<
+    T, void (Call::*)(A, Derived*), method, EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptOnServerTrailingMetadataMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  void operator()(T& x) { (call_->*method)(x, filter_); }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+template <typename T, typename A, typename Call, typename Derived,
+          absl::Status (Call::*method)(A, Derived*)>
+class AdaptOnServerTrailingMetadataMethod<
+    T, absl::Status (Call::*)(A, Derived*), method,
+    EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptOnServerTrailingMetadataMethod(Call* call, Derived* filter)
+      : call_(call), filter_(filter) {}
+  void operator()(T& x) {
+    absl::Status status = (call_->*method)(x, filter_);
+    if (!status.ok()) {
+      x = ServerMetadataFromStatus(status);
+    }
+  }
+
+ private:
+  Call* call_;
+  Derived* filter_;
+};
+
+template <typename T, typename A, typename Call, void (Call::*method)(A)>
+class AdaptOnServerTrailingMetadataMethod<T, void (Call::*)(A), method,
+                                          EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptOnServerTrailingMetadataMethod(Call* call, void* /*filter*/)
+      : call_(call) {}
+  void operator()(T& x) { (call_->*method)(x); }
+
+ private:
+  Call* call_;
+};
+
+template <typename T, typename A, typename Call,
+          absl::Status (Call::*method)(A)>
+class AdaptOnServerTrailingMetadataMethod<T, absl::Status (Call::*)(A), method,
+                                          EnableIfSameExcludingCVRef<T, A>> {
+ public:
+  explicit AdaptOnServerTrailingMetadataMethod(Call* call, void* /*filter*/)
+      : call_(call) {}
+  void operator()(T& x) {
+    absl::Status status = (call_->*method)(x);
+    if (!status.ok()) {
+      x = ServerMetadataFromStatus(status);
+    }
+  }
+
+ private:
+  Call* call_;
+};
+
+template <typename MethodType, MethodType method, typename Ignored = void>
+class AdaptOnClientToServerHalfCloseMethod;
+
+template <const NoInterceptor* method>
+class AdaptOnClientToServerHalfCloseMethod<const NoInterceptor*, method> {
+ public:
+  explicit AdaptOnClientToServerHalfCloseMethod(void* /*call*/) {}
+  void operator()() {}
+};
+
+template <typename Call, void (Call::*method)()>
+class AdaptOnClientToServerHalfCloseMethod<void (Call::*)(), method> {
+ public:
+  explicit AdaptOnClientToServerHalfCloseMethod(Call* call) : call_(call) {}
+  void operator()() { (call_->*method)(); }
+
+ private:
+  Call* call_;
+};
+
 template <auto... filter_methods>
 struct FilterMethods {
   using Methods = Valuelist<filter_methods...>;
@@ -624,6 +724,63 @@ void ExecuteCombinedOnFinalizeWithChannelAccess(Call* call, Derived* channel,
    ...);
 }
 
+// Combine the result of a series of OnServerTrailingMetadata filter methods
+// into a single method.
+template <typename Call, typename Derived, typename T, typename... Filters,
+          auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnServerTrailingMetadataWithChannelAccess(
+    Call* call, Derived* channel, T& metadata, Typelist<Filters...>,
+    Valuelist<filter_methods...>, std::index_sequence<Is...>) {
+  (AdaptOnServerTrailingMetadataMethod<T, decltype(filter_methods),
+                                       filter_methods>(
+       call->template fused_child<Is>(),
+       reinterpret_cast<Filters*>(channel))(metadata),
+   ...);
+}
+
+template <typename FilterMethods, typename FilterTypes, typename Call,
+          typename Derived, typename T>
+void ExecuteCombinedOnServerTrailingMetadataWithChannelAccess(Call* call,
+                                                              Derived* channel,
+                                                              T& metadata) {
+  ExecuteCombinedOnServerTrailingMetadataWithChannelAccess(
+      call, channel, metadata, typename FilterTypes::Types(),
+      typename FilterMethods::Methods(), typename FilterMethods::Idxs());
+}
+
+template <typename Call, typename T, auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnServerTrailingMetadata(Call* call, T& metadata,
+                                             Valuelist<filter_methods...>,
+                                             std::index_sequence<Is...>) {
+  (AdaptOnServerTrailingMetadataMethod<T, decltype(filter_methods),
+                                       filter_methods>(
+       call->template fused_child<Is>(), nullptr)(metadata),
+   ...);
+}
+
+template <typename FilterMethods, typename Call, typename T>
+void ExecuteCombinedOnServerTrailingMetadata(Call* call, T& metadata) {
+  ExecuteCombinedOnServerTrailingMetadata(call, metadata,
+                                          typename FilterMethods::Methods(),
+                                          typename FilterMethods::Idxs());
+}
+
+template <typename Call, auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnClientToServerHalfClose(Call* call,
+                                              Valuelist<filter_methods...>,
+                                              std::index_sequence<Is...>) {
+  (AdaptOnClientToServerHalfCloseMethod<decltype(filter_methods),
+                                        filter_methods>(
+       call->template fused_child<Is>())(),
+   ...);
+}
+
+template <typename FilterMethods, typename Call>
+void ExecuteCombinedOnClientToServerHalfClose(Call* call) {
+  ExecuteCombinedOnClientToServerHalfClose(
+      call, typename FilterMethods::Methods(), typename FilterMethods::Idxs());
+}
+
 template <typename FilterMethods, typename FilterTypes, typename Call,
           typename Derived, typename T>
 void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
@@ -662,23 +819,102 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
     }                                                                         \
   };                                                                          \
   template <typename Derived, typename... Filters>                            \
-  using Fuse##name =                                                          \
-      FuseImpl##name<MethodVariantForFilters<&Filters::Call::name...>(),      \
-                     Derived, Filters...>
+  using Fuse##name = FuseImpl##name<                                          \
+      MethodVariantForFilters<decltype(&Filters::Call::name)...>(), Derived,  \
+      Filters...>
+
+template <MethodVariant variant, typename Derived, typename... Filters>
+class FuseImplOnServerTrailingMetadata;
+
+template <typename Derived, typename... Filters>
+class FuseImplOnServerTrailingMetadata<MethodVariant::kNoInterceptor, Derived,
+                                       Filters...> {
+ public:
+  static inline const NoInterceptor name;
+};
+
+template <typename Derived, typename... Filters>
+class FuseImplOnServerTrailingMetadata<MethodVariant::kSimple, Derived,
+                                       Filters...> {
+ public:
+  void OnServerTrailingMetadata(ServerMetadata& x) {
+    return ExecuteCombinedOnServerTrailingMetadata<typename ForwardOrReverse<
+        false, &Filters::Call::OnServerTrailingMetadata...>::OrderMethod>(
+        static_cast<typename Derived::Call*>(this), x);
+  }
+};
+
+template <typename Derived, typename... Filters>
+class FuseImplOnServerTrailingMetadata<MethodVariant::kChannelAccess, Derived,
+                                       Filters...> {
+ public:
+  void OnServerTrailingMetadata(ServerMetadata& x, Derived* channel) {
+    return ExecuteCombinedOnServerTrailingMetadataWithChannelAccess<
+        typename ForwardOrReverse<
+            false, &Filters::Call::OnServerTrailingMetadata...>::OrderMethod,
+        typename ForwardOrReverseTypes<false, Filters...>::OrderMethod>(
+        static_cast<typename Derived::Call*>(this), channel, x);
+  }
+};
+
+template <typename Derived, typename... Filters>
+using FuseOnServerTrailingMetadata = FuseImplOnServerTrailingMetadata<
+    MethodVariantForFilters<
+        decltype(&Filters::Call::OnServerTrailingMetadata)...>(),
+    Derived, Filters...>;
+
+template <bool is_no_interceptor, typename Derived, typename... Filters>
+class FuseImplOnClientToServerHalfClose;
+
+template <typename Derived, typename... Filters>
+class FuseImplOnClientToServerHalfClose<true, Derived, Filters...> {
+ public:
+  static inline const NoInterceptor name;
+};
+
+template <typename Derived, typename... Filters>
+class FuseImplOnClientToServerHalfClose<false, Derived, Filters...> {
+ public:
+  void OnClientToServerHalfClose() {
+    return ExecuteCombinedOnClientToServerHalfClose<typename ForwardOrReverse<
+        true, &Filters::Call::OnClientToServerHalfClose...>::OrderMethod>(
+        static_cast<typename Derived::Call*>(this));
+  }
+};
+
+template <typename Derived, typename... Filters>
+using FuseOnClientToServerHalfClose = FuseImplOnClientToServerHalfClose<
+    AllNoInterceptor<decltype(&Filters::Call::OnClientToServerHalfClose)...>,
+    Derived, Filters...>;
 
 GRPC_FUSE_METHOD(OnClientInitialMetadata, ClientMetadataHandle, true);
 GRPC_FUSE_METHOD(OnServerInitialMetadata, ServerMetadataHandle, false);
 GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true);
 GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
-GRPC_FUSE_METHOD(OnServerTrailingMetadata, ServerMetadataHandle, false);
-GRPC_FUSE_METHOD(OnClientToServerHalfClose, ServerMetadataHandle, true);
-GRPC_FUSE_METHOD(OnFinalize, grpc_call_final_info*, true);
+GRPC_FUSE_METHOD(OnFinalize, const grpc_call_final_info*, true);
 
 #undef GRPC_FUSE_METHOD
 
 template <typename... Filters>
-class FusedFilter : public Filters... {
+class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
+                    public Filters... {
  public:
+  static const grpc_channel_filter kFilter;
+
+  static absl::string_view TypeName() {
+    // TODO(vigneshbabu): - Concatenate the names of the constituent filters.
+    return "fused_filter";
+  }
+
+  static absl::StatusOr<std::unique_ptr<FusedFilter<Filters...>>> Create(
+      const ChannelArgs& args, ChannelFilter::Args) {
+    // TODO(vigneshbabu): - Implement this.
+    LOG(FATAL) << "Not implemented";
+    return nullptr;
+  }
+
+  static constexpr bool IsFused = true;
+
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
                public FuseOnClientToServerMessage<FusedFilter, Filters...>,
@@ -710,11 +946,11 @@ class FusedFilter : public Filters... {
     std::tuple<typename Filters::Call...> filter_calls_;
   };
 
-  bool StartTransportOp(grpc_transport_op* op) {
+  bool StartTransportOp(grpc_transport_op* op) override {
     return StartTransportOpInternal(op, Typelist<Filters...>());
   }
 
-  bool GetChannelInfo(const grpc_channel_info* info) {
+  bool GetChannelInfo(const grpc_channel_info* info) override {
     return GetChannelInfoInternal(info, Typelist<Filters...>());
   }
 

@@ -62,6 +62,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -170,21 +171,27 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
     SettingsFrame frame;
     frame.body = client_settings;
     SliceBuffer send_buffer;
-    frame.MakeHeader().Serialize(
-        send_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+    TcpFrameHeader{frame.MakeHeader(), 0}.Serialize(
+        send_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
     frame.SerializePayload(send_buffer);
     return TrySeq(
         connect_result_.endpoint.Write(std::move(send_buffer)),
         [this]() {
           return connect_result_.endpoint.ReadSlice(
-              FrameHeader::kFrameHeaderSize);
+              TcpFrameHeader::kFrameHeaderSize);
         },
         [](Slice frame_header) {
-          return FrameHeader::Parse(frame_header.data());
+          return TcpFrameHeader::Parse(frame_header.data());
         },
-        [this](FrameHeader frame_header) {
-          server_header_ = frame_header;
-          return connect_result_.endpoint.Read(frame_header.payload_length);
+        [this](TcpFrameHeader frame_header) {
+          if (frame_header.payload_tag != 0) {
+            return absl::InternalError("Unexpected connection id in frame");
+          }
+          server_header_ = frame_header.header;
+          return absl::OkStatus();
+        },
+        [this]() {
+          return connect_result_.endpoint.Read(server_header_.payload_length);
         },
         [this](SliceBuffer payload) {
           return server_frame_.Deserialize(server_header_, std::move(payload));
@@ -245,10 +252,16 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               if (!parse_status.ok()) {
                 return parse_status;
               }
-              auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-                  result.connect_result.channel_args,
+              auto frame_transport = MakeOrphanable<TcpFrameTransport>(
+                  result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
-                  std::move(result_notifier_ptr->config), std::move(connector));
+                  result_notifier_ptr->config.TakePendingDataEndpoints(),
+                  MakeRefCounted<TransportContext>(
+                      result_notifier_ptr->args.channel_args));
+              auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+                  result_notifier_ptr->args.channel_args,
+                  std::move(frame_transport),
+                  result_notifier_ptr->config.MakeMessageChunker());
               result_notifier_ptr->result->transport = transport.release();
               result_notifier_ptr->result->channel_args =
                   result.connect_result.channel_args;

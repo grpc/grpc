@@ -28,11 +28,11 @@ cat <<EOF | sort >"$want_submodules"
 third_party/abseil-cpp 4447c7562e3bc702ade25105912dce503f0c4010
 third_party/benchmark 12235e24652fc7f809373e7c11a5f73c5763fc4c
 third_party/bloaty 60209eb1ccc34d5deefb002d1b7f37545204f7f2
-third_party/boringssl-with-bazel c64b8fefbba9a9dadda73138062fc449bdf11e2a
+third_party/boringssl-with-bazel c57adcf6947912fe17bc5bfaf0876225d1fe742d
 third_party/cares/cares 6360e96b5cf8e5980c887ce58ef727e53d77243a
 third_party/envoy-api 4de3c74cf21a9958c1cf26d8993c55c6e0d28b49
 third_party/googleapis fe8ba054ad4f7eca946c2d14a63c3f07c0b586a0
-third_party/googletest 2dd1c131950043a8ad5ab0d2dda0e0970596586a
+third_party/googletest 6910c9d9165801d8827d628cb72eb7ea9dd538c5
 third_party/opencensus-proto 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89
 third_party/opentelemetry 60fa8754d890b5c55949a8c68dcfd7ab5c2395df
 third_party/opentelemetry-cpp ced79860f8c8a091a2eabfee6d47783f828a9b59
@@ -40,7 +40,7 @@ third_party/protobuf d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e
 third_party/protoc-gen-validate 32c2415389a3538082507ae537e7edd9578c64ed
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
 third_party/xds 3a472e524827f72d1ad621c4983dd5af54c46776
-third_party/zlib 09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851
+third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then

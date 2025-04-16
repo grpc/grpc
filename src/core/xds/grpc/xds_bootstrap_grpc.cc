@@ -179,8 +179,12 @@ std::string GrpcXdsBootstrap::ToString() const {
                         node_->locality_zone(), node_->locality_sub_zone(),
                         JsonDump(Json::FromObject(node_->metadata()))));
   }
-  parts.push_back(
-      absl::StrFormat("servers=[\n%s\n],\n", JsonDump(servers_[0].ToJson())));
+  std::vector<std::string> server_strings;
+  for (auto& server : servers_) {
+    server_strings.emplace_back(server.Key());
+  }
+  parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
+                                  absl::StrJoin(server_strings, ",\n")));
   if (!client_default_listener_resource_name_template_.empty()) {
     parts.push_back(absl::StrFormat(
         "client_default_listener_resource_name_template=\"%s\",\n",
@@ -197,14 +201,13 @@ std::string GrpcXdsBootstrap::ToString() const {
     parts.push_back(
         absl::StrFormat("    client_listener_resource_name_template=\"%s\",\n",
                         authority.client_listener_resource_name_template()));
-    std::vector<std::string> server_jsons;
+    std::vector<std::string> server_strings;
     for (const XdsServer* server : authority.servers()) {
-      server_jsons.emplace_back(
-          JsonDump(DownCast<const GrpcXdsServer*>(server)->ToJson()));
+      server_strings.emplace_back(server->Key());
     }
-    if (!server_jsons.empty()) {
+    if (!server_strings.empty()) {
       parts.push_back(absl::StrFormat("    servers=[\n%s\n],\n",
-                                      absl::StrJoin(server_jsons, ",\n")));
+                                      absl::StrJoin(server_strings, ",\n")));
     }
     parts.push_back("      },\n");
   }

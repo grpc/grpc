@@ -25,8 +25,8 @@
 #include <map>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 
@@ -45,21 +45,61 @@ class ChannelzRegistry final {
     return Default()->InternalGet(uuid);
   }
 
-  // Returns the allocated JSON string that represents the proto
-  // GetTopChannelsResponse as per channelz.proto.
-  static std::string GetTopChannels(intptr_t start_channel_id) {
-    return Default()->InternalGetTopChannels(start_channel_id);
+  static RefCountedPtr<SubchannelNode> GetSubchannel(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<SubchannelNode, BaseNode::EntityType::kSubchannel>(
+            uuid);
+  }
+
+  static RefCountedPtr<ChannelNode> GetChannel(intptr_t uuid) {
+    auto node = Default()->InternalGet(uuid);
+    if (node == nullptr) return nullptr;
+    if (node->type() == BaseNode::EntityType::kTopLevelChannel) {
+      return node->RefAsSubclass<ChannelNode>();
+    }
+    if (node->type() == BaseNode::EntityType::kInternalChannel) {
+      return node->RefAsSubclass<ChannelNode>();
+    }
+    return nullptr;
+  }
+
+  static RefCountedPtr<ServerNode> GetServer(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<ServerNode, BaseNode::EntityType::kServer>(uuid);
+  }
+
+  static RefCountedPtr<SocketNode> GetSocket(intptr_t uuid) {
+    return Default()
+        ->InternalGetTyped<SocketNode, BaseNode::EntityType::kSocket>(uuid);
   }
 
   // Returns the allocated JSON string that represents the proto
+  // GetTopChannelsResponse as per channelz.proto.
+  static auto GetTopChannels(intptr_t start_channel_id) {
+    return Default()
+        ->InternalGetObjects<ChannelNode,
+                             BaseNode::EntityType::kTopLevelChannel>(
+            start_channel_id);
+  }
+
+  static std::string GetTopChannelsJson(intptr_t start_channel_id);
+  static std::string GetServersJson(intptr_t start_server_id);
+
+  // Returns the allocated JSON string that represents the proto
   // GetServersResponse as per channelz.proto.
-  static std::string GetServers(intptr_t start_server_id) {
-    return Default()->InternalGetServers(start_server_id);
+  static auto GetServers(intptr_t start_server_id) {
+    return Default()
+        ->InternalGetObjects<ServerNode, BaseNode::EntityType::kServer>(
+            start_server_id);
   }
 
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
+
+  static std::vector<RefCountedPtr<BaseNode>> GetAllEntities() {
+    return Default()->InternalGetAllEntities();
+  }
 
   // Test only helper function to reset to initial state.
   static void TestOnlyReset() {
@@ -84,10 +124,49 @@ class ChannelzRegistry final {
   // returns the void* associated with that uuid. Else returns nullptr.
   RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
-  std::string InternalGetTopChannels(intptr_t start_channel_id);
-  std::string InternalGetServers(intptr_t start_server_id);
+  template <typename T, BaseNode::EntityType entity_type>
+  RefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
+    RefCountedPtr<BaseNode> node = InternalGet(uuid);
+    if (node == nullptr || node->type() != entity_type) {
+      return nullptr;
+    }
+    return node->RefAsSubclass<T>();
+  }
+
+  template <typename T, BaseNode::EntityType entity_type>
+  std::tuple<std::vector<RefCountedPtr<T>>, bool> InternalGetObjects(
+      intptr_t start_id) {
+    const int kPaginationLimit = 100;
+    std::vector<RefCountedPtr<T>> top_level_channels;
+    RefCountedPtr<BaseNode> node_after_pagination_limit;
+    {
+      MutexLock lock(&mu_);
+      for (auto it = node_map_.lower_bound(start_id); it != node_map_.end();
+           ++it) {
+        BaseNode* node = it->second;
+        RefCountedPtr<BaseNode> node_ref;
+        if (node->type() == entity_type &&
+            (node_ref = node->RefIfNonZero()) != nullptr) {
+          // Check if we are over pagination limit to determine if we need to
+          // set the "end" element. If we don't go through this block, we know
+          // that when the loop terminates, we have <= to kPaginationLimit.
+          // Note that because we have already increased this node's
+          // refcount, we need to decrease it, but we can't unref while
+          // holding the lock, because this may lead to a deadlock.
+          if (top_level_channels.size() == kPaginationLimit) {
+            node_after_pagination_limit = std::move(node_ref);
+            break;
+          }
+          top_level_channels.emplace_back(node_ref->RefAsSubclass<T>());
+        }
+      }
+    }
+    return std::tuple(std::move(top_level_channels),
+                      node_after_pagination_limit == nullptr);
+  }
 
   void InternalLogAllEntities();
+  std::vector<RefCountedPtr<BaseNode>> InternalGetAllEntities();
 
   // protects members
   Mutex mu_;

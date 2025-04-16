@@ -24,8 +24,12 @@
 
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -88,19 +92,33 @@ class Http2ClientTransport final : public ClientTransport {
   void Orphan() override;
   void AbortWithError();
 
-  // TODO(akshitpatel) : [PH2][P2] : Probably remove this once StartCall is
-  // plugged in.
-  auto EnqueueOutgoingFrame(Http2Frame frame) {
-    return [sender = outgoing_frames_.MakeSender(),
-            frame = std::move(frame)]() mutable {
-      return sender.Send(std::move(frame));
-    };
+  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
+        }));
   }
 
  private:
+  // Promise factory for processing each type of frame
+  auto ProcessHttp2DataFrame(Http2DataFrame frame);
+  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  auto ProcessHttp2PingFrame(Http2PingFrame frame);
+  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+
   // Reading from the endpoint.
 
-  // Returns a promise to keep reading in a Loop till a fail/close is received.
+  // Returns a promise to keep reading in a Loop till a fail/close is
+  // received.
   auto ReadLoop();
 
   // Returns a promise that will read and process one HTTP2 frame.
@@ -117,46 +135,81 @@ class Http2ClientTransport final : public ClientTransport {
   // Read from the MPSC queue and write it.
   auto WriteFromQueue();
 
-  // Returns a promise to keep writing in a Loop till a fail/close is received.
+  // Returns a promise to keep writing in a Loop till a fail/close is
+  // received.
   auto WriteLoop();
 
   // Returns a promise that will do the cleanup after the WriteLoop ends.
   auto OnWriteLoopEnded();
 
+  // Returns a promise to fetch data from the callhandler and pass it further
+  // down towards the endpoint.
+  auto CallOutboundLoop(CallHandler call_handler, uint32_t stream_id,
+                        InterActivityMutex<uint32_t>::Lock lock,
+                        ClientMetadataHandle metadata);
+
+  // Returns a promise to enqueue a frame to MPSC
+  auto EnqueueOutgoingFrame(Http2Frame frame) {
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
+        }));
+  }
+
   RefCountedPtr<Party> general_party_;
-  RefCountedPtr<Party> write_party_;
 
   PromiseEndpoint endpoint_;
-  Http2Settings settings_;
+  Http2SettingsManager settings_;
 
   // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call) : call(std::move(call)) {}
-    // Transport holds one CallHandler object for each Stream.
+    explicit Stream(CallHandler call)
+        : call(std::move(call)), stream_state(HttpStreamState::kIdle) {}
+
     CallHandler call;
-    HttpStreamState stream_state = HttpStreamState::kIdle;
+    HttpStreamState stream_state;
     TransportSendQeueue send_queue;
+    GrpcMessageAssembler assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
+  uint32_t NextStreamId(
+      InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
+    const uint32_t stream_id = *next_stream_id_lock;
+    // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
+    // identifiers.
+    (*next_stream_id_lock) += 2;
+    return stream_id;
+  }
 
   MpscReceiver<Http2Frame> outgoing_frames_;
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this mapping
-  // up in the on_done of the CallInitiator or CallHandler
+  // TODO(tjagtap) : [PH2][P2] : Add to map in StartCall and clean this
+  // mapping up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
+  // Mutex to preserve the order of headers being sent out for new streams.
+  // This also tracks the stream_id for creating new streams.
+  InterActivityMutex<uint32_t> stream_id_mutex_;
+  HPackCompressor encoder_;
 
-  uint32_t MakeStream(CallHandler call_handler);
+  bool MakeStream(CallHandler call_handler, uint32_t stream_id);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 };
 
-GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 240);
+// Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
+// remain within that range. When this check fails, please update it to size
+// (current size + 32) to make sure that it does not fail each time we add a
+// small variable to the class.
+GRPC_CHECK_CLASS_SIZE(Http2ClientTransport, 600);
 
 }  // namespace http2
 }  // namespace grpc_core

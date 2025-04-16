@@ -24,6 +24,8 @@
 
 #include <memory>
 
+#include "absl/log/log.h"
+
 // IWYU pragma: no_include "google/protobuf/json/json.h"
 // IWYU pragma: no_include "google/protobuf/util/json_util.h"
 
@@ -37,7 +39,14 @@ grpc::protobuf::util::Status ParseJson(const char* json_str,
                                        grpc::protobuf::Message* message) {
   grpc::protobuf::json::JsonParseOptions options;
   options.case_insensitive_enum_parsing = true;
-  return grpc::protobuf::json::JsonStringToMessage(json_str, message, options);
+  auto r =
+      grpc::protobuf::json::JsonStringToMessage(json_str, message, options);
+  if (!r.ok()) {
+    LOG(ERROR) << "channelz json parse failed: error=" << r.ToString()
+               << " json:\n"
+               << json_str;
+  }
+  return r;
 }
 
 }  // namespace

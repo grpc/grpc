@@ -19,11 +19,11 @@ CXX = g++
 CPPFLAGS += `pkg-config --cflags protobuf grpc`
 CXXFLAGS += -std=c++17
 ifeq ($(SYSTEM),Darwin)
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpc`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpc absl_flags_parse absl_log_initialize`\
            -lgrpc++_reflection\
            -ldl
 else
-LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpc`\
+LDFLAGS += -L/usr/local/lib `pkg-config --libs --static protobuf grpc++ grpc absl_flags_parse absl_log_initialize`\
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed\
            -ldl
 endif

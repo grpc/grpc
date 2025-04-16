@@ -28,18 +28,22 @@ ABSL_FLAG(std::string, templates_dir, "", "Directory containing templates");
 ABSL_FLAG(std::string, output_dir, "", "Directory to write rendered templates");
 
 namespace {
-void RenderTemplate(const std::string& filename, nlohmann::json build_yaml) {
-  inja::Environment env;
-  std::string rendered = env.render(
-      LoadString(absl::GetFlag(FLAGS_templates_dir) + "/" + filename),
-      build_yaml);
-  std::ofstream ofs(absl::GetFlag(FLAGS_output_dir) + "/" +
-                    filename.substr(0, filename.size() - 5));
-  ofs << rendered;
+void RenderTemplate(const std::string& filename, const nlohmann::json* build_yaml) {
+  inja::Environment env{std::filesystem::path(absl::GetFlag(FLAGS_templates_dir) + "/" + filename).parent_path().string()+"/"};
+  try {
+    std::string rendered = env.render(
+        LoadString(absl::GetFlag(FLAGS_templates_dir) + "/" + filename),
+        *build_yaml);
+    std::ofstream ofs(absl::GetFlag(FLAGS_output_dir) + "/" +
+                      filename.substr(0, filename.size() - 5));
+    ofs << rendered;
+  } catch (inja::InjaError& e) {
+    LOG(FATAL) << "Failed to render template " << filename << ": " << e.what();
+  }
 }
 }  // namespace
 
-void RenderAllTemplates(nlohmann::json build_yaml) {
+void RenderAllTemplates(const nlohmann::json& build_yaml) {
   CHECK(!absl::GetFlag(FLAGS_templates_dir).empty());
   CHECK(!absl::GetFlag(FLAGS_output_dir).empty());
   std::vector<std::thread> threads;
@@ -49,7 +53,7 @@ void RenderAllTemplates(nlohmann::json build_yaml) {
       continue;
     }
     threads.emplace_back(
-        [filename, build_yaml]() { RenderTemplate(filename, build_yaml); });
+        [filename, build_yaml = &build_yaml]() { RenderTemplate(filename, build_yaml); });
   }
   for (auto& thread : threads) {
     thread.join();

@@ -166,6 +166,21 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "delegating_event_engine",
+    testonly = True,
+    hdrs = ["util/delegating_event_engine.h"],
+    external_deps = [
+        "absl/functional:any_invocable",
+        "absl/status",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "mock_event_engine",
     testonly = True,
     hdrs = ["mock_event_engine.h"],

@@ -167,6 +167,8 @@ static void queue_offload(grpc_core::Combiner* lock) {
 }
 
 bool grpc_combiner_continue_exec_ctx() {
+  GRPC_LATENT_SEE_PARENT_SCOPE("grpc_combiner_continue_exec_ctx");
+
   grpc_core::Combiner* lock =
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner;
   if (lock == nullptr) {

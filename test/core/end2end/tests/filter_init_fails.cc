@@ -95,6 +95,7 @@ void RegisterFilter(grpc_channel_stack_type type) {
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
   SKIP_IF_V3();
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter(GRPC_SERVER_CHANNEL);
   InitClient(ChannelArgs());
   InitServer(ChannelArgs().Set("channel_init_fails", true));
@@ -121,6 +122,7 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ServerFilterChannelInitFails) {
 CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   SKIP_IF_FUZZING();
   SKIP_IF_V3();
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
 
   RegisterFilter(GRPC_SERVER_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -135,12 +137,13 @@ CORE_END2END_TEST(CoreEnd2endTests, ServerFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   ShutdownAndDestroyServer();
 };
 
 CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
   SKIP_IF_V3();
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   InitServer(ChannelArgs());
@@ -162,7 +165,7 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
 CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
-
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
@@ -178,12 +181,13 @@ CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
 }
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DISABLED_SubchannelFilterChannelInitFails) {
   SKIP_IF_V3();
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set("channel_init_fails", true));
@@ -220,6 +224,7 @@ CORE_END2END_TEST(CoreClientChannelTests,
 
 CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   SKIP_IF_V3();
+  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
   RegisterFilter(GRPC_CLIENT_SUBCHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
@@ -234,7 +239,7 @@ CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status.message(), "access denied");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("access denied"));
   // Create a new call.  (The first call uses a different code path in
   // client_channel.c than subsequent calls on the same channel, and we need to
   // test both.)
@@ -251,7 +256,7 @@ CORE_END2END_TEST(CoreClientChannelTests, SubchannelFilterCallInitFails) {
   Expect(2, true);
   Step();
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_PERMISSION_DENIED);
-  EXPECT_EQ(server_status2.message(), "access denied");
+  EXPECT_THAT(server_status2.message(), ::testing::HasSubstr("access denied"));
 }
 
 }  // namespace

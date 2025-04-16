@@ -21,7 +21,7 @@ PROTOBUF_ABSL_DEPS = absl_absl_check absl_absl_log absl_algorithm absl_base absl
 # Hack: utf8_range (which is protobuf's dependency) currently doesn't have a pkgconfig file, so we need to explicitly
 # tweak the list of libraries to link against to fix the build.
 PROTOBUF_UTF8_RANGE_LINK_LIBS = -lutf8_validity
-OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_ostream_metrics -lopentelemetry_resources -lopentelemetry_common
+OPENTELEMETRY_LINK_LIBS = -lopentelemetry_metrics -lopentelemetry_exporter_ostream_metrics -lopentelemetry_exporter_ostream_span -lopentelemetry_trace -lopentelemetry_resources -lopentelemetry_common
 
 HOST_SYSTEM = $(shell uname | cut -f 1 -d_)
 SYSTEM ?= $(HOST_SYSTEM)

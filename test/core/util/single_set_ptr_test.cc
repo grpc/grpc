@@ -20,9 +20,11 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
-namespace testing {
+namespace {
 
 TEST(SingleSetPtrTest, NoOp) { SingleSetPtr<int>(); }
 
@@ -48,16 +50,56 @@ TEST(SingleSetPtrTest, CanReset) {
 TEST(SingleSetPtrTest, LotsOfSetters) {
   SingleSetPtr<int> p;
   std::vector<std::thread> threads;
-  threads.reserve(10);
-  for (int i = 0; i < 10; i++) {
-    threads.emplace_back([&p, i]() { p.Set(new int(i)); });
+  threads.reserve(100);
+  Notification n;
+  for (int i = 0; i < 100; i++) {
+    threads.emplace_back([&p, i, &n]() {
+      n.WaitForNotification();
+      p.Set(new int(i));
+    });
   }
+  n.Notify();
   for (auto& t : threads) {
     t.join();
   }
 }
 
-}  // namespace testing
+class TestClass : public RefCounted<TestClass> {
+ public:
+  int i = 42;
+};
+
+TEST(SingleSetRefCountedPtrTest, NoOp) { SingleSetRefCountedPtr<TestClass>(); }
+
+TEST(SingleSetRefCountedPtrTest, GetOrCreate) {
+  SingleSetRefCountedPtr<TestClass> p;
+  EXPECT_FALSE(p.is_set());
+  auto x = p.GetOrCreate();
+  EXPECT_TRUE(p.is_set());
+  EXPECT_EQ(x->i, 42);
+  auto y = p.GetOrCreate();
+  EXPECT_EQ(x.get(), y.get());
+  EXPECT_EQ(x->i, 42);
+}
+
+TEST(SingleSetRefCountedPtrTest, LotsOfGetOrCreators) {
+  SingleSetRefCountedPtr<TestClass> p;
+  std::vector<std::thread> threads;
+  threads.reserve(100);
+  Notification n;
+  for (int i = 0; i < 100; i++) {
+    threads.emplace_back([&p, &n]() {
+      n.WaitForNotification();
+      EXPECT_EQ(p.GetOrCreate()->i, 42);
+    });
+  }
+  n.Notify();
+  for (auto& t : threads) {
+    t.join();
+  }
+}
+
+}  // namespace
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

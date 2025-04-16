@@ -65,7 +65,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    Json ToJson() const override { return Json::FromObject({}); }
+    std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "google_default"; }
@@ -116,22 +116,26 @@ class TlsChannelCredsFactory : public ChannelCredsFactory<> {
              refresh_interval_ == o.refresh_interval_;
     }
 
-    Json ToJson() const override {
+    std::string ToString() const override {
+      std::vector<std::string> parts;
       Json::Object obj;
+      parts.push_back("{");
       if (!certificate_file_.empty()) {
-        obj["certificate_file"] = Json::FromString(certificate_file_);
+        parts.push_back(absl::StrCat("certificate_file=", certificate_file_));
       }
       if (!private_key_file_.empty()) {
-        obj["private_key_file"] = Json::FromString(private_key_file_);
+        parts.push_back(absl::StrCat("private_key_file=", private_key_file_));
       }
       if (!ca_certificate_file_.empty()) {
-        obj["ca_certificate_file"] = Json::FromString(ca_certificate_file_);
+        parts.push_back(
+            absl::StrCat("ca_certificate_file=", ca_certificate_file_));
       }
       if (refresh_interval_ != kDefaultRefreshInterval) {
-        obj["refresh_interval"] =
-            Json::FromString(refresh_interval_.ToJsonString());
+        parts.push_back(
+            absl::StrCat("refresh_interval=", refresh_interval_.ToString()));
       }
-      return Json::FromObject(std::move(obj));
+      parts.push_back("}");
+      return absl::StrJoin(parts, ",");
     }
 
     const std::string& certificate_file() const { return certificate_file_; }
@@ -196,7 +200,7 @@ class InsecureChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    Json ToJson() const override { return Json::FromObject({}); }
+    std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "insecure"; }
@@ -221,7 +225,7 @@ class FakeChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    Json ToJson() const override { return Json::FromObject({}); }
+    std::string ToString() const override { return "{}"; }
   };
 
   static absl::string_view Type() { return "fake"; }

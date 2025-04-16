@@ -261,7 +261,7 @@ void PythonOpenCensusServerCallTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 PythonOpenCensusServerCallTracer::StartNewTcpTrace() {
   return nullptr;
 }

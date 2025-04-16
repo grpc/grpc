@@ -77,8 +77,11 @@ foreach(_target
   target_link_libraries(${_target}
     absl::flags
     absl::flags_parse
+    absl::log_initialize
     opentelemetry-cpp::metrics
     opentelemetry-cpp::ostream_metrics_exporter
+    opentelemetry-cpp::ostream_span_exporter
+    opentelemetry-cpp::trace
     gRPC::grpcpp_otel_plugin
     util
     ${_PROTOBUF_LIBPROTOBUF})

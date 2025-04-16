@@ -22,9 +22,9 @@ http_archive = use_repo_rule("@bazel_tools//tools/build_defs/repo:http.bzl", "ht
 http_archive(
     name = "pantor_inja",
     build_file = "inja.BUILD",
-    integrity = "sha256-5ijZlHYtzaqal/Y6m4tz2a9Rrw/6Ws6mvbugrOr47iU=",
-    strip_prefix = "inja-3.3.0",
+    integrity = "sha256-cVX5RFU8pgZLJuiObK6Lcfi+dkgyycfG1ZmODV/WDFU=",
+    strip_prefix = "inja-3.4.0",
     urls = [
-        "https://github.com/pantor/inja/archive/refs/tags/v3.3.0.tar.gz",
+        "https://github.com/pantor/inja/archive/refs/tags/v3.4.0.tar.gz",
     ],
 )

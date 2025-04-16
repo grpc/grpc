@@ -64,7 +64,8 @@ class GrpcXdsClient final : public XdsClient {
                 std::shared_ptr<GrpcXdsBootstrap> bootstrap,
                 const ChannelArgs& args,
                 RefCountedPtr<XdsTransportFactory> transport_factory,
-                GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group);
+                std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+                    stats_plugin_group);
 
   // Helpers for encoding the XdsClient object in channel args.
   static absl::string_view ChannelArgName() {
@@ -97,7 +98,8 @@ class GrpcXdsClient final : public XdsClient {
 
   std::string key_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   std::unique_ptr<RegisteredMetricCallback> registered_metric_callback_;
   RefCountedPtr<LrsClient> lrs_client_;
 };
