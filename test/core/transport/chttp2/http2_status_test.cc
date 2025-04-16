@@ -74,7 +74,12 @@ TEST(Http2StatusTest, OkTest) {
   EXPECT_EQ(type, Http2Status::Http2ErrorType::kOk);
 
   // 2. Http2ErrorCode
-  // Trying to extract Http2ErrorCode will cause CHECK(false);
+  ASSERT_DEATH(
+      {
+        status.GetConnectionErrorCode();
+        status.GetStreamErrorCode();
+      },
+      "");
 
   // 3. message
   EXPECT_GT(status.DebugString().size(), 1);
@@ -110,6 +115,7 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
 
     // 2. Http2ErrorCode
     EXPECT_EQ(status.GetConnectionErrorCode(), code);
+    ASSERT_DEATH({ status.GetStreamErrorCode(); }, "");
 
     // 3. message
     EXPECT_GT(status.DebugString().size(), 1);
@@ -133,6 +139,7 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
 
     // 2. Http2ErrorCode
     EXPECT_EQ(status.GetStreamErrorCode(), code);
+    ASSERT_DEATH({ status.GetConnectionErrorCode(); }, "");
 
     // 3. message
     EXPECT_GT(status.DebugString().size(), 1);
@@ -156,6 +163,7 @@ TEST(Http2StatusTest, AbslConnectionErrorTest) {
 
     // 2. Http2ErrorCode
     EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+    ASSERT_DEATH({ status.GetStreamErrorCode(); }, "");
 
     // 3. message
     EXPECT_GT(status.DebugString().size(), 1);
@@ -180,6 +188,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
 
     // 2. Http2ErrorCode
     EXPECT_EQ(status.GetStreamErrorCode(), Http2ErrorCode::kInternalError);
+    ASSERT_DEATH({ status.GetConnectionErrorCode(); }, "");
 
     // 3. message
     EXPECT_GT(status.DebugString().size(), 1);
@@ -192,11 +201,6 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
     EXPECT_FALSE(absl_status.ok());
     EXPECT_EQ(absl_status.code(), code);
   }
-}
-
-TEST(Http2StatusTest, CrashForWrongType1) {
-  // Check that extracting the wrong error type should crash.
-  CHECK(true);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -218,14 +222,13 @@ TEST(ValueOrHttp2Status, ValueStdString) { CHECK(true); }
 
 TEST(ValueOrHttp2Status, ValueHttp2Frame) { CHECK(true); }
 
-TEST(ValueOrHttp2Status, ConnectionError) { CHECK(true); }
+TEST(ValueOrHttp2Status, Http2ConnectionError) { CHECK(true); }
 
-TEST(ValueOrHttp2Status, StreamError) { CHECK(true); }
+TEST(ValueOrHttp2Status, Http2StreamError) { CHECK(true); }
 
-TEST(ValueOrHttp2Status, CrashForWrongType2) {
-  // Check that extracting the wrong error type should crash.
-  CHECK(true);
-}
+TEST(ValueOrHttp2Status, AbslConnectionError) { CHECK(true); }
+
+TEST(ValueOrHttp2Status, AbslStreamError) { CHECK(true); }
 
 }  // namespace testing
 }  // namespace http2
