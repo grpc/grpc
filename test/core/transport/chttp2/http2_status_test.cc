@@ -48,6 +48,14 @@ std::vector<Http2ErrorCode> GetErrorCodes() {
   return codes;
 }
 
+std::vector<absl::StatusCode> FewAbslErrorCodes() {
+  std::vector<absl::StatusCode> codes;
+  codes.push_back(absl::StatusCode::kCancelled);
+  codes.push_back(absl::StatusCode::kInvalidArgument);
+  codes.push_back(absl::StatusCode::kInternal);
+  return codes;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Http2Status Tests
 // These tests first create the specific type of Http2Status object.
@@ -115,11 +123,76 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
   }
 }
 
-TEST(Http2StatusTest, Http2StreamErrorTest) { CHECK(true); }
+TEST(Http2StatusTest, Http2StreamErrorTest) {
+  std::vector<Http2ErrorCode> codes = GetErrorCodes();
+  for (const Http2ErrorCode& code : codes) {
+    Http2Status status = Http2Status::Http2StreamError(code, "Message1");
 
-TEST(Http2StatusTest, AbslConnectionErrorTest) { CHECK(true); }
+    // 1. Http2ErrorType
+    EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kStreamError);
 
-TEST(Http2StatusTest, AbslStreamErrorTest) { CHECK(true); }
+    // 2. Http2ErrorCode
+    EXPECT_EQ(status.GetStreamErrorCode(), code);
+
+    // 3. message
+    EXPECT_GT(status.DebugString().size(), 1);
+
+    // 4. Return of IsOk() function
+    EXPECT_FALSE(status.IsOk());
+
+    // 5. Absl status
+    absl::Status absl_status = status.GetAbslStreamError();
+    EXPECT_FALSE(absl_status.ok());
+  }
+}
+
+TEST(Http2StatusTest, AbslConnectionErrorTest) {
+  std::vector<absl::StatusCode> codes = FewAbslErrorCodes();
+  for (const absl::StatusCode& code : codes) {
+    Http2Status status = Http2Status::AbslConnectionError(code, "Message1");
+
+    // 1. Http2ErrorType
+    EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+    // 2. Http2ErrorCode
+    EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+
+    // 3. message
+    EXPECT_GT(status.DebugString().size(), 1);
+
+    // 4. Return of IsOk() function
+    EXPECT_FALSE(status.IsOk());
+
+    // 5. Absl status
+    absl::Status absl_status = status.GetAbslConnectionError();
+    EXPECT_FALSE(absl_status.ok());
+    EXPECT_EQ(absl_status.code(), code);
+  }
+}
+
+TEST(Http2StatusTest, AbslStreamErrorTest) {
+  std::vector<absl::StatusCode> codes = FewAbslErrorCodes();
+  for (const absl::StatusCode& code : codes) {
+    Http2Status status = Http2Status::AbslStreamError(code, "Message1");
+
+    // 1. Http2ErrorType
+    EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kStreamError);
+
+    // 2. Http2ErrorCode
+    EXPECT_EQ(status.GetStreamErrorCode(), Http2ErrorCode::kInternalError);
+
+    // 3. message
+    EXPECT_GT(status.DebugString().size(), 1);
+
+    // 4. Return of IsOk() function
+    EXPECT_FALSE(status.IsOk());
+
+    // 5. Absl status
+    absl::Status absl_status = status.GetAbslStreamError();
+    EXPECT_FALSE(absl_status.ok());
+    EXPECT_EQ(absl_status.code(), code);
+  }
+}
 
 TEST(Http2StatusTest, CrashForWrongType1) {
   // Check that extracting the wrong error type should crash.
