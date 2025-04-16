@@ -14,16 +14,16 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
-
 #include <string>
 #include <vector>
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
+#include "src/core/util/time.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/time.h"
 
 namespace grpc_event_engine::experimental {
 

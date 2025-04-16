@@ -18,12 +18,12 @@
 
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_GOOGLE_DEFAULT_GOOGLE_DEFAULT_CREDENTIALS_H
+#include <utility>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
-
-#include <utility>
 
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"

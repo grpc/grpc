@@ -15,17 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 #define GRPC_SRC_CORE_LIB_PROMISE_MPSC_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <stddef.h>
 #include <utility>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -34,6 +32,8 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

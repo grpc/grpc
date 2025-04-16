@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PROMISE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <optional>
 #include <type_traits>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/status/status.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 

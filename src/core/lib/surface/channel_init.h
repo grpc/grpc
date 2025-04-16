@@ -19,17 +19,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_INIT_H
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <initializer_list>
 #include <memory>
 #include <ostream>
+#include <stdint.h>
 #include <utility>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/call_filters.h"
 #include "src/core/call/interception_chain.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,6 +36,8 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 /// This module provides a way for plugins (and the grpc core library itself)
 /// to register mutators for channel stacks.

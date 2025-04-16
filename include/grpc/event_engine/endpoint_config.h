@@ -14,10 +14,10 @@
 #ifndef GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H
 #define GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H
 
-#include <grpc/support/port_platform.h>
-
 #include <optional>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 

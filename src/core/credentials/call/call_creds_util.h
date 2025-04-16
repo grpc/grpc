@@ -17,11 +17,11 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_CALL_CREDS_UTIL_H
 #define GRPC_SRC_CORE_CREDENTIALS_CALL_CALL_CREDS_UTIL_H
 
+#include <string>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
-
-#include <string>
 
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/lib/transport/transport.h"

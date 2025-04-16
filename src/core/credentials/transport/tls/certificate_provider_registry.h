@@ -19,14 +19,14 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_CERTIFICATE_PROVIDER_REGISTRY_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_TLS_CERTIFICATE_PROVIDER_REGISTRY_H
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <memory>
 #include <utility>
 
-#include "absl/strings/string_view.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/credentials/transport/tls/certificate_provider_factory.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

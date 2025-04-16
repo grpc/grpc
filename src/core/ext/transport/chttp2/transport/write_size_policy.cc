@@ -14,9 +14,9 @@
 
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 

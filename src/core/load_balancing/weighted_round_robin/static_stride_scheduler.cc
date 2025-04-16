@@ -16,13 +16,13 @@
 
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"

@@ -18,20 +18,21 @@
 
 #include "absl/log/log.h"
 
+#include <stdio.h>
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
-#include <stdio.h>
-#include <string.h>
 
+#include "src/core/config/config_vars.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/string.h"
 #include "absl/log/check.h"
 #include "absl/log/globals.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
-#include "src/core/config/config_vars.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/string.h"
 
 void gpr_unreachable_code(const char* reason, const char* file, int line) {
   grpc_core::Crash(absl::StrCat("UNREACHABLE CODE: ", reason),

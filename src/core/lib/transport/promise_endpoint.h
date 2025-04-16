@@ -15,25 +15,21 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_PROMISE_ENDPOINT_H
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include <atomic>
 #include <cstring>
 #include <functional>
 #include <memory>
 #include <optional>
+#include <stddef.h>
+#include <stdint.h>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -45,6 +41,10 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

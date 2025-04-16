@@ -15,6 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 
+#include <atomic>
+#include <cstdint>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <vector>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -28,20 +37,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <atomic>
-#include <cstdint>
-#include <string>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/call_combiner.h"
@@ -58,6 +54,10 @@
 #include "src/core/util/alloc.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

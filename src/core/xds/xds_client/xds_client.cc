@@ -16,34 +16,19 @@
 
 #include "src/core/xds/xds_client/xds_client.h"
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-#include <inttypes.h>
-#include <string.h>
-
 #include <algorithm>
 #include <functional>
+#include <inttypes.h>
 #include <memory>
 #include <optional>
+#include <string.h>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "absl/strings/strip.h"
-#include "envoy/config/core/v3/base.upb.h"
-#include "envoy/service/discovery/v3/discovery.upb.h"
-#include "envoy/service/discovery/v3/discovery.upbdefs.h"
-#include "google/protobuf/any.upb.h"
-#include "google/protobuf/timestamp.upb.h"
-#include "google/rpc/status.upb.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -55,6 +40,22 @@
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
+#include "absl/strings/strip.h"
+
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/service/discovery/v3/discovery.upb.h"
+#include "envoy/service/discovery/v3/discovery.upbdefs.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "google/rpc/status.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"

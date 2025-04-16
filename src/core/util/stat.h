@@ -17,8 +17,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_STAT_H
 #define GRPC_SRC_CORE_UTIL_STAT_H
 
-#include <grpc/support/port_platform.h>
 #include <time.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
 

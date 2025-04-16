@@ -17,8 +17,6 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_LRS_CLIENT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_LRS_CLIENT_H
 
-#include <grpc/event_engine/event_engine.h>
-
 #include <atomic>
 #include <map>
 #include <memory>
@@ -26,10 +24,8 @@
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/dual_ref_counted.h"
@@ -48,6 +44,11 @@
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
+
 #include "upb/reflection/def.hpp"
 
 namespace grpc_core {

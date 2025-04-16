@@ -14,12 +14,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_HANDLE_CONTAINERS_H
 
+#include <cstdint>
+#include <stddef.h>
+#include <utility>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-#include <stddef.h>
-
-#include <cstdint>
-#include <utility>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"

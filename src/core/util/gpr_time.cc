@@ -18,11 +18,12 @@
 
 // Generic implementation of time calls.
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "absl/log/check.h"
 

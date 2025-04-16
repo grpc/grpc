@@ -17,16 +17,16 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
 #define GRPC_SRC_CORE_TELEMETRY_STATS_DATA_H
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <atomic>
 #include <memory>
+#include <stdint.h>
 
-#include "absl/strings/string_view.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/telemetry/histogram_view.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/per_cpu.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 class GlobalStatsCollector;

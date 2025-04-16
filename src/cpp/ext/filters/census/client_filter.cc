@@ -18,36 +18,23 @@
 
 #include "src/cpp/ext/filters/census/client_filter.h"
 
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/opencensus.h>
 #include <grpcpp/support/status.h>
-#include <stddef.h>
-#include <stdint.h>
 
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <optional>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
-#include "opencensus/stats/stats.h"
-#include "opencensus/tags/tag_key.h"
-#include "opencensus/tags/tag_map.h"
-#include "opencensus/trace/span.h"
-#include "opencensus/trace/span_context.h"
-#include "opencensus/trace/status_code.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -64,6 +51,20 @@
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/cpp/ext/filters/census/measures.h"
 #include "src/cpp/ext/filters/census/open_census_call_tracer.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+
+#include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+#include "opencensus/tags/tag_map.h"
+#include "opencensus/trace/span.h"
+#include "opencensus/trace/span_context.h"
+#include "opencensus/trace/status_code.h"
 
 namespace grpc {
 namespace internal {

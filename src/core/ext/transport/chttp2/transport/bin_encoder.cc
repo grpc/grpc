@@ -18,12 +18,13 @@
 
 #include "src/core/ext/transport/chttp2/transport/bin_encoder.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
+#include "absl/log/check.h"
 
 static const char alphabet[] =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";

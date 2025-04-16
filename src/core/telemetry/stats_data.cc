@@ -16,8 +16,9 @@
 
 #include "src/core/telemetry/stats_data.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace {

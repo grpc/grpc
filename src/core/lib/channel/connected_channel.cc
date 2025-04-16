@@ -18,22 +18,19 @@
 
 #include "src/core/lib/channel/connected_channel.h"
 
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <inttypes.h>
-
 #include <functional>
+#include <inttypes.h>
 #include <memory>
 #include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/call_finalization.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
@@ -74,6 +71,9 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 typedef struct connected_channel_channel_data {
   grpc_core::Transport* transport;

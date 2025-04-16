@@ -24,16 +24,13 @@
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include <errno.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
@@ -53,6 +50,10 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

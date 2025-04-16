@@ -16,15 +16,15 @@
 
 #include "src/core/util/uri.h"
 
-#include <ctype.h>
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <algorithm>
+#include <ctype.h>
 #include <functional>
 #include <map>
+#include <stddef.h>
 #include <string>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"

@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SUPPORT_CALLBACK_COMMON_H
 #define GRPCPP_SUPPORT_CALLBACK_COMMON_H
 
+#include <functional>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpcpp/impl/call.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/global_callback_hook.h>
 #include <grpcpp/support/status.h>
-
-#include <functional>
 
 #include "absl/log/absl_check.h"
 

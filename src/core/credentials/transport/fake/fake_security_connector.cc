@@ -18,24 +18,18 @@
 
 #include "src/core/credentials/transport/fake/fake_security_connector.h"
 
+#include <optional>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <utility>
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <optional>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
@@ -58,6 +52,12 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace {
 class grpc_fake_channel_security_connector final

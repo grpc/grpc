@@ -50,18 +50,17 @@
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
-
 #include <utility>
 
+#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/uri.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/status_helper.h"
-#include "src/core/util/uri.h"
 
 namespace grpc_event_engine::experimental {
 

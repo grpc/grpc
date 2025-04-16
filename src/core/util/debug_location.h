@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_DEBUG_LOCATION_H
 #define GRPC_SRC_CORE_UTIL_DEBUG_LOCATION_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
 

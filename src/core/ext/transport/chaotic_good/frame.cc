@@ -14,18 +14,15 @@
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <string.h>
-
 #include <cstdint>
 #include <limits>
+#include <string.h>
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/lib/promise/context.h"
@@ -36,6 +33,9 @@
 #include "src/core/util/bitset.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 namespace chaotic_good {

@@ -18,9 +18,10 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
+#include <string.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <string.h>
 
 static void maybe_copy_error_msg(const char* src, char** dst) {
   if (dst != nullptr && src != nullptr) {

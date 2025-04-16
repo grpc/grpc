@@ -17,6 +17,13 @@
 //
 #include "src/core/lib/surface/completion_queue.h"
 
+#include <algorithm>
+#include <atomic>
+#include <stdio.h>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -24,19 +31,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-#include <stdio.h>
 
-#include <algorithm>
-#include <atomic>
-#include <string>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -50,6 +45,11 @@
 #include "src/core/util/spinlock.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/time.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace {
 

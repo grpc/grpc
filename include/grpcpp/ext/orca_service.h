@@ -17,6 +17,9 @@
 #ifndef GRPCPP_EXT_ORCA_SERVICE_H
 #define GRPCPP_EXT_ORCA_SERVICE_H
 
+#include <cstdint>
+#include <optional>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/impl/service_type.h>
@@ -25,9 +28,6 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
-
-#include <cstdint>
-#include <optional>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/time/time.h"

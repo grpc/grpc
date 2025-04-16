@@ -21,12 +21,12 @@
 
 /// Internal thread interface.
 
+#include <memory>
+#include <stddef.h>
+#include <utility>
+
 #include <grpc/support/port_platform.h>
 #include <grpc/support/thd_id.h>
-#include <stddef.h>
-
-#include <memory>
-#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"

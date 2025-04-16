@@ -19,7 +19,6 @@
 #include "src/compiler/objective_c_generator.h"
 
 #include <google/protobuf/compiler/objectivec/names.h>
-
 #include <map>
 #include <set>
 #include <sstream>

@@ -14,11 +14,11 @@
 
 #include "src/core/config/core_configuration.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 

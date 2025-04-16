@@ -19,12 +19,12 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 #define GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 
-#include <grpc/support/port_platform.h>
+#include <optional>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <optional>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/time/time.h"
 

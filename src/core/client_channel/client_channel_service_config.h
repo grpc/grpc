@@ -17,14 +17,13 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_SERVICE_CONFIG_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <memory>
 #include <optional>
+#include <stddef.h>
 #include <string>
 
-#include "absl/strings/string_view.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -35,6 +34,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/validation_errors.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace internal {

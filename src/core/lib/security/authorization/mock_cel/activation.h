@@ -17,8 +17,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/strings/string_view.h"
 #include "src/core/lib/security/authorization/mock_cel/cel_value.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace mock_cel {

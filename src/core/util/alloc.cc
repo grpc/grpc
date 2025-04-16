@@ -16,13 +16,14 @@
 //
 //
 
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
 
 void* gpr_malloc(size_t size) {
   void* p;

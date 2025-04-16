@@ -20,21 +20,20 @@
 
 #include <netdb.h>
 #include <string.h>
-#include <sys/socket.h>
-
 #include <string>
+#include <sys/socket.h>
 #include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/useful.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/useful.h"
 
 namespace grpc_event_engine::experimental {
 namespace {

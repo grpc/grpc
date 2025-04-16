@@ -19,13 +19,13 @@
 #ifndef GRPCPP_SUPPORT_STRING_REF_H
 #define GRPCPP_SUPPORT_STRING_REF_H
 
-#include <grpcpp/support/config.h>
-#include <string.h>
-
 #include <algorithm>
 #include <iosfwd>
 #include <iostream>
 #include <iterator>
+#include <string.h>
+
+#include <grpcpp/support/config.h>
 
 namespace grpc {
 

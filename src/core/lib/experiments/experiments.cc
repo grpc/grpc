@@ -16,8 +16,9 @@
 
 #include "src/core/lib/experiments/experiments.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
+
+#include <grpc/support/port_platform.h>
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 

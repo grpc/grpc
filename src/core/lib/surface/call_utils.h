@@ -15,6 +15,17 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CALL_UTILS_H
 
+#include <algorithm>
+#include <atomic>
+#include <cstdint>
+#include <inttypes.h>
+#include <limits.h>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <type_traits>
+#include <utility>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -28,22 +39,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <algorithm>
-#include <atomic>
-#include <cstdint>
-#include <string>
-#include <type_traits>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
@@ -55,6 +51,10 @@
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

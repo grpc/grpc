@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_UTIL_MATCH_H
 #define GRPC_SRC_CORE_UTIL_MATCH_H
 
-#include <grpc/support/port_platform.h>
-
 #include <utility>
 #include <variant>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/util/overload.h"
 

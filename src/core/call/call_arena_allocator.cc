@@ -14,9 +14,9 @@
 
 #include "src/core/call/call_arena_allocator.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

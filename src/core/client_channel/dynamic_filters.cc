@@ -16,15 +16,12 @@
 
 #include "src/core/client_channel/dynamic_filters.h"
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <new>
+#include <stddef.h>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
@@ -33,6 +30,9 @@
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/util/alloc.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
 
 // Conversion between call and call stack.
 #define CALL_TO_CALL_STACK(call)                                     \

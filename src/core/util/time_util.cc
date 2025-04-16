@@ -16,10 +16,11 @@
 
 #include "src/core/util/time_util.h"
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
 #include <stdint.h>
 #include <time.h>
+
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 
 #include "absl/log/check.h"
 

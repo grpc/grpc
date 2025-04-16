@@ -19,10 +19,10 @@
 #ifndef GRPC_SRC_CORE_UTIL_ENV_H
 #define GRPC_SRC_CORE_UTIL_ENV_H
 
-#include <grpc/support/port_platform.h>
-
 #include <optional>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

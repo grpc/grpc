@@ -16,11 +16,23 @@
 
 #include "src/core/xds/grpc/xds_listener_parser.h"
 
-#include <stdint.h>
-
 #include <set>
+#include <stdint.h>
 #include <utility>
 
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/xds/grpc/xds_common_types.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_route_config_parser.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -28,6 +40,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/config/core/v3/config_source.upb.h"
@@ -43,19 +56,6 @@
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/util/down_cast.h"
-#include "src/core/util/host_port.h"
-#include "src/core/util/match.h"
-#include "src/core/util/upb_utils.h"
-#include "src/core/util/validation_errors.h"
-#include "src/core/xds/grpc/xds_common_types.h"
-#include "src/core/xds/grpc/xds_common_types_parser.h"
-#include "src/core/xds/grpc/xds_route_config_parser.h"
-#include "src/core/xds/xds_client/xds_resource_type.h"
 #include "upb/text/encode.h"
 
 namespace grpc_core {

@@ -19,6 +19,9 @@
 #ifndef GRPCPP_SUPPORT_CLIENT_CALLBACK_H
 #define GRPCPP_SUPPORT_CLIENT_CALLBACK_H
 
+#include <atomic>
+#include <functional>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpcpp/impl/call.h>
@@ -27,9 +30,6 @@
 #include <grpcpp/support/callback_common.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
-
-#include <atomic>
-#include <functional>
 
 #include "absl/log/absl_check.h"
 

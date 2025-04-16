@@ -15,16 +15,16 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 #define GRPC_EVENT_ENGINE_SLICE_BUFFER_H
 
+#include <cstdint>
+#include <string.h>
+#include <string>
+
 #include <grpc/event_engine/internal/slice_cast.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/impl/codegen/slice.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
-#include <string.h>
-
-#include <cstdint>
-#include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/utility/utility.h"

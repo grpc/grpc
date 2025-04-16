@@ -19,9 +19,9 @@
 #ifndef GRPCPP_IMPL_RPC_METHOD_H
 #define GRPCPP_IMPL_RPC_METHOD_H
 
-#include <grpcpp/impl/codegen/channel_interface.h>
-
 #include <memory>
+
+#include <grpcpp/impl/codegen/channel_interface.h>
 
 namespace grpc {
 namespace internal {

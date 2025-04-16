@@ -18,7 +18,6 @@
 
 #include "src/core/tsi/ssl_transport_security_utils.h"
 
-#include <grpc/support/port_platform.h>
 #include <openssl/bio.h>
 #include <openssl/crypto.h>
 #include <openssl/ec.h>
@@ -30,11 +29,13 @@
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/tsi/transport_security_interface.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/tsi/transport_security_interface.h"
 
 namespace grpc_core {
 

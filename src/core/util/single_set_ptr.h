@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_UTIL_SINGLE_SET_PTR_H
 #define GRPC_SRC_CORE_UTIL_SINGLE_SET_PTR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <memory>
 
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

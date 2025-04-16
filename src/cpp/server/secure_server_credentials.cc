@@ -18,6 +18,10 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include <memory>
+#include <utility>
+#include <vector>
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpcpp/security/auth_metadata_processor.h>
@@ -25,10 +29,6 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
-
-#include <memory>
-#include <utility>
-#include <vector>
 
 #include "src/cpp/common/secure_auth_context.h"
 

@@ -17,17 +17,13 @@
 
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <optional>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/statusor.h"
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
@@ -52,6 +48,10 @@
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

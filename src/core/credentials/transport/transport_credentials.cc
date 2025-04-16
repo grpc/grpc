@@ -16,16 +16,17 @@
 
 #include "src/core/credentials/transport/transport_credentials.h"
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 // -- Common. --
 

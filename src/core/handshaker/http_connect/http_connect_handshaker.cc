@@ -18,23 +18,18 @@
 
 #include "src/core/handshaker/http_connect/http_connect_handshaker.h"
 
+#include <limits.h>
+#include <memory>
+#include <optional>
+#include <string.h>
+#include <string>
+#include <utility>
+
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <limits.h>
-#include <string.h>
 
-#include <memory>
-#include <optional>
-#include <string>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
@@ -53,6 +48,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

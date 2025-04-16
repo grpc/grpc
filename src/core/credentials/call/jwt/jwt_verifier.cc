@@ -18,8 +18,9 @@
 
 #include "src/core/credentials/call/jwt/jwt_verifier.h"
 
-#include <grpc/support/port_platform.h>
 #include <limits.h>
+#include <map>
+#include <memory>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
 #include <openssl/crypto.h>
@@ -29,12 +30,11 @@
 #include <openssl/x509.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <map>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 #if OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/param_build.h>
 #endif
@@ -45,12 +45,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/call/call_credentials.h"  // IWYU pragma: keep
 #include "src/core/credentials/transport/transport_credentials.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/closure.h"
@@ -70,6 +64,12 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
 #include "src/core/util/uri.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 

@@ -19,6 +19,7 @@
 #include "src/core/lib/surface/init.h"
 
 #include <address_sorting/address_sorting.h>
+
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -27,10 +28,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/security_connector.h"
@@ -48,6 +45,10 @@
 #include "src/core/util/fork.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/log.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 
 // Remnants of the old plugin system
 void grpc_resolver_dns_ares_init(void);

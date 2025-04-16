@@ -19,21 +19,17 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H
 
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
+#include <optional>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <optional>
 #include <string>
 #include <utility>
 #include <variant>
 #include <vector>
 
-#include "absl/random/bit_gen_ref.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser_table.h"
@@ -43,6 +39,10 @@
 #include "src/core/lib/slice/slice_refcount.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/random_early_detection.h"
+#include "absl/random/bit_gen_ref.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 // IWYU pragma: no_include <type_traits>
 

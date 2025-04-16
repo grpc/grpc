@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_COMMON_CLOSURES_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_COMMON_CLOSURES_H
 
+#include <utility>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
-
-#include <utility>
 
 #include "absl/functional/any_invocable.h"
 

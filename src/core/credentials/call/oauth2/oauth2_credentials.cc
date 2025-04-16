@@ -18,6 +18,13 @@
 
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
 
+#include <algorithm>
+#include <atomic>
+#include <map>
+#include <memory>
+#include <string.h>
+#include <vector>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -27,22 +34,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <string.h>
 
-#include <algorithm>
-#include <atomic>
-#include <map>
-#include <memory>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
@@ -61,6 +53,14 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/uri.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 
 using grpc_core::Json;
 

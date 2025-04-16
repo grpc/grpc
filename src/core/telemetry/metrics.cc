@@ -14,13 +14,13 @@
 
 #include "src/core/telemetry/metrics.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <optional>
 
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

@@ -15,25 +15,25 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTERCEPTOR_LIST_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <algorithm>
 #include <new>
 #include <optional>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 
 namespace grpc_core {
 

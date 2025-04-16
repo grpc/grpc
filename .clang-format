@@ -8,6 +8,16 @@ IncludeCategories:
   # ruby.h is even more first if it's included
   - Regex: '^<ruby/ruby.h>'
     Priority: -200
+  - Regex: '^<grpc'
+    Priority: 2
+  - Regex: '^"(src|examples)/'
+    Priority: 3
+  - Regex: '^"(third_party|absl|opentelemetry)/'
+    Priority: 3
+  - Regex: '"test/'
+    Priority: 4
+  - Regex: '^<.*'
+    Priority: 1
 ---
 Language: ObjC
 BasedOnStyle: Google

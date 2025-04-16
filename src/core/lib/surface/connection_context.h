@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_CONNECTION_CONTEXT_H
 #define GRPC_SRC_CORE_LIB_SURFACE_CONNECTION_CONTEXT_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <cstdint>
+#include <stddef.h>
 #include <vector>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"

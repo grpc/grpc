@@ -17,16 +17,16 @@
 #ifndef GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 #define GRPCPP_SECURITY_TLS_CERTIFICATE_PROVIDER_H
 
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/support/config.h>
-
-#include <memory>
-#include <string>
-#include <vector>
 
 #include "absl/status/statusor.h"
 

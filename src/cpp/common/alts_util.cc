@@ -16,6 +16,11 @@
 //
 //
 
+#include <algorithm>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
@@ -23,14 +28,10 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
-#include <algorithm>
-#include <memory>
-#include <string>
-#include <vector>
-
-#include "absl/log/log.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
+#include "absl/log/log.h"
+
 #include "upb/mem/arena.hpp"
 
 namespace grpc {

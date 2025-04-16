@@ -15,13 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREADY_EVENT_ENGINE_THREADY_EVENT_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_THREADY_EVENT_ENGINE_THREADY_EVENT_ENGINE_H
 
+#include <memory>
+#include <utility>
+
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/support/port_platform.h>
-
-#include <memory>
-#include <utility>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"

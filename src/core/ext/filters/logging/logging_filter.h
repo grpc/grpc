@@ -19,18 +19,18 @@
 #ifndef GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 #define GRPC_SRC_CORE_EXT_FILTERS_LOGGING_LOGGING_FILTER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
 #include <utility>
 
-#include "absl/status/statusor.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/logging/logging_sink.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/transport/transport.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

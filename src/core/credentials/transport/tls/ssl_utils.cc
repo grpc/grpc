@@ -18,6 +18,12 @@
 
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 
+#include <memory>
+#include <stdint.h>
+#include <string.h>
+#include <utility>
+#include <vector>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
@@ -26,18 +32,7 @@
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
-#include <stdint.h>
-#include <string.h>
 
-#include <memory>
-#include <utility>
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
@@ -49,6 +44,11 @@
 #include "src/core/util/load_file.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 
 // -- Constants. --
 

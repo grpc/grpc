@@ -18,26 +18,18 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <memory>
 #include <optional>
+#include <stddef.h>
+#include <stdlib.h>
 #include <string>
 #include <utility>
 #include <variant>
 
-#include "absl/base/attributes.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/match.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/metadata_info.h"
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/decode_huff.h"
@@ -52,6 +44,14 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/match.h"
+#include "absl/base/attributes.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 // IWYU pragma: no_include <type_traits>
 

@@ -25,10 +25,10 @@
 #include <pthread.h>
 #endif
 
+#include <mutex>
+
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
-
-#include <mutex>
 
 #include "absl/log/absl_check.h"
 #include "absl/synchronization/mutex.h"

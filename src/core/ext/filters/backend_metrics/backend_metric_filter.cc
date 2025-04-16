@@ -14,18 +14,16 @@
 
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-#include <inttypes.h>
-#include <stddef.h>
-
 #include <functional>
+#include <inttypes.h>
 #include <map>
 #include <memory>
+#include <stddef.h>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -38,6 +36,9 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/latent_see.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.hpp"
 #include "xds/data/orca/v3/orca_load_report.upb.h"

@@ -16,8 +16,9 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
 
@@ -28,7 +29,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
@@ -42,6 +42,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
 

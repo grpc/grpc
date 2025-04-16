@@ -19,17 +19,16 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_COMPOSITE_COMPOSITE_CALL_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_CALL_COMPOSITE_COMPOSITE_CALL_CREDENTIALS_H
 
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-
 #include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/status/statusor.h"
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,6 +37,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/status/statusor.h"
 
 class grpc_composite_call_credentials : public grpc_call_credentials {
  public:

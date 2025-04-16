@@ -14,9 +14,9 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 // IWYU pragma: no_include <bits/struct_stat.h>
 
@@ -27,10 +27,10 @@
 #include <errno.h>
 #include <sys/stat.h>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
 #include "src/core/util/stat.h"
 #include "src/core/util/strerror.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 

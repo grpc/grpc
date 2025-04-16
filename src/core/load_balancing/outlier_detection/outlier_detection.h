@@ -17,10 +17,10 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_OUTLIER_DETECTION_OUTLIER_DETECTION_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_OUTLIER_DETECTION_OUTLIER_DETECTION_H
 
-#include <grpc/support/port_platform.h>
+#include <optional>
 #include <stdint.h>  // for uint32_t
 
-#include <optional>
+#include <grpc/support/port_platform.h>
 
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"

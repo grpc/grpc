@@ -19,23 +19,20 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNELZ_H
 
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <atomic>
 #include <cstdint>
 #include <map>
 #include <optional>
 #include <set>
+#include <stddef.h>
 #include <string>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/strings/string_view.h"
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/json/json.h"
@@ -47,6 +44,9 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/string_view.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \

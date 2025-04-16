@@ -15,6 +15,11 @@
 //
 #include "src/core/credentials/call/external/aws_external_account_credentials.h"
 
+#include <map>
+#include <optional>
+#include <string.h>
+#include <utility>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -22,19 +27,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <string.h>
 
-#include <map>
-#include <optional>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_replace.h"
-#include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/util/env.h"
@@ -43,6 +36,13 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/uri.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

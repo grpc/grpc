@@ -14,16 +14,20 @@
 
 #include "src/core/lib/experiments/config.h"
 
-#include <grpc/support/port_platform.h>
-#include <string.h>
-
 #include <algorithm>
 #include <atomic>
 #include <map>
+#include <string.h>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/config/config_vars.h"
+#include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/no_destruct.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -31,10 +35,6 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "src/core/config/config_vars.h"
-#include "src/core/lib/experiments/experiments.h"
-#include "src/core/util/crash.h"  // IWYU pragma: keep
-#include "src/core/util/no_destruct.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL
 namespace grpc_core {

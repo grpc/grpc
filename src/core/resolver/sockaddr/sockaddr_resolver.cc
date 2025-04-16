@@ -14,17 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include <algorithm>
 #include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,6 +31,10 @@
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/uri.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

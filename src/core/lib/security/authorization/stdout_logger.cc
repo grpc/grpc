@@ -14,13 +14,13 @@
 
 #include "src/core/lib/security/authorization/stdout_logger.h"
 
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
 #include <cstdio>
 #include <memory>
 #include <string>
+
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"

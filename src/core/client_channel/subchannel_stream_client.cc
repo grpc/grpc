@@ -16,15 +16,13 @@
 
 #include "src/core/client_channel/subchannel_stream_client.h"
 
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdio.h>
-
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
@@ -34,6 +32,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 #define SUBCHANNEL_STREAM_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define SUBCHANNEL_STREAM_RECONNECT_BACKOFF_MULTIPLIER 1.6

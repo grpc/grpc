@@ -19,22 +19,22 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_TABLE_H
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <vector>
 
-#include "absl/functional/function_ref.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/unique_ptr_with_bitset.h"
+#include "absl/functional/function_ref.h"
 
 namespace grpc_core {
 

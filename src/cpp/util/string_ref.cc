@@ -16,8 +16,9 @@
 //
 //
 
-#include <grpcpp/support/string_ref.h>
 #include <stddef.h>
+
+#include <grpcpp/support/string_ref.h>
 
 namespace grpc {
 

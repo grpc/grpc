@@ -19,9 +19,9 @@
 #ifndef GRPC_SRC_CORE_UTIL_DIRECTORY_READER_H
 #define GRPC_SRC_CORE_UTIL_DIRECTORY_READER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/functional/function_ref.h"
 #include "absl/status/status.h"

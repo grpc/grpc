@@ -19,22 +19,18 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_PLUGIN_H
 
-#include <grpc/support/port_platform.h>
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/impl/server_builder_option.h>
-#include <stddef.h>
-#include <stdint.h>
-
 #include <bitset>
 #include <memory>
 #include <optional>
+#include <stddef.h>
+#include <stdint.h>
 #include <string>
 #include <utility>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/strings/string_view.h"
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/impl/server_builder_option.h>
+
 #include "opentelemetry/metrics/async_instruments.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/observer_result.h"
@@ -45,6 +41,10 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/telemetry/metrics.h"
 #include "src/core/util/down_cast.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc {
 namespace internal {

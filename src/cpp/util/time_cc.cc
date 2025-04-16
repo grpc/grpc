@@ -16,11 +16,11 @@
 //
 //
 
-#include <grpc/support/time.h>
-#include <grpcpp/support/time.h>
-
 #include <chrono>
 #include <cstdint>
+
+#include <grpc/support/time.h>
+#include <grpcpp/support/time.h>
 
 // IWYU pragma: no_include <ratio>
 

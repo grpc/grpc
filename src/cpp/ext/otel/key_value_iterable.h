@@ -19,20 +19,20 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
 #define GRPC_SRC_CPP_EXT_OTEL_KEY_VALUE_ITERABLE_H
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <optional>
+#include <stddef.h>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include <grpc/support/port_platform.h>
+
 #include "opentelemetry/common/attribute_value.h"
 #include "opentelemetry/common/key_value_iterable.h"
 #include "opentelemetry/nostd/function_ref.h"
 #include "opentelemetry/nostd/string_view.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc {
 namespace internal {

@@ -14,9 +14,8 @@
 
 #include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 
-#include <sys/types.h>
-
 #include <cstdint>
+#include <sys/types.h>
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"

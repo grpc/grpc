@@ -18,10 +18,10 @@
 
 #include "src/core/credentials/transport/tls/tls_utils.h"
 
-#include <grpc/support/port_platform.h>
+#include <algorithm>
 #include <stddef.h>
 
-#include <algorithm>
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
 #include "absl/strings/ascii.h"

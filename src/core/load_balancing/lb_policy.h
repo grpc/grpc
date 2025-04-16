@@ -17,25 +17,20 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_LB_POLICY_H
 
+#include <memory>
+#include <optional>
+#include <stddef.h>
+#include <stdint.h>
+#include <string>
+#include <utility>
+#include <variant>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/slice.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
-#include <stddef.h>
-#include <stdint.h>
 
-#include <memory>
-#include <optional>
-#include <string>
-#include <utility>
-#include <variant>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/container/inlined_vector.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -51,6 +46,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

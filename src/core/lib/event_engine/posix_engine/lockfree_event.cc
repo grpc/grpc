@@ -13,18 +13,18 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
 #include <atomic>
 #include <cstdint>
 
-#include "absl/log/check.h"
-#include "absl/status/status.h"
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/status_helper.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 
 //  'state' holds the to call when the fd is readable or writable respectively.
 //    It can contain one of the following values:

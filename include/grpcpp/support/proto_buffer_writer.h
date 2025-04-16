@@ -19,6 +19,8 @@
 #ifndef GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 #define GRPCPP_SUPPORT_PROTO_BUFFER_WRITER_H
 
+#include <type_traits>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/slice.h>
@@ -27,8 +29,6 @@
 #include <grpcpp/impl/serialization_traits.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/status.h>
-
-#include <type_traits>
 
 #include "absl/log/absl_check.h"
 #include "absl/strings/cord.h"

@@ -16,17 +16,18 @@
 //
 //
 
+#include <stdint.h>
+#include <string.h>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
-#include <stdint.h>
-#include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "absl/log/check.h"
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {

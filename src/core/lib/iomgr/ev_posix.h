@@ -23,8 +23,9 @@
 
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include <grpc/support/port_platform.h>
 #include <poll.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

@@ -18,16 +18,12 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_settings.h"
 
-#include <grpc/slice_buffer.h>
-#include <grpc/support/port_platform.h>
 #include <string.h>
-
 #include <string>
 
-#include "absl/base/attributes.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
@@ -40,6 +36,10 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/useful.h"
+#include "absl/base/attributes.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
 
 using grpc_core::http2::Http2ErrorCode;
 

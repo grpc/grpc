@@ -19,22 +19,22 @@
 #ifndef GRPCPP_EXT_OTEL_PLUGIN_H
 #define GRPCPP_EXT_OTEL_PLUGIN_H
 
+#include <memory>
+#include <stddef.h>
+#include <stdint.h>
+
 #include <grpc/support/metrics.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/support/channel_arguments.h>
-#include <stddef.h>
-#include <stdint.h>
 
-#include <memory>
-
+#include "opentelemetry/context/propagation/text_map_propagator.h"
+#include "opentelemetry/metrics/meter_provider.h"
+#include "opentelemetry/trace/tracer_provider.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "opentelemetry/context/propagation/text_map_propagator.h"
-#include "opentelemetry/metrics/meter_provider.h"
-#include "opentelemetry/trace/tracer_provider.h"
 
 namespace grpc {
 namespace internal {

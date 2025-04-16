@@ -16,14 +16,12 @@
 
 #include "src/core/server/server_call_tracer_filter.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <functional>
 #include <memory>
 #include <utility>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/call_finalization.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -39,6 +37,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/latent_see.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 

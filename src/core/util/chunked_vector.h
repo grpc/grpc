@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_UTIL_CHUNKED_VECTOR_H
 #define GRPC_SRC_CORE_UTIL_CHUNKED_VECTOR_H
 
-#include <grpc/support/port_platform.h>
-
 #include <cstddef>
 #include <iterator>
 #include <utility>
 
-#include "absl/log/check.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/util/manual_constructor.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

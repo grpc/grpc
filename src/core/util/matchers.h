@@ -15,15 +15,16 @@
 #ifndef GRPC_SRC_CORE_UTIL_MATCHERS_H
 #define GRPC_SRC_CORE_UTIL_MATCHERS_H
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <memory>
 #include <optional>
+#include <stdint.h>
 #include <string>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+
 #include "re2/re2.h"
 
 namespace grpc_core {

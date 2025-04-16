@@ -15,16 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_FOR_EACH_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
-
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
@@ -32,6 +28,10 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/util/construct_destruct.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc_core {
 

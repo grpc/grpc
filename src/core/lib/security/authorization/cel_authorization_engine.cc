@@ -14,16 +14,17 @@
 
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
-#include <grpc/support/port_platform.h>
-#include <stddef.h>
-
 #include <algorithm>
 #include <optional>
+#include <stddef.h>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+
 #include "upb/base/string_view.h"
 #include "upb/message/map.h"
 

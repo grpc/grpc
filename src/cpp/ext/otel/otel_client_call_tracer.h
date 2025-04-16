@@ -19,17 +19,13 @@
 #ifndef GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 #define GRPC_SRC_CPP_EXT_OTEL_OTEL_CLIENT_CALL_TRACER_H
 
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-#include <stdint.h>
-
 #include <memory>
+#include <stdint.h>
 #include <string>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/time/time.h"
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
+
 #include "opentelemetry/trace/span.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,6 +37,10 @@
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 
 namespace grpc {
 namespace internal {

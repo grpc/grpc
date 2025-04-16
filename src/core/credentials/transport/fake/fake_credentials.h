@@ -19,15 +19,14 @@
 #ifndef GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
 #define GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_FAKE_FAKE_CREDENTIALS_H
 
+#include <string>
+
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
 
-#include <string>
-
-#include "absl/status/statusor.h"
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -37,6 +36,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
+#include "absl/status/statusor.h"
 
 #define GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS \
   "grpc.fake_security.expected_targets"

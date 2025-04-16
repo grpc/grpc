@@ -17,6 +17,10 @@
 #ifndef GRPC_SRC_CPP_SERVER_ORCA_ORCA_SERVICE_H
 #define GRPC_SRC_CPP_SERVER_ORCA_ORCA_SERVICE_H
 
+#include <atomic>
+#include <memory>
+#include <optional>
+
 #include <grpc/event_engine/event_engine.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/impl/sync.h>
@@ -24,13 +28,9 @@
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/status.h>
 
-#include <atomic>
-#include <memory>
-#include <optional>
-
+#include "src/core/util/ref_counted.h"
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/ref_counted.h"
 
 namespace grpc {
 namespace experimental {

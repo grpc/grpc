@@ -19,9 +19,9 @@
 #ifndef GRPCPP_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
 #define GRPCPP_TEST_SERVER_CONTEXT_TEST_SPOUSE_H
 
-#include <grpcpp/server_context.h>
-
 #include <map>
+
+#include <grpcpp/server_context.h>
 
 namespace grpc {
 namespace testing {

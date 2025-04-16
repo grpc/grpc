@@ -27,24 +27,19 @@
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/cpu.h>
 #include <limits.h>
 #include <poll.h>
 #include <pthread.h>
 #include <string.h>
+#include <string>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
-#include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
+#include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
+
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
@@ -58,6 +53,11 @@
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/useful.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 static grpc_wakeup_fd global_wakeup_fd;
 static bool g_is_shutdown = true;

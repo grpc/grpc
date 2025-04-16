@@ -14,19 +14,19 @@
 
 #include "src/core/call/metadata_batch.h"
 
-#include <grpc/support/port_platform.h>
-#include <string.h>
-
 #include <algorithm>
+#include <string.h>
 #include <string>
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "absl/base/no_destructor.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
 namespace metadata_detail {

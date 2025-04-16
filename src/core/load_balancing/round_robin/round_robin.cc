@@ -14,27 +14,19 @@
 // limitations under the License.
 //
 
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-#include <inttypes.h>
-#include <stdlib.h>
-
 #include <algorithm>
 #include <atomic>
+#include <inttypes.h>
 #include <memory>
 #include <optional>
+#include <stdlib.h>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/meta/type_traits.h"
-#include "absl/random/random.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -48,6 +40,14 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/work_serializer.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/meta/type_traits.h"
+#include "absl/random/random.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

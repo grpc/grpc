@@ -17,23 +17,23 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_ROUTE_CONFIG_H
 
-#include <stdint.h>
-
 #include <algorithm>
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdint.h>
 #include <string>
 #include <variant>
 #include <vector>
 
-#include "re2/re2.h"
 #include "src/core/call/status_util.h"
 #include "src/core/util/matchers.h"
 #include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+
+#include "re2/re2.h"
 
 namespace grpc_core {
 

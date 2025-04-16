@@ -23,15 +23,13 @@
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <fcntl.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
+#include <string>
 #include <sys/socket.h>
 #include <sys/types.h>
 
-#include <string>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
@@ -44,6 +42,8 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/util/crash.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 namespace {
 using grpc_event_engine::experimental::ChannelArgsEndpointConfig;

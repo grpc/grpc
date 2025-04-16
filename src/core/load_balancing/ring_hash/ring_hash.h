@@ -17,8 +17,9 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_RING_HASH_RING_HASH_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_RING_HASH_RING_HASH_H
 
-#include <grpc/support/port_platform.h>
 #include <stdint.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/json/json.h"

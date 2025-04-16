@@ -19,23 +19,17 @@
 #ifndef GRPC_SRC_CORE_CALL_METADATA_BATCH_H
 #define GRPC_SRC_CORE_CALL_METADATA_BATCH_H
 
-#include <grpc/impl/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <stdlib.h>
-
 #include <cstdint>
 #include <optional>
+#include <stdlib.h>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include "absl/container/inlined_vector.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
-#include "absl/meta/type_traits.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/string_view.h"
+#include <grpc/impl/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/call/custom_metadata.h"
 #include "src/core/call/metadata_compression_traits.h"
 #include "src/core/call/parsed_metadata.h"
@@ -49,6 +43,12 @@
 #include "src/core/util/packed_table.h"
 #include "src/core/util/time.h"
 #include "src/core/util/type_list.h"
+#include "absl/container/inlined_vector.h"
+#include "absl/functional/function_ref.h"
+#include "absl/log/check.h"
+#include "absl/meta/type_traits.h"
+#include "absl/strings/numbers.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

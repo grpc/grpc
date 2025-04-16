@@ -14,8 +14,9 @@
 
 #include "src/core/util/strerror.h"
 
-#include <grpc/support/port_platform.h>
 #include <string.h>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_format.h"
 

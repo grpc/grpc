@@ -15,6 +15,16 @@
 #ifndef GRPC_SRC_CORE_CALL_SERVER_CALL_H
 #define GRPC_SRC_CORE_CALL_SERVER_CALL_H
 
+#include <atomic>
+#include <cstdint>
+#include <inttypes.h>
+#include <limits.h>
+#include <memory>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <utility>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -28,21 +38,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <atomic>
-#include <cstdint>
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/poll.h"
@@ -55,6 +51,10 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "absl/log/check.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -22,13 +22,14 @@
 
 #ifdef GPR_WINDOWS_TIME
 
-#include <grpc/support/time.h>
 #include <limits.h>
 #include <process.h>
 #include <sys/timeb.h>
 
-#include "absl/log/check.h"
+#include <grpc/support/time.h>
+
 #include "src/core/util/time_precise.h"
+#include "absl/log/check.h"
 
 static LARGE_INTEGER g_start_time = []() {
   LARGE_INTEGER x;

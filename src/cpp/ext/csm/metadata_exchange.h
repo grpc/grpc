@@ -19,19 +19,20 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 #define GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/strings/string_view.h"
-#include "google/protobuf/struct.upb.h"
+#include <grpc/support/port_platform.h>
+
 #include "opentelemetry/sdk/common/attribute_utils.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "absl/strings/string_view.h"
+
+#include "google/protobuf/struct.upb.h"
 #include "upb/mem/arena.hpp"
 
 namespace grpc {

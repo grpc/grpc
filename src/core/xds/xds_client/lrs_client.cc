@@ -16,23 +16,14 @@
 
 #include "src/core/xds/xds_client/lrs_client.h"
 
-#include <grpc/event_engine/event_engine.h>
-
 #include <memory>
 #include <optional>
 #include <set>
 #include <string>
 #include <vector>
 
-#include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "envoy/config/core/v3/base.upb.h"
-#include "envoy/config/endpoint/v3/load_report.upb.h"
-#include "envoy/service/load_stats/v3/lrs.upb.h"
-#include "envoy/service/load_stats/v3/lrs.upbdefs.h"
-#include "google/protobuf/duration.upb.h"
+#include <grpc/event_engine/event_engine.h>
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/backoff.h"
@@ -47,6 +38,16 @@
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_locality.h"
+#include "absl/cleanup/cleanup.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
+
+#include "envoy/config/core/v3/base.upb.h"
+#include "envoy/config/endpoint/v3/load_report.upb.h"
+#include "envoy/service/load_stats/v3/lrs.upb.h"
+#include "envoy/service/load_stats/v3/lrs.upbdefs.h"
+#include "google/protobuf/duration.upb.h"
 #include "upb/base/string_view.h"
 #include "upb/mem/arena.h"
 #include "upb/reflection/def.h"

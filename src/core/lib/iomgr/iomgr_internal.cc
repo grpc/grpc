@@ -18,8 +18,9 @@
 
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
-#include <grpc/support/port_platform.h>
 #include <stddef.h>
+
+#include <grpc/support/port_platform.h>
 
 static grpc_iomgr_platform_vtable* iomgr_platform_vtable = nullptr;
 

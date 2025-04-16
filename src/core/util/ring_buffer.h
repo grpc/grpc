@@ -15,12 +15,12 @@
 #ifndef GRPC_SRC_CORE_UTIL_RING_BUFFER_H
 #define GRPC_SRC_CORE_UTIL_RING_BUFFER_H
 
-#include <grpc/support/port_platform.h>
-
 #include <array>
 #include <cstddef>
 #include <iterator>
 #include <optional>
+
+#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 

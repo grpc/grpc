@@ -16,11 +16,11 @@
 //
 //
 
+#include <memory>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
-
-#include <memory>
 
 #include "absl/log/check.h"
 

@@ -14,6 +14,15 @@
 
 #include "src/core/call/server_call.h"
 
+#include <atomic>
+#include <inttypes.h>
+#include <limits.h>
+#include <memory>
+#include <stdlib.h>
+#include <string.h>
+#include <string>
+#include <utility>
+
 #include <grpc/byte_buffer.h>
 #include <grpc/compression.h>
 #include <grpc/event_engine/event_engine.h>
@@ -27,18 +36,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
-#include <inttypes.h>
-#include <limits.h>
-#include <stdlib.h>
-#include <string.h>
 
-#include <atomic>
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/lib/promise/all_ok.h"
@@ -52,6 +50,8 @@
 #include "src/core/server/server_interface.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/latent_see.h"
+#include "absl/log/check.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

@@ -17,14 +17,13 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_LISTENER_H
 
-#include <stdint.h>
-#include <string.h>
-
 #include <algorithm>
 #include <array>
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdint.h>
+#include <string.h>
 #include <string>
 #include <variant>
 #include <vector>

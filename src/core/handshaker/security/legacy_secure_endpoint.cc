@@ -16,6 +16,13 @@
 //
 //
 
+#include <algorithm>
+#include <atomic>
+#include <inttypes.h>
+#include <memory>
+#include <optional>
+#include <utility>
+
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/memory_request.h>
 #include <grpc/slice.h>
@@ -24,19 +31,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
-#include <inttypes.h>
 
-#include <algorithm>
-#include <atomic>
-#include <memory>
-#include <optional>
-#include <utility>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -56,6 +51,11 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
 
 #define STAGING_BUFFER_SIZE 8192
 

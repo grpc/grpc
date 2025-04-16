@@ -15,20 +15,20 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_INTER_ACTIVITY_PIPE_H
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <array>
 #include <optional>
+#include <stdint.h>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
 
 namespace grpc_core {
 

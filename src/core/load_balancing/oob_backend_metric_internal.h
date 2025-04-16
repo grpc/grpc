@@ -17,15 +17,13 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_INTERNAL_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_OOB_BACKEND_METRIC_INTERNAL_H
 
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include <memory>
 #include <set>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/string_view.h"
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
@@ -36,6 +34,8 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "src/core/util/unique_type_name.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 

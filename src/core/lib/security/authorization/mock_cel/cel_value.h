@@ -30,12 +30,12 @@
 //    std::string* msg("test");
 //    CelValue value = CelValue::CreateString(msg);
 
-#include <grpc/support/port_platform.h>
-#include <stdint.h>
-
 #include <memory>
+#include <stdint.h>
 #include <string>
 #include <utility>
+
+#include <grpc/support/port_platform.h>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"

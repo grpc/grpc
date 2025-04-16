@@ -15,24 +15,24 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_METRICS_H
 #define GRPC_SRC_CORE_TELEMETRY_METRICS_H
 
-#include <grpc/support/metrics.h>
-#include <grpc/support/port_platform.h>
-
 #include <cstdint>
 #include <memory>
 #include <type_traits>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
+#include <grpc/support/metrics.h>
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/functional/function_ref.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 
 namespace grpc_core {
 

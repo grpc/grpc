@@ -19,6 +19,13 @@
 #ifndef GRPCPP_SERVER_CONTEXT_H
 #define GRPCPP_SERVER_CONTEXT_H
 
+#include <atomic>
+#include <cassert>
+#include <map>
+#include <memory>
+#include <type_traits>
+#include <vector>
+
 #include <grpc/grpc.h>
 #include <grpc/impl/call.h>
 #include <grpc/impl/compression_types.h>
@@ -39,13 +46,6 @@
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 #include <grpcpp/support/time.h>
-
-#include <atomic>
-#include <cassert>
-#include <map>
-#include <memory>
-#include <type_traits>
-#include <vector>
 
 struct grpc_metadata;
 struct grpc_call;

@@ -15,9 +15,9 @@
 #ifndef GRPC_SRC_CORE_CALL_CALL_STATE_H
 #define GRPC_SRC_CORE_CALL_CALL_STATE_H
 
-#include <grpc/support/port_platform.h>
-
 #include <optional>
+
+#include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
