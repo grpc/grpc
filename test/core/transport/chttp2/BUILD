@@ -543,6 +543,26 @@ grpc_cc_test(
     ],
 )
 
+grpc_fuzz_test(
+    name = "message_assembler_fuzz_test",
+    srcs = ["message_assembler_fuzz_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//third_party/grpc:chttp2_frame",
+        "//third_party/grpc:ref_counted_ptr",
+        "//third_party/grpc/src/core:message",
+        "//third_party/grpc/src/core:message_assembler",
+        "//third_party/grpc/src/core:slice",
+        "//third_party/grpc/src/core:slice_buffer",
+    ],
+)
+
 grpc_cc_test(
     name = "http2_client_transport_test",
     srcs = ["http2_client_transport_test.cc"],
