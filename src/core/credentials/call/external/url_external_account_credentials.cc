@@ -146,8 +146,8 @@ UrlExternalAccountCredentials::RetrieveSubjectToken(
     Timestamp deadline,
     absl::AnyInvocable<void(absl::StatusOr<std::string>)> on_done) {
   auto url_for_request =
-      URI::Create(url_.scheme(), url_.authority(), url_full_path_,
-                  {} /* query params */, "" /* fragment */);
+      URI::Create(url_.scheme(), url_.user_info(), url_.host_port(),
+                  url_full_path_, {} /* query params */, "" /* fragment */);
   if (!url_for_request.ok()) {
     return MakeOrphanable<NoOpFetchBody>(
         event_engine(), std::move(on_done),
