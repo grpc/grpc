@@ -13,8 +13,9 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
-#include <errno.h>
 #include <grpc/support/port_platform.h>
+
+#include <errno.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 
@@ -46,11 +47,11 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/sockaddr.h"
+#include "gtest/gtest.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "gtest/gtest.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {

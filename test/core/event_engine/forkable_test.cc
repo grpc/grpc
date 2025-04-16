@@ -26,10 +26,10 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/log.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/no_destruct.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
 
 namespace {
 using ::grpc_event_engine::experimental::Forkable;

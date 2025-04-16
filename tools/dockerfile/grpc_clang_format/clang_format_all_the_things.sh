@@ -67,6 +67,7 @@ files=`echo $files | sort -R`
 
 # replace abseil for sort ordering
 sed -i 's/^#include "absl/#include "third_party\/absl/g' $files
+sed -i 's/^#include "gtest\/gtest.h"/#include "testing\/base\/public\/gunit.h"/g' $files
 
 FILES_PER_PROCESS="$(expr $(echo "$files" | grep -o '\n' | wc -l) / $CPU_COUNT + 1)"
 
@@ -89,4 +90,5 @@ else
 fi
 
 # undo replace abseil for sort ordering
+sed -i 's/^#include "testing\/base\/public\/gunit.h"/#include "gtest\/gtest.h"/g' $files
 sed -i 's/^#include "third_party\/absl/#include "absl/g' $files

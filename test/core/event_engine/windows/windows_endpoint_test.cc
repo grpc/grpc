@@ -19,8 +19,6 @@
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
@@ -29,6 +27,8 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 namespace grpc_event_engine {
 namespace experimental {

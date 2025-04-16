@@ -13,14 +13,14 @@
 // limitations under the License.
 
 #include <grpc/grpc.h>
+
+#include <memory>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <memory>
-
-#include "absl/status/status.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "gtest/gtest.h"
+#include "absl/status/status.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 
@@ -28,6 +28,7 @@
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include <grpc/support/alloc.h>
+
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
