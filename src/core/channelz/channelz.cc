@@ -172,10 +172,9 @@ void BaseNode::RunZTrace(
 //
 
 DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
-  if (node_ != nullptr) {
-    MutexLock lock(&node_->data_sources_mu_);
-    node_->data_sources_.push_back(this);
-  }
+  if (node_ == nullptr) return;
+  MutexLock lock(&node_->data_sources_mu_);
+  node_->data_sources_.push_back(this);
 }
 
 DataSource::~DataSource() {

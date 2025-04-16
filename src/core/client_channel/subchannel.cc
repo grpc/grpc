@@ -552,6 +552,7 @@ Subchannel::Subchannel(SubchannelKey key,
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
     channelz_node_->SetChannelArgs(args_);
+    args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
 }
 
