@@ -158,6 +158,13 @@ TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
 
   // Test [::ffff:0.0.0.0]:555
   port = -1;
+  auto *addr6_mapped = reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
+  LOG(ERROR)<<"Address ";
+  for (int i = 0; i < 16; i++)
+    LOG(ERROR)<<int(addr6_mapped->sin6_addr.s6_addr[i]);
+
+  grpc_resolved_address addr4_normalized;
+  ASSERT_TRUE(grpc_sockaddr_is_v4mapped(&wild_mapped, &addr4_normalized));
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   ASSERT_EQ(port, 555);
   grpc_sockaddr_in6* wild_mapped_addr =
