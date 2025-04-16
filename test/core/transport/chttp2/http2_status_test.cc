@@ -39,7 +39,28 @@ namespace testing {
 // 3. message
 // 4. Absl status
 
-TEST(Http2StatusTest, OkTest) { CHECK(true); }
+TEST(Http2StatusTest, OkTest) {
+  Http2Status status = Http2Status::Ok();
+  Http2Status::Http2ErrorType type = status.GetType();
+  EXPECT_EQ(type, Http2Status::Http2ErrorType::kOk);
+  // Trying to extract Http2ErrorCode will cause CHECK(false);
+  EXPECT_GT(status.DebugString().size(), 1);
+  // The Http2Status class intentionally does not have a way to convert an Ok
+  // status into absl::Status. Because the code does not look ergonomic.
+  //
+  // Option 1:
+  // if(status.GetType() == Http2Status::Http2ErrorType::kOk)
+  //    return absl::Status::Ok();
+  //
+  // Option 2:
+  // class Http2Status {
+  // absl::Status AbslOkStatus() { return absl::Status::Ok(); }
+  // }
+  // if(status.GetType() == Http2Status::Http2ErrorType::kOk)
+  //    return status.AbslOkStatus();
+  //
+  // We chose Option 1.
+}
 
 TEST(Http2StatusTest, Http2ConnectionErrorTest) { CHECK(true); }
 

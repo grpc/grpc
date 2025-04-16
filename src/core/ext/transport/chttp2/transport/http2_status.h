@@ -93,21 +93,6 @@ class Http2Status {
   GRPC_MUST_USE_RESULT Http2ErrorType GetType() const { return error_type_; }
 
   // We only expect to use this in 2 places
-  // 1. To know what error code to send in a HTTP2 RST_STREAM.
-  // 2. In tests
-  // Any other usage is strongly discouraged.
-  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
-    switch (error_type_) {
-      case Http2ErrorType::kOk:
-        CHECK(false);
-      case Http2ErrorType::kStreamError:
-        return http2_code_;
-      case Http2ErrorType::kConnectionError:
-        CHECK(false);
-    }
-  }
-
-  // We only expect to use this in 2 places
   // 1. To know what error code to send in a HTTP2 GOAWAY frame.
   // 2. In tests
   // Any other usage is strongly discouraged.
@@ -122,13 +107,29 @@ class Http2Status {
     }
   }
 
+  // We only expect to use this in 2 places
+  // 1. To know what error code to send in a HTTP2 RST_STREAM.
+  // 2. In tests
+  // Any other usage is strongly discouraged.
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
+    switch (error_type_) {
+      case Http2ErrorType::kOk:
+        CHECK(false);
+      case Http2ErrorType::kStreamError:
+        return http2_code_;
+      case Http2ErrorType::kConnectionError:
+        CHECK(false);
+    }
+  }
+
   // If an error code needs to be used along with promises, or passed out of the
   // transport, this function should be used.
-  GRPC_MUST_USE_RESULT absl::Status absl_status() const {
-    if (is_ok()) {
-      return absl::OkStatus();
-    }
-    return absl::Status(absl_code_, message_);
+  GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
+    return AbslError();
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
+    return AbslError();
   }
 
   std::string DebugString() {
@@ -170,6 +171,13 @@ class Http2Status {
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
     DCHECK((is_ok() && message_.empty()) || (!is_ok() && !message_.empty()));
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status AbslError() const {
+    if (is_ok()) {
+      return absl::OkStatus();
+    }
+    return absl::Status(absl_code_, message_);
   }
 
   absl::StatusCode ErrorCodeToStatusCode() const {
@@ -270,24 +278,29 @@ class ValueOrHttp2Status {
     return status_.value().GetType();
   }
 
-  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
-    CHECK(status_.has_value());
-    return status_.value().GetStreamErrorType();
-  }
-
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorType() const {
     CHECK(status_.has_value());
     return status_.value().GetConnectionErrorType();
   }
 
+  GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorType() const {
+    CHECK(status_.has_value());
+    return status_.value().GetStreamErrorType();
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
+    CHECK(status_.has_value());
+    return status_.value().GetAbslConnectionError();
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
+    CHECK(status_.has_value());
+    return status_.value().GetAbslStreamError();
+  }
+
   std::string DebugString() const {
     CHECK(status_.has_value());
     return status_.value().DebugString();
-  }
-
-  GRPC_MUST_USE_RESULT absl::Status absl_status() const {
-    CHECK(status_.has_value());
-    return status_.value().absl_status();
   }
 
  private:
