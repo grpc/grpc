@@ -151,9 +151,14 @@ static tsi_result handshaker_result_extract_peer(
   }
   index++;
   CHECK_NE(&peer->properties[index], nullptr);
-  ok = tsi_construct_string_peer_property_from_cstring(
-      TSI_ALTS_TRANSPORT_PROTOCOL, result->transport_protocol,
-      &peer->properties[index]);
+  if (result->transport_protocol != nullptr) {
+    ok = tsi_construct_string_peer_property_from_cstring(
+        TSI_ALTS_TRANSPORT_PROTOCOL, result->transport_protocol,
+        &peer->properties[index]);
+  } else {
+    ok = tsi_construct_string_peer_property_from_cstring(
+        TSI_ALTS_TRANSPORT_PROTOCOL, "", &peer->properties[index]);
+  }
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
     LOG(ERROR) << "Failed to set tsi peer property";
