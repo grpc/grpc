@@ -82,7 +82,7 @@ TEST_F(URIParserTest, BasicExamplesAreParsedCorrectly) {
 }
 
 TEST_F(URIParserTest, SchemeIsCaseInsensitive) {
-  TestSucceeds("DnS:///foo", "dns", "", "/foo", {}, {}, "");
+  TestSucceeds("DnS:///foo", "dns", "", "", "", "/foo", {}, {}, "");
 }
 
 TEST_F(URIParserTest, UncommonValidExamplesAreParsedCorrectly) {
