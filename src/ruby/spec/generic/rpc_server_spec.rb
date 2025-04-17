@@ -46,7 +46,7 @@ class FailingService
 
   def initialize(_default_var = 'ignored')
     @details = 'app error'
-    @code = 101
+    @code = 3
     @md = { 'failed_method' => 'an_rpc' }
   end
 

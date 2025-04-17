@@ -50,6 +50,7 @@
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/per_cpu.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 
@@ -107,9 +108,11 @@ struct LegacyMaxAgeFilter::Config {
         return absl::Uniform(bit_gen, min, max);
       }
     };
-    static NoDestruct<PerCpu<BitGen>> bit_gen(PerCpuOptions().SetMaxShards(8));
-    const double multiplier = bit_gen->this_cpu().MakeUniformDouble(
-        1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
+    const double multiplier = []() {
+      SharedBitGen g;
+      return absl::Uniform(g, 1.0 - kMaxConnectionAgeJitter,
+                           1.0 + kMaxConnectionAgeJitter);
+    }();
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
     return Config{args_max_age * multiplier, args_max_idle * multiplier,

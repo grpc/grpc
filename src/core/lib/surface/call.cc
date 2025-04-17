@@ -223,6 +223,10 @@ void Call::CancelWithStatus(grpc_status_code status, const char* description) {
         StatusIntProperty::kRpcStatus, status));
     return;
   }
+  if (status == GRPC_STATUS_OK) {
+    VLOG(2) << "CancelWithStatus() called with OK status, using UNKNOWN";
+    status = GRPC_STATUS_UNKNOWN;
+  }
   CancelWithError(
       absl::Status(static_cast<absl::StatusCode>(status), description));
 }

@@ -22,6 +22,7 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
@@ -63,7 +64,9 @@ TEST(ErrorUtilsTest, GetErrorGetStatusChild) {
   grpc_error_get_status(error, grpc_core::Timestamp(), &code, &message, nullptr,
                         nullptr);
   ASSERT_EQ(code, GRPC_STATUS_RESOURCE_EXHAUSTED);
-  ASSERT_EQ(message, "Child2");
+  ASSERT_EQ(message, grpc_core::IsErrorFlattenEnabled()
+                         ? "Parent (Child1) (Child2)"
+                         : "Child2");
 }
 
 // ---- Ok Status ----
@@ -86,12 +89,18 @@ TEST(ErrorUtilsTest, AbslStatusToGrpcErrorDoesNotReturnSpecialVariables) {
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    GTEST_SKIP() << "This functionality not available with this experiment";
+  }
   absl::Status status = grpc_error_to_absl_status(absl::CancelledError());
   ASSERT_TRUE(absl::IsCancelled(status));
   ASSERT_EQ(status.message(), "CANCELLED");
 }
 
 TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
+  if (grpc_core::IsErrorFlattenEnabled()) {
+    GTEST_SKIP() << "This functionality not available with this experiment";
+  }
   absl::Status status =
       grpc_error_to_absl_status(absl::ResourceExhaustedError(""));
   ASSERT_TRUE(absl::IsResourceExhausted(status));

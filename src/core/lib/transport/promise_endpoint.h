@@ -91,7 +91,8 @@ class PromiseEndpoint {
             ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
-          &write_state_->buffer, nullptr /* uses default arguments */);
+          &write_state_->buffer,
+          grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
       if (completed) write_state_->waker = Waker();
     }
     return If(
@@ -141,8 +142,9 @@ class PromiseEndpoint {
     while (read_state_->buffer.Length() < num_bytes) {
       // Set read args with hinted bytes.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
-          read_args = {
-              static_cast<int64_t>(num_bytes - read_state_->buffer.Length())};
+          read_args;
+      read_args.set_read_hint_bytes(
+          static_cast<int64_t>(num_bytes - read_state_->buffer.Length()));
       // If `Read()` returns true immediately, the callback will not be
       // called.
       read_state_->waker = GetContext<Activity>()->MakeNonOwningWaker();
@@ -151,7 +153,7 @@ class PromiseEndpoint {
                 ExecCtx exec_ctx;
                 read_state->Complete(std::move(status), num_bytes);
               },
-              &read_state_->pending_buffer, &read_args)) {
+              &read_state_->pending_buffer, std::move(read_args))) {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);

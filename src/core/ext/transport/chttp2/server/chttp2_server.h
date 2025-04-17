@@ -255,6 +255,10 @@ class PassiveListenerImpl final : public PassiveListener {
 };
 
 }  // namespace experimental
+
+absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
+                                        const ChannelArgs& args);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H

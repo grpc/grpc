@@ -29,7 +29,6 @@
 #include <array>
 #include <cerrno>
 #include <csignal>
-#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <iterator>
@@ -57,6 +56,13 @@
 namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
+
+namespace {
+
+using ReadArgs = EventEngine::Endpoint::ReadArgs;
+using WriteArgs = EventEngine::Endpoint::WriteArgs;
+
+}  // namespace
 
 std::string GetBacktrace() {
   std::array<void*, 10> ptrs;
@@ -277,9 +283,7 @@ class PollerForkTest : public ::testing::Test {
                                absl::string_view data) {
     SliceBuffer buffer;
     StatusListener read_status;
-    EventEngine::Endpoint::ReadArgs read_args = {
-        static_cast<int64_t>(data.length())};
-    if (endpoint.Read(read_status.Setter(), &buffer, &read_args)) {
+    if (endpoint.Read(read_status.Setter(), &buffer, ReadArgs())) {
       return absl::FailedPreconditionError("Endpoint has pending data");
     }
     ssize_t wrote = write(socket_fd, data.data(), data.size());
@@ -333,8 +337,9 @@ TEST_F(PollerForkTest, ListenerInParent) {
   MutableSlice slice = MutableSlice::CreateUninitialized(4 * 1024 * 1024);
   std::fill(slice.begin(), slice.end(), 42);
   write_buffer.Append(Slice(std::move(slice)));
-  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
-  ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr))
+  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, ReadArgs()));
+  ASSERT_FALSE(
+      endpoint->Write(write_status.Setter(), &write_buffer, WriteArgs()))
       << "Need to send more data";
   LOG(INFO) << "Before fork in parent";
   // Let the data reach the buffers
@@ -348,11 +353,11 @@ TEST_F(PollerForkTest, ListenerInParent) {
   EXPECT_THAT(write_status.AwaitStatus(), IsOk());
   // Starting read and write post-fork will fail asynchronously and return the
   // status.
-  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
+  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, ReadArgs()));
   ASSERT_THAT(client.Write("Hi again"), IsOk());
   EXPECT_THAT(read_status.AwaitStatus(), IsOk());
   bool write_result =
-      endpoint->Write(write_status.Setter(), &write_buffer, nullptr);
+      endpoint->Write(write_status.Setter(), &write_buffer, WriteArgs());
   ASSERT_THAT(client.Read(write_buffer.Length()), IsOk());
   if (!write_result) {
     EXPECT_THAT(write_status.AwaitStatus(),
@@ -375,8 +380,9 @@ TEST_F(PollerForkTest, ListenerInChild) {
   MutableSlice slice = MutableSlice::CreateUninitialized(4 * 1024 * 1024);
   std::fill(slice.begin(), slice.end(), 42);
   write_buffer.Append(Slice(std::move(slice)));
-  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
-  ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr))
+  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, ReadArgs()));
+  ASSERT_FALSE(
+      endpoint->Write(write_status.Setter(), &write_buffer, WriteArgs()))
       << "Need to send more data";
   LOG(INFO) << "Before fork in child";
   // Let the data reach the buffers
@@ -390,8 +396,9 @@ TEST_F(PollerForkTest, ListenerInChild) {
               StatusIs(absl::StatusCode::kResourceExhausted));
   // Starting read and write post-fork will fail asynchronously and return the
   // status.
-  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, nullptr));
-  ASSERT_FALSE(endpoint->Write(write_status.Setter(), &write_buffer, nullptr));
+  ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, ReadArgs()));
+  ASSERT_FALSE(
+      endpoint->Write(write_status.Setter(), &write_buffer, WriteArgs()));
   EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
   EXPECT_THAT(write_status.AwaitStatus(), ::testing::Not(IsOk()));
 }

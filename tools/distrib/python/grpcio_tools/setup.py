@@ -343,12 +343,17 @@ setuptools.setup(
     packages=setuptools.find_packages("."),
     python_requires=f">={python_version.MIN_PYTHON_VERSION}",
     install_requires=[
-        "protobuf>=6.30.0,<7.0dev",
+        "protobuf>=6.30.0,<7.0.0",
         "grpcio>={version}".format(version=grpc_version.VERSION),
         "setuptools",
     ],
     package_data=package_data(),
     cmdclass={
         "build_ext": BuildExt,
+    },
+    entry_points={
+        "console_scripts": [
+            "python-grpc-tools-protoc = grpc_tools.protoc:entrypoint",
+        ],
     },
 )

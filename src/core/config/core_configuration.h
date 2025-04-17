@@ -30,6 +30,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/transport/endpoint_transport.h"
 
 namespace grpc_core {
 
@@ -78,6 +79,10 @@ class GRPC_DLL CoreConfiguration {
       return &certificate_provider_registry_;
     }
 
+    EndpointTransportRegistry::Builder* endpoint_transport_registry() {
+      return &endpoint_transport_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -90,6 +95,7 @@ class GRPC_DLL CoreConfiguration {
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
     ProxyMapperRegistry::Builder proxy_mapper_registry_;
     CertificateProviderRegistry::Builder certificate_provider_registry_;
+    EndpointTransportRegistry::Builder endpoint_transport_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -206,6 +212,10 @@ class GRPC_DLL CoreConfiguration {
     return certificate_provider_registry_;
   }
 
+  const EndpointTransportRegistry& endpoint_transport_registry() const {
+    return endpoint_transport_registry_;
+  }
+
   static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
     default_builder_ = builder;
   }
@@ -233,6 +243,7 @@ class GRPC_DLL CoreConfiguration {
   LoadBalancingPolicyRegistry lb_policy_registry_;
   ProxyMapperRegistry proxy_mapper_registry_;
   CertificateProviderRegistry certificate_provider_registry_;
+  EndpointTransportRegistry endpoint_transport_registry_;
 };
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);

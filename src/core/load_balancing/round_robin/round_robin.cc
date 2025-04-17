@@ -47,6 +47,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
@@ -166,8 +167,6 @@ class RoundRobin final : public LoadBalancingPolicy {
   OrphanablePtr<RoundRobinEndpointList> latest_pending_endpoint_list_;
 
   bool shutdown_ = false;
-
-  absl::BitGen bit_gen_;
 };
 
 //
@@ -180,7 +179,7 @@ RoundRobin::Picker::Picker(
     : parent_(parent), pickers_(std::move(pickers)) {
   // For discussion on why we generate a random starting index for
   // the picker, see https://github.com/grpc/grpc-go/issues/2580.
-  size_t index = absl::Uniform<size_t>(parent->bit_gen_, 0, pickers_.size());
+  size_t index = absl::Uniform<size_t>(SharedBitGen(), 0, pickers_.size());
   last_picked_index_.store(index, std::memory_order_relaxed);
   GRPC_TRACE_LOG(round_robin, INFO)
       << "[RR " << parent_ << " picker " << this

@@ -255,9 +255,9 @@ void CFStreamEndpointImpl::Shutdown() {
   CFWriteStreamClose(cf_write_stream_);
 }
 
-bool CFStreamEndpointImpl::Read(
-    absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-    const EventEngine::Endpoint::ReadArgs* /* args */) {
+bool CFStreamEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                                SliceBuffer* buffer,
+                                EventEngine::Endpoint::ReadArgs /* args */) {
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "CFStreamEndpointImpl::Read, this: " << this;
 
@@ -304,7 +304,7 @@ void CFStreamEndpointImpl::DoRead(
 
 bool CFStreamEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const EventEngine::Endpoint::WriteArgs* /* args */) {
+    EventEngine::Endpoint::WriteArgs /* args */) {
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "CFStreamEndpointImpl::Write, this: " << this;
 

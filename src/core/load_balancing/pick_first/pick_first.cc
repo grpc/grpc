@@ -61,6 +61,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/work_serializer.h"
@@ -405,8 +406,6 @@ class PickFirst final : public LoadBalancingPolicy {
   grpc_connectivity_state state_ = GRPC_CHANNEL_CONNECTING;
   // Are we shut down?
   bool shutdown_ = false;
-  // Random bit generator used for shuffling addresses if configured
-  absl::BitGen bit_gen_;
 };
 
 PickFirst::PickFirst(Args args)
@@ -533,7 +532,8 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
       if (config->shuffle_addresses()) {
-        absl::c_shuffle(endpoints, bit_gen_);
+        SharedBitGen g;
+        absl::c_shuffle(endpoints, g);
       }
       // Flatten the list so that we have one address per endpoint.
       // While we're iterating, also determine the desired address family

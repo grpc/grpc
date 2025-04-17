@@ -230,12 +230,10 @@ PosixOracleEndpoint::~PosixOracleEndpoint() {
 }
 
 bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                               SliceBuffer* buffer, const ReadArgs* args) {
+                               SliceBuffer* buffer, ReadArgs args) {
   grpc_core::MutexLock lock(&mu_);
   CHECK_NE(buffer, nullptr);
-  int read_hint_bytes =
-      args != nullptr ? std::max(1, static_cast<int>(args->read_hint_bytes))
-                      : 0;
+  int read_hint_bytes = std::max(1, static_cast<int>(args.read_hint_bytes()));
   read_ops_channel_ =
       ReadOperation(read_hint_bytes, buffer, std::move(on_read));
   read_op_signal_->Notify();
@@ -244,7 +242,7 @@ bool PosixOracleEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 
 bool PosixOracleEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const WriteArgs* /*args*/) {
+    WriteArgs /*args*/) {
   grpc_core::MutexLock lock(&mu_);
   CHECK_NE(data, nullptr);
   write_ops_channel_ = WriteOperation(data, std::move(on_writable));

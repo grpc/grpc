@@ -97,6 +97,7 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -113,6 +114,8 @@ class BaseNode : public RefCounted<BaseNode> {
         return "listen_socket";
       case EntityType::kSocket:
         return "socket";
+      case EntityType::kCall:
+        return "call";
     }
     return "unknown";
   }
@@ -177,6 +180,8 @@ class DataSink {
  public:
   virtual void AddAdditionalInfo(absl::string_view name,
                                  Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
 
  protected:
   ~DataSink() = default;
@@ -594,6 +599,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz

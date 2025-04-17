@@ -96,7 +96,7 @@ class EventEngineEndpointWrapper {
 
   // Read using the underlying EventEngine endpoint object.
   bool Read(grpc_closure* read_cb, grpc_slice_buffer* pending_read_buffer,
-            const EventEngine::Endpoint::ReadArgs* args) {
+            EventEngine::Endpoint::ReadArgs args) {
     Ref();
     pending_read_cb_ = read_cb;
     pending_read_buffer_ = pending_read_buffer;
@@ -108,7 +108,7 @@ class EventEngineEndpointWrapper {
     read_buffer->Clear();
     return endpoint_->Read(
         [this](absl::Status status) { FinishPendingRead(status); }, read_buffer,
-        args);
+        std::move(args));
   }
 
   void FinishPendingRead(absl::Status status) {
@@ -143,7 +143,7 @@ class EventEngineEndpointWrapper {
 
   // Write using the underlying EventEngine endpoint object
   bool Write(grpc_closure* write_cb, grpc_slice_buffer* slices,
-             const EventEngine::Endpoint::WriteArgs* args) {
+             EventEngine::Endpoint::WriteArgs args) {
     Ref();
     if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
       size_t i;
@@ -165,7 +165,7 @@ class EventEngineEndpointWrapper {
     pending_write_cb_ = write_cb;
     return endpoint_->Write(
         [this](absl::Status status) { FinishPendingWrite(status); },
-        write_buffer, args);
+        write_buffer, std::move(args));
   }
 
   void FinishPendingWrite(absl::Status status) {
@@ -300,8 +300,9 @@ void EndpointRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::ReadArgs read_args = {min_progress_size};
-  if (eeep->wrapper->Read(cb, slices, &read_args)) {
+  EventEngine::Endpoint::ReadArgs read_args;
+  read_args.set_read_hint_bytes(min_progress_size);
+  if (eeep->wrapper->Read(cb, slices, std::move(read_args))) {
     // Read succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingRead(absl::OkStatus());
   }
@@ -322,8 +323,10 @@ void EndpointWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
     return;
   }
 
-  EventEngine::Endpoint::WriteArgs write_args = {arg, max_frame_size};
-  if (eeep->wrapper->Write(cb, slices, &write_args)) {
+  EventEngine::Endpoint::WriteArgs write_args;
+  write_args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(arg);
+  write_args.set_max_frame_size(max_frame_size);
+  if (eeep->wrapper->Write(cb, slices, std::move(write_args))) {
     // Write succeeded immediately. Run the callback inline.
     eeep->wrapper->FinishPendingWrite(absl::OkStatus());
   }

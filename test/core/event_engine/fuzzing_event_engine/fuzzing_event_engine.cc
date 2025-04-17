@@ -28,6 +28,7 @@
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -86,6 +87,20 @@ FuzzingEventEngine::FuzzingEventEngine(
     if (port == 0 || port > 65535) continue;
     free_ports_.push(port);
     fuzzer_mentioned_ports_.insert(port);
+  }
+
+  // Fill endpoint metrics data structures.
+  for (const auto& endpoint_metric : actions.endpoint_metrics()) {
+    if (endpoint_metrics_by_id_.count(endpoint_metric.key()) > 0) continue;
+    if (endpoint_metrics_by_name_.count(endpoint_metric.name()) > 0) continue;
+    endpoint_metrics_by_id_[endpoint_metric.key()] = endpoint_metric.name();
+    endpoint_metrics_by_name_[endpoint_metric.name()] = endpoint_metric.key();
+  }
+
+  for (const auto& returned_endpoint_metric :
+       actions.returned_endpoint_metrics()) {
+    returned_endpoint_metrics_[returned_endpoint_metric.write_id()].push_back(
+        returned_endpoint_metric);
   }
 
   // Fill the write sizes queue for future connections.
@@ -403,19 +418,76 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const WriteArgs*) {
+    WriteArgs args) {
   grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
+  const int write_id = g_fuzzing_event_engine->next_write_id_;
+  ++g_fuzzing_event_engine->next_write_id_;
   IoToken write_token({"WRITE", middle_.get(), my_index(),
                        &g_fuzzing_event_engine->outstanding_writes_});
   CHECK(!middle_->closed[my_index()]);
   CHECK(!middle_->writing[my_index()]);
+  if (auto m = args.TakeMetricsSink(); m.has_value()) {
+    auto it = g_fuzzing_event_engine->returned_endpoint_metrics_.find(write_id);
+    if (it != g_fuzzing_event_engine->returned_endpoint_metrics_.end()) {
+      std::shared_ptr<WriteEventCallback> write_event_callback =
+          std::make_shared<WriteEventCallback>(m->TakeEventCallback());
+      for (const auto& r : it->second) {
+        g_fuzzing_event_engine->RunAfterExactlyLocked(
+            std::chrono::microseconds(r.delay_us()),
+            [r, write_event_callback]() {
+              std::vector<WriteMetric> metrics;
+              for (const auto& m : r.returned_endpoint_metrics()) {
+                metrics.push_back(WriteMetric{m.key(), m.value()});
+              }
+              (*write_event_callback)(static_cast<WriteEvent>(r.event()),
+                                      g_fuzzing_event_engine->NowAsAbslTime(),
+                                      std::move(metrics));
+            });
+      }
+    }
+  }
   // If the write succeeds immediately, then we return true.
   if (middle_->Write(data, my_index())) return true;
   middle_->writing[my_index()] = true;
   ScheduleDelayedWrite(middle_, my_index(), std::move(on_writable), data,
                        std::move(write_token));
   return false;
+}
+
+absl::Time FuzzingEventEngine::NowAsAbslTime() {
+  grpc_core::MutexLock lock(&*now_mu_);
+  return g_fuzzing_event_engine->epoch_ +
+         absl::Nanoseconds(
+             g_fuzzing_event_engine->now_.time_since_epoch().count());
+}
+
+std::vector<size_t> FuzzingEventEngine::FuzzingEndpoint::AllWriteMetrics() {
+  std::vector<size_t> out;
+  out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
+  for (const auto& [key, _] : g_fuzzing_event_engine->endpoint_metrics_by_id_) {
+    out.push_back(key);
+  }
+  return out;
+}
+
+std::optional<absl::string_view>
+FuzzingEventEngine::FuzzingEndpoint::GetMetricName(size_t key) {
+  auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
+  if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
+    return std::nullopt;
+  }
+  return it->second;
+}
+
+std::optional<size_t> FuzzingEventEngine::FuzzingEndpoint::GetMetricKey(
+    absl::string_view name) {
+  auto it =
+      g_fuzzing_event_engine->endpoint_metrics_by_name_.find(std::string(name));
+  if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
+    return std::nullopt;
+  }
+  return it->second;
 }
 
 void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
@@ -492,7 +564,7 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-    const ReadArgs*) {
+    ReadArgs) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
   IoToken read_token({"READ", middle_.get(), my_index(),
@@ -714,6 +786,11 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactly(
     Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&*mu_);
+  return RunAfterExactlyLocked(when, std::move(closure));
+}
+
+EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactlyLocked(
+    Duration when, absl::AnyInvocable<void()> closure) {
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kExact, std::min(when, kOneYear),
                         std::move(closure));
