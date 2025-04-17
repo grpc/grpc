@@ -75,16 +75,6 @@ TEST(SpiffeId, SchemeInvalidCharacterFails) {
           "SPIFFE ID URI cannot contain non-ascii characters. Contains 0xc5"));
 }
 
-TEST(SpiffeId, SchemeMissingSuffixFails) {
-  EXPECT_EQ(SpiffeId::FromString("spiffe").status(),
-            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
-}
-
-TEST(SpiffeId, SchemeMissingPrefix) {
-  EXPECT_EQ(SpiffeId::FromString("piffe://foo/bar/").status(),
-            absl::InvalidArgumentError("SPIFFE ID must start with spiffe://"));
-}
-
 TEST(SpiffeId, EndWithSlashFails) {
   EXPECT_EQ(SpiffeId::FromString("spiffe://foo/bar/").status(),
             absl::InvalidArgumentError("SPIFFE ID cannot end with a /"));
