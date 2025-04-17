@@ -29,6 +29,11 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/util/orphanable.h"
 
+// Integer. The size of a read at which the secure endpoint will offload
+// decryption to an event engine thread.
+#define GRPC_ARG_DECRYPTION_OFFLOAD_THRESHOLD \
+  "grpc.secure_endpoint.decryption_offload_threshold"
+
 // Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
 // leftover_slices. If zero_copy_protector is not NULL, protector will never be
 // used.

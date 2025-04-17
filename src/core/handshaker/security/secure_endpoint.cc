@@ -686,7 +686,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                            leftover_nslices, channel_args),
           wrapped_ep_(std::move(wrapped_ep)),
           event_engine_(channel_args.GetObjectRef<
-                        grpc_event_engine::experimental::EventEngine>()) {}
+                        grpc_event_engine::experimental::EventEngine>()),
+          large_read_threshold_(std::max(
+              1, channel_args.GetInt(GRPC_ARG_DECRYPTION_OFFLOAD_THRESHOLD)
+                     .value_or(32 * 1024))) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, ReadArgs args) {
@@ -698,22 +701,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
-            {
-              grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
-              if (status.ok() && impl->wrapped_ep_ == nullptr) {
-                status = absl::CancelledError("secure endpoint shutdown");
-              }
-              status = impl->frame_protector_.Unprotect(std::move(status));
-            }
-            if (status.ok()) {
-              impl->frame_protector_.TraceOp(
-                  "Read",
-                  impl->frame_protector_.source_buffer()->c_slice_buffer());
-            }
-            auto on_read = std::move(impl->on_read_);
-            impl->frame_protector_.FinishRead(status.ok());
-            impl.reset();
-            on_read(status);
+            FinishAsyncRead(std::move(impl), std::move(status));
           },
           frame_protector_.source_buffer(), std::move(args));
       if (read_completed_immediately) return MaybeFinishReadImmediately();
@@ -782,6 +770,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
    private:
     bool MaybeFinishReadImmediately() {
       grpc_core::MutexLock lock(frame_protector_.read_mu());
+      if (grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
+          frame_protector_.source_buffer()->Length() > large_read_threshold_) {
+        event_engine_->Run([impl = Ref()]() mutable {
+          FinishAsyncRead(std::move(impl), absl::OkStatus());
+        });
+        return false;
+      }
       frame_protector_.TraceOp(
           "Read(Imm)", frame_protector_.source_buffer()->c_slice_buffer());
       auto status = frame_protector_.Unprotect(absl::OkStatus());
@@ -795,11 +790,31 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       return false;
     }
 
+    static void FinishAsyncRead(grpc_core::RefCountedPtr<Impl> impl,
+                                absl::Status status) {
+      {
+        grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
+        if (status.ok() && impl->wrapped_ep_ == nullptr) {
+          status = absl::CancelledError("secure endpoint shutdown");
+        }
+        status = impl->frame_protector_.Unprotect(std::move(status));
+      }
+      if (status.ok()) {
+        impl->frame_protector_.TraceOp(
+            "Read", impl->frame_protector_.source_buffer()->c_slice_buffer());
+      }
+      auto on_read = std::move(impl->on_read_);
+      impl->frame_protector_.FinishRead(status.ok());
+      impl.reset();
+      on_read(status);
+    }
+
     grpc_core::FrameProtector frame_protector_;
     absl::AnyInvocable<void(absl::Status)> on_read_;
     absl::AnyInvocable<void(absl::Status)> on_write_;
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
     std::shared_ptr<EventEngine> event_engine_;
+    const size_t large_read_threshold_;
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;
