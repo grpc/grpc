@@ -231,6 +231,12 @@
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+- name: secure_endpoint_offload_large_writes
+  description: If a large read write to be encrypted, use a separate thread.
+  expiry: 2025/10/10
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
+  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
 - name: server_global_callbacks_ownership
   description:
     If set, server global callbacks ownership is fixed to not be owned by gRPC.

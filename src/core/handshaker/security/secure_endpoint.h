@@ -33,6 +33,10 @@
 // decryption to an event engine thread.
 #define GRPC_ARG_DECRYPTION_OFFLOAD_THRESHOLD \
   "grpc.secure_endpoint.decryption_offload_threshold"
+#define GRPC_ARG_ENCRYPTION_OFFLOAD_THRESHOLD \
+  "grpc.secure_endpoint.encryption_offload_threshold"
+#define GRPC_ARG_ENCRYPTION_OFFLOAD_MAX_BUFFERED_WRITES \
+  "grpc.secure_endpoint.encryption_offload_max_buffered_writes"
 
 // Takes ownership of protector, zero_copy_protector, and to_wrap, and refs
 // leftover_slices. If zero_copy_protector is not NULL, protector will never be

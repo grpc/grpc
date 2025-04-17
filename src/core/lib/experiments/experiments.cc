@@ -149,6 +149,14 @@ const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
@@ -253,6 +261,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
      required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
@@ -401,6 +413,14 @@ const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
@@ -505,6 +525,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
      required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
@@ -653,6 +677,14 @@ const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
@@ -757,6 +789,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_secure_endpoint_offload_large_reads,
      additional_constraints_secure_endpoint_offload_large_reads,
      required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,

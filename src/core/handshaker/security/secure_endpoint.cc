@@ -689,7 +689,14 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                         grpc_event_engine::experimental::EventEngine>()),
           large_read_threshold_(std::max(
               1, channel_args.GetInt(GRPC_ARG_DECRYPTION_OFFLOAD_THRESHOLD)
-                     .value_or(32 * 1024))) {}
+                     .value_or(32 * 1024))),
+          large_write_threshold_(std::max(
+              1, channel_args.GetInt(GRPC_ARG_ENCRYPTION_OFFLOAD_THRESHOLD)
+                     .value_or(32 * 1024))),
+          max_buffered_writes_(std::max(
+              0, channel_args
+                     .GetInt(GRPC_ARG_ENCRYPTION_OFFLOAD_MAX_BUFFERED_WRITES)
+                     .value_or(1024 * 1024))) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
               SliceBuffer* buffer, ReadArgs args) {
@@ -712,6 +719,31 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                SliceBuffer* data, WriteArgs args) {
       GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
       tsi_result result;
+      if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
+        if (data->Length() == 0) return true;
+        grpc_core::MutexLock lock(&write_queue_mu_);
+        if (writing_) {
+          last_write_args_ = std::move(args);
+          for (size_t i = 0; i < data->Count(); i++) {
+            pending_writes_.Append(data->RefSlice(i));
+          }
+          if (pending_writes_.Length() <= max_buffered_writes_) {
+            return true;
+          }
+          on_write_ = std::move(on_writable);
+          return false;
+        }
+        if (data->Length() > large_write_threshold_) {
+          CHECK(pending_writes_.Count() == 0);
+          writing_ = true;
+          last_write_args_ = std::move(args);
+          pending_writes_ = std::move(*data);
+          on_write_ = std::move(on_writable);
+          event_engine_->Run(
+              [impl = Ref()]() mutable { impl->FinishAsyncWrite(); });
+          return false;
+        }
+      }
       {
         grpc_core::MutexLock lock(frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
@@ -809,12 +841,60 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       on_read(status);
     }
 
+    void FinishAsyncWrite() {
+      tsi_result result;
+      SliceBuffer data;
+      WriteArgs args;
+      do {
+        {
+          grpc_core::ReleasableMutexLock lock(&write_queue_mu_);
+          if (pending_writes_.Count() == 0) {
+            writing_ = false;
+            lock.Release();
+            auto on_write = std::move(on_write_);
+            on_write(absl::OkStatus());
+            return;
+          }
+          auto data = std::move(pending_writes_);
+          args = std::move(last_write_args_);
+          pending_writes_.Clear();
+        }
+        {
+          grpc_core::MutexLock lock(frame_protector_.write_mu());
+          result = frame_protector_.Protect(data.c_slice_buffer(),
+                                            args.max_frame_size());
+        }
+        if (result != TSI_OK) {
+          auto on_write = std::move(on_write_);
+          on_write(GRPC_ERROR_CREATE(absl::StrCat(
+              "Wrap failed (", tsi_result_to_string(result), ")")));
+          return;
+        }
+      } while (wrapped_ep_->Write(
+          [impl = Ref()](absl::Status status) mutable {
+            if (status.ok()) {
+              impl->FinishAsyncWrite();
+              return;
+            }
+            auto on_write = std::move(impl->on_write_);
+            impl.reset();
+            on_write(status);
+          },
+          frame_protector_.output_buffer(), std::move(args)));
+    }
+
+    grpc_core::Mutex write_queue_mu_;
+    bool writing_ ABSL_GUARDED_BY(write_queue_mu_) = false;
+    WriteArgs last_write_args_ ABSL_GUARDED_BY(write_queue_mu_);
+    SliceBuffer pending_writes_ ABSL_GUARDED_BY(write_queue_mu_);
     grpc_core::FrameProtector frame_protector_;
     absl::AnyInvocable<void(absl::Status)> on_read_;
     absl::AnyInvocable<void(absl::Status)> on_write_;
     std::unique_ptr<EventEngine::Endpoint> wrapped_ep_;
     std::shared_ptr<EventEngine> event_engine_;
     const size_t large_read_threshold_;
+    const size_t large_write_threshold_;
+    const size_t max_buffered_writes_;
   };
 
   grpc_core::RefCountedPtr<Impl> impl_;
