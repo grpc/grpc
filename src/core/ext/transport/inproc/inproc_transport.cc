@@ -193,8 +193,8 @@ class InprocClientTransport final : public ClientTransport {
                  if (!server_call_initiator.ok()) {
                    return server_call_initiator.status();
                  }
-                 ForwardCall(
-                     child_call_handler, std::move(*server_call_initiator),
+                 child_call_handler.ForwardTo(
+                     std::move(*server_call_initiator),
                      [connected_state =
                           std::move(connected_state)](ServerMetadata& md) {
                        md.Set(GrpcStatusFromWire(), true);

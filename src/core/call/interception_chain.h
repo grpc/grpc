@@ -20,10 +20,12 @@
 #include <memory>
 #include <vector>
 
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/call/call_destination.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {
@@ -39,10 +41,12 @@ class HijackedCall final {
  public:
   HijackedCall(ClientMetadataHandle metadata,
                RefCountedPtr<UnstartedCallDestination> destination,
-               CallHandler call_handler)
+               CallHandler call_handler,
+               RefCountedPtr<CallArenaAllocator> arena_allocator)
       : metadata_(std::move(metadata)),
         destination_(std::move(destination)),
-        call_handler_(std::move(call_handler)) {}
+        call_handler_(std::move(call_handler)),
+        arena_allocator_(std::move(arena_allocator)) {}
 
   // Create a new call and pass it down the stack.
   // This can be called as many times as needed.
@@ -63,6 +67,7 @@ class HijackedCall final {
   ClientMetadataHandle metadata_;
   RefCountedPtr<UnstartedCallDestination> destination_;
   CallHandler call_handler_;
+  RefCountedPtr<CallArenaAllocator> arena_allocator_;
 };
 
 // A delegating UnstartedCallDestination for use as a hijacking filter.
@@ -106,13 +111,14 @@ class Interceptor : public UnstartedCallDestination {
   auto Hijack(UnstartedCallHandler unstarted_call_handler) {
     auto call_handler = unstarted_call_handler.StartCall();
     return Map(call_handler.PullClientInitialMetadata(),
-               [call_handler, destination = wrapped_destination_](
+               [call_handler, destination = wrapped_destination_,
+                arena_allocator = arena_allocator_](
                    ValueOrFailure<ClientMetadataHandle> metadata) mutable
                    -> ValueOrFailure<HijackedCall> {
                  if (!metadata.ok()) return Failure{};
-                 return HijackedCall(std::move(metadata.value()),
-                                     std::move(destination),
-                                     std::move(call_handler));
+                 return HijackedCall(
+                     std::move(metadata.value()), std::move(destination),
+                     std::move(call_handler), std::move(arena_allocator));
                });
   }
 
@@ -121,7 +127,7 @@ class Interceptor : public UnstartedCallDestination {
   // API is what we need here (I think we need 2 or 3 more fully worked through
   // samples) and then reduce this surface to one API.
   CallInitiator MakeChildCall(ClientMetadataHandle metadata,
-                              RefCountedPtr<Arena> arena);
+                              CallHandler& parent_call);
 
   // Consume this call - it will not be passed on to any further filters.
   CallHandler Consume(UnstartedCallHandler unstarted_call_handler) {
@@ -138,6 +144,7 @@ class Interceptor : public UnstartedCallDestination {
 
   RefCountedPtr<UnstartedCallDestination> wrapped_destination_;
   RefCountedPtr<CallFilters::Stack> filter_stack_;
+  RefCountedPtr<CallArenaAllocator> arena_allocator_;
 };
 
 class InterceptionChainBuilder final {
@@ -166,6 +173,7 @@ class InterceptionChainBuilder final {
                                     const Blackboard* old_blackboard = nullptr,
                                     Blackboard* new_blackboard = nullptr)
       : args_(std::move(args)),
+        memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
         old_blackboard_(old_blackboard),
         new_blackboard_(new_blackboard) {}
 
@@ -271,6 +279,7 @@ class InterceptionChainBuilder final {
   std::vector<absl::AnyInvocable<void(InterceptionChainBuilder*)>>
       on_new_interception_tail_;
   absl::Status status_;
+  MemoryQuotaRefPtr memory_quota_;
   std::map<size_t, size_t> filter_type_counts_;
   static std::atomic<size_t> next_filter_id_;
   const Blackboard* old_blackboard_ = nullptr;
