@@ -633,7 +633,7 @@ TEST(XdsLbPolicyRegistryTest, MaxRecursion) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->lb_policy_registry()->RegisterLoadBalancingPolicyFactory(
             std::make_unique<grpc_core::testing::CustomLbPolicyFactory>());

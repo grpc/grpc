@@ -234,7 +234,7 @@ void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) mutable {
           builder->channel_init()->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
                                                   &AddLabelsFilter::kFilter);

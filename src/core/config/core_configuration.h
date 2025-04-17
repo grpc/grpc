@@ -16,11 +16,10 @@
 #define GRPC_SRC_CORE_CONFIG_CORE_CONFIGURATION_H
 
 #include <grpc/support/port_platform.h>
+#include <sys/stat.h>
 
 #include <atomic>
 
-#include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -31,6 +30,8 @@
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/transport/endpoint_transport.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/log/check.h"
 
 namespace grpc_core {
 
@@ -40,6 +41,30 @@ class GRPC_DLL CoreConfiguration {
  public:
   CoreConfiguration(const CoreConfiguration&) = delete;
   CoreConfiguration& operator=(const CoreConfiguration&) = delete;
+
+  // BulderScope is used to indicate whether a builder is persistent - these
+  // are builders that are used every time the configuration is built, or
+  // ephemeral - each time the configuration is built these are thrown away.
+  //
+  // Considerations for choosing persistent vs ephemeral:
+  // - For testing we want ephemeral builders, so the next test can throw away
+  //   configuration.
+  // - For adapting gRPC to different environments we typically want persistent
+  //   builders.
+  //   - However, if the adaption should run only once per process, then
+  //     ephemeral is better.
+  // - For the classic gRPC plugin mechanism we want ephemeral builders - since
+  //   that models persistency derives from the registration mechanism being
+  //   called every build time.
+  //
+  // Builders are instantiated in scope order - persistent first, ephemeral
+  // second.
+  enum class BuilderScope {
+    kPersistent,
+    kEphemeral,
+    // Must be last, do not use as a scope.
+    kCount,
+  };
 
   // Builder is passed to plugins, etc... at initialization time to collect
   // their configuration and assemble the published CoreConfiguration.
@@ -127,8 +152,10 @@ class GRPC_DLL CoreConfiguration {
       // Backup current core configuration and replace/reset.
       config_restore_ =
           CoreConfiguration::config_.exchange(p, std::memory_order_acquire);
-      builders_restore_ = CoreConfiguration::builders_.exchange(
-          nullptr, std::memory_order_acquire);
+      builders_restore_ =
+          CoreConfiguration::builders_[static_cast<size_t>(
+                                           BuilderScope::kEphemeral)]
+              .exchange(nullptr, std::memory_order_acquire);
     }
 
     ~WithSubstituteBuilder() {
@@ -136,8 +163,10 @@ class GRPC_DLL CoreConfiguration {
       Reset();
       CHECK(CoreConfiguration::config_.exchange(
                 config_restore_, std::memory_order_acquire) == nullptr);
-      CHECK(CoreConfiguration::builders_.exchange(
-                builders_restore_, std::memory_order_acquire) == nullptr);
+      CHECK(CoreConfiguration::builders_[static_cast<size_t>(
+                                             BuilderScope::kEphemeral)]
+                .exchange(builders_restore_, std::memory_order_acquire) ==
+            nullptr);
     }
 
    private:
@@ -159,7 +188,18 @@ class GRPC_DLL CoreConfiguration {
   // Attach a registration function globally.
   // Each registration function is called *in addition to*
   // BuildCoreConfiguration for the default core configuration.
-  static void RegisterBuilder(absl::AnyInvocable<void(Builder*)> builder);
+  static void RegisterBuilder(BuilderScope scope,
+                              absl::AnyInvocable<void(Builder*)> builder);
+
+  static void RegisterPersistentBuilder(
+      absl::AnyInvocable<void(Builder*)> builder) {
+    RegisterBuilder(BuilderScope::kPersistent, std::move(builder));
+  }
+
+  static void RegisterEphemeralBuilder(
+      absl::AnyInvocable<void(Builder*)> builder) {
+    RegisterBuilder(BuilderScope::kEphemeral, std::move(builder));
+  }
 
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
@@ -229,8 +269,13 @@ class GRPC_DLL CoreConfiguration {
 
   // The configuration
   static std::atomic<CoreConfiguration*> config_;
+  // Has a configuration *ever* been produced - we verify this is false for
+  // persistent builders so that we can prove consistency build to build for
+  // these.
+  static std::atomic<bool> has_config_ever_been_produced_;
   // Extra registered builders
-  static std::atomic<RegisteredBuilder*> builders_;
+  static std::atomic<RegisteredBuilder*>
+      builders_[static_cast<size_t>(BuilderScope::kCount)];
   // Default builder
   static void (*default_builder_)(CoreConfiguration::Builder*);
 
@@ -245,6 +290,23 @@ class GRPC_DLL CoreConfiguration {
   CertificateProviderRegistry certificate_provider_registry_;
   EndpointTransportRegistry endpoint_transport_registry_;
 };
+
+template <typename Sink>
+void AbslStringify(Sink& sink, CoreConfiguration::BuilderScope scope) {
+  switch (scope) {
+    case CoreConfiguration::BuilderScope::kPersistent:
+      sink.Append("Persistent");
+      break;
+    case CoreConfiguration::BuilderScope::kEphemeral:
+      sink.Append("Ephemeral");
+      break;
+    case CoreConfiguration::BuilderScope::kCount:
+      sink.Append("Count(");
+      sink.Append(std::to_string(static_cast<size_t>(scope)));
+      sink.Append(")");
+      break;
+  }
+}
 
 extern void BuildCoreConfiguration(CoreConfiguration::Builder* builder);
 

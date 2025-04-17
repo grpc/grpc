@@ -251,7 +251,8 @@ const grpc_channel_filter ServerLoadReportingFilter::kFilter =
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
+    CoreConfiguration::RegisterEphemeralBuilder([](CoreConfiguration::Builder*
+                                                       builder) {
       // Access measures to ensure they are initialized. Otherwise, we can't
       // create any valid view before the first RPC.
       grpc::load_reporter::MeasureStartCount();
