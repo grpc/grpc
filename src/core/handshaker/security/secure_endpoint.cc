@@ -640,13 +640,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
   ~SecureEndpoint() override { impl_->Shutdown(); }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* in_args) override {
-    return impl_->Read(std::move(on_read), buffer, in_args);
+            ReadArgs in_args) override {
+    return impl_->Read(std::move(on_read), buffer, std::move(in_args));
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override {
-    return impl_->Write(std::move(on_writable), data, args);
+             SliceBuffer* data, WriteArgs args) override {
+    return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {
@@ -659,6 +659,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
   void* QueryExtension(absl::string_view id) override {
     return impl_->QueryExtension(id);
+  }
+
+  std::vector<size_t> AllWriteMetrics() override {
+    return impl_->AllWriteMetrics();
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) override {
+    return impl_->GetMetricName(key);
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) override {
+    return impl_->GetMetricKey(name);
   }
 
  private:
@@ -677,14 +689,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                         grpc_event_engine::experimental::EventEngine>()) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs*) {
+              SliceBuffer* buffer, ReadArgs args) {
       on_read_ = std::move(on_read);
       frame_protector_.BeginRead(buffer->c_slice_buffer());
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      ReadArgs args;
-      args.read_hint_bytes = frame_protector_.min_progress_size();
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
       bool read_completed_immediately = wrapped_ep_->Read(
           [impl = Ref()](absl::Status status) mutable {
             {
@@ -704,20 +715,19 @@ class SecureEndpoint final : public EventEngine::Endpoint {
             impl.reset();
             on_read(status);
           },
-          frame_protector_.source_buffer(), &args);
+          frame_protector_.source_buffer(), std::move(args));
       if (read_completed_immediately) return MaybeFinishReadImmediately();
       return false;
     }
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) {
+               SliceBuffer* data, WriteArgs args) {
       GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
       tsi_result result;
       {
         grpc_core::MutexLock lock(frame_protector_.write_mu());
-        result = frame_protector_.Protect(
-            data->c_slice_buffer(),
-            args == nullptr ? 1024 * 1024 : args->max_frame_size);
+        result = frame_protector_.Protect(data->c_slice_buffer(),
+                                          args.max_frame_size());
       }
       if (result != TSI_OK) {
         event_engine_->Run(
@@ -736,7 +746,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
             impl.reset();
             on_write(status);
           },
-          frame_protector_.output_buffer(), args);
+          frame_protector_.output_buffer(), std::move(args));
     }
 
     const EventEngine::ResolvedAddress& GetPeerAddress() const {
@@ -755,6 +765,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       grpc_core::MutexLock lock(frame_protector_.read_mu());
       wrapped_ep_.reset();
       frame_protector_.Shutdown();
+    }
+
+    virtual std::vector<size_t> AllWriteMetrics() {
+      return wrapped_ep_->AllWriteMetrics();
+    }
+
+    virtual std::optional<absl::string_view> GetMetricName(size_t key) {
+      return wrapped_ep_->GetMetricName(key);
+    }
+
+    virtual std::optional<size_t> GetMetricKey(absl::string_view name) {
+      return wrapped_ep_->GetMetricKey(name);
     }
 
    private:

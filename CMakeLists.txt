@@ -2252,6 +2252,7 @@ add_library(grpc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
+  src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -2855,6 +2856,7 @@ add_library(grpc
   src/core/resolver/xds/xds_config.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
+  src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
@@ -2924,6 +2926,7 @@ add_library(grpc
   src/core/util/posix/directory_reader.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -3047,6 +3050,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -3322,6 +3326,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -3608,6 +3613,7 @@ add_library(grpc_unsecure
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/service_config/service_config_channel_arg_filter.cc
@@ -3645,6 +3651,7 @@ add_library(grpc_unsecure
   src/core/util/per_cpu.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -3732,6 +3739,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -5902,6 +5910,7 @@ add_library(grpc_authorization_provider
   src/core/util/matchers.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -5980,6 +5989,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -9548,6 +9558,7 @@ add_executable(call_utils_test
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -15656,6 +15667,7 @@ add_executable(filter_fusion_test
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -27074,6 +27086,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shared_bit_gen_test
+  src/core/util/shared_bit_gen.cc
   test/core/util/shared_bit_gen_test.cc
 )
 target_compile_features(shared_bit_gen_test PUBLIC cxx_std_17)
