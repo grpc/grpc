@@ -2078,6 +2078,7 @@ Pod::Spec.new do |s|
                       'src/core/util/ref_counted_string.cc',
                       'src/core/util/ref_counted_string.h',
                       'src/core/util/ring_buffer.h',
+                      'src/core/util/shared_bit_gen.cc',
                       'src/core/util/shared_bit_gen.h',
                       'src/core/util/single_set_ptr.h',
                       'src/core/util/sorted_pack.h',
