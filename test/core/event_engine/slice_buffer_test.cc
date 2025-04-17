@@ -17,13 +17,13 @@
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-#include <string.h>
 
 #include <memory>
+#include <string.h>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
+#include "absl/log/check.h"
 
 using ::grpc_event_engine::experimental::Slice;
 using ::grpc_event_engine::experimental::SliceBuffer;

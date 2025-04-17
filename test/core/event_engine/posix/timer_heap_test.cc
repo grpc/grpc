@@ -18,17 +18,17 @@
 
 #include "src/core/lib/event_engine/posix_engine/timer_heap.h"
 
+#include <algorithm>
 #include <stdint.h>
 #include <stdlib.h>
-
-#include <algorithm>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/posix_engine/timer.h"
 #include "src/core/util/bitset.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+
+#include "gmock/gmock.h"
 
 using testing::Contains;
 using testing::Not;

@@ -13,28 +13,28 @@
 // limitations under the License.
 
 #include <grpc/grpc.h>
-#include <stdint.h>
-#include <sys/select.h>
 
 #include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <cstring>
 #include <memory>
+#include <stdint.h>
+#include <sys/select.h>
 #include <vector>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "gtest/gtest.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -42,18 +42,17 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV
 
-#include <errno.h>
-#include <fcntl.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
+
+#include <errno.h>
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
@@ -65,6 +64,8 @@
 #include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 static gpr_mu g_mu;
 static std::shared_ptr<grpc_event_engine::experimental::PosixEventPoller>

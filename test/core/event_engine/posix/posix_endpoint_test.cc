@@ -27,13 +27,6 @@
 #include <type_traits>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
-#include "absl/strings/string_view.h"
-#include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
@@ -53,6 +46,13 @@
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/event_engine/test_suite/posix/oracle_event_engine_posix.h"
 #include "test/core/test_util/port.h"
+#include "gtest/gtest.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -13,16 +13,17 @@
 // limitations under the License.
 
 #include <grpc/event_engine/event_engine.h>
-#include <stdint.h>
 
+#include <stdint.h>
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
-#include "absl/status/statusor.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/uri.h"
+#include "absl/log/check.h"
+#include "absl/status/statusor.h"
+
+#include "fuzztest/fuzztest.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::VectorOf;
