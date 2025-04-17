@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <atomic>
+#include <cstdint>
 #include <initializer_list>
 #include <limits>
 #include <memory>
@@ -748,6 +749,17 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
     t->last_new_stream_id = t->incoming_stream_id;
     s = t->incoming_stream =
         grpc_chttp2_parsing_accept_stream(t, t->incoming_stream_id);
+
+    uint32_t current_open_streams = t->stream_map.size() + t->extra_streams;
+    if (t->max_concurrent_streams_overload_protection) {
+      current_open_streams =
+          t->streams_allocated.load(std::memory_order_relaxed);
+    }
+
+    t->settings.mutable_local().UpdateMaxConcurrentStreams(
+        t->stream_quota->GetConnectionMaxConcurrentRequests(
+            current_open_streams));
+
     ++requests_started;
     if (GPR_UNLIKELY(s == nullptr)) {
       GRPC_CHTTP2_IF_TRACING(ERROR) << "grpc_chttp2_stream not accepted";
