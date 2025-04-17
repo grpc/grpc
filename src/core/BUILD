@@ -8290,6 +8290,7 @@ grpc_cc_library(
         "channel_args",
         "metrics",
         "ref_counted",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:ref_counted_ptr",
     ],
