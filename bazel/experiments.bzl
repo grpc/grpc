@@ -46,7 +46,7 @@ EXPERIMENT_ENABLES = {
     "rq_fast_reject": "rq_fast_reject",
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
-    "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_dns,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
+    "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
