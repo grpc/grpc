@@ -756,8 +756,8 @@ static void on_openid_config_retrieved(void* user_data,
   // TODO(ctiller): Carry the resource_quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  uri = grpc_core::URI::Create("https", host, path, {} /* query params /*/,
-                               "" /* fragment */);
+  uri = grpc_core::URI::Create("https", /*user_info=*/"", host, path,
+                               {} /* query params /*/, "" /* fragment */);
   if (!uri.ok()) {
     goto error;
   }
@@ -886,8 +886,8 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   // TODO(ctiller): Carry the resource_quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  uri = grpc_core::URI::Create("https", host, path, {} /* query params */,
-                               "" /* fragment */);
+  uri = grpc_core::URI::Create("https", /*user_info=*/"", host, path,
+                               {} /* query params */, "" /* fragment */);
   if (!uri.ok()) {
     goto error;
   }
