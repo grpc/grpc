@@ -112,10 +112,6 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
   CHECK(resolved_addr != resolved_addr4_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  grpc_sockaddr_in* addr4_out =
-      resolved_addr4_out == nullptr
-          ? nullptr
-          : reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
   if (addr->sa_family == GRPC_AF_INET6) {
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
@@ -124,6 +120,7 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
+        grpc_sockaddr_in* addr4_out = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
         addr4_out->sin_family = GRPC_AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         //LOG(ERROR)<<"Setting family to ipv4 ";
