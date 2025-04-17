@@ -537,7 +537,7 @@ Poller::WorkResult Epoll1Poller::Work(
 
 void Epoll1Poller::Kick() { grpc_core::Crash("unimplemented"); }
 
-void Epoll1Poller::AdvanceGeneration() { grpc_core::Crash("unimplemented"); }
+void Epoll1Poller::HandleForkInChild() { grpc_core::Crash("unimplemented"); }
 
 void Epoll1Poller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 
