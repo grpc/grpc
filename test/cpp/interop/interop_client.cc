@@ -977,7 +977,8 @@ bool InteropClient::DoPickFirstUnary() {
 
 bool InteropClient::DoOrcaPerRpc() {
   load_report_tracker_.ResetCollectedLoadReports();
-  grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+      RegisterBackendMetricsLbPolicy);
   VLOG(2) << "testing orca per rpc";
   SimpleRequest request;
   SimpleResponse response;
@@ -1010,7 +1011,8 @@ bool InteropClient::DoOrcaOob() {
   grpc_core::ConfigVars::Overrides overrides;
   overrides.client_channel_backup_poll_interval_ms = 250;
   grpc_core::ConfigVars::SetOverrides(overrides);
-  grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+      RegisterBackendMetricsLbPolicy);
   ClientContext context;
   std::unique_ptr<ClientReaderWriter<StreamingOutputCallRequest,
                                      StreamingOutputCallResponse>>

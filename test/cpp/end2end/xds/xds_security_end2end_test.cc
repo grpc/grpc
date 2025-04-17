@@ -2643,7 +2643,7 @@ int main(int argc, char** argv) {
   grpc::testing::g_fake1_cert_data_map = &cert_data_map_1;
   grpc::testing::FakeCertificateProvider::CertDataMapWrapper cert_data_map_2;
   grpc::testing::g_fake2_cert_data_map = &cert_data_map_2;
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->certificate_provider_registry()
             ->RegisterCertificateProviderFactory(
