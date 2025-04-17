@@ -21,7 +21,6 @@
 
 #include <functional>
 
-#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
@@ -56,6 +55,9 @@ class NativeDNSResolver : public DNSResolver {
 
   // NativeDNSResolver does not support cancellation.
   bool Cancel(TaskHandle handle) override;
+
+ private:
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
 };
 
 }  // namespace grpc_core
