@@ -131,17 +131,12 @@ void OutputBuffer::MaybeCompleteSend(uint64_t current_time) {
 
 NextWrite OutputBuffer::TakePendingAndStartWrite(uint64_t current_time) {
   send_rate_.StartSend(current_time, pending_.Length());
-  return {std::move(pending_), std::move(context_list_)};
-}
-
-void OutputBuffer::AddTraceContext(std::shared_ptr<TcpCallTracer> call_tracer,
-                                   size_t payload_size) {
-  if (context_list_ == nullptr) {
-    context_list_ = std::make_unique<ContextList>();
+  bool trace = false;
+  if (!rate_probe_outstanding_ && send_rate_.IsRateMeasurementStale()) {
+    rate_probe_outstanding_ = true;
+    trace = true;
   }
-  context_list_->emplace_back(
-      /* context: */ nullptr, pending_.Length(), payload_size,
-      /* byte_offset: */ 0, /* stream_index: */ 0, std::move(call_tracer));
+  return {std::move(pending_), trace};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -180,17 +175,6 @@ Poll<Empty> OutputBuffers::PollWrite(
   auto& buffer = buffers_[best_endpoint];
   waker = buffer->TakeWaker();
   SliceBuffer& output = buffer->pending();
-  std::shared_ptr<TcpCallTracer> call_tracer = std::move(call_tracer_ref);
-  if (buffer->NeedsBandwidthProbe()) {
-    buffer->StartRateProbe();
-    call_tracer = std::make_shared<ProbeCallTracer>(std::move(call_tracer),
-                                                    Ref(), best_endpoint);
-  }
-  if (call_tracer != nullptr) {
-    buffer->AddTraceContext(
-        std::move(call_tracer),
-        DataFrameHeader::kFrameHeaderSize + output_buffer.Length());
-  }
   DataFrameHeader{payload_tag, send_time, length}.Serialize(
       output.AddTiny(DataFrameHeader::kFrameHeaderSize));
   output.TakeAndAppend(output_buffer);
@@ -226,20 +210,12 @@ void OutputBuffers::AddEndpoint(uint32_t connection_id) {
   ready_endpoints_.fetch_add(1, std::memory_order_relaxed);
 }
 
-void OutputBuffers::UpdateMetrics(size_t output_buffer,
-                                  const TcpConnectionMetrics& metrics) {
-  if (!metrics.delivery_rate.has_value()) return;
+void OutputBuffers::UpdateSendRate(uint32_t connection_id,
+                                   double bytes_per_nanosecond) {
   MutexLock lock(&mu_);
-  auto& buffer = buffers_[output_buffer];
+  auto& buffer = buffers_[connection_id];
   if (!buffer.has_value()) return;
-  buffer->UpdateSendRate(*metrics.delivery_rate * 1e-9);
-}
-
-void OutputBuffers::FinishProbe(size_t output_buffer) {
-  MutexLock lock(&mu_);
-  auto& buffer = buffers_[output_buffer];
-  if (!buffer.has_value()) return;
-  buffer->FinishProbe();
+  buffer->UpdateSendRate(bytes_per_nanosecond);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -312,16 +288,46 @@ auto Endpoint::WriteLoop(uint32_t id,
                          RefCountedPtr<OutputBuffers> output_buffers,
                          std::shared_ptr<PromiseEndpoint> endpoint) {
   output_buffers->AddEndpoint(id);
+  std::vector<size_t> requested_metrics;
+  std::optional<size_t> data_rate_metric =
+      endpoint->GetEventEngineEndpoint()->GetMetricKey("delivery_rate");
+  if (data_rate_metric.has_value()) {
+    requested_metrics.push_back(*data_rate_metric);
+  }
   return Loop([id, endpoint = std::move(endpoint),
-               output_buffers = std::move(output_buffers)]() {
+               output_buffers = std::move(output_buffers),
+               requested_metrics = std::move(requested_metrics),
+               data_rate_metric]() {
     return TrySeq(
         output_buffers->Next(id),
-        [endpoint, id](data_endpoints_detail::NextWrite next_write) {
+        [endpoint, id,
+         requested_metrics = absl::Span<const size_t>(requested_metrics),
+         data_rate_metric,
+         output_buffers](data_endpoints_detail::NextWrite next_write) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Write " << next_write.bytes.Length()
               << "b to data endpoint #" << id;
+          using grpc_event_engine::experimental::EventEngine;
+          PromiseEndpoint::WriteArgs write_args;
+          if (next_write.trace && data_rate_metric.has_value()) {
+            write_args.set_metrics_sink(EventEngine::Endpoint::WriteEventSink(
+                requested_metrics,
+                {EventEngine::Endpoint::WriteEvent::kSendMsg},
+                [data_rate_metric, id, output_buffers](
+                    EventEngine::Endpoint::WriteEvent event, absl::Time,
+                    std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
+                  if (event != EventEngine::Endpoint::WriteEvent::kSendMsg) {
+                    return;
+                  }
+                  for (const auto& metric : metrics) {
+                    if (metric.key == *data_rate_metric) {
+                      output_buffers->UpdateSendRate(id, metric.value * 1e-9);
+                    }
+                  }
+                }));
+          }
           return endpoint->Write(std::move(next_write.bytes),
-                                 std::move(next_write.context_list));
+                                 std::move(write_args));
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });

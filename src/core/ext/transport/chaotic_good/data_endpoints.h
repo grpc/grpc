@@ -84,7 +84,7 @@ class SendRate {
 
 struct NextWrite {
   SliceBuffer bytes;
-  std::unique_ptr<ContextList> context_list;
+  bool trace;
 };
 
 // Buffered writes for one data endpoint
@@ -99,20 +99,8 @@ class OutputBuffer {
   bool HavePending() const { return pending_.Length() > 0; }
   NextWrite TakePendingAndStartWrite(uint64_t current_time);
   void MaybeCompleteSend(uint64_t current_time);
-  bool NeedsBandwidthProbe() const {
-    return !rate_probe_outstanding_ && send_rate_.IsRateMeasurementStale();
-  }
-  void StartRateProbe() {
-    CHECK(!rate_probe_outstanding_);
-    rate_probe_outstanding_ = true;
-  }
-  void FinishProbe() {
-    CHECK(rate_probe_outstanding_);
-    rate_probe_outstanding_ = false;
-  }
-  void AddTraceContext(std::shared_ptr<TcpCallTracer> call_tracer,
-                       size_t payload_size);
   void UpdateSendRate(double bytes_per_nanosecond) {
+    rate_probe_outstanding_ = false;
     send_rate_.SetCurrentRate(bytes_per_nanosecond);
   }
 
@@ -121,7 +109,6 @@ class OutputBuffer {
   SliceBuffer pending_;
   SendRate send_rate_;
   bool rate_probe_outstanding_ = false;
-  std::unique_ptr<ContextList> context_list_;
 };
 
 // The set of output buffers for all connected data endpoints
@@ -148,42 +135,14 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
     return ready_endpoints_.load(std::memory_order_relaxed);
   }
 
+  void UpdateSendRate(uint32_t connection_id, double bytes_per_nanosecond);
+
  private:
-  class ProbeCallTracer final : public TcpCallTracer {
-   public:
-    ProbeCallTracer(std::shared_ptr<TcpCallTracer> parent,
-                    RefCountedPtr<OutputBuffers> output_buffers,
-                    size_t output_buffer)
-        : parent_(std::move(parent)),
-          output_buffers_(std::move(output_buffers)),
-          output_buffer_(output_buffer) {}
-
-    ~ProbeCallTracer() override {
-      output_buffers_->FinishProbe(output_buffer_);
-    }
-
-    void RecordEvent(Type type, absl::Time time, size_t byte_offset,
-                     std::optional<TcpConnectionMetrics> metrics) override {
-      if (metrics.has_value()) {
-        output_buffers_->UpdateMetrics(output_buffer_, *metrics);
-      }
-      if (parent_ != nullptr) {
-        parent_->RecordEvent(type, time, byte_offset, std::move(metrics));
-      }
-    }
-
-   private:
-    const std::shared_ptr<TcpCallTracer> parent_;
-    const RefCountedPtr<OutputBuffers> output_buffers_;
-    const size_t output_buffer_;
-  };
-
   Poll<Empty> PollWrite(uint64_t payload_tag, uint64_t send_time,
                         SliceBuffer& output_buffer,
                         std::shared_ptr<TcpCallTracer>& call_tracer);
   Poll<NextWrite> PollNext(uint32_t connection_id);
   void UpdateMetrics(size_t output_buffer, const TcpConnectionMetrics& metrics);
-  void FinishProbe(size_t output_buffer);
 
   Mutex mu_;
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
