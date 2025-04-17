@@ -22,15 +22,6 @@
 
 #ifdef GRPC_WINSOCK_SOCKET
 
-#include <inttypes.h>
-#include <io.h>
-
-#include <vector>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
@@ -39,14 +30,20 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <io.h>
 
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
@@ -60,6 +57,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -72,8 +70,6 @@ using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
 using ::grpc_event_engine::experimental::RunEventEngineClosure;
-using ::grpc_event_engine::experimental::WindowsEventEngine;
-using ::grpc_event_engine::experimental::WindowsEventEngineListener;
 }  // namespace
 
 // one listening port
@@ -131,7 +127,7 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   // used for the EventEngine shim
-  WindowsEventEngineListener* ee_listener;
+  std::unique_ptr<EventEngine::Listener> ee_listener;
 };
 
 // TODO(hork): This may be refactored to share with posix engine and event
@@ -181,6 +177,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.head = NULL;
   s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
+  new (&s->ee_listener) std::unique_ptr<EventEngine::Listener>(nullptr);
   *server = s;
   return absl::OkStatus();
 }
@@ -199,6 +196,7 @@ static void destroy_server(void* arg, grpc_error_handle /* error */) {
     unlink_if_unix_domain_socket(&sp->resolved_addr);
     gpr_free(sp);
   }
+  std::destroy_at(&s->ee_listener);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -294,9 +292,8 @@ static grpc_error_handle prepare_socket(SOCKET sock,
 
 failure:
   CHECK(!error.ok());
-  error = grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING(
-                                 "Failed to prepare server socket", &error, 1),
-                             grpc_core::StatusIntProperty::kFd, (intptr_t)sock);
+  error = GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                        &error, 1);
   if (sock != INVALID_SOCKET) closesocket(sock);
   return error;
 }
@@ -373,7 +370,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
   grpc_winsocket_callback_info* info = &sp->socket->read_info;
   grpc_endpoint* ep = NULL;
   grpc_resolved_address peer_name;
-  DWORD transfered_bytes;
+  DWORD transferred_bytes;
   DWORD flags;
   BOOL wsa_success;
   int err;
@@ -394,9 +391,9 @@ static void on_accept(void* arg, grpc_error_handle error) {
   }
   // The IOCP notified us of a completed operation. Let's grab the results,
   // and act accordingly.
-  transfered_bytes = 0;
+  transferred_bytes = 0;
   wsa_success = WSAGetOverlappedResult(sock, &info->overlapped,
-                                       &transfered_bytes, FALSE, &flags);
+                                       &transferred_bytes, FALSE, &flags);
   if (!wsa_success) {
     if (!sp->shutting_down) {
       char* utf8_message = gpr_format_message(WSAGetLastError());
@@ -447,6 +444,7 @@ static void on_accept(void* arg, grpc_error_handle error) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   }
   // As we were notified from the IOCP of one and exactly one accept,
@@ -643,16 +641,12 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
                                              grpc_tcp_server_cb on_accept_cb,
                                              void* on_accept_cb_arg,
                                              grpc_tcp_server** server) {
-  // On Windows, the event_engine_listener experiment only supports the
-  // default engine
-  WindowsEventEngine* engine_ptr = reinterpret_cast<WindowsEventEngine*>(
-      config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  new (&s->ee_listener) std::unique_ptr<EventEngine::Listener>(nullptr);
   CHECK_NE(on_accept_cb, nullptr);
   auto accept_cb = [s, on_accept_cb, on_accept_cb_arg](
                        std::unique_ptr<EventEngine::Endpoint> endpoint,
                        MemoryAllocator memory_allocator) {
-    grpc_core::ApplicationCallbackExecCtx app_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_tcp_server_acceptor* acceptor =
         static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
@@ -660,6 +654,7 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
     acceptor->port_index = -1;
     acceptor->fd_index = -1;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     on_accept_cb(on_accept_cb_arg,
                  grpc_event_engine_endpoint_create(std::move(endpoint)),
                  nullptr, acceptor);
@@ -676,11 +671,18 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   }
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
-  s->ee_listener = new WindowsEventEngineListener(
-      engine_ptr->poller(), std::move(accept_cb), std::move(on_shutdown),
+  EventEngine* engine = reinterpret_cast<EventEngine*>(
+      config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  CHECK_NE(engine, nullptr);
+  auto listener = engine->CreateListener(
+      std::move(accept_cb), std::move(on_shutdown), config,
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
-          resource_quota->memory_quota()),
-      engine_ptr->shared_from_this(), engine_ptr->thread_pool(), config);
+          resource_quota->memory_quota()));
+  GRPC_RETURN_IF_ERROR(listener.status());
+  CHECK_NE(listener->get(), nullptr);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::" << engine << ": created Listener::" << listener->get();
+  s->ee_listener = std::move(*listener);
   s->active_ports = -1;
   s->on_accept_cb = [](void* /* arg */, grpc_endpoint* /* ep */,
                        grpc_pollset* /* accepting_pollset */,
@@ -736,7 +738,13 @@ static grpc_tcp_server* event_engine_ref(grpc_tcp_server* s) {
 }
 
 static void event_engine_shutdown_listeners(grpc_tcp_server* s) {
-  s->ee_listener->ShutdownListeners();
+  auto* iomgr_compatible_listener =
+      grpc_event_engine::experimental::QueryExtension<
+          grpc_event_engine::experimental::IomgrCompatibleListener>(
+          s->ee_listener.get());
+  if (iomgr_compatible_listener != nullptr) {
+    iomgr_compatible_listener->Shutdown();
+  }
 }
 
 static void event_engine_unref(grpc_tcp_server* s) {
@@ -746,7 +754,7 @@ static void event_engine_unref(grpc_tcp_server* s) {
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     gpr_mu_destroy(&s->mu);
-    delete s->ee_listener;
+    std::destroy_at(&s->ee_listener);
     gpr_free(s);
   }
 }

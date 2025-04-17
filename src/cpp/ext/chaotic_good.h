@@ -15,10 +15,10 @@
 #ifndef GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
 #define GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
 
-#include <memory>
-
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
+
+#include <memory>
 
 namespace grpc {
 

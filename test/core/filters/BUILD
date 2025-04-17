@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -28,11 +28,8 @@ grpc_cc_library(
         "absl/memory",
         "absl/strings",
         "absl/strings:str_format",
-        "absl/types:optional",
-        "absl/types:variant",
         "gtest",
     ],
-    language = "c++",
     tags = ["nofixdeps"],  # until event engine tests are under fixbuilddeps
     deps = [
         "//:gpr",
@@ -85,7 +82,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -110,7 +106,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -120,12 +115,46 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_test(
+    name = "gcp_authentication_filter_test",
+    srcs = ["gcp_authentication_filter_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "filter_test",
+        "//:grpc",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//src/core:channel_args",
+    ],
+)
+
 grpc_cc_benchmark(
     name = "bm_http_client_filter",
     srcs = ["bm_http_client_filter.cc"],
+    monitoring = HISTORY,
     deps = [
         "//:grpc",
         "//src/core:default_event_engine",
-        "//test/core/transport:call_spine_benchmarks",
+        "//test/core/call:call_spine_benchmarks",
+    ],
+)
+
+grpc_cc_test(
+    name = "blackboard_test",
+    srcs = ["blackboard_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:blackboard",
     ],
 )

@@ -8,7 +8,7 @@ gRPC expects the xDS bootstrap configuration to be specified as a JSON string.
 The xDS bootstrap file location may be specified using the environment variable
 `GRPC_XDS_BOOTSTRAP`.  Alternatively, the bootstrap file contents may be
 specified using the environment variable `GRPC_XDS_BOOTSTRAP_CONFIG`.  If both
-are specified, the former takes precendence.
+are specified, the former takes precedence.
 
 The xDS client inside of gRPC parses the bootstrap configuration specified by
 one of the above means when it is created to configure itself.

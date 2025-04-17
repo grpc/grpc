@@ -62,6 +62,10 @@ build:msan --action_env=LD_LIBRARY_PATH=/usr/local/libcxx-msan/lib
 # the version having https://github.com/googleapis/google-cloud-cpp/pull/14151
 build:msan --cxxopt='-std=c++17'
 build:msan --host_cxxopt='-std=c++17'
+# Attempt to fix flakes on MSAN thought to be related to MSAN being too slow
+# in unoptimized builds.
+build:msan --copt=-O1
+build:msan --cxxopt=-O1
 
 # thread sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -71,11 +75,7 @@ build:tsan --copt=-gmlt
 build:tsan --test_timeout=60,600,1800,3600
 build:tsan --test_tag_filters=-no_linux,-notsan,-qps_json_driver
 
-build:thready_tsan --copt=-gmlt
-# use double the default value for "moderate" and "long" timeout as sanitizer
-# tests tend to be slower
-build:thready_tsan --test_timeout=60,600,1800,3600
-build:thready_tsan --test_tag_filters=thready_tsan,-no_linux,-notsan,-qps_json_driver
+build:fuzztest --test_tag_filters=grpc-fuzztest
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building keyvaluestore.
 
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.16)
 
 project(KeyValueStore C CXX)
 
@@ -70,6 +70,8 @@ target_link_libraries(client
 add_executable(server "server.cc")
 target_link_libraries(server
   absl::check
+  absl::flags_parse
+  absl::log_initialize
   kvs_grpc_proto
   ${_REFLECTION}
   ${_GRPC_GRPCPP}

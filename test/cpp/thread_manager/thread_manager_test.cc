@@ -18,20 +18,18 @@
 
 #include "src/cpp/thread_manager/thread_manager.h"
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <chrono>
 #include <climits>
 #include <memory>
 #include <thread>
 
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/grpcpp.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "gtest/gtest.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

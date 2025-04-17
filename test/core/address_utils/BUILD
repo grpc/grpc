@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
-load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzzer")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 licenses(["notice"])
 
@@ -29,7 +29,6 @@ grpc_cc_test(
         "absl/log:check",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -45,7 +44,6 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
-    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
@@ -53,14 +51,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_fuzzer(
+grpc_fuzz_test(
     name = "sockaddr_utils_fuzzer_test",
     srcs = ["sockaddr_utils_fuzzer_test.cc"],
-    corpus = "sockaddr_uri_corpus",
-    external_deps = ["absl/log:check"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
     tags = ["no_windows"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:grpc",
         "//test/core/test_util:grpc_test_util",
@@ -74,8 +73,11 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        # Invalid interface name: 'lo'.
+        "grpc:fails-internally",
+        "no_windows",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

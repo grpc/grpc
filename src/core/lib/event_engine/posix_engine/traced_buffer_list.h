@@ -15,69 +15,67 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
 
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
+
+#include <optional>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 struct ConnectionMetrics {  // Delivery rate in Bytes/s.
-  absl::optional<uint64_t> delivery_rate;
+  std::optional<uint64_t> delivery_rate;
   // If the delivery rate is limited by the application, this is set to true.
-  absl::optional<bool> is_delivery_rate_app_limited;
+  std::optional<bool> is_delivery_rate_app_limited;
   // Total packets retransmitted.
-  absl::optional<uint32_t> packet_retx;
+  std::optional<uint32_t> packet_retx;
   // Total packets retransmitted spuriously. This metric is smaller than or
   // equal to packet_retx.
-  absl::optional<uint32_t> packet_spurious_retx;
+  std::optional<uint32_t> packet_spurious_retx;
   // Total packets sent.
-  absl::optional<uint32_t> packet_sent;
+  std::optional<uint32_t> packet_sent;
   // Total packets delivered.
-  absl::optional<uint32_t> packet_delivered;
+  std::optional<uint32_t> packet_delivered;
   // Total packets delivered with ECE marked. This metric is smaller than or
   // equal to packet_delivered.
-  absl::optional<uint32_t> packet_delivered_ce;
+  std::optional<uint32_t> packet_delivered_ce;
   // Total bytes lost so far.
-  absl::optional<uint64_t> data_retx;
+  std::optional<uint64_t> data_retx;
   // Total bytes sent so far.
-  absl::optional<uint64_t> data_sent;
+  std::optional<uint64_t> data_sent;
   // Total bytes in write queue but not sent.
-  absl::optional<uint64_t> data_notsent;
+  std::optional<uint64_t> data_notsent;
   // Pacing rate of the connection in Bps
-  absl::optional<uint64_t> pacing_rate;
+  std::optional<uint64_t> pacing_rate;
   // Minimum RTT observed in usec.
-  absl::optional<uint32_t> min_rtt;
+  std::optional<uint32_t> min_rtt;
   // Smoothed RTT in usec
-  absl::optional<uint32_t> srtt;
+  std::optional<uint32_t> srtt;
   // Send congestion window.
-  absl::optional<uint32_t> congestion_window;
+  std::optional<uint32_t> congestion_window;
   // Slow start threshold in packets.
-  absl::optional<uint32_t> snd_ssthresh;
+  std::optional<uint32_t> snd_ssthresh;
   // Maximum degree of reordering (i.e., maximum number of packets reodered)
   // on the connection.
-  absl::optional<uint32_t> reordering;
+  std::optional<uint32_t> reordering;
   // Represents the number of recurring retransmissions of the first sequence
   // that is not acknowledged yet.
-  absl::optional<uint8_t> recurring_retrans;
+  std::optional<uint8_t> recurring_retrans;
   // The cumulative time (in usec) that the transport protocol was busy
   // sending data.
-  absl::optional<uint64_t> busy_usec;
+  std::optional<uint64_t> busy_usec;
   // The cumulative time (in usec) that the transport protocol was limited by
   // the receive window size.
-  absl::optional<uint64_t> rwnd_limited_usec;
+  std::optional<uint64_t> rwnd_limited_usec;
   // The cumulative time (in usec) that the transport protocol was limited by
   // the send buffer size.
-  absl::optional<uint64_t> sndbuf_limited_usec;
+  std::optional<uint64_t> sndbuf_limited_usec;
 };
 
 struct BufferTimestamp {
@@ -178,7 +176,6 @@ class TracedBufferList {
 void TcpSetWriteTimestampsCallback(
     absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H

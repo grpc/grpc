@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -20,21 +22,28 @@
 #include <vector>
 
 #include "absl/strings/str_join.h"
-
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/experiments/experiments.h"
 
 namespace grpc_core {
 
-std::string ValidateExperimentsStringForFuzzing(uint64_t input) {
-  std::vector<std::string> experiments;
-  for (size_t i = 0; i < std::min<size_t>(kNumExperiments, 64); i++) {
-    const auto& metadata = g_experiment_metadata[i];
-    if ((input & (1ull << i)) && metadata.allow_in_fuzzing_config) {
-      experiments.push_back(metadata.name);
-    }
+std::vector<std::string> ExperimentConfigChoices() {
+  std::vector<std::string> choices;
+  for (size_t i = 0; i < kNumExperiments; i++) {
+    if (!g_experiment_metadata[i].allow_in_fuzzing_config) continue;
+    choices.push_back(g_experiment_metadata[i].name);
+    choices.push_back(absl::StrCat("-", g_experiment_metadata[i].name));
   }
-  return absl::StrJoin(experiments, ",");
+  return choices;
+}
+
+std::vector<std::string> TracerConfigChoices() {
+  std::vector<std::string> choices;
+  for (const auto& [name, _] : GetAllTraceFlags()) {
+    choices.push_back(name);
+    choices.push_back(absl::StrCat("-", name));
+  }
+  return choices;
 }
 
 }  // namespace grpc_core

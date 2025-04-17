@@ -16,12 +16,11 @@
 
 #include "test/core/experiments/fixtures/experiments.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/experiments/config.h"
 
 #ifndef GRPC_EXPERIMENTS_ARE_FINAL

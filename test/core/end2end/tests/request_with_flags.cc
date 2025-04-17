@@ -16,22 +16,20 @@
 //
 //
 
-#include <stdint.h>
-#include <string.h>
-
-#include <map>
-#include <utility>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <stdint.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <map>
+#include <optional>
+#include <utility>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -66,7 +64,7 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   grpc_metadata_array_init(&request_metadata_recv);
   grpc_call_details_init(&call_details);
 
-  absl::optional<CoreEnd2endTest::Call> c =
+  std::optional<CoreEnd2endTest::Call> c =
       test.NewClientCall("/foo").Timeout(Duration::Seconds(1)).Create();
 
   memset(ops, 0, sizeof(ops));
@@ -101,7 +99,7 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
                                 CqVerifier::tag(1), nullptr);
   EXPECT_EQ(error, call_start_batch_expected_result);
   if (error == GRPC_CALL_OK) {
-    if (test.GetParam()->feature_mask & FEATURE_MASK_IS_MINSTACK) {
+    if (test.test_config()->feature_mask & FEATURE_MASK_IS_MINSTACK) {
       c->Cancel();
     }
     test.Expect(1, true);
@@ -118,54 +116,51 @@ void InvokeRequestWithFlags(CoreEnd2endTest& test,
   grpc_byte_buffer_destroy(request_payload);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendInitialMetadata) {
+CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendInitialMetadata) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendMessage) {
+CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendMessage) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_MESSAGE, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnSendCloseFromClient) {
+CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnSendCloseFromClient) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_SEND_CLOSE_FROM_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvInitialMetadata) {
+CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnRecvInitialMetadata) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_INITIAL_METADATA, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, BadFlagsOnRecvStatusOnClient) {
+CORE_END2END_TEST(CoreEnd2endTests, BadFlagsOnRecvStatusOnClient) {
   InvokeRequestWithFlags(*this, {{GRPC_OP_RECV_STATUS_ON_CLIENT, 0xdeadbeef}},
                          GRPC_CALL_ERROR_INVALID_FLAGS);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, WriteBufferIntAcceptedOnSendMessage) {
-  SKIP_IF_V3();
+CORE_END2END_TEST(CoreEnd2endTests, WriteBufferIntAcceptedOnSendMessage) {
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT}}, GRPC_CALL_OK);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, WriteNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
+CORE_END2END_TEST(CoreEnd2endTests, WriteNoCompressAcceptedOnSendMessage) {
   InvokeRequestWithFlags(
       *this, {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_NO_COMPRESS}}, GRPC_CALL_OK);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   WriteBufferHintAndNoCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
   InvokeRequestWithFlags(
       *this,
       {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_BUFFER_HINT | GRPC_WRITE_NO_COMPRESS}},
       GRPC_CALL_OK);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, WriteInternalCompressAcceptedOnSendMessage) {
-  SKIP_IF_V3();
+CORE_END2END_TEST(CoreEnd2endTests,
+                  WriteInternalCompressAcceptedOnSendMessage) {
   InvokeRequestWithFlags(*this,
                          {{GRPC_OP_SEND_MESSAGE, GRPC_WRITE_INTERNAL_COMPRESS}},
                          GRPC_CALL_OK);

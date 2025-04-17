@@ -17,6 +17,16 @@
 //
 
 #include <fcntl.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/impl/service_type.h>
+#include <grpcpp/server_builder.h>
 #include <netinet/in.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,34 +39,22 @@
 #include <set>
 #include <thread>
 
-#include <gmock/gmock.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/impl/service_type.h>
-#include <grpcpp/server_builder.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "gmock/gmock.h"
+#include "src/core/credentials/transport/alts/alts_credentials.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/credentials/alts/alts_credentials.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
+#include "test/core/test_util/build.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -279,8 +277,8 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
-        10 /* per connect deadline seconds */, 10 /* loops */,
-        GRPC_CHANNEL_READY /* expected connectivity states */,
+        10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+        10 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
         0 /* reconnect_backoff_ms unset */);
   }
 }
@@ -293,13 +291,16 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   {
     TestServer test_server;
     size_t num_concurrent_connects = 50;
+    if (BuiltUnderMsan()) {
+      num_concurrent_connects = 25;
+    }
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;
     VLOG(2) << "start performing concurrent expected-to-succeed connects";
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           test_server.address(), fake_handshake_server.address(),
-          15 /* per connect deadline seconds */, 5 /* loops */,
-          GRPC_CHANNEL_READY /* expected connectivity states */,
+          15 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          5 /* loops */, GRPC_CHANNEL_READY /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
     connect_loop_runners.clear();
@@ -336,7 +337,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 3 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -368,7 +370,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          20 /* per connect deadline seconds */, 2 /* loops */,
+          20 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           0 /* reconnect_backoff_ms unset */));
     }
@@ -400,7 +403,8 @@ TEST(AltsConcurrentConnectivityTest,
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       connect_loop_runners.push_back(std::make_unique<ConnectLoopRunner>(
           fake_backend_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 2 /* loops */,
+          10 * grpc_test_slowdown_factor() /* per connect deadline seconds */,
+          2 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */,
           100 /* reconnect_backoff_ms */));
     }

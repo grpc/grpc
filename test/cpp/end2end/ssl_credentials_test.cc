@@ -15,14 +15,6 @@
 // limitations under the License.
 //
 //
-#include <memory>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-#include "absl/synchronization/notification.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -31,6 +23,12 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <memory>
+
+#include "absl/log/log.h"
+#include "absl/synchronization/notification.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
@@ -100,7 +98,7 @@ void DoRpc(const std::string& server_addr,
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/60));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {

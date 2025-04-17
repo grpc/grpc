@@ -16,13 +16,12 @@
 //
 //
 
-#include <gtest/gtest.h>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/slice.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/impl/proto_utils.h>
 
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

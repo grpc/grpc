@@ -12,18 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <memory>
-
 #include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
+
+#include <memory>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 namespace {

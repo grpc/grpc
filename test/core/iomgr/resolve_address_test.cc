@@ -18,31 +18,28 @@
 
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#include <string.h>
-
 #include <address_sorting/address_sorting.h>
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
+#include <string.h>
 
 #include "absl/functional/bind_front.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
@@ -167,6 +164,19 @@ class ResolveAddressTest : public ::testing::Test {
 
   grpc_pollset_set* pollset_set() const { return pollset_set_; }
 
+ protected:
+  void SetUp() override {
+    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+      GTEST_SKIP()
+          << "Skipping all legacy ResolveAddress tests. The "
+             "event_engine_for_all_other_endpoints experiment is enabled, so "
+             "the grpc_core::GetDNSResolver() API is not in use. Further, the "
+             "experiment replaces iomgr grpc_fds with minimal implementations. "
+             "The legacy resolvers use the grpc_fd APIs directly, so these "
+             "tests would fail.";
+    }
+  }
+
  private:
   static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
@@ -240,7 +250,7 @@ const address_sorting_source_addr_factory_vtable
 
 }  // namespace
 
-TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvalailable) {
+TEST_F(ResolveAddressTest, LocalhostResultHasIPv4FirstWhenIPv6IsntAvailable) {
   if (std::string(g_resolver_type) != "ares") {
     GTEST_SKIP() << "this test is only valid with the c-ares resolver";
   }
@@ -326,7 +336,7 @@ TEST_F(ResolveAddressTest, InvalidIPv6Addresses) {
   TestInvalidIPAddress(this, "[2001:db8::11111]:1");
 }
 
-void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
+void TestUnparsableHostPort(ResolveAddressTest* test, const char* target) {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::GetDNSResolver()->LookupHostname(
       absl::bind_front(&ResolveAddressTest::MustFail, test), target, "1",
@@ -335,28 +345,28 @@ void TestUnparseableHostPort(ResolveAddressTest* test, const char* target) {
   test->PollPollsetUntilRequestDone();
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsOnlyBracket) {
-  TestUnparseableHostPort(this, "[");
+TEST_F(ResolveAddressTest, UnparsableHostPortsOnlyBracket) {
+  TestUnparsableHostPort(this, "[");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsMissingRightBracket) {
-  TestUnparseableHostPort(this, "[::1");
+TEST_F(ResolveAddressTest, UnparsableHostPortsMissingRightBracket) {
+  TestUnparsableHostPort(this, "[::1");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadPort) {
-  TestUnparseableHostPort(this, "[::1]bad");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadPort) {
+  TestUnparsableHostPort(this, "[::1]bad");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadIPv6) {
-  TestUnparseableHostPort(this, "[1.2.3.4]");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadIPv6) {
+  TestUnparsableHostPort(this, "[1.2.3.4]");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhost) {
-  TestUnparseableHostPort(this, "[localhost]");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadLocalhost) {
+  TestUnparsableHostPort(this, "[localhost]");
 }
 
-TEST_F(ResolveAddressTest, UnparseableHostPortsBadLocalhostWithPort) {
-  TestUnparseableHostPort(this, "[localhost]:1");
+TEST_F(ResolveAddressTest, UnparsableHostPortsBadLocalhostWithPort) {
+  TestUnparsableHostPort(this, "[localhost]:1");
 }
 
 // Kick off a simple DNS resolution and then immediately cancel. This
@@ -537,6 +547,11 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
 }
 
 int main(int argc, char** argv) {
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    LOG(WARNING) << "iomgr resolver tests are disabled since the pollset "
+                    "alternative experiment breaks some iomgr APIs";
+    return 0;
+  }
   // Configure the DNS resolver (c-ares vs. native) based on the
   // name of the binary. TODO(apolcyn): is there a way to pass command
   // line flags to a gtest that it works in all of our test environments?

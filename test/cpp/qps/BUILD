@@ -56,10 +56,10 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing:benchmark_service_proto",
-        "//src/proto/grpc/testing:control_proto",
-        "//src/proto/grpc/testing:payloads_proto",
-        "//src/proto/grpc/testing:worker_service_proto",
+        "//src/proto/grpc/testing:benchmark_service_cc_grpc",
+        "//src/proto/grpc/testing:control_cc_proto",
+        "//src/proto/grpc/testing:payloads_cc_proto",
+        "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/end2end:ssl_test_data",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
@@ -86,10 +86,10 @@ grpc_cc_library(
         ":parse_json",
         ":qps_worker_impl",
         "//:grpc++",
-        "//src/proto/grpc/testing:control_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:report_qps_scenario_service_proto",
-        "//src/proto/grpc/testing:worker_service_proto",
+        "//src/proto/grpc/testing:control_cc_proto",
+        "//src/proto/grpc/testing:messages_cc_proto",
+        "//src/proto/grpc/testing:report_qps_scenario_service_cc_grpc",
+        "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -111,7 +111,7 @@ grpc_cc_library(
         ":driver_impl",
         ":histogram",
         "//:grpc++",
-        "//src/proto/grpc/testing:control_proto",
+        "//src/proto/grpc/testing:control_cc_proto",
     ],
 )
 
@@ -122,7 +122,7 @@ grpc_cc_library(
         "stats.h",
     ],
     deps = [
-        "//src/proto/grpc/testing:stats_proto",
+        "//src/proto/grpc/testing:stats_cc_proto",
         "//test/core/test_util:grpc_test_util",
     ],
 )
@@ -195,6 +195,7 @@ grpc_cc_test(
 grpc_cc_test(
     name = "secure_sync_unary_ping_pong_test",
     srcs = ["secure_sync_unary_ping_pong_test.cc"],
+    tags = ["grpc:no-internal-test"],
     deps = [
         ":benchmark_config",
         ":driver_impl",

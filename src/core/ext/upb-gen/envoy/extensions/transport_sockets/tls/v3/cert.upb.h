@@ -3,10 +3,11 @@
  *     envoy/extensions/transport_sockets/tls/v3/cert.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -36,4 +37,4 @@ extern "C" {
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_TRANSPORT_SOCKETS_TLS_V3_CERT_PROTO_UPB_H__UPB_H_ */

@@ -16,14 +16,13 @@
 
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_IMPL_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_RESOURCE_TYPE_IMPL_H
+
 #include <memory>
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 
@@ -42,18 +41,23 @@ class XdsResourceTypeImpl : public XdsResourceType {
   class WatcherInterface : public XdsClient::ResourceWatcherInterface {
    public:
     virtual void OnResourceChanged(
-        std::shared_ptr<const ResourceType> resource,
+        absl::StatusOr<std::shared_ptr<const ResourceType>> resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) = 0;
 
    private:
     // Get result from XdsClient generic watcher interface, perform
     // down-casting, and invoke the caller's OnResourceChanged() method.
     void OnGenericResourceChanged(
-        std::shared_ptr<const XdsResourceType::ResourceData> resource,
+        absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
+            resource,
         RefCountedPtr<XdsClient::ReadDelayHandle> read_delay_handle) override {
-      OnResourceChanged(
-          std::static_pointer_cast<const ResourceType>(std::move(resource)),
-          std::move(read_delay_handle));
+      if (!resource.ok()) {
+        OnResourceChanged(resource.status(), std::move(read_delay_handle));
+      } else {
+        OnResourceChanged(
+            std::static_pointer_cast<const ResourceType>(std::move(*resource)),
+            std::move(read_delay_handle));
+      }
     }
   };
 
@@ -78,8 +82,8 @@ class XdsResourceTypeImpl : public XdsResourceType {
 
   bool ResourcesEqual(const ResourceData* r1,
                       const ResourceData* r2) const override {
-    return *static_cast<const ResourceType*>(r1) ==
-           *static_cast<const ResourceType*>(r2);
+    return *DownCast<const ResourceType*>(r1) ==
+           *DownCast<const ResourceType*>(r2);
   }
 };
 

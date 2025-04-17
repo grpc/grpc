@@ -20,17 +20,14 @@
 // working
 
 #include <benchmark/benchmark.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/grpc_library.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
@@ -215,7 +212,6 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   grpc_completion_queue* cc = grpc_completion_queue_create(
       grpc_completion_queue_factory_lookup(&attr), &attr, nullptr);
   for (auto _ : state) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;
     CHECK(grpc_cq_begin_op(cc, &tag_cb));
@@ -258,7 +254,6 @@ static void BM_Callback_CQ_Pass1CoreHeapCompletion(benchmark::State& state) {
   grpc_completion_queue* cc =
       grpc_completion_queue_create_for_callback(&shutdown_cb, nullptr);
   for (auto _ : state) {
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion* completion = new grpc_cq_completion;
     CHECK(grpc_cq_begin_op(cc, &tag_cb));

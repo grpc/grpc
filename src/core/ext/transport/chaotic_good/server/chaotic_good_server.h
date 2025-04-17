@@ -15,6 +15,9 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstddef>
 #include <cstdint>
 #include <memory>
@@ -25,17 +28,11 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chaotic_good/config.h"
+#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
@@ -46,18 +43,27 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+
+// Channel arg: integer number of data connections to specify
+// Defaults to 1 if not set
+#define GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS \
+  "grpc.chaotic_good.data_connections"
 
 namespace grpc_core {
 namespace chaotic_good {
 class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
-    return [bitgen = absl::BitGen()]() mutable {
-      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(bitgen)));
+    return []() mutable {
+      SharedBitGen g;
+      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(g)));
     };
   }
 
-  ChaoticGoodServerListener(
+  explicit ChaoticGoodServerListener(
       Server* server, const ChannelArgs& args,
       absl::AnyInvocable<std::string()> connection_id_generator =
           DefaultConnectionIDGenerator());
@@ -83,7 +89,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
       explicit HandshakingState(RefCountedPtr<ActiveConnection> connection);
-      ~HandshakingState() override{};
+      ~HandshakingState() override {};
       void Start(std::unique_ptr<
                  grpc_event_engine::experimental::EventEngine::Endpoint>
                      endpoint);
@@ -93,26 +99,33 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       }
 
      private:
+      struct DataConnection {
+        explicit DataConnection(std::string connection_id)
+            : connection_id(std::move(connection_id)) {}
+        std::string connection_id;
+      };
+      struct ControlConnection {
+        explicit ControlConnection(Config config) : config(std::move(config)) {}
+        Config config;
+      };
+
       static auto EndpointReadSettingsFrame(
           RefCountedPtr<HandshakingState> self);
       static auto EndpointWriteSettingsFrame(
           RefCountedPtr<HandshakingState> self, bool is_control_endpoint);
-      static auto WaitForDataEndpointSetup(
-          RefCountedPtr<HandshakingState> self);
       static auto ControlEndpointWriteSettingsFrame(
           RefCountedPtr<HandshakingState> self);
       static auto DataEndpointWriteSettingsFrame(
           RefCountedPtr<HandshakingState> self);
 
       void OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result);
-      Timestamp GetConnectionDeadline();
       const RefCountedPtr<ActiveConnection> connection_;
       const RefCountedPtr<HandshakeManager> handshake_mgr_;
+      std::variant<std::monostate, DataConnection, ControlConnection> data_;
     };
 
    private:
-    void Done(absl::optional<absl::string_view> error = absl::nullopt);
-    void NewConnectionID();
+    void Done();
     RefCountedPtr<Arena> arena_ = SimpleArenaAllocator()->MakeArena();
     const RefCountedPtr<ChaoticGoodServerListener> listener_;
     RefCountedPtr<HandshakingState> handshaking_state_;
@@ -120,18 +133,57 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
-    HPackCompressor hpack_compressor_;
-    HPackParser hpack_parser_;
-    absl::BitGen bitgen_;
-    std::string connection_id_;
-    int32_t data_alignment_;
   };
 
-  void Start(Server*, const std::vector<grpc_pollset*>*) override {
-    StartListening().IgnoreError();
+  class DataConnectionListener final : public ServerConnectionFactory {
+   public:
+    DataConnectionListener(
+        absl::AnyInvocable<std::string()> connection_id_generator,
+        Duration connect_timeout,
+        std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+            event_engine);
+    ~DataConnectionListener() override { CHECK(shutdown_); }
+
+    void Orphaned() override;
+
+    PendingConnection RequestDataConnection() override;
+    void FinishDataConnection(absl::string_view id, PromiseEndpoint endpoint);
+    Duration connection_timeout() const { return connect_timeout_; }
+
+   private:
+    using PromiseEndpointLatch =
+        InterActivityLatch<absl::StatusOr<PromiseEndpoint>>;
+    using PromiseEndpointLatchPtr = std::shared_ptr<PromiseEndpointLatch>;
+    struct PendingConnectionInfo {
+      PromiseEndpointLatchPtr latch;
+      grpc_event_engine::experimental::EventEngine::TaskHandle timeout;
+    };
+
+    void ConnectionTimeout(absl::string_view id);
+    PromiseEndpointLatchPtr Extract(absl::string_view id);
+
+    Mutex mu_;
+    absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections_
+        ABSL_GUARDED_BY(mu_);
+    absl::AnyInvocable<std::string()> connection_id_generator_
+        ABSL_GUARDED_BY(mu_);
+    const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_;
+    const Duration connect_timeout_;
+    bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
   };
+
+  void Start() override { StartListening().IgnoreError(); };
 
   channelz::ListenSocketNode* channelz_listen_socket_node() const override {
+    return nullptr;
+  }
+
+  void SetServerListenerState(RefCountedPtr<Server::ListenerState>) override {}
+
+  const grpc_resolved_address* resolved_address() const override {
+    // chaotic good doesn't use the new ListenerState interface yet.
+    Crash("Unimplemented");
     return nullptr;
   }
 
@@ -148,15 +200,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
       ee_listener_;
   Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-  // Map of connection id to endpoints connectivity.
-  absl::flat_hash_map<std::string,
-                      std::shared_ptr<InterActivityLatch<PromiseEndpoint>>>
-      connectivity_map_ ABSL_GUARDED_BY(mu_);
   absl::flat_hash_set<OrphanablePtr<ActiveConnection>> connection_list_
       ABSL_GUARDED_BY(mu_);
-  absl::AnyInvocable<std::string()> connection_id_generator_
-      ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
+  const RefCountedPtr<DataConnectionListener> data_connection_listener_;
 };
 
 }  // namespace chaotic_good

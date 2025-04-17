@@ -70,7 +70,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.36'
+    version = '0.0.40'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -110,9 +110,9 @@
       :commit => "${boringssl_commit}",
     }
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '15.0'
+    s.osx.deployment_target = '11.0'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
 
@@ -163,22 +163,18 @@
       ss.source_files = 'src/ssl/*.{h,c,cc}',
                         'src/ssl/**/*.{h,c,cc}',
                         'src/crypto/*.{h,c,cc}',
-                        'src/crypto/**/*.{h,c,cc}',
+                        'src/crypto/**/*.{h,c,cc,inc}',
                         # We have to include fiat because spake25519 depends on it
                         'src/third_party/fiat/*.{h,c,cc}',
                         # Include the err_data.c pre-generated in boringssl's master-with-bazel branch
-                        'src/gen/crypto/err_data.c'
+                        'src/gen/crypto/err_data.cc'
 
       ss.private_header_files = 'src/ssl/*.h',
                                 'src/ssl/**/*.h',
                                 'src/crypto/*.h',
                                 'src/crypto/**/*.h',
                                 'src/third_party/fiat/*.h'
-      # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
-      # explicitly exclude it from the pod.
-      # TODO (mxyan): Work with BoringSSL team to remove this hack.
-      ss.exclude_files = 'src/crypto/fipsmodule/bcm.c',
-                         'src/**/*_test.*',
+      ss.exclude_files = 'src/**/*_test.*',
                          'src/**/test_*.*',
                          'src/**/test/*.*'
 
@@ -221,10 +217,10 @@
       EOF
 
       # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
-      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
+      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' -or -path '*.inc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
 
       # Include of boringssl_prefix_symbols.h does not follow Xcode import style. We add the package
       # name here so that Xcode knows where to find it.
-      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
+      find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' -or -path '*.inc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <boringssl_prefix_symbols.h>;#include <openssl_grpc/boringssl_prefix_symbols.h>;g'
     END_OF_COMMAND
   end

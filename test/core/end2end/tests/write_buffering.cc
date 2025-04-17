@@ -16,19 +16,18 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <memory>
+
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 // Client sends a request with payload, server reads then returns status.
-CORE_END2END_TEST(WriteBufferingTest, WriteBufferingWorks) {
+CORE_END2END_TEST(WriteBufferingTests, WriteBufferingWorks) {
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   c.NewBatch(1).SendInitialMetadata({});
   IncomingMetadata server_initial_metadata;
@@ -74,7 +73,7 @@ CORE_END2END_TEST(WriteBufferingTest, WriteBufferingWorks) {
   Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(request_payload_recv1.payload(), "hello world");

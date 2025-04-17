@@ -12,27 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <benchmark/benchmark.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+
 #include <algorithm>
 #include <memory>
 #include <thread>
 #include <utility>
 #include <vector>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/lockfree_event.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::Scheduler;
@@ -157,9 +155,9 @@ namespace {
 
 // A trivial callback sceduler which inherits from the Scheduler interface but
 // immediatey runs the callback/closure.
-class BechmarkCallbackScheduler : public Scheduler {
+class BenchmarkCallbackScheduler : public Scheduler {
  public:
-  BechmarkCallbackScheduler() = default;
+  BenchmarkCallbackScheduler() = default;
   void Run(
       grpc_event_engine::experimental::EventEngine::Closure* closure) override {
     closure->Run();
@@ -172,7 +170,7 @@ class BechmarkCallbackScheduler : public Scheduler {
 // callback with SetReady. This benchmark is intended to measure the cost of
 // NotifyOn and SetReady implementations of the lock free event.
 void BM_LockFreeEvent(benchmark::State& state) {
-  BechmarkCallbackScheduler cb_scheduler;
+  BenchmarkCallbackScheduler cb_scheduler;
   LockfreeEvent event(&cb_scheduler);
   event.InitEvent();
   PosixEngineClosure* notify_on_closure =
@@ -199,8 +197,8 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
   benchmark::Initialize(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
   // until we clear out the iomgr shutdown code.
   grpc_init();

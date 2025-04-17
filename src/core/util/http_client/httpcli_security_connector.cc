@@ -16,31 +16,28 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
-
+#include <grpc/support/string_util.h>
 #include <string.h>
 
+#include <optional>
 #include <string>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
+#include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/security/security_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -48,11 +45,11 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/security_connector.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
@@ -176,7 +173,7 @@ class HttpRequestSSLCredentials : public grpc_channel_credentials {
       LOG(ERROR) << "Could not get default pem root certs.";
       return nullptr;
     }
-    absl::optional<std::string> target_string =
+    std::optional<std::string> target_string =
         args->GetOwnedString(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)
             .value_or(target);
     return httpcli_ssl_channel_security_connector_create(

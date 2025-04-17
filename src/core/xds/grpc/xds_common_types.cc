@@ -19,8 +19,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -52,7 +51,7 @@ bool CommonTlsContext::CertificateProviderPluginInstance::Empty() const {
 std::string CommonTlsContext::CertificateValidationContext::ToString() const {
   std::vector<std::string> contents;
   Match(
-      ca_certs, [](const absl::monostate&) {},
+      ca_certs, [](const std::monostate&) {},
       [&](const CertificateProviderPluginInstance& cert_provider) {
         contents.push_back(
             absl::StrCat("ca_certs=cert_provider", cert_provider.ToString()));
@@ -73,7 +72,7 @@ std::string CommonTlsContext::CertificateValidationContext::ToString() const {
 }
 
 bool CommonTlsContext::CertificateValidationContext::Empty() const {
-  return absl::holds_alternative<absl::monostate>(ca_certs) &&
+  return std::holds_alternative<std::monostate>(ca_certs) &&
          match_subject_alt_names.empty();
 }
 

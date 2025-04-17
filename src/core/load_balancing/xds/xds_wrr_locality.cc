@@ -14,9 +14,14 @@
 // limitations under the License.
 //
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -25,21 +30,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -47,11 +40,16 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/endpoint_addresses.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
+#include "src/core/util/validation_errors.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 
 namespace grpc_core {
 
@@ -136,15 +134,13 @@ XdsWrrLocalityLb::XdsWrrLocalityLb(Args args)
     : LoadBalancingPolicy(std::move(args)) {}
 
 XdsWrrLocalityLb::~XdsWrrLocalityLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] destroying";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] destroying";
 }
 
 void XdsWrrLocalityLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] shutting down";
   if (child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
@@ -161,9 +157,8 @@ void XdsWrrLocalityLb::ResetBackoffLocked() {
 }
 
 absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this << "] Received update";
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] Received update";
   auto config = args.config.TakeAsSubclass<XdsWrrLocalityLbConfig>();
   // Scan the addresses to find the weight for each locality.
   std::map<RefCountedStringValue, uint32_t> locality_weights;
@@ -173,12 +168,12 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
       uint32_t weight =
           endpoint.args().GetInt(GRPC_ARG_XDS_LOCALITY_WEIGHT).value_or(0);
       if (locality_name != nullptr && weight > 0) {
-        auto p = locality_weights.emplace(
+        auto [it, inserted] = locality_weights.emplace(
             locality_name->human_readable_string(), weight);
-        if (!p.second && p.first->second != weight) {
+        if (!inserted && it->second != weight) {
           LOG(ERROR) << "INTERNAL ERROR: xds_wrr_locality found different "
                         "weights for locality "
-                     << p.first->first.c_str() << " (" << p.first->second
+                     << it->first.as_string_view() << " (" << it->second
                      << " vs " << weight << "); using first value";
         }
       }
@@ -186,14 +181,12 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
   }
   // Construct the config for the weighted_target policy.
   Json::Object weighted_targets;
-  for (const auto& p : locality_weights) {
-    absl::string_view locality_name = p.first.as_string_view();
-    uint32_t weight = p.second;
-    // Add weighted target entry.
-    weighted_targets[std::string(locality_name)] = Json::FromObject({
-        {"weight", Json::FromNumber(weight)},
-        {"childPolicy", config->child_config()},
-    });
+  for (const auto& [locality_name, weight] : locality_weights) {
+    weighted_targets[std::string(locality_name.as_string_view())] =
+        Json::FromObject({
+            {"weight", Json::FromNumber(weight)},
+            {"childPolicy", config->child_config()},
+        });
   }
   Json child_config_json = Json::FromArray({
       Json::FromObject({
@@ -203,11 +196,9 @@ absl::Status XdsWrrLocalityLb::UpdateLocked(UpdateArgs args) {
            })},
       }),
   });
-  if (GRPC_TRACE_FLAG_ENABLED(xds_wrr_locality_lb)) {
-    LOG(INFO) << "[xds_wrr_locality_lb " << this
-              << "] generated child policy config: "
-              << JsonDump(child_config_json, /*indent=*/1);
-  }
+  GRPC_TRACE_LOG(xds_wrr_locality_lb, INFO)
+      << "[xds_wrr_locality_lb " << this << "] generated child policy config: "
+      << JsonDump(child_config_json, /*indent=*/1);
   // Parse config.
   auto child_config =
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(

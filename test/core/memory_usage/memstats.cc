@@ -22,12 +22,10 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 
-#include <grpc/support/log.h>
-
-long GetMemUsage(absl::optional<int> pid) {
+long GetMemUsage(std::optional<int> pid) {
   // Default is getting memory usage for self (calling process)
   std::string path = "/proc/self/stat";
-  if (pid != absl::nullopt) {
+  if (pid != std::nullopt) {
     path = absl::StrCat("/proc/", pid.value(), "/stat");
   }
   std::ifstream stat_stream(path, std::ios_base::in);

@@ -33,18 +33,16 @@
 #ifdef __linux__
 #include <sys/epoll.h>
 #endif
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <sys/socket.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/util/strerror.h"
+#include "src/core/util/thd.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/histogram.h"
@@ -292,7 +290,8 @@ static void print_histogram(grpc_histogram* histogram) {
 
 static double now(void) {
   gpr_timespec tv = gpr_now(GPR_CLOCK_REALTIME);
-  return 1e9 * static_cast<double>(tv.tv_sec) + static_cast<double>(tv.tv_nsec);
+  return (1e9 * static_cast<double>(tv.tv_sec)) +
+         static_cast<double>(tv.tv_nsec);
 }
 
 static void client_thread(thread_args* args) {

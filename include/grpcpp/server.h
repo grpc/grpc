@@ -19,10 +19,6 @@
 #ifndef GRPCPP_SERVER_H
 #define GRPCPP_SERVER_H
 
-#include <list>
-#include <memory>
-#include <vector>
-
 #include <grpc/compression.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
@@ -38,6 +34,10 @@
 #include <grpcpp/support/client_interceptor.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
+#include <list>
+#include <memory>
+#include <vector>
 
 struct grpc_server;
 

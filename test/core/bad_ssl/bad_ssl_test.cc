@@ -16,13 +16,6 @@
 //
 //
 
-#include <stdio.h>
-#include <string.h>
-
-#include <string>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -31,12 +24,16 @@
 #include <grpc/slice.h>
 #include <grpc/status.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <stdio.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include <string>
+
+#include "absl/log/check.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"

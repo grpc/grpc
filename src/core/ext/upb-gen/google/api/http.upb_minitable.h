@@ -3,10 +3,11 @@
  *     google/api/http.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef GOOGLE_API_HTTP_PROTO_UPB_MINITABLE_H_
-#define GOOGLE_API_HTTP_PROTO_UPB_MINITABLE_H_
+#ifndef GOOGLE_API_HTTP_PROTO_UPB_H__UPB_MINITABLE_H_
+#define GOOGLE_API_HTTP_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,8 +19,11 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable google__api__Http_msg_init;
+extern const upb_MiniTable* google__api__Http_msg_init_ptr;
 extern const upb_MiniTable google__api__HttpRule_msg_init;
+extern const upb_MiniTable* google__api__HttpRule_msg_init_ptr;
 extern const upb_MiniTable google__api__CustomHttpPattern_msg_init;
+extern const upb_MiniTable* google__api__CustomHttpPattern_msg_init_ptr;
 
 extern const upb_MiniTableFile google_api_http_proto_upb_file_layout;
 
@@ -29,4 +33,4 @@ extern const upb_MiniTableFile google_api_http_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* GOOGLE_API_HTTP_PROTO_UPB_MINITABLE_H_ */
+#endif  /* GOOGLE_API_HTTP_PROTO_UPB_H__UPB_MINITABLE_H_ */

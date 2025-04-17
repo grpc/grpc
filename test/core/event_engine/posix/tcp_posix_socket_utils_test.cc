@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -19,9 +20,6 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/lib/iomgr/port.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
@@ -29,10 +27,9 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
+#include <grpc/support/alloc.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-
-#include <grpc/support/alloc.h>
 
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"

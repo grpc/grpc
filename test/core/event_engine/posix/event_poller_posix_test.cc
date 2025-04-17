@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <sys/select.h>
 
@@ -28,15 +29,12 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
-#include "src/core/lib/config/config_vars.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_posix.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 // IWYU pragma: no_include <arpa/inet.h>
 // IWYU pragma: no_include <ratio>
@@ -46,6 +44,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <netinet/in.h>
 #include <poll.h>
 #include <stdlib.h>
@@ -54,19 +54,15 @@
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/strerror.h"
 #include "test/core/event_engine/posix/posix_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 
@@ -235,7 +231,7 @@ void ListenCb(server* sv, absl::Status status) {
     listen_em_fd->NotifyOnRead(sv->listen_closure);
     return;
   } else if (fd < 0) {
-    LOG(ERROR) << "Failed to acceot a connection, returned error: "
+    LOG(ERROR) << "Failed to accept a connection, returned error: "
                << grpc_core::StrError(errno);
   }
   EXPECT_GE(fd, 0);
@@ -377,12 +373,9 @@ void WaitAndShutdown(server* sv, client* cl) {
 
 class EventPollerTest : public ::testing::Test {
   void SetUp() override {
-    engine_ =
-        std::make_unique<grpc_event_engine::experimental::PosixEventEngine>();
+    engine_ = PosixEventEngine::MakePosixEventEngine();
     EXPECT_NE(engine_, nullptr);
-    scheduler_ =
-        std::make_unique<grpc_event_engine::experimental::TestScheduler>(
-            engine_.get());
+    scheduler_ = std::make_unique<TestScheduler>(engine_.get());
     EXPECT_NE(scheduler_, nullptr);
     g_event_poller = MakeDefaultPoller(scheduler_.get());
     engine_ = PosixEventEngine::MakeTestOnlyPosixEventEngine(g_event_poller);
@@ -403,8 +396,8 @@ class EventPollerTest : public ::testing::Test {
   TestScheduler* Scheduler() { return scheduler_.get(); }
 
  private:
-  std::shared_ptr<grpc_event_engine::experimental::PosixEventEngine> engine_;
-  std::unique_ptr<grpc_event_engine::experimental::TestScheduler> scheduler_;
+  std::shared_ptr<PosixEventEngine> engine_;
+  std::unique_ptr<TestScheduler> scheduler_;
 };
 
 // Test grpc_fd. Start an upload server and client, upload a stream of bytes
@@ -527,8 +520,8 @@ std::atomic<int> kTotalActiveWakeupFdHandles{0};
 // A helper class representing one file descriptor. Its implemented using
 // a WakeupFd. It registers itself with the poller and waits to be notified
 // of read events. Upon receiving a read event, (1) it processes it,
-// (2) registes to be notified of the next read event and (3) schedules
-// generation of the next read event. The Fd orphanes itself after processing
+// (2) registers to be notified of the next read event and (3) schedules
+// generation of the next read event. The Fd orphans itself after processing
 // a specified number of read events.
 class WakeupFdHandle : public grpc_core::DualRefCounted<WakeupFdHandle> {
  public:

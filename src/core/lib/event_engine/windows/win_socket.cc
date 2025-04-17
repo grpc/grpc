@@ -14,18 +14,17 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log_windows.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/sync.h"
 
 #if defined(__MSYS__) && defined(GPR_ARCH_64)
 // Nasty workaround for nasty bug when using the 64 bits msys compiler
@@ -35,8 +34,7 @@
 #define GRPC_FIONBIO FIONBIO
 #endif
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // ---- WinSocket ----
 
@@ -235,7 +233,17 @@ absl::Status PrepareSocket(SOCKET sock) {
   return absl::OkStatus();
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET socket) {
+  char addr[EventEngine::ResolvedAddress::MAX_SIZE_BYTES];
+  int addr_len = sizeof(addr);
+  if (getsockname(socket, reinterpret_cast<sockaddr*>(addr), &addr_len) < 0) {
+    return GRPC_WSA_ERROR(WSAGetLastError(),
+                          "Failed to get local socket name using getsockname");
+  }
+  return EventEngine::ResolvedAddress(reinterpret_cast<sockaddr*>(addr),
+                                      addr_len);
+}
+
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

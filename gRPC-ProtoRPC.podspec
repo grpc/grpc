@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-ProtoRPC'
-  version = '1.67.0-dev'
+  version = '1.73.0-dev'
   s.version  = version
   s.summary  = 'RPC library for Protocol Buffers, based on gRPC'
   s.homepage = 'https://grpc.io'
@@ -33,9 +33,9 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '10.0'
-  s.osx.deployment_target = '10.12'
-  s.tvos.deployment_target = '12.0'
+  s.ios.deployment_target = '15.0'
+  s.osx.deployment_target = '11.0'
+  s.tvos.deployment_target = '13.0'
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 
@@ -55,7 +55,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = "src/objective-c/ProtoRPC"
     ss.dependency "#{s.name}/Legacy-Header", version
     ss.dependency 'gRPC/Interface', version
-    ss.dependency 'Protobuf', '~> 3.0'
+    ss.dependency 'Protobuf', '~> 4.0'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
                       "src/objective-c/ProtoRPC/ProtoRPC.{h,m}",
@@ -68,7 +68,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Legacy-Header", version
     ss.dependency 'gRPC/GRPCCore', version
     ss.dependency 'gRPC-RxLibrary', version
-    ss.dependency 'Protobuf', '~> 3.0'
+    ss.dependency 'Protobuf', '~> 4.0'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
                       "src/objective-c/ProtoRPC/ProtoServiceLegacy.m"
@@ -85,6 +85,6 @@ Pod::Spec.new do |s|
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
-    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+    'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
   }
 end

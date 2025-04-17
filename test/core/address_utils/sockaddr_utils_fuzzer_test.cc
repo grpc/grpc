@@ -18,31 +18,31 @@
 #include <string.h>
 
 #include <string>
+#include <vector>
 
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
-
-#include <grpc/support/log.h>
-
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
-bool squelch = true;
+using fuzztest::Arbitrary;
+using fuzztest::VectorOf;
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  if (size > GRPC_MAX_SOCKADDR_SIZE) return 0;
+void CheckUriIsParseable(std::vector<uint8_t> buffer) {
   grpc_resolved_address address;
   memset(&address, 0, sizeof(address));
-  memcpy(address.addr, data, size);
-  address.len = size;
-
+  memcpy(address.addr, buffer.data(), buffer.size());
+  address.len = buffer.size();
   absl::StatusOr<std::string> uri = grpc_sockaddr_to_uri(&address);
-  if (!uri.ok()) return 0;
+  if (!uri.ok()) return;
   absl::StatusOr<grpc_core::URI> parsed_uri =
       grpc_core::URI::Parse(uri.value());
-
   CHECK_OK(parsed_uri);
-  return 0;
 }
+FUZZ_TEST(MyTestSuite, CheckUriIsParseable)
+    .WithDomains(VectorOf(Arbitrary<uint8_t>())
+                     .WithMaxSize(GRPC_MAX_SOCKADDR_SIZE)
+                     .WithMinSize(1));

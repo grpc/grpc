@@ -22,7 +22,7 @@ cd "$(dirname "$0")/../../.."
 # To use the correct docker image for your experiments,
 # note that every invocation of run_tests.py with "--use_docker"
 # prints the docker image used as a debug message at the end of the run.
-# This is expecially important when --compiler/--arch params are
+# This is especially important when --compiler/--arch params are
 # use, since they usually influence with docker image will be used
 # by run_tests.py
 export DOCKERFILE_DIR=tools/dockerfile/test/cxx_debian11_x64

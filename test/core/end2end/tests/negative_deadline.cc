@@ -16,19 +16,18 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(CoreDeadlineTest, NegativeDeadline) {
+CORE_END2END_TEST(CoreDeadlineTests, NegativeDeadline) {
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(-1)).Create();
   IncomingStatusOnClient server_status;

@@ -18,18 +18,15 @@
 
 #include "src/core/lib/slice/slice_buffer.h"
 
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice_internal.h"
 
 namespace grpc_core {
@@ -424,8 +421,8 @@ void grpc_slice_buffer_move_first_into_buffer(grpc_slice_buffer* src, size_t n,
   }
 }
 
-void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
-                                              void* dst) {
+void grpc_slice_buffer_copy_first_into_buffer(const grpc_slice_buffer* src,
+                                              size_t n, void* dst) {
   uint8_t* dstp = static_cast<uint8_t*>(dst);
   CHECK(src->length >= n);
 
@@ -444,6 +441,7 @@ void grpc_slice_buffer_copy_first_into_buffer(grpc_slice_buffer* src, size_t n,
 template <bool allow_inline>
 void grpc_slice_buffer_trim_end_impl(grpc_slice_buffer* sb, size_t n,
                                      grpc_slice_buffer* garbage) {
+  if (n == 0) return;
   CHECK(n <= sb->length);
   sb->length -= n;
   for (;;) {

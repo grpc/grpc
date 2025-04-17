@@ -18,11 +18,10 @@
 
 // Test various closure related operations
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
-
 #include <grpc/grpc.h>
+
+#include <sstream>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"

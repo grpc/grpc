@@ -3,7 +3,8 @@
  *     xds/core/v3/context_params.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "xds/core/v3/context_params.upbdefs.h"

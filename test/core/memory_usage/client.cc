@@ -16,6 +16,16 @@
 //
 //
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,18 +40,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/time.h>
-
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -71,7 +69,7 @@ static fling_call calls[100001];
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 // A call is intentionally divided into two steps. First step is to initiate a
-// call (i.e send and recv metadata). A call is outstanding after we initated,
+// call (i.e send and recv metadata). A call is outstanding after we initiated,
 // so we can measure the call memory usage.
 static void init_ping_pong_request(int call_idx) {
   grpc_metadata_array_init(&calls[call_idx].initial_metadata_recv);
@@ -195,7 +193,7 @@ std::pair<MemStats, MemStats> run_test_loop(int iterations, int* call_idx) {
     init_ping_pong_request(*call_idx + i + 1);
   }
 
-  auto peak = std::make_pair(
+  auto peak = std::pair(
       // client
       MemStats::Snapshot(),
       // server

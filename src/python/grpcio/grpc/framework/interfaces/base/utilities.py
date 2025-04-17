@@ -57,7 +57,7 @@ def completion(terminal_metadata, code, message):
     """Creates a base.Completion aggregating the given operation values.
 
     Args:
-      terminal_metadata: A terminal metadata value for an operaton.
+      terminal_metadata: A terminal metadata value for an operation.
       code: A code value for an operation.
       message: A message value for an operation.
 

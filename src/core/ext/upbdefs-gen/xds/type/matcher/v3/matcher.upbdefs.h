@@ -3,10 +3,11 @@
  *     xds/type/matcher/v3/matcher.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPBDEFS_H_
-#define XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPBDEFS_H_
+#ifndef XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPB_H__UPBDEFS_H_
+#define XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -74,4 +75,4 @@ UPB_INLINE const upb_MessageDef *xds_type_matcher_v3_Matcher_MatcherTree_MatchMa
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPBDEFS_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_MATCHER_PROTO_UPB_H__UPBDEFS_H_ */

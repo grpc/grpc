@@ -15,18 +15,17 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_EVALUATE_ARGS_H
 
+#include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
+
+#include <optional>
 #include <string>
 #include <vector>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -62,13 +61,13 @@ class EvaluateArgs final {
   absl::string_view GetAuthority() const;
   absl::string_view GetMethod() const;
   // Returns metadata value(s) for the specified key.
-  // If the key is not present in the batch, returns absl::nullopt.
+  // If the key is not present in the batch, returns std::nullopt.
   // If the key is present exactly once in the batch, returns a string_view of
   // that value.
   // If the key is present more than once in the batch, constructs a
   // comma-concatenated string of all values in concatenated_value and returns a
   // string_view of that string.
-  absl::optional<absl::string_view> GetHeaderValue(
+  std::optional<absl::string_view> GetHeaderValue(
       absl::string_view key, std::string* concatenated_value) const;
 
   grpc_resolved_address GetLocalAddress() const;

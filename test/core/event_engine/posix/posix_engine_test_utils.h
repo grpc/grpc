@@ -15,12 +15,11 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_POSIX_POSIX_ENGINE_TEST_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 
 namespace grpc_event_engine {
@@ -30,7 +29,7 @@ class TestScheduler : public Scheduler {
  public:
   explicit TestScheduler(grpc_event_engine::experimental::EventEngine* engine)
       : engine_(engine) {}
-  TestScheduler() : engine_(nullptr){};
+  TestScheduler() : engine_(nullptr) {};
   void ChangeCurrentEventEngine(
       grpc_event_engine::experimental::EventEngine* engine) {
     engine_ = engine;

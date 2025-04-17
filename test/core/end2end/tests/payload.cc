@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -68,7 +67,7 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
   test.Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), request_slice);
@@ -78,11 +77,11 @@ void RequestResponseWithPayload(CoreEnd2endTest& test) {
 
 // Client sends a request with payload, server reads then returns a response
 // payload and status.
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload) {
   RequestResponseWithPayload(*this);
 }
 
-CORE_END2END_TEST(CoreLargeSendTest, RequestResponseWithPayload10Times) {
+CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload10Times) {
   for (int i = 0; i < 10; i++) {
     RequestResponseWithPayload(*this);
   }

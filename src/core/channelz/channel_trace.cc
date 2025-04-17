@@ -18,20 +18,21 @@
 
 #include "src/core/channelz/channel_trace.h"
 
-#include <memory>
-#include <utility>
-
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include <memory>
+#include <utility>
+
+#include "absl/strings/str_cat.h"
 #include "src/core/channelz/channelz.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -53,41 +54,8 @@ ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
 
 ChannelTrace::TraceEvent::~TraceEvent() { CSliceUnref(data_); }
 
-namespace {
-
-const char* SeverityString(ChannelTrace::Severity severity) {
-  switch (severity) {
-    case ChannelTrace::Severity::Info:
-      return "CT_INFO";
-    case ChannelTrace::Severity::Warning:
-      return "CT_WARNING";
-    case ChannelTrace::Severity::Error:
-      return "CT_ERROR";
-    default:
-      GPR_UNREACHABLE_CODE(return "CT_UNKNOWN");
-  }
-}
-
-}  // anonymous namespace
-
-Json ChannelTrace::TraceEvent::RenderTraceEvent() const {
-  char* description = grpc_slice_to_c_string(data_);
-  Json::Object object = {
-      {"description", Json::FromString(description)},
-      {"severity", Json::FromString(SeverityString(severity_))},
-      {"timestamp", Json::FromString(gpr_format_timespec(timestamp_))},
-  };
-  gpr_free(description);
-  if (referenced_entity_ != nullptr) {
-    const bool is_channel =
-        (referenced_entity_->type() == BaseNode::EntityType::kTopLevelChannel ||
-         referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
-    object[is_channel ? "channelRef" : "subchannelRef"] = Json::FromObject({
-        {(is_channel ? "channelId" : "subchannelId"),
-         Json::FromString(absl::StrCat(referenced_entity_->uuid()))},
-    });
-  }
-  return Json::FromObject(std::move(object));
+RefCountedPtr<BaseNode> ChannelTrace::TraceEvent::referenced_entity() const {
+  return referenced_entity_;
 }
 
 //
@@ -116,9 +84,8 @@ void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
   // first event case
   if (head_trace_ == nullptr) {
     head_trace_ = tail_trace_ = new_trace_event;
-  }
-  // regular event add case
-  else {
+  } else {
+    // regular event add case
     tail_trace_->set_next(new_trace_event);
     tail_trace_ = tail_trace_->next();
   }
@@ -152,6 +119,25 @@ void ChannelTrace::AddTraceEventWithReference(
       new TraceEvent(severity, data, std::move(referenced_entity)));
 }
 
+std::string ChannelTrace::TraceEvent::description() const {
+  char* description = grpc_slice_to_c_string(data_);
+  std::string s(description);
+  gpr_free(description);
+  return s;
+}
+
+void ChannelTrace::ForEachTraceEventLocked(
+    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                           RefCountedPtr<BaseNode>)>
+        callback) const {
+  TraceEvent* it = head_trace_;
+  while (it != nullptr) {
+    callback(it->timestamp(), it->severity(), it->description(),
+             it->referenced_entity());
+    it = it->next();
+  }
+}
+
 Json ChannelTrace::RenderJson() const {
   // Tracing is disabled if max_event_memory_ == 0.
   if (max_event_memory_ == 0) {
@@ -167,14 +153,35 @@ Json ChannelTrace::RenderJson() const {
         Json::FromString(absl::StrCat(num_events_logged_));
   }
   // Only add in the event list if it is non-empty.
-  if (head_trace_ != nullptr) {
-    Json::Array array;
-    for (TraceEvent* it = head_trace_; it != nullptr; it = it->next()) {
-      array.emplace_back(it->RenderTraceEvent());
+  Json::Array array;
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity severity,
+                                   std::string description,
+                                   RefCountedPtr<BaseNode> referenced_entity) {
+    Json::Object object = {
+        {"description", Json::FromString(description)},
+        {"severity", Json::FromString(SeverityString(severity))},
+        {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
+    };
+    if (referenced_entity != nullptr) {
+      const bool is_channel =
+          (referenced_entity->type() ==
+               BaseNode::EntityType::kTopLevelChannel ||
+           referenced_entity->type() == BaseNode::EntityType::kInternalChannel);
+      object[is_channel ? "channelRef" : "subchannelRef"] = Json::FromObject({
+          {(is_channel ? "channelId" : "subchannelId"),
+           Json::FromString(absl::StrCat(referenced_entity->uuid()))},
+      });
     }
+    array.emplace_back(Json::FromObject(std::move(object)));
+  });
+  if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
   }
   return Json::FromObject(std::move(object));
+}
+
+std::string ChannelTrace::creation_timestamp() const {
+  return gpr_format_timespec(time_created_);
 }
 
 }  // namespace channelz

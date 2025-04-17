@@ -31,6 +31,14 @@ _classic_spawn = ccompiler.CCompiler.spawn
 
 
 def _commandfile_spawn(self, command, **kwargs):
+    if os.name == "nt":
+        if any(arg.startswith("/Tc") for arg in command):
+            # Remove /std:c++17 option if this is a MSVC C complation
+            command = [arg for arg in command if arg != "/std:c++17"]
+        elif any(arg.startswith("/Tp") for arg in command):
+            # Remove /std:c11 option if this is a MSVC C++ complation
+            command = [arg for arg in command if arg != "/std:c11"]
+
     command_length = sum([len(arg) for arg in command])
     if os.name == "nt" and command_length > MAX_COMMAND_LENGTH:
         # Even if this command doesn't support the @command_file, it will

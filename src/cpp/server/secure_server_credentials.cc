@@ -18,10 +18,6 @@
 
 #include "src/cpp/server/secure_server_credentials.h"
 
-#include <memory>
-#include <utility>
-#include <vector>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpcpp/security/auth_metadata_processor.h>
@@ -29,6 +25,10 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <memory>
+#include <utility>
+#include <vector>
 
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -65,8 +65,8 @@ void AuthMetadataProcessorAsyncWrapper::InvokeProcessor(
     grpc_process_auth_metadata_done_cb cb, void* user_data) {
   AuthMetadataProcessor::InputMetadata metadata;
   for (size_t i = 0; i < num_md; i++) {
-    metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
-                                   StringRefFromSlice(&md[i].value)));
+    metadata.insert(std::pair(StringRefFromSlice(&md[i].key),
+                              StringRefFromSlice(&md[i].value)));
   }
   SecureAuthContext ctx(context);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;

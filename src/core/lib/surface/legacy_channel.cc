@@ -18,31 +18,26 @@
 
 #include "src/core/lib/surface/legacy_channel.h"
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/connectivity_state.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_stack_builder_impl.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -58,6 +53,11 @@
 #include "src/core/telemetry/metrics.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -71,6 +71,44 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
       args = channel_args_mutator(target.c_str(), args, channel_stack_type);
     }
   }
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group;
+  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
+    stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
+    // Add per-server stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        stats_plugin_group->AddStatsPlugin(plugin,
+                                           plugin->GetServerScopeConfig(args));
+      }
+    }
+  } else {
+    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
+                                .value_or(CoreConfiguration::Get()
+                                              .resolver_registry()
+                                              .GetDefaultAuthority(target));
+    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
+        args);
+    experimental::StatsPluginChannelScope scope(target, authority,
+                                                endpoint_config);
+    stats_plugin_group =
+        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
+    // Add per-channel stats plugins.
+    auto* stats_plugin_list = args.GetPointer<
+        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
+        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
+    if (stats_plugin_list != nullptr) {
+      for (const auto& plugin : **stats_plugin_list) {
+        stats_plugin_group->AddStatsPlugin(
+            plugin, plugin->GetChannelScopeConfig(scope));
+      }
+    }
+  }
+  args = args.SetObject(stats_plugin_group);
   ChannelStackBuilderImpl builder(
       grpc_channel_stack_type_string(channel_stack_type), channel_stack_type,
       args);
@@ -89,41 +127,7 @@ absl::StatusOr<RefCountedPtr<Channel>> LegacyChannel::Create(
     LOG(ERROR) << "channel stack builder failed: " << status;
     return status;
   }
-  if (channel_stack_type == GRPC_SERVER_CHANNEL) {
-    *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForServer(args);
-    // Add per-server stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        (*r)->stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetServerScopeConfig(args));
-      }
-    }
-  } else {
-    std::string authority = args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY)
-                                .value_or(CoreConfiguration::Get()
-                                              .resolver_registry()
-                                              .GetDefaultAuthority(target));
-    grpc_event_engine::experimental::ChannelArgsEndpointConfig endpoint_config(
-        args);
-    experimental::StatsPluginChannelScope scope(target, authority,
-                                                endpoint_config);
-    *(*r)->stats_plugin_group =
-        GlobalStatsPluginRegistry::GetStatsPluginsForChannel(scope);
-    // Add per-channel stats plugins.
-    auto* stats_plugin_list = args.GetPointer<
-        std::shared_ptr<std::vector<std::shared_ptr<StatsPlugin>>>>(
-        GRPC_ARG_EXPERIMENTAL_STATS_PLUGINS);
-    if (stats_plugin_list != nullptr) {
-      for (const auto& plugin : **stats_plugin_list) {
-        (*r)->stats_plugin_group->AddStatsPlugin(
-            plugin, plugin->GetChannelScopeConfig(scope));
-      }
-    }
-  }
+  *(*r)->stats_plugin_group = std::move(stats_plugin_group);
   return MakeRefCounted<LegacyChannel>(
       grpc_channel_stack_type_is_client(builder.channel_stack_type()),
       std::move(target), args, std::move(*r));
@@ -179,11 +183,13 @@ bool LegacyChannel::IsLame() const {
   return elem->filter == &LameClientFilter::kFilter;
 }
 
-grpc_call* LegacyChannel::CreateCall(
-    grpc_call* parent_call, uint32_t propagation_mask,
-    grpc_completion_queue* cq, grpc_pollset_set* pollset_set_alternative,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
-    bool registered_method) {
+grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
+                                     uint32_t propagation_mask,
+                                     grpc_completion_queue* cq,
+                                     grpc_pollset_set* pollset_set_alternative,
+                                     Slice path, std::optional<Slice> authority,
+                                     Timestamp deadline,
+                                     bool registered_method) {
   CHECK(is_client_);
   CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
@@ -287,7 +293,6 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
     MutexLock lock(&mu_);
     timer_handle_ =
         channel_->event_engine()->RunAfter(timeout, [self = Ref()]() mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->TimeoutComplete();
           // StateWatcher deletion might require an active ExecCtx.
@@ -344,7 +349,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
   // timer callback fired immediately on an EventEngine thread before
   // RunAfter() returns.
   Mutex mu_;
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
   bool timer_fired_ = false;
 };

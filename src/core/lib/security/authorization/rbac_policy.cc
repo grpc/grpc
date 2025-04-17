@@ -14,13 +14,13 @@
 
 #include "src/core/lib/security/authorization/rbac_policy.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 
@@ -312,7 +312,7 @@ Rbac::Principal Rbac::Principal::MakeAnyPrincipal() {
 }
 
 Rbac::Principal Rbac::Principal::MakeAuthenticatedPrincipal(
-    absl::optional<StringMatcher> string_matcher) {
+    std::optional<StringMatcher> string_matcher) {
   Principal principal;
   principal.type = Principal::RuleType::kPrincipalName;
   principal.string_matcher = std::move(string_matcher);

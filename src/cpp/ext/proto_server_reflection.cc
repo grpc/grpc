@@ -18,12 +18,12 @@
 
 #include "src/cpp/ext/proto_server_reflection.h"
 
-#include <unordered_set>
-#include <vector>
-
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/interceptor.h>
 #include <grpcpp/support/sync_stream.h>
+
+#include <unordered_set>
+#include <vector>
 
 // IWYU pragma: no_include "google/protobuf/descriptor.h"
 // IWYU pragma: no_include <google/protobuf/descriptor.h>
@@ -176,10 +176,10 @@ template <typename Response>
 void ProtoServerReflectionBackend::FillFileDescriptorResponse(
     const protobuf::FileDescriptor* file_desc, Response* response,
     std::unordered_set<std::string>* seen_files) const {
-  if (seen_files->find(file_desc->name()) != seen_files->end()) {
+  bool inserted = seen_files->emplace(file_desc->name()).second;
+  if (!inserted) {
     return;
   }
-  seen_files->insert(file_desc->name());
 
   protobuf::FileDescriptorProto file_desc_proto;
   std::string data;

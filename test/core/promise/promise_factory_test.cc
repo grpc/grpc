@@ -16,7 +16,6 @@
 
 #include "absl/functional/bind_front.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -36,17 +35,15 @@ TEST(AdaptorTest, FactoryFromPromise) {
   EXPECT_EQ(
       MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
       Poll<int>(42));
-  EXPECT_EQ(MakeRepeatedFactory<void>([]() {
-              return Poll<int>(Poll<int>(42));
-            }).Make()(),
-            Poll<int>(42));
   EXPECT_EQ(
       MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
       Poll<int>(42));
-  EXPECT_EQ(MakeRepeatedFactory<void>([]() {
-              return Poll<int>(Poll<int>(42));
-            }).Make()(),
-            Poll<int>(42));
+  EXPECT_EQ(
+      MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
+      Poll<int>(42));
+  EXPECT_EQ(
+      MakeOnceFactory<void>([]() { return Poll<int>(Poll<int>(42)); }).Make()(),
+      Poll<int>(42));
 }
 
 TEST(AdaptorTest, FactoryFromBindFrontPromise) {

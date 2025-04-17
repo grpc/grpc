@@ -21,19 +21,16 @@
 
 #ifdef GRPC_HAVE_VSOCK
 
+#include <grpc/support/alloc.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 absl::StatusOr<std::vector<grpc_resolved_address>> grpc_resolve_vsock_address(

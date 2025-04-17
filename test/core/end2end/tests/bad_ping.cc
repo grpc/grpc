@@ -16,15 +16,14 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 #define MAX_PING_STRIKES 2
@@ -33,7 +32,7 @@ namespace grpc_core {
 namespace {
 
 // Send more pings than server allows to trigger server's GOAWAY.
-CORE_END2END_TEST(RetryHttp2Test, BadPing) {
+CORE_END2END_TEST(RetryHttp2Tests, BadPing) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
@@ -86,7 +85,7 @@ CORE_END2END_TEST(RetryHttp2Test, BadPing) {
 
 // Try sending more pings than server allows, but server should be fine because
 // max_pings_without_data should limit pings sent out on wire.
-CORE_END2END_TEST(RetryHttp2Test, PingsWithoutData) {
+CORE_END2END_TEST(RetryHttp2Tests, PingsWithoutData) {
   if (IsMaxPingsWoDataThrottleEnabled()) {
     GTEST_SKIP() << "pings are not limited if this experiment is enabled";
   }

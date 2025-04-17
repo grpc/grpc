@@ -16,14 +16,6 @@
 //
 //
 
-#include <chrono>
-#include <utility>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/channel.h>
 #include <grpcpp/create_channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -32,13 +24,18 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <chrono>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -46,6 +43,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/notification.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
@@ -292,14 +290,10 @@ TEST(WritesPerRpcTest, UnaryPingPong) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_event_engine::experimental::SetEventEngineFactory(
-      []() -> std::unique_ptr<grpc_event_engine::experimental::EventEngine> {
-        return std::make_unique<
-            grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
-            std::chrono::milliseconds(1));
-      });
-  // avoids a race around gpr_now_impl
-  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  grpc_event_engine::experimental::DefaultEventEngineScope engine_scope(
+      std::make_shared<
+          grpc_event_engine::experimental::ThreadedFuzzingEventEngine>(
+          std::chrono::milliseconds(1)));
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();

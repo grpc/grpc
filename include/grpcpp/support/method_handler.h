@@ -19,13 +19,12 @@
 #ifndef GRPCPP_SUPPORT_METHOD_HANDLER_H
 #define GRPCPP_SUPPORT_METHOD_HANDLER_H
 
-#include "absl/log/absl_check.h"
-
 #include <grpc/byte_buffer.h>
-#include <grpc/support/log.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/sync_stream.h>
+
+#include "absl/log/absl_check.h"
 
 namespace grpc {
 

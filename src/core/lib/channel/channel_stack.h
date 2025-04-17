@@ -19,13 +19,6 @@
 #ifndef GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 #define GRPC_SRC_CORE_LIB_CHANNEL_CHANNEL_STACK_H
 
-//////////////////////////////////////////////////////////////////////////////
-// IMPORTANT NOTE:
-//
-// When you update this API, please make the corresponding changes to
-// the C++ API in src/cpp/common/channel_filter.{h,cc}
-//////////////////////////////////////////////////////////////////////////////
-
 // A channel filter defines how operations on a channel are implemented.
 // Channel filters are chained together to create full channels, and if those
 // chains are linear, then channel stacks provide a mechanism to minimize
@@ -44,26 +37,20 @@
 // it can have an effect on the call status.
 //
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <stddef.h>
 
 #include <functional>
 #include <memory>
 
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -73,18 +60,27 @@
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/metrics.h"
+#include "src/core/util/manual_constructor.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "src/core/util/unique_type_name.h"
+
+namespace grpc_core {
+class Blackboard;
+}  // namespace grpc_core
 
 struct grpc_channel_element_args {
   grpc_channel_stack* channel_stack;
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
+  const grpc_core::Blackboard* old_blackboard;
+  grpc_core::Blackboard* new_blackboard;
 };
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
   const void* server_transport_data;
-  const grpc_slice& path;
   gpr_cycle_counter start_time;  // Note: not populated in subchannel stack.
   grpc_core::Timestamp deadline;
   grpc_core::Arena* arena;
@@ -201,7 +197,7 @@ struct grpc_channel_stack {
   }
 
   grpc_core::ManualConstructor<
-      grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>
+      std::shared_ptr<grpc_core::GlobalStatsPluginRegistry::StatsPluginGroup>>
       stats_plugin_group;
 
   // Minimal infrastructure to act like a RefCounted thing without converting
@@ -263,7 +259,9 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& args, const char* name,
-    grpc_channel_stack* stack);
+    grpc_channel_stack* stack,
+    const grpc_core::Blackboard* old_blackboard = nullptr,
+    grpc_core::Blackboard* new_blackboard = nullptr);
 // Destroy a channel stack
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

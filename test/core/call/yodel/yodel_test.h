@@ -15,30 +15,33 @@
 #ifndef GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 #define GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H
 
+#include <google/protobuf/text_format.h>
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/strings/string_view.h"
+#include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-
+#include "src/core/call/call_arena_allocator.h"
+#include "src/core/call/call_spine.h"
+#include "src/core/call/metadata.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/promise/cancel_callback.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
-#include "src/core/lib/transport/call_spine.h"
-#include "src/core/lib/transport/metadata.h"
+#include "src/core/util/debug_location.h"
+#include "test/core/call/yodel/fuzzer.pb.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/fuzz_config_vars_helpers.h"
+#include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
 
 class YodelTest;
-
-extern bool g_yodel_fuzzing;
 
 namespace yodel_detail {
 
@@ -206,123 +209,15 @@ auto SpawnerForContext(
   };
 }
 
-class TestRegistry {
- public:
-  TestRegistry() : next_(root_) { root_ = this; }
-
-  struct Test {
-    absl::string_view file;
-    int line;
-    std::string test_type;
-    std::string name;
-    absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
-                                  absl::BitGenRef) const>
-        make;
-  };
-
-  static std::vector<Test> AllTests();
-
- protected:
-  ~TestRegistry() {
-    Crash("unreachable: TestRegistry should never be destroyed");
-  }
-
- private:
-  virtual void ContributeTests(std::vector<Test>& tests) = 0;
-
-  TestRegistry* next_;
-  static TestRegistry* root_;
-};
-
-class SimpleTestRegistry final : public TestRegistry {
- public:
-  SimpleTestRegistry() {}
-  ~SimpleTestRegistry() = delete;
-
-  void RegisterTest(
-      absl::string_view file, int line, absl::string_view test_type,
-      absl::string_view name,
-      absl::AnyInvocable<YodelTest*(const fuzzing_event_engine::Actions&,
-                                    absl::BitGenRef) const>
-          create);
-
-  static SimpleTestRegistry& Get() {
-    static SimpleTestRegistry* const p = new SimpleTestRegistry;
-    return *p;
-  }
-
- private:
-  void ContributeTests(std::vector<Test>& tests) override;
-
-  std::vector<Test> tests_;
-};
-
-template <typename /*test_type*/, typename T>
-class ParameterizedTestRegistry final : public TestRegistry {
- public:
-  ParameterizedTestRegistry() {}
-  ~ParameterizedTestRegistry() = delete;
-
-  void RegisterTest(absl::string_view file, int line,
-                    absl::string_view test_type, absl::string_view name,
-                    absl::AnyInvocable<YodelTest*(
-                        const T&, const fuzzing_event_engine::Actions&,
-                        absl::BitGenRef) const>
-                        make) {
-    tests_.push_back({file, line, test_type, name, std::move(make)});
-  }
-
-  void RegisterParameter(absl::string_view name, T value) {
-    parameters_.push_back({name, std::move(value)});
-  }
-
-  static ParameterizedTestRegistry& Get() {
-    static ParameterizedTestRegistry* const p = new ParameterizedTestRegistry;
-    return *p;
-  }
-
- private:
-  struct ParameterizedTest {
-    absl::string_view file;
-    int line;
-    absl::string_view test_type;
-    absl::string_view name;
-    absl::AnyInvocable<YodelTest*(
-        const T&, const fuzzing_event_engine::Actions&, absl::BitGenRef) const>
-        make;
-  };
-  struct Parameter {
-    absl::string_view name;
-    T value;
-  };
-
-  void ContributeTests(std::vector<Test>& tests) override {
-    for (const auto& test : tests_) {
-      for (const auto& parameter : parameters_) {
-        tests.push_back({test.file, test.line, std::string(test.test_type),
-                         absl::StrCat(test.name, "/", parameter.name),
-                         [test = &test, parameter = &parameter](
-                             const fuzzing_event_engine::Actions& actions,
-                             absl::BitGenRef rng) {
-                           return test->make(parameter->value, actions, rng);
-                         }});
-      }
-    }
-  }
-
-  std::vector<ParameterizedTest> tests_;
-  std::vector<Parameter> parameters_;
-};
-
 }  // namespace yodel_detail
 
-class YodelTest : public ::testing::Test {
+class YodelTest {
  public:
+  YodelTest(const fuzzing_event_engine::Actions& actions, absl::BitGenRef rng);
   void RunTest();
+  virtual ~YodelTest() = default;
 
  protected:
-  YodelTest(const fuzzing_event_engine::Actions& actions, absl::BitGenRef rng);
-
   // Helpers to generate various random values.
   // When we're fuzzing, delegates to the fuzzer input to generate this data.
   std::string RandomString(int min_length, int max_length,
@@ -363,6 +258,41 @@ class YodelTest : public ::testing::Test {
         .Start(std::move(actions)...);
   }
 
+  class NoContext {
+   public:
+    explicit NoContext(grpc_event_engine::experimental::EventEngine* ee) {
+      auto arena = SimpleArenaAllocator()->MakeArena();
+      arena->SetContext(ee);
+      party_ = Party::Make(std::move(arena));
+    }
+
+    template <typename PromiseFactory>
+    void SpawnInfallible(absl::string_view name,
+                         PromiseFactory promise_factory) {
+      party_->Spawn(
+          name,
+          [party = party_,
+           promise_factory = std::move(promise_factory)]() mutable {
+            promise_detail::OncePromiseFactory<void, PromiseFactory> factory(
+                std::move(promise_factory));
+            return [party, underlying = factory.Make()]() mutable {
+              return underlying();
+            };
+          },
+          [](Empty) {});
+    }
+
+   private:
+    RefCountedPtr<Party> party_;
+  };
+
+  template <typename... Actions>
+  void SpawnTestSeqWithoutContext(
+      yodel_detail::NameAndLocation name_and_location, Actions... actions) {
+    SpawnTestSeq(NoContext{event_engine().get()}, name_and_location,
+                 std::move(actions)...);
+  }
+
   auto MakeCall(ClientMetadataHandle client_initial_metadata) {
     auto arena = state_->call_arena_allocator->MakeArena();
     arena->SetContext<grpc_event_engine::experimental::EventEngine>(
@@ -374,7 +304,7 @@ class YodelTest : public ::testing::Test {
 
   template <typename T>
   T TickUntil(absl::FunctionRef<Poll<T>()> poll) {
-    absl::optional<T> result;
+    std::optional<T> result;
     TickUntilTrue([poll, &result]() {
       auto r = poll();
       if (auto* p = r.value_if_ready()) {
@@ -386,9 +316,15 @@ class YodelTest : public ::testing::Test {
     return std::move(*result);
   }
 
+  void TickUntilTrue(absl::FunctionRef<bool()> poll);
+
   const std::shared_ptr<grpc_event_engine::experimental::FuzzingEventEngine>&
   event_engine() {
     return state_->event_engine;
+  }
+
+  void SetMaxRandomMessageSize(size_t max_random_message_size) {
+    max_random_message_size_ = max_random_message_size;
   }
 
  private:
@@ -402,7 +338,6 @@ class YodelTest : public ::testing::Test {
   virtual void TestImpl() = 0;
 
   void Timeout();
-  void TickUntilTrue(absl::FunctionRef<bool()> poll);
 
   // Called before the test runs, after core configuration has been reset
   // and before the event engine is started.
@@ -417,59 +352,35 @@ class YodelTest : public ::testing::Test {
   fuzzing_event_engine::Actions actions_;
   std::unique_ptr<State> state_;
   std::queue<std::shared_ptr<yodel_detail::ActionState>> pending_actions_;
+  size_t max_random_message_size_ = 1024 * 1024;
 };
+
+inline yodel::Msg ParseTestProto(const std::string& proto) {
+  yodel::Msg msg;
+  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  return msg;
+}
 
 }  // namespace grpc_core
 
 #define YODEL_TEST(test_type, name)                                          \
-  class YodelTest_##name : public grpc_core::test_type {                     \
+  class YodelTest_##test_type##_##name final : public grpc_core::test_type { \
    public:                                                                   \
     using test_type::test_type;                                              \
-    void TestBody() override { RunTest(); }                                  \
                                                                              \
    private:                                                                  \
     void TestImpl() override;                                                \
-    static grpc_core::YodelTest* Create(                                     \
-        const fuzzing_event_engine::Actions& actions, absl::BitGenRef rng) { \
-      return new YodelTest_##name(actions, rng);                             \
-    }                                                                        \
-    static int registered_;                                                  \
   };                                                                         \
-  int YodelTest_##name::registered_ =                                        \
-      (grpc_core::yodel_detail::SimpleTestRegistry::Get().RegisterTest(      \
-           __FILE__, __LINE__, #test_type, #name, &Create),                  \
-       0);                                                                   \
-  void YodelTest_##name::TestImpl()
-
-// NOLINTBEGIN(bugprone-macro-parentheses)
-#define YODEL_TEST_P(test_type, parameter_type, name)                        \
-  class YodelTest_##name : public grpc_core::test_type {                     \
-   public:                                                                   \
-    using test_type::test_type;                                              \
-    void TestBody() override { RunTest(); }                                  \
-                                                                             \
-   private:                                                                  \
-    void TestImpl() override;                                                \
-    static grpc_core::YodelTest* Create(                                     \
-        const parameter_type& parameter,                                     \
-        const fuzzing_event_engine::Actions& actions, absl::BitGenRef rng) { \
-      return new YodelTest_##name(parameter, actions, rng);                  \
-    }                                                                        \
-    static int registered_;                                                  \
-  };                                                                         \
-  int YodelTest_##name::registered_ =                                        \
-      (grpc_core::yodel_detail::ParameterizedTestRegistry<                   \
-           grpc_core::test_type, parameter_type>::Get()                      \
-           .RegisterTest(__FILE__, __LINE__, #test_type, #name, &Create),    \
-       0);                                                                   \
-  void YodelTest_##name::TestImpl()
-
-#define YODEL_TEST_PARAM(test_type, parameter_type, name, value) \
-  int YodelTestParam_##name =                                    \
-      (grpc_core::yodel_detail::ParameterizedTestRegistry<       \
-           grpc_core::test_type, parameter_type>::Get()          \
-           .RegisterParameter(#name, value),                     \
-       0)
-// NOLINTEND(bugprone-macro-parentheses)
+  void name(const yodel::Msg& msg) {                                         \
+    if (!grpc_core::IsEventEngineClientEnabled()) return;                    \
+    grpc_core::ApplyFuzzConfigVars(msg.config_vars());                       \
+    grpc_core::ProtoBitGen bitgen(msg.rng());                                \
+    YodelTest_##test_type##_##name test(msg.event_engine_actions(), bitgen); \
+    test.RunTest();                                                          \
+  }                                                                          \
+  FUZZ_TEST(test_type, name)                                                 \
+      .WithDomains(::fuzztest::Arbitrary<yodel::Msg>().WithProtobufField(    \
+          "config_vars", AnyConfigVars()));                                  \
+  void YodelTest_##test_type##_##name::TestImpl()
 
 #endif  // GRPC_TEST_CORE_CALL_YODEL_YODEL_TEST_H

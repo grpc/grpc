@@ -56,9 +56,6 @@ TEST_TARGETS=(
   //src/objective-c/tests:InteropTestsRemote
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
-  # TODO: Enable this again once @CronetFramework is working
-  #//src/objective-c/tests:CppCronetTests
-  #//src/objective-c/tests:CronetTests
   #//src/objective-c/tests:PerfTests
   //src/objective-c/tests:CFStreamTests
   # Needs oracle engine, which doesn't work with GRPC_IOS_EVENT_ENGINE_CLIENT=1
@@ -131,6 +128,7 @@ EVENT_ENGINE_TEST_TARGETS=(
   //src/objective-c/tests:MacTests
   //src/objective-c/tests:UnitTests
   //src/objective-c/tests:EventEngineUnitTests
+  //src/objective-c/tests:CFStreamTests
   //src/objective-c/tests:tvtests_build_test
 )
 
@@ -143,7 +141,7 @@ objc_event_engine_bazel_tests/bazel_wrapper \
   "${BAZEL_REMOTE_CACHE_ARGS[@]}" \
   $BAZEL_FLAGS \
   --test_env=GRPC_EXPERIMENTS=event_engine_client \
-  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine,api \
+  --test_env=GRPC_VERBOSITY=debug --test_env=GRPC_TRACE=event_engine*,api \
   "${OBJC_TEST_ENV_ARGS[@]}" \
   -- \
   "${EXAMPLE_TARGETS[@]}" \

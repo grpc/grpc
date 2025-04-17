@@ -14,17 +14,16 @@
 
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 
-#include <algorithm>
-#include <ostream>
-
-#include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+#include <optional>
+#include <ostream>
+
+#include "absl/strings/str_cat.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/match.h"
 
 // How many pings do we allow to be inflight at any given time?
 // In older versions of gRPC this was implicitly 1.
@@ -37,7 +36,7 @@ namespace grpc_core {
 namespace {
 int g_default_max_pings_without_data_sent = 2;
 constexpr Duration kThrottleIntervalWithoutDataSent = Duration::Minutes(1);
-absl::optional<int> g_default_max_inflight_pings;
+std::optional<int> g_default_max_inflight_pings;
 }  // namespace
 
 Chttp2PingRatePolicy::Chttp2PingRatePolicy(const ChannelArgs& args,

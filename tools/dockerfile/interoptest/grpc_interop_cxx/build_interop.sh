@@ -35,6 +35,6 @@ cp etc/roots.pem /usr/local/share/grpc/roots.pem
 # build C++ interop client, interop server and http2 interop client
 mkdir -p cmake/build
 cd cmake/build
-cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DgRPC_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=17 ../..
 make interop_client interop_server -j4
 make http2_client -j4

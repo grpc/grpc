@@ -19,16 +19,14 @@
 #ifndef GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 #define GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
 
-#include <memory>
-
-#include <openssl/x509.h>
-
-#include "absl/strings/string_view.h"
-
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpc/support/port_platform.h>
+#include <openssl/x509.h>
 
+#include <memory>
+
+#include "absl/strings/string_view.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -97,7 +95,7 @@ static constexpr bool tsi_tls_session_key_logging_supported() {
 // --- tsi_ssl_client_handshaker_factory object ---
 
 // This object creates a client tsi_handshaker objects implemented in terms of
-// the TLS 1.2 specificiation.
+// the TLS 1.2 specification.
 
 typedef struct tsi_ssl_client_handshaker_factory
     tsi_ssl_client_handshaker_factory;
@@ -245,7 +243,7 @@ void tsi_ssl_client_handshaker_factory_unref(
 // --- tsi_ssl_server_handshaker_factory object ---
 
 // This object creates a client tsi_handshaker objects implemented in terms of
-// the TLS 1.2 specificiation.
+// the TLS 1.2 specification.
 
 typedef struct tsi_ssl_server_handshaker_factory
     tsi_ssl_server_handshaker_factory;

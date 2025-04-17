@@ -14,17 +14,16 @@
 
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <map>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 using TlsSessionKeyLogger = tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger;
 

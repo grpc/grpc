@@ -1231,7 +1231,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     def abort(self, code, details):
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The code and details passed as arguments will supercede any existing
+        The code and details passed as arguments will supersede any existing
         ones.
 
         Args:
@@ -1250,7 +1250,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
     def abort_with_status(self, status):
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The status passed as argument will supercede any existing status code,
+        The status passed as argument will supersede any existing status code,
         status message and trailing metadata.
 
         This is an EXPERIMENTAL API.

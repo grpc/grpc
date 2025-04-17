@@ -19,15 +19,14 @@
 #ifndef GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 #define GRPC_SRC_CORE_RESOLVER_ENDPOINT_ADDRESSES_H
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 

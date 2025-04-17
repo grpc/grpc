@@ -17,15 +17,14 @@
 #include <thread>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
-
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
+#include "src/core/config/config_vars.h"
+#include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
 namespace grpc {
@@ -65,9 +64,9 @@ TEST_P(LdsTest, NotAnApiListener) {
   ServerHcmAccessor().Pack(hcm, &listener);
   balancer_->ads_service()->SetLdsResource(listener);
   // RPCs should fail.
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrCat(kServerName, ": UNAVAILABLE: not an API listener"));
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      absl::StrCat("empty address list \\(LDS resource ",
+                                   kServerName, ": not an API listener\\)"));
   // We should have ACKed the LDS resource.
   const auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
@@ -90,8 +89,9 @@ class LdsDeletionTest : public XdsEnd2endTest {
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsDeletionTest,
                          ::testing::Values(XdsTestType()), &XdsTestType::Name);
 
-// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted.
-TEST_P(LdsDeletionTest, ListenerDeleted) {
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted
+// by default.
+TEST_P(LdsDeletionTest, ListenerDeletedFailsByDefault) {
   InitClient();
   CreateAndStartBackends(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
@@ -101,21 +101,17 @@ TEST_P(LdsDeletionTest, ListenerDeleted) {
   // Unset LDS resource.
   balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   // Wait for RPCs to start failing.
-  SendRpcsUntil(DEBUG_LOCATION, [](const RpcResult& result) {
-    if (result.status.ok()) return true;  // Keep going.
-    EXPECT_EQ(result.status.error_code(), StatusCode::UNAVAILABLE);
-    EXPECT_EQ(result.status.error_message(),
-              absl::StrCat("empty address list: ", kServerName,
-                           ": xDS listener resource does not exist"));
-    return false;
-  });
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
   // Make sure we ACK'ed the update.
   auto response_state = balancer_->ads_service()->lds_response_state();
   ASSERT_TRUE(response_state.has_value());
   EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that we ignore Listener deletions if configured to do so.
+// Tests that we ignore Listener deletions with ignore_resource_deletion.
 TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
   InitClient(MakeBootstrapBuilder().SetIgnoreResourceDeletion());
   CreateAndStartBackends(2);
@@ -160,6 +156,81 @@ TEST_P(LdsDeletionTest, ListenerDeletionIgnored) {
                                    new_route_config);
   // Wait for client to start using backend 1.
   WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we ignore Listener deletions by default when data error
+// handling is enabled.
+TEST_P(LdsDeletionTest,
+       ListenerDeletionIgnoredByDefaultWhenDataErrorHandlingEnabled) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient();
+  CreateAndStartBackends(2);
+  // Bring up client pointing to backend 0 and wait for it to connect.
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 1);
+  // Make sure we ACKed the LDS update.
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Unset LDS resource and wait for client to ACK the update.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  const auto deadline =
+      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
+  while (true) {
+    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
+    response_state = balancer_->ads_service()->lds_response_state();
+    if (response_state.has_value()) break;
+    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
+  }
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
+  // Make sure we can still send RPCs.
+  CheckRpcSendOk(DEBUG_LOCATION);
+  // Now recreate the LDS resource pointing to a different CDS and EDS
+  // resource, pointing to backend 1, and make sure the client uses it.
+  const char* kNewClusterName = "new_cluster_name";
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  auto cluster = default_cluster_;
+  cluster.set_name(kNewClusterName);
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  args = EdsResourceArgs({{"locality0", CreateEndpointsForBackends(1, 2)}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args, kNewEdsResourceName));
+  RouteConfiguration new_route_config = default_route_config_;
+  new_route_config.mutable_virtual_hosts(0)
+      ->mutable_routes(0)
+      ->mutable_route()
+      ->set_cluster(kNewClusterName);
+  SetListenerAndRouteConfiguration(balancer_.get(), default_listener_,
+                                   new_route_config);
+  // Wait for client to start using backend 1.
+  WaitForAllBackends(DEBUG_LOCATION, 1, 2);
+}
+
+// Tests that we go into TRANSIENT_FAILURE if the Listener is deleted
+// when data error handling is enabled and fail_on_data_errors is set.
+TEST_P(LdsDeletionTest, ListenerDeletedFailsWithFailOnDataErrors) {
+  grpc_core::testing::ScopedExperimentalEnvVar env(
+      "GRPC_EXPERIMENTAL_XDS_DATA_ERROR_HANDLING");
+  InitClient(MakeBootstrapBuilder().SetFailOnDataErrors());
+  CreateAndStartBackends(1);
+  EdsResourceArgs args({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(DEBUG_LOCATION);
+  // Unset LDS resource.
+  balancer_->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
+  // Wait for RPCs to start failing.
+  SendRpcsUntilFailure(
+      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+      absl::StrCat("empty address list \\(LDS resource ", kServerName,
+                   ": does not exist \\(node ID:xds_end2end_test\\)\\)"));
+  // Make sure we ACK'ed the update.
+  auto response_state = balancer_->ads_service()->lds_response_state();
+  ASSERT_TRUE(response_state.has_value());
+  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
 }
 
 using LdsRdsInteractionTest = XdsEnd2endTest;
@@ -429,10 +500,12 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrCat(
+          "empty address list \\(",
+          (GetParam().enable_rds_testing() ? "RDS" : "LDS"), " resource ",
           (GetParam().enable_rds_testing() ? kDefaultRouteConfigurationName
                                            : kServerName),
-          ": UNAVAILABLE: could not find VirtualHost for ", kServerName,
-          " in RouteConfiguration"));
+          ": could not find VirtualHost for ", kServerName,
+          " in RouteConfiguration\\)"));
   // Do a bit of polling, to allow the ACK to get to the ADS server.
   channel_->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100));
   auto response_state = RouteConfigurationResponseState(balancer_.get());
@@ -472,7 +545,7 @@ TEST_P(LdsRdsTest, ChooseLastRoute) {
 }
 
 TEST_P(LdsRdsTest, NoMatchingRoute) {
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   route_config.mutable_virtual_hosts(0)
@@ -531,7 +604,7 @@ TEST_P(LdsRdsTest, NacksInvalidRouteConfig) {
 // Tests that LDS client should fail RPCs with UNAVAILABLE status code if the
 // matching route has an action other than RouteAction.
 TEST_P(LdsRdsTest, MatchingRouteHasNoRouteAction) {
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration route_config = default_route_config_;
   // Set a route with an inappropriate route action
@@ -1548,10 +1621,10 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   const char* kNewCluster3Name = "new_cluster_3";
   const char* kNewEdsService3Name = "new_eds_service_name_3";
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args2({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args3({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args2({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args3({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -1661,9 +1734,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args1({{"locality0", {MakeNonExistantEndpoint()}}});
-  EdsResourceArgs args2({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args1({{"locality0", {MakeNonExistentEndpoint()}}});
+  EdsResourceArgs args2({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -1749,7 +1822,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit) {
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
   const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -1784,7 +1857,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit) {
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   const auto kTimeoutApplication = grpc_core::Duration::Milliseconds(4500);
   // Populate new EDS resources.
-  EdsResourceArgs args({{"locality0", {MakeNonExistantEndpoint()}}});
+  EdsResourceArgs args({{"locality0", {MakeNonExistentEndpoint()}}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
   CheckRpcSendFailure(
@@ -1889,12 +1962,19 @@ TEST_P(LdsRdsTest, XdsRetryPolicyLongBackOff) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  // Set backoff to 1 second, 1/2 of rpc timeout of 2 second.
+  // Set base interval to 1.5 seconds.  Multiplier is 2, so delay after
+  // second attempt will be ~3 seconds.  However, there is a jitter of 0.2,
+  // so delay after first attempt will be in the range [1.2, 1.8], and delay
+  // after second attempt will be in the range [2.4, 3.6].  So the first
+  // attempt will always complete before the 2.5 second timeout, and the
+  // second attempt cannot start earlier than 1.2 + 2.4 = 3.6 seconds, which
+  // is after the 2.5 second timeout.  This ensures that there will be
+  // exactly one retry.
+  // No need to set max interval; it defaults to 10x base interval.
   SetProtoDuration(
-      grpc_core::Duration::Seconds(1),
+      grpc_core::Duration::Milliseconds(1500),
       retry_policy->mutable_retry_back_off()->mutable_base_interval());
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  // No need to set max interval and just let it be the default of 10x of base.
   // We expect 1 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
@@ -1921,16 +2001,17 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
       "5xx,cancelled,deadline-exceeded,internal,resource-exhausted,"
       "unavailable");
   retry_policy->mutable_num_retries()->set_value(kNumRetries);
-  // Set backoff to 1 second.
+  // Set base interval to 1 second and max backoff to 3 seconds, so the
+  // delays after the first three attempts will be approximately (1, 2, 3).
+  // Jitter is 0.2, so the minumum time of the 4th attempt will be
+  // 0.8 + 1.6 + 2.4 = 4.8 seconds and the max time of the 3rd attempt will
+  // be 1.2 + 2.4 = 3.6 seconds.  With an RPC timeout of 4.2 seconds, we are
+  // guaranteed to have exactly 3 attempts.
   SetProtoDuration(
       grpc_core::Duration::Seconds(1),
       retry_policy->mutable_retry_back_off()->mutable_base_interval());
-  // Set max interval to be the same as base, so 2 retries will take 2 seconds
-  // and both retries will take place before the 2.5 seconds rpc timeout.
-  // Tested to ensure if max is not set, this test will be the same as
-  // XdsRetryPolicyLongBackOff and we will only see 1 retry in that case.
   SetProtoDuration(
-      grpc_core::Duration::Seconds(1),
+      grpc_core::Duration::Seconds(3),
       retry_policy->mutable_retry_back_off()->mutable_max_interval());
   SetRouteConfiguration(balancer_.get(), new_route_config);
   // Send an initial RPC to make sure we get connected (we don't want
@@ -1940,7 +2021,7 @@ TEST_P(LdsRdsTest, XdsRetryPolicyMaxBackOff) {
   // We expect 2 retry before the RPC times out with DEADLINE_EXCEEDED.
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::DEADLINE_EXCEEDED, "Deadline Exceeded",
-      RpcOptions().set_timeout_ms(2500).set_server_expected_error(
+      RpcOptions().set_timeout_ms(4200).set_server_expected_error(
           StatusCode::CANCELLED));
   EXPECT_EQ(2 + 1, backends_[0]->backend_service()->request_count());
 }

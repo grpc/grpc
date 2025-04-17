@@ -123,7 +123,7 @@ def parse_test_cases(arg):
             test_cases = test_cases.union([arg])
     if not all([test_case in all_test_cases for test_case in test_cases]):
         raise Exception("Failed to parse test cases %s" % arg)
-    # Perserve order.
+    # Preserve order.
     return [x for x in all_test_cases if x in test_cases]
 
 
@@ -2179,7 +2179,7 @@ def test_circuit_breaking(
     """
     Since backend service circuit_breakers configuration cannot be unset,
     which causes trouble for restoring validate_for_proxy flag in target
-    proxy/global forwarding rule. This test uses dedicated backend sevices.
+    proxy/global forwarding rule. This test uses dedicated backend services.
     The url_map and backend services undergoes the following state changes:
 
     Before test:

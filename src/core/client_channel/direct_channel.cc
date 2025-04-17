@@ -14,12 +14,12 @@
 
 #include "src/core/client_channel/direct_channel.h"
 
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/call/client_call.h"
+#include "src/core/call/interception_chain.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/surface/client_call.h"
-#include "src/core/lib/transport/interception_chain.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_core {
 
@@ -59,7 +59,7 @@ void DirectChannel::StartCall(UnstartedCallHandler unstarted_handler) {
       "start",
       [interception_chain = interception_chain_, unstarted_handler]() mutable {
         interception_chain->StartCall(std::move(unstarted_handler));
-        return []() { return Empty{}; };
+        return []() {};
       });
 }
 
@@ -70,7 +70,7 @@ void DirectChannel::GetInfo(const grpc_channel_info*) {
 grpc_call* DirectChannel::CreateCall(
     grpc_call* parent_call, uint32_t propagation_mask,
     grpc_completion_queue* cq, grpc_pollset_set* /*pollset_set_alternative*/,
-    Slice path, absl::optional<Slice> authority, Timestamp deadline,
+    Slice path, std::optional<Slice> authority, Timestamp deadline,
     bool /*registered_method*/) {
   auto arena = call_arena_allocator()->MakeArena();
   arena->SetContext<grpc_event_engine::experimental::EventEngine>(

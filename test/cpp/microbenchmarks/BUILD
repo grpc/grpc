@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
-load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
@@ -31,6 +31,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = HISTORY,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -44,6 +45,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/container:btree",
     ],
+    monitoring = HISTORY,
     deps = [
         "//:grpc++",
         "//src/core:channel_args",
@@ -77,6 +79,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = HISTORY,
     uses_event_engine = False,
     deps = [
         ":helpers",
@@ -99,7 +102,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
@@ -122,7 +125,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/cpp/util:test_config",
@@ -132,6 +135,7 @@ grpc_cc_library(
 grpc_cc_benchmark(
     name = "bm_closure",
     srcs = ["bm_closure.cc"],
+    monitoring = HISTORY,
     deps = [
         ":helpers",
         "//src/core:closure",
@@ -155,6 +159,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_alarm",
     srcs = ["bm_alarm.cc"],
+    monitoring = HISTORY,
     deps = [":helpers"],
 )
 
@@ -185,6 +190,7 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_channel",
     srcs = ["bm_channel.cc"],
+    monitoring = HISTORY,
     tags = [
         "no_mac",
         "no_windows",
@@ -199,6 +205,7 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/log:check",
     ],
+    monitoring = HISTORY,
     deps = [":helpers"],
 )
 
@@ -306,10 +313,13 @@ grpc_cc_benchmark(
 grpc_cc_benchmark(
     name = "bm_opencensus_plugin",
     srcs = ["bm_opencensus_plugin.cc"],
+    tags = [
+        "grpc:fails-internally",
+    ],
     deps = [
         ":helpers_secure",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
     ],
 )
 
@@ -324,7 +334,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
-        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:echo_cc_grpc",
         "//test/cpp/util:test_util",
     ],
 )
@@ -401,6 +411,11 @@ grpc_cc_benchmark(
     external_deps = [
         "absl/strings",
         "otel/sdk/src/metrics",
+    ],
+    monitoring = HISTORY,
+    tags = [
+        # TODO(b/332369798): Remove after fixing bug
+        "grpc:otel-namespace-calamity",
     ],
     deps = [
         ":helpers",

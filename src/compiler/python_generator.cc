@@ -42,7 +42,6 @@ using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::compiler::GeneratorContext;
 using grpc::protobuf::io::CodedOutputStream;
 using grpc::protobuf::io::ZeroCopyOutputStream;
-using std::make_pair;
 using std::map;
 using std::pair;
 using std::replace;
@@ -234,11 +233,11 @@ bool PrivateGenerator::PrintBetaServerFactory(
         return false;
       }
       method_implementation_constructors.insert(
-          make_pair(method->name(), method_implementation_constructor));
+          pair(method->name(), method_implementation_constructor));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -341,12 +340,11 @@ bool PrivateGenerator::PrintBetaStubFactory(
               config.prefixes_to_filter)) {
         return false;
       }
-      method_cardinalities.insert(
-          make_pair(method->name(), method_cardinality));
+      method_cardinalities.insert(pair(method->name(), method_cardinality));
       input_message_modules_and_classes.insert(
-          make_pair(method->name(), input_message_module_and_class));
+          pair(method->name(), input_message_module_and_class));
       output_message_modules_and_classes.insert(
-          make_pair(method->name(), output_message_module_and_class));
+          pair(method->name(), output_message_module_and_class));
     }
     StringMap method_dict;
     method_dict["PackageQualifiedServiceName"] = package_qualified_service_name;
@@ -709,8 +707,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
         std::string input_module_alias =
             ModuleAlias(input_type_file_name, config.import_prefix,
                         config.prefixes_to_filter);
-        imports_set.insert(
-            std::make_tuple(input_module_name, input_module_alias));
+        imports_set.insert(std::tuple(input_module_name, input_module_alias));
 
         std::string output_type_file_name = method->get_output_type_name();
         std::string output_module_name =
@@ -719,8 +716,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
         std::string output_module_alias =
             ModuleAlias(output_type_file_name, config.import_prefix,
                         config.prefixes_to_filter);
-        imports_set.insert(
-            std::make_tuple(output_module_name, output_module_alias));
+        imports_set.insert(std::tuple(output_module_name, output_module_alias));
       }
     }
 
@@ -744,8 +740,6 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       var["ToolsVersion"] = config.grpc_tools_version;
       out->Print(var, "\nGRPC_GENERATED_VERSION = '$ToolsVersion$'\n");
       out->Print("GRPC_VERSION = grpc.__version__\n");
-      out->Print("EXPECTED_ERROR_RELEASE = '1.66.0'\n");
-      out->Print("SCHEDULED_RELEASE_DATE = 'August 6, 2024'\n");
       out->Print("_version_not_supported = False\n\n");
       out->Print("try:\n");
       {
@@ -763,7 +757,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
       out->Print("\nif _version_not_supported:\n");
       {
         IndentScope raii_warning_indent(out);
-        out->Print("warnings.warn(\n");
+        out->Print("raise RuntimeError(\n");
         {
           IndentScope raii_warning_string_indent(out);
           std::string filename_without_ext = file->filename_without_ext();
@@ -779,11 +773,7 @@ bool PrivateGenerator::PrintPreamble(grpc_generator::Printer* out) {
               "+ f' Please upgrade your grpc module to "
               "grpcio>={GRPC_GENERATED_VERSION}'\n"
               "+ f' or downgrade your generated code using "
-              "grpcio-tools<={GRPC_VERSION}.'\n"
-              "+ f' This warning will become an error in "
-              "{EXPECTED_ERROR_RELEASE},'\n"
-              "+ f' scheduled for release on {SCHEDULED_RELEASE_DATE}.',\n"
-              "RuntimeWarning\n");
+              "grpcio-tools<={GRPC_VERSION}.'\n");
         }
         out->Print(")\n");
       }
@@ -844,10 +834,10 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
           "Client and server classes corresponding to protobuf-defined "
           "services.\"\"\"\n");
       if (!PrintPreamble(out.get())) {
-        return make_pair(false, "");
+        return pair(false, "");
       }
       if (!PrintGAServices(out.get())) {
-        return make_pair(false, "");
+        return pair(false, "");
       }
     } else {
       out->Print("try:\n");
@@ -857,16 +847,16 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
             "# THESE ELEMENTS WILL BE DEPRECATED.\n"
             "# Please use the generated *_pb2_grpc.py files instead.\n");
         if (!PrintPreamble(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintBetaPreamble(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintGAServices(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
         if (!PrintBetaServices(out.get())) {
-          return make_pair(false, "");
+          return pair(false, "");
         }
       }
       out->Print("except ImportError:\n");
@@ -876,7 +866,7 @@ pair<bool, std::string> PrivateGenerator::GetGrpcServices() {
       }
     }
   }
-  return make_pair(true, std::move(output));
+  return pair(true, std::move(output));
 }
 
 }  // namespace
@@ -957,8 +947,8 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
   static const int proto_suffix_length = strlen(".proto");
   if (file->name().size() > static_cast<size_t>(proto_suffix_length) &&
       file->name().find_last_of(".proto") == file->name().size() - 1) {
-    std::string base =
-        file->name().substr(0, file->name().size() - proto_suffix_length);
+    std::string base(
+        file->name().substr(0, file->name().size() - proto_suffix_length));
     std::replace(base.begin(), base.end(), '-', '_');
     pb2_file_name = base + "_pb2.py";
     pb2_grpc_file_name = base + "_pb2_grpc.py";

@@ -16,14 +16,6 @@
 //
 //
 
-#include <mutex>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
@@ -36,16 +28,23 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <mutex>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_tcp_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -96,9 +95,11 @@ class TestTcpServer {
       : shutdown_(false),
         queue_data_(false),
         port_(grpc_pick_unused_port_or_die()) {
-    std::ostringstream server_address;
-    server_address << "localhost:" << port_;
-    address_ = server_address.str();
+    grpc_init();  // needed by LocalIpAndPort()
+    // This test does not do well with multiple connection attempts at the same
+    // time to the same tcp server, so use the local IP address instead of
+    // "localhost" which can result in two connections (ipv4 and ipv6).
+    address_ = grpc_core::LocalIpAndPort(port_);
     test_tcp_server_init(&tcp_server_, &TestTcpServer::OnConnect, this);
     GRPC_CLOSURE_INIT(&on_fd_released_, &TestTcpServer::OnFdReleased, this,
                       grpc_schedule_on_exec_ctx);
@@ -108,6 +109,7 @@ class TestTcpServer {
     running_thread_.join();
     test_tcp_server_destroy(&tcp_server_);
     grpc_recycle_unused_port(port_);
+    grpc_shutdown();
   }
 
   // Read some data before handing off the connection.
@@ -168,7 +170,7 @@ class TestTcpServer {
     grpc_tcp_destroy_and_release_fd(tcp, &fd_, &on_fd_released_);
   }
 
-  void OnFdReleased(grpc_error_handle err) {
+  void OnFdReleased(const absl::Status& err) {
     EXPECT_EQ(absl::OkStatus(), err);
     experimental::ExternalConnectionAcceptor::NewConnectionParameters p;
     p.listener_fd = listener_fd_;

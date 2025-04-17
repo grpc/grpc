@@ -67,48 +67,6 @@ RUN mkdir /var/local/jenkins
 
 
 #=================
-# Compile CPython 3.7.13 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.7.13/Python-3.7.13.tgz && \
-    tar xzvf Python-3.7.13.tgz && \
-    cd Python-3.7.13 && \
-    ./configure && \
-    make -j4 && \
-    make install
-
-RUN cd /tmp && \
-    echo "e0d3321026d4a5f3a3890b5d821ad762 Python-3.7.13.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.7 -m ensurepip && \
-    python3.7 -m pip install coverage
-
-#=================
-# Compile CPython 3.8.13 from source
-
-RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
-RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
-
-RUN cd /tmp && \
-    wget -q https://www.python.org/ftp/python/3.8.13/Python-3.8.13.tgz && \
-    tar xzvf Python-3.8.13.tgz && \
-    cd Python-3.8.13 && \
-    ./configure && \
-    make -j4 && \
-    make install
-
-RUN cd /tmp && \
-    echo "3c49180c6b43df3519849b7e390af0b9 Python-3.8.13.tgz" > checksum.md5 && \
-    md5sum -c checksum.md5
-
-RUN python3.8 -m ensurepip && \
-    python3.8 -m pip install coverage
-
-#=================
 # Compile CPython 3.10.3 from source
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
@@ -173,6 +131,28 @@ RUN cd /tmp && \
 RUN python3.12 -m ensurepip && \
     python3.12 -m pip install coverage
 
+#=================
+# Compile CPython 3.13.0rc2 from source
+
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev libsqlite3-dev && apt-get clean
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev && apt-get clean
+
+RUN cd /tmp && \
+    wget -q https://www.python.org/ftp/python/3.13.0/Python-3.13.0rc2.tgz && \
+    tar xzvf Python-3.13.0rc2.tgz && \
+    cd Python-3.13.0rc2 && \
+    ./configure && \
+    make -j4 && \
+    make install
+
+
+RUN cd /tmp && \
+    echo "ad7f44153649e27ec385e7633e853e03  Python-3.13.0rc2.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
+
+RUN python3.13 -m ensurepip && \
+    python3.13 -m pip install coverage
+
 
 # Python test coverage requires libsqlite3, and it have
 # to be installed before Python.
@@ -211,4 +191,5 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
+
 

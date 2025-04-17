@@ -69,31 +69,38 @@ Checks: '-*,
   bugprone-*,
   -bugprone-assignment-in-if-condition,
   -bugprone-branch-clone,
+  -bugprone-casting-through-void,
+  -bugprone-crtp-constructor-accessibility,
   -bugprone-easily-swappable-parameters,
   -bugprone-empty-catch,
   -bugprone-exception-escape,
   -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-inc-dec-in-conditions,
   -bugprone-infinite-loop,
+  -bugprone-multi-level-implicit-pointer-conversion,
   -bugprone-narrowing-conversions,
   -bugprone-not-null-terminated-result,
   -bugprone-reserved-identifier,
+  -bugprone-return-const-ref-from-parameter,
   -bugprone-signed-char-misuse,
   -bugprone-sizeof-expression,
+  -bugprone-suspicious-stringview-data-usage,
   -bugprone-switch-missing-default-case,
   -bugprone-too-small-loop-variable,
   -bugprone-unchecked-optional-access,
+  -bugprone-unused-local-non-trivial-variable,
   google-*,
   -google-readability-casting,
   -google-runtime-int,
-  -google-runtime-references,
   performance-*,
   -performance-avoid-endl,
+  -performance-enum-size,
+  -performance-inefficient-vector-operation,
   -performance-no-automatic-move,
   -performance-no-int-to-ptr,
   -performance-noexcept-swap,
   -performance-unnecessary-copy-initialization,
   -performance-unnecessary-value-param,
-  clang-diagnostic-deprecated-declarations,
   clang-diagnostic-deprecated-register,
   clang-diagnostic-expansion-to-defined,
   clang-diagnostic-ignored-attributes,
@@ -102,6 +109,7 @@ Checks: '-*,
   clang-diagnostic-shift-sign-overflow,
   clang-diagnostic-tautological-undefined-compare,
   clang-diagnostic-thread-safety*,
+  -clang-diagnostic-thread-safety-reference-return,
   clang-diagnostic-undefined-bool-conversion,
   clang-diagnostic-unreachable-code,
   clang-diagnostic-unreachable-code-loop-increment,
@@ -126,6 +134,7 @@ Checks: '-*,
   modernize-use-noexcept,
   modernize-use-nullptr,
   modernize-use-override,
+  modernize-use-starts-ends-with,
   modernize-use-transparent-functors,
   readability-braces-around-statements,
   readability-const-return-type,
@@ -135,13 +144,13 @@ Checks: '-*,
   readability-duplicate-include,
   readability-function-size,
   readability-inconsistent-declaration-parameter-name,
+  -readability-math-missing-parentheses,
   readability-misleading-indentation,
   readability-misplaced-array-index,
   readability-redundant-access-specifiers,
   readability-redundant-control-flow,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
-  -readability-redundant-string-cstr,
   readability-redundant-string-init,
   readability-simplify-boolean-expr,
   readability-static-definition-in-anonymous-namespace,
@@ -149,13 +158,13 @@ Checks: '-*,
   readability-uniqueptr-delete-release'
 WarningsAsErrors: '*'
 CheckOptions:
-  - key:    readability-function-size.StatementThreshold
+  - key:    bugprone-unused-return-value.AllowCastToVoid
+    value:  true
+  - key:    readability-braces-around-statements.ShortStatementLines
     value:  '450'
+  - key:    readability-simplify-boolean-expr.SimplifyDeMorgan
+    value:  false
   - key:    modernize-make-unique.MakeSmartPtrFunction
     value:  'absl::make_unique'
   - key:    modernize-make-unique.MakeSmartPtrFunctionHeader
     value:  'absl/memory/memory.h'
-  - key:    readability-braces-around-statements.ShortStatementLines
-    value:  1
-  - key:    readability-simplify-boolean-expr.SimplifyDeMorgan
-    value:  false

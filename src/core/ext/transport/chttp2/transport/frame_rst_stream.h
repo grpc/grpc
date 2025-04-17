@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_RST_STREAM_H
 
-#include <stdint.h>
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
+#include <stdint.h>
 
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
@@ -35,7 +35,8 @@ struct grpc_chttp2_rst_stream_parser {
 };
 grpc_slice grpc_chttp2_rst_stream_create(
     uint32_t stream_id, uint32_t code,
-    grpc_core::CallTracerInterface* call_tracer);
+    grpc_core::CallTracerInterface* call_tracer,
+    grpc_core::Http2ZTraceCollector* ztrace_collector);
 
 // Adds RST_STREAM frame to t->qbuf (buffer for the next write). Should be
 // called when we want to add RST_STREAM and we are not in

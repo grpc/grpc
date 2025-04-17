@@ -18,6 +18,8 @@
 
 #include "src/core/lib/compression/compression_internal.h"
 
+#include <grpc/compression.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <string>
@@ -27,16 +29,11 @@
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
-
-#include <grpc/compression.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/ref_counted_string.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/ref_counted_string.h"
 
 namespace grpc_core {
 
@@ -96,7 +93,7 @@ class CommaSeparatedLists {
 const CommaSeparatedLists kCommaSeparatedLists;
 }  // namespace
 
-absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
+std::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
     absl::string_view algorithm) {
   if (algorithm == "identity") {
     return GRPC_COMPRESS_NONE;
@@ -105,7 +102,7 @@ absl::optional<grpc_compression_algorithm> ParseCompressionAlgorithm(
   } else if (algorithm == "gzip") {
     return GRPC_COMPRESS_GZIP;
   } else {
-    return absl::nullopt;
+    return std::nullopt;
   }
 }
 
@@ -225,10 +222,10 @@ uint32_t CompressionAlgorithmSet::ToLegacyBitmask() const {
   return set_.ToInt<uint32_t>();
 }
 
-absl::optional<grpc_compression_algorithm>
+std::optional<grpc_compression_algorithm>
 DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   auto* value = args.Get(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);
-  if (value == nullptr) return absl::nullopt;
+  if (value == nullptr) return std::nullopt;
   auto ival = value->GetIfInt();
   if (ival.has_value()) {
     return static_cast<grpc_compression_algorithm>(*ival);
@@ -237,7 +234,7 @@ DefaultCompressionAlgorithmFromChannelArgs(const ChannelArgs& args) {
   if (sval != nullptr) {
     return ParseCompressionAlgorithm(sval->as_string_view());
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 grpc_compression_options CompressionOptionsFromChannelArgs(
@@ -248,10 +245,10 @@ grpc_compression_options CompressionOptionsFromChannelArgs(
   auto default_level = args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL);
   if (default_level.has_value()) {
     compression_options.default_level.is_set = true;
-    compression_options.default_level.level = Clamp(
-        static_cast<grpc_compression_level>(*default_level),
-        GRPC_COMPRESS_LEVEL_NONE,
-        static_cast<grpc_compression_level>(GRPC_COMPRESS_LEVEL_COUNT - 1));
+    compression_options.default_level.level =
+        static_cast<grpc_compression_level>(
+            Clamp(*default_level, static_cast<int>(GRPC_COMPRESS_LEVEL_NONE),
+                  static_cast<int>(GRPC_COMPRESS_LEVEL_COUNT - 1)));
   }
   auto default_algorithm =
       args.GetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM);

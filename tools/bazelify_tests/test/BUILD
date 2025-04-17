@@ -72,7 +72,7 @@ grpc_run_tests_harness_test(
     ],
     docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
-    use_login_shell = True,  # ruby's docker image uses RVM which wierdly requires login shell
+    use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
 
 grpc_run_tests_harness_test(
@@ -83,7 +83,7 @@ grpc_run_tests_harness_test(
     ],
     docker_image_version = "tools/dockerfile/test/ruby_debian11_x64.current_version",
     prepare_script = ":prepare_ruby.sh",
-    use_login_shell = True,  # ruby's docker image uses RVM which wierdly requires login shell
+    use_login_shell = True,  # ruby's docker image uses RVM which weirdly requires login shell
 )
 
 # PHP
@@ -91,18 +91,18 @@ grpc_run_tests_harness_test(
     name = "runtests_php_linux_dbg",
     size = "enormous",
     args = [
-        "-l php7 -c dbg",
+        "-l php8 -c dbg",
     ],
-    docker_image_version = "tools/dockerfile/test/php7_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
 )
 
 grpc_run_tests_harness_test(
     name = "runtests_php_linux_opt",
     size = "enormous",
     args = [
-        "-l php7 -c opt",
+        "-l php8 -c opt",
     ],
-    docker_image_version = "tools/dockerfile/test/php7_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_debian12_x64.current_version",
 )
 
 # Python
@@ -155,49 +155,49 @@ grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_as_submodule_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_as_submodule.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_as_externalproject_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_as_externalproject.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_fetchcontent_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_fetchcontent.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_module_install_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_module_install.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_pkgconfig_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_pkgconfig.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_x64.current_version",
 )
 
 grpc_run_cpp_distribtest_test(
     name = "cpp_distribtest_cmake_aarch64_cross_linux",
     size = "enormous",
     args = ["test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh"],
-    docker_image_version = "tools/dockerfile/distribtest/cpp_debian10_aarch64_cross_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/cpp_debian11_aarch64_cross_x64.current_version",
 )
 
 test_suite(
@@ -217,6 +217,13 @@ test_suite(
 generate_strict_tests()
 
 grpc_run_simple_command_test(
+    name = "bazel_build_with_bzlmod_linux",
+    size = "enormous",
+    args = ["tools/bazelify_tests/test/bazel_build_with_bzlmod_linux.sh"],
+    docker_image_version = "tools/dockerfile/test/bazel.current_version",
+)
+
+grpc_run_simple_command_test(
     name = "bazel_build_with_grpc_no_xds_linux",
     size = "enormous",
     args = ["tools/bazelify_tests/test/bazel_build_with_grpc_no_xds_linux.sh"],
@@ -233,6 +240,7 @@ grpc_run_simple_command_test(
 test_suite(
     name = "bazel_build_tests_linux",
     tests = [
+        ":bazel_build_with_bzlmod_linux",
         ":bazel_build_with_grpc_no_xds_linux",
         ":bazel_build_with_grpc_no_xds_negative_test_linux",
         ":bazel_build_with_strict_warnings_linux",
@@ -243,19 +251,19 @@ test_suite(
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x64",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x64.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x64.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_x86",
     build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_centos6_x86.current_version",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_x86.current_version",
 )
 
 grpc_build_artifact_task(
     name = "artifact_protoc_linux_aarch64",
-    build_script = "build_artifact_protoc_linux.sh",
-    docker_image_version = "tools/dockerfile/grpc_artifact_protoc_aarch64.current_version",
+    build_script = "build_artifact_protoc_linux_aarch64.sh",
+    docker_image_version = "tools/dockerfile/grpc_artifact_manylinux2014_aarch64.current_version",
 )
 
 # PHP artifact build tasks
@@ -263,14 +271,14 @@ grpc_build_artifact_task(
 grpc_build_artifact_task(
     name = "artifact_php_linux_x64",
     build_script = "build_artifact_php_linux.sh",
-    docker_image_version = "tools/dockerfile/test/php73_zts_debian11_x64.current_version",
+    docker_image_version = "tools/dockerfile/test/php8_zts_debian12_x64.current_version",
 )
 
 # Python artifact build tasks
 
 grpc_build_artifact_task(
-    name = "artifact_python_linux_x64_manylinux2014_cp312",
-    build_script = "build_artifact_python_linux_x64_cp312.sh",
+    name = "artifact_python_linux_x64_manylinux2014_cp313",
+    build_script = "build_artifact_python_linux_x64_cp313.sh",
     docker_image_version = "tools/dockerfile/grpc_artifact_python_manylinux2014_x64.current_version",
 )
 
@@ -287,7 +295,7 @@ grpc_build_artifact_task(
     name = "package_python_linux",
     # TODO(jtattermusch): add more python artifacts once they are migrated from artifact_targets.py
     artifact_deps = [
-        "artifact_python_linux_x64_manylinux2014_cp312",
+        "artifact_python_linux_x64_manylinux2014_cp313",
         "artifact_python_linux_x64_manylinux2014_cp39",
     ],
     build_script = "build_package_python_linux.sh",
@@ -311,13 +319,13 @@ grpc_build_artifact_task(
 # C# distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_csharp_linux_x64_debian10",
+    name = "distribtest_csharp_linux_x64_debian11",
     # depend on the C# packages
     artifact_deps = [
         "package_csharp_linux",
     ],
     build_script = "run_distribtest_csharp_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/csharp_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/csharp_debian11_x64.current_version",
 )
 
 grpc_run_distribtest_test(
@@ -364,7 +372,7 @@ test_suite(
     name = "csharp_distribtests_linux",
     tests = [
         ":distribtest_csharp_linux_x64_alpine",
-        ":distribtest_csharp_linux_x64_debian10",
+        ":distribtest_csharp_linux_x64_debian11",
         ":distribtest_csharp_linux_x64_dotnet31",
         ":distribtest_csharp_linux_x64_dotnet5",
         ":distribtest_csharp_linux_x64_ubuntu2204",
@@ -374,20 +382,20 @@ test_suite(
 # PHP distribtests
 
 grpc_run_distribtest_test(
-    name = "distribtest_php_linux_x64_debian10",
+    name = "distribtest_php_linux_x64_debian12",
     size = "enormous",
     artifact_deps = [
         "artifact_php_linux_x64",
     ],
     build_script = "run_distribtest_php_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/php7_debian10_x64.current_version",
+    docker_image_version = "tools/dockerfile/distribtest/php8_debian12_x64.current_version",
     docker_run_as_root = True,
 )
 
 test_suite(
     name = "php_distribtests_linux",
     tests = [
-        ":distribtest_php_linux_x64_debian10",
+        ":distribtest_php_linux_x64_debian12",
     ],
 )
 
@@ -421,7 +429,7 @@ test_suite(
         ":artifact_protoc_linux_aarch64_build_test",
         ":artifact_protoc_linux_x64_build_test",
         ":artifact_protoc_linux_x86_build_test",
-        ":artifact_python_linux_x64_manylinux2014_cp312_build_test",
+        ":artifact_python_linux_x64_manylinux2014_cp313_build_test",
         ":artifact_python_linux_x64_manylinux2014_cp39_build_test",
         ":package_csharp_linux_build_test",
         ":package_python_linux_build_test",

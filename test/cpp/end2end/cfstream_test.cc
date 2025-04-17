@@ -16,17 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
@@ -39,10 +28,19 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -314,7 +312,7 @@ std::vector<TestScenario> CreateTestScenarios() {
 INSTANTIATE_TEST_SUITE_P(CFStreamTest, CFStreamTest,
                          ::testing::ValuesIn(CreateTestScenarios()));
 
-// gRPC should automatically detech network flaps (without enabling keepalives)
+// gRPC should automatically detect network flaps (without enabling keepalives)
 //  when CFStream is enabled
 TEST_P(CFStreamTest, NetworkTransition) {
   auto channel = BuildChannel();

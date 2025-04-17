@@ -7,12 +7,15 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/escaping.h"
 #include "google/protobuf/test_messages_proto3.upb.h"
 #include "upb/base/status.hpp"
 #include "upb/base/string_view.h"
@@ -22,6 +25,7 @@
 #include "upb/mem/arena.h"
 #include "upb/mem/arena.hpp"
 #include "upb/message/array.h"
+#include "upb/message/compare.h"
 #include "upb/message/map.h"
 #include "upb/message/message.h"
 #include "upb/message/test.upb.h"
@@ -35,12 +39,11 @@
 #include "upb/reflection/def.hpp"
 #include "upb/reflection/message.h"
 #include "upb/test/fuzz_util.h"
+#include "upb/text/debug_string.h"
 #include "upb/wire/decode.h"
 #include "upb/wire/encode.h"
-
-// begin:google_only
-// #include "testing/fuzzing/fuzztest.h"
-// end:google_only
+#include "upb/wire/eps_copy_input_stream.h"
+#include "upb/wire/types.h"
 
 void VerifyMessage(const upb_test_TestExtensions* ext_msg) {
   EXPECT_TRUE(upb_test_TestExtensions_has_optional_int32_ext(ext_msg));
@@ -114,6 +117,98 @@ TEST(MessageTest, Extensions) {
   protobuf_test_messages_proto3_TestAllTypesProto3_set_optional_int32(
       upb_test_mutable_optional_msg_ext(ext_msg4, arena.ptr()), 456);
   VerifyMessage(ext_msg4);
+}
+
+TEST(MessageTest, ExtensionsDeterministic) {
+  upb::Arena arena;
+  upb_test_TestExtensions* ext_msg = upb_test_TestExtensions_new(arena.ptr());
+
+  EXPECT_FALSE(upb_test_TestExtensions_has_optional_int32_ext(ext_msg));
+  // EXPECT_FALSE(upb_test_TestExtensions_Nested_has_optional_int32_ext(ext_msg));
+  EXPECT_FALSE(upb_test_has_optional_msg_ext(ext_msg));
+
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestExtensions_getmsgdef(defpool.ptr()));
+  EXPECT_TRUE(m.ptr() != nullptr);
+
+  std::string json = R"json(
+  {
+      "[upb_test.TestExtensions.optional_int32_ext]": 123,
+      "[upb_test.TestExtensions.Nested.repeated_int32_ext]": [],
+      "[upb_test.optional_msg_ext]": {"optional_int32": 456}
+  }
+  )json";
+  upb::Status status;
+  EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), UPB_UPCAST(ext_msg),
+                             m.ptr(), defpool.ptr(), 0, arena.ptr(),
+                             status.ptr()))
+      << status.error_message();
+
+  VerifyMessage(ext_msg);
+
+  size_t size;
+  char* serialized =
+      upb_test_TestExtensions_serialize(ext_msg, arena.ptr(), &size);
+  ASSERT_TRUE(serialized != nullptr);
+  ASSERT_GE(size, 0);
+
+  size_t deterministic_size;
+  char* deterministic_serialized = upb_test_TestExtensions_serialize_ex(
+      ext_msg, kUpb_EncodeOption_Deterministic, arena.ptr(),
+      &deterministic_size);
+  ASSERT_TRUE(deterministic_serialized != nullptr);
+  ASSERT_EQ(deterministic_size, size);
+}
+
+TEST(MessageTest, ExtensionsEmpty) {
+  upb::Arena arena;
+
+  upb::DefPool defpool;
+  upb::MessageDefPtr m(upb_test_TestExtensions_getmsgdef(defpool.ptr()));
+  EXPECT_TRUE(m.ptr() != nullptr);
+
+  for (int options : {0, int{kUpb_EncodeOption_Deterministic}}) {
+    std::string json_with_empty = R"json(
+  {
+      "[upb_test.TestExtensions.optional_int32_ext]": 123,
+      "[upb_test.TestExtensions.Nested.repeated_int32_ext]": []
+  }
+  )json";
+    upb::Status status_empty;
+    upb_test_TestExtensions* ext_msg_with_empty =
+        upb_test_TestExtensions_new(arena.ptr());
+    EXPECT_TRUE(upb_JsonDecode(json_with_empty.data(), json_with_empty.size(),
+                               UPB_UPCAST(ext_msg_with_empty), m.ptr(),
+                               defpool.ptr(), 0, arena.ptr(),
+                               status_empty.ptr()))
+        << status_empty.error_message();
+
+    std::string json = R"json(
+  {
+      "[upb_test.TestExtensions.optional_int32_ext]": 123
+  }
+  )json";
+    upb::Status status;
+    upb_test_TestExtensions* ext_msg = upb_test_TestExtensions_new(arena.ptr());
+    EXPECT_TRUE(upb_JsonDecode(json.data(), json.size(), UPB_UPCAST(ext_msg),
+                               m.ptr(), defpool.ptr(), 0, arena.ptr(),
+                               status.ptr()))
+        << status.error_message();
+
+    size_t size_with_empty;
+    char* serialized = upb_test_TestExtensions_serialize_ex(
+        ext_msg_with_empty, options, arena.ptr(), &size_with_empty);
+    ASSERT_TRUE(serialized != nullptr);
+    ASSERT_GE(size_with_empty, 0);
+
+    size_t size;
+    serialized = upb_test_TestExtensions_serialize_ex(ext_msg, options,
+                                                      arena.ptr(), &size);
+    ASSERT_TRUE(serialized != nullptr);
+    // Presence or absence of an empty extension should not affect the
+    // serialized output.
+    ASSERT_EQ(size_with_empty, size);
+  }
 }
 
 void VerifyMessageSet(const upb_test_TestMessageSet* mset_msg) {
@@ -505,6 +600,7 @@ TEST(MessageTest, MapField) {
   // parse into second instance
   upb_test_TestMapFieldExtra* test_msg_extra2 =
       upb_test_TestMapFieldExtra_parse(serialized, size, arena.ptr());
+  ASSERT_NE(nullptr, test_msg_extra2);
   ASSERT_TRUE(
       upb_test_TestMapFieldExtra_map_field_get(test_msg_extra2, 0, nullptr));
 }
@@ -583,196 +679,3 @@ TEST(MessageTest, Freeze) {
     ASSERT_TRUE(upb_Message_IsFrozen(UPB_UPCAST(nest)));
   }
 }
-
-// begin:google_only
-//
-// static void DecodeEncodeArbitrarySchemaAndPayload(
-//     const upb::fuzz::MiniTableFuzzInput& input, std::string_view proto_payload,
-//     int decode_options, int encode_options, bool length_prefixed = false) {
-// // Lexan does not have setenv
-// #ifndef _MSC_VER
-//   setenv("FUZZTEST_STACK_LIMIT", "262144", 1);
-// #endif
-//   // The value of 80 used here is empirical and intended to roughly represent
-//   // the tiny 64K stack size used by the test framework. We still see the
-//   // occasional stack overflow at 90, so far 80 has worked 100% of the time.
-//   decode_options = upb_Decode_LimitDepth(decode_options, 80);
-//   encode_options = upb_Encode_LimitDepth(encode_options, 80);
-//
-//   upb::Arena arena;
-//   upb_ExtensionRegistry* exts;
-//   const upb_MiniTable* mini_table =
-//       upb::fuzz::BuildMiniTable(input, &exts, arena.ptr());
-//   if (!mini_table) return;
-//   upb_Message* msg = upb_Message_New(mini_table, arena.ptr());
-//   if (length_prefixed) {
-//     size_t num_bytes_read = 0;
-//     upb_DecodeStatus status = upb_DecodeLengthPrefixed(
-//         proto_payload.data(), proto_payload.size(), msg, &num_bytes_read,
-//         mini_table, exts, decode_options, arena.ptr());
-//     ASSERT_TRUE(status != kUpb_DecodeStatus_Ok ||
-//                 num_bytes_read <= proto_payload.size());
-//   } else {
-//     upb_Decode(proto_payload.data(), proto_payload.size(), msg, mini_table,
-//                exts, decode_options, arena.ptr());
-//   }
-//   char* ptr;
-//   size_t size;
-//   if (length_prefixed) {
-//     upb_EncodeLengthPrefixed(msg, mini_table, encode_options, arena.ptr(), &ptr,
-//                              &size);
-//   } else {
-//     upb_Encode(msg, mini_table, encode_options, arena.ptr(), &ptr, &size);
-//   }
-// }
-// FUZZ_TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayload);
-//
-// TEST(FuzzTest, DecodeUnknownProto2EnumExtension) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\256\354Rt\216\3271\234", "\243\243\267\207\336gV\366w"},
-//        {"z"},
-//        "}\212\304d\371\363\341\2329\325B\264\377?\215\223\201\201\226y\201%"
-//        "\321\363\255;",
-//        {}},
-//       "\010", -724543908, -591643538);
-// }
-//
-// TEST(FuzzTest, DecodeExtensionEnsurePresenceInitialized) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\031", "S", "\364", "", "", "j", "\303", "", "\224", "\277"},
-//        {},
-//        "_C-\236$*)C0C>",
-//        {4041515984, 2147483647, 1929379871, 0, 3715937258, 4294967295}},
-//       "\010\002", 342248070, -806315555);
-// }
-//
-// TEST(FuzzTest, DecodeExtendMessageSetWithNonMessage) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\n"}, {""}, ".\244", {}}, "\013\032\005\212a#\365\336\020\001\226",
-//       14803219, 670718349);
-// }
-//
-// TEST(FuzzTest, DecodeExtendMessageSetWithNonMessage2) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"\n", "G", "\n", "\274", ""},
-//                                          {"", "\030"},
-//                                          "_@",
-//                                          {4294967295, 2147483647}},
-//                                         std::string("\013\032\000\220", 4),
-//                                         279975758, 1647495141);
-// }
-//
-// TEST(FuzzTest, DecodeExtendMessageSetWithNonMessage3) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\n"}, {"B", ""}, "\212:b", {11141121}},
-//       "\013\032\004\357;7\363\020\001\346\240\200\201\271", 399842149,
-//       -452966025);
-// }
-//
-// TEST(FuzzTest, DecodeExtendMessageSetWithNonMessage4) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\n", "3\340", "\354"}, {}, "B}G", {4294967295, 4082331310}},
-//       "\013\032\004\244B\331\255\020\001\220\224\243\350\t", -561523015,
-//       1683327312);
-// }
-//
-// TEST(FuzzTest, DecodeExtendMessageSetWithNonMessage5) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\n"}, {""}, "kB", {0}},
-//       "x\203\251\006\013\032\002S\376\010\273\'\020\014\365\207\244\234",
-//       -696925610, -654590577);
-// }
-//
-// TEST(FuzzTest, ExtendMessageSetWithEmptyExtension) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"\n"}, {}, "_", {}}, std::string(), 0,
-//                                         0);
-// }
-//
-// TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayloadRegression) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"\320", "\320", "\320", "\320", "\320", "%2%%%%%"},
-//        {"", "", "", "", "", "", "", "", "", "", "", "",
-//         "", "", "", "", "", "", "", "", "", "", ""},
-//        "\226\226\226\226\226\226\350\351\350\350\350\350\350\350\350\314",
-//        {4026531839}},
-//       std::string("\n\n\n\n\272\n======@@%%%%%%%%%%%%%%%@@@(("
-//                   "qqqqqqqq5555555555qqqqqffq((((((((((((\335@@>"
-//                   "\ru\360ncppppxxxxxxxxx\025\025\025xxxxxppppppp<="
-//                   "\2165\275\275\315\217\361\010\t\000\016\013in\n\n\n\256\263",
-//                   130),
-//       901979906, 65537);
-// }
-//
-// // This test encodes a map field with extra cruft.
-// TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayloadRegressionInvalidMap) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"%%%%///////"}, {}, "", {}},
-//                                         std::string("\035|", 2), 65536, 3);
-// }
-//
-// // This test found a case where presence was unset for a mini table field.
-// TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayloadRegressionMsan) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"%-#^#"}, {}, "", {}}, std::string(),
-//                                         -1960166338, 16809991);
-// }
-//
-// // This test encodes a map containing a msg wrapping another, empty msg.
-// TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayloadRegressionMapMap) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"%#G"}, {}, "", {}}, std::string("\022\002\022\000", 4), 0, 0);
-// }
-//
-// TEST(FuzzTest, GroupMap) {
-//   // Groups should not be allowed as maps, but we previously failed to prevent
-//   // this.
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {.mini_descriptors = {"$$FF$", "%-C"},
-//        .enum_mini_descriptors = {},
-//        .extensions = "",
-//        .links = {1}},
-//       std::string(
-//           "\023\020\030\233\000\204\330\372#\000`"
-//           "a\000\000\001\000\000\000ccccccc\030s\273sssssssss\030\030\030\030"
-//           "\030\030\030\030\215\215\215\215\215\215\215\215\030\030\232\253\253"
-//           "\232*\334\227\273\231\207\373\t\0051\305\265\335\224\226"),
-//       0, 0);
-// }
-//
-// TEST(FuzzTest, MapUnknownFieldSpanBuffers) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"$   3", "%# "}, {}, "", {1}},
-//       std::string(
-//           "\"\002\010\000\000\000\000\000\000\000\000\000\000\000\000\000\000",
-//           17),
-//       0, 0);
-// }
-//
-// // Another test for mismatched submsg types.
-// TEST(FuzzTest, DecodeEncodeArbitrarySchemaAndPayloadRegression22) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"$2222222222222222222222", "%,&"}, {}, "", {1}},
-//       std::string("\035\170\170\170\051\263\001\030\000\035\357\357\340\021\035"
-//                   "\025\331\035\035\035\035\035\035\035\035",
-//                   25),
-//       0, 0);
-// }
-//
-// TEST(FuzzTest, ExtensionWithoutExt) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"$ 3", "", "%#F"}, {}, "", {2, 1}},
-//                                         std::string("\022\002\010\000", 4), 0,
-//                                         0);
-// }
-//
-// TEST(FuzzTest, MapFieldVerify) {
-//   DecodeEncodeArbitrarySchemaAndPayload({{"%  ^!"}, {}, "", {}}, "", 0, 0);
-// }
-//
-// TEST(FuzzTest, TooManyRequiredFields) {
-//   DecodeEncodeArbitrarySchemaAndPayload(
-//       {{"$ N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N "
-//         "N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N N"},
-//        {},
-//        "",
-//        {}},
-//       "", 0, 4);
-// }
-//
-// end:google_only

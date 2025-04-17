@@ -21,8 +21,11 @@ load("@rules_proto//proto:defs.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
+    "get_out_dir",
     "get_plugin_args",
+    "get_proto_arguments",
     "get_proto_root",
+    "is_in_virtual_imports",
     "proto_path_to_generated_filename",
 )
 
@@ -43,11 +46,6 @@ def _strip_package_from_path(label_package, file):
     if not path.startswith(label_package + "/", prefix_len):
         fail("'{}' does not lie within '{}'.".format(path, label_package))
     return path[prefix_len + len(label_package + "/"):]
-
-def _get_srcs_file_path(file):
-    if not file.is_source and file.path.startswith(file.root.path):
-        return file.path[len(file.root.path) + 1:]
-    return file.path
 
 def _join_directories(directories):
     massaged_directories = [directory for directory in directories if len(directory) != 0]
@@ -112,30 +110,34 @@ def generate_cc_impl(ctx):
             for proto in protos
         ]
     out_files = [ctx.actions.declare_file(out) for out in outs]
-    dir_out = str(ctx.genfiles_dir.path + proto_root)
+    out_dir_info = get_out_dir(protos, ctx)
+    output_dir = out_dir_info.path
 
     arguments = []
     if ctx.executable.plugin:
         arguments += get_plugin_args(
             ctx.executable.plugin,
             ctx.attr.flags,
-            dir_out,
+            output_dir,
             ctx.attr.generate_mocks,
+            ctx.attr.allow_deprecated,
         )
         tools = [ctx.executable.plugin]
     else:
-        arguments.append("--cpp_out=" + ",".join(ctx.attr.flags) + ":" + dir_out)
+        arguments.append("--cpp_out=" + ",".join(ctx.attr.flags) + ":" + output_dir)
         tools = []
 
-    arguments += [
-        "--proto_path={}".format(get_include_directory(i))
-        for i in includes
-    ]
+    proto_root = get_proto_root(ctx.label.workspace_root)
+    dir_out = str(ctx.genfiles_dir.path + proto_root)
+    proto_paths = [dir_out]
+    for inc in includes:
+        inc_dir = get_include_directory(inc)
+        if inc_dir not in proto_paths:
+            proto_paths.append(inc_dir)
+    arguments += ["--proto_path={}".format(path) for path in proto_paths]
 
-    # Include the output directory so that protoc puts the generated code in the
-    # right directory.
-    arguments.append("--proto_path={0}{1}".format(dir_out, proto_root))
-    arguments += [_get_srcs_file_path(proto) for proto in protos]
+    # Add proto files to compile.
+    arguments += get_proto_arguments(protos, ctx.genfiles_dir.path)
 
     # create a list of well known proto files if the argument is non-None
     well_known_proto_files = []
@@ -163,7 +165,23 @@ def generate_cc_impl(ctx):
         use_default_shell_env = True,
     )
 
-    return DefaultInfo(files = depset(out_files))
+    # Create symlinks from _virtual_imports to _virtual_includes for headers.
+    virtual_includes_files = []
+    for out_file in out_files:
+        if (is_in_virtual_imports(out_file) and
+            out_file.path.endswith(".grpc.pb.h")):
+            virtual_imports_str = "_virtual_imports"
+            path_idx = out_file.path.find(virtual_imports_str) + len(virtual_imports_str)
+            rel_path = out_file.path[path_idx:]
+            virtual_includes_path = "_virtual_includes" + rel_path
+            virtual_includes_file = ctx.actions.declare_file(virtual_includes_path)
+            ctx.actions.symlink(
+                output = virtual_includes_file,
+                target_file = out_file,
+            )
+            virtual_includes_files.append(virtual_includes_file)
+
+    return DefaultInfo(files = depset(out_files + virtual_includes_files))
 
 _generate_cc = rule(
     attrs = {
@@ -183,6 +201,10 @@ _generate_cc = rule(
         ),
         "well_known_protos": attr.label(mandatory = False),
         "generate_mocks": attr.bool(
+            default = False,
+            mandatory = False,
+        ),
+        "allow_deprecated": attr.bool(
             default = False,
             mandatory = False,
         ),

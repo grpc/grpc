@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
+platform :ios, '15.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
@@ -25,4 +25,12 @@ target 'SwiftSample' do
   pod 'gRPC-Core', :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
   pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+    end
+  end
 end

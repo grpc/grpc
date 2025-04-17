@@ -15,23 +15,21 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_CALLBACKS_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_CALLBACKS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
+#include <optional>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/random/bit_gen_ref.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -87,7 +85,7 @@ class Chttp2PingCallbacks {
   // Clears started_new_ping_without_setting_timeout.
   // Returns the ping id of the ping the timeout was attached to if a timer was
   // started, or nullopt otherwise.
-  absl::optional<uint64_t> OnPingTimeout(
+  std::optional<uint64_t> OnPingTimeout(
       Duration ping_timeout,
       grpc_event_engine::experimental::EventEngine* event_engine,
       Callback callback);

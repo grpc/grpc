@@ -18,17 +18,15 @@
 
 #ifdef GPR_WINDOWS
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-
 #include <grpc/event_engine/event_engine.h>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/functional/any_invocable.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class WinSocket {
  public:
@@ -135,8 +133,10 @@ absl::Status PrepareSocket(SOCKET sock);
 // Set non block option for socket.
 absl::Status SetSocketNonBlock(SOCKET sock);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+// Get the local address of a socket.
+absl::StatusOr<EventEngine::ResolvedAddress> SocketToAddress(SOCKET sock);
+
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

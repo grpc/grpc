@@ -38,12 +38,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
     Construct(&promise${i}, std::forward<P${i}>(p${i}));
 % endfor
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) {
-    DCHECK(other.ready.none());
-% for i in range(0,n):
-    Construct(&promise${i}, other.promise${i});
-% endfor
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(const JoinState& other) = delete;
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
@@ -79,7 +74,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
           return Traits::template EarlyReturn<Result>(std::move(*p));
         }
       }
-    } else if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
+    } else {
       GRPC_TRACE_VLOG(promise_primitives, 2) << "join[" << this << "]: joint ${i+1}/${n} already ready";
     }
 % endfor
@@ -104,10 +99,10 @@ front_matter = """
 #include "absl/log/log.h"
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
+#include "src/core/util/construct_destruct.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/gprpp/bitset.h"
+#include "src/core/util/bitset.h"
 #include <tuple>
 #include <type_traits>
 #include <utility>

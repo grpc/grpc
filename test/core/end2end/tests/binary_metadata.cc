@@ -16,16 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -77,7 +76,8 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage(response_payload.Ref())
-      .SendStatusFromServer(GRPC_STATUS_OK, status_string.as_string_view(),
+      .SendStatusFromServer(GRPC_STATUS_INVALID_ARGUMENT,
+                            status_string.as_string_view(),
                             {
                                 {"key5-bin", key5_payload.as_string_view()},
                                 {"key6-bin", key6_payload.as_string_view()},
@@ -86,7 +86,7 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   test.Expect(1, true);
   test.Step();
 
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ(server_status.message(), status_string.as_string_view());
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
@@ -102,22 +102,22 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
             key6_payload.as_string_view());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientHttp2Fallback) {
   BinaryMetadata(*this, true, false);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientTrueBinary) {
   BinaryMetadata(*this, false, true);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerTrueBinaryClientTrueBinary) {
   BinaryMetadata(*this, true, true);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   BinaryMetadataServerHttp2FallbackClientHttp2Fallback) {
   BinaryMetadata(*this, false, false);
 }

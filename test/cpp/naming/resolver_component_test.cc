@@ -18,13 +18,17 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/grpc_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <string.h>
 
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <gmock/gmock.h>
 
 #include "absl/flags/flag.h"
 #include "absl/log/check.h"
@@ -32,26 +36,15 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/grpc_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
+#include "gmock/gmock.h"
 #include "src/core/client_channel/client_channel_filter.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -61,7 +54,11 @@
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"
+#include "src/core/util/work_serializer.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/socket_use_after_close_detector.h"
@@ -282,7 +279,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
 
 void CheckLBPolicyResultLocked(const grpc_core::ChannelArgs channel_args,
                                ArgsStruct* args) {
-  absl::optional<absl::string_view> lb_policy_arg =
+  std::optional<absl::string_view> lb_policy_arg =
       channel_args.GetString(GRPC_ARG_LB_POLICY_NAME);
   if (!args->expected_lb_policy.empty()) {
     EXPECT_TRUE(lb_policy_arg.has_value());
@@ -508,8 +505,7 @@ void RunResolvesRelevantRecordsTest(
           whole_uri.c_str(), resolver_args, args.pollset_set, args.lock,
           CreateResultHandler(&args));
   auto* resolver_ptr = resolver.get();
-  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); },
-                 DEBUG_LOCATION);
+  args.lock->Run([resolver_ptr]() { StartResolvingLocked(resolver_ptr); });
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

@@ -3,10 +3,11 @@
  *     xds/type/matcher/v3/string.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -133,6 +134,7 @@ UPB_INLINE const struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_St
   const struct xds_type_matcher_v3_RegexMatcher* default_val = NULL;
   const struct xds_type_matcher_v3_RegexMatcher* ret;
   const upb_MiniTableField field = {5, 16, -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__RegexMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -184,6 +186,7 @@ UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_suffix(xds_type_matcher_v3
 }
 UPB_INLINE void xds_type_matcher_v3_StringMatcher_set_safe_regex(xds_type_matcher_v3_StringMatcher *msg, struct xds_type_matcher_v3_RegexMatcher* value) {
   const upb_MiniTableField field = {5, 16, -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__RegexMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_RegexMatcher* xds_type_matcher_v3_StringMatcher_mutable_safe_regex(xds_type_matcher_v3_StringMatcher* msg, upb_Arena* arena) {
@@ -245,6 +248,7 @@ UPB_INLINE void xds_type_matcher_v3_ListStringMatcher_clear_patterns(xds_type_ma
 }
 UPB_INLINE const xds_type_matcher_v3_StringMatcher* const* xds_type_matcher_v3_ListStringMatcher_patterns(const xds_type_matcher_v3_ListStringMatcher* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__StringMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -256,6 +260,7 @@ UPB_INLINE const xds_type_matcher_v3_StringMatcher* const* xds_type_matcher_v3_L
 }
 UPB_INLINE const upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_upb_array(const xds_type_matcher_v3_ListStringMatcher* msg, size_t* size) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__StringMatcher_msg_init);
   const upb_Array* arr = upb_Message_GetArray(UPB_UPCAST(msg), &field);
   if (size) {
     *size = arr ? arr->UPB_PRIVATE(size) : 0;
@@ -264,6 +269,7 @@ UPB_INLINE const upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_upb_
 }
 UPB_INLINE upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_mutable_upb_array(xds_type_matcher_v3_ListStringMatcher* msg, size_t* size, upb_Arena* arena) {
   const upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__StringMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(UPB_UPCAST(msg),
                                                        &field, arena);
   if (size) {
@@ -274,6 +280,7 @@ UPB_INLINE upb_Array* _xds_type_matcher_v3_ListStringMatcher_patterns_mutable_up
 
 UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMatcher_mutable_patterns(xds_type_matcher_v3_ListStringMatcher* msg, size_t* size) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__StringMatcher_msg_init);
   upb_Array* arr = upb_Message_GetMutableArray(UPB_UPCAST(msg), &field);
   if (arr) {
     if (size) *size = arr->UPB_PRIVATE(size);
@@ -290,6 +297,7 @@ UPB_INLINE xds_type_matcher_v3_StringMatcher** xds_type_matcher_v3_ListStringMat
 }
 UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStringMatcher_add_patterns(xds_type_matcher_v3_ListStringMatcher* msg, upb_Arena* arena) {
   upb_MiniTableField field = {1, 8, 0, 0, 11, (int)kUpb_FieldMode_Array | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__StringMatcher_msg_init);
   upb_Array* arr = upb_Message_GetOrCreateMutableArray(
       UPB_UPCAST(msg), &field, arena);
   if (!arr || !UPB_PRIVATE(_upb_Array_ResizeUninitialized)(
@@ -309,4 +317,4 @@ UPB_INLINE struct xds_type_matcher_v3_StringMatcher* xds_type_matcher_v3_ListStr
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_STRING_PROTO_UPB_H__UPB_H_ */

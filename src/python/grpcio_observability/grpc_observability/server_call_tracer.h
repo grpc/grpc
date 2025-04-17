@@ -15,6 +15,8 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_SERVER_CALL_TRACER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 
 #include "absl/strings/string_view.h"
@@ -22,9 +24,6 @@
 #include "constants.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -83,19 +82,18 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override;
 
-  void RecordSendMessage(const grpc_core::SliceBuffer& send_message) override;
+  void RecordSendMessage(const grpc_core::Message& send_message) override;
 
   void RecordSendCompressedMessage(
-      const grpc_core::SliceBuffer& send_compressed_message) override;
+      const grpc_core::Message& send_compressed_message) override;
 
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override;
 
-  void RecordReceivedMessage(
-      const grpc_core::SliceBuffer& recv_message) override;
+  void RecordReceivedMessage(const grpc_core::Message& recv_message) override;
 
   void RecordReceivedDecompressedMessage(
-      const grpc_core::SliceBuffer& recv_decompressed_message) override;
+      const grpc_core::Message& recv_decompressed_message) override;
 
   void RecordReceivedTrailingMetadata(
       grpc_metadata_batch* /*recv_trailing_metadata*/) override {}
@@ -114,7 +112,7 @@ class PythonOpenCensusServerCallTracer : public grpc_core::ServerCallTracer {
 
   void RecordAnnotation(const Annotation& annotation) override;
 
-  std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
 
  private:
   PythonCensusContext context_;

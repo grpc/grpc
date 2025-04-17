@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_GRPCLB_CLIENT_STATS_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_GRPCLB_GRPCLB_CLIENT_STATS_H
 
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <memory>
@@ -26,13 +28,9 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
-
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

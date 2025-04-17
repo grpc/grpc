@@ -18,23 +18,21 @@
 
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
-#include <gtest/gtest.h>
-
-#include "upb/mem/arena.hpp"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#include "src/core/lib/gprpp/env.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "upb/mem/arena.hpp"
 
 #define ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME "Hello Google"
 #define ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME "bigtable.google.api.com"
@@ -514,17 +512,17 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
 
 TEST(MaxNumberOfConcurrentHandshakesTest, Default) {
   grpc_core::UnsetEnv(kMaxConcurrentStreamsEnvironmentVariable);
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNotInt) {
   grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "not-a-number");
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarNegative) {
   grpc_core::SetEnv(kMaxConcurrentStreamsEnvironmentVariable, "-10");
-  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 40);
+  EXPECT_EQ(MaxNumberOfConcurrentHandshakes(), 100);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, EnvVarSuccess) {

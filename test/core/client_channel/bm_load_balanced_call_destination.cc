@@ -13,15 +13,13 @@
 // limitations under the License.
 
 #include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/client_channel/load_balanced_call_destination.h"
 #include "src/core/lib/address_utils/parse_address.h"
-#include "test/core/transport/call_spine_benchmarks.h"
+#include "test/core/call/call_spine_benchmarks.h"
 
 namespace grpc_core {
 namespace {
@@ -79,6 +77,8 @@ class LoadBalancedCallDestinationTraits {
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
+
+    std::string address() const override { return "test"; }
 
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;

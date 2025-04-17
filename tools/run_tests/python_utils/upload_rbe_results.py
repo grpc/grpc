@@ -310,7 +310,7 @@ if __name__ == "__main__":
                             "test_target": action["id"]["targetId"],
                             "test_class_name": "N/A",
                             "test_case": "N/A",
-                            "result": "UNPARSEABLE",
+                            "result": "UNPARSABLE",
                             "timestamp": "N/A",
                         },
                     }

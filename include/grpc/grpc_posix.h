@@ -19,11 +19,10 @@
 #ifndef GRPC_GRPC_POSIX_H
 #define GRPC_GRPC_POSIX_H
 
-#include <stddef.h>
-
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {

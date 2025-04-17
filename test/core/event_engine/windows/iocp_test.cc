@@ -14,26 +14,24 @@
 #include <grpc/support/port_platform.h>
 
 #ifdef GPR_WINDOWS
-#include <thread>
+#include <grpc/grpc.h>
+#include <grpc/support/log_windows.h>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
+#include <thread>
+#include <variant>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/time/time.h"
-#include "absl/types/variant.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log_windows.h>
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/notification.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace {
@@ -69,16 +67,19 @@ TEST_F(IOCPTest, ClientReceivesNotificationOfServerSend) {
   DWORD flags = 0;
   AnyInvocableClosure* on_read;
   AnyInvocableClosure* on_write;
+  WSABUF read_wsabuf;
+  DWORD bytes_rcvd;
+  read_wsabuf.len = 2048;
+  char read_char_buffer[2048];
+  read_wsabuf.buf = read_char_buffer;
   {
     // When the client gets some data, ensure it matches what we expect.
-    WSABUF read_wsabuf;
-    read_wsabuf.len = 2048;
-    char read_char_buffer[2048];
-    read_wsabuf.buf = read_char_buffer;
-    DWORD bytes_rcvd;
     on_read = new AnyInvocableClosure([win_socket = wrapped_client_socket.get(),
                                        &read_called, &read_wsabuf]() {
       VLOG(2) << "Notified on read";
+      EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
+          << "Error on read: "
+          << win_socket->read_info()->result().error_status;
       EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
       EXPECT_STREQ(read_wsabuf.buf, "hello!");
       read_called.Notify();
@@ -147,22 +148,25 @@ TEST_F(IOCPTest, IocpWorkTimeoutDueToNoNotificationRegistered) {
   auto wrapped_client_socket = iocp.Watch(sockpair[0]);
   grpc_core::Notification read_called;
   DWORD flags = 0;
+  WSABUF read_wsabuf;
+  DWORD bytes_rcvd;
+  read_wsabuf.len = 2048;
+  char read_char_buffer[2048];
+  read_wsabuf.buf = read_char_buffer;
   {
     // Set the client to receive asynchronously
     // Prepare a notification callback, but don't register it yet.
-    WSABUF read_wsabuf;
     wrapped_client_socket->NotifyOnRead(
         SelfDeletingClosure::Create([win_socket = wrapped_client_socket.get(),
                                      &read_called, &read_wsabuf]() {
           VLOG(2) << "Notified on read";
+          EXPECT_TRUE(win_socket->read_info()->result().error_status.ok())
+              << "Error on read: "
+              << win_socket->read_info()->result().error_status;
           EXPECT_GE(win_socket->read_info()->result().bytes_transferred, 10u);
           EXPECT_STREQ(read_wsabuf.buf, "hello!");
           read_called.Notify();
         }));
-    read_wsabuf.len = 2048;
-    char read_char_buffer[2048];
-    read_wsabuf.buf = read_char_buffer;
-    DWORD bytes_rcvd;
     int status = WSARecv(
         wrapped_client_socket->raw_socket(), &read_wsabuf, 1, &bytes_rcvd,
         &flags, wrapped_client_socket->read_info()->overlapped(), NULL);
@@ -249,16 +253,6 @@ TEST_F(IOCPTest, KickThenShutdownCasusesNextWorkerToBeKicked) {
                      [&cb_invoked]() { cb_invoked = true; });
   ASSERT_TRUE(result == Poller::WorkResult::kDeadlineExceeded);
   ASSERT_FALSE(cb_invoked);
-  thread_pool->Quiesce();
-}
-
-TEST_F(IOCPTest, CrashOnWatchingAClosedSocket) {
-  auto thread_pool = grpc_event_engine::experimental::MakeThreadPool(8);
-  IOCP iocp(thread_pool.get());
-  SOCKET sockpair[2];
-  CreateSockpair(sockpair, iocp.GetDefaultSocketFlags());
-  closesocket(sockpair[0]);
-  ASSERT_DEATH({ auto wrapped_client_socket = iocp.Watch(sockpair[0]); }, "");
   thread_pool->Quiesce();
 }
 

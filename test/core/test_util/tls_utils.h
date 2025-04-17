@@ -17,20 +17,19 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_TLS_UTILS_H
 #define GRPC_TEST_CORE_TEST_UTIL_TLS_UTILS_H
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
+
 #include <deque>
 #include <string>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 
 namespace grpc_core {
 

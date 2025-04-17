@@ -18,25 +18,24 @@
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/sync.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <gtest/gtest.h>
-
-#include "upb/mem/arena.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/support/sync.h>
-
-#include "src/core/lib/gprpp/thd.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/util/thd.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "upb/message/internal/map.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
 #define ALTS_TSI_HANDSHAKER_TEST_OUT_FRAME "Hello Google"
@@ -362,26 +361,26 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                    local_account.size),
             0);
-  size_t iter = kUpb_Map_Begin;
-  grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
-      grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
-  ASSERT_NE(peer_attributes_entry, nullptr);
-  while (peer_attributes_entry != nullptr) {
-    upb_StringView key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
-        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
-            peer_attributes_entry));
-    upb_StringView val = grpc_gcp_AltsContext_PeerAttributesEntry_value(
-        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
-            peer_attributes_entry));
-    ASSERT_TRUE(upb_StringView_IsEqual(
-        key, upb_StringView_FromString(
-                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
-    ASSERT_TRUE(upb_StringView_IsEqual(
-        val, upb_StringView_FromString(
-                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
-    peer_attributes_entry =
-        grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+
+  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  const upb_Map* ctx_upb_map =
+      _grpc_gcp_AltsContext_peer_attributes_upb_map(ctx);
+  if (ctx_upb_map) {
+    size_t iter = kUpb_Map_Begin;
+    upb_MessageValue k, v;
+    while (upb_Map_Next(ctx_upb_map, &k, &v, &iter)) {
+      upb_StringView key = k.str_val;
+      upb_StringView val = v.str_val;
+      ASSERT_TRUE(upb_StringView_IsEqual(
+          key, upb_StringView_FromString(
+                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+      ASSERT_TRUE(upb_StringView_IsEqual(
+          val, upb_StringView_FromString(
+                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+    }
   }
+
   // Validate security level.
   ASSERT_EQ(
       memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
@@ -465,26 +464,26 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                    local_account.size),
             0);
-  size_t iter = kUpb_Map_Begin;
-  grpc_gcp_AltsContext_PeerAttributesEntry* peer_attributes_entry =
-      grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
-  ASSERT_NE(peer_attributes_entry, nullptr);
-  while (peer_attributes_entry != nullptr) {
-    upb_StringView key = grpc_gcp_AltsContext_PeerAttributesEntry_key(
-        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
-            peer_attributes_entry));
-    upb_StringView val = grpc_gcp_AltsContext_PeerAttributesEntry_value(
-        const_cast<grpc_gcp_AltsContext_PeerAttributesEntry*>(
-            peer_attributes_entry));
-    ASSERT_TRUE(upb_StringView_IsEqual(
-        key, upb_StringView_FromString(
-                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
-    ASSERT_TRUE(upb_StringView_IsEqual(
-        val, upb_StringView_FromString(
-                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
-    peer_attributes_entry =
-        grpc_gcp_AltsContext_peer_attributes_nextmutable(ctx, &iter);
+
+  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+  // v30.0.
+  const upb_Map* ctx_upb_map =
+      _grpc_gcp_AltsContext_peer_attributes_upb_map(ctx);
+  if (ctx_upb_map) {
+    size_t iter = kUpb_Map_Begin;
+    upb_MessageValue k, v;
+    while (upb_Map_Next(ctx_upb_map, &k, &v, &iter)) {
+      upb_StringView key = k.str_val;
+      upb_StringView val = v.str_val;
+      ASSERT_TRUE(upb_StringView_IsEqual(
+          key, upb_StringView_FromString(
+                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+      ASSERT_TRUE(upb_StringView_IsEqual(
+          val, upb_StringView_FromString(
+                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
+    }
   }
+
   // Check security level.
   ASSERT_EQ(
       memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
@@ -538,14 +537,15 @@ static tsi_result mock_server_start(alts_handshaker_client* client,
   }
   alts_handshaker_client_check_fields_for_testing(
       client, on_server_start_success_cb, nullptr, true, nullptr);
-  grpc_slice slice = grpc_empty_slice();
-  EXPECT_EQ(grpc_slice_cmp(*bytes_received, slice), 0);
+  EXPECT_EQ(memcmp(GRPC_SLICE_START_PTR(*bytes_received),
+                   ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                   GRPC_SLICE_LENGTH(*bytes_received)),
+            0);
   // Populate handshaker response for server_start request.
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
   *recv_buffer_ptr = generate_handshaker_response(SERVER_START);
   cb_event = client;
-  grpc_slice_unref(slice);
   signal(&caller_to_tsi_notification);
   return TSI_OK;
 }
@@ -658,8 +658,11 @@ static void check_handshaker_next_success() {
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Server start.
-  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
-                                nullptr, on_server_start_success_cb, nullptr),
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, on_server_start_success_cb, nullptr),
             TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   // Server next.
@@ -712,8 +715,11 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
                                 nullptr, check_must_not_be_called, nullptr),
             TSI_INTERNAL_ERROR);
   // Server start.
-  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
-                                nullptr, check_must_not_be_called, nullptr),
+  ASSERT_EQ(tsi_handshaker_next(
+                server_handshaker,
+                (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                nullptr, check_must_not_be_called, nullptr),
             TSI_INTERNAL_ERROR);
   // Server next.
   ASSERT_EQ(tsi_handshaker_next(
@@ -732,6 +738,18 @@ TEST(AltsTsiHandshakerTest, CheckHandshakerNextFailure) {
   // Cleanup.
   run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
   run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
+}
+
+TEST(AltsTsiHandshakerTest, CheckHandshakerNextIncomplete) {
+  should_handshaker_client_api_succeed = false;
+  tsi_handshaker* server_handshaker =
+      create_test_handshaker(false /* is_client */);
+  // Server start.
+  ASSERT_EQ(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr, nullptr,
+                                nullptr, check_must_not_be_called, nullptr),
+            TSI_INCOMPLETE_DATA);
+  // Cleanup.
+  run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
 }
 
 static void on_invalid_input_cb(tsi_result status, void* user_data,

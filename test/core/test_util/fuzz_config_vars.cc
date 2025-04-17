@@ -18,8 +18,6 @@
 
 #include "test/core/test_util/fuzz_config_vars.h"
 
-#include "test/core/test_util/fuzz_config_vars_helpers.h"
-
 namespace grpc_core {
 
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
@@ -35,8 +33,7 @@ ConfigVars::Overrides OverridesFromFuzzConfigVars(
     overrides.verbosity = vars.verbosity();
   }
   if (vars.has_experiments()) {
-    overrides.experiments =
-        ValidateExperimentsStringForFuzzing(vars.experiments());
+    overrides.experiments = vars.experiments();
   }
   if (vars.has_trace()) {
     overrides.trace = vars.trace();

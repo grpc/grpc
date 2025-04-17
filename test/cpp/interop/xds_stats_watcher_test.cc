@@ -16,14 +16,13 @@
 
 #include "test/cpp/interop/xds_stats_watcher.h"
 
+#include <grpc/grpc.h>
+
 #include <map>
 #include <memory>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include <grpc/grpc.h>
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {

@@ -18,9 +18,18 @@
 
 #include "test/cpp/interop/interop_client.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/security/credentials.h>
+
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -31,19 +40,9 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/security/credentials.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -87,18 +86,18 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
   }
 }
 
-absl::optional<std::string> ValuesDiff(absl::string_view field, double expected,
-                                       double actual) {
+std::optional<std::string> ValuesDiff(absl::string_view field, double expected,
+                                      double actual) {
   if (expected != actual) {
     return absl::StrFormat("%s: expected: %f, actual: %f", field, expected,
                            actual);
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
 template <typename Map>
-absl::optional<std::string> MapsDiff(absl::string_view path,
-                                     const Map& expected, const Map& actual) {
+std::optional<std::string> MapsDiff(absl::string_view path, const Map& expected,
+                                    const Map& actual) {
   auto result = ValuesDiff(absl::StrFormat("%s size", path), expected.size(),
                            actual.size());
   if (result.has_value()) {
@@ -116,11 +115,11 @@ absl::optional<std::string> MapsDiff(absl::string_view path,
       return result;
     }
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 
-absl::optional<std::string> OrcaLoadReportsDiff(const TestOrcaReport& expected,
-                                                const TestOrcaReport& actual) {
+std::optional<std::string> OrcaLoadReportsDiff(const TestOrcaReport& expected,
+                                               const TestOrcaReport& actual) {
   auto error = ValuesDiff("cpu_utilization", expected.cpu_utilization(),
                           actual.cpu_utilization());
   if (error.has_value()) {
@@ -140,7 +139,7 @@ absl::optional<std::string> OrcaLoadReportsDiff(const TestOrcaReport& expected,
   if (error.has_value()) {
     return error;
   }
-  return absl::nullopt;
+  return std::nullopt;
 }
 }  // namespace
 
@@ -1190,16 +1189,16 @@ InteropClient::PerformOneSoakTestIteration(
   gpr_timespec now = gpr_now(GPR_CLOCK_MONOTONIC);
   int32_t elapsed_ms = gpr_time_to_millis(gpr_time_sub(now, start));
   if (!s.ok()) {
-    return std::make_tuple(false, elapsed_ms, context.debug_error_string(),
-                           context.peer());
+    return std::tuple(false, elapsed_ms, context.debug_error_string(),
+                      context.peer());
   } else if (elapsed_ms > max_acceptable_per_iteration_latency_ms) {
     std::string debug_string = absl::StrFormat(
         "%d ms exceeds max acceptable latency: %d ms, peer: %s", elapsed_ms,
         max_acceptable_per_iteration_latency_ms, context.peer());
-    return std::make_tuple(false, elapsed_ms, std::move(debug_string),
-                           context.peer());
+    return std::tuple(false, elapsed_ms, std::move(debug_string),
+                      context.peer());
   } else {
-    return std::make_tuple(true, elapsed_ms, "", context.peer());
+    return std::tuple(true, elapsed_ms, "", context.peer());
   }
 }
 

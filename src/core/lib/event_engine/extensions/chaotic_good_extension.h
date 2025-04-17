@@ -15,14 +15,12 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H
 
-#include "absl/strings/string_view.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/string_view.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 /// An Endpoint extension class that will be supported by EventEngine endpoints
 /// which need to work with the ChaoticGood transport.
@@ -59,7 +57,6 @@ class ChaoticGoodExtension {
   virtual void EnforceRxMemoryAlignment() = 0;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_EXTENSIONS_CHAOTIC_GOOD_EXTENSION_H

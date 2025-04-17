@@ -23,18 +23,19 @@
 #define HAVE_ABSEIL
 #endif
 
+#include <grpcpp/ext/otel_plugin.h>
+#include <grpcpp/grpcpp.h>
+
 #include <condition_variable>
 #include <mutex>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/otel_plugin.h>
-#include <grpcpp/grpcpp.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/codelab/util.h"
@@ -128,6 +129,7 @@ void RunClient(const std::string& target_str) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Register a global gRPC OpenTelemetry plugin configured with a prometheus
   // exporter.
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;

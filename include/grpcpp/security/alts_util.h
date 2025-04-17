@@ -19,12 +19,12 @@
 #ifndef GRPCPP_SECURITY_ALTS_UTIL_H
 #define GRPCPP_SECURITY_ALTS_UTIL_H
 
-#include <memory>
-
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/auth_context.h>
 #include <grpcpp/support/status.h>
+
+#include <memory>
 
 struct grpc_gcp_AltsContext;
 

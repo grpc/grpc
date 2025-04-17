@@ -12,23 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <string>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/tls_utils.h"
 
@@ -119,7 +117,7 @@ class InitWithTempFile {
   grpc_authorization_policy_provider* provider_;
 };
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitAllowAuthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitAllowAuthorizedRequest) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -137,7 +135,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitAllowAuthorizedRequest) {
   TestAllowAuthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyUnauthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyUnauthorizedRequest) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -165,7 +163,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyUnauthorizedRequest) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyRequestNoMatchInPolicy) {
+CORE_END2END_TEST(SecureEnd2endTests, StaticInitDenyRequestNoMatchInPolicy) {
   InitWithStaticData(*this,
                      "{"
                      "  \"name\": \"authz\","
@@ -183,7 +181,7 @@ CORE_END2END_TEST(SecureEnd2endTest, StaticInitDenyRequestNoMatchInPolicy) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitAllowAuthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitAllowAuthorizedRequest) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -201,7 +199,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitAllowAuthorizedRequest) {
   TestAllowAuthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitDenyUnauthorizedRequest) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInitDenyUnauthorizedRequest) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -229,7 +227,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInitDenyUnauthorizedRequest) {
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest,
+CORE_END2END_TEST(SecureEnd2endTests,
                   FileWatcherInitDenyRequestNoMatchInPolicy) {
   InitWithTempFile tmp_policy(*this,
                               "{"
@@ -248,7 +246,7 @@ CORE_END2END_TEST(SecureEnd2endTest,
   TestDenyUnauthorizedRequest(*this);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherValidPolicyReload) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherValidPolicyReload) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -302,7 +300,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherValidPolicyReload) {
   tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherInvalidPolicySkipReload) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -327,14 +325,14 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherInvalidPolicySkipReload) {
           on_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);
   tmp_policy.provider()->SetCallbackForTesting(nullptr);
 }
 
-CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
+CORE_END2END_TEST(SecureEnd2endTests, FileWatcherRecoversFromFailure) {
   InitWithTempFile tmp_policy(*this,
                               "{"
                               "  \"name\": \"authz\","
@@ -359,7 +357,7 @@ CORE_END2END_TEST(SecureEnd2endTest, FileWatcherRecoversFromFailure) {
           on_first_reload_done.Notify();
         }
       });
-  // Replace exisiting policy in file with an invalid policy.
+  // Replace existing policy in file with an invalid policy.
   tmp_policy.file().RewriteFile("{}");
   on_first_reload_done.WaitForNotification();
   TestAllowAuthorizedRequest(*this);

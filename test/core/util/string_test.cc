@@ -18,15 +18,13 @@
 
 #include "src/core/util/string.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stddef.h>
 #include <string.h>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-
 #include "test/core/test_util/test_config.h"
 
 TEST(StringTest, Strdup) {

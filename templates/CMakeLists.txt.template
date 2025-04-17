@@ -275,7 +275,7 @@
         protobuf_gen_files.add(src)
   %>
 
-  cmake_minimum_required(VERSION 3.13)
+  cmake_minimum_required(VERSION 3.16)
 
   set(PACKAGE_NAME          "grpc")
   set(PACKAGE_VERSION       "${settings.cpp_version}")
@@ -393,9 +393,9 @@
   endif()
 
   if (APPLE AND NOT DEFINED CMAKE_CXX_STANDARD)
-    # AppleClang defaults to C++98, so we bump it to C++14.
-    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++14.")
-    set(CMAKE_CXX_STANDARD 14)
+    # AppleClang defaults to C++98, so we bump it to C++17.
+    message("CMAKE_CXX_STANDARD was undefined, defaulting to C++17.")
+    set(CMAKE_CXX_STANDARD 17)
   endif ()
 
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
@@ -548,10 +548,10 @@
   )
 
   set(gRPC_ADDITIONAL_DLL_SRC
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc
-    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc
-    src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_distributor.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_provider.cc
+    src/core/credentials/transport/tls/grpc_tls_certificate_verifier.cc
+    src/core/credentials/transport/tls/grpc_tls_credentials_options.cc
   )
 
   set(gRPC_ADDITIONAL_DLL_CXX_SRC
@@ -713,10 +713,24 @@
     DEPENDS tools_c tools_cxx)
 
   % for src in sorted(protobuf_gen_files):
+  % if not (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
   protobuf_generate_grpc_cpp_with_import_path_correction(
     ${src} ${third_party_proto_import_path(src)}
   )
+  % endif
   % endfor
+
+  # This enables CMake to build the project without requiring submodules
+  # in the third_party directory as long as test builds are disabled.
+  if (gRPC_BUILD_TESTS)
+  % for src in sorted(protobuf_gen_files):
+  % if (src.startswith('third_party/') or src.startswith('test/') or src.startswith('src/proto/grpc/testing/')):
+  protobuf_generate_grpc_cpp_with_import_path_correction(
+    ${src} ${third_party_proto_import_path(src)}
+  )
+  % endif
+  % endfor
+  endif()
 
   if(gRPC_BUILD_TESTS)
     add_custom_target(buildtests_c)
@@ -839,7 +853,7 @@
   % endif
   )
 
-  target_compile_features(${lib.name} PUBLIC cxx_std_14)
+  target_compile_features(${lib.name} PUBLIC cxx_std_17)
 
   set_target_properties(${lib.name} PROPERTIES
   % if lib.language == 'c++':
@@ -923,9 +937,9 @@
     )
   endif()
   % endif
-  % if lib.name in ["grpc", "grpc_cronet", "grpc_test_util", \
+  % if lib.name in ["grpc", "grpc_test_util", \
                     "grpc_test_util_unsecure", "grpc_unsecure", \
-                    "grpc++_cronet"]: # TODO(jtattermusch): remove special cases based on target names
+                   ]: # TODO(jtattermusch): remove special cases based on target names
   if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
     target_link_libraries(${lib.name} "-framework CoreFoundation")
   endif()
@@ -982,7 +996,7 @@
     endif()
   endif()
   % endif
-  target_compile_features(${tgt.name} PUBLIC cxx_std_14)
+  target_compile_features(${tgt.name} PUBLIC cxx_std_17)
   target_include_directories(${tgt.name}
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>

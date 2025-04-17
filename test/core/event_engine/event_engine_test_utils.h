@@ -15,6 +15,9 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_EVENT_ENGINE_TEST_UTILS_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <functional>
 #include <map>
 #include <memory>
@@ -27,13 +30,9 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
 
 using EventEngineFactory = std::function<
     std::unique_ptr<grpc_event_engine::experimental::EventEngine>()>;
@@ -45,20 +44,6 @@ std::string ExtractSliceBufferIntoString(SliceBuffer* buf);
 
 // Returns a random message with bounded length.
 std::string GetNextSendMessage();
-
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// Usage: WaitForSingleOwner(std::move(engine))
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine);
-
-// Waits until the use_count of the EventEngine shared_ptr has reached 1
-// and returns.
-// Callers must give up their ref, or this method will block forever.
-// This version will CRASH after the given timeout
-// Usage: WaitForSingleOwner(std::move(engine), 30s)
-void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
-                                   EventEngine::Duration timeout);
 
 // A helper method to exchange data between two endpoints. It is assumed
 // that both endpoints are connected. The data (specified as a string) is
@@ -72,7 +57,7 @@ absl::Status SendValidatePayload(absl::string_view data,
 // A helper class to create clients/listeners and connections between them.
 // The clients and listeners can be created by the oracle EventEngine
 // or the EventEngine under test. The class provides handles into the
-// connections that are created. Inidividual tests can test expected behavior by
+// connections that are created. Individual tests can test expected behavior by
 // exchanging arbitrary data over these connections.
 class ConnectionManager {
  public:
@@ -231,6 +216,11 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress peer_;
   EventEngine::ResolvedAddress local_;
 };
+
+// We need everything EventEngine to do reasonable timer steps -- without it
+// we need to do a bunch of evil to make sure both timer systems are ticking
+// each step.
+bool IsSaneTimerEnvironment();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

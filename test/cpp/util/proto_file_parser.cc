@@ -18,6 +18,8 @@
 
 #include "test/cpp/util/proto_file_parser.h"
 
+#include <grpcpp/support/config.h>
+
 #include <algorithm>
 #include <iostream>
 #include <sstream>
@@ -25,8 +27,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_split.h"
-
-#include <grpcpp/support/config.h>
 
 namespace grpc {
 namespace testing {
@@ -95,7 +95,7 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
       if (file_desc) {
         for (int i = 0; i < file_desc->service_count(); i++) {
           service_desc_list_.push_back(file_desc->service(i));
-          known_services.insert(file_desc->service(i)->full_name());
+          known_services.emplace(file_desc->service(i)->full_name());
         }
       } else {
         std::cerr << file_name << " not found" << std::endl;
@@ -148,7 +148,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
     const auto* service_desc = *it;
     for (int j = 0; j < service_desc->method_count(); j++) {
       const auto* method_desc = service_desc->method(j);
-      if (MethodNameMatch(method_desc->full_name(), method)) {
+      if (MethodNameMatch(std::string(method_desc->full_name()), method)) {
         if (method_descriptor) {
           std::ostringstream error_stream;
           error_stream << "Ambiguous method names: ";
@@ -169,7 +169,7 @@ std::string ProtoFileParser::GetFullMethodName(const std::string& method) {
 
   known_methods_[method] = method_descriptor->full_name();
 
-  return method_descriptor->full_name();
+  return std::string(method_descriptor->full_name());
 }
 
 std::string ProtoFileParser::GetFormattedMethodName(const std::string& method) {
@@ -200,8 +200,8 @@ std::string ProtoFileParser::GetMessageTypeFromMethod(const std::string& method,
     return "";
   }
 
-  return is_request ? method_desc->input_type()->full_name()
-                    : method_desc->output_type()->full_name();
+  return std::string(is_request ? method_desc->input_type()->full_name()
+                                : method_desc->output_type()->full_name());
 }
 
 bool ProtoFileParser::IsStreaming(const std::string& method, bool is_request) {

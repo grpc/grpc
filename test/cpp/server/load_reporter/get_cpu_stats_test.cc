@@ -18,11 +18,10 @@
 
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include "gtest/gtest.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

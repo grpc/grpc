@@ -33,10 +33,9 @@ DIRS=(
     'setup.py'
 )
 
-VIRTUALENV=isort_virtual_environment
-
+VIRTUALENV=venv_isort_code
 python3 -m virtualenv $VIRTUALENV
-PYTHON=${VIRTUALENV}/bin/python
-"$PYTHON" -m pip install isort==5.9.2
+source $VIRTUALENV/bin/activate
 
-$PYTHON -m isort $ACTION --settings-path=black.toml --dont-follow-links "${DIRS[@]}"
+python3 -m pip install isort==5.9.2
+python3 -m isort $ACTION --settings-path=black.toml --dont-follow-links "${DIRS[@]}"

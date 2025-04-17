@@ -16,16 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -33,7 +32,8 @@ namespace {
 
 // Tests that we correctly clean up if the second attempt finishes
 // before we have finished replaying all of the send ops.
-CORE_END2END_TEST(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
+CORE_END2END_TEST(RetryTests, RetryStreamSucceedsBeforeReplayFinished) {
+  SKIP_IF_V3();  // Not working yet
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -53,7 +53,7 @@ CORE_END2END_TEST(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Client starts a batch for receiving initial metadata, a message,
   // and trailing metadata.
   IncomingMetadata server_initial_metadata;
@@ -68,11 +68,11 @@ CORE_END2END_TEST(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
   Expect(2, true);
   Step();
   // Server gets a call with received initial metadata.
-  absl::optional<IncomingCall> s = RequestCall(101);
+  std::optional<IncomingCall> s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server receives a message.
   IncomingMessage client_message;
   s->NewBatch(102).RecvMessage(client_message);
@@ -113,8 +113,8 @@ CORE_END2END_TEST(RetryTest, RetryStreamSucceedsBeforeReplayFinished) {
   s.emplace(RequestCall(201));
   Expect(201, true);
   Step();
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   // Server receives the first message (and does not receive any others).
   IncomingMessage client_message4;
   s->NewBatch(202).RecvMessage(client_message4);

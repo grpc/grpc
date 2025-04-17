@@ -14,6 +14,8 @@
 
 #include "src/core/client_channel/load_balanced_call_destination.h"
 
+#include <grpc/grpc.h>
+
 #include <atomic>
 #include <memory>
 #include <queue>
@@ -21,9 +23,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "test/core/call/yodel/yodel_test.h"
 
 using testing::StrictMock;
@@ -79,8 +78,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
       handlers_.push(unstarted_call_handler.StartCall());
     }
 
-    absl::optional<CallHandler> PopHandler() {
-      if (handlers_.empty()) return absl::nullopt;
+    std::optional<CallHandler> PopHandler() {
+      if (handlers_.empty()) return std::nullopt;
       auto handler = std::move(handlers_.front());
       handlers_.pop();
       return handler;
@@ -117,6 +116,8 @@ class LoadBalancedCallDestinationTest : public YodelTest {
     RefCountedPtr<UnstartedCallDestination> call_destination() override {
       return call_destination_;
     }
+
+    std::string address() const override { return "test"; }
 
    private:
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
@@ -165,12 +166,8 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(CreateCall) {
       call.initiator, "initiator",
       [this, handler = std::move(call.handler)]() {
         destination_under_test().StartCall(handler);
-        return Empty{};
       },
-      [call_initiator = call.initiator]() mutable {
-        call_initiator.Cancel();
-        return Empty{};
-      });
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 
@@ -179,7 +176,6 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
   SpawnTestSeq(call.initiator, "initiator",
                [this, handler = std::move(call.handler)]() {
                  destination_under_test().StartCall(handler);
-                 return Empty{};
                });
   auto mock_picker = MakeRefCounted<StrictMock<MockPicker>>();
   EXPECT_CALL(*mock_picker, Pick)
@@ -188,11 +184,9 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCall) {
       });
   picker().Set(mock_picker);
   auto handler = TickUntilCallStarted();
-  SpawnTestSeq(call.initiator, "cancel",
-               [call_initiator = call.initiator]() mutable {
-                 call_initiator.Cancel();
-                 return Empty{};
-               });
+  SpawnTestSeq(
+      call.initiator, "cancel",
+      [call_initiator = call.initiator]() mutable { call_initiator.Cancel(); });
   WaitForAllPendingWork();
 }
 
@@ -211,7 +205,6 @@ LOAD_BALANCED_CALL_DESTINATION_TEST(StartCallOnDestroyedChannel) {
       [](ServerMetadataHandle md) {
         EXPECT_EQ(md->get(GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN),
                   GRPC_STATUS_UNAVAILABLE);
-        return Empty{};
       });
   // Set a picker and wait for at least one pick attempt to prove the call has
   // made it to the picker.

@@ -15,11 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 #define GRPC_SRC_CORE_LIB_PROMISE_ACTIVITY_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <atomic>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -27,22 +29,17 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/status.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -124,9 +121,14 @@ class Waker {
     return wakeable_and_arg_.ActivityDebugTag();
   }
 
-  std::string DebugString() {
+  std::string DebugString() const {
     return absl::StrFormat("Waker{%p, %d}", wakeable_and_arg_.wakeable,
                            wakeable_and_arg_.wakeup_mask);
+  }
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Waker& waker) {
+    sink.Append(waker.DebugString());
   }
 
   // This is for tests to assert that a waker is occupied or not.
@@ -170,6 +172,11 @@ class IntraActivityWaiter {
 
   std::string DebugString() const;
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const IntraActivityWaiter& waker) {
+    sink.Append(waker.DebugString());
+  }
+
  private:
   WakeupMask wakeups_ = 0;
 };
@@ -206,9 +213,9 @@ class Activity : public Orphanable {
   // - assert that there is a current activity (and catch bugs if there's not)
   // - indicate to thread safety analysis that the current activity is indeed
   //   locked
-  // - back up that assertation with a runtime check in debug builds (it's
+  // - back up that assertion with a runtime check in debug builds (it's
   //   prohibitively expensive in non-debug builds)
-  static Activity* current() { return g_current_activity_; }
+  static Activity* current() { return current_ref(); }
 
   // Produce an activity-owning Waker. The produced waker will keep the activity
   // alive until it's awoken or dropped.
@@ -225,17 +232,16 @@ class Activity : public Orphanable {
  protected:
   // Check if this activity is the current activity executing on the current
   // thread.
-  bool is_current() const { return this == g_current_activity_; }
+  bool is_current() const { return this == current(); }
   // Check if there is an activity executing on the current thread.
-  static bool have_current() { return g_current_activity_ != nullptr; }
+  static bool have_current() { return current() != nullptr; }
   // Set the current activity at construction, clean it up at destruction.
   class ScopedActivity {
    public:
-    explicit ScopedActivity(Activity* activity)
-        : prior_activity_(g_current_activity_) {
-      g_current_activity_ = activity;
+    explicit ScopedActivity(Activity* activity) : prior_activity_(current()) {
+      current_ref() = activity;
     }
-    ~ScopedActivity() { g_current_activity_ = prior_activity_; }
+    ~ScopedActivity() { current_ref() = prior_activity_; }
     ScopedActivity(const ScopedActivity&) = delete;
     ScopedActivity& operator=(const ScopedActivity&) = delete;
 
@@ -244,9 +250,21 @@ class Activity : public Orphanable {
   };
 
  private:
+  static Activity*& current_ref() {
+#if !defined(_WIN32) || !defined(_DLL)
+    return g_current_activity_;
+#else
+    // Set during RunLoop to the Activity that's executing.
+    // Being set implies that mu_ is held.
+    static thread_local Activity* current_activity;
+    return current_activity;
+#endif
+  }
+#if !defined(_WIN32) || !defined(_DLL)
   // Set during RunLoop to the Activity that's executing.
   // Being set implies that mu_ is held.
   static thread_local Activity* g_current_activity_;
+#endif
 };
 
 // Owned pointer to one Activity.
@@ -369,8 +387,8 @@ class FreestandingActivity : public Activity, private Wakeable {
   // If more than one action is received during a run, we use max() to resolve
   // which one to report (so Cancel overrides Wakeup).
   enum class ActionDuringRun : uint8_t {
-    kNone,    // No action occured during run.
-    kWakeup,  // A wakeup occured during run.
+    kNone,    // No action occurred during run.
+    kWakeup,  // A wakeup occurred during run.
     kCancel,  // Cancel was called during run.
   };
 
@@ -390,7 +408,7 @@ class FreestandingActivity : public Activity, private Wakeable {
   // completed.
   void WakeupComplete() { Unref(); }
 
-  // Set the action that occured during this run.
+  // Set the action that occurred during this run.
   // We use max to combine actions so that cancellation overrides wakeups.
   void SetActionDuringRun(ActionDuringRun action)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
@@ -590,7 +608,7 @@ class PromiseActivity final
   // The main body of a step: set the current activity, and any contexts, and
   // then run the main polling loop. Contained in a function by itself in
   // order to keep the scoping rules a little easier in Step().
-  absl::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::optional<ResultType> RunStep() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
     return StepLoop();
@@ -599,7 +617,7 @@ class PromiseActivity final
   // Similarly to RunStep, but additionally construct the promise from a
   // promise factory before entering the main loop. Called once from the
   // constructor.
-  absl::optional<ResultType> Start(Factory promise_factory)
+  std::optional<ResultType> Start(Factory promise_factory)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     ScopedActivity scoped_activity(this);
     ScopedContext contexts(this);
@@ -609,7 +627,7 @@ class PromiseActivity final
 
   // Until there are no wakeups from within and the promise is incomplete:
   // poll the promise.
-  absl::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+  std::optional<ResultType> StepLoop() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu()) {
     CHECK(is_current());
     while (true) {
       // Run the promise.

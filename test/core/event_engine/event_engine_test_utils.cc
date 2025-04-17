@@ -14,6 +14,11 @@
 
 #include "test/core/event_engine/event_engine_test_utils.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
 #include <stdlib.h>
 
 #include <algorithm>
@@ -30,19 +35,12 @@
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/build.h"
 
 // IWYU pragma: no_include <sys/socket.h>
@@ -77,32 +75,6 @@ std::string GetNextSendMessage() {
     tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
   }
   return tmp_s;
-}
-
-void WaitForSingleOwner(std::shared_ptr<EventEngine> engine) {
-  WaitForSingleOwnerWithTimeout(std::move(engine), std::chrono::hours{24});
-}
-
-void WaitForSingleOwnerWithTimeout(std::shared_ptr<EventEngine> engine,
-                                   EventEngine::Duration timeout) {
-  int n = 0;
-  auto start = std::chrono::system_clock::now();
-  while (engine.use_count() > 1) {
-    ++n;
-    if (n % 100 == 0) {
-      LOG(INFO) << "Checking for leaks...";
-      AsanAssertNoLeaks();
-    }
-    auto remaining = timeout - (std::chrono::system_clock::now() - start);
-    if (remaining < std::chrono::seconds{0}) {
-      grpc_core::Crash("Timed out waiting for a single EventEngine owner");
-    }
-    LOG_EVERY_N_SEC(INFO, 2)
-        << "engine.use_count() = " << engine.use_count()
-        << " timeout_remaining = "
-        << absl::FormatDuration(absl::Nanoseconds(remaining.count()));
-    absl::SleepFor(absl::Milliseconds(100));
-  }
 }
 
 void AppendStringToSliceBuffer(SliceBuffer* buf, absl::string_view data) {
@@ -227,7 +199,7 @@ absl::Status ConnectionManager::BindAndStartListener(
   // Insert same listener pointer for all bind addresses after the listener
   // has started successfully.
   for (auto& addr : addrs) {
-    listeners_.insert(std::make_pair(addr, listener));
+    listeners_.insert(std::pair(addr, listener));
   }
   return absl::OkStatus();
 }
@@ -264,10 +236,16 @@ ConnectionManager::CreateConnection(std::string target_addr,
     auto server_endpoint = last_in_progress_connection_.GetServerEndpoint();
     CHECK(server_endpoint != nullptr);
     // Set last_in_progress_connection_ to nullptr
-    return std::make_tuple(std::move(client_endpoint),
-                           std::move(server_endpoint));
+    return std::tuple(std::move(client_endpoint), std::move(server_endpoint));
   }
   return absl::CancelledError("Failed to create connection.");
+}
+
+bool IsSaneTimerEnvironment() {
+  return grpc_core::IsEventEngineClientEnabled() &&
+         grpc_core::IsEventEngineListenerEnabled() &&
+         grpc_core::IsEventEngineDnsEnabled() &&
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled();
 }
 
 }  // namespace experimental

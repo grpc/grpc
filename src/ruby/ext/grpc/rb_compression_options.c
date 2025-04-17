@@ -20,12 +20,6 @@
 
 #include "rb_compression_options.h"
 
-#include <string.h>
-
-#include "rb_byte_buffer.h"
-#include "rb_grpc.h"
-#include "rb_grpc_imports.generated.h"
-
 #include <grpc/compression.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/compression_types.h>
@@ -33,6 +27,11 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
+
+#include "rb_byte_buffer.h"
+#include "rb_grpc.h"
+#include "rb_grpc_imports.generated.h"
 
 static VALUE grpc_rb_cCompressionOptions = Qnil;
 
@@ -296,7 +295,7 @@ VALUE grpc_rb_compression_options_level_value_to_name_internal(
  * Fails if the enum value is invalid. */
 VALUE grpc_rb_compression_options_algorithm_value_to_name_internal(
     grpc_compression_algorithm internal_value) {
-  char* algorithm_name = NULL;
+  const char* algorithm_name = NULL;
 
   if (!grpc_compression_algorithm_name(internal_value, &algorithm_name)) {
     rb_raise(rb_eArgError, "Failed to convert algorithm value to name");

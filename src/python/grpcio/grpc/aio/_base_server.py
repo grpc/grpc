@@ -197,7 +197,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     ) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
-        The code and details passed as arguments will supercede any existing
+        The code and details passed as arguments will supersede any existing
         ones.
 
         Args:

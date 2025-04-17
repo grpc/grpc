@@ -1,0 +1,76 @@
+matrix:
+  platform:
+    - debian11
+    - macos
+    - macos_arm64
+    - ubuntu2004
+    - ubuntu2204
+    - ubuntu2404
+  bazel:
+    - 7.x
+    - 8.x
+
+tasks:
+  verify_targets:
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_flags:
+    - '--cxxopt=-std=c++17'
+    - '--host_cxxopt=-std=c++17'
+    build_targets:
+      - "@grpc//:grpc"
+      - "@grpc//:grpc_unsecure"
+      - "@grpc//:grpc_opencensus_plugin"
+      - "@grpc//:grpc_security_base"
+      - "@grpc//:grpc++"
+      - "@grpc//:grpc++_unsecure"
+      - "@grpc//:grpc++_reflection"
+      - "@grpc//:grpc++_test"
+      - "@grpc//:grpcpp_admin"
+      - "@grpc//:grpcpp_channelz"
+      - "@grpc//:grpcpp_csds"
+      - "@grpc//:grpcpp_orca_service"
+      - "@grpc//examples/protos/..."
+
+  verify_targets_with_openssl:
+    platform: ${{ platform }}
+    bazel: ${{ bazel }}
+    build_flags:
+    - '--cxxopt=-std=c++17'
+    - '--host_cxxopt=-std=c++17'
+    - '--//third_party:use_openssl=true'
+    build_targets:
+      - "@grpc//:grpc"
+      - "@grpc//:grpc_unsecure"
+      - "@grpc//:grpc_opencensus_plugin"
+      - "@grpc//:grpc_security_base"
+      - "@grpc//:grpc++"
+      - "@grpc//:grpc++_unsecure"
+      - "@grpc//:grpc++_reflection"
+      - "@grpc//:grpc++_test"
+      - "@grpc//:grpcpp_admin"
+      - "@grpc//:grpcpp_channelz"
+      - "@grpc//:grpcpp_csds"
+      - "@grpc//:grpcpp_orca_service"
+      - "@grpc//examples/protos/..."
+
+  verify_targets_on_windows:
+    platform: "windows"
+    bazel: ${{ bazel }}
+    build_flags:
+    - '--cxxopt=/std:c++17'
+    - '--host_cxxopt=/std:c++17'
+    - '--define=protobuf_allow_msvc=true'
+    build_targets:
+      - "@grpc//:grpc"
+      - "@grpc//:grpc_unsecure"
+      - "@grpc//:grpc_opencensus_plugin"
+      - "@grpc//:grpc_security_base"
+      - "@grpc//:grpc++"
+      - "@grpc//:grpc++_unsecure"
+      - "@grpc//:grpc++_reflection"
+      - "@grpc//:grpc++_test"
+      - "@grpc//:grpcpp_admin"
+      - "@grpc//:grpcpp_channelz"
+      - "@grpc//:grpcpp_csds"
+      - "@grpc//:grpcpp_orca_service"

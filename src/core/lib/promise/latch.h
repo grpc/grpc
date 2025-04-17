@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 #define GRPC_SRC_CORE_LIB_PROMISE_LATCH_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -24,20 +25,25 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
-// Latch provides a single set waitable object.
-// Initially the Latch is unset.
-// It can be waited upon by the Wait method, which produces a Promise that
-// resolves when the Latch is Set to a value of type T.
-// Latches only work correctly within a single activity.
+// Latches only work correctly within a single activity or a single party. If
+// you need something that works across activities/parties refer to
+// inter_activity_latch.h
+//
+// Latch provides a single set waitable object. We use Latch when we want to
+// wait for a particular object to be set. This object would typically be set by
+// some promise getting resolved.
+//
+// Initially the value Latch is unset.
+//
+// We can wait for Latch to be set using either the Wait or WaitAndCopy method.
+// These two methods produce Promises that resolves when the Latch is value Set
+// to a value of type T.
 template <typename T>
 class Latch {
  public:
@@ -119,7 +125,7 @@ class Latch {
 
   // The value stored (if has_value_ is true), otherwise some random value, we
   // don't care.
-  // Why not absl::optional<>? Writing things this way lets us compress
+  // Why not std::optional<>? Writing things this way lets us compress
   // has_value_ with waiter_ and leads to some significant memory savings for
   // some scenarios.
   GPR_NO_UNIQUE_ADDRESS T value_;

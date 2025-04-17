@@ -230,8 +230,9 @@ EXPORTS
     gpr_free_aligned
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
-    gpr_log
-    gpr_should_log
+    grpc_absl_log
+    grpc_absl_log_int
+    grpc_absl_log_str
     gpr_log_verbosity_init
     gpr_format_message
     gpr_strdup

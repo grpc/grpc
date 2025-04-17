@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 #define GRPC_SRC_CORE_XDS_XDS_CLIENT_XDS_CLIENT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <set>
@@ -25,29 +28,28 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
+#include "envoy/admin/v3/config_dump_shared.upb.h"
+#include "envoy/service/status/v3/csds.upb.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/work_serializer.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/xds_client/xds_api.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_metrics.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_transport.h"
+#include "upb/reflection/def.hpp"
 
 namespace grpc_core {
 
@@ -72,33 +74,25 @@ class XdsClient : public DualRefCounted<XdsClient> {
   class ResourceWatcherInterface : public RefCounted<ResourceWatcherInterface> {
    public:
     virtual void OnGenericResourceChanged(
-        std::shared_ptr<const XdsResourceType::ResourceData> resource,
+        absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
+            resource,
         RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnError(absl::Status status,
-                         RefCountedPtr<ReadDelayHandle> read_delay_handle)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
-    virtual void OnResourceDoesNotExist(
-        RefCountedPtr<ReadDelayHandle> read_delay_handle)
+    virtual void OnAmbientError(
+        absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&work_serializer_) = 0;
   };
 
   XdsClient(
-      std::unique_ptr<XdsBootstrap> bootstrap,
-      OrphanablePtr<XdsTransportFactory> transport_factory,
+      std::shared_ptr<XdsBootstrap> bootstrap,
+      RefCountedPtr<XdsTransportFactory> transport_factory,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine,
       std::unique_ptr<XdsMetricsReporter> metrics_reporter,
       std::string user_agent_name, std::string user_agent_version,
-      Duration resource_request_timeout = Duration::Seconds(15));
+      // This parameter overrides the timer duration for testing
+      // purposes only -- do not use in production.
+      Duration resource_request_timeout = Duration::Zero());
   ~XdsClient() override;
-
-  const XdsBootstrap& bootstrap() const {
-    return *bootstrap_;  // ctor asserts that it is non-null
-  }
-
-  XdsTransportFactory* transport_factory() const {
-    return transport_factory_.get();
-  }
 
   // Start and cancel watch for a resource.
   //
@@ -126,29 +120,16 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            ResourceWatcherInterface* watcher,
                            bool delay_unsubscription = false);
 
-  // Adds and removes drop stats for cluster_name and eds_service_name.
-  RefCountedPtr<XdsClusterDropStats> AddClusterDropStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name);
-  void RemoveClusterDropStats(absl::string_view xds_server,
-                              absl::string_view cluster_name,
-                              absl::string_view eds_service_name,
-                              XdsClusterDropStats* cluster_drop_stats);
-
-  // Adds and removes locality stats for cluster_name and eds_service_name
-  // for the specified locality.
-  RefCountedPtr<XdsClusterLocalityStats> AddClusterLocalityStats(
-      const XdsBootstrap::XdsServer& xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      RefCountedPtr<XdsLocalityName> locality);
-  void RemoveClusterLocalityStats(
-      absl::string_view xds_server, absl::string_view cluster_name,
-      absl::string_view eds_service_name,
-      const RefCountedPtr<XdsLocalityName>& locality,
-      XdsClusterLocalityStats* cluster_locality_stats);
-
   // Resets connection backoff state.
-  void ResetBackoff();
+  virtual void ResetBackoff();
+
+  const XdsBootstrap& bootstrap() const {
+    return *bootstrap_;  // ctor asserts that it is non-null
+  }
+
+  XdsTransportFactory* transport_factory() const {
+    return transport_factory_.get();
+  }
 
   grpc_event_engine::experimental::EventEngine* engine() {
     return engine_.get();
@@ -160,8 +141,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex* mu() ABSL_LOCK_RETURNED(&mu_) { return &mu_; }
 
   // Dumps the active xDS config to the provided
-  // envoy.service.status.v3.ClientConfig message including the config status
-  // (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  // envoy.service.status.v3.ClientConfig message.
   void DumpClientConfig(std::set<std::string>* string_pool, upb_Arena* arena,
                         envoy_service_status_v3_ClientConfig* client_config)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
@@ -212,20 +192,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
     class RetryableCall;
 
     class AdsCall;
-    class LrsCall;
 
     XdsChannel(WeakRefCountedPtr<XdsClient> xds_client,
                const XdsBootstrap::XdsServer& server);
     ~XdsChannel() override;
 
     XdsClient* xds_client() const { return xds_client_.get(); }
-    AdsCall* ads_call() const;
-    LrsCall* lrs_call() const;
 
     void ResetBackoff();
-
-    void MaybeStartLrsCall();
-    void StopLrsCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     // Returns non-OK if there has been an error since the last time the
     // ADS stream saw a response.
@@ -239,9 +213,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    absl::string_view server_uri() const { return server_.server_uri(); }
+    absl::string_view server_uri() const {
+      return server_.target()->server_uri();
+    }
 
    private:
+    class ConnectivityFailureWatcher;
+
     // Attempts to find a suitable Xds fallback server. Returns true if
     // a connection to a suitable server had been established.
     bool MaybeFallbackLocked(const std::string& authority,
@@ -262,13 +240,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
     const XdsBootstrap::XdsServer& server_;  // Owned by bootstrap.
 
-    OrphanablePtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport> transport_;
+    RefCountedPtr<XdsTransportFactory::XdsTransport::ConnectivityFailureWatcher>
+        failure_watcher_;
 
     bool shutting_down_ = false;
 
     // The retryable ADS and LRS calls.
     OrphanablePtr<RetryableCall<AdsCall>> ads_call_;
-    OrphanablePtr<RetryableCall<LrsCall>> lrs_call_;
 
     // Stores the most recent accepted resource version for each resource type.
     std::map<const XdsResourceType*, std::string /*version*/>
@@ -277,55 +256,132 @@ class XdsClient : public DualRefCounted<XdsClient> {
     absl::Status status_;
   };
 
-  struct ResourceState {
-    std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
-        watchers;
+  using WatcherSet =
+      absl::flat_hash_set<RefCountedPtr<ResourceWatcherInterface>,
+                          RefCountedPtrHash<ResourceWatcherInterface>,
+                          RefCountedPtrEq<ResourceWatcherInterface>>;
+
+  class ResourceState {
+   public:
+    // Resource status from the view of a xDS client, which tells the
+    // synchronization status between the xDS client and the xDS server.
+    enum ClientResourceStatus {
+      // Client requested this resource but hasn't received any update from
+      // management server. The client will not fail requests, but will queue
+      // them until update arrives or the client times out waiting for the
+      // resource.
+      REQUESTED = 1,
+      // This resource has been requested by the client but has either not been
+      // delivered by the server or was previously delivered by the server and
+      // then subsequently removed from resources provided by the server.
+      DOES_NOT_EXIST,
+      // Client received this resource and replied with ACK.
+      ACKED,
+      // Client received this resource and replied with NACK.
+      NACKED,
+      // Server sent an error for the resource.
+      RECEIVED_ERROR,
+      // Client encountered timeout getting resource from server.
+      TIMEOUT,
+    };
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_REQUESTED) ==
+                  ClientResourceStatus::REQUESTED);
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_DOES_NOT_EXIST) ==
+        ClientResourceStatus::DOES_NOT_EXIST);
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_ACKED) ==
+                  ClientResourceStatus::ACKED);
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_NACKED) ==
+                  ClientResourceStatus::NACKED);
+    static_assert(
+        static_cast<ClientResourceStatus>(envoy_admin_v3_RECEIVED_ERROR) ==
+        ClientResourceStatus::RECEIVED_ERROR);
+    static_assert(static_cast<ClientResourceStatus>(envoy_admin_v3_TIMEOUT) ==
+                  ClientResourceStatus::TIMEOUT);
+
+    void AddWatcher(RefCountedPtr<ResourceWatcherInterface> watcher) {
+      watchers_.insert(std::move(watcher));
+    }
+    void RemoveWatcher(ResourceWatcherInterface* watcher) {
+      watchers_.erase(watcher);
+    }
+    bool HasWatchers() const { return !watchers_.empty(); }
+    const WatcherSet& watchers() const { return watchers_; }
+
+    void SetAcked(std::shared_ptr<const XdsResourceType::ResourceData> resource,
+                  std::string serialized_proto, std::string version,
+                  Timestamp update_time);
+    void SetNacked(const std::string& version, absl::string_view details,
+                   Timestamp update_time, bool drop_cached_resource);
+    void SetReceivedError(const std::string& version, absl::Status status,
+                          Timestamp update_time, bool drop_cached_resource);
+    void SetDoesNotExistOnLdsOrCdsDeletion(const std::string& version,
+                                           Timestamp update_time,
+                                           bool drop_cached_resource);
+    void SetDoesNotExistOnTimeout();
+    void SetTimeout(const std::string& details);
+
+    ClientResourceStatus client_status() const { return client_status_; }
+    absl::string_view CacheStateString() const;
+
+    bool HasResource() const { return resource_ != nullptr; }
+    std::shared_ptr<const XdsResourceType::ResourceData> resource() const {
+      return resource_;
+    }
+
+    const absl::Status& failed_status() const { return failed_status_; }
+
+    void FillGenericXdsConfig(
+        upb_StringView type_url, upb_StringView resource_name, upb_Arena* arena,
+        envoy_service_status_v3_ClientConfig_GenericXdsConfig* entry) const;
+
+   private:
+    WatcherSet watchers_;
     // The latest data seen for the resource.
-    std::shared_ptr<const XdsResourceType::ResourceData> resource;
-    XdsApi::ResourceMetadata meta;
-    bool ignored_deletion = false;
+    std::shared_ptr<const XdsResourceType::ResourceData> resource_;
+    // Cache state.
+    ClientResourceStatus client_status_ = REQUESTED;
+    // The serialized bytes of the last successfully updated raw xDS resource.
+    std::string serialized_proto_;
+    // The timestamp when the resource was last successfully updated.
+    Timestamp update_time_;
+    // The last successfully updated version of the resource.
+    std::string version_;
+    // Details about the last failed update attempt or transient error.
+    absl::Status failed_status_;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version_;
+    // Timestamp of the last failed update attempt.
+    // Used only if failed_version_ is non-empty.
+    Timestamp failed_update_time_;
   };
 
   struct AuthorityState {
     std::vector<RefCountedPtr<XdsChannel>> xds_channels;
     std::map<const XdsResourceType*, std::map<XdsResourceKey, ResourceState>>
-        resource_map;
+        type_map;
   };
 
-  struct LoadReportState {
-    struct LocalityState {
-      XdsClusterLocalityStats* locality_stats = nullptr;
-      XdsClusterLocalityStats::Snapshot deleted_locality_stats;
-    };
+  absl::Status AppendNodeToStatus(const absl::Status& status) const;
 
-    XdsClusterDropStats* drop_stats = nullptr;
-    XdsClusterDropStats::Snapshot deleted_drop_stats;
-    std::map<RefCountedPtr<XdsLocalityName>, LocalityState,
-             XdsLocalityName::Less>
-        locality_stats;
-    Timestamp last_report_time = Timestamp::Now();
-  };
-
-  // Load report data.
-  using LoadReportMap = std::map<
-      std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
-      LoadReportState>;
-
-  struct LoadReportServer {
-    RefCountedPtr<XdsChannel> xds_channel;
-    LoadReportMap load_report_map;
-  };
-
-  // Sends an error notification to a specific set of watchers.
-  void NotifyWatchersOnErrorLocked(
-      const std::map<ResourceWatcherInterface*,
-                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
-      absl::Status status, RefCountedPtr<ReadDelayHandle> read_delay_handle);
-  // Sends a resource-does-not-exist notification to a specific set of watchers.
-  void NotifyWatchersOnResourceDoesNotExist(
-      const std::map<ResourceWatcherInterface*,
-                     RefCountedPtr<ResourceWatcherInterface>>& watchers,
+  // Sends an OnResourceChanged() notification to a specific set of watchers.
+  void NotifyWatchersOnResourceChanged(
+      absl::StatusOr<std::shared_ptr<const XdsResourceType::ResourceData>>
+          resource,
+      WatcherSet watchers, RefCountedPtr<ReadDelayHandle> read_delay_handle);
+  // Sends an OnAmbientError() notification to a specific set of watchers.
+  void NotifyWatchersOnAmbientError(
+      absl::Status status, WatcherSet watchers,
       RefCountedPtr<ReadDelayHandle> read_delay_handle);
+  // Notifies watchers for resource_state of an error, using
+  // OnResourceChanged() if there is no cached resource or
+  // OnAmbientError() if there is a cached resource.
+  void NotifyWatchersOnError(const ResourceState& resource_state,
+                             RefCountedPtr<ReadDelayHandle> read_delay_handle,
+                             // If empty, will use resource_state.watchers().
+                             WatcherSet watchers = {},
+                             // If OK, will use resource_state.failed_status().
+                             absl::Status status = absl::OkStatus());
 
   void MaybeRegisterResourceTypeLocked(const XdsResourceType* resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -334,25 +390,28 @@ class XdsClient : public DualRefCounted<XdsClient> {
   const XdsResourceType* GetResourceTypeLocked(absl::string_view resource_type)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  bool HasUncachedResources(const AuthorityState& authority_state);
+
+  void MaybeRemoveUnsubscribedCacheEntriesForTypeLocked(
+      XdsChannel* xds_channel, const XdsResourceType* type)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   absl::StatusOr<XdsResourceName> ParseXdsResourceName(
       absl::string_view name, const XdsResourceType* type);
   static std::string ConstructFullXdsResourceName(
       absl::string_view authority, absl::string_view resource_type,
       const XdsResourceKey& key);
 
-  XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      const XdsBootstrap::XdsServer& xds_server, bool send_all_clusters,
-      const std::set<std::string>& clusters) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   RefCountedPtr<XdsChannel> GetOrCreateXdsChannelLocked(
       const XdsBootstrap::XdsServer& server, const char* reason)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  bool HasUncachedResources(const AuthorityState& authority_state);
 
-  std::unique_ptr<XdsBootstrap> bootstrap_;
-  OrphanablePtr<XdsTransportFactory> transport_factory_;
+  std::shared_ptr<XdsBootstrap> bootstrap_;
+  const std::string user_agent_name_;
+  const std::string user_agent_version_;
+  RefCountedPtr<XdsTransportFactory> transport_factory_;
   const Duration request_timeout_;
   const bool xds_federation_enabled_;
-  XdsApi api_;
   WorkSerializer work_serializer_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
   std::unique_ptr<XdsMetricsReporter> metrics_reporter_;
@@ -371,13 +430,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
   std::map<std::string /*authority*/, AuthorityState> authority_state_map_
       ABSL_GUARDED_BY(mu_);
 
-  std::map<std::string /*XdsServer key*/, LoadReportServer, std::less<>>
-      xds_load_report_server_map_ ABSL_GUARDED_BY(mu_);
-
   // Stores started watchers whose resource name was not parsed successfully,
   // waiting to be cancelled or reset in Orphan().
-  std::map<ResourceWatcherInterface*, RefCountedPtr<ResourceWatcherInterface>>
-      invalid_watchers_ ABSL_GUARDED_BY(mu_);
+  WatcherSet invalid_watchers_ ABSL_GUARDED_BY(mu_);
 
   bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };

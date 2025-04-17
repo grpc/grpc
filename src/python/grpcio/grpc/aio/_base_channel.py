@@ -183,7 +183,7 @@ class Channel(abc.ABC):
     """Enables asynchronous RPC invocation as a client.
 
     Channel objects implement the Asynchronous Context Manager (aka. async
-    with) type, although they are not supportted to be entered and exited
+    with) type, although they are not supported to be entered and exited
     multiple times.
     """
 
@@ -312,7 +312,7 @@ class Channel(abc.ABC):
             whether the method is registered.
 
         Returns:
-          A UnarySteramMultiCallable value for the named unary-stream method.
+          A UnaryStreamMultiCallable value for the named unary-stream method.
         """
 
     @abc.abstractmethod

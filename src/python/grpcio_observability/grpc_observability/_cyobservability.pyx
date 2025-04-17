@@ -155,15 +155,6 @@ def create_server_call_tracer_factory_capsule(dict exchange_labels, str identifi
   return capsule
 
 
-def delete_client_call_tracer(object client_call_tracer) -> None:
-  client_call_tracer: grpc._observability.ClientCallTracerCapsule
-
-  if cpython.PyCapsule_IsValid(client_call_tracer, CLIENT_CALL_TRACER):
-    capsule_ptr = cpython.PyCapsule_GetPointer(client_call_tracer, CLIENT_CALL_TRACER)
-    call_tracer_ptr = <ClientCallTracer*>capsule_ptr
-    del call_tracer_ptr
-
-
 def _c_label_to_labels(vector[Label] c_labels) -> Dict[str, AnyStr]:
   py_labels = {}
   for label in c_labels:
@@ -188,7 +179,7 @@ def _c_measurement_to_measurement(object measurement
   """Convert Cython Measurement to Python measurement.
 
   Args:
-  measurement: Actual measurement repesented by Cython type Measurement, using object here
+  measurement: Actual measurement represented by Cython type Measurement, using object here
    since Cython refuse to automatically convert a union with unsafe type combinations.
 
   Returns:
@@ -317,7 +308,7 @@ cdef void _export_census_data(object exporter):
       while not GLOBAL_SHUTDOWN_EXPORT_THREAD:
         lk = new unique_lock[mutex](g_census_data_buffer_mutex)
         # Wait for next batch of census data OR timeout at fixed interval.
-        # Batch export census data to minimize the time we acquiring the GIL.
+        # Batch export census data to minimize the time we acquire the GIL.
         AwaitNextBatchLocked(dereference(lk), export_interval_ms)
 
         # Break only when buffer have data

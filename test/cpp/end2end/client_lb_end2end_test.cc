@@ -12,32 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <algorithm>
-#include <chrono>
-#include <deque>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <set>
-#include <string>
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/str_join.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -50,32 +28,50 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <algorithm>
+#include <chrono>
+#include <deque>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <set>
+#include <string>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/global_subchannel_pool.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/tcp_client.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/server/server.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
@@ -83,6 +79,7 @@
 #include "test/cpp/end2end/connection_attempt_injector.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/credentials.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -150,26 +147,26 @@ class MyTestServiceImpl : public TestServiceImpl {
       if (request_metrics.eps() > 0) {
         recorder->RecordEpsMetric(request_metrics.eps());
       }
-      for (const auto& p : request_metrics.request_cost()) {
-        char* key = static_cast<char*>(
-            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-        strncpy(key, p.first.data(), p.first.size());
-        key[p.first.size()] = '\0';
-        recorder->RecordRequestCostMetric(key, p.second);
+      for (const auto& [key, value] : request_metrics.request_cost()) {
+        char* key_copy = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), key.size() + 1));
+        strncpy(key_copy, key.data(), key.size());
+        key_copy[key.size()] = '\0';
+        recorder->RecordRequestCostMetric(key_copy, value);
       }
-      for (const auto& p : request_metrics.utilization()) {
-        char* key = static_cast<char*>(
-            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-        strncpy(key, p.first.data(), p.first.size());
-        key[p.first.size()] = '\0';
-        recorder->RecordUtilizationMetric(key, p.second);
+      for (const auto& [key, value] : request_metrics.utilization()) {
+        char* key_copy = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), key.size() + 1));
+        strncpy(key_copy, key.data(), key.size());
+        key_copy[key.size()] = '\0';
+        recorder->RecordUtilizationMetric(key_copy, value);
       }
-      for (const auto& p : request_metrics.named_metrics()) {
-        char* key = static_cast<char*>(
-            grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-        strncpy(key, p.first.data(), p.first.size());
-        key[p.first.size()] = '\0';
-        recorder->RecordNamedMetric(key, p.second);
+      for (const auto& [key, value] : request_metrics.named_metrics()) {
+        char* key_copy = static_cast<char*>(
+            grpc_call_arena_alloc(context->c_call(), key.size() + 1));
+        strncpy(key_copy, key.data(), key.size());
+        key_copy[key.size()] = '\0';
+        recorder->RecordNamedMetric(key_copy, value);
       }
     }
     return TestServiceImpl::Echo(context, request, response);
@@ -599,15 +596,22 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Prefixes added for context
         "(Failed to connect to remote host: )?"
         "(Timeout occurred: )?"
+        // Parenthetical wrappers
+        "((Secure read failed|"
+        "Handshake read failed|"
+        "Delayed close due to in-progress write) \\()?"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
         // strerror() output or other message
         "(Connection refused"
         "|Connection reset by peer"
         "|Socket closed"
-        "|FD shutdown)"
+        "|FD shutdown"
+        "|Endpoint closing)"
         // errno value
-        "( \\([0-9]+\\))?");
+        "( \\([0-9]+\\))?"
+        // close paren from "(Secure|Handshake) read failed \\(" above
+        "\\)?");
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;
@@ -955,41 +959,51 @@ TEST_F(PickFirstTest, SelectsReadyAtStartup) {
 }
 
 TEST_F(PickFirstTest, BackOffInitialReconnect) {
+  StartServers(1);
   ChannelArguments args;
   constexpr int kInitialBackOffMs = 100;
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS,
               kInitialBackOffMs * grpc_test_slowdown_factor());
-  const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   FakeResolverResponseGeneratorWrapper response_generator;
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(ports);
-  // Start trying to connect.  The channel will report
-  // TRANSIENT_FAILURE, because the server is not reachable.
-  const grpc_core::Timestamp t0 = grpc_core::Timestamp::Now();
-  ASSERT_TRUE(WaitForChannelState(
-      channel.get(),
-      [&](grpc_connectivity_state state) {
+  response_generator.SetNextResolution({servers_[0]->port_});
+  // Intercept the first two connection attempts.
+  ConnectionAttemptInjector injector;
+  auto hold1 = injector.AddHold(servers_[0]->port_);
+  auto hold2 = injector.AddHold(servers_[0]->port_);
+  // Start trying to connect.
+  EXPECT_EQ(channel->GetState(/*try_to_connect=*/true), GRPC_CHANNEL_IDLE);
+  // When the first connection attempt starts, record the time, then fail the
+  // attempt.
+  hold1->Wait();
+  const grpc_core::Timestamp first_attempt_time = grpc_core::Timestamp::Now();
+  hold1->Fail(absl::UnavailableError("nope"));
+  // Wait for the second attempt and see how long it took.
+  hold2->Wait();
+  const grpc_core::Duration waited =
+      grpc_core::Timestamp::Now() - first_attempt_time;
+  // The channel will transition to TRANSIENT_FAILURE.
+  EXPECT_TRUE(
+      WaitForChannelState(channel.get(), [&](grpc_connectivity_state state) {
         if (state == GRPC_CHANNEL_TRANSIENT_FAILURE) return true;
         EXPECT_THAT(state, ::testing::AnyOf(GRPC_CHANNEL_IDLE,
                                             GRPC_CHANNEL_CONNECTING));
         return false;
-      },
-      /*try_to_connect=*/true));
-  // Bring up a server on the chosen port.
-  StartServers(1, ports);
-  // Now the channel will become connected.
-  ASSERT_TRUE(WaitForChannelReady(channel.get()));
+      }));
+  // Now let the second attempt complete.
+  hold2->Resume();
+  // The channel will transition to READY.
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
   // Check how long it took.
-  const grpc_core::Duration waited = grpc_core::Timestamp::Now() - t0;
   VLOG(2) << "Waited " << waited.millis() << " milliseconds";
-  // We should have waited at least kInitialBackOffMs. We substract one to
-  // account for test and precision accuracy drift.
+  // We should have waited at least kInitialBackOffMs, plus or minus
+  // jitter.  Jitter is 0.2, but we give extra leeway to account for
+  // measurement skew, thread hops, etc.
   EXPECT_GE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) - 1);
-  // But not much more.
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 0.7);
   EXPECT_LE(waited.millis(),
-            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.3);
+            (kInitialBackOffMs * grpc_test_slowdown_factor()) * 1.5);
 }
 
 TEST_F(PickFirstTest, BackOffMinReconnect) {
@@ -1014,7 +1028,7 @@ TEST_F(PickFirstTest, BackOffMinReconnect) {
   const grpc_core::Duration waited =
       grpc_core::Duration::FromTimespec(gpr_time_sub(t1, t0));
   VLOG(2) << "Waited " << waited.millis() << " milliseconds";
-  // We should have waited at least kMinReconnectBackOffMs. We substract one to
+  // We should have waited at least kMinReconnectBackOffMs. We subtract one to
   // account for test and precision accuracy drift.
   EXPECT_GE(waited.millis(),
             (kMinReconnectBackOffMs * grpc_test_slowdown_factor()) - 1);
@@ -1623,8 +1637,9 @@ TEST_F(RoundRobinTest, Updates) {
   ports.clear();
   response_generator.SetNextResolution(ports);
   WaitForChannelNotReady(channel.get());
-  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
-                      "empty address list: fake resolver empty address list");
+  CheckRpcSendFailure(
+      DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+      "empty address list \\(fake resolver empty address list\\)");
   servers_[0]->service_.ResetCounters();
   // Next update introduces servers_[1], making the channel recover.
   LOG(INFO) << "*** BACK TO SECOND BACKEND ***";
@@ -1737,8 +1752,7 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
   result.addresses.emplace();
   result.resolution_note = "injected error";
   result.result_health_callback = [&](absl::Status status) {
-    EXPECT_EQ(absl::StatusCode::kUnavailable, status.code());
-    EXPECT_EQ("empty address list: injected error", status.message()) << status;
+    EXPECT_EQ(status, absl::UnavailableError("empty address list"));
     notification.Notify();
   };
   response_generator.SetResponse(std::move(result));
@@ -1751,6 +1765,9 @@ TEST_F(RoundRobinTest, FailsEmptyResolverUpdate) {
       WaitForChannelState(channel.get(), predicate, /*try_to_connect=*/true));
   // Callback should have been run.
   notification.WaitForNotification();
+  // Make sure RPCs fail with the right status.
+  CheckRpcSendFailure(DEBUG_LOCATION, stub, StatusCode::UNAVAILABLE,
+                      "empty address list \\(injected error\\)");
   // Return a valid address.
   LOG(INFO) << "****** SENDING NEXT RESOLVER RESULT *******";
   StartServers(1);
@@ -2311,8 +2328,8 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
     std::vector<std::string> entries;
     for (const auto& args_seen : args_seen_list) {
       std::vector<std::string> metadata;
-      for (const auto& p : args_seen.metadata) {
-        metadata.push_back(absl::StrCat(p.first, "=", p.second));
+      for (const auto& [key, value] : args_seen.metadata) {
+        metadata.push_back(absl::StrCat(key, "=", value));
       }
       entries.push_back(absl::StrFormat("{path=\"%s\", metadata=[%s]}",
                                         args_seen.path,
@@ -2420,14 +2437,14 @@ OrcaLoadReport BackendMetricDataToOrcaLoadReport(
                      .SetMemUtilization(backend_metric_data.mem_utilization)
                      .SetQps(backend_metric_data.qps)
                      .SetEps(backend_metric_data.eps);
-  for (const auto& p : backend_metric_data.request_cost) {
-    builder.SetRequestCost(std::string(p.first), p.second);
+  for (const auto& [key, value] : backend_metric_data.request_cost) {
+    builder.SetRequestCost(std::string(key), value);
   }
-  for (const auto& p : backend_metric_data.utilization) {
-    builder.SetUtilization(std::string(p.first), p.second);
+  for (const auto& [key, value] : backend_metric_data.utilization) {
+    builder.SetUtilization(std::string(key), value);
   }
-  for (const auto& p : backend_metric_data.named_metrics) {
-    builder.SetNamedMetrics(std::string(p.first), p.second);
+  for (const auto& [key, value] : backend_metric_data.named_metrics) {
+    builder.SetNamedMetrics(std::string(key), value);
   }
   return builder.Build();
 }
@@ -2443,22 +2460,22 @@ void CheckLoadReportAsExpected(const OrcaLoadReport& actual,
   EXPECT_EQ(actual.rps_fractional(), expected.rps_fractional());
   EXPECT_EQ(actual.eps(), expected.eps());
   EXPECT_EQ(actual.request_cost().size(), expected.request_cost().size());
-  for (const auto& p : actual.request_cost()) {
-    auto it = expected.request_cost().find(p.first);
+  for (const auto& [key, value] : actual.request_cost()) {
+    auto it = expected.request_cost().find(key);
     ASSERT_NE(it, expected.request_cost().end());
-    EXPECT_EQ(it->second, p.second);
+    EXPECT_EQ(it->second, value);
   }
   EXPECT_EQ(actual.utilization().size(), expected.utilization().size());
-  for (const auto& p : actual.utilization()) {
-    auto it = expected.utilization().find(p.first);
+  for (const auto& [key, value] : actual.utilization()) {
+    auto it = expected.utilization().find(key);
     ASSERT_NE(it, expected.utilization().end());
-    EXPECT_EQ(it->second, p.second);
+    EXPECT_EQ(it->second, value);
   }
   EXPECT_EQ(actual.named_metrics().size(), expected.named_metrics().size());
-  for (const auto& p : actual.named_metrics()) {
-    auto it = expected.named_metrics().find(p.first);
+  for (const auto& [key, value] : actual.named_metrics()) {
+    auto it = expected.named_metrics().find(key);
     ASSERT_NE(it, expected.named_metrics().end());
-    EXPECT_EQ(it->second, p.second);
+    EXPECT_EQ(it->second, value);
   }
 }
 
@@ -2499,7 +2516,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return std::move(trailing_metadata_);
   }
 
-  absl::optional<OrcaLoadReport> backend_load_report() {
+  std::optional<OrcaLoadReport> backend_load_report() {
     grpc_core::MutexLock lock(&mu_);
     return std::move(load_report_);
   }
@@ -2560,7 +2577,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   grpc_core::CondVar cond_;
   absl::Status last_status_;
   grpc_core::MetadataVector trailing_metadata_;
-  absl::optional<OrcaLoadReport> load_report_;
+  std::optional<OrcaLoadReport> load_report_;
 };
 
 ClientLbInterceptTrailingMetadataTest*
@@ -2887,7 +2904,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
     grpc_core::CoreConfiguration::Reset();
   }
 
-  const std::vector<std::string>& addresses_seen() {
+  std::vector<std::string> addresses_seen() {
     grpc_core::MutexLock lock(&mu_);
     return addresses_seen_;
   }
@@ -2956,9 +2973,9 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
     grpc_core::CoreConfiguration::Reset();
   }
 
-  absl::optional<BackendMetricReport> GetBackendMetricReport() {
+  std::optional<BackendMetricReport> GetBackendMetricReport() {
     grpc_core::MutexLock lock(&mu_);
-    if (backend_metric_reports_.empty()) return absl::nullopt;
+    if (backend_metric_reports_.empty()) return std::nullopt;
     auto result = std::move(backend_metric_reports_.front());
     backend_metric_reports_.pop_front();
     return result;
@@ -3268,7 +3285,7 @@ TEST_F(WeightedRoundRobinTest, CallAndServerMetric) {
 // all of its subchannels every time it saw an update, thus causing the
 // WRR policy to re-enter the blackout period for that address.
 TEST_F(WeightedRoundRobinTest, WithOutlierDetection) {
-  const int kBlackoutPeriodSeconds = 5;
+  const int kBlackoutPeriodSeconds = 10;
   const int kNumServers = 3;
   StartServers(kNumServers);
   // Report server metrics that should give 6:4:3 WRR picks.

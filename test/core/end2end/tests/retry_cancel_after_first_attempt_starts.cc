@@ -14,15 +14,14 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-
 #include <grpc/impl/channel_arg_names.h>
+
+#include <memory>
+#include <optional>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -30,7 +29,8 @@ namespace {
 
 // Tests that we can unref a call after the first attempt starts but
 // before any ops complete.  This should not cause a memory leak.
-CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
+CORE_END2END_TEST(RetryTests, RetryCancelAfterFirstAttemptStarts) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   // This is a workaround for the flakiness that if the server ever enters
   // GracefulShutdown for whatever reason while the client has already been
   // shutdown, the test would not timeout and fail.
@@ -51,7 +51,7 @@ CORE_END2END_TEST(RetryTest, RetryCancelAfterFirstAttemptStarts) {
       "    }\n"
       "  } ]\n"
       "}"));
-  absl::optional<Call> c =
+  std::optional<Call> c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(6)).Create();
   // Client starts send ops.
   c->NewBatch(1)

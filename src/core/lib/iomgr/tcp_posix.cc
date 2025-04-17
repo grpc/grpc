@@ -16,21 +16,20 @@
 //
 //
 
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
 #include <errno.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <limits.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -43,39 +42,39 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <optional>
 #include <unordered_map>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/string_util.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/debug/event_log.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
-#include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/event_log.h"
+#include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
-#include "src/core/util/useful.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 #ifndef SOL_TCP
 #define SOL_TCP IPPROTO_TCP
@@ -328,7 +327,7 @@ class TcpZerocopySendCtx {
   size_t threshold_bytes() const { return threshold_bytes_; }
 
   // Expected to be called by handler reading messages from the err queue.
-  // It is used to indicate that some OMem meory is now available. It returns
+  // It is used to indicate that some OMem memory is now available. It returns
   // true to tell the caller to mark the file descriptor as immediately
   // writable.
   //
@@ -737,13 +736,12 @@ static void finish_estimate(grpc_tcp* tcp) {
   tcp->bytes_read_this_round = 0;
 }
 
-static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
-                                            grpc_tcp* tcp) {
-  return grpc_error_set_int(
-      grpc_error_set_int(src_error, grpc_core::StatusIntProperty::kFd, tcp->fd),
-      // All tcp errors are marked with UNAVAILABLE so that application may
-      // choose to retry.
-      grpc_core::StatusIntProperty::kRpcStatus, GRPC_STATUS_UNAVAILABLE);
+static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error) {
+  return grpc_error_set_int(src_error,
+                            // All tcp errors are marked with UNAVAILABLE so
+                            // that application may choose to retry.
+                            grpc_core::StatusIntProperty::kRpcStatus,
+                            GRPC_STATUS_UNAVAILABLE);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
@@ -818,7 +816,7 @@ static void maybe_post_reclaimer(grpc_tcp* tcp)
     TCP_REF(tcp, "posted_reclaimer");
     tcp->memory_owner.PostReclaimer(
         grpc_core::ReclamationPass::kBenign,
-        [tcp](absl::optional<grpc_core::ReclamationSweep> sweep) {
+        [tcp](std::optional<grpc_core::ReclamationSweep> sweep) {
           if (sweep.has_value()) {
             perform_reclamation(tcp);
           }
@@ -971,12 +969,10 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
       // 0 read size ==> end of stream
       grpc_slice_buffer_reset_and_unref(tcp->incoming_buffer);
       if (read_bytes == 0) {
-        *error = tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+        *error = tcp_annotate_error(absl::InternalError("Socket closed"));
       } else {
-        *error =
-            tcp_annotate_error(absl::InternalError(absl::StrCat(
-                                   "recvmsg:", grpc_core::StrError(errno))),
-                               tcp);
+        *error = tcp_annotate_error(absl::InternalError(
+            absl::StrCat("recvmsg:", grpc_core::StrError(errno))));
       }
       return true;
     }
@@ -1124,8 +1120,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
     tcp_trace_read(tcp, tcp_read_error);
   } else {
     if (!tcp->memory_owner.is_valid() && error.ok()) {
-      tcp_read_error =
-          tcp_annotate_error(absl::InternalError("Socket closed"), tcp);
+      tcp_read_error = tcp_annotate_error(absl::InternalError("Socket closed"));
     } else {
       tcp_read_error = error;
     }
@@ -1255,9 +1250,8 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-        LOG(ERROR) << "Failed to set timestamping options on the socket.";
-      }
+      GRPC_TRACE_LOG(tcp, ERROR)
+          << "Failed to set timestamping options on the socket.";
       return false;
     }
     tcp->bytes_counter = -1;
@@ -1341,9 +1335,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(ERROR) << "Received timestamp without extended error";
-    }
+    GRPC_TRACE_LOG(tcp, ERROR) << "Received timestamp without extended error";
     return cmsg;
   }
 
@@ -1353,9 +1345,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     opt_stats = next_cmsg;
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-        LOG(ERROR) << "Received timestamp without extended error";
-      }
+      GRPC_TRACE_LOG(tcp, ERROR) << "Received timestamp without extended error";
       return opt_stats;
     }
   }
@@ -1363,9 +1353,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
-    if (GRPC_TRACE_FLAG_ENABLED(tcp)) {
-      LOG(ERROR) << "Unexpected control message";
-    }
+    GRPC_TRACE_LOG(tcp, ERROR) << "Unexpected control message";
     return cmsg;
   }
 
@@ -1626,7 +1614,7 @@ static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
         record->UnwindIfThrottled(unwind_slice_idx, unwind_byte_idx);
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
         tcp_shutdown_buffer_list(tcp);
         return true;
       }
@@ -1736,7 +1724,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
         }
         return false;
       } else {
-        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"), tcp);
+        *error = tcp_annotate_error(GRPC_OS_ERROR(saved_errno, "sendmsg"));
         grpc_slice_buffer_reset_and_unref(tcp->outgoing_buffer);
         tcp_shutdown_buffer_list(tcp);
         return true;
@@ -1831,11 +1819,10 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   DCHECK_EQ(tcp->current_zerocopy_send, nullptr);
 
   if (buf->length == 0) {
-    grpc_core::Closure::Run(
-        DEBUG_LOCATION, cb,
-        grpc_fd_is_shutdown(tcp->em_fd)
-            ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"), tcp)
-            : absl::OkStatus());
+    grpc_core::Closure::Run(DEBUG_LOCATION, cb,
+                            grpc_fd_is_shutdown(tcp->em_fd)
+                                ? tcp_annotate_error(GRPC_ERROR_CREATE("EOF"))
+                                : absl::OkStatus());
     tcp_shutdown_buffer_list(tcp);
     return;
   }
@@ -1923,9 +1910,40 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
                                             tcp_get_fd,
                                             tcp_can_track_err};
 
+grpc_endpoint* grpc_tcp_create(
+    grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
+    absl::string_view peer_string) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    // Create an EventEngine endpoint when creating the transport.
+    auto* engine =
+        reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(
+            config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+    if (engine == nullptr) {
+      grpc_core::Crash("EventEngine is not set");
+    }
+    auto* engine_supports_fd = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::EventEngineSupportsFdExtension>(
+        engine);
+    if (engine_supports_fd == nullptr) {
+      grpc_core::Crash("EventEngine does not support fds");
+    }
+    int wrapped_fd;
+    grpc_fd_orphan(fd, nullptr, &wrapped_fd, "Hand fd over to EventEngine");
+    return grpc_event_engine_endpoint_create(
+        engine_supports_fd->CreateEndpointFromFd(wrapped_fd, config));
+  }
+  return grpc_tcp_create(fd, TcpOptionsFromEndpointConfig(config), peer_string);
+}
+
 grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
                                const grpc_core::PosixTcpOptions& options,
                                absl::string_view peer_string) {
+  CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
+      << "This function must not be called when the pollset_alternative "
+         "experiment is enabled. This is a bug.";
+  CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
+      << "The event_engine_for_all_other_endpoints experiment should prevent "
+         "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);
   tcp->base.vtable = &vtable;
   tcp->peer_string = std::string(peer_string);

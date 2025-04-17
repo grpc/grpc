@@ -16,16 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -35,7 +34,8 @@ namespace {
 // - 2 retries allowed for ABORTED status
 // - first attempt gets ABORTED with a long delay
 // - second attempt succeeds
-CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
+CORE_END2END_TEST(RetryTests, RetryServerPushbackDelay) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -55,7 +55,7 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingMessage server_message;
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;
@@ -66,11 +66,11 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
       .SendCloseFromClient()
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
-  absl::optional<IncomingCall> s = RequestCall(101);
+  std::optional<IncomingCall> s = RequestCall(101);
   Expect(101, true);
   Step(Duration::Seconds(20));
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s->NewBatch(102)
       .SendInitialMetadata({})
@@ -89,8 +89,8 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
   // Configured back-off was 1 second, server push-back said 2 seconds.
   // To avoid flakiness, we allow some fudge factor here.
   EXPECT_GE(retry_delay, Duration::Milliseconds(1500));
-  EXPECT_NE(s->GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s->GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close2;
   s->NewBatch(202)
       .SendInitialMetadata({})
@@ -100,7 +100,7 @@ CORE_END2END_TEST(RetryTest, RetryServerPushbackDelay) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "message2");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "message2");
   EXPECT_EQ(s->method(), "/service/method");
   EXPECT_FALSE(client_close2.was_cancelled());
 }

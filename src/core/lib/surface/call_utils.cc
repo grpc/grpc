@@ -14,6 +14,19 @@
 
 #include "src/core/lib/surface/call_utils.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -33,25 +46,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/call/metadata.h"
+#include "src/core/call/metadata_batch.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -61,8 +58,9 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/validate_metadata.h"
-#include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/match.h"
 
 namespace grpc_core {
 
@@ -124,7 +122,7 @@ Poll<Empty> WaitForCqEndOp::operator()() {
   GRPC_TRACE_LOG(promise_primitives, INFO)
       << Activity::current()->DebugTag() << "WaitForCqEndOp[" << this << "] "
       << StateString(state_);
-  if (auto* n = absl::get_if<NotStarted>(&state_)) {
+  if (auto* n = std::get_if<NotStarted>(&state_)) {
     if (n->is_closure) {
       ExecCtx::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(n->tag),
                    std::move(n->error));
@@ -144,7 +142,7 @@ Poll<Empty> WaitForCqEndOp::operator()() {
           &started, &started.completion);
     }
   }
-  auto& started = absl::get<Started>(state_);
+  auto& started = std::get<Started>(state_);
   if (started.done.load(std::memory_order_acquire)) {
     return Empty{};
   } else {
@@ -166,47 +164,6 @@ std::string WaitForCqEndOp::StateString(const State& state) {
             x.done.load(std::memory_order_relaxed) ? "true" : "false");
       },
       [](const Invalid&) -> std::string { return "Invalid{}"; });
-}
-
-////////////////////////////////////////////////////////////////////////
-// MessageReceiver
-
-StatusFlag MessageReceiver::FinishRecvMessage(
-    ValueOrFailure<absl::optional<MessageHandle>> result) {
-  if (!result.ok()) {
-    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
-                               << "[call] RecvMessage: outstanding_recv "
-                                  "finishes: received end-of-stream with error";
-    *recv_message_ = nullptr;
-    recv_message_ = nullptr;
-    return Failure{};
-  }
-  if (!result->has_value()) {
-    GRPC_TRACE_LOG(call, INFO) << Activity::current()->DebugTag()
-                               << "[call] RecvMessage: outstanding_recv "
-                                  "finishes: received end-of-stream";
-    *recv_message_ = nullptr;
-    recv_message_ = nullptr;
-    return Success{};
-  }
-  MessageHandle& message = **result;
-  test_only_last_message_flags_ = message->flags();
-  if ((message->flags() & GRPC_WRITE_INTERNAL_COMPRESS) &&
-      (incoming_compression_algorithm_ != GRPC_COMPRESS_NONE)) {
-    *recv_message_ = grpc_raw_compressed_byte_buffer_create(
-        nullptr, 0, incoming_compression_algorithm_);
-  } else {
-    *recv_message_ = grpc_raw_byte_buffer_create(nullptr, 0);
-  }
-  grpc_slice_buffer_move_into(message->payload()->c_slice_buffer(),
-                              &(*recv_message_)->data.raw.slice_buffer);
-  GRPC_TRACE_LOG(call, INFO)
-      << Activity::current()->DebugTag()
-      << "[call] RecvMessage: outstanding_recv "
-         "finishes: received "
-      << (*recv_message_)->data.raw.slice_buffer.length << " byte message";
-  recv_message_ = nullptr;
-  return Success{};
 }
 
 ////////////////////////////////////////////////////////////////////////

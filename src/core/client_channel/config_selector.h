@@ -17,8 +17,8 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CONFIG_SELECTOR_H
 
+#include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
-
 #include <string.h>
 
 #include <utility>
@@ -27,20 +27,16 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
+#include "src/core/call/interception_chain.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/lib/channel/channel_fwd.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/interception_chain.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/service_config/service_config.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 // Channel arg key for ConfigSelector.

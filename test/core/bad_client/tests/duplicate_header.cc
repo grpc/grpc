@@ -16,16 +16,13 @@
 //
 //
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
-#include <grpc/support/log.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "absl/log/check.h"
+#include "src/core/util/time.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/test_config.h"

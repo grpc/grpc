@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/strings/match.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 
+#include "absl/strings/match.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/debug/trace.h"
 #include "test/core/test_util/test_config.h"
 

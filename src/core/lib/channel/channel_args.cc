@@ -18,6 +18,10 @@
 
 #include "src/core/lib/channel/channel_args.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,12 +38,6 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -220,34 +218,34 @@ ChannelArgs ChannelArgs::RemoveAllKeysWithPrefix(
   return ChannelArgs(std::move(args));
 }
 
-absl::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
+std::optional<int> ChannelArgs::GetInt(absl::string_view name) const {
   auto* v = Get(name);
-  if (v == nullptr) return absl::nullopt;
+  if (v == nullptr) return std::nullopt;
   return v->GetIfInt();
 }
 
-absl::optional<Duration> ChannelArgs::GetDurationFromIntMillis(
+std::optional<Duration> ChannelArgs::GetDurationFromIntMillis(
     absl::string_view name) const {
   auto ms = GetInt(name);
-  if (!ms.has_value()) return absl::nullopt;
+  if (!ms.has_value()) return std::nullopt;
   if (*ms == INT_MAX) return Duration::Infinity();
   if (*ms == INT_MIN) return Duration::NegativeInfinity();
   return Duration::Milliseconds(*ms);
 }
 
-absl::optional<absl::string_view> ChannelArgs::GetString(
+std::optional<absl::string_view> ChannelArgs::GetString(
     absl::string_view name) const {
   auto* v = Get(name);
-  if (v == nullptr) return absl::nullopt;
+  if (v == nullptr) return std::nullopt;
   const auto s = v->GetIfString();
-  if (s == nullptr) return absl::nullopt;
+  if (s == nullptr) return std::nullopt;
   return s->as_string_view();
 }
 
-absl::optional<std::string> ChannelArgs::GetOwnedString(
+std::optional<std::string> ChannelArgs::GetOwnedString(
     absl::string_view name) const {
-  absl::optional<absl::string_view> v = GetString(name);
-  if (!v.has_value()) return absl::nullopt;
+  std::optional<absl::string_view> v = GetString(name);
+  if (!v.has_value()) return std::nullopt;
   return std::string(*v);
 }
 
@@ -259,13 +257,13 @@ void* ChannelArgs::GetVoidPointer(absl::string_view name) const {
   return pp->c_pointer();
 }
 
-absl::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
+std::optional<bool> ChannelArgs::GetBool(absl::string_view name) const {
   auto* v = Get(name);
-  if (v == nullptr) return absl::nullopt;
+  if (v == nullptr) return std::nullopt;
   auto i = v->GetIfInt();
   if (!i.has_value()) {
     LOG(ERROR) << name << " ignored: it must be an integer";
-    return absl::nullopt;
+    return std::nullopt;
   }
   switch (*i) {
     case 0:

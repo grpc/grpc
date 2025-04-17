@@ -3,10 +3,11 @@
  *     envoy/config/metrics/v3/stats.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,13 +19,21 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__config__metrics__v3__StatsSink_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__StatsSink_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__StatsConfig_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__StatsConfig_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__StatsMatcher_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__StatsMatcher_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__TagSpecifier_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__TagSpecifier_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__HistogramBucketSettings_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__HistogramBucketSettings_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__StatsdSink_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__StatsdSink_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__DogStatsdSink_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__DogStatsdSink_msg_init_ptr;
 extern const upb_MiniTable envoy__config__metrics__v3__HystrixSink_msg_init;
+extern const upb_MiniTable* envoy__config__metrics__v3__HystrixSink_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_config_metrics_v3_stats_proto_upb_file_layout;
 
@@ -34,4 +43,4 @@ extern const upb_MiniTableFile envoy_config_metrics_v3_stats_proto_upb_file_layo
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_CONFIG_METRICS_V3_STATS_PROTO_UPB_H__UPB_MINITABLE_H_ */

@@ -16,9 +16,9 @@
  *
  */
 
-#include <map>
+#include <google/protobuf/compiler/php/names.h>
 
-#include <google/protobuf/compiler/php/php_generator.h>
+#include <map>
 
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
@@ -50,7 +50,7 @@ std::string PackageName(const FileDescriptor* file) {
   if (file->options().has_php_namespace()) {
     return file->options().php_namespace();
   } else {
-    return ConvertToPhpNamespace(file->package());
+    return ConvertToPhpNamespace(std::string(file->package()));
   }
 }
 
@@ -176,7 +176,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         "of \\$input_type_id$\n"
         " * @param \\Grpc\\ServerContext $$context server request context\n"
         " * @return \\$output_type_id$ for response data, null if if error "
-        "occured\n"
+        "occurred\n"
         " *     initial metadata (if any) and status (if not ok) should be set "
         "to $$context\n"
         " */\n"
@@ -208,7 +208,7 @@ void PrintServerMethod(const MethodDescriptor* method, Printer* out) {
         " * @param \\$input_type_id$ $$request client request\n"
         " * @param \\Grpc\\ServerContext $$context server request context\n"
         " * @return \\$output_type_id$ for response data, null if if error "
-        "occured\n"
+        "occurred\n"
         " *     initial metadata (if any) and status (if not ok) should be set "
         "to $$context\n"
         " */\n"

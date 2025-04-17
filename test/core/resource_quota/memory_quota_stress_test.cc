@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/memory_request.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -19,6 +21,7 @@
 #include <chrono>
 #include <initializer_list>
 #include <memory>
+#include <optional>
 #include <random>
 #include <thread>
 #include <utility>
@@ -27,15 +30,10 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/memory_request.h>
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -81,7 +79,7 @@ class StressTest {
           if (st->RememberReservation(
                   allocator->MakeReservation(st->RandomRequest()))) {
             allocator->PostReclaimer(
-                pass, [st](absl::optional<ReclamationSweep> sweep) {
+                pass, [st](std::optional<ReclamationSweep> sweep) {
                   if (!sweep.has_value()) return;
                   st->ForgetReservations();
                 });
@@ -90,7 +88,7 @@ class StressTest {
       }
     }
 
-    // All threads started, wait for the alloted time.
+    // All threads started, wait for the allotted time.
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
 
     // Toggle the completion bit, and then wait for the threads.

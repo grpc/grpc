@@ -45,15 +45,15 @@ std::string DescribeService(const grpc::protobuf::ServiceDescriptor* service) {
   if (service->options().deprecated()) {
     result.append("DEPRECATED\n");
   }
-  result.append("filename: " + service->file()->name() + "\n");
+  result.append("filename: " + std::string(service->file()->name()) + "\n");
 
-  std::string package = service->full_name();
-  size_t pos = package.rfind("." + service->name());
+  std::string package(service->full_name());
+  size_t pos = package.rfind("." + std::string(service->name()));
   if (pos != std::string::npos) {
     package.erase(pos);
     result.append("package: " + package + ";\n");
   }
-  result.append("service " + service->name() + " {\n");
+  result.append("service " + std::string(service->name()) + " {\n");
   for (int i = 0; i < service->method_count(); ++i) {
     result.append(DescribeMethod(service->method(i)));
   }
@@ -83,7 +83,7 @@ std::string SummarizeService(const grpc::protobuf::ServiceDescriptor* service) {
 }
 
 std::string SummarizeMethod(const grpc::protobuf::MethodDescriptor* method) {
-  std::string result = method->name();
+  std::string result(method->name());
   result.append("\n");
   return result;
 }

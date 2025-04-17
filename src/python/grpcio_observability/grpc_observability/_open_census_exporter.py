@@ -123,7 +123,7 @@ class OpenCensusExporter(_observability.Exporter):
             if not measure:
                 continue
             # Create a measurement map for each metric, otherwise metrics will
-            # be override instead of accumulate.
+            # be overridden instead of accumulate.
             measurement_map = self.stats_recorder.new_measurement_map()
             # Add data label to default labels.
             labels = data.labels

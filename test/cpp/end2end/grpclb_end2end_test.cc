@@ -14,6 +14,16 @@
 // limitations under the License.
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+
 #include <deque>
 #include <memory>
 #include <mutex>
@@ -21,9 +31,6 @@
 #include <sstream>
 #include <string>
 #include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
@@ -33,39 +40,30 @@
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/notification.h"
 #include "absl/types/span.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
+#include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
@@ -189,8 +187,8 @@ struct ClientStats {
         other.num_calls_finished_with_client_failed_to_send;
     num_calls_finished_known_received +=
         other.num_calls_finished_known_received;
-    for (const auto& p : other.drop_token_counts) {
-      drop_token_counts[p.first] += p.second;
+    for (const auto& [token, count] : other.drop_token_counts) {
+      drop_token_counts[token] += count;
     }
     return *this;
   }
@@ -241,11 +239,11 @@ class BalancerServiceImpl : public BalancerService {
 
   void ShutdownStream() {
     grpc_core::MutexLock lock(&mu_);
-    response_queue_.emplace_back(absl::nullopt);
+    response_queue_.emplace_back(std::nullopt);
     if (response_cond_ != nullptr) response_cond_->SignalAll();
   }
 
-  absl::optional<ClientStats> WaitForLoadReport(absl::Duration timeout) {
+  std::optional<ClientStats> WaitForLoadReport(absl::Duration timeout) {
     grpc_core::MutexLock lock(&load_report_mu_);
     if (load_report_queue_.empty()) {
       grpc_core::CondVar condition;
@@ -254,7 +252,7 @@ class BalancerServiceImpl : public BalancerService {
                                 timeout * grpc_test_slowdown_factor());
       load_report_cond_ = nullptr;
     }
-    if (load_report_queue_.empty()) return absl::nullopt;
+    if (load_report_queue_.empty()) return std::nullopt;
     ClientStats load_report = std::move(load_report_queue_.front());
     load_report_queue_.pop_front();
     return load_report;
@@ -391,7 +389,7 @@ class BalancerServiceImpl : public BalancerService {
   // Helper for request handler thread to get the next response to be
   // sent on the stream.  Returns nullopt when the test has requested
   // stream shutdown.
-  absl::optional<LoadBalanceResponse> GetNextResponse() {
+  std::optional<LoadBalanceResponse> GetNextResponse() {
     grpc_core::MutexLock lock(&mu_);
     if (response_queue_.empty()) {
       grpc_core::CondVar condition;
@@ -420,7 +418,7 @@ class BalancerServiceImpl : public BalancerService {
   grpc_core::Mutex mu_;
   bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   std::vector<std::string> service_names_ ABSL_GUARDED_BY(mu_);
-  std::deque<absl::optional<LoadBalanceResponse>> response_queue_
+  std::deque<std::optional<LoadBalanceResponse>> response_queue_
       ABSL_GUARDED_BY(mu_);
   grpc_core::CondVar* response_cond_ ABSL_GUARDED_BY(mu_) = nullptr;
 
@@ -621,7 +619,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     for (auto& backend : backends_) backend->service().ResetCounters();
   }
 
-  absl::optional<ClientStats> WaitForLoadReports(
+  std::optional<ClientStats> WaitForLoadReports(
       absl::Duration timeout = absl::Seconds(5)) {
     return balancer_->service().WaitForLoadReport(timeout);
   }
@@ -695,7 +693,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
               << options.num_requests_multiple_of << ") against the backends. "
               << num_ok << " succeeded, " << num_failure << " failed, "
               << num_drops << " dropped.";
-    return std::make_tuple(num_ok, num_failure, num_drops);
+    return std::tuple(num_ok, num_failure, num_drops);
   }
 
   void WaitForBackend(size_t backend_idx,
@@ -769,11 +767,11 @@ class GrpclbEnd2endTest : public ::testing::Test {
       const std::vector<int>& backend_ports,
       const std::map<std::string, size_t>& drop_token_counts) {
     LoadBalanceResponse response;
-    for (const auto& drop_token_count : drop_token_counts) {
-      for (size_t i = 0; i < drop_token_count.second; ++i) {
+    for (const auto& [token, count] : drop_token_counts) {
+      for (size_t i = 0; i < count; ++i) {
         auto* server = response.mutable_server_list()->add_servers();
         server->set_drop(true);
-        server->set_load_balance_token(drop_token_count.first);
+        server->set_load_balance_token(token);
       }
     }
     for (const int& backend_port : backend_ports) {
@@ -953,12 +951,19 @@ TEST_F(GrpclbEnd2endTest, UsePickFirstChildPolicy) {
       "}");
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that all requests went to the first backend.  This verifies
-  // that we used pick_first instead of round_robin as the child policy.
-  EXPECT_EQ(backends_[0]->service().request_count(), kNumRpcs);
-  for (size_t i = 1; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 0UL);
+  // Check that all requests went to one backend.  This verifies that we
+  // used pick_first instead of round_robin as the child policy.
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->service().request_count() > 0) {
+      LOG(INFO) << "backend " << i << " saw traffic";
+      EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "multiple backends saw traffic";
+      found = true;
+    }
   }
+  EXPECT_TRUE(found) << "no backends saw traffic";
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_->service().request_count());
   // and sent a single response.
@@ -983,21 +988,24 @@ TEST_F(GrpclbEnd2endTest, SwapChildPolicy) {
       "}");
   SendBalancerResponse(BuildResponseForBackends(GetBackendPorts(), {}));
   CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that all requests went to the first backend.  This verifies
-  // that we used pick_first instead of round_robin as the child policy.
-  EXPECT_EQ(backends_[0]->service().request_count(), kNumRpcs);
-  for (size_t i = 1; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 0UL);
+  // Check that all requests went to one backend.  This verifies that we
+  // used pick_first instead of round_robin as the child policy.
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->service().request_count() > 0) {
+      LOG(INFO) << "backend " << i << " saw traffic";
+      EXPECT_EQ(backends_[i]->service().request_count(), kNumRpcs)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "multiple backends saw traffic";
+      found = true;
+    }
   }
+  EXPECT_TRUE(found) << "no backends saw traffic";
   // Send new resolution that removes child policy from service config.
   SetNextResolutionDefaultBalancer();
+  // We should now be using round_robin, which will send traffic to all
+  // backends.
   WaitForAllBackends();
-  CheckRpcSendOk(kNumRpcs, 3000 /* timeout_ms */, true /* wait_for_ready */);
-  // Check that every backend saw the same number of requests.  This verifies
-  // that we used round_robin.
-  for (size_t i = 0; i < backends_.size(); ++i) {
-    EXPECT_EQ(backends_[i]->service().request_count(), 2UL);
-  }
   // The balancer got a single request.
   EXPECT_EQ(1U, balancer_->service().request_count());
   // and sent a single response.

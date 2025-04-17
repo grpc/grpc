@@ -14,13 +14,20 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc_security.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -29,25 +36,9 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/address_filtering.h"
 #include "src/core/load_balancing/delegating_helper.h"
@@ -57,10 +48,18 @@
 #include "src/core/load_balancing/outlier_detection/outlier_detection.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/env.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/work_serializer.h"
 #include "src/core/xds/grpc/xds_cluster.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_health_status.h"
@@ -77,8 +76,6 @@ bool XdsAggregateClusterBackwardCompatibilityEnabled() {
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
-
-using XdsConfig = XdsDependencyManager::XdsConfig;
 
 constexpr absl::string_view kCds = "cds_experimental";
 
@@ -183,21 +180,16 @@ class CdsLb final : public LoadBalancingPolicy {
 //
 
 CdsLb::CdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] created";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO) << "[cdslb " << this << "] created";
 }
 
 CdsLb::~CdsLb() {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] destroying cds LB policy";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO)
+      << "[cdslb " << this << "] destroying cds LB policy";
 }
 
 void CdsLb::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this << "] shutting down";
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO) << "[cdslb " << this << "] shutting down";
   shutting_down_ = true;
   ResetState();
 }
@@ -233,10 +225,11 @@ std::string MakeChildPolicyName(absl::string_view cluster,
 class PriorityEndpointIterator final : public EndpointAddressesIterator {
  public:
   PriorityEndpointIterator(
-      std::string cluster_name,
+      std::string cluster_name, bool use_http_connect,
       std::shared_ptr<const XdsEndpointResource> endpoints,
       std::vector<size_t /*child_number*/> priority_child_numbers)
       : cluster_name_(std::move(cluster_name)),
+        use_http_connect_(use_http_connect),
         endpoints_(std::move(endpoints)),
         priority_child_numbers_(std::move(priority_child_numbers)) {}
 
@@ -247,9 +240,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
       const auto& priority_entry = priority_list[priority];
       std::string priority_child_name =
           MakeChildPolicyName(cluster_name_, priority_child_numbers_[priority]);
-      for (const auto& p : priority_entry.localities) {
-        const auto& locality_name = p.first;
-        const auto& locality = p.second;
+      for (const auto& [locality_name, locality] : priority_entry.localities) {
         std::vector<RefCountedStringValue> hierarchical_path = {
             RefCountedStringValue(priority_child_name),
             locality_name->human_readable_string()};
@@ -259,13 +250,14 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
           uint32_t endpoint_weight =
               locality.lb_weight *
               endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-          callback(EndpointAddresses(
-              endpoint.addresses(),
+          ChannelArgs args =
               endpoint.args()
                   .SetObject(hierarchical_path_attr)
                   .Set(GRPC_ARG_ADDRESS_WEIGHT, endpoint_weight)
                   .SetObject(locality_name->Ref())
-                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight)));
+                  .Set(GRPC_ARG_XDS_LOCALITY_WEIGHT, locality.lb_weight);
+          if (!use_http_connect_) args = args.Remove(GRPC_ARG_XDS_HTTP_PROXY);
+          callback(EndpointAddresses(endpoint.addresses(), args));
         }
       }
     }
@@ -273,6 +265,7 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
 
  private:
   std::string cluster_name_;
+  bool use_http_connect_;
   std::shared_ptr<const XdsEndpointResource> endpoints_;
   std::vector<size_t /*child_number*/> priority_child_numbers_;
 };
@@ -280,11 +273,10 @@ class PriorityEndpointIterator final : public EndpointAddressesIterator {
 absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   // Get new config.
   auto new_config = args.config.TakeAsSubclass<CdsLbConfig>();
-  if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-    LOG(INFO) << "[cdslb " << this
-              << "] received update: cluster=" << new_config->cluster()
-              << " is_dynamic=" << new_config->is_dynamic();
-  }
+  GRPC_TRACE_LOG(cds_lb, INFO)
+      << "[cdslb " << this
+      << "] received update: cluster=" << new_config->cluster()
+      << " is_dynamic=" << new_config->is_dynamic();
   CHECK(new_config != nullptr);
   // Cluster name should never change, because we should use a different
   // child name in xds_cluster_manager in that case.
@@ -295,11 +287,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   }
   // Start dynamic subscription if needed.
   if (new_config->is_dynamic() && subscription_ == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      LOG(INFO) << "[cdslb " << this
-                << "] obtaining dynamic subscription for cluster "
-                << cluster_name_;
-    }
+    GRPC_TRACE_LOG(cds_lb, INFO)
+        << "[cdslb " << this << "] obtaining dynamic subscription for cluster "
+        << cluster_name_;
     auto* dependency_mgr = args.args.GetObject<XdsDependencyManager>();
     if (dependency_mgr == nullptr) {
       // Should never happen.
@@ -326,11 +316,10 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // If we are already subscribed, it's possible that we just
       // recently subscribed but another update came through before we
       // got the new cluster, in which case it will still be missing.
-      if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-        LOG(INFO) << "[cdslb " << this
-                  << "] xDS config has no entry for dynamic cluster "
-                  << cluster_name_ << ", waiting for subsequent update";
-      }
+      GRPC_TRACE_LOG(cds_lb, INFO)
+          << "[cdslb " << this
+          << "] xDS config has no entry for dynamic cluster " << cluster_name_
+          << ", waiting for subsequent update";
       // Stay in CONNECTING until we get an update that has the cluster.
       return absl::OkStatus();
     }
@@ -357,7 +346,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
       // Can't do this for an aggregate cluster, because even if the aggregate
       // cluster itself didn't change, the leaf clusters may have changed.
       if (*new_cluster_config == *old_cluster_config &&
-          absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+          std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
               new_cluster_config->children)) {
         return absl::OkStatus();
       }
@@ -368,7 +357,7 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
   static constexpr absl::string_view kArgXdsAggregateClusterName =
       GRPC_ARG_NO_SUBCHANNEL_PREFIX "xds_aggregate_cluster_name";
   if (XdsAggregateClusterBackwardCompatibilityEnabled()) {
-    if (absl::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
+    if (std::holds_alternative<XdsConfig::ClusterConfig::EndpointConfig>(
             new_cluster_config->children)) {
       auto aggregate_cluster = args.args.GetString(kArgXdsAggregateClusterName);
       if (aggregate_cluster.has_value()) {
@@ -405,7 +394,8 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
             old_cluster_config, *new_cluster_config, endpoint_config);
         // Populate addresses and resolution_note for child policy.
         update_args.addresses = std::make_shared<PriorityEndpointIterator>(
-            cluster_name_, endpoint_config.endpoints,
+            cluster_name_, new_cluster_config->cluster->use_http_connect,
+            endpoint_config.endpoints,
             child_name_state_.priority_child_numbers);
         update_args.resolution_note = endpoint_config.resolution_note;
         // Construct child policy config.
@@ -452,11 +442,9 @@ absl::Status CdsLb::UpdateLocked(UpdateArgs args) {
     }
     grpc_pollset_set_add_pollset_set(child_policy_->interested_parties(),
                                      interested_parties());
-    if (GRPC_TRACE_FLAG_ENABLED(cds_lb)) {
-      LOG(INFO) << "[cdslb " << this << "] created child policy "
-                << (*child_config)->name() << " (" << child_policy_.get()
-                << ")";
-    }
+    GRPC_TRACE_LOG(cds_lb, INFO)
+        << "[cdslb " << this << "] created child policy "
+        << (*child_config)->name() << " (" << child_policy_.get() << ")";
   }
   // Update child policy.
   update_args.config = std::move(*child_config);
@@ -468,7 +456,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
     const XdsConfig::ClusterConfig* old_cluster,
     const XdsConfig::ClusterConfig& new_cluster,
     const XdsConfig::ClusterConfig::EndpointConfig& endpoint_config) const {
-  CHECK(!absl::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
+  CHECK(!std::holds_alternative<XdsConfig::ClusterConfig::AggregateConfig>(
       new_cluster.children));
   // First, build some maps from locality to child number and the reverse
   // from old_cluster and child_name_state_.
@@ -478,7 +466,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       child_locality_map;
   if (old_cluster != nullptr) {
     auto* old_endpoint_config =
-        absl::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
+        std::get_if<XdsConfig::ClusterConfig::EndpointConfig>(
             &old_cluster->children);
     if (old_endpoint_config != nullptr) {
       const auto& prev_priority_list =
@@ -488,8 +476,7 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
         size_t child_number =
             child_name_state_.priority_child_numbers[priority];
         const auto& localities = prev_priority_list[priority].localities;
-        for (const auto& p : localities) {
-          XdsLocalityName* locality_name = p.first;
+        for (const auto& [locality_name, _] : localities) {
           locality_child_map[locality_name] = child_number;
           child_locality_map[child_number].insert(locality_name);
         }
@@ -505,11 +492,10 @@ CdsLb::ChildNameState CdsLb::ComputeChildNames(
       GetUpdatePriorityList(endpoint_config.endpoints.get());
   for (size_t priority = 0; priority < priority_list.size(); ++priority) {
     const auto& localities = priority_list[priority].localities;
-    absl::optional<size_t> child_number;
+    std::optional<size_t> child_number;
     // If one of the localities in this priority already existed, reuse its
     // child number.
-    for (const auto& p : localities) {
-      XdsLocalityName* locality_name = p.first;
+    for (const auto& [locality_name, _] : localities) {
       if (!child_number.has_value()) {
         auto it = locality_child_map.find(locality_name);
         if (it != locality_child_map.end()) {
@@ -552,20 +538,13 @@ Json CdsLb::CreateChildPolicyConfigForLeafCluster(
     const XdsClusterResource* aggregate_cluster_resource) {
   const auto& cluster_resource = *new_cluster.cluster;
   const bool is_logical_dns =
-      absl::holds_alternative<XdsClusterResource::LogicalDns>(
+      std::holds_alternative<XdsClusterResource::LogicalDns>(
           cluster_resource.type);
   // Determine what xDS LB policy to use.
   Json xds_lb_policy;
-  if (is_logical_dns) {
-    xds_lb_policy = Json::FromArray({
-        Json::FromObject({
-            {"pick_first", Json::FromObject({})},
-        }),
-    });
-  }
-  // TODO(roth): Remove this "else if" block after the 1.63 release.
-  else if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
-           aggregate_cluster_resource != nullptr) {
+  // TODO(roth): Remove this "if" condition after the 1.63 release.
+  if (XdsAggregateClusterBackwardCompatibilityEnabled() &&
+      aggregate_cluster_resource != nullptr) {
     xds_lb_policy =
         Json::FromArray(aggregate_cluster_resource->lb_policy_config);
   } else {

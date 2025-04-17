@@ -16,21 +16,6 @@
 //
 //
 
-#include <string.h>
-
-#include <algorithm>
-#include <functional>
-#include <memory>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/types/optional.h"
-
 #include <grpc/byte_buffer.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
@@ -41,12 +26,24 @@
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <string.h>
 
+#include <algorithm>
+#include <functional>
+#include <memory>
+#include <optional>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -288,7 +285,7 @@ class TestServer {
 // grpc_call_cancel_with_status
 TEST(Pollers, TestDontCrashWhenTryingToReproIssueFixedBy23984) {
   // 64 threads is arbitrary but chosen because, experimentally it's enough to
-  // repro the targetted crash crash (which is then fixed by
+  // repro the targeted crash crash (which is then fixed by
   // https://github.com/grpc/grpc/pull/23984) at a very high rate.
   const int kNumCalls = 64;
   std::vector<std::thread> threads;

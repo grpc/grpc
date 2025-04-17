@@ -16,15 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <forward_list>
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <thread>
-
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/generic/async_generic_service.h>
@@ -35,9 +26,17 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
+#include <algorithm>
+#include <forward_list>
+#include <functional>
+#include <memory>
+#include <mutex>
+#include <thread>
+
+#include "absl/log/log.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/qps_server_builder.h"
@@ -238,7 +237,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     ServerRpcContext() {}
     void lock() { mu_.lock(); }
     void unlock() { mu_.unlock(); }
-    virtual ~ServerRpcContext(){};
+    virtual ~ServerRpcContext() {};
     virtual bool RunNextState(bool) = 0;  // next state, return false if done
     virtual void Reset() = 0;             // start this back at a clean state
    private:

@@ -19,10 +19,8 @@
 #include <fstream>
 #include <sstream>
 
-#include <gtest/gtest.h>
-
 #include "absl/flags/flag.h"
-
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/test_config.h"
 

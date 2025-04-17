@@ -37,32 +37,29 @@ TEST_DIRS=(
     'src/python/grpcio_tests/tests_gevent'
 )
 
-VIRTUALENV=python_pylint_venv
-python3 -m virtualenv $VIRTUALENV -p $(which python3)
-
-PYTHON=$VIRTUALENV/bin/python
-
-$PYTHON -m pip install --upgrade pip==19.3.1
+VIRTUALENV=venv_python_code
+python3.7 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
 
 # TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
-$PYTHON -m pip install --upgrade astroid==2.3.3 \
+python3 -m pip install --upgrade astroid==2.3.3 \
   pylint==2.2.2 \
   toml==0.10.2 \
   "isort>=4.3.0,<5.0.0"
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
+  python3 -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  $PYTHON -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
+  python3 -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
 done
 
 find examples/python \
   -iname "*.py" \
   -not -name "*_pb2.py" \
   -not -name "*_pb2_grpc.py" \
-  | xargs $PYTHON -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
+  | xargs python3 -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
 
 exit $EXIT

@@ -18,6 +18,8 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
+#include <grpc/support/time.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -26,12 +28,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/down_cast.h"
 
 namespace grpc_core {
 
@@ -56,11 +55,11 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
     parts.push_back(
         absl::StrFormat("certificate_file=\"%s\", ", identity_cert_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!private_key_file_.empty()) {
     parts.push_back(
         absl::StrFormat("private_key_file=\"%s\", ", private_key_file_));
   }
-  if (!identity_cert_file_.empty()) {
+  if (!root_cert_file_.empty()) {
     parts.push_back(
         absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
   }
@@ -120,7 +119,7 @@ FileWatcherCertificateProviderFactory::CreateCertificateProvider(
     return nullptr;
   }
   auto* file_watcher_config =
-      static_cast<FileWatcherCertificateProviderFactory::Config*>(config.get());
+      DownCast<FileWatcherCertificateProviderFactory::Config*>(config.get());
   return MakeRefCounted<FileWatcherCertificateProvider>(
       file_watcher_config->private_key_file(),
       file_watcher_config->identity_cert_file(),

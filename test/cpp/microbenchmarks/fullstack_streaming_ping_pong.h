@@ -21,12 +21,11 @@
 #ifndef GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
 #define GRPC_TEST_CPP_MICROBENCHMARKS_FULLSTACK_STREAMING_PING_PONG_H
 
-#include <sstream>
-
 #include <benchmark/benchmark.h>
 
-#include "absl/log/check.h"
+#include <sstream>
 
+#include "absl/log/check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"
 #include "test/cpp/microbenchmarks/fullstack_fixtures.h"
@@ -43,7 +42,7 @@ static void* tag(intptr_t x) { return reinterpret_cast<void*>(x); }
 // Repeatedly makes Streaming Bidi calls (exchanging a configurable number of
 // messages in each call) in a loop on a single channel
 //
-//  First parmeter (i.e state.range(0)):  Message size (in bytes) to use
+//  First parameter (i.e state.range(0)):  Message size (in bytes) to use
 //  Second parameter (i.e state.range(1)): Number of ping pong messages.
 //      Note: One ping-pong means two messages (one from client to server and
 //      the other from server to client):
@@ -139,7 +138,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
 }
 
 // Repeatedly sends ping pong messages in a single streaming Bidi call in a loop
-//     First parmeter (i.e state.range(0)):  Message size (in bytes) to use
+//     First parameter (i.e state.range(0)):  Message size (in bytes) to use
 template <class Fixture, class ClientContextMutator, class ServerContextMutator>
 static void BM_StreamingPingPongMsgs(benchmark::State& state) {
   const int msg_size = state.range(0);
@@ -230,7 +229,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
 // sendmsg syscalls for streaming by coalescing 1. initial metadata with first
 // message; 2. final streaming message with trailing metadata.
 //
-//  First parmeter (i.e state.range(0)):  Message size (in bytes) to use
+//  First parameter (i.e state.range(0)):  Message size (in bytes) to use
 //  Second parameter (i.e state.range(1)): Number of ping pong messages.
 //      Note: One ping-pong means two messages (one from client to server and
 //      the other from server to client):

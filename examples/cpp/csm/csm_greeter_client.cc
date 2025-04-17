@@ -16,6 +16,9 @@
  *
  */
 
+#include <grpcpp/ext/csm_observability.h>
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/support/string_ref.h>
 #include <sys/types.h>
 
 #include <chrono>
@@ -27,16 +30,12 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
 #include "opentelemetry/exporters/prometheus/exporter_options.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
-
-#include <grpcpp/ext/csm_observability.h>
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/support/string_ref.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -120,7 +119,7 @@ class GreeterClient {
     // The actual RPC.
     std::mutex mu;
     std::condition_variable cv;
-    absl::optional<Status> status;
+    std::optional<Status> status;
     // Set the cookie header if we already got a cookie from the server
     if (cookie_from_server_.has_value()) {
       context.AddMetadata("cookie",
@@ -155,13 +154,14 @@ class GreeterClient {
  private:
   std::unique_ptr<Greeter::Stub> stub_;
   std::string cookie_name_;
-  absl::optional<Cookie> cookie_from_server_;
+  std::optional<Cookie> cookie_from_server_;
 };
 
 absl::StatusOr<grpc::CsmObservability> InitializeObservability() {
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

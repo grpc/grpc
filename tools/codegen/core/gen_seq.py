@@ -109,15 +109,7 @@ tail${i}:
     Destruct(&${"prior."*(n-1-i)}next_factory);
 % endfor
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
-    Construct(&${"prior."*(n-1)}current_promise,
-            other.${"prior."*(n-1)}current_promise);
-% for i in range(0,n-1):
-    Construct(&${"prior."*(n-1-i)}next_factory,
-              other.${"prior."*(n-1-i)}next_factory);
-% endfor
-  }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(const SeqState& other) noexcept = delete;
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept : state(other.state), whence(other.whence) {
     DCHECK(state == State::kState0);
@@ -133,21 +125,17 @@ tail${i}:
     switch (state) {
 % for i in range(0,n-1):
       case State::kState${i}: {
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${i+1}/${n}";
-        }
         auto result = ${"prior."*(n-1-i)}current_promise();
         PromiseResult${i}* p = result.value_if_ready();
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${i+1}/${n} gets "
                 << (p != nullptr
                     ? (PromiseResultTraits${i}::IsOk(*p)
                       ? "ready"
                       : absl::StrCat("early-error:", PromiseResultTraits${i}::ErrorString(*p)).c_str())
                     : "pending");
-        }
         if (p == nullptr) return Pending{};
         if (!PromiseResultTraits${i}::IsOk(*p)) {
           return PromiseResultTraits${i}::template ReturnValue<Result>(std::move(*p));
@@ -158,20 +146,16 @@ tail${i}:
         Construct(&${"prior."*(n-2-i)}current_promise, std::move(next_promise));
         state = State::kState${i+1};
       }
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
 % endfor
       default:
       case State::kState${n-1}: {
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: begin poll step ${n}/${n}";
-        }
         auto result = current_promise();
-        if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-          VLOG(2).AtLocation(whence.file(), whence.line())
+        GRPC_TRACE_LOG(promise_primitives, INFO).AtLocation(whence.file(), whence.line())
                 << "seq[" << this << "]: poll step ${n}/${n} gets "
                 << (result.ready()? "ready" : "pending");
-        }
         auto* p = result.value_if_ready();
         if (p == nullptr) return Pending{};
         return Result(std::move(*p));
@@ -199,8 +183,8 @@ front_matter = """
 #include "absl/strings/str_cat.h"
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/construct_destruct.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include "src/core/util/construct_destruct.h"
+#include "src/core/util/debug_location.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"

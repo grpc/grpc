@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,32 +35,24 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config_call_data.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
-
-const NoInterceptor StatefulSessionFilter::Call::OnClientToServerMessage;
-const NoInterceptor StatefulSessionFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor StatefulSessionFilter::Call::OnServerToClientMessage;
-const NoInterceptor StatefulSessionFilter::Call::OnFinalize;
 
 UniqueTypeName XdsOverrideHostAttribute::TypeName() {
   static UniqueTypeName::Factory kFactory("xds_override_host");
@@ -221,6 +213,8 @@ bool IsConfiguredPath(absl::string_view configured_path,
 
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "StatefulSessionFilter::Call::OnClientInitialMetadata");
   // Get config.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
@@ -260,6 +254,8 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
 }
 
 void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "StatefulSessionFilter::Call::OnServerInitialMetadata");
   if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
   MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
@@ -268,6 +264,8 @@ void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 }
 
 void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "StatefulSessionFilter::Call::OnServerTrailingMetadata");
   if (!perform_filtering_) return;
   // If we got a Trailers-Only response, then add the
   // cookie to the trailing metadata instead of the

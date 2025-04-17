@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
 
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <string.h>
 
@@ -28,10 +30,6 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -92,6 +90,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
 
   if (p->byte == 8) {
     CHECK(is_last);
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PingTrace<true>{p->is_ack != 0, p->opaque_8bytes});
     if (p->is_ack) {
       GRPC_TRACE_LOG(http2_ping, INFO)
           << (t->is_client ? "CLIENT" : "SERVER") << "[" << t
@@ -110,8 +110,9 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
         if (t->ping_abuse_policy.ReceivedOnePing(transport_idle)) {
           grpc_chttp2_exceeded_ping_strikes(t);
         }
-      } else if (GRPC_TRACE_FLAG_ENABLED(http2_ping)) {
-        LOG(INFO) << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
+      } else {
+        GRPC_TRACE_LOG(http2_ping, INFO)
+            << "CLIENT[" << t << "]: received ping " << p->opaque_8bytes;
       }
       if (t->ack_pings) {
         if (t->ping_ack_count == t->ping_ack_capacity) {

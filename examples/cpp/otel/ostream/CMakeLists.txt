@@ -17,7 +17,7 @@
 # See cmake_externalproject/CMakeLists.txt for all-in-one cmake build
 # that automatically builds all the dependencies before building helloworld.
 
-cmake_minimum_required(VERSION 3.13)
+cmake_minimum_required(VERSION 3.16)
 
 project(grpc_opentelemetry_example C CXX)
 
@@ -77,8 +77,11 @@ foreach(_target
   target_link_libraries(${_target}
     absl::flags
     absl::flags_parse
+    absl::log_initialize
     opentelemetry-cpp::metrics
     opentelemetry-cpp::ostream_metrics_exporter
+    opentelemetry-cpp::ostream_span_exporter
+    opentelemetry-cpp::trace
     gRPC::grpcpp_otel_plugin
     util
     ${_PROTOBUF_LIBPROTOBUF})

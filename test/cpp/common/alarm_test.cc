@@ -16,17 +16,16 @@
 //
 //
 
+#include <grpcpp/alarm.h>
+#include <grpcpp/completion_queue.h>
+
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <thread>
 
-#include <gtest/gtest.h>
-
-#include <grpcpp/alarm.h>
-#include <grpcpp/completion_queue.h>
-
-#include "src/core/lib/gprpp/notification.h"
+#include "gtest/gtest.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {
@@ -437,6 +436,30 @@ TEST(AlarmTest, CallbackSetDestruction) {
 TEST(AlarmTest, UnsetDestruction) {
   CompletionQueue cq;
   Alarm alarm;
+}
+
+TEST(AlarmTest, CallbackSetInCallback) {
+  Completion c;
+  std::mutex alarm_mu;
+  Alarm alarm;
+  {
+    std::lock_guard<std::mutex> l(alarm_mu);
+    alarm.Set(std::chrono::system_clock::now() + std::chrono::seconds(1),
+              [&](bool ok) {
+                EXPECT_TRUE(ok);
+                std::lock_guard<std::mutex> l(alarm_mu);
+                alarm.Set(
+                    std::chrono::system_clock::now() + std::chrono::seconds(1),
+                    [&](bool ok) {
+                      EXPECT_TRUE(ok);
+                      std::lock_guard<std::mutex> l(c.mu);
+                      c.completed = true;
+                      c.cv.notify_one();
+                    });
+              });
+  }
+  std::unique_lock<std::mutex> l(c.mu);
+  c.cv.wait(l, [&] { return c.completed; });
 }
 
 }  // namespace

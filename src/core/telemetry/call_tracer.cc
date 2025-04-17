@@ -18,15 +18,13 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/promise/context.h"
 #include "src/core/telemetry/tcp_tracer.h"
 
@@ -103,13 +101,13 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordSendTrailingMetadata(send_trailing_metadata);
       }
     }
-    void RecordSendMessage(const SliceBuffer& send_message) override {
+    void RecordSendMessage(const Message& send_message) override {
       for (auto* tracer : tracers_) {
         tracer->RecordSendMessage(send_message);
       }
     }
     void RecordSendCompressedMessage(
-        const SliceBuffer& send_compressed_message) override {
+        const Message& send_compressed_message) override {
       for (auto* tracer : tracers_) {
         tracer->RecordSendCompressedMessage(send_compressed_message);
       }
@@ -120,13 +118,13 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordReceivedInitialMetadata(recv_initial_metadata);
       }
     }
-    void RecordReceivedMessage(const SliceBuffer& recv_message) override {
+    void RecordReceivedMessage(const Message& recv_message) override {
       for (auto* tracer : tracers_) {
         tracer->RecordReceivedMessage(recv_message);
       }
     }
     void RecordReceivedDecompressedMessage(
-        const SliceBuffer& recv_decompressed_message) override {
+        const Message& recv_decompressed_message) override {
       for (auto* tracer : tracers_) {
         tracer->RecordReceivedDecompressedMessage(recv_decompressed_message);
       }
@@ -144,9 +142,9 @@ class DelegatingClientCallTracer : public ClientCallTracer {
                                                transport_stream_stats);
       }
     }
-    void RecordEnd(const gpr_timespec& latency) override {
+    void RecordEnd() override {
       for (auto* tracer : tracers_) {
-        tracer->RecordEnd(latency);
+        tracer->RecordEnd();
       }
     }
     void RecordIncomingBytes(
@@ -171,7 +169,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
     void SetOptionalLabel(OptionalLabelKey key,
@@ -249,13 +247,13 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordSendTrailingMetadata(send_trailing_metadata);
     }
   }
-  void RecordSendMessage(const SliceBuffer& send_message) override {
+  void RecordSendMessage(const Message& send_message) override {
     for (auto* tracer : tracers_) {
       tracer->RecordSendMessage(send_message);
     }
   }
   void RecordSendCompressedMessage(
-      const SliceBuffer& send_compressed_message) override {
+      const Message& send_compressed_message) override {
     for (auto* tracer : tracers_) {
       tracer->RecordSendCompressedMessage(send_compressed_message);
     }
@@ -266,13 +264,13 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordReceivedInitialMetadata(recv_initial_metadata);
     }
   }
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {
+  void RecordReceivedMessage(const Message& recv_message) override {
     for (auto* tracer : tracers_) {
       tracer->RecordReceivedMessage(recv_message);
     }
   }
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& recv_decompressed_message) override {
+      const Message& recv_decompressed_message) override {
     for (auto* tracer : tracers_) {
       tracer->RecordReceivedDecompressedMessage(recv_decompressed_message);
     }
@@ -315,9 +313,7 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordAnnotation(annotation);
     }
   }
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }

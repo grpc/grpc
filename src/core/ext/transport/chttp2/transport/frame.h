@@ -15,17 +15,16 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FRAME_H
 
+#include <grpc/support/port_platform.h>
+
 #include <cstdint>
 #include <string>
+#include <variant>
 #include <vector>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
@@ -50,6 +49,19 @@ namespace grpc_core {
 // declare a bool per flag to make producing/consuming code easier to write.
 //
 // Equality operators are defined for use in unit tests.
+
+// All frames begin with a fixed 9-octet header followed by a variable-length
+// frame payload. The following sizes are in bits.
+// HTTP Frame {
+//   Length(24),
+//   Type(8),
+//   Flags(8),
+//   Reserved(1),
+//   Stream Identifier(31),
+//   Frame Payload(..),
+// }
+// Reference : https://www.rfc-editor.org/rfc/rfc9113.html#name-frame-format
+constexpr uint8_t kFrameHeaderSize = 9;
 
 // DATA frame
 struct Http2DataFrame {
@@ -144,11 +156,20 @@ struct Http2GoawayFrame {
 
 // WINDOW_UPDATE frame
 struct Http2WindowUpdateFrame {
-  uint32_t stream_id;
-  uint32_t increment;
+  uint32_t stream_id = 0;
+  uint32_t increment = 0;
 
   bool operator==(const Http2WindowUpdateFrame& other) const {
     return stream_id == other.stream_id && increment == other.increment;
+  }
+};
+
+// Security-related frame
+struct Http2SecurityFrame {
+  SliceBuffer payload;
+
+  bool operator==(const Http2SecurityFrame& other) const {
+    return payload.JoinIntoString() == other.payload.JoinIntoString();
   }
 };
 
@@ -157,15 +178,21 @@ struct Http2UnknownFrame {
   bool operator==(const Http2UnknownFrame&) const { return true; }
 };
 
+// This is used as a fake frame to trigger events in the HTTP2 transport.
+struct Http2EmptyFrame {
+  bool operator==(const Http2EmptyFrame&) const { return true; }
+};
+
 ///////////////////////////////////////////////////////////////////////////////
 // Frame variant
 //
 // A union of all the frame types above, so that we may pass around an
 // arbitrary frame between layers as appropriate.
 using Http2Frame =
-    absl::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
-                  Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
-                  Http2GoawayFrame, Http2WindowUpdateFrame, Http2UnknownFrame>;
+    std::variant<Http2DataFrame, Http2HeaderFrame, Http2ContinuationFrame,
+                 Http2RstStreamFrame, Http2SettingsFrame, Http2PingFrame,
+                 Http2GoawayFrame, Http2WindowUpdateFrame, Http2SecurityFrame,
+                 Http2UnknownFrame, Http2EmptyFrame>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Frame header
@@ -208,6 +235,24 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
+
+///////////////////////////////////////////////////////////////////////////////
+// GRPC Header
+
+constexpr uint8_t kGrpcHeaderSizeInBytes = 5;
+
+struct GrpcMessageHeader {
+  uint8_t flags = 0;
+  uint32_t length = 0;
+};
+
+// If the payload SliceBuffer is too small to hold a gRPC header, this function
+// will crash. The calling function MUST ensure that the payload SliceBuffer
+// has length greater than or equal to the gRPC header.
+GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload);
+
+void AppendGrpcHeaderToSliceBuffer(SliceBuffer& payload, const uint8_t flags,
+                                   const uint32_t length);
 
 }  // namespace grpc_core
 

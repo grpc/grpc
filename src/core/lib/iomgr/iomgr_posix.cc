@@ -85,7 +85,8 @@ void grpc_set_default_iomgr_platform() {
 }
 
 bool grpc_iomgr_run_in_background() {
-  return grpc_event_engine_run_in_background();
+  return grpc_core::IsEventEngineCallbackCqEnabled() ||
+         grpc_event_engine_run_in_background();
 }
 
 #endif  // GRPC_POSIX_SOCKET_IOMGR

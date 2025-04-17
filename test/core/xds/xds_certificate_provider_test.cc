@@ -18,16 +18,16 @@
 
 #include "src/core/xds/grpc/xds_certificate_provider.h"
 
-#include "absl/status/status.h"
-#include "absl/types/optional.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/status_helper.h"
+#include <optional>
+
+#include "absl/status/status.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
@@ -81,8 +81,8 @@ class TestCertificatesWatcher
   ~TestCertificatesWatcher() override {}
 
   void OnCertificatesChanged(
-      absl::optional<absl::string_view> root_certs,
-      absl::optional<PemKeyCertPairList> key_cert_pairs) override {
+      std::optional<absl::string_view> root_certs,
+      std::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (root_certs.has_value()) {
       if (!root_certs_.has_value() ||
           (root_certs_.has_value() &&
@@ -105,9 +105,9 @@ class TestCertificatesWatcher
     identity_cert_error_ = identity_cert_error;
   }
 
-  const absl::optional<std::string>& root_certs() const { return root_certs_; }
+  const std::optional<std::string>& root_certs() const { return root_certs_; }
 
-  const absl::optional<PemKeyCertPairList>& key_cert_pairs() const {
+  const std::optional<PemKeyCertPairList>& key_cert_pairs() const {
     return key_cert_pairs_;
   }
 
@@ -116,8 +116,8 @@ class TestCertificatesWatcher
   grpc_error_handle identity_cert_error() const { return identity_cert_error_; }
 
  private:
-  absl::optional<std::string> root_certs_;
-  absl::optional<PemKeyCertPairList> key_cert_pairs_;
+  std::optional<std::string> root_certs_;
+  std::optional<PemKeyCertPairList> key_cert_pairs_;
   grpc_error_handle root_cert_error_;
   grpc_error_handle identity_cert_error_;
 };
@@ -132,14 +132,14 @@ TEST(
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
-  EXPECT_EQ(watcher->root_certs(), absl::nullopt);
-  EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
+  EXPECT_EQ(watcher->root_certs(), std::nullopt);
+  EXPECT_EQ(watcher->key_cert_pairs(), std::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Update both root certs and identity certs
   root_provider->distributor()->SetKeyMaterials("root", kRootCert1,
-                                                absl::nullopt);
-  identity_provider->distributor()->SetKeyMaterials("identity", absl::nullopt,
+                                                std::nullopt);
+  identity_provider->distributor()->SetKeyMaterials("identity", std::nullopt,
                                                     MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
@@ -163,9 +163,9 @@ TEST(
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for both root and identity
   root_provider->distributor()->SetErrorForCert(
-      "root", GRPC_ERROR_CREATE(kRootErrorMessage), absl::nullopt);
+      "root", GRPC_ERROR_CREATE(kRootErrorMessage), std::nullopt);
   identity_provider->distributor()->SetErrorForCert(
-      "identity", absl::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
+      "identity", std::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(StatusToString(watcher->root_cert_error()),
@@ -174,7 +174,7 @@ TEST(
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for root certs. Test that the root cert error is reset.
   root_provider->distributor()->SetKeyMaterials("root", kRootCert1,
-                                                absl::nullopt);
+                                                std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
@@ -182,7 +182,7 @@ TEST(
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for identity certs. Test that the identity cert error is
   // reset.
-  identity_provider->distributor()->SetKeyMaterials("identity", absl::nullopt,
+  identity_provider->distributor()->SetKeyMaterials("identity", std::nullopt,
                                                     MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
@@ -199,14 +199,14 @@ TEST(XdsCertificateProviderTest,
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
-  EXPECT_EQ(watcher->root_certs(), absl::nullopt);
-  EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
+  EXPECT_EQ(watcher->root_certs(), std::nullopt);
+  EXPECT_EQ(watcher->key_cert_pairs(), std::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Update both root certs and identity certs
   root_provider->distributor()->SetKeyMaterials("test", kRootCert1,
-                                                absl::nullopt);
-  identity_provider->distributor()->SetKeyMaterials("test", absl::nullopt,
+                                                std::nullopt);
+  identity_provider->distributor()->SetKeyMaterials("test", std::nullopt,
                                                     MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
@@ -214,13 +214,13 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Second update for just root certs
   root_provider->distributor()->SetKeyMaterials("test", kRootCert2,
-                                                absl::nullopt);
+                                                std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Second update for identity certs
-  identity_provider->distributor()->SetKeyMaterials("test", absl::nullopt,
+  identity_provider->distributor()->SetKeyMaterials("test", std::nullopt,
                                                     MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
@@ -228,9 +228,9 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for both root and identity
   root_provider->distributor()->SetErrorForCert(
-      "test", GRPC_ERROR_CREATE(kRootErrorMessage), absl::nullopt);
+      "test", GRPC_ERROR_CREATE(kRootErrorMessage), std::nullopt);
   identity_provider->distributor()->SetErrorForCert(
-      "test", absl::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
+      "test", std::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(StatusToString(watcher->root_cert_error()),
@@ -239,7 +239,7 @@ TEST(XdsCertificateProviderTest,
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for root certs. Test that the root cert error is reset.
   root_provider->distributor()->SetKeyMaterials("test", kRootCert1,
-                                                absl::nullopt);
+                                                std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
@@ -247,7 +247,7 @@ TEST(XdsCertificateProviderTest,
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for identity certs. Test that the identity cert error is
   // reset.
-  identity_provider->distributor()->SetKeyMaterials("test", absl::nullopt,
+  identity_provider->distributor()->SetKeyMaterials("test", std::nullopt,
                                                     MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
@@ -269,8 +269,8 @@ TEST(XdsCertificateProviderTest,
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
-  EXPECT_EQ(watcher->root_certs(), absl::nullopt);
-  EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
+  EXPECT_EQ(watcher->root_certs(), std::nullopt);
+  EXPECT_EQ(watcher->key_cert_pairs(), std::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Update both root certs and identity certs
@@ -333,8 +333,8 @@ TEST(XdsCertificateProviderTest,
   auto* watcher = new TestCertificatesWatcher;
   provider.distributor()->WatchTlsCertificates(
       std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
-  EXPECT_EQ(watcher->root_certs(), absl::nullopt);
-  EXPECT_EQ(watcher->key_cert_pairs(), absl::nullopt);
+  EXPECT_EQ(watcher->root_certs(), std::nullopt);
+  EXPECT_EQ(watcher->key_cert_pairs(), std::nullopt);
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Update both root certs and identity certs
@@ -344,27 +344,27 @@ TEST(XdsCertificateProviderTest,
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Second update for just root certs
-  distributor->SetKeyMaterials("", kRootCert2, absl::nullopt);
+  distributor->SetKeyMaterials("", kRootCert2, std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Second update for identity certs
-  distributor->SetKeyMaterials("", absl::nullopt, MakeKeyCertPairsType2());
+  distributor->SetKeyMaterials("", std::nullopt, MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for root
   distributor->SetErrorForCert("", GRPC_ERROR_CREATE(kRootErrorMessage),
-                               absl::nullopt);
+                               std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_THAT(StatusToString(watcher->root_cert_error()),
               ::testing::HasSubstr(kRootErrorMessage));
   EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
   // Set error for identity
-  distributor->SetErrorForCert("", absl::nullopt,
+  distributor->SetErrorForCert("", std::nullopt,
                                GRPC_ERROR_CREATE(kIdentityErrorMessage));
   EXPECT_EQ(watcher->root_certs(), kRootCert2);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
@@ -373,14 +373,14 @@ TEST(XdsCertificateProviderTest,
   EXPECT_THAT(StatusToString(watcher->identity_cert_error()),
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for root
-  distributor->SetKeyMaterials("", kRootCert1, absl::nullopt);
+  distributor->SetKeyMaterials("", kRootCert1, std::nullopt);
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
   EXPECT_THAT(StatusToString(watcher->identity_cert_error()),
               ::testing::HasSubstr(kIdentityErrorMessage));
   // Send an update for identity
-  distributor->SetKeyMaterials("", absl::nullopt, MakeKeyCertPairsType1());
+  distributor->SetKeyMaterials("", std::nullopt, MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_certs(), kRootCert1);
   EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
   EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());

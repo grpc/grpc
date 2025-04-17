@@ -30,9 +30,8 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "test/core/test_util/port.h"
 #include "test/cpp/util/subprocess.h"
 

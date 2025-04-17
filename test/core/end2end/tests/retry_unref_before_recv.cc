@@ -14,16 +14,15 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -32,7 +31,8 @@ namespace {
 // Tests that we can unref a call while recv ops are started but before
 // they complete.  This ensures that we don't drop callbacks or cause a
 // memory leak.
-CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
+CORE_END2END_TEST(RetryTests, UnrefBeforeRecv) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -50,7 +50,7 @@ CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
       "    }\n"
       "  } ]\n"
       "}"));
-  absl::optional<Call> c{
+  std::optional<Call> c{
       NewClientCall("/service/method").Timeout(Duration::Seconds(60)).Create()};
 
   // Client starts send ops.
@@ -82,7 +82,14 @@ CORE_END2END_TEST(RetryTest, UnrefBeforeRecv) {
       .SendStatusFromServer(GRPC_STATUS_FAILED_PRECONDITION, "xyz", {})
       .RecvCloseOnServer(client_close);
   // Server ops complete and client recv ops complete.
-  Expect(2, false);  // Failure!
+  if (test_config()->feature_mask & FEATURE_MASK_IS_CALL_V3) {
+    // Call-v3 behavior change: the cancellation used to signal different
+    // behavior, but we're effectively just returning a trailers-only response -
+    // and a trailers only response succeeds here, so we're normalizing that.
+    Expect(2, true);
+  } else {
+    Expect(2, false);  // Failure!
+  }
   Expect(102, true);
   Step();
 

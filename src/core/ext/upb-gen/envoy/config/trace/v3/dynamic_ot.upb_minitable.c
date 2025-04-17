@@ -3,7 +3,8 @@
  *     envoy/config/trace/v3/dynamic_ot.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -18,8 +19,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_config_trace_v3_DynamicOtConfig_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_config_trace_v3_DynamicOtConfig__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Struct_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_config_trace_v3_DynamicOtConfig__fields[2] = {
@@ -28,7 +30,7 @@ static const upb_MiniTableField envoy_config_trace_v3_DynamicOtConfig__fields[2]
 };
 
 const upb_MiniTable envoy__config__trace__v3__DynamicOtConfig_msg_init = {
-  &envoy_config_trace_v3_DynamicOtConfig_submsgs[0],
+  &envoy_config_trace_v3_DynamicOtConfig__submsgs[0],
   &envoy_config_trace_v3_DynamicOtConfig__fields[0],
   UPB_SIZE(24, 40), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(8), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -40,6 +42,7 @@ const upb_MiniTable envoy__config__trace__v3__DynamicOtConfig_msg_init = {
   })
 };
 
+const upb_MiniTable* envoy__config__trace__v3__DynamicOtConfig_msg_init_ptr = &envoy__config__trace__v3__DynamicOtConfig_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &envoy__config__trace__v3__DynamicOtConfig_msg_init,
 };

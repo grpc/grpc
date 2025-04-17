@@ -15,18 +15,16 @@
 #include <string>
 #include <vector>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/proto/grpc/testing/xds/v3/stateful_session.pb.h"
-#include "src/proto/grpc/testing/xds/v3/stateful_session_cookie.pb.h"
+#include "envoy/extensions/filters/http/stateful_session/v3/stateful_session.pb.h"
+#include "envoy/extensions/http/stateful_session/cookie/v3/cookie.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
@@ -54,7 +52,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     std::set<std::string> attributes;
 
     std::pair<std::string, std::string> Header() const {
-      return std::make_pair("cookie", absl::StrFormat("%s=%s", name, value));
+      return std::pair("cookie", absl::StrFormat("%s=%s", name, value));
     }
 
     template <typename Sink>
@@ -67,14 +65,19 @@ class OverrideHostTest : public XdsEnd2endTest {
 
   static Cookie ParseCookie(absl::string_view header) {
     Cookie cookie;
-    std::pair<absl::string_view, absl::string_view> name_value =
+    std::pair<absl::string_view, absl::string_view> string_pair =
         absl::StrSplit(header, absl::MaxSplits('=', 1));
-    cookie.name = std::string(name_value.first);
-    std::pair<absl::string_view, absl::string_view> value_attrs =
-        absl::StrSplit(name_value.second, absl::MaxSplits(';', 1));
-    cookie.value = std::string(value_attrs.first);
-    for (absl::string_view segment : absl::StrSplit(value_attrs.second, ';')) {
-      cookie.attributes.emplace(absl::StripAsciiWhitespace(segment));
+    auto [name, rest] = string_pair;
+    string_pair = absl::StrSplit(rest, absl::MaxSplits(';', 1));
+    auto& [value, attributes] = string_pair;
+    cookie.name = std::string(name);
+    cookie.value = std::string(value);
+    std::string decoded;
+    EXPECT_TRUE(absl::Base64Unescape(value, &decoded));
+    LOG(INFO) << "set-cookie header: " << header << " (decoded: " << decoded
+              << ")";
+    for (absl::string_view attribute : absl::StrSplit(attributes, ';')) {
+      cookie.attributes.emplace(absl::StripAsciiWhitespace(attribute));
     }
     return cookie;
   }
@@ -82,16 +85,8 @@ class OverrideHostTest : public XdsEnd2endTest {
   static std::vector<Cookie> GetCookies(
       const std::multimap<std::string, std::string>& server_initial_metadata) {
     std::vector<Cookie> values;
-    auto pair = server_initial_metadata.equal_range("set-cookie");
-    for (auto it = pair.first; it != pair.second; ++it) {
-      std::pair<absl::string_view, absl::string_view> key_value =
-          absl::StrSplit(it->second, '=');
-      std::pair<absl::string_view, absl::string_view> key_value2 =
-          absl::StrSplit(key_value.second, ';');
-      std::string decoded;
-      EXPECT_TRUE(absl::Base64Unescape(key_value2.first, &decoded));
-      LOG(INFO) << "set-cookie header: " << it->second
-                << " (decoded: " << decoded << ")";
+    auto [start, end] = server_initial_metadata.equal_range("set-cookie");
+    for (auto it = start; it != end; ++it) {
       values.emplace_back(ParseCookie(it->second));
       EXPECT_FALSE(values.back().value.empty());
       EXPECT_THAT(values.back().attributes, ::testing::Contains("HttpOnly"));
@@ -163,7 +158,7 @@ class OverrideHostTest : public XdsEnd2endTest {
   // For weighted clusters, more than one request per backend may be necessary
   // to obtain the cookie. max_requests_per_backend argument specifies
   // the number of requests per backend to send.
-  absl::optional<std::pair<std::string, std::string>>
+  std::optional<std::pair<std::string, std::string>>
   GetAffinityCookieHeaderForBackend(
       grpc_core::DebugLocation debug_location, size_t backend_index,
       size_t max_requests_per_backend = 1,
@@ -176,7 +171,7 @@ class OverrideHostTest : public XdsEnd2endTest {
         return cookie.Header();
       }
     }
-    return absl::nullopt;
+    return std::nullopt;
   }
 
   void SetClusterResource(absl::string_view cluster_name,
@@ -191,11 +186,11 @@ class OverrideHostTest : public XdsEnd2endTest {
       const std::map<absl::string_view, uint32_t>& clusters) {
     RouteConfiguration new_route_config = default_route_config_;
     auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-    for (const auto& cluster : clusters) {
+    for (const auto& [cluster, weight] : clusters) {
       auto* weighted_cluster =
           route1->mutable_route()->mutable_weighted_clusters()->add_clusters();
-      weighted_cluster->set_name(cluster.first);
-      weighted_cluster->mutable_weight()->set_value(cluster.second);
+      weighted_cluster->set_name(cluster);
+      weighted_cluster->mutable_weight()->set_value(weight);
     }
     return new_route_config;
   }
@@ -219,7 +214,7 @@ class OverrideHostTest : public XdsEnd2endTest {
 
   static Route BuildStatefulSessionRouteConfig(
       absl::string_view match_prefix, absl::string_view cookie_name,
-      absl::optional<grpc_core::Duration> opt_duration = absl::nullopt) {
+      std::optional<grpc_core::Duration> opt_duration = std::nullopt) {
     StatefulSessionPerRoute stateful_session_per_route;
     if (!cookie_name.empty()) {
       auto* session_state =
@@ -463,6 +458,48 @@ TEST_P(OverrideHostTest, DrainingExcludedFromOverrideSet) {
   ResetBackendCounters();
 }
 
+TEST_P(OverrideHostTest, UnhealthyEndpoint) {
+  CreateAndStartBackends(3);
+  Cluster cluster = default_cluster_;
+  auto* lb_config = cluster.mutable_common_lb_config();
+  auto* override_health_status_set = lb_config->mutable_override_host_status();
+  override_health_status_set->add_statuses(HealthStatus::HEALTHY);
+  override_health_status_set->add_statuses(HealthStatus::DRAINING);
+  override_health_status_set->add_statuses(HealthStatus::DEGRADED);
+  override_health_status_set->add_statuses(HealthStatus::UNKNOWN);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::HEALTHY),
+                         CreateEndpoint(1, HealthStatus::HEALTHY)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  CheckRpcSendOk(DEBUG_LOCATION, 4);
+  EXPECT_EQ(2, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(2, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+  // Get a cookie for backends_[0].
+  auto session_cookie = GetAffinityCookieHeaderForBackend(DEBUG_LOCATION, 0);
+  ASSERT_TRUE(session_cookie.has_value());
+  LOG(INFO) << session_cookie->first << " " << session_cookie->second;
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0",
+                        {CreateEndpoint(0, HealthStatus::UNHEALTHY),
+                         CreateEndpoint(1, HealthStatus::HEALTHY),
+                         CreateEndpoint(2, HealthStatus::HEALTHY)}}})));
+  WaitForAllBackends(DEBUG_LOCATION, 2);
+  // Override for the draining host is not honored, RR is used instead.
+  CheckRpcSendOk(DEBUG_LOCATION, 2,
+                 RpcOptions().set_metadata({*session_cookie}));
+  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[1]->backend_service()->request_count());
+  EXPECT_EQ(1, backends_[2]->backend_service()->request_count());
+  ResetBackendCounters();
+}
+
 TEST_P(OverrideHostTest, OverrideWithWeightedClusters) {
   CreateAndStartBackends(3);
   const char* kNewCluster1Name = "new_cluster_1";
@@ -703,8 +740,6 @@ TEST_P(OverrideHostTest, TTLSetsMaxAge) {
 }
 
 TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_DUALSTACK_ENDPOINTS");
   // Create 3 backends, but leave backend 0 unstarted.
   CreateBackends(3);
   StartBackend(1);

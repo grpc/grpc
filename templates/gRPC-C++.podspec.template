@@ -71,9 +71,9 @@
   def filter_grpcpp(files):
     return sorted([file for file in files if not file.startswith("include/grpc++")])
 
-  # ObjectiveC doesn't use c-ares so we don't need address_sorting and cares files at all.
+  # ObjectiveC doesn't use c-ares.
   # absl deps will be declared explicitly so we also don't need to include them.
-  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"address_sorting", "cares"})
+  grpc_full_deps = set(non_abseil_lib_and_transitive_deps("grpc")) - set({"cares"})
   grpc_private_headers = collect_files_for_libs(grpc_full_deps, ("headers", ))
 
   # grpc++ dependencies minus grpc and the libraries grpc itself depends on.
@@ -118,9 +118,9 @@
       :tag => "v#{version}",
     }
 
-    s.ios.deployment_target = '10.0'
-    s.osx.deployment_target = '10.12'
-    s.tvos.deployment_target = '12.0'
+    s.ios.deployment_target = '15.0'
+    s.osx.deployment_target = '11.0'
+    s.tvos.deployment_target = '13.0'
     s.watchos.deployment_target = '6.0'
     s.visionos.deployment_target = '1.0'
 
@@ -136,7 +136,8 @@
     s.header_dir = name
 
     s.pod_target_xcconfig = {
-      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"'${"\\"}
+          ' "$(PODS_TARGET_SRCROOT)/third_party/address_sorting/include"',
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upb-gen"'${"\\"}
           ' "$(PODS_TARGET_SRCROOT)/src/core/ext/upbdefs-gen"'${"\\"}
@@ -152,7 +153,7 @@
       # build.
       'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
-      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++14',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     }
 
     s.libraries = 'c++'
@@ -184,7 +185,7 @@
       ss.dependency "#{s.name}/Privacy", version
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '~> 1.20240116.2'
+      abseil_version = '~> 1.20240722.0'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor
@@ -199,25 +200,6 @@
       ss.dependency "#{s.name}/Interface", version
 
       ss.source_files = ${ruby_multiline_list(grpcpp_proto_files, 22)}
-    end
-
-    s.subspec 'Cronet-Interface' do |ss|
-      ss.header_mappings_dir = 'include/grpcpp'
-      ss.public_header_files = "include/grpcpp/security/cronet_credentials.h",
-                               "include/grpcpp/security/cronet_credentials_impl.h"
-      ss.source_files = "include/grpcpp/security/cronet_credentials.h",
-                        "include/grpcpp/security/cronet_credentials_impl.h"
-    end
-
-    s.subspec 'Cronet-Implementation' do |ss|
-      ss.header_mappings_dir = '.'
-      ss.dependency "#{s.name}/Cronet-Interface", version
-      ss.dependency "#{s.name}/Implementation", version
-      ss.dependency "#{s.name}/Privacy", version
-
-      ss.dependency 'gRPC-Core/Cronet-Implementation', version
-
-      ss.source_files = "src/cpp/client/cronet_credentials.cc"
     end
 
     # patch include of openssl to openssl_grpc

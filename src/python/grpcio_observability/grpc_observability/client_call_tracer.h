@@ -15,6 +15,7 @@
 #ifndef GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 #define GRPC_PYTHON_OPENCENSUS_CLIENT_CALL_TRACER_H
 
+#include <grpc/support/time.h>
 #include <stdint.h>
 
 #include <atomic>
@@ -27,9 +28,6 @@
 #include "absl/time/time.h"
 #include "metadata_exchange.h"
 #include "python_observability_context.h"
-
-#include <grpc/support/time.h>
-
 #include "src/core/telemetry/call_tracer.h"
 
 namespace grpc_observability {
@@ -57,16 +55,15 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
         grpc_metadata_batch* send_initial_metadata) override;
     void RecordSendTrailingMetadata(
         grpc_metadata_batch* /*send_trailing_metadata*/) override {}
-    void RecordSendMessage(
-        const grpc_core::SliceBuffer& /*send_message*/) override;
+    void RecordSendMessage(const grpc_core::Message& /*send_message*/) override;
     void RecordSendCompressedMessage(
-        const grpc_core::SliceBuffer& /*send_compressed_message*/) override {}
+        const grpc_core::Message& /*send_compressed_message*/) override {}
     void RecordReceivedInitialMetadata(
         grpc_metadata_batch* /*recv_initial_metadata*/) override;
     void RecordReceivedMessage(
-        const grpc_core::SliceBuffer& /*recv_message*/) override;
+        const grpc_core::Message& /*recv_message*/) override;
     void RecordReceivedDecompressedMessage(
-        const grpc_core::SliceBuffer& /*recv_decompressed_message*/) override {}
+        const grpc_core::Message& /*recv_decompressed_message*/) override {}
     void RecordReceivedTrailingMetadata(
         absl::Status status, grpc_metadata_batch* recv_trailing_metadata,
         const grpc_transport_stream_stats* transport_stream_stats) override;
@@ -75,10 +72,10 @@ class PythonOpenCensusCallTracer : public grpc_core::ClientCallTracer {
     void RecordOutgoingBytes(
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
-    void RecordEnd(const gpr_timespec& /*latency*/) override;
+    void RecordEnd() override;
     void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& annotation) override;
-    std::shared_ptr<grpc_core::TcpTracerInterface> StartNewTcpTrace() override;
+    std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 

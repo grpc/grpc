@@ -18,17 +18,16 @@
 
 #include "src/core/telemetry/call_tracer.h"
 
-#include <vector>
-
-#include "gtest/gtest.h"
-
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/grpc.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include <vector>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 
@@ -76,7 +75,7 @@ TEST_F(CallTracerTest, MultipleClientCallAttemptTracers) {
   attempt_tracer->RecordAnnotation("Test");
   EXPECT_EQ(annotation_logger_,
             std::vector<std::string>({"Test", "Test", "Test"}));
-  attempt_tracer->RecordEnd(gpr_timespec());
+  attempt_tracer->RecordEnd();
 }
 
 TEST_F(CallTracerTest, BasicServerCallTracerTest) {

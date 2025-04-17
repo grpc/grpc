@@ -11,25 +11,20 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
 #include <deque>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
-#include "src/libfuzzer/libfuzzer_macro.h"
 #include "test/core/event_engine/work_queue/work_queue_fuzzer.pb.h"
-
-bool squelch = true;
-bool leak_check = true;
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -130,14 +125,15 @@ class WorkQueueFuzzer {
   //  B) last_executed_key_ is set, so its value must match this closure's own
   //     key to assert that it is the other part of the pair. last_executed_key_
   //     is then reset.
-  absl::optional<int> last_executed_key_;
+  std::optional<int> last_executed_key_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-DEFINE_PROTO_FUZZER(const work_queue_fuzzer::Msg& msg) {
+void Fuzz(const work_queue_fuzzer::Msg& msg) {
   for (const auto& action : msg.actions()) {
     grpc_event_engine::experimental::WorkQueueFuzzer().Run(action);
   }
 }
+FUZZ_TEST(WorkQueueFuzzer, Fuzz);
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

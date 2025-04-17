@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 #define GRPC_SRC_CPP_EXT_CSM_METADATA_EXCHANGE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -27,13 +29,10 @@
 #include "absl/strings/string_view.h"
 #include "google/protobuf/struct.upb.h"
 #include "opentelemetry/sdk/common/attribute_utils.h"
-#include "upb/mem/arena.hpp"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc {
 namespace internal {
@@ -94,7 +93,7 @@ class MeshLabelsIterable : public LabelsIterable {
           local_labels,
       grpc_core::Slice remote_metadata);
 
-  absl::optional<std::pair<absl::string_view, absl::string_view>> Next()
+  std::optional<std::pair<absl::string_view, absl::string_view>> Next()
       override;
 
   size_t Size() const override;
@@ -112,11 +111,6 @@ class MeshLabelsIterable : public LabelsIterable {
   GcpResourceType remote_type_ = GcpResourceType::kUnknown;
   uint32_t pos_ = 0;
 };
-
-// Returns the mesh ID by reading and parsing the bootstrap file. Returns
-// "unknown" if for some reason, mesh ID could not be figured out.
-// EXPOSED FOR TESTING PURPOSES ONLY.
-std::string GetMeshId();
 
 }  // namespace internal
 }  // namespace grpc

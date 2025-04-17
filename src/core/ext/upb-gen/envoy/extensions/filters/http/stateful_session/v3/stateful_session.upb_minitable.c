@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/stateful_session/v3/stateful_session.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -15,19 +16,20 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_stateful_session_v3_StatefulSession__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__config__core__v3__TypedExtensionConfig_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[2] = {
   {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(16, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
+  {2, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init = {
-  &envoy_extensions_filters_http_stateful_session_v3_StatefulSession_submsgs[0],
+  &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSession__fields[0],
-  24, 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
+  UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
   "envoy.extensions.filters.http.stateful_session.v3.StatefulSession",
 #endif
@@ -39,8 +41,9 @@ const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__Sta
   })
 };
 
-static const upb_MiniTableSub envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init},
+const upb_MiniTable* envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init_ptr = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init;
+static const upb_MiniTableSubInternal envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init_ptr},
 };
 
 static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[2] = {
@@ -49,7 +52,7 @@ static const upb_MiniTableField envoy_extensions_filters_http_stateful_session_v
 };
 
 const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init = {
-  &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_submsgs[0],
+  &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__submsgs[0],
   &envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute__fields[0],
   UPB_SIZE(16, 24), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -63,6 +66,7 @@ const upb_MiniTable envoy__extensions__filters__http__stateful_0session__v3__Sta
   })
 };
 
+const upb_MiniTable* envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init_ptr = &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &envoy__extensions__filters__http__stateful_0session__v3__StatefulSession_msg_init,
   &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init,

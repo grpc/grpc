@@ -18,16 +18,13 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 
-#include <string.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
-#include <grpc/support/log.h>
+#include <string.h>
 
+#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/useful.h"
 #include "test/core/bad_ssl/server_common.h"

@@ -17,6 +17,9 @@
 #ifndef GRPC_SRC_CPP_EXT_GCP_ENVIRONMENT_AUTODETECT_H
 #define GRPC_SRC_CPP_EXT_GCP_ENVIRONMENT_AUTODETECT_H
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -25,11 +28,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc {
 

@@ -14,25 +14,26 @@
 
 #include "src/core/lib/promise/party.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <cstdint>
+#include <limits>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
-#include "src/core/lib/gprpp/thd.h"       // IWYU pragma: keep
+#include "absl/random/random.h"           // IWYU pragma: keep
 #include "src/core/lib/iomgr/exec_ctx.h"  // IWYU pragma: keep
+#include "src/core/util/thd.h"            // IWYU pragma: keep
 #endif
 
 namespace grpc_core {
@@ -41,18 +42,18 @@ namespace grpc_core {
 // PartySyncUsingAtomics
 
 GRPC_MUST_USE_RESULT bool Party::RefIfNonZero() {
-  auto count = state_.load(std::memory_order_relaxed);
+  auto state = state_.load(std::memory_order_relaxed);
   do {
     // If zero, we are done (without an increment). If not, we must do a CAS
     // to maintain the contract: do not increment the counter if it is already
     // zero
-    if (count == 0) {
+    if ((state & kRefMask) == 0) {
       return false;
     }
-  } while (!state_.compare_exchange_weak(count, count + kOneRef,
+  } while (!state_.compare_exchange_weak(state, state + kOneRef,
                                          std::memory_order_acq_rel,
                                          std::memory_order_relaxed));
-  LogStateChange("RefIfNonZero", count, count + kOneRef);
+  LogStateChange("RefIfNonZero", state, state + kOneRef);
   return true;
 }
 
@@ -131,6 +132,9 @@ class Party::Handle final : public Wakeable {
   Party* party_ ABSL_GUARDED_BY(mu_);
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Party::Participant
+
 Wakeable* Party::Participant::MakeNonOwningWakeable(Party* party) {
   if (handle_ == nullptr) {
     handle_ = new Handle(party);
@@ -146,18 +150,62 @@ Party::Participant::~Participant() {
   }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// Party::SpawnSerializer
+
+bool Party::SpawnSerializer::PollParticipantPromise() {
+  if (active_ == nullptr) {
+    active_ = next_.Pop().value_or(nullptr);
+  }
+  while (active_ != nullptr) {
+    // If the active participant is incomplete, we are also incomplete.
+    if (!active_->PollParticipantPromise()) return false;
+    // Otherwise, yank the next participant from the queue.
+    active_ = next_.Pop().value_or(nullptr);
+  }
+  // If we have no active participant and no more participants in the queue, we
+  // can return. `true` here indicates this participant is done - we never
+  // return that value as we'd not be able to continue polling.
+  // TODO(ctiller): if ArenaSpsc had a way to signal 'first item added' to the
+  // queue, we could use that as a signal to re-add the participant and allow
+  // ourselves to be removed. Consider if that would help.
+  return false;
+}
+
+void Party::SpawnSerializer::Destroy() {
+  if (active_ != nullptr) {
+    active_->Destroy();
+  }
+  while (auto* p = next_.Pop().value_or(nullptr)) {
+    p->Destroy();
+  }
+  Destruct(this);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Party
+
 Party::~Party() {}
 
 void Party::CancelRemainingParticipants() {
-  if ((state_.load(std::memory_order_relaxed) & kAllocatedMask) == 0) return;
+  uint64_t prev_state = state_.load(std::memory_order_relaxed);
+  if ((prev_state & kAllocatedMask) == 0) return;
   ScopedActivity activity(this);
   promise_detail::Context<Arena> arena_ctx(arena_.get());
-  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
-    if (auto* p =
-            participants_[i].exchange(nullptr, std::memory_order_acquire)) {
-      p->Destroy();
+  uint64_t clear_state = 0;
+  do {
+    for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+      if (auto* p =
+              participants_[i].exchange(nullptr, std::memory_order_acquire)) {
+        clear_state |= 1ull << i << kAllocatedShift;
+        p->Destroy();
+      }
     }
-  }
+    if (clear_state == 0) return;
+  } while (!state_.compare_exchange_weak(prev_state, prev_state & ~clear_state,
+                                         std::memory_order_acq_rel));
+  LogStateChange("CancelRemainingParticipants", prev_state,
+                 prev_state & ~clear_state);
 }
 
 std::string Party::ActivityDebugTag(WakeupMask wakeup_mask) const {
@@ -189,7 +237,6 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
   Thread thd(
       "RunParty",
       [party, prev_state]() {
-        ApplicationCallbackExecCtx app_exec_ctx;
         ExecCtx exec_ctx;
         party->RunPartyAndUnref(prev_state);
       },
@@ -243,13 +290,15 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      party->arena_->GetContext<grpc_event_engine::experimental::EventEngine>()
-          ->Run([wakeup]() {
-            GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
-            ApplicationCallbackExecCtx app_exec_ctx;
-            ExecCtx exec_ctx;
-            RunState{wakeup}.Run();
-          });
+      auto arena = party->arena_.get();
+      auto* event_engine =
+          arena->GetContext<grpc_event_engine::experimental::EventEngine>();
+      CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      event_engine->Run([wakeup]() {
+        GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
+        ExecCtx exec_ctx;
+        RunState{wakeup}.Run();
+      });
       return;
     }
     g_run_state->next = PartyWakeup{party, prev_state};
@@ -269,6 +318,9 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   DCHECK_EQ(prev_state & ~(kRefMask | kAllocatedMask), 0u)
       << "Party should have contained no wakeups on lock";
   prev_state |= kLocked;
+#if !TARGET_OS_IPHONE
+  ScopedTimeCache time_cache;
+#endif
   for (;;) {
     uint64_t keep_allocated_mask = kAllocatedMask;
     // For each wakeup bit...
@@ -316,7 +368,7 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
             (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef,
             std::memory_order_acq_rel, std::memory_order_acquire)) {
       LogStateChange("Run:End", prev_state,
-                     prev_state & (kRefMask | kAllocatedMask) - kOneRef);
+                     (prev_state & (kRefMask | keep_allocated_mask)) - kOneRef);
       if ((prev_state & kRefMask) == kOneRef) {
         // We're done with the party.
         PartyIsOver();
@@ -342,50 +394,42 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
   }
 }
 
-void Party::AddParticipants(Participant** participants, size_t count) {
-  uint64_t state = state_.load(std::memory_order_acquire);
-  uint64_t allocated;
-
-  size_t slots[party_detail::kMaxParticipants];
-
-  // Find slots for each new participant, ordering them from lowest available
-  // slot upwards to ensure the same poll ordering as presentation ordering to
-  // this function.
-  WakeupMask wakeup_mask;
-  uint64_t new_state;
-  do {
-    wakeup_mask = 0;
-    allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    for (size_t i = 0; i < count; i++) {
-      auto new_mask = LowestOneBit(~allocated);
-      if (GPR_UNLIKELY((new_mask & kWakeupMask) == 0)) {
-        DelayAddParticipants(participants, count);
-        return;
-      }
-      wakeup_mask |= new_mask;
-      allocated |= new_mask;
-      slots[i] = absl::countr_zero(new_mask);
-    }
-    // Try to allocate this slot and take a ref (atomically).
-    // Ref needs to be taken because once we store the participant it could be
-    // spuriously woken up and unref the party.
-    new_state = (state | (allocated << kAllocatedShift)) + kOneRef;
-  } while (!state_.compare_exchange_weak(
-      state, new_state, std::memory_order_acq_rel, std::memory_order_acquire));
-  LogStateChange("AddParticipantsAndRef", state, new_state);
-
-  for (size_t i = 0; i < count; i++) {
-    GRPC_TRACE_LOG(party_state, INFO)
-        << "Party " << this << "                 AddParticipant: " << slots[i]
-        << " " << participants[i];
-    participants_[slots[i]].store(participants[i], std::memory_order_release);
-  }
-
-  // Now we need to wake up the party.
-  WakeupFromState(new_state, wakeup_mask);
+// Given a bitmask indicating allocation status of promises, return the index of
+// the next slot to allocate.
+// By default we use a deterministic and fast algorithm (fit-first), but we
+// don't want to guarantee that this is the order of spawning -- if a promise is
+// locked by another thread (for instance) a sequence of spawns may be reordered
+// for initial execution.
+// So for thready-tsan we provide an alternative implementation that
+// additionally reorders promises.
+#ifndef GRPC_MAXIMIZE_THREADYNESS
+uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
+  return LowestOneBit(~current_allocation_mask);
 }
+#else
+uint64_t Party::NextAllocationMask(uint64_t current_allocation_mask) {
+  CHECK_EQ(current_allocation_mask & ~kWakeupMask, 0);
+  if (current_allocation_mask == kWakeupMask) return kWakeupMask + 1;
+  // Count number of unset bits in the wakeup mask
+  size_t unset_bits = 0;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (current_allocation_mask & (1ull << i)) continue;
+    ++unset_bits;
+  }
+  CHECK_GT(unset_bits, 0);
+  absl::BitGen bitgen;
+  size_t selected = absl::Uniform<size_t>(bitgen, 0, unset_bits);
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (current_allocation_mask & (1ull << i)) continue;
+    if (selected == 0) return 1ull << i;
+    --selected;
+  }
+  LOG(FATAL) << "unreachable";
+}
+#endif
 
-void Party::AddParticipant(Participant* participant) {
+size_t Party::AddParticipant(Participant* participant) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Party::AddParticipant");
   uint64_t state = state_.load(std::memory_order_acquire);
   uint64_t allocated;
   size_t slot;
@@ -397,10 +441,9 @@ void Party::AddParticipant(Participant* participant) {
   uint64_t new_state;
   do {
     allocated = (state & kAllocatedMask) >> kAllocatedShift;
-    wakeup_mask = LowestOneBit(~allocated);
+    wakeup_mask = NextAllocationMask(allocated);
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
-      DelayAddParticipants(&participant, 1);
-      return;
+      return std::numeric_limits<size_t>::max();
     }
     DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "No available slots for new participant; allocated=" << allocated
@@ -419,23 +462,21 @@ void Party::AddParticipant(Participant* participant) {
       << " [participant=" << participant << "]";
   participants_[slot].store(participant, std::memory_order_release);
   // Now we need to wake up the party.
-  WakeupFromState(new_state, wakeup_mask);
+  WakeupFromState<true>(new_state, wakeup_mask);
+  return slot;
 }
 
-void Party::DelayAddParticipants(Participant** participants, size_t count) {
+void Party::MaybeAsyncAddParticipant(Participant* participant) {
+  const size_t slot = AddParticipant(participant);
+  if (slot != std::numeric_limits<size_t>::max()) return;
   // We need to delay the addition of participants.
   IncrementRefCount();
-  VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of " << count
-                          << " participants to party " << this
-                          << " because it is full.";
-  std::vector<Participant*> delayed_participants{participants,
-                                                 participants + count};
+  VLOG_EVERY_N_SEC(2, 10) << "Delaying addition of participant to party "
+                          << this << " because it is full.";
   arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
-      [this, delayed_participants = std::move(delayed_participants)]() mutable {
-        ApplicationCallbackExecCtx app_exec_ctx;
+      [this, participant]() mutable {
         ExecCtx exec_ctx;
-        AddParticipants(delayed_participants.data(),
-                        delayed_participants.size());
+        MaybeAsyncAddParticipant(participant);
         Unref();
       });
 }
@@ -454,7 +495,7 @@ void Party::WakeupAsync(WakeupMask wakeup_mask) {
         wakeup_mask_ |= wakeup_mask;
         arena_->GetContext<grpc_event_engine::experimental::EventEngine>()->Run(
             [this, prev_state]() {
-              ApplicationCallbackExecCtx app_exec_ctx;
+              GRPC_LATENT_SEE_PARENT_SCOPE("Party::WakeupAsync");
               ExecCtx exec_ctx;
               RunLockedAndUnref(this, prev_state);
             });

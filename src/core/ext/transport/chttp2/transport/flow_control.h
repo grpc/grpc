@@ -19,10 +19,12 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_FLOW_CONTROL_H
 
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 
 #include <iosfwd>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -30,16 +32,11 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 namespace testing {
@@ -305,6 +302,24 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
+    Json::Object ToJsonObject() {
+      Json::Object object;
+      object["targetWindow"] = Json::FromNumber(target_window);
+      object["targetFrameSize"] = Json::FromNumber(target_frame_size);
+      object["targetPreferredRxCryptoFrameSize"] =
+          Json::FromNumber(target_preferred_rx_crypto_frame_size);
+      object["ackedInitWindow"] = Json::FromNumber(acked_init_window);
+      object["queuedInitWindow"] = Json::FromNumber(queued_init_window);
+      object["sentInitWindow"] = Json::FromNumber(sent_init_window);
+      object["remoteWindow"] = Json::FromNumber(remote_window);
+      object["announcedWindow"] = Json::FromNumber(announced_window);
+      object["announcedStreamTotalOverIncomingWindow"] =
+          Json::FromNumber(announced_stream_total_over_incoming_window);
+      object["bdpAccumulator"] = Json::FromNumber(bdp_accumulator);
+      object["bdpEstimate"] = Json::FromNumber(bdp_estimate);
+      object["bdpBwEst"] = Json::FromNumber(bdp_bw_est);
+      return object;
+    }
   };
 
   Stats stats() const {
@@ -443,7 +458,7 @@ class StreamFlowControl final {
     int64_t min_progress_size;
     int64_t remote_window_delta;
     int64_t announced_window_delta;
-    absl::optional<int64_t> pending_size;
+    std::optional<int64_t> pending_size;
 
     std::string ToString() const;
   };
@@ -462,7 +477,7 @@ class StreamFlowControl final {
   int64_t min_progress_size_ = 0;
   int64_t remote_window_delta_ = 0;
   int64_t announced_window_delta_ = 0;
-  absl::optional<int64_t> pending_size_;
+  std::optional<int64_t> pending_size_;
 
   FlowControlAction UpdateAction(FlowControlAction action);
 };

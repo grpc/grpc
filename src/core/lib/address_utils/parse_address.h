@@ -19,16 +19,14 @@
 #ifndef GRPC_SRC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H
 #define GRPC_SRC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 
 /// Populate \a resolved_addr from \a uri, whose path is expected to contain a
 /// unix socket path. Returns true upon success.

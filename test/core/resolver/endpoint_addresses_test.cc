@@ -16,6 +16,8 @@
 
 #include "src/core/resolver/endpoint_addresses.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <set>
 
 #include "absl/log/check.h"
@@ -23,14 +25,10 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {

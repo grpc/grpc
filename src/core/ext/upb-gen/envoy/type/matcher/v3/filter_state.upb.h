@@ -3,15 +3,17 @@
  *     envoy/type/matcher/v3/filter_state.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H_
-#define ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H_
+#ifndef ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H__UPB_H_
+#define ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
 #include "envoy/type/matcher/v3/filter_state.upb_minitable.h"
 
+#include "envoy/type/matcher/v3/address.upb_minitable.h"
 #include "envoy/type/matcher/v3/string.upb_minitable.h"
 #include "udpa/annotations/status.upb_minitable.h"
 #include "validate/validate.upb_minitable.h"
@@ -24,6 +26,7 @@ extern "C" {
 #endif
 
 typedef struct envoy_type_matcher_v3_FilterStateMatcher { upb_Message UPB_PRIVATE(base); } envoy_type_matcher_v3_FilterStateMatcher;
+struct envoy_type_matcher_v3_AddressMatcher;
 struct envoy_type_matcher_v3_StringMatcher;
 
 
@@ -66,6 +69,7 @@ UPB_INLINE char* envoy_type_matcher_v3_FilterStateMatcher_serialize_ex(const env
 }
 typedef enum {
   envoy_type_matcher_v3_FilterStateMatcher_matcher_string_match = 2,
+  envoy_type_matcher_v3_FilterStateMatcher_matcher_address_match = 3,
   envoy_type_matcher_v3_FilterStateMatcher_matcher_NOT_SET = 0
 } envoy_type_matcher_v3_FilterStateMatcher_matcher_oneofcases;
 UPB_INLINE envoy_type_matcher_v3_FilterStateMatcher_matcher_oneofcases envoy_type_matcher_v3_FilterStateMatcher_matcher_case(const envoy_type_matcher_v3_FilterStateMatcher* msg) {
@@ -93,12 +97,30 @@ UPB_INLINE const struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_
   const struct envoy_type_matcher_v3_StringMatcher* default_val = NULL;
   const struct envoy_type_matcher_v3_StringMatcher* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_type_matcher_v3_FilterStateMatcher_has_string_match(const envoy_type_matcher_v3_FilterStateMatcher* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_clear_address_match(envoy_type_matcher_v3_FilterStateMatcher* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
+}
+UPB_INLINE const struct envoy_type_matcher_v3_AddressMatcher* envoy_type_matcher_v3_FilterStateMatcher_address_match(const envoy_type_matcher_v3_FilterStateMatcher* msg) {
+  const struct envoy_type_matcher_v3_AddressMatcher* default_val = NULL;
+  const struct envoy_type_matcher_v3_AddressMatcher* ret;
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__AddressMatcher_msg_init);
+  _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
+                                    &default_val, &ret);
+  return ret;
+}
+UPB_INLINE bool envoy_type_matcher_v3_FilterStateMatcher_has_address_match(const envoy_type_matcher_v3_FilterStateMatcher* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
@@ -108,6 +130,7 @@ UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_key(envoy_type_matc
 }
 UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_string_match(envoy_type_matcher_v3_FilterStateMatcher *msg, struct envoy_type_matcher_v3_StringMatcher* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__StringMatcher_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_FilterStateMatcher_mutable_string_match(envoy_type_matcher_v3_FilterStateMatcher* msg, upb_Arena* arena) {
@@ -118,6 +141,19 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_Fil
   }
   return sub;
 }
+UPB_INLINE void envoy_type_matcher_v3_FilterStateMatcher_set_address_match(envoy_type_matcher_v3_FilterStateMatcher *msg, struct envoy_type_matcher_v3_AddressMatcher* value) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__matcher__v3__AddressMatcher_msg_init);
+  upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
+}
+UPB_INLINE struct envoy_type_matcher_v3_AddressMatcher* envoy_type_matcher_v3_FilterStateMatcher_mutable_address_match(envoy_type_matcher_v3_FilterStateMatcher* msg, upb_Arena* arena) {
+  struct envoy_type_matcher_v3_AddressMatcher* sub = (struct envoy_type_matcher_v3_AddressMatcher*)envoy_type_matcher_v3_FilterStateMatcher_address_match(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_v3_AddressMatcher*)_upb_Message_New(&envoy__type__matcher__v3__AddressMatcher_msg_init, arena);
+    if (sub) envoy_type_matcher_v3_FilterStateMatcher_set_address_match(msg, sub);
+  }
+  return sub;
+}
 
 #ifdef __cplusplus
 }  /* extern "C" */
@@ -125,4 +161,4 @@ UPB_INLINE struct envoy_type_matcher_v3_StringMatcher* envoy_type_matcher_v3_Fil
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H_ */
+#endif  /* ENVOY_TYPE_MATCHER_V3_FILTER_STATE_PROTO_UPB_H__UPB_H_ */

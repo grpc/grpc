@@ -37,6 +37,7 @@ If you've made modifications to a dockerfile, you can upload the new version of 
 registry as follows:
 
 If you haven't configured authentication in Docker for us-docker.pkg.dev previously, run:
+
 ```
 gcloud auth configure-docker us-docker.pkg.dev
 gcloud auth login
@@ -45,6 +46,7 @@ gcloud auth login
 Rebuild the docker images that have been modified locally and upload the docker images to
 artifact registry (note that this won't overwrite the "old" versions of the docker image
 that are already in artifact registry)
+
 ```
 # Install qemu, binformat, and configure binfmt interpreters
 sudo apt-get install binfmt-support qemu-user-static
@@ -58,6 +60,7 @@ tools/dockerfile/push_testing_images.sh
 Build modified docker images locally and don't push to artifact registry. This option is
 very useful for quick local experiments. The script is much faster if it doesn't have to
 interact with artifact registry:
+
 ```
 # very useful for local experiments
 LOCAL_ONLY_MODE=true tools/dockerfile/push_testing_images.sh
@@ -69,6 +72,7 @@ In the past, our testing docker images were [hosted on dockerhub](https://hub.do
 but we are in the process of migrating them artifact registry now.
 
 This temporary feature might simplify the migration:
+
 ```
 # try pull existing images from dockerhub instead of building the from scratch locally.
 TRANSFER_FROM_DOCKERHUB=true tools/dockerfile/push_testing_images.sh

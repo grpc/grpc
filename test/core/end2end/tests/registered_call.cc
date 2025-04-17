@@ -16,11 +16,10 @@
 //
 //
 
-#include "gtest/gtest.h"
-
 #include <grpc/status.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include "gtest/gtest.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -53,11 +52,11 @@ void SimpleRequestBody(CoreEnd2endTest& test,
   EXPECT_FALSE(client_close.was_cancelled());
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, InvokeRegisteredCall) {
+CORE_END2END_TEST(CoreEnd2endTests, InvokeRegisteredCall) {
   SimpleRequestBody(*this, RegisterCallOnClient("/foo", nullptr));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, Invoke10RegisteredCalls) {
+CORE_END2END_TEST(CoreEnd2endTests, Invoke10RegisteredCalls) {
   auto rc = RegisterCallOnClient("/foo", nullptr);
   for (int i = 0; i < 10; i++) {
     SimpleRequestBody(*this, rc);

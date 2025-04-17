@@ -18,6 +18,7 @@
 
 #include "test/core/test_util/cmdline.h"
 
+#include <grpc/support/alloc.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,11 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/memory.h"
+#include "src/core/util/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;
 

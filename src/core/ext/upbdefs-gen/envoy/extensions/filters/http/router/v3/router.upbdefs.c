@@ -3,7 +3,8 @@
  *     envoy/extensions/filters/http/router/v3/router.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"

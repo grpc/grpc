@@ -14,6 +14,7 @@
 
 #include "client_call_tracer.h"
 
+#include <grpc/slice.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -25,9 +26,6 @@
 #include "metadata_exchange.h"
 #include "observability_util.h"
 #include "python_observability_context.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/slice/slice.h"
 
@@ -203,16 +201,16 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordSendMessage(const grpc_core::SliceBuffer& /*send_message*/) {
+    RecordSendMessage(const grpc_core::Message& /*send_message*/) {
   ++sent_message_count_;
 }
 
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
-    RecordReceivedMessage(const grpc_core::SliceBuffer& /*recv_message*/) {
+    RecordReceivedMessage(const grpc_core::Message& /*recv_message*/) {
   ++recv_message_count_;
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface> PythonOpenCensusCallTracer::
+std::shared_ptr<grpc_core::TcpCallTracer> PythonOpenCensusCallTracer::
     PythonOpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }
@@ -319,8 +317,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordCancel(absl::Status /*cancel_error*/) {}
 
-void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordEnd() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, parent_->method_);
     context_.Labels().emplace_back(kClientStatus,

@@ -12,20 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <openssl/sha.h>
+
 #include <atomic>
 #include <cstdint>
 #include <fstream>
 #include <limits>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <numeric>
+#include <optional>
 #include <queue>
 #include <set>
 #include <string>
 #include <thread>
+#include <variant>
 #include <vector>
-
-#include <openssl/sha.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
@@ -33,11 +36,9 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
 #include "src/core/ext/transport/chttp2/transport/huffsyms.h"
-#include "src/core/lib/gprpp/match.h"
+#include "src/core/util/env.h"
+#include "src/core/util/match.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // SHA256 hash handling
@@ -146,7 +147,7 @@ SymSet AllSyms() {
   return syms;
 }
 
-// What whould we do after reading a set of bits?
+// What would we do after reading a set of bits?
 struct ReadActions {
   // Emit these symbols
   std::vector<int> emit;
@@ -231,7 +232,7 @@ struct End {
   bool operator<(End) const { return false; }
 };
 
-using MatchCase = absl::variant<Matched, Unmatched, End>;
+using MatchCase = std::variant<Matched, Unmatched, End>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Text & numeric helper functions
@@ -429,7 +430,7 @@ class Switch : public Item {
     bool operator<(const Default&) const { return false; }
     bool operator==(const Default&) const { return true; }
   };
-  using CaseLabel = absl::variant<int, std::string, Default>;
+  using CaseLabel = std::variant<int, std::string, Default>;
   // \a cond is the condition to place at the head of the switch statement.
   // eg. "switch (cond) {".
   explicit Switch(std::string cond) : cond_(std::move(cond)) {}
@@ -499,20 +500,20 @@ class BuildCtx {
   void AddStep(SymSet start_syms, int num_bits, bool is_top, bool refill,
                int depth, Sink* out);
   void AddMatchBody(TableBuilder* table_builder, std::string index,
-                    std::string ofs, const MatchCase& match_case, bool is_top,
-                    bool refill, int depth, Sink* out);
+                    std::string ofs, const MatchCase& match_case, bool refill,
+                    int depth, Sink* out);
   void AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
                Sink* out);
 
   int NewId() { return next_id_++; }
   int MaxBitsForTop() const { return max_bits_for_depth_[0]; }
 
-  absl::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
-                                                      Hash hash) {
+  std::optional<std::string> PreviousNameForArtifact(std::string proposed_name,
+                                                     Hash hash) {
     auto it = arrays_.find(hash);
     if (it == arrays_.end()) {
       arrays_.emplace(hash, proposed_name);
-      return absl::nullopt;
+      return std::nullopt;
     }
     return it->second;
   }
@@ -524,7 +525,7 @@ class BuildCtx {
  private:
   void AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far, SymSet syms,
                    std::vector<uint8_t> emit, TableBuilder* table_builder,
-                   std::map<absl::optional<int>, int>* cases);
+                   std::map<std::optional<int>, int>* cases);
 
   const std::vector<int> max_bits_for_depth_;
   std::map<Hash, std::string> arrays_;
@@ -886,7 +887,7 @@ class TableBuilder {
     table->slice_bits = slice_bits;
     const int pack_consume_bits = ConsumeBits();
     const int pack_match_bits = MatchBits();
-    for (size_t i = 0; i < slices; i++) {
+    for (int i = 0; i < slices; i++) {
       auto& slice = table->slices[i];
       for (size_t j = 0; j < elems_.size() / slices; j++) {
         const auto& elem = elems_[i * elems_.size() / slices + j];
@@ -1046,7 +1047,7 @@ class TableBuilder {
     // identity => 0,1,2,3,...
     bool is_identity = true;
     for (size_t i = 0; i < values.size(); i++) {
-      if (values[i] != i) {
+      if (static_cast<size_t>(values[i]) != i) {
         is_identity = false;
         break;
       }
@@ -1057,7 +1058,7 @@ class TableBuilder {
     // offset => k,k+1,k+2,k+3,...
     bool is_offset = true;
     for (size_t i = 1; i < values.size(); i++) {
-      if (values[i] - values[0] != i) {
+      if (static_cast<size_t>(values[i] - values[0]) != i) {
         is_offset = false;
         break;
       }
@@ -1066,10 +1067,10 @@ class TableBuilder {
       note_solution(std::make_unique<OffsetArray>(values[0]));
     }
     // offset => k,k,k+1,k+1,...
-    for (int d = 2; d < 32; d++) {
+    for (size_t d = 2; d < 32; d++) {
       bool is_linear = true;
       for (size_t i = 1; i < values.size(); i++) {
-        if (values[i] - values[0] != (i / d)) {
+        if (static_cast<size_t>(values[i] - values[0]) != (i / d)) {
           is_linear = false;
           break;
         }
@@ -1245,8 +1246,8 @@ class FunMaker {
   std::string ReadBytes(int bytes_needed, int bytes_allowed) {
     auto fn_name =
         absl::StrCat("Read", bytes_needed, "to", bytes_allowed, "Bytes");
-    if (have_reads_.count(std::make_pair(bytes_needed, bytes_allowed)) == 0) {
-      have_reads_.insert(std::make_pair(bytes_needed, bytes_allowed));
+    if (have_reads_.count(std::pair(bytes_needed, bytes_allowed)) == 0) {
+      have_reads_.insert(std::pair(bytes_needed, bytes_allowed));
       auto fn = NewFun(fn_name, "bool");
       auto s = fn->Add<Switch>("end_ - begin_");
       for (int i = 0; i <= bytes_allowed; i++) {
@@ -1309,7 +1310,7 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
       continue;
     }
     TableBuilder table_builder(this);
-    std::map<absl::optional<int>, int> cases;
+    std::map<std::optional<int>, int> cases;
     for (size_t n = 0; n < (1 << i); n++) {
       AddDoneCase(n, i, all_ones_so_far, maybe, {}, &table_builder, &cases);
     }
@@ -1349,8 +1350,8 @@ void BuildCtx::AddDone(SymSet start_syms, int num_bits, bool all_ones_so_far,
 void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
                            SymSet syms, std::vector<uint8_t> emit,
                            TableBuilder* table_builder,
-                           std::map<absl::optional<int>, int>* cases) {
-  auto add_case = [cases](absl::optional<int> which) {
+                           std::map<std::optional<int>, int>* cases) {
+  auto add_case = [cases](std::optional<int> which) {
     auto it = cases->find(which);
     if (it == cases->end()) {
       it = cases->emplace(which, cases->size()).first;
@@ -1364,7 +1365,7 @@ void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
   for (auto sym : syms) {
     if ((n >> (n_bits - sym.bits.length())) == sym.bits.mask()) {
       emit.push_back(sym.symbol);
-      size_t bits_left = n_bits - sym.bits.length();
+      int bits_left = n_bits - sym.bits.length();
       if (bits_left == 0) {
         table_builder->Add(add_case(emit.size()), emit, 0);
         return;
@@ -1379,7 +1380,7 @@ void BuildCtx::AddDoneCase(size_t n, size_t n_bits, bool all_ones_so_far,
       return;
     }
   }
-  table_builder->Add(add_case(absl::nullopt), {}, 0);
+  table_builder->Add(add_case(std::nullopt), {}, 0);
 }
 
 void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
@@ -1440,15 +1441,15 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
                         ";"));
   if (match_cases.size() == 1) {
     AddMatchBody(&table_builder, "index", "emit_ofs",
-                 match_cases.begin()->first, is_top, refill, depth, out);
+                 match_cases.begin()->first, refill, depth, out);
   } else {
     auto s = out->Add<Switch>(
         absl::StrCat("(op >> ", table_builder.ConsumeBits(), ") & ",
                      (1 << table_builder.MatchBits()) - 1));
     for (auto kv : match_cases) {
       auto c = s->Case(kv.second);
-      AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, is_top,
-                   refill, depth, c);
+      AddMatchBody(&table_builder, "index", "emit_ofs", kv.first, refill, depth,
+                   c);
       c->Add("break;");
     }
   }
@@ -1456,18 +1457,18 @@ void BuildCtx::AddStep(SymSet start_syms, int num_bits, bool is_top,
 
 void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
                             std::string ofs, const MatchCase& match_case,
-                            bool is_top, bool refill, int depth, Sink* out) {
-  if (absl::holds_alternative<End>(match_case)) {
+                            bool refill, int depth, Sink* out) {
+  if (std::holds_alternative<End>(match_case)) {
     out->Add("begin_ = end_;");
     out->Add("buffer_len_ = 0;");
     return;
   }
-  if (auto* p = absl::get_if<Unmatched>(&match_case)) {
+  if (auto* p = std::get_if<Unmatched>(&match_case)) {
     if (refill) {
       int max_bits = 0;
       for (auto sym : p->syms) max_bits = std::max(max_bits, sym.bits.length());
       AddStep(p->syms,
-              depth + 1 >= max_bits_for_depth_.size()
+              static_cast<size_t>(depth + 1) >= max_bits_for_depth_.size()
                   ? max_bits
                   : std::min(max_bits, max_bits_for_depth_[depth + 1]),
               false, true, depth + 1,
@@ -1475,7 +1476,7 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
     }
     return;
   }
-  const auto& matched = absl::get<Matched>(match_case);
+  const auto& matched = std::get<Matched>(match_case);
   for (int i = 0; i < matched.emits; i++) {
     out->Add(absl::StrCat(
         "sink_(",
@@ -1487,24 +1488,19 @@ void BuildCtx::AddMatchBody(TableBuilder* table_builder, std::string index,
 // Driver code
 
 // Generated header and source code
-struct BuildOutput {
+struct FileSet {
   std::string header;
   std::string source;
-  std::string header_name;
-  std::string source_name;
-  std::string ns;
+  const std::string base_name;
+  std::vector<std::string> all_ns;
+
+  explicit FileSet(std::string base_name) : base_name(base_name) {}
+  void AddFrontMatter(int copyright_year);
+  void AddBuild(std::vector<int> max_bits_for_depth, bool selected_version);
+  void AddTailMatter();
 };
 
-// Given max_bits_for_depth = {n1,n2,n3,...}
-// Build a decoder that first considers n1 bits, then n2, then n3, ...
-BuildOutput Build(std::vector<int> max_bits_for_depth, bool selected_version,
-                  int copyright_year) {
-  std::string base_name =
-      selected_version
-          ? "src/core/ext/transport/chttp2/transport/decode_huff"
-          : absl::StrCat(
-                "test/cpp/microbenchmarks/huffman_geometries/decode_huff_",
-                absl::StrJoin(max_bits_for_depth, "_"));
+void FileSet::AddFrontMatter(int copyright_year) {
   std::string guard = absl::StrCat(
       "GRPC_",
       absl::AsciiStrToUpper(absl::StrReplaceAll(base_name, {{"/", "_"}})),
@@ -1515,6 +1511,24 @@ BuildOutput Build(std::vector<int> max_bits_for_depth, bool selected_version,
   src->Add<Prelude>("//", copyright_year);
   hdr->Add(absl::StrCat("#ifndef ", guard));
   hdr->Add(absl::StrCat("#define ", guard));
+  header += hdr->ToString();
+  source += src->ToString();
+}
+
+void FileSet::AddTailMatter() {
+  auto hdr = std::make_unique<Sink>();
+  auto src = std::make_unique<Sink>();
+  hdr->Add("#endif");
+  header += hdr->ToString();
+  source += src->ToString();
+}
+
+// Given max_bits_for_depth = {n1,n2,n3,...}
+// Build a decoder that first considers n1 bits, then n2, then n3, ...
+void FileSet::AddBuild(std::vector<int> max_bits_for_depth,
+                       bool selected_version) {
+  auto hdr = std::make_unique<Sink>();
+  auto src = std::make_unique<Sink>();
   src->Add(absl::StrCat("#include \"", base_name, ".h\""));
   hdr->Add("#include <cstddef>");
   hdr->Add("#include <grpc/support/port_platform.h>");
@@ -1546,7 +1560,6 @@ BuildOutput Build(std::vector<int> max_bits_for_depth, bool selected_version,
     hdr->Add("}  // namespace geometry");
   }
   hdr->Add("}  // namespace grpc_core");
-  hdr->Add(absl::StrCat("#endif  // ", guard));
   auto global_values = src->Add<Indent>();
   if (!ns.empty()) {
     src->Add("}  // namespace geometry");
@@ -1575,8 +1588,9 @@ BuildOutput Build(std::vector<int> max_bits_for_depth, bool selected_version,
   body->Add("}");
   body->Add("return ok_;");
   pub->Add("}");
-  return {hdr->ToString(), src->ToString(), absl::StrCat(base_name, ".h"),
-          absl::StrCat(base_name, ".cc"), std::move(ns)};
+  header += hdr->ToString();
+  source += src->ToString();
+  all_ns.push_back(std::move(ns));
 }
 
 // Generate all permutations of max_bits_for_depth for the Build function,
@@ -1611,7 +1625,7 @@ class PermutationBuilder {
     }
   }
 
-  const int max_depth_;
+  const size_t max_depth_;
   std::vector<std::vector<int>> perms_;
 };
 
@@ -1625,23 +1639,38 @@ std::string SplitBefore(absl::string_view input, char c) {
 
 // Does what it says.
 void WriteFile(std::string filename, std::string content) {
+  auto out = grpc_core::GetEnv("GEN_OUT");
+  if (out.has_value()) {
+    filename = absl::StrCat(*out, "/", filename);
+  }
   std::ofstream ofs(filename);
   ofs << content;
+  if (ofs.bad()) {
+    fprintf(stderr, "Failed to write %s\n", filename.c_str());
+    abort();
+  }
 }
 
-int main(void) {
-  std::vector<std::unique_ptr<BuildOutput>> results;
+void GenMicrobenchmarks() {
   std::queue<std::thread> threads;
   // Generate all permutations of max_bits_for_depth for the Build function.
   // Then generate all variations of the code.
+  static constexpr int kNumShards = 100;
+  std::unique_ptr<FileSet> results[kNumShards];
+  std::mutex results_mutexes[kNumShards];
+  for (int i = 0; i < kNumShards; i++) {
+    results[i] = std::make_unique<FileSet>(
+        absl::StrCat("test/cpp/microbenchmarks/huffman_geometries/shard_", i));
+    results[i]->AddFrontMatter(2024);
+  }
+  int r = 0;
   for (const auto& perm : PermutationBuilder(3).Run()) {
-    while (threads.size() > 200) {
-      threads.front().join();
-      threads.pop();
-    }
-    results.emplace_back(std::make_unique<BuildOutput>());
+    int shard = r++ % kNumShards;
     threads.emplace(
-        [perm, r = results.back().get()] { *r = Build(perm, false, 2023); });
+        [perm, fileset = results[shard].get(), mu = &results_mutexes[shard]] {
+          std::lock_guard<std::mutex> lock(*mu);
+          fileset->AddBuild(perm, false);
+        });
   }
   while (!threads.empty()) {
     threads.front().join();
@@ -1660,46 +1689,43 @@ int main(void) {
   index_hdr->Add(
       "#endif  // GRPC_TEST_CPP_MICROBENCHMARKS_HUFFMAN_GEOMETRIES_INDEX_H");
 
-  auto index_bzl = std::make_unique<Sink>();
-  index_bzl->Add<Prelude>("#", 2023);
-  index_bzl->Add(
-      "load(\"//bazel:grpc_build_system.bzl\", \"grpc_cc_library\", "
-      "\"grpc_package\")");
-  index_bzl->Add("licenses([\"notice\"])");
-  index_bzl->Add(
-      "grpc_package(name = \"test/cpp/microbenchmarks/huffman_geometries\", "
-      "visibility = \"public\")");
-
-  index_bzl->Add("grpc_cc_library(");
-  index_bzl->Add("  name = \"huffman_geometries\",");
-  index_bzl->Add("  srcs = [");
-  auto index_srcs = index_bzl->Add<Sink>();
-  index_bzl->Add("  ],");
-  index_bzl->Add("  hdrs = [");
-  index_bzl->Add("    \"index.h\",");
-  auto index_hdrs = index_bzl->Add<Sink>();
-  index_bzl->Add("  ],");
-  index_bzl->Add("  deps = [\"//:gpr_platform\"],");
-  index_bzl->Add(")");
-
   for (auto& r : results) {
-    index_includes->Add(absl::StrCat("#include \"", r->header_name, "\""));
-    index_decls->Add(absl::StrCat("  DECL_BENCHMARK(grpc_core::", r->ns,
-                                  "::HuffDecoder, ", r->ns, "); \\"));
-    index_hdrs->Add(
-        absl::StrCat("    \"", SplitAfter(r->header_name, '/'), "\","));
-    index_srcs->Add(
-        absl::StrCat("    \"", SplitAfter(r->source_name, '/'), "\","));
-    WriteFile(r->header_name, r->header);
-    WriteFile(r->source_name, r->source);
+    r->AddTailMatter();
+    index_includes->Add(absl::StrCat("#include \"", r->base_name, ".h\""));
+    for (const auto& ns : r->all_ns) {
+      index_decls->Add(absl::StrCat("  DECL_BENCHMARK(grpc_core::", ns,
+                                    "::HuffDecoder, ", ns, "); \\"));
+    }
+    WriteFile(r->base_name + ".h", r->header);
+    WriteFile(r->base_name + ".cc", r->source);
   }
   WriteFile("test/cpp/microbenchmarks/huffman_geometries/index.h",
             index_hdr->ToString());
-  WriteFile("test/cpp/microbenchmarks/huffman_geometries/BUILD",
-            index_bzl->ToString());
+}
 
-  auto selected = Build(std::vector<int>({15, 7, 8}), true, 2022);
-  WriteFile(selected.header_name, selected.header);
-  WriteFile(selected.source_name, selected.source);
+void GenSelected() {
+  FileSet selected("src/core/ext/transport/chttp2/transport/decode_huff");
+  selected.AddFrontMatter(2023);
+  selected.AddBuild(std::vector<int>({15, 7, 8}), true);
+  selected.AddTailMatter();
+  WriteFile(selected.base_name + ".h", selected.header);
+  WriteFile(selected.base_name + ".cc", selected.source);
+}
+
+int main(int argc, char** argv) {
+  if (argc < 2) {
+    fprintf(stderr, "No generators specified\n");
+    return 1;
+  }
+  std::map<std::string, std::function<void()>> generators = {
+      {"microbenchmarks", GenMicrobenchmarks}, {"selected", GenSelected}};
+  for (int i = 1; i < argc; i++) {
+    auto it = generators.find(argv[i]);
+    if (it == generators.end()) {
+      fprintf(stderr, "Unknown generator: %s\n", argv[i]);
+      return 1;
+    }
+    it->second();
+  }
   return 0;
 }

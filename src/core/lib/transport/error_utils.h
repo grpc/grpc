@@ -19,16 +19,15 @@
 #ifndef GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 #define GRPC_SRC_CORE_LIB_TRANSPORT_ERROR_UTILS_H
 
-#include <string>
-
-#include "absl/status/status.h"
-
 #include <grpc/status.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/time.h"
+#include <string>
+
+#include "absl/status/status.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/util/time.h"
 
 /// A utility function to get the status code and message to be returned
 /// to the application.  If not set in the top-level message, looks
@@ -40,7 +39,7 @@
 void grpc_error_get_status(grpc_error_handle error,
                            grpc_core::Timestamp deadline,
                            grpc_status_code* code, std::string* message,
-                           grpc_http2_error_code* http_error,
+                           grpc_core::http2::Http2ErrorCode* http_error,
                            const char** error_string);
 
 /// Utility Function to convert a grpc_error_handle  \a error to an

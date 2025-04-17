@@ -18,10 +18,9 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-
-#include "src/core/lib/gprpp/match.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/match.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
@@ -49,10 +48,16 @@ std::string XdsClusterResource::ToString() const {
       });
   contents.push_back(absl::StrCat("lb_policy_config=",
                                   JsonDump(Json::FromArray(lb_policy_config))));
-  if (lrs_load_reporting_server.has_value()) {
+  if (lrs_load_reporting_server != nullptr) {
     contents.push_back(absl::StrCat("lrs_load_reporting_server_name=",
                                     lrs_load_reporting_server->server_uri()));
   }
+  if (lrs_backend_metric_propagation != nullptr) {
+    contents.push_back(
+        absl::StrCat("lrs_backend_metric_propagation=",
+                     lrs_backend_metric_propagation->AsString()));
+  }
+  if (use_http_connect) contents.push_back("use_http_connect=true");
   if (!common_tls_context.Empty()) {
     contents.push_back(
         absl::StrCat("common_tls_context=", common_tls_context.ToString()));
@@ -65,14 +70,8 @@ std::string XdsClusterResource::ToString() const {
       absl::StrCat("max_concurrent_requests=", max_concurrent_requests));
   contents.push_back(absl::StrCat("override_host_statuses=",
                                   override_host_statuses.ToString()));
-  if (!service_telemetry_label.as_string_view().empty()) {
-    contents.push_back(absl::StrCat("service_name_telemetry_label=",
-                                    service_telemetry_label.as_string_view()));
-  }
-  if (!namespace_telemetry_label.as_string_view().empty()) {
-    contents.push_back(
-        absl::StrCat("service_namespace_telemetry_label=",
-                     namespace_telemetry_label.as_string_view()));
+  if (!metadata.empty()) {
+    contents.push_back(absl::StrCat("metadata={", metadata.ToString(), "}"));
   }
   return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }

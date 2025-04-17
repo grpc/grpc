@@ -19,15 +19,15 @@
 #ifndef GRPCPP_EXT_CSM_OBSERVABILITY_H
 #define GRPCPP_EXT_CSM_OBSERVABILITY_H
 
+#include <grpc/support/port_platform.h>
+#include <grpcpp/ext/otel_plugin.h>
+
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "opentelemetry/metrics/meter_provider.h"
-
-#include <grpc/support/port_platform.h>
-#include <grpcpp/ext/otel_plugin.h>
 
 namespace grpc {
 

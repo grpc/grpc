@@ -16,23 +16,22 @@
 //
 //
 
-#include <string>
-
-#include "gtest/gtest.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/time.h>
 
+#include <string>
+
+#include "gtest/gtest.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
+#include "src/core/util/host_port.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
-TEST(ServerChttp2, UnparseableTarget) {
+TEST(ServerChttp2, UnparsableTarget) {
   grpc_channel_args args = {0, nullptr};
   grpc_server* server = grpc_server_create(&args, nullptr);
   grpc_server_credentials* server_creds =

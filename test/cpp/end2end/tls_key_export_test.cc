@@ -12,6 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc++/grpc++.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/channel_arguments.h>
+
 #include <memory>
 #include <string>
 #include <thread>  // NOLINT
@@ -23,14 +30,6 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc++/grpc++.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/security/tls_credentials_options.h>
-#include <grpcpp/support/channel_arguments.h>
-
 #include "src/core/util/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"

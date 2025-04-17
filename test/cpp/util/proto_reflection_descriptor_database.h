@@ -18,13 +18,13 @@
 #ifndef GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
 #define GRPC_TEST_CPP_UTIL_PROTO_REFLECTION_DESCRIPTOR_DATABASE_H
 
+#include <grpcpp/grpcpp.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
+
 #include <mutex>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-
-#include <grpcpp/grpcpp.h>
-#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 

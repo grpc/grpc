@@ -18,16 +18,14 @@
 
 #include "test/core/end2end/fixtures/local_util.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpc/status.h>
 #include <string.h>
 
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/status.h>
-#include <grpc/support/log.h>
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,

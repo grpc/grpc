@@ -18,12 +18,20 @@
 
 #include "src/core/handshaker/security/security_handshaker.h"
 
+#include <grpc/grpc_security.h>
+#include <grpc/grpc_security_constants.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <algorithm>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -33,40 +41,29 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc_security.h>
-#include <grpc/grpc_security_constants.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_factory.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security_grpc.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 
 #define GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE 256
 
@@ -202,7 +199,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
   // https://github.com/grpc/grpc/blob/fcd43e90304862a823316b224ee733d17a8cfd90/src/proto/grpc/channelz/channelz.proto#L326
   // from grpc_auth_context.
   security->type = channelz::SocketNode::Security::ModelType::kTls;
-  security->tls = absl::make_optional<channelz::SocketNode::Security::Tls>();
+  security->tls = std::make_optional<channelz::SocketNode::Security::Tls>();
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
@@ -248,7 +245,7 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
   tsi_frame_protector* protector = nullptr;
   switch (frame_protector_type) {
     case TSI_FRAME_PROTECTOR_ZERO_COPY:
-      ABSL_FALLTHROUGH_INTENDED;
+      [[fallthrough]];
     case TSI_FRAME_PROTECTOR_NORMAL_OR_ZERO_COPY:
       // Create zero-copy frame protector.
       result = tsi_handshaker_result_create_zero_copy_grpc_protector(
@@ -284,13 +281,13 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
       args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, std::move(args_->endpoint), &slice,
-          args_->args.ToC().get(), 1);
+          protector, zero_copy_protector, std::move(args_->endpoint), &slice, 1,
+          args_->args);
       CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, std::move(args_->endpoint), nullptr,
-          args_->args.ToC().get(), 0);
+          0, args_->args);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -359,16 +356,12 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     return error;
   }
   if (result != TSI_OK) {
-    auto* security_connector = args_->args.GetObject<grpc_security_connector>();
-    absl::string_view connector_type = "<unknown>";
-    if (security_connector != nullptr) {
-      connector_type = security_connector->type().name();
-    }
     // TODO(roth): Get a better signal from the TSI layer as to what
     // status code we should use here.
     return GRPC_ERROR_CREATE(absl::StrCat(
-        connector_type, " handshake failed (", tsi_result_to_string(result),
-        ")", (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
+        connector_->type().name(), " handshake failed (",
+        tsi_result_to_string(result), ")",
+        (tsi_handshake_error_.empty() ? "" : ": "), tsi_handshake_error_));
   }
   // Update handshaker result.
   if (handshaker_result != nullptr) {
@@ -447,7 +440,6 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataReceivedFromPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).
@@ -479,7 +471,6 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
     grpc_error_handle error) {
   args_->event_engine->Run([self = RefAsSubclass<SecurityHandshaker>(),
                             error = std::move(error)]() mutable {
-    ApplicationCallbackExecCtx callback_exec_ctx;
     ExecCtx exec_ctx;
     self->OnHandshakeDataSentToPeerFn(std::move(error));
     // Avoid destruction outside of an ExecCtx (since this is non-cancelable).

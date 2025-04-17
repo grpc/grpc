@@ -14,43 +14,46 @@
 // limitations under the License.
 //
 
+#include <google/protobuf/any.pb.h>
+#include <google/protobuf/duration.pb.h>
+#include <google/protobuf/wrappers.pb.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
 #include <stdint.h>
 
 #include <limits>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
-
-#include <google/protobuf/any.pb.h>
-#include <google/protobuf/duration.pb.h>
-#include <google/protobuf/wrappers.pb.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
+#include "envoy/config/core/v3/base.pb.h"
+#include "envoy/config/core/v3/extension.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/filters/http/fault/v3/fault.pb.h"
+#include "envoy/type/matcher/v3/regex.pb.h"
+#include "envoy/type/matcher/v3/string.pb.h"
+#include "envoy/type/v3/percent.pb.h"
+#include "envoy/type/v3/range.pb.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "re2/re2.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"
-
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-
-#include "src/core/lib/channel/status_util.h"
+#include "src/core/call/status_util.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/matchers/matchers.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_route_config.h"
 #include "src/core/xds/grpc/xds_route_config_parser.h"
@@ -58,17 +61,11 @@
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/proto/grpc/lookup/v1/rls_config.pb.h"
-#include "src/proto/grpc/testing/xds/v3/base.pb.h"
-#include "src/proto/grpc/testing/xds/v3/extension.pb.h"
-#include "src/proto/grpc/testing/xds/v3/fault.pb.h"
-#include "src/proto/grpc/testing/xds/v3/percent.pb.h"
-#include "src/proto/grpc/testing/xds/v3/range.pb.h"
-#include "src/proto/grpc/testing/xds/v3/regex.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.pb.h"
-#include "src/proto/grpc/testing/xds/v3/string.pb.h"
-#include "src/proto/grpc/testing/xds/v3/typed_struct.pb.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"
+#include "xds/type/v3/typed_struct.pb.h"
 
 using envoy::config::route::v3::RouteConfiguration;
 using grpc::lookup::v1::RouteLookupClusterSpecifier;
@@ -83,7 +80,6 @@ class XdsRouteConfigTest : public ::testing::Test {
       : xds_client_(MakeXdsClient(trusted_xds_server)),
         decode_context_{xds_client_.get(),
                         *xds_client_->bootstrap().servers().front(),
-                        &xds_route_config_resource_type_test_trace,
                         upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
   static RefCountedPtr<XdsClient> MakeXdsClient(bool trusted_xds_server) {
@@ -126,7 +122,7 @@ TEST_F(XdsRouteConfigTest, Definition) {
   EXPECT_FALSE(resource_type->AllResourcesRequiredInSotW());
 }
 
-TEST_F(XdsRouteConfigTest, UnparseableProto) {
+TEST_F(XdsRouteConfigTest, UnparsableProto) {
   std::string serialized_resource("\0", 1);
   auto* resource_type = XdsRouteConfigResourceType::Get();
   auto decode_result =
@@ -168,10 +164,10 @@ TEST_F(XdsRouteConfigTest, MinimumValidConfig) {
   EXPECT_THAT(matchers.header_matchers, ::testing::ElementsAre());
   EXPECT_FALSE(matchers.fraction_per_million.has_value());
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
@@ -216,10 +212,10 @@ TEST_F(VirtualHostTest, MultipleVirtualHosts) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto* route = &resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
@@ -228,10 +224,10 @@ TEST_F(VirtualHostTest, MultipleVirtualHosts) {
   ASSERT_EQ(resource.virtual_hosts[1].routes.size(), 1UL);
   route = &resource.virtual_hosts[1].routes[0];
   action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
   ASSERT_NE(action, nullptr);
   cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster2");
@@ -360,9 +356,9 @@ class TypedPerFilterConfigTest
       case TypedPerFilterConfigScope::kRoute:
         return resource.virtual_hosts[0].routes[0].typed_per_filter_config;
       case TypedPerFilterConfigScope::kWeightedCluster: {
-        auto& action = absl::get<XdsRouteConfigResource::Route::RouteAction>(
+        auto& action = std::get<XdsRouteConfigResource::Route::RouteAction>(
             resource.virtual_hosts[0].routes[0].action);
-        auto& weighted_clusters = absl::get<std::vector<
+        auto& weighted_clusters = std::get<std::vector<
             XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
             action.action);
         return weighted_clusters[0].typed_per_filter_config;
@@ -562,7 +558,7 @@ TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperInTypedStruct) {
       << decode_result.resource.status();
 }
 
-TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparseable) {
+TEST_P(TypedPerFilterConfigTest, FilterConfigWrapperUnparsable) {
   auto* typed_per_filter_config_proto =
       GetTypedPerFilterConfigProto(&route_config_);
   auto& any = (*typed_per_filter_config_proto)["fault"];
@@ -747,7 +743,7 @@ TEST_P(RetryPolicyTest, Empty) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
@@ -786,7 +782,7 @@ TEST_P(RetryPolicyTest, AllFields) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
@@ -823,7 +819,7 @@ TEST_P(RetryPolicyTest, MaxIntervalDefaultsTo10xBaseInterval) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
   const auto& retry_policy = *action->retry_policy;
@@ -903,7 +899,7 @@ TEST_F(RetryPolicyOverrideTest, RoutePolicyOverridesVhostPolicy) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   ASSERT_TRUE(action->retry_policy.has_value());
   auto expected_codes = internal::StatusCodeSet().Add(GRPC_STATUS_CANCELLED);
@@ -998,33 +994,33 @@ TEST_F(RouteMatchTest, PathMatchers) {
   // route 0
   EXPECT_EQ(virtual_host.routes[0].matchers.path_matcher.ToString(),
             "StringMatcher{exact=/service/method}");
-  auto* action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+  auto* action = std::get_if<XdsRouteConfigResource::Route::RouteAction>(
       &virtual_host.routes[0].action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
   // route 1
   EXPECT_EQ(virtual_host.routes[1].matchers.path_matcher.ToString(),
             "StringMatcher{prefix=}");
-  action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+  action = std::get_if<XdsRouteConfigResource::Route::RouteAction>(
       &virtual_host.routes[1].action);
   ASSERT_NE(action, nullptr);
   cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster2");
   // route 2
   EXPECT_EQ(virtual_host.routes[2].matchers.path_matcher.ToString(),
             "StringMatcher{safe_regex=/.*}");
-  action = absl::get_if<XdsRouteConfigResource::Route::RouteAction>(
+  action = std::get_if<XdsRouteConfigResource::Route::RouteAction>(
       &virtual_host.routes[2].action);
   ASSERT_NE(action, nullptr);
   cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster3");
@@ -1333,7 +1329,7 @@ TEST_F(MaxStreamDurationTest, GrpcTimeoutHeaderMax) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
 }
@@ -1364,7 +1360,7 @@ TEST_F(MaxStreamDurationTest, MaxStreamDuration) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
 }
@@ -1398,7 +1394,7 @@ TEST_F(MaxStreamDurationTest, PrefersGrpcTimeoutHeaderMaxToMaxStreamDuration) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_EQ(action->max_stream_duration, Duration::Seconds(3));
 }
@@ -1509,12 +1505,12 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   auto& hash_policies = action->hash_policies;
   ASSERT_EQ(hash_policies.size(), 3UL);
   // hash policy 0: header "header0"
-  auto* header = absl::get_if<
+  auto* header = std::get_if<
       XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
       &hash_policies[0].policy);
   ASSERT_NE(header, nullptr);
@@ -1523,7 +1519,7 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   EXPECT_EQ(header->regex_substitution, "");
   EXPECT_FALSE(hash_policies[0].terminal);
   // hash policy 1: header "header1" with regex_rewrite
-  header = absl::get_if<
+  header = std::get_if<
       XdsRouteConfigResource::Route::RouteAction::HashPolicy::Header>(
       &hash_policies[1].policy);
   ASSERT_NE(header, nullptr);
@@ -1534,7 +1530,7 @@ TEST_F(HashPolicyTest, ValidAndUnsupportedPolicies) {
   EXPECT_TRUE(hash_policies[1].terminal);
   // hash policy 2: filter state "io.grpc.channel_id", terminal
   ASSERT_TRUE(
-      absl::holds_alternative<
+      std::holds_alternative<
           XdsRouteConfigResource::Route::RouteAction::HashPolicy::ChannelId>(
           hash_policies[2].policy));
   EXPECT_FALSE(hash_policies[2].terminal);
@@ -1618,7 +1614,7 @@ TEST_F(AuthorityRewriteDisabledInBootstrapTest, AutoHostRewriteIgnored) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_FALSE(action->auto_host_rewrite);
 }
@@ -1654,7 +1650,7 @@ TEST_F(AuthorityRewriteEnabledInBootstrapTest, AutoHostRewriteTrue) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_TRUE(action->auto_host_rewrite);
 }
@@ -1684,7 +1680,7 @@ TEST_F(AuthorityRewriteEnabledInBootstrapTest,
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   EXPECT_FALSE(action->auto_host_rewrite);
 }
@@ -1727,9 +1723,9 @@ TEST_F(WeightedClusterTest, Basic) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
-  auto* weighted_clusters = absl::get_if<
+  auto* weighted_clusters = std::get_if<
       std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>>(
       &action->action);
   ASSERT_NE(weighted_clusters, nullptr);
@@ -1863,9 +1859,9 @@ TEST_F(RlsTest, Basic) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
-  auto* plugin_name = absl::get_if<
+  auto* plugin_name = std::get_if<
       XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
       &action->action);
   ASSERT_NE(plugin_name, nullptr);
@@ -1907,10 +1903,10 @@ TEST_F(RlsTest, PluginDefinedButNotUsed) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto& route = resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
@@ -1967,9 +1963,9 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
   ASSERT_EQ(resource.virtual_hosts[0].routes.size(), 1UL);
   auto* route = &resource.virtual_hosts[0].routes[0];
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
   ASSERT_NE(action, nullptr);
-  auto* plugin_name = absl::get_if<
+  auto* plugin_name = std::get_if<
       XdsRouteConfigResource::Route::RouteAction::ClusterSpecifierPluginName>(
       &action->action);
   ASSERT_NE(plugin_name, nullptr);
@@ -1979,10 +1975,10 @@ TEST_F(RlsTest, NotUsedInAllVirtualHosts) {
   ASSERT_EQ(resource.virtual_hosts[1].routes.size(), 1UL);
   route = &resource.virtual_hosts[1].routes[0];
   action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route->action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
@@ -2028,10 +2024,10 @@ TEST_F(RlsTest, ClusterSpecifierPluginsIgnoredWhenNotEnabled) {
   auto& matchers = route.matchers;
   EXPECT_EQ(matchers.path_matcher.ToString(), "StringMatcher{prefix=}");
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   auto* cluster_name =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster_name, nullptr);
   EXPECT_EQ(cluster_name->cluster_name, "cluster1");
@@ -2162,10 +2158,10 @@ TEST_F(RlsTest, UnsupportedButOptionalClusterSpecifierPlugin) {
   auto& matchers = route.matchers;
   EXPECT_EQ(matchers.path_matcher.ToString(), "StringMatcher{prefix=}");
   auto* action =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
+      std::get_if<XdsRouteConfigResource::Route::RouteAction>(&route.action);
   ASSERT_NE(action, nullptr);
   auto* cluster =
-      absl::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
+      std::get_if<XdsRouteConfigResource::Route::RouteAction::ClusterName>(
           &action->action);
   ASSERT_NE(cluster, nullptr);
   EXPECT_EQ(cluster->cluster_name, "cluster1");
@@ -2201,7 +2197,7 @@ TEST_F(RlsTest, InvalidGrpcLbPolicyConfig) {
             "errors validating RouteConfiguration resource: ["
             "field:cluster_specifier_plugins[0].extension.typed_config "
             "error:ClusterSpecifierPlugin returned invalid LB policy config: "
-            "errors validing RLS LB policy config: ["
+            "errors validating RLS LB policy config: ["
             "field:routeLookupConfig.lookupService error:field not present]]")
       << decode_result.resource.status();
 }
@@ -2238,7 +2234,7 @@ TEST_F(RlsTest, RlsInTypedStruct) {
       << decode_result.resource.status();
 }
 
-TEST_F(RlsTest, RlsConfigUnparseable) {
+TEST_F(RlsTest, RlsConfigUnparsable) {
   ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_RLS_LB");
   RouteConfiguration route_config;
   route_config.set_name("foo");

@@ -17,17 +17,16 @@
 #ifndef GRPC_SUPPORT_JSON_H
 #define GRPC_SUPPORT_JSON_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 
 #include <map>
 #include <string>
 #include <utility>
+#include <variant>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
-#include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace experimental {
@@ -148,46 +147,46 @@ class Json {
 
   // Moveable.
   Json(Json&& other) noexcept : value_(std::move(other.value_)) {
-    other.value_ = absl::monostate();
+    other.value_ = std::monostate();
   }
   Json& operator=(Json&& other) noexcept {
     value_ = std::move(other.value_);
-    other.value_ = absl::monostate();
+    other.value_ = std::monostate();
     return *this;
   }
 
   // Returns the JSON type.
   Type type() const {
     struct ValueFunctor {
-      Json::Type operator()(const absl::monostate&) { return Type::kNull; }
+      Json::Type operator()(const std::monostate&) { return Type::kNull; }
       Json::Type operator()(bool) { return Type::kBoolean; }
       Json::Type operator()(const NumberValue&) { return Type::kNumber; }
       Json::Type operator()(const std::string&) { return Type::kString; }
       Json::Type operator()(const Object&) { return Type::kObject; }
       Json::Type operator()(const Array&) { return Type::kArray; }
     };
-    return absl::visit(ValueFunctor(), value_);
+    return std::visit(ValueFunctor(), value_);
   }
 
   // Payload accessor for kBoolean.
   // Must not be called for other types.
-  bool boolean() const { return absl::get<bool>(value_); }
+  bool boolean() const { return std::get<bool>(value_); }
 
   // Payload accessor for kNumber or kString.
   // Must not be called for other types.
   const std::string& string() const {
-    const NumberValue* num = absl::get_if<NumberValue>(&value_);
+    const NumberValue* num = std::get_if<NumberValue>(&value_);
     if (num != nullptr) return num->value;
-    return absl::get<std::string>(value_);
+    return std::get<std::string>(value_);
   }
 
   // Payload accessor for kObject.
   // Must not be called for other types.
-  const Object& object() const { return absl::get<Object>(value_); }
+  const Object& object() const { return std::get<Object>(value_); }
 
   // Payload accessor for kArray.
   // Must not be called for other types.
-  const Array& array() const { return absl::get<Array>(value_); }
+  const Array& array() const { return std::get<Array>(value_); }
 
   bool operator==(const Json& other) const { return value_ == other.value_; }
   bool operator!=(const Json& other) const { return !(*this == other); }
@@ -200,12 +199,12 @@ class Json {
       return value == other.value;
     }
   };
-  using Value = absl::variant<absl::monostate,  // kNull
-                              bool,             // kBoolean
-                              NumberValue,      // kNumber
-                              std::string,      // kString
-                              Object,           // kObject
-                              Array>;           // kArray
+  using Value = std::variant<std::monostate,  // kNull
+                             bool,            // kBoolean
+                             NumberValue,     // kNumber
+                             std::string,     // kString
+                             Object,          // kObject
+                             Array>;          // kArray
 
   explicit Json(Value value) : value_(std::move(value)) {}
 

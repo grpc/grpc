@@ -16,23 +16,20 @@
 //
 //
 
+#include <benchmark/benchmark.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
 #include <string.h>
 
 #include <atomic>
 
-#include <benchmark/benchmark.h>
-
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"

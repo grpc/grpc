@@ -18,12 +18,20 @@
 
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/sync.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <algorithm>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -33,24 +41,11 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/sync.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -63,9 +58,12 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/time.h"
 
 namespace {
 struct inproc_stream;
@@ -187,16 +185,21 @@ struct inproc_stream {
 
     if (!server_data) {
       t->ref();
-      inproc_transport* st = t->other_side;
-      st->ref();
       other_side = nullptr;  // will get filled in soon
-      // Pass the client-side stream address to the server-side for a ref
-      ref("inproc_init_stream:clt");  // ref it now on behalf of server
-                                      // side to avoid destruction
-      GRPC_TRACE_LOG(inproc, INFO)
-          << "calling accept stream cb " << st->accept_stream_cb << " "
-          << st->accept_stream_data;
-      (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      inproc_transport* st = t->other_side;
+      if (st->accept_stream_cb == nullptr) {
+        cancel_stream_locked(this,
+                             absl::UnavailableError("inproc server closed"));
+      } else {
+        st->ref();
+        // Pass the client-side stream address to the server-side for a ref
+        ref("inproc_init_stream:clt");  // ref it now on behalf of server
+                                        // side to avoid destruction
+        GRPC_TRACE_LOG(inproc, INFO)
+            << "calling accept stream cb " << st->accept_stream_cb << " "
+            << st->accept_stream_data;
+        (*st->accept_stream_cb)(st->accept_stream_data, t, this);
+      }
     } else {
       // This is the server-side and is being called through accept_stream_cb
       inproc_stream* cs = const_cast<inproc_stream*>(

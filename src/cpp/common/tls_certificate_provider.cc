@@ -14,15 +14,15 @@
 // limitations under the License.
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc_security.h>
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include <string>
 #include <vector>
 
 #include "absl/log/check.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/log.h>
-#include <grpcpp/security/tls_certificate_provider.h>
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 
 namespace grpc {
 namespace experimental {
@@ -45,6 +45,13 @@ StaticDataCertificateProvider::~StaticDataCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
 
+absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::StaticDataCertificateProvider*>(
+          c_provider_);
+  return provider->ValidateCredentials();
+}
+
 FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     const std::string& private_key_path,
     const std::string& identity_certificate_path,
@@ -58,6 +65,13 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
 FileWatcherCertificateProvider::~FileWatcherCertificateProvider() {
   grpc_tls_certificate_provider_release(c_provider_);
 };
+
+absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
+  auto* provider =
+      grpc_core::DownCast<grpc_core::FileWatcherCertificateProvider*>(
+          c_provider_);
+  return provider->ValidateCredentials();
+}
 
 }  // namespace experimental
 }  // namespace grpc

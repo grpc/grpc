@@ -16,14 +16,14 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/json/json_util.h"
 
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/validation_errors.h"
+#include <grpc/support/port_platform.h>
+
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 

@@ -21,10 +21,10 @@
 
 #include <list>
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/resource_quota/thread_quota.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 
 namespace grpc {
 
@@ -42,10 +42,10 @@ class ThreadManager {
 
   // "Polls" for new work.
   // If the return value is WORK_FOUND:
-  //  - The implementaion of PollForWork() MAY set some opaque identifier to
+  //  - The implementation of PollForWork() MAY set some opaque identifier to
   //    (identify the work item found) via the '*tag' parameter
-  //  - The implementaion MUST set the value of 'ok' to 'true' or 'false'. A
-  //    value of 'false' indicates some implemenation specific error (that is
+  //  - The implementation MUST set the value of 'ok' to 'true' or 'false'. A
+  //    value of 'false' indicates some implementation specific error (that is
   //    neither SHUTDOWN nor TIMEOUT)
   //  - ThreadManager does not interpret the values of 'tag' and 'ok'
   //  - ThreadManager WILL call DoWork() and pass '*tag' and 'ok' as input to

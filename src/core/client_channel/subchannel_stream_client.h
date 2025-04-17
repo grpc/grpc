@@ -17,26 +17,21 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_STREAM_CLIENT_H
 
-#include <grpc/support/port_platform.h>
-
-#include <atomic>
-#include <memory>
-
-#include "absl/base/thread_annotations.h"
-#include "absl/status/status.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <grpc/support/port_platform.h>
 
+#include <atomic>
+#include <memory>
+#include <optional>
+
+#include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
+#include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/backoff/backoff.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -46,8 +41,11 @@
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -174,7 +172,7 @@ class SubchannelStreamClient final
     grpc_closure recv_initial_metadata_ready_;
 
     // recv_message
-    absl::optional<SliceBuffer> recv_message_;
+    std::optional<SliceBuffer> recv_message_;
     grpc_closure recv_message_ready_;
     std::atomic<bool> seen_response_{false};
 
@@ -204,13 +202,13 @@ class SubchannelStreamClient final
   Mutex mu_;
   std::unique_ptr<CallEventHandler> event_handler_ ABSL_GUARDED_BY(mu_);
 
-  // The data associated with the current health check call.  It holds a ref
+  // The data associated with the current call.  It holds a ref
   // to this SubchannelStreamClient object.
   OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 
   // Call retry state.
   BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
-  absl::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
+  std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       retry_timer_handle_ ABSL_GUARDED_BY(mu_);
   // A raw pointer will suffice since connected_subchannel_ holds a copy of the
   // ChannelArgs which holds an std::shared_ptr of the EventEngine.

@@ -15,11 +15,11 @@
 #include "src/core/telemetry/metrics.h"
 
 #include <memory>
+#include <thread>
 
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
@@ -60,16 +60,16 @@ TEST_F(MetricsTest, UInt64Counter) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
-      .AddCounter(uint64_counter_handle, uint64_t(1), kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(uint64_counter_handle, uint64_t(1), kLabelValues,
+                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
-      .AddCounter(uint64_counter_handle, uint64_t(2), kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(uint64_counter_handle, uint64_t(2), kLabelValues,
+                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
-      .AddCounter(uint64_counter_handle, uint64_t(3), kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(uint64_counter_handle, uint64_t(3), kLabelValues,
+                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetUInt64CounterValue(
                   uint64_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1));
@@ -100,16 +100,16 @@ TEST_F(MetricsTest, DoubleCounter) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
-      .AddCounter(double_counter_handle, 1.23, kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(double_counter_handle, 1.23, kLabelValues,
+                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
-      .AddCounter(double_counter_handle, 2.34, kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(double_counter_handle, 2.34, kLabelValues,
+                   kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
-      .AddCounter(double_counter_handle, 3.45, kLabelValues,
-                  kOptionalLabelValues);
+      ->AddCounter(double_counter_handle, 3.45, kLabelValues,
+                   kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetDoubleCounterValue(
                   double_counter_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(1.23));
@@ -140,16 +140,16 @@ TEST_F(MetricsTest, UInt64Histogram) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
-      .RecordHistogram(uint64_histogram_handle, uint64_t(1), kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(uint64_histogram_handle, uint64_t(1), kLabelValues,
+                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
-      .RecordHistogram(uint64_histogram_handle, uint64_t(2), kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(uint64_histogram_handle, uint64_t(2), kLabelValues,
+                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
-      .RecordHistogram(uint64_histogram_handle, uint64_t(3), kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(uint64_histogram_handle, uint64_t(3), kLabelValues,
+                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetUInt64HistogramValue(
                   uint64_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1)));
@@ -180,16 +180,16 @@ TEST_F(MetricsTest, DoubleHistogram) {
   auto plugin3 = MakeStatsPluginForTarget(kDomain3To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
-      .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
+                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_))
-      .RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(double_histogram_handle, 2.34, kLabelValues,
+                        kOptionalLabelValues);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_))
-      .RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(double_histogram_handle, 3.45, kLabelValues,
+                        kOptionalLabelValues);
   EXPECT_THAT(plugin1->GetDoubleHistogramValue(
                   double_histogram_handle, kLabelValues, kOptionalLabelValues),
               ::testing::Optional(::testing::UnorderedElementsAre(1.23)));
@@ -226,13 +226,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
-  auto callback1 = group1.RegisterCallback(
+  auto callback1 = group1->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(1), kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), int64_gauge_handle);
-  auto callback2 = group1.RegisterCallback(
+  auto callback2 = group1->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(2), kLabelValues2,
                         kOptionalLabelValues);
@@ -241,22 +241,22 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin1->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -270,16 +270,16 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(2));
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -287,13 +287,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
-  callback1 = group2.RegisterCallback(
+  callback1 = group2->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(3), kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), int64_gauge_handle);
-  callback2 = group2.RegisterCallback(
+  callback2 = group2->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(4), kLabelValues2,
                         kOptionalLabelValues);
@@ -308,16 +308,16 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(2));
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -337,10 +337,10 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(4));
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -348,13 +348,13 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
-  callback1 = group3.RegisterCallback(
+  callback1 = group3->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(5), kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), int64_gauge_handle);
-  callback2 = group3.RegisterCallback(
+  callback2 = group3->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(int64_gauge_handle, int64_t(6), kLabelValues2,
                         kOptionalLabelValues);
@@ -375,10 +375,10 @@ TEST_F(MetricsTest, Int64CallbackGauge) {
               ::testing::Optional(4));
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetInt64CallbackGaugeValue(
                 int64_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -431,13 +431,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1";
   auto group1 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain3To4, "", endpoint_config_));
-  auto callback1 = group1.RegisterCallback(
+  auto callback1 = group1->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 1.23, kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), double_gauge_handle);
-  auto callback2 = group1.RegisterCallback(
+  auto callback2 = group1->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 2.34, kLabelValues2,
                         kOptionalLabelValues);
@@ -446,22 +446,22 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   // No plugins have data yet.
   EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin1->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -475,16 +475,16 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(2.34));
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -492,13 +492,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1, plugin2";
   auto group2 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain2To4, "", endpoint_config_));
-  callback1 = group2.RegisterCallback(
+  callback1 = group2->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 3.45, kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), double_gauge_handle);
-  callback2 = group2.RegisterCallback(
+  callback2 = group2->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 4.56, kLabelValues2,
                         kOptionalLabelValues);
@@ -513,16 +513,16 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(2.34));
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin2->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -542,10 +542,10 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(4.56));
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // De-register the callbacks.
   callback1.reset();
   callback2.reset();
@@ -553,13 +553,13 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
   LOG(INFO) << "testing callbacks for: plugin1, plugin2, plugin3";
   auto group3 = GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_));
-  callback1 = group3.RegisterCallback(
+  callback1 = group3->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 5.67, kLabelValues,
                         kOptionalLabelValues);
       },
       Duration::Seconds(5), double_gauge_handle);
-  callback2 = group3.RegisterCallback(
+  callback2 = group3->RegisterCallback(
       [&](CallbackMetricReporter& reporter) {
         reporter.Report(double_gauge_handle, 6.78, kLabelValues2,
                         kOptionalLabelValues);
@@ -580,10 +580,10 @@ TEST_F(MetricsTest, DoubleCallbackGauge) {
               ::testing::Optional(4.56));
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   EXPECT_EQ(plugin3->GetDoubleCallbackGaugeValue(
                 double_gauge_handle, kLabelValues2, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
   // Now invoke the callbacks.
   plugin1->TriggerCallbacks();
   plugin2->TriggerCallbacks();
@@ -627,11 +627,11 @@ TEST_F(MetricsTest, DisableByDefaultMetricIsNotRecordedByFakeStatsPlugin) {
   auto plugin = MakeStatsPluginForTarget(kDomain1To4);
   GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
       StatsPluginChannelScope(kDomain1To4, "", endpoint_config_))
-      .RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
-                       kOptionalLabelValues);
+      ->RecordHistogram(double_histogram_handle, 1.23, kLabelValues,
+                        kOptionalLabelValues);
   EXPECT_EQ(plugin->GetDoubleHistogramValue(double_histogram_handle,
                                             kLabelValues, kOptionalLabelValues),
-            absl::nullopt);
+            std::nullopt);
 }
 
 TEST_F(MetricsTest, FindInstrumentByName) {
@@ -647,6 +647,40 @@ TEST_F(MetricsTest, FindInstrumentByName) {
               ::testing::Optional(::testing::Field(
                   &GlobalInstrumentsRegistry::GlobalInstrumentHandle::index,
                   ::testing::Eq(uint64_counter_handle.index))));
+}
+
+TEST_F(MetricsTest, ParallelStatsPluginRegistrationAndLookup) {
+  std::vector<std::thread> register_threads;
+  std::vector<std::thread> lookup_threads;
+  register_threads.reserve(100);
+  lookup_threads.reserve(100);
+  // 100 threads that register 100 stats plugins each
+  for (int i = 0; i < 100; ++i) {
+    register_threads.emplace_back([] {
+      for (int j = 0; j < 100; ++j) {
+        FakeStatsPluginBuilder().BuildAndRegister();
+      }
+    });
+  }
+  // 100 threads that keep looking up stats plugins till they see 10000 stats
+  // plugins
+  for (int i = 0; i < 100; ++i) {
+    lookup_threads.emplace_back([this] {
+      while (GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+                 StatsPluginChannelScope("", "", endpoint_config_))
+                 ->size() < 10000) {
+        // Yield to avoid starving the register threads.
+        std::this_thread::yield();
+      };
+    });
+  }
+  for (int i = 0; i < 100; ++i) {
+    register_threads[i].join();
+    lookup_threads[i].join();
+  }
+  EXPECT_THAT(GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+                  StatsPluginChannelScope("", "", endpoint_config_)),
+              ::testing::Pointee(::testing::SizeIs(10000)));
 }
 
 using MetricsDeathTest = MetricsTest;
@@ -672,6 +706,8 @@ TEST_F(MetricsDeathTest, RegisterTheSameMetricNameWouldCrash) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc_core::GlobalInstrumentsRegistryTestPeer::
+      ResetGlobalInstrumentsRegistry();
   int ret = RUN_ALL_TESTS();
   return ret;
 }

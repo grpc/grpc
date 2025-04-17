@@ -13,6 +13,9 @@
 // limitations under the License.
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
 #include <poll.h>
 #include <stdlib.h>
 #include <sys/socket.h>
@@ -34,19 +37,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -147,7 +146,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
   CHECK_OK(resolved_addr);
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
@@ -168,7 +168,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
@@ -176,7 +176,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
   CHECK_OK(resolved_addr);
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
@@ -198,7 +199,7 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
   for (auto sock : sockets) {
     close(sock);
   }
-  WaitForSingleOwner(std::move(posix_ee));
+  grpc_core::WaitForSingleOwner(std::move(posix_ee));
 }
 
 }  // namespace experimental

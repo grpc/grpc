@@ -13,15 +13,14 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/port_platform.h>
+
 #include <thread>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/common_closures.h"
 #include "test/core/test_util/test_config.h"
 

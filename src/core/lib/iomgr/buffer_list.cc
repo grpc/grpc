@@ -18,15 +18,13 @@
 
 #include "src/core/lib/iomgr/buffer_list.h"
 
-#include "absl/log/log.h"
-
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
 #ifdef GRPC_LINUX_ERRQUEUE
 #include <netinet/in.h>
@@ -43,7 +41,7 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
 }
 
 void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
-                               absl::Status /*shudown_err*/) {
+                               absl::Status /*shutdown_err*/) {
   VLOG(2) << "Timestamps callback has not been registered";
 }
 

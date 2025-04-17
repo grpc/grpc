@@ -18,11 +18,10 @@
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 
-#include <stdio.h>
-#include <string.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
+#include <stdio.h>
+#include <string.h>
 
 static const char vtable_error_msg[] =
     "crypter or crypter->vtable has not been initialized properly";

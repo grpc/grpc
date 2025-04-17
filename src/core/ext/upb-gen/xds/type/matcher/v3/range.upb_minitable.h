@@ -3,10 +3,11 @@
  *     xds/type/matcher/v3/range.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_MINITABLE_H_
-#define XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_MINITABLE_H_
+#ifndef XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_
+#define XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,11 +19,17 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__Int64RangeMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__Int64RangeMatcher__RangeMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__Int32RangeMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__Int32RangeMatcher__RangeMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__DoubleRangeMatcher_msg_init_ptr;
 extern const upb_MiniTable xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init;
+extern const upb_MiniTable* xds__type__matcher__v3__DoubleRangeMatcher__RangeMatcher_msg_init_ptr;
 
 extern const upb_MiniTableFile xds_type_matcher_v3_range_proto_upb_file_layout;
 
@@ -32,4 +39,4 @@ extern const upb_MiniTableFile xds_type_matcher_v3_range_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_MINITABLE_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_RANGE_PROTO_UPB_H__UPB_MINITABLE_H_ */

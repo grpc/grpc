@@ -18,13 +18,12 @@
 
 #include "src/core/load_balancing/grpclb/grpclb_client_stats.h"
 
-#include <string.h>
-
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/string_util.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 

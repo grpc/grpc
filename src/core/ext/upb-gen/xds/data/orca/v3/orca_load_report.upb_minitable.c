@@ -3,7 +3,8 @@
  *     xds/data/orca/v3/orca_load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -13,10 +14,11 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_data_orca_v3_OrcaLoadReport_submsgs[3] = {
-  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init},
-  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_data_orca_v3_OrcaLoadReport__submsgs[3] = {
+  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport__fields[9] = {
@@ -32,7 +34,7 @@ static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport__fields[9] = {
 };
 
 const upb_MiniTable xds__data__orca__v3__OrcaLoadReport_msg_init = {
-  &xds_data_orca_v3_OrcaLoadReport_submsgs[0],
+  &xds_data_orca_v3_OrcaLoadReport__submsgs[0],
   &xds_data_orca_v3_OrcaLoadReport__fields[0],
   UPB_SIZE(72, 80), 9, kUpb_ExtMode_NonExtendable, 9, UPB_FASTTABLE_MASK(120), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -58,6 +60,7 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport_msg_init_ptr = &xds__data__orca__v3__OrcaLoadReport_msg_init;
 static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport_RequestCostEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -78,6 +81,7 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_in
   })
 };
 
+const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init_ptr = &xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init;
 static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport_UtilizationEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -98,6 +102,7 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_in
   })
 };
 
+const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init_ptr = &xds__data__orca__v3__OrcaLoadReport__UtilizationEntry_msg_init;
 static const upb_MiniTableField xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry__fields[2] = {
   {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
   {2, 32, 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
@@ -118,6 +123,7 @@ const upb_MiniTable xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_i
   })
 };
 
+const upb_MiniTable* xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init_ptr = &xds__data__orca__v3__OrcaLoadReport__NamedMetricsEntry_msg_init;
 static const upb_MiniTable *messages_layout[4] = {
   &xds__data__orca__v3__OrcaLoadReport_msg_init,
   &xds__data__orca__v3__OrcaLoadReport__RequestCostEntry_msg_init,

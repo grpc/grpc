@@ -14,23 +14,21 @@
 
 #include "src/core/lib/transport/promise_endpoint.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/support/port_platform.h>
+
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -90,7 +88,6 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
       }
       if (ep->Read(
               [self = Ref(), num_bytes_requested](absl::Status status) {
-                ApplicationCallbackExecCtx callback_exec_ctx;
                 ExecCtx exec_ctx;
                 self->Complete(std::move(status), num_bytes_requested);
               },

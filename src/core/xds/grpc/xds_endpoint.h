@@ -24,14 +24,16 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/random/random.h"
-
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/xds/xds_client/xds_client_stats.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/xds/xds_client/xds_locality.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
 #include "src/core/xds/xds_client/xds_resource_type_impl.h"
+
+// Per-endpoint channel arg key for xDS-configured HTTP CONNECT proxy.
+#define GRPC_ARG_XDS_HTTP_PROXY "grpc.internal.xds_http_proxy"
 
 namespace grpc_core {
 

@@ -14,6 +14,9 @@
 
 #include "src/core/lib/resource_quota/memory_quota.h"
 
+#include <grpc/slice.h>
+#include <grpc/support/log.h>
+
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -23,9 +26,6 @@
 #include <vector>
 
 #include "gtest/gtest.h"
-
-#include <grpc/slice.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/resource_quota/call_checker.h"
 #include "test/core/test_util/test_config.h"
@@ -88,7 +88,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   auto checker1 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object, checker1](absl::optional<ReclamationSweep> sweep) {
+      [&object, checker1](std::optional<ReclamationSweep> sweep) {
         checker1->Called();
         EXPECT_TRUE(sweep.has_value());
         object.reset();
@@ -100,7 +100,7 @@ TEST(MemoryQuotaTest, CreateSomeObjectsAndExpectReclamation) {
   auto checker2 = CallChecker::Make();
   memory_allocator.PostReclaimer(
       ReclamationPass::kDestructive,
-      [&object2, checker2](absl::optional<ReclamationSweep> sweep) {
+      [&object2, checker2](std::optional<ReclamationSweep> sweep) {
         checker2->Called();
         EXPECT_TRUE(sweep.has_value());
         object2.reset();
@@ -130,7 +130,7 @@ TEST(MemoryQuotaTest, MakeSlice) {
   for (int i = 1; i < 1000; i++) {
     ExecCtx exec_ctx;
     int min = i;
-    int max = 10 * i - 9;
+    int max = (10 * i) - 9;
     slices.push_back(memory_allocator.MakeSlice(MemoryRequest(min, max)));
   }
   ExecCtx exec_ctx;
@@ -160,7 +160,7 @@ TEST(MemoryQuotaTest, NoBunchingIfIdle) {
     auto memory_owner = memory_quota.CreateMemoryOwner();
     memory_owner.PostReclaimer(
         ReclamationPass::kDestructive,
-        [&count_reclaimers_called](absl::optional<ReclamationSweep> sweep) {
+        [&count_reclaimers_called](std::optional<ReclamationSweep> sweep) {
           EXPECT_FALSE(sweep.has_value());
           count_reclaimers_called.fetch_add(1, std::memory_order_relaxed);
         });
@@ -185,6 +185,22 @@ TEST(MemoryQuotaTest, AllMemoryQuotas) {
   EXPECT_EQ(gather(), std::set<std::string>({"m1", "m2"}));
   m1.reset();
   EXPECT_EQ(gather(), std::set<std::string>({"m2"}));
+}
+
+TEST(MemoryQuotaTest, ContainerMemoryAccountedFor) {
+  MemoryQuota memory_quota("foo");
+  memory_quota.SetSize(1000000);
+  EXPECT_EQ(ContainerMemoryPressure(), 0.0);
+  auto owner = memory_quota.CreateMemoryOwner();
+  const double original_memory_pressure =
+      owner.GetPressureInfo().instantaneous_pressure;
+  EXPECT_LT(original_memory_pressure, 0.01);
+  SetContainerMemoryPressure(1.0);
+  EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure, 1.0);
+  SetContainerMemoryPressure(0.0);
+  EXPECT_EQ(owner.GetPressureInfo().instantaneous_pressure,
+            original_memory_pressure);
+  SetContainerMemoryPressure(0.0);
 }
 
 }  // namespace testing

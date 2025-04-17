@@ -19,12 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 #define GRPC_SRC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 
 #include "absl/container/flat_hash_map.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"

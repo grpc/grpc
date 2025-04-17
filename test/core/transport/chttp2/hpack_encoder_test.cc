@@ -18,6 +18,8 @@
 
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice_buffer.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,21 +29,19 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/test_util/parse_hexstring.h"
 #include "test/core/test_util/slice_splitter.h"
 #include "test/core/test_util/test_config.h"
 
 grpc_core::HPackCompressor* g_compressor;
+grpc_core::Http2ZTraceCollector* g_ztrace_collector =
+    new grpc_core::Http2ZTraceCollector();
 
 typedef struct {
   bool eof;
@@ -160,18 +160,16 @@ class FakeCallTracer final : public CallTracerInterface {
       grpc_metadata_batch* send_initial_metadata) override {}
   void RecordSendTrailingMetadata(
       grpc_metadata_batch* send_trailing_metadata) override {}
-  void RecordSendMessage(const SliceBuffer& send_message) override {}
+  void RecordSendMessage(const Message& send_message) override {}
   void RecordSendCompressedMessage(
-      const SliceBuffer& send_compressed_message) override {}
+      const Message& send_compressed_message) override {}
   void RecordReceivedInitialMetadata(
       grpc_metadata_batch* recv_initial_metadata) override {}
-  void RecordReceivedMessage(const SliceBuffer& recv_message) override {}
+  void RecordReceivedMessage(const Message& recv_message) override {}
   void RecordReceivedDecompressedMessage(
-      const SliceBuffer& recv_decompressed_message) override {}
+      const Message& recv_decompressed_message) override {}
   void RecordCancel(grpc_error_handle cancel_error) override {}
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   void RecordAnnotation(absl::string_view annotation) override {}
   void RecordAnnotation(const Annotation& annotation) override {}
   std::string TraceId() override { return ""; }
@@ -200,7 +198,7 @@ grpc_slice EncodeHeaderIntoBytes(
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       16384,       // max_frame_size
-      &call_tracer};
+      &call_tracer, g_ztrace_collector};
   grpc_slice_buffer output;
   grpc_slice_buffer_init(&output);
 
@@ -344,7 +342,7 @@ static void verify_continuation_headers(const char* key, const char* value,
       is_eof,      // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &call_tracer, g_ztrace_collector};
   g_compressor->EncodeHeaders(hopt, b, &output);
   verify_frames(output, is_eof);
   grpc_slice_buffer_destroy(&output);
@@ -383,7 +381,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsBase64) {
       true,        // is_eof
       false,       // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &call_tracer, g_ztrace_collector};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);
@@ -407,7 +405,7 @@ TEST(HpackEncoderTest, EncodeBinaryAsTrueBinary) {
       true,        // is_eof
       true,        // use_true_binary_metadata
       150,         // max_frame_size
-      &call_tracer};
+      &call_tracer, g_ztrace_collector};
   grpc_core::HPackCompressor compressor;
   compressor.EncodeHeaders(hopt, b, &output);
   grpc_slice_buffer_destroy(&output);

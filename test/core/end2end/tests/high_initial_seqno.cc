@@ -16,15 +16,14 @@
 //
 //
 
-#include <memory>
-
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -70,8 +69,10 @@ void TenRequests(CoreEnd2endTest& test, int initial_sequence_number) {
   }
 }
 
-CORE_END2END_TEST(Http2Test, HighInitialSeqno) { TenRequests(*this, 16777213); }
-CORE_END2END_TEST(RetryHttp2Test, HighInitialSeqno) {
+CORE_END2END_TEST(Http2Tests, HighInitialSeqno) {
+  TenRequests(*this, 16777213);
+}
+CORE_END2END_TEST(RetryHttp2Tests, HighInitialSeqno) {
   TenRequests(*this, 2147483645);
 }
 

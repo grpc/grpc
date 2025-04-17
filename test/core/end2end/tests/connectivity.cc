@@ -16,20 +16,19 @@
 //
 //
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
 namespace {
 
-CORE_END2END_TEST(RetryHttp2Test, ConnectivityWatch) {
+CORE_END2END_TEST(RetryHttp2Tests, ConnectivityWatch) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, 1000)
                  .Set(GRPC_ARG_MAX_RECONNECT_BACKOFF_MS, 1000)

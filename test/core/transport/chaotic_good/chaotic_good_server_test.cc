@@ -14,6 +14,11 @@
 
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/status.h>
+#include <grpcpp/server.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -24,21 +29,15 @@
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/status.h>
-#include <grpcpp/server.h>
-
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/uri/uri_parser.h"
 #include "src/core/server/server.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/time.h"
+#include "src/core/util/uri.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/port.h"
@@ -93,8 +92,7 @@ class ChaoticGoodServerTest : public ::testing::Test {
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();
-    connector_ = MakeRefCounted<ChaoticGoodConnector>(
-        grpc_event_engine::experimental::GetDefaultEventEngine());
+    connector_ = MakeRefCounted<ChaoticGoodConnector>();
   }
 
  protected:
@@ -125,6 +123,9 @@ class ChaoticGoodServerTest : public ::testing::Test {
 };
 
 TEST_F(ChaoticGoodServerTest, Connect) {
+  if (!IsChaoticGoodFramingLayerEnabled()) {
+    GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
+  }
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);
   connector_->Connect(args_, &connecting_result_, &on_connecting_finished_);
@@ -132,6 +133,9 @@ TEST_F(ChaoticGoodServerTest, Connect) {
 }
 
 TEST_F(ChaoticGoodServerTest, ConnectAndShutdown) {
+  if (!IsChaoticGoodFramingLayerEnabled()) {
+    GTEST_SKIP() << "Chaotic Good framing layer is not enabled";
+  }
   Notification connect_finished;
   GRPC_CLOSURE_INIT(&on_connecting_finished_, OnConnectingFinished, this,
                     grpc_schedule_on_exec_ctx);

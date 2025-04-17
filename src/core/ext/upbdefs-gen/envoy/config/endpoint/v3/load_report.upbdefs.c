@@ -3,7 +3,8 @@
  *     envoy/config/endpoint/v3/load_report.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include "upb/reflection/def.h"
 #include "envoy/config/endpoint/v3/load_report.upbdefs.h"

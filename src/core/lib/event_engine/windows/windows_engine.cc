@@ -15,6 +15,12 @@
 
 #ifdef GPR_WINDOWS
 
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
+#include <grpc/support/cpu.h>
+
 #include <memory>
 #include <ostream>
 
@@ -23,13 +29,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/event_engine/slice_buffer.h>
-#include <grpc/support/cpu.h>
-
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/handle_containers.h"
@@ -43,14 +42,15 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/dump_args.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 std::ostream& operator<<(
     std::ostream& out,
@@ -257,6 +257,47 @@ bool WindowsEventEngine::Cancel(EventEngine::TaskHandle handle) {
   known_handles_.erase(handle);
   if (r) delete cd;
   return r;
+}
+
+std::unique_ptr<EventEngine::Endpoint>
+WindowsEventEngine::CreateEndpointFromWinSocket(SOCKET socket,
+                                                const EndpointConfig& config) {
+  // Get address from socket.
+  auto local_address = SocketToAddress(socket);
+  if (!local_address.ok()) {
+    LOG(ERROR) << "WindowsEventEngine::" << this
+               << ": Error getting local socket address: "
+               << local_address.status();
+    return nullptr;
+  }
+  // Create winsocket and ensure IOCP is polling it.
+  auto winsocket = iocp_.Watch(socket);
+  if (winsocket == nullptr) {
+    LOG(ERROR) << "WindowsEventEngine::" << this
+               << ": Error registering socket with IOCP engine.";
+    return nullptr;
+  }
+  // Get the config's memory allocator factory if present, or fall back to the
+  // resource quota.
+  MemoryAllocator allocator;
+  auto local_address_string = *ResolvedAddressToURI(*local_address);
+  auto* allocator_factory =
+      config.GetVoidPointer(GRPC_ARG_EVENT_ENGINE_USE_MEMORY_ALLOCATOR_FACTORY);
+  if (allocator_factory != nullptr) {
+    allocator = static_cast<MemoryAllocatorFactory*>(allocator_factory)
+                    ->CreateMemoryAllocator(local_address_string);
+  } else {
+    auto* rqv = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
+    CHECK_NE(rqv, nullptr) << "WindowsEventEngine::" << this
+                           << ": config does not contain a resource quota. "
+                              "This should not happen.";
+    allocator = static_cast<grpc_core::ResourceQuota*>(rqv)
+                    ->memory_quota()
+                    ->CreateMemoryAllocator(local_address_string);
+  }
+  return std::make_unique<WindowsEndpoint>(
+      std::move(*local_address), std::move(winsocket), std::move(allocator),
+      config, thread_pool_.get(), shared_from_this());
 }
 
 EventEngine::TaskHandle WindowsEventEngine::RunAfter(
@@ -594,7 +635,6 @@ WindowsEventEngine::CreateListener(
       std::move(memory_allocator_factory), shared_from_this(),
       thread_pool_.get(), config);
 }
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

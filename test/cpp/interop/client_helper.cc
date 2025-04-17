@@ -18,6 +18,13 @@
 
 #include "test/cpp/interop/client_helper.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/support/alloc.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -28,15 +35,7 @@
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/support/alloc.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-
-#include "test/core/security/oauth2_utils.h"
+#include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
 

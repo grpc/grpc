@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/backend_metrics/backend_metric_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
@@ -26,37 +26,28 @@
 
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
-#include "upb/base/string_view.h"
-#include "upb/mem/arena.hpp"
-#include "xds/data/orca/v3/orca_load_report.upb.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_data.h"
+#include "src/core/util/latent_see.h"
+#include "upb/base/string_view.h"
+#include "upb/mem/arena.hpp"
+#include "xds/data/orca/v3/orca_load_report.upb.h"
 
 namespace grpc_core {
 
-const NoInterceptor BackendMetricFilter::Call::OnClientInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnServerInitialMetadata;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerMessage;
-const NoInterceptor BackendMetricFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor BackendMetricFilter::Call::OnServerToClientMessage;
-const NoInterceptor BackendMetricFilter::Call::OnFinalize;
-
 namespace {
-absl::optional<std::string> MaybeSerializeBackendMetrics(
+std::optional<std::string> MaybeSerializeBackendMetrics(
     BackendMetricProvider* provider) {
-  if (provider == nullptr) return absl::nullopt;
+  if (provider == nullptr) return std::nullopt;
   BackendMetricData data = provider->GetBackendMetricData();
   upb::Arena arena;
   xds_data_orca_v3_OrcaLoadReport* response =
@@ -107,7 +98,7 @@ absl::optional<std::string> MaybeSerializeBackendMetrics(
     has_data = true;
   }
   if (!has_data) {
-    return absl::nullopt;
+    return std::nullopt;
   }
   size_t len;
   char* buf =
@@ -125,23 +116,25 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "BackendMetricFilter::Call::OnServerTrailingMetadata");
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-      LOG(INFO) << "[" << this << "] No BackendMetricProvider.";
-    }
+    GRPC_TRACE_LOG(backend_metric_filter, INFO)
+        << "[" << this << "] No BackendMetricProvider.";
     return;
   }
-  absl::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
+  std::optional<std::string> serialized = MaybeSerializeBackendMetrics(ctx);
   if (serialized.has_value() && !serialized->empty()) {
     GRPC_TRACE_LOG(backend_metric_filter, INFO)
         << "[" << this
         << "] Backend metrics serialized. size: " << serialized->size();
     md.Set(EndpointLoadMetricsBinMetadata(),
            Slice::FromCopiedString(std::move(*serialized)));
-  } else if (GRPC_TRACE_FLAG_ENABLED(backend_metric_filter)) {
-    LOG(INFO) << "[" << this << "] No backend metrics.";
+  } else {
+    GRPC_TRACE_LOG(backend_metric_filter, INFO)
+        << "[" << this << "] No backend metrics.";
   }
 }
 

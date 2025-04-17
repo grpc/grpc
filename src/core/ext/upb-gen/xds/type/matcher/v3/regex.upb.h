@@ -3,10 +3,11 @@
  *     xds/type/matcher/v3/regex.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
-#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_
+#ifndef XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_
+#define XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -79,6 +80,7 @@ UPB_INLINE const xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3
   const xds_type_matcher_v3_RegexMatcher_GoogleRE2* default_val = NULL;
   const xds_type_matcher_v3_RegexMatcher_GoogleRE2* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -102,6 +104,7 @@ UPB_INLINE upb_StringView xds_type_matcher_v3_RegexMatcher_regex(const xds_type_
 
 UPB_INLINE void xds_type_matcher_v3_RegexMatcher_set_google_re2(xds_type_matcher_v3_RegexMatcher *msg, xds_type_matcher_v3_RegexMatcher_GoogleRE2* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&xds__type__matcher__v3__RegexMatcher__GoogleRE2_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct xds_type_matcher_v3_RegexMatcher_GoogleRE2* xds_type_matcher_v3_RegexMatcher_mutable_google_re2(xds_type_matcher_v3_RegexMatcher* msg, upb_Arena* arena) {
@@ -161,4 +164,4 @@ UPB_INLINE char* xds_type_matcher_v3_RegexMatcher_GoogleRE2_serialize_ex(const x
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H_ */
+#endif  /* XDS_TYPE_MATCHER_V3_REGEX_PROTO_UPB_H__UPB_H_ */

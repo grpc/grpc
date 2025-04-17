@@ -18,23 +18,24 @@
 
 #include "test/core/test_util/test_config.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 
+#include <mutex>
+
 #include "absl/debugging/failure_signal_handler.h"
 #include "absl/log/globals.h"
+#include "absl/log/initialize.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/surface/init.h"
+#include "src/core/util/crash.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/stack_tracer.h"
@@ -52,6 +53,13 @@ static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
 #include <process.h>
 
 static unsigned seed(void) { return (unsigned)_getpid(); }
+#endif
+
+#ifdef GPR_WINDOWS
+// clang-format off
+#include <winsock2.h>
+#include <iphlpapi.h>
+// clang-format on
 #endif
 
 int64_t grpc_test_sanitizer_slowdown_factor() {
@@ -120,9 +128,20 @@ void ParseTestArgs(int* argc, char** argv) {
     ++i;
   }
 }
+
+// grpc-oss-only-begin
+std::once_flag log_flag;
+// grpc-oss-only-end
+
 }  // namespace
 
 void grpc_test_init(int* argc, char** argv) {
+  // grpc-oss-only-begin
+  std::call_once(log_flag, []() { absl::InitializeLog(); });
+  absl::SetGlobalVLogLevel(2);
+  absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
+  absl::SetStderrThreshold(absl::LogSeverityAtLeast::kInfo);
+  // grpc-oss-only-end
   gpr_log_verbosity_init();
   ParseTestArgs(argc, argv);
   grpc_core::testing::InitializeStackTracer(argv[0]);
@@ -159,6 +178,23 @@ bool grpc_wait_until_shutdown(int64_t time_s) {
 void grpc_disable_all_absl_logs() {
   absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   absl::SetVLogLevel("*grpc*/*", -1);
+}
+
+void grpc_prewarm_os_for_tests() {
+#ifdef GPR_WINDOWS
+  // On Windows RBE, c-ares' ares_init_options which internally calls
+  // GetAdaptersAddresses sometimes take >20s to return causing tests to
+  // timeout. This is a hack to prewarm the cache by calling that function
+  // during test setup.
+#define IPAA_INITIAL_BUF_SZ 15 * 1024
+  ULONG AddrFlags = 0;
+  ULONG Bufsz = IPAA_INITIAL_BUF_SZ;
+  ULONG ReqBufsz = IPAA_INITIAL_BUF_SZ;
+  IP_ADAPTER_ADDRESSES* ipaa;
+  ipaa = static_cast<IP_ADAPTER_ADDRESSES*>(malloc(Bufsz));
+  GetAdaptersAddresses(AF_UNSPEC, AddrFlags, NULL, ipaa, &ReqBufsz);
+  free(ipaa);
+#endif
 }
 
 namespace grpc {

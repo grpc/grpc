@@ -16,90 +16,57 @@
 
 
 # Explicitly ban select functions from being used in gRPC.
-#
 # Any new instance of a deprecated function being used in the code will be
 # flagged by the script. If there is a new instance of a deprecated function in
 # a Pull Request, then the Sanity tests will fail for the Pull Request.
-# We are currently working on clearing out the usage of deprecated functions in
-# the entire gRPC code base.
-# While our cleaning is in progress we have a temporary allow list. The allow
-# list has a list of files where clean up of deprecated functions is pending.
-# As we clean up the deprecated function from files, we will remove them from
-# the allow list.
-# It would be wise to do the file clean up and the altering of the allow list
-# in the same PR. This will make sure that any roll back of a clean up PR will
-# also alter the allow list and avoid build failures.
+# The allow list has a list of files where clean up of deprecated functions is
+# pending.
 
 import os
 import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), "../../.."))
 
+# More files may be added to the RUBY_PHP_ALLOW_LIST
+# if they belong to the PHP or RUBY folder.
+RUBY_PHP_ALLOW_LIST = [
+    "./include/grpc/support/log.h",
+    "./src/core/util/log.cc",
+    "./src/php/ext/grpc/call_credentials.c",
+    "./src/php/ext/grpc/channel.c",
+    "./src/ruby/ext/grpc/rb_call.c",
+    "./src/ruby/ext/grpc/rb_call_credentials.c",
+    "./src/ruby/ext/grpc/rb_channel.c",
+    "./src/ruby/ext/grpc/rb_event_thread.c",
+    "./src/ruby/ext/grpc/rb_grpc.c",
+    "./src/ruby/ext/grpc/rb_server.c",
+]
+
 #  Map of deprecated functions to allowlist files
 DEPRECATED_FUNCTION_TEMP_ALLOW_LIST = {
-    "gpr_log_severity": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.c",
-        "./src/ruby/ext/grpc/rb_grpc_imports.generated.h",
-    ],
-    "gpr_log(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/php/ext/grpc/call_credentials.c",
-        "./src/php/ext/grpc/channel.c",
-        "./src/ruby/ext/grpc/rb_call.c",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-        "./src/ruby/ext/grpc/rb_channel.c",
-        "./src/ruby/ext/grpc/rb_event_thread.c",
-        "./src/ruby/ext/grpc/rb_grpc.c",
-        "./src/ruby/ext/grpc/rb_server.c",
-    ],
-    "gpr_should_log(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-        "./src/ruby/ext/grpc/rb_call_credentials.c",
-    ],
-    "gpr_log_message(": [
-        "./src/core/util/android/log.cc",
-        "./src/core/util/linux/log.cc",
-        "./src/core/util/log.cc",
-        "./src/core/util/posix/log.cc",
-        "./src/core/util/windows/log.cc",
-    ],
-    "gpr_log_func_args": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
-    "gpr_set_log_function(": [
-        "./include/grpc/support/log.h",
-        "./src/core/util/log.cc",
-    ],
-    "GPR_ASSERT": [],
-    "gpr_assertion_failed": [],
-    "GPR_DEBUG_ASSERT": [],
-    "gpr_log_severity_string": [],
-    "gpr_set_log_verbosity(": [],
+    # These experimental logging functions are only for php and ruby.
+    "grpc_absl_log(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_int(": RUBY_PHP_ALLOW_LIST,
+    "grpc_absl_log_str(": RUBY_PHP_ALLOW_LIST,
+    # These have been deprecated.
+    # Most of these have been deleted.
+    # Putting this check here just to prevent people from
+    # submitting PRs with any of these commented out.
+    "gpr_assertion_failed": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log(": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log_func_args": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log_message": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_log_severity_string": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_set_log_function": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_set_log_verbosity": [],  # Safe to delete this entry after Nov 2024.
+    "gpr_should_log": [],  # Safe to delete this entry after Nov 2024.
+    "GPR_ASSERT": [],  # Safe to delete this entry after Nov 2024.
+    "GPR_DEBUG_ASSERT": [],  # Safe to delete this entry after Nov 2024.
 }
 
 errors = 0
 num_files = 0
 for root, dirs, files in os.walk("."):
-    if root.startswith(
-        "./tools/distrib/python/grpcio_tools"
-    ) or root.startswith("./src/python"):
-        continue
     for filename in files:
         num_files += 1
         path = os.path.join(root, filename)
@@ -115,7 +82,7 @@ for root, dirs, files in os.walk("."):
             if deprecated in text:
                 print(
                     (
-                        'Illegal use of "%s" in %s . Use absl functions instead.'
+                        'Illegal use of "%s" in %s. Use absl functions instead.'
                         % (deprecated, path)
                     )
                 )
@@ -129,5 +96,5 @@ if errors > 0:
 # https://github.com/grpc/grpc/issues/15381
 # Basically, a change rendered this script useless and we did not realize it.
 # This check ensures that this type of issue doesn't occur again.
-assert num_files > 18000  # we have more files
-# print(('Number of files checked : %d ' % (num_files)))
+assert num_files > 18000
+print("Number of files checked : %d " % (num_files))

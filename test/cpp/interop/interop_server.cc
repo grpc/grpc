@@ -16,15 +16,6 @@
 //
 //
 
-#include <fstream>
-#include <memory>
-#include <sstream>
-#include <thread>
-
-#include "absl/flags/flag.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 #include <grpcpp/ext/call_metric_recorder.h>
@@ -35,9 +26,17 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <thread>
+
+#include "absl/flags/flag.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -183,7 +182,7 @@ class TestServiceImpl : public TestService::Service {
   Status CacheableUnaryCall(ServerContext* context,
                             const SimpleRequest* /*request*/,
                             SimpleResponse* response) override {
-    gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
+    gpr_timespec ts = gpr_now(GPR_CLOCK_MONOTONIC);
     std::string timestamp = std::to_string(ts.tv_nsec);
     response->mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
     context->AddInitialMetadata("cache-control", "max-age=60, public");

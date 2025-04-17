@@ -735,12 +735,15 @@ extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 typedef unsigned(*gpr_cpu_current_cpu_type)(void);
 extern gpr_cpu_current_cpu_type gpr_cpu_current_cpu_import;
 #define gpr_cpu_current_cpu gpr_cpu_current_cpu_import
-typedef void(*gpr_log_type)(const char* file, int line, gpr_log_severity severity, const char* format, ...) GPR_PRINT_FORMAT_CHECK(4, 5);
-extern gpr_log_type gpr_log_import;
-#define gpr_log gpr_log_import
-typedef int(*gpr_should_log_type)(gpr_log_severity severity);
-extern gpr_should_log_type gpr_should_log_import;
-#define gpr_should_log gpr_should_log_import
+typedef void(*grpc_absl_log_type)(const char* file, int line, gpr_log_severity severity, const char* message_str);
+extern grpc_absl_log_type grpc_absl_log_import;
+#define grpc_absl_log grpc_absl_log_import
+typedef void(*grpc_absl_log_int_type)(const char* file, int line, gpr_log_severity severity, const char* message_str, intptr_t num);
+extern grpc_absl_log_int_type grpc_absl_log_int_import;
+#define grpc_absl_log_int grpc_absl_log_int_import
+typedef void(*grpc_absl_log_str_type)(const char* file, int line, gpr_log_severity severity, const char* message_str1, const char* message_str2);
+extern grpc_absl_log_str_type grpc_absl_log_str_import;
+#define grpc_absl_log_str grpc_absl_log_str_import
 typedef void(*gpr_log_verbosity_init_type)(void);
 extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 #define gpr_log_verbosity_init gpr_log_verbosity_init_import

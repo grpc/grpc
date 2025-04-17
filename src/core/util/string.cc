@@ -16,11 +16,12 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/util/string.h"
 
 #include <ctype.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <limits.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -29,12 +30,8 @@
 #include <time.h>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "absl/time/time.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
 char* gpr_strdup(const char* src) {
@@ -54,14 +51,14 @@ char* gpr_strdup(const char* src) {
 }
 
 std::string gpr_format_timespec(gpr_timespec tm) {
-  char time_buffer[35];
-  char ns_buffer[11];  // '.' + 9 digits of precision
-  struct tm* tm_info = localtime(reinterpret_cast<time_t*>(&tm.tv_sec));
-  strftime(time_buffer, sizeof(time_buffer), "%Y-%m-%dT%H:%M:%S", tm_info);
-  snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
+  const std::string time_str =
+      absl::FormatTime("%Y-%m-%d%ET%H:%M:%S", absl::FromUnixSeconds(tm.tv_sec),
+                       absl::LocalTimeZone());
   // This loop trims off trailing zeros by inserting a null character that the
   // right point. We iterate in chunks of three because we want 0, 3, 6, or 9
   // fractional digits.
+  char ns_buffer[11];  // '.' + 9 digits of precision
+  snprintf(ns_buffer, 11, ".%09d", tm.tv_nsec);
   for (int i = 7; i >= 1; i -= 3) {
     if (ns_buffer[i] == '0' && ns_buffer[i + 1] == '0' &&
         ns_buffer[i + 2] == '0') {
@@ -74,7 +71,7 @@ std::string gpr_format_timespec(gpr_timespec tm) {
       break;
     }
   }
-  return absl::StrCat(time_buffer, ns_buffer, "Z");
+  return absl::StrCat(time_str, ns_buffer, "Z");
 }
 
 struct dump_out {
@@ -186,7 +183,7 @@ int gpr_ltoa(long value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';
@@ -207,7 +204,7 @@ int int64_ttoa(int64_t value, char* output) {
 
   sign = value < 0 ? -1 : 1;
   while (value) {
-    output[i++] = static_cast<char>('0' + sign * (value % 10));
+    output[i++] = static_cast<char>('0' + (sign * (value % 10)));
     value /= 10;
   }
   if (sign < 0) output[i++] = '-';

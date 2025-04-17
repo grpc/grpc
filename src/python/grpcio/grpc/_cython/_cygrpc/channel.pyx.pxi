@@ -76,12 +76,6 @@ cdef class _CallState:
     with nogil:
       grpc_call_unref(self.c_call)
     self.c_call = NULL
-    self.maybe_delete_call_tracer()
-
-  cdef void maybe_delete_call_tracer(self) except *:
-    if not self.call_tracer_capsule:
-      return
-    _observability.delete_call_tracer(self.call_tracer_capsule)
 
   cdef void maybe_save_registered_method(self, bytes method_name) except *:
     with _observability.get_plugin() as plugin:

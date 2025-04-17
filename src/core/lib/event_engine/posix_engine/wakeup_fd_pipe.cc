@@ -12,15 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/crash.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"  // IWYU pragma: keep
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 #include <errno.h>
@@ -31,10 +30,9 @@
 #endif
 
 #include "src/core/lib/event_engine/posix_engine/wakeup_fd_pipe.h"
-#include "src/core/lib/gprpp/strerror.h"
+#include "src/core/util/strerror.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_POSIX_WAKEUP_FD
 
@@ -66,9 +64,17 @@ absl::Status PipeWakeupFd::Init() {
                         absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
   auto status = SetSocketNonBlocking(pipefd[0]);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return status;
+  }
   status = SetSocketNonBlocking(pipefd[1]);
-  if (!status.ok()) return status;
+  if (!status.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return status;
+  }
   SetWakeupFds(pipefd[0], pipefd[1]);
   return absl::OkStatus();
 }
@@ -145,5 +151,4 @@ absl::StatusOr<std::unique_ptr<WakeupFd>> PipeWakeupFd::CreatePipeWakeupFd() {
 
 #endif  //  GRPC_POSIX_WAKEUP_FD
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

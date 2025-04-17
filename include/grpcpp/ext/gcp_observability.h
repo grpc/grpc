@@ -17,11 +17,11 @@
 #ifndef GRPCPP_EXT_GCP_OBSERVABILITY_H
 #define GRPCPP_EXT_GCP_OBSERVABILITY_H
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpcpp/impl/grpc_library.h>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 namespace grpc {
 

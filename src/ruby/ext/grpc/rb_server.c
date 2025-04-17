@@ -20,6 +20,12 @@
 
 #include "rb_server.h"
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/log.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call.h"
 #include "rb_channel_args.h"
@@ -28,12 +34,6 @@
 #include "rb_grpc_imports.generated.h"
 #include "rb_server_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cServer is the ruby class that proxies grpc_server. */
 static VALUE grpc_rb_cServer = Qnil;
@@ -68,9 +68,9 @@ static void grpc_rb_server_shutdown_and_notify_internal(grpc_rb_server* server,
           server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL, NULL);
     }
     if (ev.type != GRPC_OP_COMPLETE) {
-      gpr_log(GPR_INFO,
-              "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:%d",
-              ev.type);
+      grpc_absl_log_int(
+          GPR_DEBUG,
+          "GRPC_RUBY: bad grpc_server_shutdown_and_notify result:", ev.type);
     }
   }
 }
@@ -192,7 +192,7 @@ struct server_request_call_args {
 
 static void shutdown_server_unblock_func(void* arg) {
   grpc_rb_server* server = (grpc_rb_server*)arg;
-  gpr_log(GPR_INFO, "GRPC_RUBY: shutdown_server_unblock_func");
+  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: shutdown_server_unblock_func");
   GRPC_RUBY_ASSERT(server->wrapped != NULL);
   grpc_event event;
   void* tag = &event;
@@ -202,10 +202,12 @@ static void shutdown_server_unblock_func(void* arg) {
   // cancelled all calls.
   event = grpc_completion_queue_pluck(server->queue, tag,
                                       gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  gpr_log(GPR_INFO,
-          "GRPC_RUBY: shutdown_server_unblock_func pluck event.type: %d "
-          "event.success: %d",
-          event.type, event.success);
+  grpc_absl_log_int(
+      GPR_DEBUG,
+      "GRPC_RUBY: shutdown_server_unblock_func pluck event.type: ", event.type);
+  grpc_absl_log_int(
+      GPR_DEBUG,
+      "GRPC_RUBY: shutdown_server_unblock_func event.success: ", event.success);
 }
 
 static VALUE grpc_rb_server_request_call_try(VALUE value_args) {

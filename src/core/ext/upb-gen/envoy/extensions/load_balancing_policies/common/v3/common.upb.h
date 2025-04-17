@@ -3,10 +3,11 @@
  *     envoy/extensions/load_balancing_policies/common/v3/common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_
-#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_
+#ifndef ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H__UPB_H_
+#define ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -93,6 +94,7 @@ UPB_INLINE const envoy_extensions_load_balancing_policies_common_v3_LocalityLbCo
   const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* default_val = NULL;
   const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -109,6 +111,7 @@ UPB_INLINE const envoy_extensions_load_balancing_policies_common_v3_LocalityLbCo
   const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* default_val = NULL;
   const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -120,6 +123,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbCon
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig *msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__ZoneAwareLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_mutable_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, upb_Arena* arena) {
@@ -132,6 +136,7 @@ UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbC
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_set_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig *msg, envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig__LocalityWeightedLbConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_LocalityWeightedLbConfig* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_mutable_locality_weighted_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg, upb_Arena* arena) {
@@ -187,6 +192,7 @@ UPB_INLINE const struct envoy_type_v3_Percent* envoy_extensions_load_balancing_p
   const struct envoy_type_v3_Percent* default_val = NULL;
   const struct envoy_type_v3_Percent* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -203,6 +209,7 @@ UPB_INLINE const struct google_protobuf_UInt64Value* envoy_extensions_load_balan
   const struct google_protobuf_UInt64Value* default_val = NULL;
   const struct google_protobuf_UInt64Value* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -212,13 +219,13 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbCon
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_clear_fail_traffic_on_panic(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_fail_traffic_on_panic(const envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg) {
   bool default_val = false;
   bool ret;
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -226,6 +233,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_LocalityLbCon
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_routing_enabled(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_mutable_routing_enabled(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
@@ -238,6 +246,7 @@ UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policie
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_min_cluster_size(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, struct google_protobuf_UInt64Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt64Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_mutable_min_cluster_size(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig* msg, upb_Arena* arena) {
@@ -249,7 +258,7 @@ UPB_INLINE struct google_protobuf_UInt64Value* envoy_extensions_load_balancing_p
   return sub;
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig_set_fail_traffic_on_panic(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_ZoneAwareLbConfig *msg, bool value) {
-  const upb_MiniTableField field = {3, UPB_SIZE(20, 9), 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {3, 9, 0, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
@@ -335,6 +344,7 @@ UPB_INLINE const struct google_protobuf_Duration* envoy_extensions_load_balancin
   const struct google_protobuf_Duration* default_val = NULL;
   const struct google_protobuf_Duration* ret;
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -351,6 +361,7 @@ UPB_INLINE const struct envoy_config_core_v3_RuntimeDouble* envoy_extensions_loa
   const struct envoy_config_core_v3_RuntimeDouble* default_val = NULL;
   const struct envoy_config_core_v3_RuntimeDouble* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -367,6 +378,7 @@ UPB_INLINE const struct envoy_type_v3_Percent* envoy_extensions_load_balancing_p
   const struct envoy_type_v3_Percent* default_val = NULL;
   const struct envoy_type_v3_Percent* ret;
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -378,6 +390,7 @@ UPB_INLINE bool envoy_extensions_load_balancing_policies_common_v3_SlowStartConf
 
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_slow_start_window(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct google_protobuf_Duration* value) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Duration_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Duration* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_slow_start_window(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
@@ -390,6 +403,7 @@ UPB_INLINE struct google_protobuf_Duration* envoy_extensions_load_balancing_poli
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_aggression(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct envoy_config_core_v3_RuntimeDouble* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(16, 24), 65, 1, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__core__v3__RuntimeDouble_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_aggression(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
@@ -402,6 +416,7 @@ UPB_INLINE struct envoy_config_core_v3_RuntimeDouble* envoy_extensions_load_bala
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_set_min_weight_percent(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig *msg, struct envoy_type_v3_Percent* value) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 32), 66, 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__type__v3__Percent_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_type_v3_Percent* envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig_mutable_min_weight_percent(envoy_extensions_load_balancing_policies_common_v3_SlowStartConfig* msg, upb_Arena* arena) {
@@ -469,6 +484,7 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_extensions_load_balan
   const struct google_protobuf_UInt32Value* default_val = NULL;
   const struct google_protobuf_UInt32Value* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -484,6 +500,7 @@ UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHas
 }
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_set_hash_balance_factor(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig *msg, struct google_protobuf_UInt32Value* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__UInt32Value_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig_mutable_hash_balance_factor(envoy_extensions_load_balancing_policies_common_v3_ConsistentHashingLbConfig* msg, upb_Arena* arena) {
@@ -501,4 +518,4 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_extensions_load_balancing_p
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H_ */
+#endif  /* ENVOY_EXTENSIONS_LOAD_BALANCING_POLICIES_COMMON_V3_COMMON_PROTO_UPB_H__UPB_H_ */

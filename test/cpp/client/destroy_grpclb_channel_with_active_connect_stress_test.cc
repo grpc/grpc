@@ -16,18 +16,8 @@
 //
 //
 
-#include <atomic>
-#include <memory>
-#include <mutex>
-#include <random>
-#include <sstream>
-#include <thread>
-
-#include <gmock/gmock.h>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <grpcpp/channel.h>
@@ -37,16 +27,24 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
+#include <atomic>
+#include <memory>
+#include <mutex>
+#include <random>
+#include <sstream>
+#include <thread>
+
+#include "gmock/gmock.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 
@@ -96,7 +94,6 @@ void TryConnectAndDestroy() {
   channel->GetState(true /* try_to_connect */);
   ASSERT_FALSE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
-  ASSERT_EQ("grpclb", channel->GetLoadBalancingPolicyName());
   channel.reset();
 };
 

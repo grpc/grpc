@@ -19,13 +19,13 @@
 #ifndef GRPC_TEST_CPP_UTIL_CLI_CALL_H
 #define GRPC_TEST_CPP_UTIL_CLI_CALL_H
 
-#include <map>
-
 #include <grpcpp/channel.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/generic_stub.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <map>
 
 namespace grpc {
 
@@ -80,7 +80,7 @@ class CliCall final {
   void WritesDoneAndWait();
 
   // Thread-safe Read. Blockingly receive a generic response message. Notify
-  // writes if they are finished when this read is waiting for a resposne.
+  // writes if they are finished when this read is waiting for a response.
   bool ReadAndMaybeNotifyWrite(
       std::string* response,
       IncomingMetadataContainer* server_initial_metadata);
@@ -97,7 +97,7 @@ class CliCall final {
   grpc::CompletionQueue cq_;
   gpr_mu write_mu_;
   gpr_cv write_cv_;  // Protected by write_mu_;
-  bool write_done_;  // Portected by write_mu_;
+  bool write_done_;  // Protected by write_mu_;
 };
 
 }  // namespace testing

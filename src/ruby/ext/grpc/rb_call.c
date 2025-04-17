@@ -20,16 +20,16 @@
 
 #include "rb_call.h"
 
+#include <grpc/grpc.h>
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+
 #include "rb_byte_buffer.h"
 #include "rb_call_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
 /* grpc_rb_cCall is the Call class whose instances proxy grpc_call. */
 static VALUE grpc_rb_cCall;
@@ -809,7 +809,7 @@ struct call_run_batch_args {
 };
 
 static void cancel_call_unblock_func(void* arg) {
-  gpr_log(GPR_INFO, "GRPC_RUBY: cancel_call_unblock_func");
+  grpc_absl_log(GPR_DEBUG, "GRPC_RUBY: cancel_call_unblock_func");
   grpc_call* call = (grpc_call*)arg;
   grpc_call_cancel(call, NULL);
 }

@@ -3,10 +3,11 @@
  *     xds/annotations/v3/sensitive.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H_
-#define XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H_
+#ifndef XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H__UPB_H_
+#define XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -54,4 +55,4 @@ UPB_INLINE void xds_annotations_v3_set_sensitive(struct google_protobuf_FieldOpt
 
 #include "upb/port/undef.inc"
 
-#endif  /* XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H_ */
+#endif  /* XDS_ANNOTATIONS_V3_SENSITIVE_PROTO_UPB_H__UPB_H_ */

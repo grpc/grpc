@@ -15,17 +15,8 @@
 //
 //
 
-#include <atomic>
-#include <functional>
-#include <memory>
-#include <utility>
-
-#include "absl/log/check.h"
-#include "absl/status/status.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
@@ -33,11 +24,18 @@
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/impl/completion_queue_tag.h>
 
+#include <atomic>
+#include <functional>
+#include <memory>
+#include <utility>
+
+#include "absl/log/check.h"
+#include "absl/status/status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/time.h"
 
 namespace grpc {
 
@@ -106,7 +104,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
  private:
   void OnCQAlarm(grpc_error_handle error) {
     cq_armed_.store(false);
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     // Preserve the cq and reset the cq_ so that the alarm
     // can be reset when the alarm tag is delivered.
@@ -121,7 +118,6 @@ class AlarmImpl : public grpc::internal::CompletionQueueTag {
 
   void OnCallbackAlarm(bool is_ok) {
     callback_armed_.store(false);
-    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     callback_(is_ok);
     Unref();

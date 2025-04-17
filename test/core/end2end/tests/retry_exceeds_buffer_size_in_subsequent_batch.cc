@@ -16,16 +16,15 @@
 //
 //
 
-#include <string>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <optional>
+#include <string>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -37,7 +36,8 @@ namespace {
 // - buffer size set to 100 KiB (larger than initial metadata)
 // - client sends a 100 KiB message
 // - first attempt gets ABORTED but is not retried
-CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
+CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInSubsequentBatch) {
+  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(
       ChannelArgs()
@@ -59,7 +59,7 @@ CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
           .Set(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE, 102400));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   c.NewBatch(1).SendInitialMetadata({});
   Expect(1, true);
   Step();
@@ -75,8 +75,8 @@ CORE_END2END_TEST(RetryTest, RetryExceedsBufferSizeInSubsequentBatch) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})

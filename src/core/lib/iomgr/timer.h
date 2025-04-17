@@ -19,11 +19,11 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_TIMER_H
 #define GRPC_SRC_CORE_LIB_IOMGR_TIMER_H
 
-#include <cstdint>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+
+#include <cstdint>
 
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr.h"

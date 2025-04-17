@@ -16,15 +16,13 @@
 //
 //
 
+#include <grpc/support/alloc.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <memory>
 
 #include "gtest/gtest.h"
-
-#include <grpc/support/alloc.h>
-
 #include "test/core/test_util/test_config.h"
 
 TEST(AllocTest, MallocAligned) {

@@ -16,37 +16,29 @@
 //
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/http/client_authority_filter.h"
+
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 
 #include <functional>
 #include <memory>
+#include <optional>
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/security/transport/auth_filters.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
 
-const NoInterceptor ClientAuthorityFilter::Call::OnServerInitialMetadata;
-const NoInterceptor ClientAuthorityFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerMessage;
-const NoInterceptor ClientAuthorityFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor ClientAuthorityFilter::Call::OnServerToClientMessage;
-const NoInterceptor ClientAuthorityFilter::Call::OnFinalize;
-
 absl::StatusOr<std::unique_ptr<ClientAuthorityFilter>>
 ClientAuthorityFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
-  absl::optional<absl::string_view> default_authority =
+  std::optional<absl::string_view> default_authority =
       args.GetString(GRPC_ARG_DEFAULT_AUTHORITY);
   if (!default_authority.has_value()) {
     return absl::InvalidArgumentError(
@@ -59,6 +51,8 @@ ClientAuthorityFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 void ClientAuthorityFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ClientAuthorityFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ClientAuthorityFilter::Call::OnClientInitialMetadata");
   // If no authority is set, set the default authority.
   if (md.get_pointer(HttpAuthorityMetadata()) == nullptr) {
     md.Set(HttpAuthorityMetadata(), filter->default_authority_.Ref());
@@ -79,11 +73,13 @@ void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>();
+      .Before<ClientAuthFilter>()
+      .Before<LegacyClientAuthFilter>();
 }
 
 }  // namespace grpc_core

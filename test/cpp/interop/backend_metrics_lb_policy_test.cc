@@ -18,20 +18,19 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
-#include <memory>
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
 
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/sync.h"
+#include <memory>
+#include <thread>
+
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/core/test_util/port.h"
@@ -114,7 +113,7 @@ TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   SimpleResponse res;
   grpc_core::Mutex mu;
   grpc_core::CondVar cond;
-  absl::optional<Status> status;
+  std::optional<Status> status;
 
   stub.async()->UnaryCall(&ctx, &req, &res, [&](auto s) {
     grpc_core::MutexLock lock(&mu);

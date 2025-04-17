@@ -542,7 +542,7 @@ async def _handle_unary_unary_rpc(object method_handler,
         request_raw,
     )
 
-    # Creates a dedecated ServicerContext
+    # Creates a dedicated ServicerContext
     cdef _ServicerContext servicer_context = _ServicerContext(
         rpc_state,
         None,
@@ -575,7 +575,7 @@ async def _handle_unary_stream_rpc(object method_handler,
         request_raw,
     )
 
-    # Creates a dedecated ServicerContext
+    # Creates a dedicated ServicerContext
     cdef _ServicerContext servicer_context = _ServicerContext(
         rpc_state,
         method_handler.request_deserializer,
@@ -623,7 +623,7 @@ cdef class _MessageReceiver:
 async def _handle_stream_unary_rpc(object method_handler,
                                    RPCState rpc_state,
                                    object loop):
-    # Creates a dedecated ServicerContext
+    # Creates a dedicated ServicerContext
     cdef _ServicerContext servicer_context = _ServicerContext(
         rpc_state,
         method_handler.request_deserializer,
@@ -655,7 +655,7 @@ async def _handle_stream_unary_rpc(object method_handler,
 async def _handle_stream_stream_rpc(object method_handler,
                                     RPCState rpc_state,
                                     object loop):
-    # Creates a dedecated ServicerContext
+    # Creates a dedicated ServicerContext
     cdef _ServicerContext servicer_context = _ServicerContext(
         rpc_state,
         method_handler.request_deserializer,
@@ -871,7 +871,7 @@ cdef class _ConcurrentRpcLimiter:
 
     def __cinit__(self, int maximum_concurrent_rpcs):
         if maximum_concurrent_rpcs <= 0:
-            raise ValueError("maximum_concurrent_rpcs should be a postive integer")
+            raise ValueError("maximum_concurrent_rpcs should be a positive integer")
         self._maximum_concurrent_rpcs = maximum_concurrent_rpcs
         self._active_rpcs = 0
         self.limiter_concurrency_exceeded = False

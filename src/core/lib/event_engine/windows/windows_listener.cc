@@ -19,19 +19,18 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
-
+#include "src/core/lib/event_engine/extensions/iomgr_compatible.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/event_engine/windows/windows_listener.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 // ---- SinglePortSocketListener::AsyncIOState ----
 
@@ -259,10 +258,8 @@ WindowsEventEngineListener::SinglePortSocketListener::PrepareListenerSocket(
     SOCKET sock, const EventEngine::ResolvedAddress& addr) {
   auto fail = [&](absl::Status error) -> absl::Status {
     CHECK(!error.ok());
-    error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket", &error,
-                                      1),
-        grpc_core::StatusIntProperty::kFd, static_cast<intptr_t>(sock));
+    error = GRPC_ERROR_CREATE_REFERENCING("Failed to prepare server socket",
+                                          &error, 1);
     if (sock != INVALID_SOCKET) closesocket(sock);
     return error;
   };
@@ -310,7 +307,7 @@ WindowsEventEngineListener::WindowsEventEngineListener(
 
 WindowsEventEngineListener::~WindowsEventEngineListener() {
   GRPC_TRACE_LOG(event_engine, INFO) << "~WindowsEventEngineListener::" << this;
-  ShutdownListeners();
+  Shutdown();
   on_shutdown_(absl::OkStatus());
 }
 
@@ -370,7 +367,7 @@ absl::Status WindowsEventEngineListener::Start() {
   return absl::OkStatus();
 }
 
-void WindowsEventEngineListener::ShutdownListeners() {
+void WindowsEventEngineListener::Shutdown() {
   grpc_core::MutexLock lock(&port_listeners_mu_);
   if (std::exchange(listeners_shutdown_, true)) return;
   // Shut down each port listener before destroying this EventEngine::Listener
@@ -398,7 +395,6 @@ WindowsEventEngineListener::AddSinglePortSocketListener(
   return single_port_listener_ptr;
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GPR_WINDOWS

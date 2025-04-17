@@ -16,16 +16,15 @@
 //
 //
 
-#include <memory>
-
-#include "absl/types/optional.h"
-#include "gtest/gtest.h"
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
+#include <memory>
+#include <optional>
+
+#include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -34,7 +33,8 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt gets ABORTED
 // - second attempt gets ABORTED but does not retry
-CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
+CORE_END2END_TEST(RetryTests, RetryTooManyAttempts) {
+  if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -54,7 +54,7 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
       "}"));
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Seconds(5)).Create();
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;
   IncomingMessage server_message;
@@ -68,8 +68,8 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
   auto s = RequestCall(101);
   Expect(101, true);
   Step();
-  EXPECT_NE(s.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close;
   s.NewBatch(102)
       .SendInitialMetadata({})
@@ -81,8 +81,8 @@ CORE_END2END_TEST(RetryTest, RetryTooManyAttempts) {
 
   Expect(201, true);
   Step();
-  EXPECT_NE(s2.GetPeer(), absl::nullopt);
-  EXPECT_NE(c.GetPeer(), absl::nullopt);
+  EXPECT_NE(s2.GetPeer(), std::nullopt);
+  EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingCloseOnServer client_close2;
   s2.NewBatch(202)
       .SendInitialMetadata({})

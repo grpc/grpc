@@ -18,24 +18,22 @@
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_RETRY_SERVICE_CONFIG_H
 
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 #include <stdint.h>
 
 #include <memory>
+#include <optional>
 
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
+#include "src/core/call/status_util.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/channel/status_util.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/service_config/service_config_parser.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 
 namespace grpc_core {
 namespace internal {
@@ -63,7 +61,7 @@ class RetryMethodConfig final : public ServiceConfigParser::ParsedConfig {
   StatusCodeSet retryable_status_codes() const {
     return retryable_status_codes_;
   }
-  absl::optional<Duration> per_attempt_recv_timeout() const {
+  std::optional<Duration> per_attempt_recv_timeout() const {
     return per_attempt_recv_timeout_;
   }
 
@@ -71,13 +69,26 @@ class RetryMethodConfig final : public ServiceConfigParser::ParsedConfig {
   void JsonPostLoad(const Json& json, const JsonArgs& args,
                     ValidationErrors* errors);
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const RetryMethodConfig& config) {
+    sink.Append(absl::StrCat(
+        "max_attempts:", config.max_attempts_, " initial_backoff:",
+        config.initial_backoff_, " max_backoff:", config.max_backoff_,
+        " backoff_multiplier:", config.backoff_multiplier_,
+        " retryable_status_codes:", config.retryable_status_codes_.ToString(),
+        " per_attempt_recv_timeout:",
+        config.per_attempt_recv_timeout_.has_value()
+            ? absl::StrCat(*config.per_attempt_recv_timeout_)
+            : "none"));
+  }
+
  private:
   int max_attempts_ = 0;
   Duration initial_backoff_;
   Duration max_backoff_;
   float backoff_multiplier_ = 0;
   StatusCodeSet retryable_status_codes_;
-  absl::optional<Duration> per_attempt_recv_timeout_;
+  std::optional<Duration> per_attempt_recv_timeout_;
 };
 
 class RetryServiceConfigParser final : public ServiceConfigParser::Parser {

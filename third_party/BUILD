@@ -1,3 +1,5 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+
 exports_files([
     "gtest.BUILD",
     "zlib.BUILD",
@@ -16,15 +18,32 @@ exports_files([
 
 package(default_visibility = ["//:__subpackages__"])
 
+bool_flag(
+    name = "grpc_use_openssl",
+    build_setting_default = False,
+    visibility = ["//visibility:public"],
+)
+
+config_setting(
+    name = "grpc_use_openssl_setting",
+    flag_values = {":grpc_use_openssl": "true"},
+)
+
 alias(
     name = "libssl",
-    actual = "@boringssl//:ssl",
+    actual = select({
+        ":grpc_use_openssl_setting": "@openssl//:ssl",
+        "//conditions:default": "@boringssl//:ssl",
+    }),
     tags = ["manual"],
 )
 
 alias(
     name = "libcrypto",
-    actual = "@boringssl//:crypto",
+    actual = select({
+        ":grpc_use_openssl_setting": "@openssl//:crypto",
+        "//conditions:default": "@boringssl//:crypto",
+    }),
     tags = ["manual"],
 )
 
@@ -68,6 +87,12 @@ alias(
 alias(
     name = "gtest",
     actual = "@com_google_googletest//:gtest",
+    tags = ["manual"],
+)
+
+alias(
+    name = "gtest_main",
+    actual = "@com_google_googletest//:gtest_main",
     tags = ["manual"],
 )
 
@@ -200,17 +225,5 @@ alias(
 alias(
     name = "googleapis_logging_cc_proto",
     actual = "@com_google_googleapis//google/logging/v2:logging_cc_proto",
-    tags = ["manual"],
-)
-
-alias(
-    name = "twisted",
-    actual = "@com_github_twisted_twisted//:twisted",
-    tags = ["manual"],
-)
-
-alias(
-    name = "yaml",
-    actual = "@com_github_yaml_pyyaml//:yaml",
     tags = ["manual"],
 )

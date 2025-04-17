@@ -20,8 +20,8 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/client_channel/subchannel.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 

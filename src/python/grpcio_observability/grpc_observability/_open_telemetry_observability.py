@@ -383,7 +383,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
         try:
             _cyobservability.cyobservability_init(self._exporter)
-        # TODO(xuanwn): Use specific exceptons
+        # TODO(xuanwn): Use specific exceptions
         except Exception as e:  # pylint: disable=broad-except
             _LOGGER.exception("Initiate observability failed with: %s", e)
 
@@ -437,11 +437,6 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             exchange_labels, self._get_identifier()
         )
         return capsule
-
-    def delete_client_call_tracer(
-        self, client_call_tracer: ClientCallTracerCapsule
-    ) -> None:
-        _cyobservability.delete_client_call_tracer(client_call_tracer)
 
     def save_trace_context(
         self, trace_id: str, span_id: str, is_sampled: bool

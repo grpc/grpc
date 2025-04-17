@@ -27,12 +27,11 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/wakeup_fd_pipe.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/strerror.h"
 
 static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
@@ -44,9 +43,17 @@ static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   }
   grpc_error_handle err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
-  if (!err.ok()) return err;
+  if (!err.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return err;
+  }
   err = grpc_set_socket_nonblocking(pipefd[1], 1);
-  if (!err.ok()) return err;
+  if (!err.ok()) {
+    close(pipefd[0]);
+    close(pipefd[1]);
+    return err;
+  }
   fd_info->read_fd = pipefd[0];
   fd_info->write_fd = pipefd[1];
   return absl::OkStatus();
@@ -99,4 +106,4 @@ const grpc_wakeup_fd_vtable grpc_pipe_wakeup_fd_vtable = {
     pipe_init, pipe_consume, pipe_wakeup, pipe_destroy,
     pipe_check_availability};
 
-#endif  // GPR_POSIX_WAKUP_FD
+#endif  // GRPC_POSIX_WAKEUP_FD

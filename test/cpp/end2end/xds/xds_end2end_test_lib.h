@@ -16,22 +16,6 @@
 #ifndef GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 #define GRPC_TEST_CPP_END2END_XDS_XDS_END2END_TEST_LIB_H
 
-#include <memory>
-#include <set>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
@@ -40,19 +24,35 @@
 #include <grpcpp/ext/server_metric_recorder.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include <memory>
+#include <optional>
+#include <set>
+#include <string>
+#include <thread>
+#include <vector>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "envoy/config/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/http/rbac/v3/rbac.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/credentials/transport/fake/fake_credentials.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/cpp/server/secure_server_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_filter_rbac.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/orca_load_report.pb.h"
-#include "src/proto/grpc/testing/xds/v3/rbac.pb.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/cpp/end2end/counted_service.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/end2end/xds/xds_server.h"
 #include "test/cpp/end2end/xds/xds_utils.h"
+#include "xds/data/orca/v3/orca_load_report.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -211,14 +211,27 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   class ServerThread {
    public:
     // A status notifier for xDS-enabled servers.
+    //
+    // TODO(yashykt): This notifier records the most recent state seen
+    // for every URI and then lets the caller wait until the status for
+    // that URI is the expected one.  If we are expecting an update that
+    // has the same status as the previous one, then we really have no
+    // way of knowing whether the second update has actually been sent.
+    // A better approach here would be to queue the updates received by
+    // the notifier and then have a method to get the next update from
+    // the queue, if any.
+    // Also, we should change the callers to check not just the status
+    // but also the corresponding error message, so that we can verify
+    // that we're emitting useful error messages for our users.
     class XdsServingStatusNotifier
         : public grpc::XdsServerServingStatusNotifierInterface {
      public:
       void OnServingStatusUpdate(std::string uri,
                                  ServingStatusUpdate update) override;
 
-      void WaitOnServingStatusChange(std::string uri,
-                                     grpc::StatusCode expected_status);
+      GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+          const std::string& uri, grpc::StatusCode expected_status,
+          absl::Duration timeout = absl::Seconds(10));
 
      private:
       grpc_core::Mutex mu_;
@@ -246,6 +259,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int port() const { return port_; }
 
     XdsServingStatusNotifier* notifier() { return &notifier_; }
+
+    GRPC_MUST_USE_RESULT bool WaitOnServingStatusChange(
+        grpc::StatusCode expected_status,
+        absl::Duration timeout = absl::Seconds(10)) {
+      return notifier_.WaitOnServingStatusChange(
+          grpc_core::LocalIpAndPort(port_), expected_status, timeout);
+    }
 
     void set_allow_put_requests(bool allow_put_requests) {
       allow_put_requests_ = allow_put_requests;
@@ -303,12 +323,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
         if (request->has_param() && request->param().has_backend_metrics()) {
           const auto& request_metrics = request->param().backend_metrics();
           auto* recorder = context->ExperimentalGetCallMetricRecorder();
-          for (const auto& p : request_metrics.named_metrics()) {
-            char* key = static_cast<char*>(
-                grpc_call_arena_alloc(context->c_call(), p.first.size() + 1));
-            strncpy(key, p.first.data(), p.first.size());
-            key[p.first.size()] = '\0';
-            recorder->RecordNamedMetric(key, p.second);
+          if (request_metrics.cpu_utilization() != 0) {
+            recorder->RecordCpuUtilizationMetric(
+                request_metrics.cpu_utilization());
+          }
+          if (request_metrics.mem_utilization() != 0) {
+            recorder->RecordMemoryUtilizationMetric(
+                request_metrics.mem_utilization());
+          }
+          if (request_metrics.application_utilization() != 0) {
+            recorder->RecordApplicationUtilizationMetric(
+                request_metrics.application_utilization());
+          }
+          for (const auto& [key, value] : request_metrics.named_metrics()) {
+            char* key_copy = static_cast<char*>(
+                grpc_call_arena_alloc(context->c_call(), key.size() + 1));
+            strncpy(key_copy, key.data(), key.size());
+            key_copy[key.size()] = '\0';
+            recorder->RecordNamedMetric(key_copy, value);
           }
         }
         const auto status = TestMultipleServiceImpl<RpcService>::Echo(
@@ -475,16 +507,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       size_t backend_idx,
       ::envoy::config::core::v3::HealthStatus health_status =
           ::envoy::config::core::v3::HealthStatus::UNKNOWN,
-      int lb_weight = 1, std::vector<size_t> additional_backend_indxes = {},
-      absl::string_view hostname = "") {
+      int lb_weight = 1, std::vector<size_t> additional_backend_indexes = {},
+      absl::string_view hostname = "",
+      const std::map<std::string, std::string /*JSON*/>& metadata = {}) {
     std::vector<int> additional_ports;
-    additional_ports.reserve(additional_backend_indxes.size());
-    for (size_t idx : additional_backend_indxes) {
+    additional_ports.reserve(additional_backend_indexes.size());
+    for (size_t idx : additional_backend_indexes) {
       additional_ports.push_back(backends_[idx]->port());
     }
     return EdsResourceArgs::Endpoint(backends_[backend_idx]->port(),
                                      health_status, lb_weight, additional_ports,
-                                     hostname);
+                                     hostname, metadata);
   }
 
   // Creates a vector of endpoints for a specified range of backends,
@@ -497,7 +530,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns an endpoint for an unused port, for use in constructing an
   // EDS resource.
-  EdsResourceArgs::Endpoint MakeNonExistantEndpoint() {
+  EdsResourceArgs::Endpoint MakeNonExistentEndpoint() {
     return EdsResourceArgs::Endpoint(grpc_pick_unused_port_or_die());
   }
 
@@ -567,7 +600,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // and channel args for the XdsClient.  Then calls ResetStub().
   // All tests must call this exactly once at the start of the test.
   // If credentials is null, fake credentials will be used.
-  void InitClient(absl::optional<XdsBootstrapBuilder> builder = absl::nullopt,
+  void InitClient(std::optional<XdsBootstrapBuilder> builder = std::nullopt,
                   std::string lb_expected_authority = "",
                   int xds_resource_does_not_exist_timeout_ms = 0,
                   std::string balancer_authority_override = "",
@@ -610,9 +643,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     int client_cancel_after_us = 0;
     bool skip_cancelled_check = false;
     StatusCode server_expected_error = StatusCode::OK;
-    absl::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
+    std::optional<xds::data::orca::v3::OrcaLoadReport> backend_metrics;
     bool server_notify_client_when_started = false;
     bool echo_host_from_authority_header = false;
+    bool echo_metadata_initially = false;
 
     RpcOptions() {}
 
@@ -673,7 +707,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     }
 
     RpcOptions& set_backend_metrics(
-        absl::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
+        std::optional<xds::data::orca::v3::OrcaLoadReport> metrics) {
       backend_metrics = std::move(metrics);
       return *this;
     }
@@ -686,6 +720,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
     RpcOptions& set_echo_host_from_authority_header(bool value) {
       echo_host_from_authority_header = value;
+      return *this;
+    }
+
+    RpcOptions& set_echo_metadata_initially(bool value) {
+      echo_metadata_initially = value;
       return *this;
     }
 
@@ -740,8 +779,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
                            absl::string_view expected_message_regex,
                            const RpcOptions& rpc_options = RpcOptions());
 
+  // Sends RPCs until either a timeout or an RPC fail, in which case the
+  // failure must match the specified status and message regex.
+  void SendRpcsUntilFailure(const grpc_core::DebugLocation& debug_location,
+                            StatusCode expected_status,
+                            absl::string_view expected_message_regex,
+                            int timeout_ms = 15000,
+                            const RpcOptions& rpc_options = RpcOptions());
+
   // Sends num_rpcs RPCs, counting how many of them fail with a message
-  // matching the specfied expected_message_prefix.
+  // matching the specified expected_message_prefix.
   // Any failure with a non-matching status or message is a test failure.
   size_t SendRpcsAndCountFailuresWithMessage(
       const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
@@ -779,7 +826,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     grpc_core::Duration elapsed_time;
     EchoResponse response;
   };
-  std::vector<ConcurrentRpc> SendConcurrentRpcs(
+  std::vector<std::unique_ptr<ConcurrentRpc>> SendConcurrentRpcs(
       const grpc_core::DebugLocation& debug_location,
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options);
@@ -836,14 +883,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // xDS server, or until a timeout expires.
 
   // Sends RPCs until get_state() returns a response.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForNack(
+  // TODO(roth): Does this actually need to send RPCs, or can it just
+  // use a condition variable to wait?  I suspect that we need to be
+  // sending RPCs for polling reasons, but that should go away when we
+  // finish the EventEngine migration.  Once that's done, try changing
+  // this to not send RPCs.
+  // Also, consider refactoring to also support waiting for ACKs, since
+  // there are several use-cases where tests are doing that.
+  std::optional<AdsServiceImpl::ResponseState> WaitForNack(
       const grpc_core::DebugLocation& debug_location,
-      std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+      std::function<std::optional<AdsServiceImpl::ResponseState>()> get_state,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE);
 
   // Sends RPCs until an LDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForLdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -854,7 +908,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until an RDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForRdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -865,7 +919,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until a CDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForCdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -876,7 +930,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   }
 
   // Sends RPCs until an EDS NACK is seen.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForEdsNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions()) {
     return WaitForNack(
@@ -887,7 +941,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Convenient front-end to wait for RouteConfiguration to be NACKed,
   // regardless of whether it's sent in LDS or RDS.
-  absl::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
+  std::optional<AdsServiceImpl::ResponseState> WaitForRouteConfigNack(
       const grpc_core::DebugLocation& debug_location,
       const RpcOptions& rpc_options = RpcOptions(),
       StatusCode expected_status = StatusCode::UNAVAILABLE) {
@@ -899,7 +953,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Convenient front-end for accessing xDS response state for a
   // RouteConfiguration, regardless of whether it's sent in LDS or RDS.
-  absl::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
+  std::optional<AdsServiceImpl::ResponseState> RouteConfigurationResponseState(
       BalancerServerThread* balancer) const {
     AdsServiceImpl* ads_service = balancer->ads_service();
     if (GetParam().enable_rds_testing()) {
@@ -937,7 +991,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
   // sigma (standard deviation) to cover the probability area of 99.99994%. In
   // another word, for a sample with size "n" probability "p" error-tolerance
   // "k", we want the error always land within 5.00 sigma. The sigma of
-  // binominal distribution and be computed as sqrt(np(1-p)). Hence, we have
+  // binomial distribution and be computed as sqrt(np(1-p)). Hence, we have
   // the equation:
   //
   //   kn <= 5.00 * sqrt(np(1-p))
@@ -957,7 +1011,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns a regex that can be matched against an RPC failure status
   // message for a connection failure.
-  static std::string MakeConnectionFailureRegex(absl::string_view prefix);
+  static std::string MakeConnectionFailureRegex(
+      absl::string_view prefix, bool has_resolution_note = true);
+
+  // Returns a regex that can be matched against an RPC failure status
+  // message for a Tls handshake failure.
+  static std::string MakeTlsHandshakeFailureRegex(absl::string_view prefix);
 
   // Returns a private key pair, read from local files.
   static grpc_core::PemKeyCertPairList ReadTlsIdentityPair(
@@ -970,11 +1029,24 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
 
   // Returns XdsCredentials with mTLS fallback creds.
   static std::shared_ptr<ChannelCredentials> CreateXdsChannelCredentials();
+  static std::shared_ptr<ChannelCredentials> CreateTlsChannelCredentials();
 
   // Creates various types of server credentials.
   static std::shared_ptr<ServerCredentials> CreateFakeServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateMtlsServerCredentials();
   static std::shared_ptr<ServerCredentials> CreateTlsServerCredentials();
+
+  // event_engine_scope_ always has to be at the top of the list to make sure
+  // that all other objects are destroyed before this and other event engine
+  // refs are released.
+  // We are using DefaultEventEngineScope to make sure that all work from the
+  // current test is done before the next test starts. Without this, we run into
+  // errors such as https://github.com/grpc/grpc/issues/38588. Note that we are
+  // using all refs to current event engine going down to 0 as a proxy for
+  // checking that all work from the current test is done, but this is not a
+  // guaranteed way since there might still be threads that are not using event
+  // engine but are still accessing/modifying the system state.
+  grpc_event_engine::experimental::DefaultEventEngineScope scoped_event_engine_;
 
   std::unique_ptr<BalancerServerThread> balancer_;
 

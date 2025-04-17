@@ -16,6 +16,10 @@
 
 // IWYU pragma: no_include <sys/socket.h>
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>  // IWYU pragma: keep
+#include <grpc/event_engine/slice_buffer.h>
+
 #include <cstring>
 #include <memory>
 #include <string>
@@ -24,11 +28,6 @@
 #include "absl/functional/any_invocable.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/port.h>  // IWYU pragma: keep
-#include <grpc/event_engine/slice_buffer.h>
-
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/seq.h"
@@ -156,7 +155,7 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -168,7 +167,7 @@ TEST_F(PromiseEndpointTest, OneReadFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadsSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadsSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -293,7 +292,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -305,7 +304,7 @@ TEST_F(PromiseEndpointTest, OneReadSliceFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadSlicesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadSlicesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -430,7 +429,7 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   EXPECT_CALL(mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -442,7 +441,7 @@ TEST_F(PromiseEndpointTest, OneReadByteFailed) {
   activity.Deactivate();
 }
 
-TEST_F(PromiseEndpointTest, MutipleReadBytesSuccessful) {
+TEST_F(PromiseEndpointTest, MultipleReadBytesSuccessful) {
   MockActivity activity;
   const std::string kBuffer = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08};
   activity.Activate();
@@ -753,7 +752,7 @@ TEST_F(MultiplePromiseEndpointTest, JoinOneReadSuccessfulOneReadFailed) {
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
@@ -783,14 +782,14 @@ TEST_F(MultiplePromiseEndpointTest, JoinReadsFailed) {
   EXPECT_CALL(first_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));
   EXPECT_CALL(second_mock_endpoint_, Read)
       .WillOnce(WithArgs<0>(
           [this](absl::AnyInvocable<void(absl::Status)> read_callback) {
-            // Mock EventEngine enpoint read fails.
+            // Mock EventEngine endpoint read fails.
             read_callback(this->kDummyErrorStatus);
             return false;
           }));

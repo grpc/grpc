@@ -15,16 +15,16 @@
 
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
 
+#include <grpcpp/security/tls_certificate_provider.h>
+
 #include <functional>
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
@@ -33,17 +33,15 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpcpp/security/tls_certificate_provider.h>
-
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/ext/filters/http/server/http_server_filter.h"
-#include "src/core/lib/gprpp/env.h"
 #include "src/core/server/server.h"
+#include "src/core/util/env.h"
 #include "src/core/util/tmpfile.h"
 #include "src/core/xds/grpc/xds_client_grpc.h"
 #include "src/core/xds/xds_client/xds_channel_args.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/credentials.h"
@@ -72,15 +70,26 @@ void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
   cond_.Signal();
 }
 
-void XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
-    WaitOnServingStatusChange(std::string uri,
-                              grpc::StatusCode expected_status) {
+bool XdsEnd2endTest::ServerThread::XdsServingStatusNotifier::
+    WaitOnServingStatusChange(const std::string& uri,
+                              grpc::StatusCode expected_status,
+                              absl::Duration timeout) {
   grpc_core::MutexLock lock(&mu_);
+  absl::Time deadline = absl::Now() + timeout * grpc_test_slowdown_factor();
   std::map<std::string, grpc::Status>::iterator it;
   while ((it = status_map.find(uri)) == status_map.end() ||
          it->second.error_code() != expected_status) {
-    cond_.Wait(&mu_);
+    if (cond_.WaitWithDeadline(&mu_, deadline)) {
+      LOG(ERROR) << "\nTimeout Elapsed waiting on serving status "
+                    "change\nExpected status: "
+                 << expected_status << "\nActual:"
+                 << (it == status_map.end()
+                         ? "Entry not found in map"
+                         : absl::StrCat(it->second.error_code()));
+      return false;
+    }
   }
+  return true;
 }
 
 //
@@ -322,8 +331,8 @@ void XdsEnd2endTest::BalancerServerThread::ShutdownAllServices() {
 
 void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
                                           EchoRequest* request) const {
-  for (const auto& item : metadata) {
-    context->AddMetadata(item.first, item.second);
+  for (const auto& [key, value] : metadata) {
+    context->AddMetadata(key, value);
   }
   if (timeout_ms != 0) {
     context->set_deadline(grpc_timeout_milliseconds_to_deadline(timeout_ms));
@@ -353,6 +362,9 @@ void XdsEnd2endTest::RpcOptions::SetupRpc(ClientContext* context,
   if (echo_host_from_authority_header) {
     request->mutable_param()->set_echo_host_from_authority_header(true);
   }
+  if (echo_metadata_initially) {
+    request->mutable_param()->set_echo_metadata_initially(true);
+  }
 }
 
 //
@@ -369,7 +381,9 @@ const char XdsEnd2endTest::kRequestMessage[] = "Live long and prosper.";
 
 XdsEnd2endTest::XdsEnd2endTest(
     std::shared_ptr<ServerCredentials> balancer_credentials)
-    : balancer_(CreateAndStartBalancer("Default Balancer",
+    : scoped_event_engine_(
+          grpc_event_engine::experimental::CreateEventEngine()),
+      balancer_(CreateAndStartBalancer("Default Balancer",
                                        std::move(balancer_credentials))) {
   // Initialize default client-side xDS resources.
   default_listener_ = XdsResourceUtils::DefaultListener();
@@ -479,7 +493,7 @@ std::vector<int> XdsEnd2endTest::GetBackendPorts(size_t start_index,
 }
 
 void XdsEnd2endTest::InitClient(
-    absl::optional<XdsBootstrapBuilder> builder,
+    std::optional<XdsBootstrapBuilder> builder,
     std::string lb_expected_authority,
     int xds_resource_does_not_exist_timeout_ms,
     std::string balancer_authority_override, ChannelArguments* args,
@@ -490,7 +504,7 @@ void XdsEnd2endTest::InitClient(
   if (xds_resource_does_not_exist_timeout_ms > 0) {
     xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-        xds_resource_does_not_exist_timeout_ms));
+        xds_resource_does_not_exist_timeout_ms * grpc_test_slowdown_factor()));
   }
   if (!lb_expected_authority.empty()) {
     constexpr char authority_const[] = "localhost:%d";
@@ -610,12 +624,12 @@ Status XdsEnd2endTest::SendRpc(
       break;
   }
   if (server_initial_metadata != nullptr) {
-    for (const auto& it : context.GetServerInitialMetadata()) {
-      std::string header(it.first.data(), it.first.size());
+    for (const auto& [key, value] : context.GetServerInitialMetadata()) {
+      std::string header(key.data(), key.size());
       // Guard against implementation-specific header case - RFC 2616
       absl::AsciiStrToLower(&header);
-      server_initial_metadata->emplace(
-          header, std::string(it.second.data(), it.second.size()));
+      server_initial_metadata->emplace(header,
+                                       std::string(value.data(), value.size()));
     }
   }
   return status;
@@ -669,6 +683,26 @@ void XdsEnd2endTest::CheckRpcSendFailure(
       << debug_location.file() << ":" << debug_location.line();
 }
 
+void XdsEnd2endTest::SendRpcsUntilFailure(
+    const grpc_core::DebugLocation& debug_location, StatusCode expected_status,
+    absl::string_view expected_message_regex, int timeout_ms,
+    const RpcOptions& rpc_options) {
+  SendRpcsUntil(
+      debug_location,
+      [&](const RpcResult& result) {
+        // Might still succeed if channel hasn't yet seen the server go down.
+        if (result.status.ok()) return true;
+        // RPC failed.  Make sure the failure status is as expected and stop.
+        EXPECT_EQ(result.status.error_code(), expected_status)
+            << debug_location.file() << ":" << debug_location.line();
+        EXPECT_THAT(result.status.error_message(),
+                    ::testing::MatchesRegex(expected_message_regex))
+            << debug_location.file() << ":" << debug_location.line();
+        return false;
+      },
+      timeout_ms, rpc_options);
+}
+
 size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
     const grpc_core::DebugLocation& debug_location, size_t num_rpcs,
     StatusCode expected_status, absl::string_view expected_message_prefix,
@@ -711,33 +745,37 @@ Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
   return status_;
 }
 
-std::vector<XdsEnd2endTest::ConcurrentRpc> XdsEnd2endTest::SendConcurrentRpcs(
+std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
+XdsEnd2endTest::SendConcurrentRpcs(
     const grpc_core::DebugLocation& debug_location,
     grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
     const RpcOptions& rpc_options) {
   // Variables for RPCs.
-  std::vector<ConcurrentRpc> rpcs(num_rpcs);
+  std::vector<std::unique_ptr<ConcurrentRpc>> rpcs;
+  rpcs.reserve(num_rpcs);
   EchoRequest request;
   // Variables for synchronization
   grpc_core::Mutex mu;
   grpc_core::CondVar cv;
   size_t completed = 0;
   // Set-off callback RPCs
-  for (size_t i = 0; i < num_rpcs; i++) {
-    ConcurrentRpc* rpc = &rpcs[i];
+  for (size_t i = 0; i < num_rpcs; ++i) {
+    auto rpc = std::make_unique<ConcurrentRpc>();
     rpc_options.SetupRpc(&rpc->context, &request);
     grpc_core::Timestamp t0 = NowFromCycleCounter();
-    stub->async()->Echo(&rpc->context, &request, &rpc->response,
-                        [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
-                          rpc->status = s;
-                          rpc->elapsed_time = NowFromCycleCounter() - t0;
-                          bool done;
-                          {
-                            grpc_core::MutexLock lock(&mu);
-                            done = (++completed) == num_rpcs;
-                          }
-                          if (done) cv.Signal();
-                        });
+    stub->async()->Echo(
+        &rpc->context, &request, &rpc->response,
+        [rpc = rpc.get(), &mu, &completed, &cv, num_rpcs, t0](Status s) {
+          rpc->status = s;
+          rpc->elapsed_time = NowFromCycleCounter() - t0;
+          bool done;
+          {
+            grpc_core::MutexLock lock(&mu);
+            done = (++completed) == num_rpcs;
+          }
+          if (done) cv.Signal();
+        });
+    rpcs.push_back(std::move(rpc));
   }
   {
     grpc_core::MutexLock lock(&mu);
@@ -776,11 +814,11 @@ size_t XdsEnd2endTest::WaitForAllBackends(
   return num_rpcs;
 }
 
-absl::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
+std::optional<AdsServiceImpl::ResponseState> XdsEnd2endTest::WaitForNack(
     const grpc_core::DebugLocation& debug_location,
-    std::function<absl::optional<AdsServiceImpl::ResponseState>()> get_state,
+    std::function<std::optional<AdsServiceImpl::ResponseState>()> get_state,
     const RpcOptions& rpc_options, StatusCode expected_status) {
-  absl::optional<AdsServiceImpl::ResponseState> response_state;
+  std::optional<AdsServiceImpl::ResponseState> response_state;
   auto deadline =
       absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
   auto continue_predicate = [&]() {
@@ -810,7 +848,7 @@ void XdsEnd2endTest::SetProtoDuration(
 }
 
 std::string XdsEnd2endTest::MakeConnectionFailureRegex(
-    absl::string_view prefix) {
+    absl::string_view prefix, bool has_resolution_note) {
   return absl::StrCat(
       prefix,
       "(UNKNOWN|UNAVAILABLE): "
@@ -819,15 +857,41 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       // Prefixes added for context
       "(Failed to connect to remote host: )?"
       "(Timeout occurred: )?"
+      // Parenthetical wrappers
+      "((Secure read failed|"
+      "Handshake read failed|"
+      "Delayed close due to in-progress write) \\()?"
       // Syscall
       "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
       // strerror() output or other message
       "(Connection refused"
       "|Connection reset by peer"
       "|Socket closed"
-      "|FD shutdown)"
+      "|Broken pipe"
+      "|FD shutdown"
+      "|Endpoint closing)"
       // errno value
-      "( \\([0-9]+\\))?");
+      "( \\([0-9]+\\))?"
+      // close paren from wrappers above
+      "\\)?",
+      // xDS node ID
+      has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
+}
+
+std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
+    absl::string_view prefix) {
+  return absl::StrCat(
+      prefix,
+      "(UNKNOWN|UNAVAILABLE): "
+      // IP address
+      "(ipv6:%5B::1%5D|ipv4:127.0.0.1):[0-9]+: "
+      // Prefixes added for context
+      "(Failed to connect to remote host: )?"
+      // Tls handshake failure
+      "Tls handshake failed \\(TSI_PROTOCOL_FAILURE\\): SSL_ERROR_SSL: "
+      "error:1000007d:SSL routines:OPENSSL_internal:CERTIFICATE_VERIFY_FAILED"
+      // Detailed reason for certificate verify failure
+      "(: .*)?");
 }
 
 grpc_core::PemKeyCertPairList XdsEnd2endTest::ReadTlsIdentityPair(
@@ -847,6 +911,11 @@ XdsEnd2endTest::MakeIdentityKeyCertPairForTlsCreds() {
 
 std::shared_ptr<ChannelCredentials>
 XdsEnd2endTest::CreateXdsChannelCredentials() {
+  return XdsCredentials(CreateTlsChannelCredentials());
+}
+
+std::shared_ptr<ChannelCredentials>
+XdsEnd2endTest::CreateTlsChannelCredentials() {
   auto certificate_provider = std::make_shared<StaticDataCertificateProvider>(
       grpc_core::testing::GetFileContents(kCaCertPath),
       MakeIdentityKeyCertPairForTlsCreds());
@@ -859,8 +928,7 @@ XdsEnd2endTest::CreateXdsChannelCredentials() {
   options.set_certificate_verifier(std::move(verifier));
   options.set_verify_server_certs(true);
   options.set_check_call_host(false);
-  auto tls_creds = grpc::experimental::TlsCredentials(options);
-  return XdsCredentials(tls_creds);
+  return grpc::experimental::TlsCredentials(options);
 }
 
 std::shared_ptr<ServerCredentials>

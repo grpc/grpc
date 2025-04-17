@@ -17,37 +17,36 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/arena_promise.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/service_config/service_config_impl.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -82,32 +81,22 @@ class ServiceConfigChannelArgFilter final
    public:
     void OnClientInitialMetadata(ClientMetadata& md,
                                  ServiceConfigChannelArgFilter* filter);
-    static const NoInterceptor OnServerInitialMetadata;
-    static const NoInterceptor OnServerTrailingMetadata;
-    static const NoInterceptor OnClientToServerMessage;
-    static const NoInterceptor OnClientToServerHalfClose;
-    static const NoInterceptor OnServerToClientMessage;
-    static const NoInterceptor OnFinalize;
+    static inline const NoInterceptor OnServerInitialMetadata;
+    static inline const NoInterceptor OnServerTrailingMetadata;
+    static inline const NoInterceptor OnClientToServerMessage;
+    static inline const NoInterceptor OnClientToServerHalfClose;
+    static inline const NoInterceptor OnServerToClientMessage;
+    static inline const NoInterceptor OnFinalize;
   };
 
  private:
   RefCountedPtr<ServiceConfig> service_config_;
 };
 
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerInitialMetadata;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnClientToServerMessage;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor
-    ServiceConfigChannelArgFilter::Call::OnServerToClientMessage;
-const NoInterceptor ServiceConfigChannelArgFilter::Call::OnFinalize;
-
 void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServiceConfigChannelArgFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata");
   const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;
   if (filter->service_config_ != nullptr) {
     method_configs = filter->service_config_->GetMethodParsedConfigVector(

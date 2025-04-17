@@ -39,7 +39,7 @@ then
   # Any installation step is a potential source of breakages,
   # so we are trying to perform as few download-and-install operations
   # as possible.
-  "${PYTHON}" -m pip install --upgrade 'cython<3.0.0rc1'
+  "${PYTHON}" -m pip install --upgrade 'cython<4.0.0rc1'
 fi
 
 # Allow build_ext to build C/C++ files in parallel
@@ -167,7 +167,7 @@ then
   "${PYTHON}" -m pip install virtualenv
   "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==20.0.23 && "${PYTHON}" -m virtualenv venv; }
   # Ensure the generated artifacts are valid using "twine check"
-  venv/bin/python -m pip install "twine<=2.0" "readme_renderer<40.0"
+  venv/bin/python -m pip install "cryptography==40.0.0" "twine==5.0.0" "readme_renderer<40.0"
   venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
   if [ "$GRPC_BUILD_MAC" == "" ]; then
     venv/bin/python -m twine check src/python/grpcio_observability/dist/*

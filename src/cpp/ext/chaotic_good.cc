@@ -14,9 +14,9 @@
 
 #include "src/cpp/ext/chaotic_good.h"
 
-#include <memory>
-
 #include <grpc/grpc.h>
+
+#include <memory>
 
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"

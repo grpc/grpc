@@ -18,12 +18,10 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_counter.h"
 
-#include <gtest/gtest.h>
-
 #include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include "gtest/gtest.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 
 const size_t kSmallCounterSize = 4;

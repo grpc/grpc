@@ -18,18 +18,17 @@
 
 #include "src/core/channelz/channelz.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <string>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/server/server.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 using testing::HasSubstr;
@@ -60,11 +59,12 @@ void RunOneRequest(CoreEnd2endTest& test, bool request_is_success) {
   test.Expect(102, true);
   test.Expect(1, true);
   test.Step();
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(),
+            request_is_success && IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
+CORE_END2END_TEST(CoreEnd2endTests, Channelz) {
   SKIP_IF_V3();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)
@@ -118,7 +118,7 @@ CORE_END2END_TEST(CoreEnd2endTest, Channelz) {
   EXPECT_THAT(json, HasSubstr("\"end\":true"));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
+CORE_END2END_TEST(CoreEnd2endTests, ChannelzWithChannelTrace) {
   SKIP_IF_V3();
   auto args =
       ChannelArgs()
@@ -148,7 +148,7 @@ CORE_END2END_TEST(CoreEnd2endTest, ChannelzWithChannelTrace) {
   EXPECT_THAT(json, HasSubstr("\"severity\":\"CT_INFO\""));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, ChannelzDisabled) {
+CORE_END2END_TEST(CoreEnd2endTests, ChannelzDisabled) {
   SKIP_IF_V3();
   auto args = ChannelArgs()
                   .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 0)

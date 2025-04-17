@@ -1,1 +1,0 @@
-../../../tools/distrib/python_wrapper.sh

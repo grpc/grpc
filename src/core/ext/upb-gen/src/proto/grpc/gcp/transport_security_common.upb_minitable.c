@@ -3,7 +3,8 @@
  *     src/proto/grpc/gcp/transport_security_common.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -12,9 +13,10 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub grpc_gcp_RpcProtocolVersions_submsgs[2] = {
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions__Version_msg_init},
-  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions__Version_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal grpc_gcp_RpcProtocolVersions__submsgs[2] = {
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr},
+  {.UPB_PRIVATE(submsg) = &grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr},
 };
 
 static const upb_MiniTableField grpc_gcp_RpcProtocolVersions__fields[2] = {
@@ -23,7 +25,7 @@ static const upb_MiniTableField grpc_gcp_RpcProtocolVersions__fields[2] = {
 };
 
 const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init = {
-  &grpc_gcp_RpcProtocolVersions_submsgs[0],
+  &grpc_gcp_RpcProtocolVersions__submsgs[0],
   &grpc_gcp_RpcProtocolVersions__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(255), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -31,6 +33,7 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions_msg_init = {
 #endif
 };
 
+const upb_MiniTable* grpc__gcp__RpcProtocolVersions_msg_init_ptr = &grpc__gcp__RpcProtocolVersions_msg_init;
 static const upb_MiniTableField grpc_gcp_RpcProtocolVersions_Version__fields[2] = {
   {1, 8, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
   {2, 12, 0, kUpb_NoSub, 13, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)},
@@ -51,6 +54,7 @@ const upb_MiniTable grpc__gcp__RpcProtocolVersions__Version_msg_init = {
   })
 };
 
+const upb_MiniTable* grpc__gcp__RpcProtocolVersions__Version_msg_init_ptr = &grpc__gcp__RpcProtocolVersions__Version_msg_init;
 static const upb_MiniTable *messages_layout[2] = {
   &grpc__gcp__RpcProtocolVersions_msg_init,
   &grpc__gcp__RpcProtocolVersions__Version_msg_init,

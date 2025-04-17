@@ -18,6 +18,8 @@
 
 #include "src/core/lib/compression/message_compress.h"
 
+#include <grpc/compression.h>
+#include <grpc/slice_buffer.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,10 +28,6 @@
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/compression.h>
-#include <grpc/slice_buffer.h>
-
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/slice_splitter.h"
@@ -182,7 +180,7 @@ TEST(MessageCompressTest, BadDecompressionDataCrc) {
   idx = GRPC_SLICE_LENGTH(corrupted.slices[1]) - 8;
   memcpy(GRPC_SLICE_START_PTR(corrupted.slices[1]) + idx, &bad, 4);
 
-  // try (and fail) to decompress the corrupted compresed buffer
+  // try (and fail) to decompress the corrupted compressed buffer
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_GZIP, &corrupted, &output));
 
   grpc_slice_buffer_destroy(&input);
@@ -228,7 +226,7 @@ TEST(MessageCompressTest, BadDecompressionDataTrailingGarbage) {
       &input, grpc_slice_from_copied_buffer(
                   "\x78\xda\x63\x60\x60\x60\x00\x00\x00\x04\x00\x01\x99", 13));
 
-  // try (and fail) to decompress the invalid compresed buffer
+  // try (and fail) to decompress the invalid compressed buffer
   grpc_core::ExecCtx exec_ctx;
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 
@@ -245,7 +243,7 @@ TEST(MessageCompressTest, BadDecompressionDataStream) {
   grpc_slice_buffer_add(&input,
                         grpc_slice_from_copied_buffer("\x78\xda\xff\xff", 4));
 
-  // try (and fail) to decompress the invalid compresed buffer
+  // try (and fail) to decompress the invalid compressed buffer
   grpc_core::ExecCtx exec_ctx;
   ASSERT_EQ(0, grpc_msg_decompress(GRPC_COMPRESS_DEFLATE, &input, &output));
 

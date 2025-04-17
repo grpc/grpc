@@ -16,20 +16,18 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "google/protobuf/duration.upb.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/grpc.h>
 #include <grpcpp/support/config.h>
 
+#include "absl/log/check.h"
+#include "google/protobuf/duration.upb.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/load_balancing/grpclb/load_balancer_api.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc {
 namespace {

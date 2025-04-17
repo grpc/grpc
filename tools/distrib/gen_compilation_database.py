@@ -61,9 +61,7 @@ def generateCompilationDatabase(args):
     for compdb_file in Path(execroot).glob("**/*.compile_commands.json"):
         compdb.extend(
             json.loads(
-                "["
-                + compdb_file.read_text().replace("__EXEC_ROOT__", execroot)
-                + "]"
+                compdb_file.read_text().replace("__EXEC_ROOT__", execroot)
             )
         )
 
@@ -118,8 +116,8 @@ def modifyCompileCommand(target, args):
         options += " -Wno-pragma-once-outside-header -Wno-unused-const-variable"
         options += " -Wno-unused-function"
         if not target["file"].startswith("external/"):
-            # *.h file is treated as C header by default while our headers files are all C++14.
-            options = "-x c++ -std=c++14 -fexceptions " + options
+            # *.h file is treated as C header by default while our headers files are all C++17.
+            options = "-x c++ -std=c++17 -fexceptions " + options
 
     target["command"] = " ".join([cc, options])
     return target

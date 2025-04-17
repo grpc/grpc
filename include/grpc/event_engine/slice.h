@@ -15,6 +15,9 @@
 #ifndef GRPC_EVENT_ENGINE_SLICE_H
 #define GRPC_EVENT_ENGINE_SLICE_H
 
+#include <grpc/event_engine/internal/slice_cast.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <string.h>
 
 #include <cstdint>
@@ -22,11 +25,6 @@
 #include <utility>
 
 #include "absl/strings/string_view.h"
-
-#include <grpc/event_engine/internal/slice_cast.h>
-#include <grpc/slice.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 
 // This public slice definition largely based of the internal grpc_core::Slice
 // implementation. Changes to this implementation might warrant changes to the

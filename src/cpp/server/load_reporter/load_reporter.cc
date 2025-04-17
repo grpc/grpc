@@ -18,6 +18,7 @@
 
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stdio.h>
 
@@ -30,9 +31,6 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "opencensus/tags/tag_key.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/cpp/server/load_reporter/constants.h"
 #include "src/cpp/server/load_reporter/get_cpu_stats.h"
 

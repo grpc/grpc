@@ -16,19 +16,17 @@
 //
 //
 
-#include <gtest/gtest.h>
-
-#include "upb/mem/arena.hpp"
-
 #include <grpcpp/security/alts_context.h>
 #include <grpcpp/security/alts_util.h>
 #include <grpcpp/security/auth_context.h>
 
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc {
 namespace {
@@ -85,8 +83,8 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   std::string expected_rp("record protocol");
   std::string expected_peer("peer");
   std::string expected_local("local");
-  std::string expected_peer_atrributes_key("peer");
-  std::string expected_peer_atrributes_value("attributes");
+  std::string expected_peer_attributes_key("peer");
+  std::string expected_peer_attributes_value("attributes");
   grpc_security_level expected_sl = GRPC_INTEGRITY_ONLY;
   upb::Arena context_arena;
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
@@ -105,10 +103,10 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
                                               expected_local.length()));
   grpc_gcp_AltsContext_peer_attributes_set(
       context,
-      upb_StringView_FromDataAndSize(expected_peer_atrributes_key.data(),
-                                     expected_peer_atrributes_key.length()),
-      upb_StringView_FromDataAndSize(expected_peer_atrributes_value.data(),
-                                     expected_peer_atrributes_value.length()),
+      upb_StringView_FromDataAndSize(expected_peer_attributes_key.data(),
+                                     expected_peer_attributes_key.length()),
+      upb_StringView_FromDataAndSize(expected_peer_attributes_value.data(),
+                                     expected_peer_attributes_value.length()),
       context_arena.ptr());
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
@@ -131,8 +129,8 @@ TEST(AltsUtilTest, AuthContextWithGoodAltsContextWithoutRpcVersions) {
   EXPECT_EQ(0, rpc_protocol_versions.max_rpc_version.minor_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.major_version);
   EXPECT_EQ(0, rpc_protocol_versions.min_rpc_version.minor_version);
-  EXPECT_EQ(expected_peer_atrributes_value,
-            alts_context->peer_attributes().at(expected_peer_atrributes_key));
+  EXPECT_EQ(expected_peer_attributes_value,
+            alts_context->peer_attributes().at(expected_peer_attributes_key));
 }
 
 TEST(AltsUtilTest, AuthContextWithGoodAltsContext) {

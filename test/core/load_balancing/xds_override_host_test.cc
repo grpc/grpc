@@ -14,11 +14,14 @@
 // limitations under the License.
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/json.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <array>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,22 +32,16 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/json.h>
-
 #include "src/core/ext/filters/stateful_session/stateful_session_filter.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/endpoint_addresses.h"
-#include "src/core/resolver/xds/xds_dependency_manager.h"
+#include "src/core/resolver/xds/xds_config.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/grpc/xds_health_status.h"
 #include "test/core/load_balancing/lb_policy_test_lib.h"
 #include "test/core/test_util/test_config.h"
@@ -57,10 +54,17 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
   XdsOverrideHostTest()
       : LoadBalancingPolicyTest("xds_override_host_experimental") {}
 
-  static RefCountedPtr<const XdsDependencyManager::XdsConfig> MakeXdsConfig(
+  void SetUp() override {
+    LoadBalancingPolicyTest::SetUp();
+    if (!grpc_event_engine::experimental::IsSaneTimerEnvironment()) {
+      GTEST_SKIP() << "Needs most EventEngine experiments enabled";
+    }
+  }
+
+  static RefCountedPtr<const XdsConfig> MakeXdsConfig(
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name") {
     auto cluster_resource = std::make_shared<XdsClusterResource>();
     for (const absl::string_view host_status : override_host_statuses) {
@@ -70,7 +74,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     if (connection_idle_timeout.has_value()) {
       cluster_resource->connection_idle_timeout = *connection_idle_timeout;
     }
-    auto xds_config = MakeRefCounted<XdsDependencyManager::XdsConfig>();
+    auto xds_config = MakeRefCounted<XdsConfig>();
     xds_config->clusters[std::move(cluster_name)].emplace(
         std::move(cluster_resource), nullptr, "");
     return xds_config;
@@ -80,7 +84,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const EndpointAddresses> endpoints,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     auto config = MakeConfig(Json::FromArray({Json::FromObject(
@@ -102,7 +106,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       absl::Span<const absl::string_view> addresses,
       absl::Span<const absl::string_view> override_host_statuses = {"UNKNOWN",
                                                                     "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt,
+      std::optional<Duration> connection_idle_timeout = std::nullopt,
       std::string cluster_name = "cluster_name",
       std::string child_policy = "round_robin") {
     return UpdateXdsOverrideHostPolicy(
@@ -132,7 +136,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
           addresses_and_statuses,
       absl::Span<const absl::string_view> override_host_status = {"UNKNOWN",
                                                                   "HEALTHY"},
-      absl::optional<Duration> connection_idle_timeout = absl::nullopt) {
+      std::optional<Duration> connection_idle_timeout = std::nullopt) {
     EndpointAddressesList endpoints;
     for (auto address_and_status : addresses_and_statuses) {
       endpoints.push_back(MakeAddressWithHealthStatus(
@@ -186,7 +190,7 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
     }
     std::string expected_addresses_str = absl::StrJoin(expected_addresses, ",");
     for (size_t i = 0; i < 3; ++i) {
-      EXPECT_EQ(ExpectPickComplete(picker, {attribute},
+      EXPECT_EQ(ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
                                    /*subchannel_call_tracker=*/nullptr,
                                    /*picked_subchannel=*/nullptr, location),
                 expected)
@@ -205,9 +209,10 @@ class XdsOverrideHostTest : public LoadBalancingPolicyTest {
       SourceLocation location = SourceLocation()) {
     std::vector<std::string> actual_picks;
     for (size_t i = 0; i < expected.size(); ++i) {
-      auto address = ExpectPickComplete(
-          picker, {attribute}, /*subchannel_call_tracker=*/nullptr,
-          /*picked_subchannel=*/nullptr, location);
+      auto address =
+          ExpectPickComplete(picker, {attribute}, /*metadata=*/{},
+                             /*subchannel_call_tracker=*/nullptr,
+                             /*picked_subchannel=*/nullptr, location);
       ASSERT_TRUE(address.has_value())
           << location.file() << ":" << location.line();
       EXPECT_THAT(*address, ::testing::AnyOfArray(expected))

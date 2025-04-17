@@ -81,3 +81,5 @@ LRS Custom Metrics Support | [A64](https://github.com/grpc/proposal/blob/master/
 mTLS Credentials in xDS Bootstrap File | [A65](https://github.com/grpc/proposal/blob/master/A65-xds-mtls-creds-in-bootstrap.md) | v1.65.0 | | v1.61.0 | |
 Stateful Session Affinity | [A55](https://github.com/grpc/proposal/blob/master/A55-xds-stateful-session-affinity.md), [A60](https://github.com/grpc/proposal/blob/master/A60-xds-stateful-session-affinity-weighted-clusters.md), [A75](https://github.com/grpc/proposal/blob/master/A75-xds-aggregate-cluster-behavior-fixes.md) | v1.61.0 | | | |
 xDS Locality label for OpenTelemetry metrics | [A78](https://github.com/grpc/proposal/blob/master/A78-grpc-metrics-wrr-pf-xds.md) | v1.63.0 (C++) | v1.64.0 | | |
+xDS Fallback | [A71](https://github.com/grpc/proposal/blob/master/A71-xds-fallback.md) | v1.67.0 | | | |
+Dualstack Backend Support | [A61](https://github.com/grpc/proposal/blob/master/A61-IPv4-IPv6-dualstack-backends.md) | v1.66.1 | | v1.71.0 | v1.12.0 |

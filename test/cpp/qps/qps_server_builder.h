@@ -19,10 +19,10 @@
 #ifndef GRPC_TEST_CPP_QPS_QPS_SERVER_BUILDER_H
 #define GRPC_TEST_CPP_QPS_QPS_SERVER_BUILDER_H
 
+#include <grpcpp/server_builder.h>
+
 #include <functional>
 #include <memory>
-
-#include <grpcpp/server_builder.h>
 
 namespace grpc {
 namespace testing {

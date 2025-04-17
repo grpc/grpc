@@ -18,15 +18,14 @@
 
 #include "src/core/xds/grpc/file_watcher_certificate_provider_factory.h"
 
+#include <grpc/grpc.h>
+
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-
 #include "src/core/util/json/json_reader.h"
 #include "test/core/test_util/test_config.h"
 
@@ -101,7 +100,7 @@ TEST(FileWatcherConfigTest, OnlyRootCertificatesFileProvided) {
   EXPECT_EQ((*config)->refresh_interval(), Duration::Seconds(600));
 }
 
-TEST(FileWatcherConfigTest, OnlyIdenityCertificatesAndPrivateKeyProvided) {
+TEST(FileWatcherConfigTest, OnlyIdentityCertificatesAndPrivateKeyProvided) {
   std::string json_str = absl::StrFormat(
       "{"
       "  \"certificate_file\": \"%s\","

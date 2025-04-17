@@ -14,12 +14,11 @@
 
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/lib/security/authorization/grpc_authorization_engine.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"

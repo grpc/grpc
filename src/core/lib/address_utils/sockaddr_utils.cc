@@ -19,11 +19,10 @@
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/support/port_platform.h>
 #ifdef GRPC_HAVE_VSOCK
 #include <linux/vm_sockets.h>
 #endif
@@ -36,13 +35,12 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
-#include "src/core/lib/uri/uri_parser.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/uri.h"
 
 #ifdef GRPC_HAVE_UNIX_SOCKET
 #ifdef GPR_WINDOWS
@@ -75,7 +73,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     path = unix_addr->sun_path;
   }
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
+      std::move(scheme), /*user_info=*/"", /*host_port=*/"", std::move(path),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
@@ -320,9 +318,9 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
 
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path.value()),
-                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      scheme, /*user_info=*/"", /*host_port=*/"", std::move(path.value()),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
 }

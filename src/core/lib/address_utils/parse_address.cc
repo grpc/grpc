@@ -46,12 +46,11 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/iomgr/grpc_if_nametoindex.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/grpc_if_nametoindex.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 
 // IWYU pragma: no_include <arpa/inet.h>

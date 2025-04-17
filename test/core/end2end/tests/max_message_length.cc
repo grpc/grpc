@@ -16,14 +16,13 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
+
 #include <string>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "test/core/end2end/end2end_tests.h"
 
@@ -133,20 +132,18 @@ void TestMaxMessageLengthOnServerOnResponse(CoreEnd2endTest& test) {
             "SERVER: Sent message larger than max (11 vs. 5)");
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnClientOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -162,10 +159,9 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnRequestViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -180,29 +176,26 @@ CORE_END2END_TEST(
   TestMaxMessageLengthOnClientOnRequest(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnRequestViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnRequest(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnClientOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithStringJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -218,10 +211,9 @@ CORE_END2END_TEST(
 }
 
 CORE_END2END_TEST(
-    CoreEnd2endTest,
+    CoreEnd2endTests,
     MaxMessageLengthOnClientOnResponseViaServiceConfigWithIntegerJsonValue) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
@@ -236,18 +228,17 @@ CORE_END2END_TEST(
   TestMaxMessageLengthOnClientOnResponse(*this);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest,
+CORE_END2END_TEST(CoreEnd2endTests,
                   MaxMessageLengthOnServerOnResponseViaChannelArg) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_SEND_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
   TestMaxMessageLengthOnServerOnResponse(*this);
 }
 
-CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
+CORE_END2END_TEST(Http2Tests,
+                  MaxMessageLengthOnServerOnRequestWithCompression) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   // Set limit via channel args.
   InitServer(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));
   InitClient(ChannelArgs());
@@ -281,10 +272,9 @@ CORE_END2END_TEST(Http2Test, MaxMessageLengthOnServerOnRequestWithCompression) {
               StartsWith("SERVER: Received message larger than max"));
 }
 
-CORE_END2END_TEST(Http2Test,
+CORE_END2END_TEST(Http2Tests,
                   MaxMessageLengthOnClientOnResponseWithCompression) {
   SKIP_IF_MINSTACK();
-  SKIP_IF_V3();
   // Set limit via channel args.
   InitServer(ChannelArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, 5));

@@ -3,10 +3,11 @@
  *     envoy/config/trace/v3/dynamic_ot.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H_
-#define ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H_
+#ifndef ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H__UPB_H_
+#define ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -87,6 +88,7 @@ UPB_INLINE const struct google_protobuf_Struct* envoy_config_trace_v3_DynamicOtC
   const struct google_protobuf_Struct* default_val = NULL;
   const struct google_protobuf_Struct* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -102,6 +104,7 @@ UPB_INLINE void envoy_config_trace_v3_DynamicOtConfig_set_library(envoy_config_t
 }
 UPB_INLINE void envoy_config_trace_v3_DynamicOtConfig_set_config(envoy_config_trace_v3_DynamicOtConfig *msg, struct google_protobuf_Struct* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&google__protobuf__Struct_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct google_protobuf_Struct* envoy_config_trace_v3_DynamicOtConfig_mutable_config(envoy_config_trace_v3_DynamicOtConfig* msg, upb_Arena* arena) {
@@ -119,4 +122,4 @@ UPB_INLINE struct google_protobuf_Struct* envoy_config_trace_v3_DynamicOtConfig_
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H_ */
+#endif  /* ENVOY_CONFIG_TRACE_V3_DYNAMIC_OT_PROTO_UPB_H__UPB_H_ */

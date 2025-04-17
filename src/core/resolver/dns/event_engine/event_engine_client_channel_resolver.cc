@@ -13,12 +13,16 @@
 // limitations under the License.
 #include "src/core/resolver/dns/event_engine/event_engine_client_channel_resolver.h"
 
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
 #include <inttypes.h>
 #include <stddef.h>
 
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -32,21 +36,9 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
-#include "absl/types/optional.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/load_balancing/grpclb/grpclb_balancer_addresses.h"
@@ -57,6 +49,12 @@
 #include "src/core/resolver/resolver_factory.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_impl.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
+#include "src/core/util/validation_errors.h"
 
 // IWYU pragma: no_include <ratio>
 
@@ -76,12 +74,6 @@ using grpc_event_engine::experimental::EventEngine;
 // addresses.
 // TODO(hork): Add a test that checks for proper authority from balancer
 // addresses.
-
-#define GRPC_EVENT_ENGINE_RESOLVER_TRACE(format, ...)                  \
-  if (GRPC_TRACE_FLAG_ENABLED(event_engine_client_channel_resolver)) { \
-    VLOG(2) << "(event_engine client channel resolver) "               \
-            << absl::StrFormat(format, __VA_ARGS__);                   \
-  }
 
 // ----------------------------------------------------------------------------
 // EventEngineClientChannelDNSResolver
@@ -124,7 +116,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
     // callers must release the lock and call OnRequestComplete if a Result is
     // returned. This is because OnRequestComplete may Orphan the resolver,
     // which requires taking the lock.
-    absl::optional<Resolver::Result> OnResolvedLocked()
+    std::optional<Resolver::Result> OnResolvedLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(on_resolved_mu_);
     // Helper method to populate server addresses on resolver result.
     void MaybePopulateAddressesLocked(Resolver::Result* result)
@@ -154,7 +146,7 @@ class EventEngineClientChannelDNSResolver final : public PollingResolver {
     size_t number_of_balancer_hostnames_resolved_
         ABSL_GUARDED_BY(on_resolved_mu_) = 0;
     bool orphaned_ ABSL_GUARDED_BY(on_resolved_mu_) = false;
-    absl::optional<EventEngine::TaskHandle> timeout_handle_
+    std::optional<EventEngine::TaskHandle> timeout_handle_
         ABSL_GUARDED_BY(on_resolved_mu_);
     std::unique_ptr<EventEngine::DNSResolver> event_engine_resolver_;
   };
@@ -221,30 +213,30 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
       event_engine_resolver_(std::move(event_engine_resolver)) {
   // Locking to prevent completion before all records are queried
   MutexLock lock(&on_resolved_mu_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p Starting hostname resolution for %s", resolver_.get(),
-      resolver_->name_to_resolve().c_str());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << resolver_.get() << " Starting hostname resolution for "
+      << resolver_->name_to_resolve();
   is_hostname_inflight_ = true;
   event_engine_resolver_->LookupHostname(
       [self = Ref(DEBUG_LOCATION, "OnHostnameResolved")](
           absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
               addresses) mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnHostnameResolved(std::move(addresses));
         self.reset();
       },
       resolver_->name_to_resolve(), kDefaultSecurePort);
   if (resolver_->enable_srv_queries_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting SRV record resolution for %s",
-        resolver_.get(), resolver_->name_to_resolve().c_str());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting SRV record resolution for "
+        << resolver_->name_to_resolve();
     is_srv_inflight_ = true;
     event_engine_resolver_->LookupSRV(
         [self = Ref(DEBUG_LOCATION, "OnSRVResolved")](
             absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
                 srv_records) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnSRVResolved(std::move(srv_records));
           self.reset();
@@ -252,14 +244,14 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         absl::StrCat("_grpclb._tcp.", resolver_->name_to_resolve()));
   }
   if (resolver_->request_service_config_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting TXT record resolution for %s",
-        resolver_.get(), resolver_->name_to_resolve().c_str());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting TXT record resolution for "
+        << resolver_->name_to_resolve();
     is_txt_inflight_ = true;
     event_engine_resolver_->LookupTXT(
         [self = Ref(DEBUG_LOCATION, "OnTXTResolved")](
             absl::StatusOr<std::vector<std::string>> service_config) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnTXTResolved(std::move(service_config));
           self.reset();
@@ -272,7 +264,6 @@ EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
                      : resolver_->query_timeout_ms_;
   timeout_handle_ = resolver_->event_engine_->RunAfter(
       timeout, [self = Ref(DEBUG_LOCATION, "OnTimeout")]() mutable {
-        ApplicationCallbackExecCtx callback_exec_ctx;
         ExecCtx exec_ctx;
         self->OnTimeout();
         self.reset();
@@ -303,8 +294,9 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTimeout() {
   MutexLock lock(&on_resolved_mu_);
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE("DNSResolver::%p OnTimeout",
-                                   resolver_.get());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << resolver_.get() << " OnTimeout";
   timeout_handle_.reset();
   event_engine_resolver_.reset();
 }
@@ -312,7 +304,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnHostnameResolved(absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                            new_addresses) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
@@ -338,7 +330,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnSRVResolved(
         absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
             srv_records) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -368,16 +360,16 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
   // Do a subsequent hostname query since SRV records were returned
   for (auto& srv_record : *srv_records) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p Starting balancer hostname resolution for %s:%d",
-        resolver_.get(), srv_record.host.c_str(), srv_record.port);
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::"
+        << resolver_.get() << " Starting balancer hostname resolution for "
+        << srv_record.host << ":" << srv_record.port;
     ++number_of_balancer_hostnames_initiated_;
     event_engine_resolver_->LookupHostname(
         [host = srv_record.host,
          self = Ref(DEBUG_LOCATION, "OnBalancerHostnamesResolved")](
             absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
                 new_balancer_addresses) mutable {
-          ApplicationCallbackExecCtx callback_exec_ctx;
           ExecCtx exec_ctx;
           self->OnBalancerHostnamesResolved(std::move(host),
                                             std::move(new_balancer_addresses));
@@ -392,7 +384,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         std::string authority,
         absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
             new_balancer_addresses) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   auto cleanup = absl::MakeCleanup([&]() {
     if (result.has_value()) {
       resolver_->OnRequestComplete(std::move(*result));
@@ -423,7 +415,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
 
 void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     OnTXTResolved(absl::StatusOr<std::vector<std::string>> service_config) {
-  absl::optional<Resolver::Result> result;
+  std::optional<Resolver::Result> result;
   {
     MutexLock lock(&on_resolved_mu_);
     // Make sure field destroys before cleanup.
@@ -446,9 +438,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
         // Found a service config record.
         service_config_json_ =
             result->substr(kServiceConfigAttributePrefix.size());
-        GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-            "DNSResolver::%p found service config: %s",
-            event_engine_resolver_.get(), service_config_json_->c_str());
+        GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+            << "(event_engine client channel resolver) DNSResolver::"
+            << event_engine_resolver_.get()
+            << " found service config: " << service_config_json_->c_str();
       } else {
         service_config_json_ = absl::UnavailableError(absl::StrCat(
             "failed to find attribute prefix: ", kServiceConfigAttributePrefix,
@@ -492,9 +485,10 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     return;
   }
   if (service_config->empty()) return;
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p selected service config choice: %s",
-      event_engine_resolver_.get(), service_config->c_str());
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::"
+      << event_engine_resolver_.get()
+      << " selected service config choice: " << service_config->c_str();
   result->service_config =
       ServiceConfigImpl::Create(resolver_->channel_args(), *service_config);
   if (!result->service_config.ok()) {
@@ -504,27 +498,26 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
   }
 }
 
-absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
+std::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
     EventEngineDNSRequestWrapper::OnResolvedLocked() {
-  if (orphaned_) return absl::nullopt;
+  if (orphaned_) return std::nullopt;
   // Wait for all requested queries to return.
   if (is_hostname_inflight_ || is_srv_inflight_ || is_txt_inflight_ ||
       number_of_balancer_hostnames_resolved_ !=
           number_of_balancer_hostnames_initiated_) {
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-        "DNSResolver::%p OnResolved() waiting for results (hostname: %s, "
-        "srv: %s, "
-        "txt: %s, "
-        "balancer addresses: %" PRIuPTR "/%" PRIuPTR " complete",
-        this, is_hostname_inflight_ ? "waiting" : "done",
-        is_srv_inflight_ ? "waiting" : "done",
-        is_txt_inflight_ ? "waiting" : "done",
-        number_of_balancer_hostnames_resolved_,
-        number_of_balancer_hostnames_initiated_);
-    return absl::nullopt;
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) DNSResolver::" << this
+        << " OnResolved() waiting for results (hostname: "
+        << (is_hostname_inflight_ ? "waiting" : "done")
+        << ", srv: " << (is_srv_inflight_ ? "waiting" : "done")
+        << ", txt: " << (is_txt_inflight_ ? "waiting" : "done")
+        << ", balancer addresses: " << number_of_balancer_hostnames_resolved_
+        << "/" << number_of_balancer_hostnames_initiated_ << " complete";
+    return std::nullopt;
   }
-  GRPC_EVENT_ENGINE_RESOLVER_TRACE(
-      "DNSResolver::%p OnResolvedLocked() proceeding", this);
+  GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+      << "(event_engine client channel resolver) DNSResolver::" << this
+      << " OnResolvedLocked() proceeding";
   Resolver::Result result;
   result.args = resolver_->channel_args();
   // If both addresses and balancer addresses failed, return an error for both
@@ -538,7 +531,8 @@ absl::optional<Resolver::Result> EventEngineClientChannelDNSResolver::
       // return an error. Validation errors may be empty.
       status = absl::UnavailableError("No results from DNS queries");
     }
-    GRPC_EVENT_ENGINE_RESOLVER_TRACE("%s", status.message().data());
+    GRPC_TRACE_VLOG(event_engine_client_channel_resolver, 2)
+        << "(event_engine client channel resolver) " << status.message().data();
     result.addresses = status;
     result.service_config = status;
     return std::move(result);

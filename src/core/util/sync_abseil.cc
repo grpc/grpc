@@ -21,20 +21,16 @@
 #if defined(GPR_ABSEIL_SYNC) && !defined(GPR_CUSTOM_SYNC)
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <time.h>
 
 #include "absl/base/call_once.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time_util.h"
+#include "src/core/util/time_util.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   static_assert(sizeof(gpr_mu) == sizeof(absl::Mutex),

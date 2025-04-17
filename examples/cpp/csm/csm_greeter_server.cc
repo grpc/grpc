@@ -16,18 +16,6 @@
  *
  */
 
-#include <iostream>
-#include <memory>
-#include <string>
-
-#include "absl/flags/flag.h"
-#include "absl/flags/parse.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_cat.h"
-#include "opentelemetry/exporters/prometheus/exporter_factory.h"
-#include "opentelemetry/exporters/prometheus/exporter_options.h"
-#include "opentelemetry/sdk/metrics/meter_provider.h"
-
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/csm_observability.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
@@ -35,7 +23,19 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/xds_server_builder.h>
 
-#include "src/core/lib/iomgr/gethostname.h"
+#include <iostream>
+#include <memory>
+#include <string>
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_cat.h"
+#include "opentelemetry/exporters/prometheus/exporter_factory.h"
+#include "opentelemetry/exporters/prometheus/exporter_options.h"
+#include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "src/core/util/gethostname.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -101,9 +101,11 @@ void RunServer(const char* hostname) {
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   opentelemetry::exporter::metrics::PrometheusExporterOptions opts;
   // default was "localhost:9464" which causes connection issue across GKE pods
   opts.url = "0.0.0.0:9464";
+  opts.without_otel_scope = false;
   auto prometheus_exporter =
       opentelemetry::exporter::metrics::PrometheusExporterFactory::Create(opts);
   auto meter_provider =

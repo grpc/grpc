@@ -20,6 +20,9 @@
 
 #include "rb_grpc.h"
 
+#include <grpc/grpc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/time.h>
 #include <math.h>
 #include <ruby/vm.h>
 #include <stdbool.h>
@@ -38,10 +41,6 @@
 #include "rb_server_credentials.h"
 #include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
 
 #ifdef GPR_LINUX
 #include <sys/syscall.h>
@@ -328,9 +327,9 @@ static void grpc_ruby_init_threads() {
   // in gpr_once_init. In general, it appears to be unsafe to call
   // into the ruby library while holding a non-ruby mutex, because a gil yield
   // could end up trying to lock onto that same mutex and deadlocking.
-  gpr_log(GPR_INFO,
-          "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=%d",
-          g_bg_thread_init_done);
+  grpc_absl_log_int(GPR_DEBUG,
+                    "GRPC_RUBY: grpc_ruby_init_threads g_bg_thread_init_done=",
+                    g_bg_thread_init_done);
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
@@ -347,11 +346,12 @@ void grpc_ruby_init() {
   grpc_ruby_fork_guard();
   grpc_init();
   grpc_ruby_init_threads();
-  // (only gpr_log after logging has been initialized)
-  gpr_log(GPR_DEBUG,
-          "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=%d prev "
-          "g_grpc_ruby_init_count:%" PRId64,
-          g_enable_fork_support, g_grpc_ruby_init_count++);
+  // (only log after logging has been initialized)
+  grpc_absl_log_int(GPR_DEBUG,
+                    "GRPC_RUBY: grpc_ruby_init - g_enable_fork_support=",
+                    g_enable_fork_support);
+  grpc_absl_log_int(GPR_DEBUG,
+                    "prev g_grpc_ruby_init_count:", g_grpc_ruby_init_count++);
 }
 
 // fork APIs, useable on linux with env var: GRPC_ENABLE_FORK_SUPPORT=1

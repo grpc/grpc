@@ -16,6 +16,14 @@
 
 #include "src/core/server/server.h"
 
+#include <grpc/byte_buffer.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/slice.h>
+#include <grpc/status.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,6 +33,7 @@
 #include <list>
 #include <memory>
 #include <new>
+#include <optional>
 #include <queue>
 #include <type_traits>
 #include <utility>
@@ -35,28 +44,16 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/types/optional.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/slice.h>
-#include <grpc/status.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/time.h>
-
+#include "src/core/call/interception_chain.h"
+#include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/mpscq.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/promise/activity.h"
@@ -77,14 +74,277 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/surface/legacy_channel.h"
-#include "src/core/lib/surface/server_call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
+
+using http2::Http2ErrorCode;
+
+//
+// Server::ListenerState::ConfigFetcherWatcher
+//
+
+void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
+    RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager) {
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager>
+      connection_manager_to_destroy;
+  {
+    MutexLock lock(&listener_state_->mu_);
+    connection_manager_to_destroy = listener_state_->connection_manager_;
+    listener_state_->connection_manager_ = std::move(connection_manager);
+    listener_state_->DrainConnectionsLocked();
+    if (listener_state_->server_->ShutdownCalled()) {
+      return;
+    }
+    listener_state_->is_serving_ = true;
+    if (listener_state_->started_) return;
+    listener_state_->started_ = true;
+  }
+  listener_state_->listener_->Start();
+}
+
+void Server::ListenerState::ConfigFetcherWatcher::StopServing() {
+  MutexLock lock(&listener_state_->mu_);
+  listener_state_->is_serving_ = false;
+  listener_state_->DrainConnectionsLocked();
+}
+
+//
+// Server::ListenerState
+//
+
+Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
+                                     OrphanablePtr<ListenerInterface> l)
+    : server_(std::move(server)),
+      memory_quota_(
+          server_->channel_args().GetObject<ResourceQuota>()->memory_quota()),
+      connection_quota_(MakeRefCounted<ConnectionQuota>()),
+      event_engine_(
+          server_->channel_args()
+              .GetObject<grpc_event_engine::experimental::EventEngine>()),
+      listener_(std::move(l)) {
+  auto max_allowed_incoming_connections =
+      server_->channel_args().GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
+  if (max_allowed_incoming_connections.has_value()) {
+    connection_quota_->SetMaxIncomingConnections(
+        max_allowed_incoming_connections.value());
+  }
+}
+
+void Server::ListenerState::Start() {
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
+    config_fetcher_watcher_ = watcher.get();
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
+        std::move(watcher));
+  } else {
+    {
+      MutexLock lock(&mu_);
+      started_ = true;
+      is_serving_ = true;
+    }
+    listener_->Start();
+  }
+}
+
+void Server::ListenerState::Stop() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&mu_);
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
+    connections_.clear();
+    is_serving_ = false;
+  }
+  if (config_fetcher_watcher_ != nullptr) {
+    CHECK_NE(server_->config_fetcher(), nullptr);
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
+  }
+  GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
+                    grpc_schedule_on_exec_ctx);
+  listener_->SetOnDestroyDone(&destroy_done_);
+  listener_.reset();
+}
+
+std::optional<ChannelArgs> Server::ListenerState::AddLogicalConnection(
+    OrphanablePtr<ListenerInterface::LogicalConnection> connection,
+    const ChannelArgs& args, grpc_endpoint* endpoint) {
+  RefCountedPtr<ServerConfigFetcher::ConnectionManager> connection_manager;
+  {
+    MutexLock lock(&mu_);
+    if (!is_serving_) {
+      // Not serving
+      return std::nullopt;
+    }
+    connection_manager = connection_manager_;
+  }
+  // The following section is intentionally outside the critical section. The
+  // operation to update channel args for a connection is heavy and complicated.
+  // For example, if using the xDS config fetcher, an involved matching process
+  // is performed to determine the filter chain to apply for this connection,
+  // prepare the filters, config selector and credentials. Subsequently, the
+  // credentials are used to create a security connector as well. Doing this
+  // outside the critical region allows us to get a larger degree of parallelism
+  // for the handling of incoming connections.
+  ChannelArgs new_args = args;
+  if (server_->config_fetcher() != nullptr) {
+    if (connection_manager == nullptr) {
+      // Connection manager not available
+      return std::nullopt;
+    }
+    absl::StatusOr<ChannelArgs> args_result =
+        connection_manager->UpdateChannelArgsForConnection(new_args, endpoint);
+    if (!args_result.ok()) {
+      return std::nullopt;
+    }
+    auto* server_credentials =
+        (*args_result).GetObject<grpc_server_credentials>();
+    if (server_credentials == nullptr) {
+      // Could not find server credentials
+      return std::nullopt;
+    }
+    auto security_connector =
+        server_credentials->create_security_connector(*args_result);
+    if (security_connector == nullptr) {
+      // Unable to create secure server with credentials
+      return std::nullopt;
+    }
+    new_args = (*args_result).SetObject(security_connector);
+  }
+  MutexLock lock(&mu_);
+  // Since we let go of the lock earlier, we need to protect ourselves against
+  // time-of-check-to-time-of-use cases. The server may have stopped serving
+  // or the connection manager may have changed before we add the connection
+  // to the list of tracked connections.
+  if (!is_serving_ || connection_manager != connection_manager_) {
+    // Not serving
+    return std::nullopt;
+  }
+  connections_.emplace(std::move(connection));
+  return new_args;
+}
+
+void Server::ListenerState::OnHandshakeDone(
+    ListenerInterface::LogicalConnection* connection) {
+  if (server_->config_fetcher() != nullptr) {
+    return;
+  }
+  // There is no config fetcher, so we can remove this connection from being
+  // tracked immediately.
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+  {
+    // Remove the connection if it wasn't already removed.
+    MutexLock lock(&mu_);
+    auto connection_handle = connections_.extract(connection);
+    if (!connection_handle.empty()) {
+      connection_to_remove = std::move(connection_handle.value());
+    }
+    // We do not need to check connections_to_be_drained_list_ since that only
+    // gets set if there is a config fetcher.
+  }
+}
+
+void Server::ListenerState::RemoveLogicalConnection(
+    ListenerInterface::LogicalConnection* connection) {
+  OrphanablePtr<ListenerInterface::LogicalConnection> connection_to_remove;
+  // Remove the connection if it wasn't already removed.
+  MutexLock lock(&mu_);
+  auto connection_handle = connections_.extract(connection);
+  if (!connection_handle.empty()) {
+    connection_to_remove = std::move(connection_handle.value());
+    return;
+  }
+  // The connection might be getting drained.
+  for (auto it = connections_to_be_drained_list_.begin();
+       it != connections_to_be_drained_list_.end(); ++it) {
+    auto connection_handle = it->connections.extract(connection);
+    if (!connection_handle.empty()) {
+      connection_to_remove = std::move(connection_handle.value());
+      RemoveConnectionsToBeDrainedOnEmptyLocked(it);
+      return;
+    }
+  }
+}
+
+void Server::ListenerState::DrainConnectionsLocked() {
+  if (connections_.empty()) {
+    return;
+  }
+  // Send GOAWAYs on the transports so that they disconnect when existing
+  // RPCs finish.
+  for (auto& connection : connections_) {
+    connection->SendGoAway();
+  }
+  connections_to_be_drained_list_.emplace_back();
+  auto& connections_to_be_drained = connections_to_be_drained_list_.back();
+  connections_to_be_drained.connections = std::move(connections_);
+  connections_.clear();
+  connections_to_be_drained.timestamp =
+      Timestamp::Now() +
+      std::max(Duration::Zero(),
+               server_->channel_args()
+                   .GetDurationFromIntMillis(
+                       GRPC_ARG_SERVER_CONFIG_CHANGE_DRAIN_GRACE_TIME_MS)
+                   .value_or(Duration::Minutes(10)));
+  MaybeStartNewGraceTimerLocked();
+}
+
+void Server::ListenerState::OnDrainGraceTimer() {
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections_to_be_drained;
+  {
+    MutexLock lock(&mu_);
+    if (connections_to_be_drained_list_.empty()) {
+      return;
+    }
+    connections_to_be_drained =
+        std::move(connections_to_be_drained_list_.front().connections);
+    connections_to_be_drained_list_.pop_front();
+    MaybeStartNewGraceTimerLocked();
+  }
+  for (auto& connection : connections_to_be_drained) {
+    connection->DisconnectImmediately();
+  }
+}
+
+void Server::ListenerState::MaybeStartNewGraceTimerLocked() {
+  if (connections_to_be_drained_list_.empty()) {
+    return;
+  }
+  drain_grace_timer_handle_ = event_engine()->RunAfter(
+      connections_to_be_drained_list_.front().timestamp - Timestamp::Now(),
+      [self = Ref()]() mutable {
+        ExecCtx exec_ctx;
+        self->OnDrainGraceTimer();
+        // resetting within an active ExecCtx
+        self.reset();
+      });
+}
+
+void Server::ListenerState::RemoveConnectionsToBeDrainedOnEmptyLocked(
+    std::deque<ConnectionsToBeDrained>::iterator it) {
+  if (it->connections.empty()) {
+    // Cancel the timer if the set of connections is now empty.
+    if (event_engine()->Cancel(drain_grace_timer_handle_)) {
+      // Only remove the entry from the list if the cancellation was
+      // actually successful. OnDrainGraceTimer() will remove if
+      // cancellation is not successful.
+      connections_to_be_drained_list_.erase(it);
+      MaybeStartNewGraceTimerLocked();
+    }
+  }
+}
 
 //
 // Server::RequestMatcherInterface
@@ -313,6 +573,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       pending_promises_.front()->Finish(absl::InternalError("Server closed"));
       pending_promises_.pop();
     }
+    zombified_ = true;
   }
 
   void KillRequests(grpc_error_handle error) override {
@@ -466,9 +727,12 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         if (server_->pending_backlog_protector_.Reject(pending_promises_.size(),
-                                                       server_->bitgen_)) {
+                                                       SharedBitGen())) {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
+        }
+        if (zombified_) {
+          return Immediate(absl::InternalError("Server closed"));
         }
         auto w = std::make_shared<ActivityWaiter>(
             GetContext<Activity>()->MakeOwningWaker());
@@ -480,7 +744,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
               if (r == nullptr) return Pending{};
               return std::move(*r);
             },
-            [w]() { w->Expire(); });
+            [w]() { w->Finish(absl::CancelledError()); });
       }
     }
     return Immediate(MatchResult(server(), cq_idx, rc));
@@ -500,8 +764,14 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
     explicit ActivityWaiter(Waker waker) : waker(std::move(waker)) {}
     ~ActivityWaiter() { delete result.load(std::memory_order_acquire); }
     void Finish(absl::Status status) {
-      delete result.exchange(new ResultType(std::move(status)),
-                             std::memory_order_acq_rel);
+      ResultType* expected = nullptr;
+      ResultType* new_value = new ResultType(std::move(status));
+      if (!result.compare_exchange_strong(expected, new_value,
+                                          std::memory_order_acq_rel,
+                                          std::memory_order_acquire)) {
+        delete new_value;
+        return;
+      }
       waker.WakeupAsync();
     }
     // Returns true if requested_call consumed, false otherwise.
@@ -520,10 +790,6 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       waker.WakeupAsync();
       return true;
     }
-    void Expire() {
-      delete result.exchange(new ResultType(absl::CancelledError()),
-                             std::memory_order_acq_rel);
-    }
     Duration Age() { return Timestamp::Now() - created; }
     Waker waker;
     std::atomic<ResultType*> result{nullptr};
@@ -533,6 +799,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
   std::queue<PendingCallFilterStack> pending_filter_stack_;
   std::queue<PendingCallPromises> pending_promises_;
   std::vector<LockedMultiProducerSingleConsumerQueue> requests_per_cq_;
+  bool zombified_ = false;
 };
 
 // AllocatingRequestMatchers don't allow the application to request an RPC in
@@ -721,7 +988,8 @@ class ChannelBroadcaster {
     op->goaway_error =
         send_goaway
             ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
-                                 StatusIntProperty::kRpcStatus, GRPC_STATUS_OK)
+                                 StatusIntProperty::kHttp2Error,
+                                 static_cast<int>(Http2ErrorCode::kNoError))
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
@@ -795,6 +1063,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
     channelz_node->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
+    channelz_node->SetChannelArgs(args);
   }
   return channelz_node;
 }
@@ -814,39 +1083,54 @@ absl::StatusOr<ClientMetadataHandle> CheckClientMetadata(
 }
 }  // namespace
 
+auto Server::MatchRequestAndMaybeReadFirstMessage(CallHandler call_handler,
+                                                  ClientMetadataHandle md) {
+  auto* registered_method = static_cast<RegisteredMethod*>(
+      md->get(GrpcRegisteredMethod()).value_or(nullptr));
+  RequestMatcherInterface* rm;
+  grpc_server_register_method_payload_handling payload_handling =
+      GRPC_SRM_PAYLOAD_NONE;
+  if (registered_method == nullptr) {
+    rm = unregistered_request_matcher_.get();
+  } else {
+    payload_handling = registered_method->payload_handling;
+    rm = registered_method->matcher.get();
+  }
+  using FirstMessageResult = ValueOrFailure<std::optional<MessageHandle>>;
+  auto maybe_read_first_message = If(
+      payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
+      [call_handler]() mutable {
+        return Map(
+            call_handler.PullMessage(),
+            [](ClientToServerNextMessage next_msg) -> FirstMessageResult {
+              if (!next_msg.ok()) return Failure{};
+              if (!next_msg.has_value()) {
+                return FirstMessageResult(std::nullopt);
+              }
+              return FirstMessageResult(next_msg.TakeValue());
+            });
+      },
+      []() -> FirstMessageResult { return FirstMessageResult(std::nullopt); });
+  return TryJoin<absl::StatusOr>(
+      std::move(maybe_read_first_message), rm->MatchRequest(0),
+      [md = std::move(md)]() mutable {
+        return ValueOrFailure<ClientMetadataHandle>(std::move(md));
+      });
+}
+
 auto Server::MatchAndPublishCall(CallHandler call_handler) {
   call_handler.SpawnGuarded("request_matcher", [this, call_handler]() mutable {
     return TrySeq(
-        // Wait for initial metadata to pass through all filters
-        Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
-        // Match request with requested call
-        [this, call_handler](ClientMetadataHandle md) mutable {
-          auto* registered_method = static_cast<RegisteredMethod*>(
-              md->get(GrpcRegisteredMethod()).value_or(nullptr));
-          RequestMatcherInterface* rm;
-          grpc_server_register_method_payload_handling payload_handling =
-              GRPC_SRM_PAYLOAD_NONE;
-          if (registered_method == nullptr) {
-            rm = unregistered_request_matcher_.get();
-          } else {
-            payload_handling = registered_method->payload_handling;
-            rm = registered_method->matcher.get();
-          }
-          auto maybe_read_first_message = If(
-              payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER,
-              [call_handler]() mutable { return call_handler.PullMessage(); },
-              []() -> ValueOrFailure<absl::optional<MessageHandle>> {
-                return ValueOrFailure<absl::optional<MessageHandle>>(
-                    absl::nullopt);
-              });
-          return TryJoin<absl::StatusOr>(
-              std::move(maybe_read_first_message), rm->MatchRequest(0),
-              [md = std::move(md)]() mutable {
-                return ValueOrFailure<ClientMetadataHandle>(std::move(md));
-              });
-        },
+        call_handler.UntilCallCompletes(TrySeq(
+            // Wait for initial metadata to pass through all filters
+            Map(call_handler.PullClientInitialMetadata(), CheckClientMetadata),
+            // Match request with requested call
+            [this, call_handler](ClientMetadataHandle md) mutable {
+              return MatchRequestAndMaybeReadFirstMessage(
+                  std::move(call_handler), std::move(md));
+            })),
         // Publish call to cq
-        [call_handler, this](std::tuple<absl::optional<MessageHandle>,
+        [call_handler, this](std::tuple<std::optional<MessageHandle>,
                                         RequestMatcherInterface::MatchResult,
                                         ClientMetadataHandle>
                                  r) {
@@ -869,8 +1153,10 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args) {
   InterceptionChainBuilder builder(args);
-  builder.AddOnClientInitialMetadata(
-      [this](ClientMetadata& md) { SetRegisteredMethodOnMetadata(md); });
+  // TODO(ctiller): find a way to avoid adding a server ref per call
+  builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
+    self->SetRegisteredMethodOnMetadata(md);
+  });
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_SERVER_CHANNEL, builder);
   return builder.Build(
@@ -910,7 +1196,10 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
     channelz_node_->AddChildListenSocket(
         listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
   }
-  listeners_.emplace_back(std::move(listener));
+  ListenerInterface* ptr = listener.get();
+  listener_states_.emplace_back(
+      MakeRefCounted<ListenerState>(Ref(), std::move(listener)));
+  ptr->SetServerListenerState(listener_states_.back());
 }
 
 void Server::Start() {
@@ -942,8 +1231,8 @@ void Server::Start() {
                                    pollset);
     }
   }
-  for (auto& listener : listeners_) {
-    listener.listener->Start(this, &pollsets_);
+  for (auto& listener_state : listener_states_) {
+    listener_state->Start();
   }
   MutexLock lock(&mu_global_);
   starting_ = false;
@@ -954,6 +1243,7 @@ grpc_error_handle Server::SetupTransport(
     Transport* transport, grpc_pollset* accepting_pollset,
     const ChannelArgs& args,
     const RefCountedPtr<channelz::SocketNode>& socket_node) {
+  GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.
@@ -962,7 +1252,8 @@ grpc_error_handle Server::SetupTransport(
     // TODO(ctiller): post-v3-transition make this method take an
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
-    auto destination = MakeCallDestination(args.SetObject(transport));
+    auto destination = MakeCallDestination(
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -980,7 +1271,9 @@ grpc_error_handle Server::SetupTransport(
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
+        "",
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node),
+        GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
@@ -1051,7 +1344,7 @@ Server::RegisteredMethod* Server::RegisterMethod(
     LOG(ERROR) << "grpc_server_register_method method string cannot be NULL";
     return nullptr;
   }
-  auto key = std::make_pair(host ? host : "", method);
+  auto key = std::pair(host ? host : "", method);
   if (registered_methods_.find(key) != registered_methods_.end()) {
     LOG(ERROR) << "duplicate registration for " << method << "@"
                << (host ? host : "*");
@@ -1092,15 +1385,15 @@ void Server::MaybeFinishShutdown() {
     KillPendingWorkLocked(GRPC_ERROR_CREATE("Server Shutdown"));
   }
   if (!channels_.empty() || connections_open_ > 0 ||
-      listeners_destroyed_ < listeners_.size()) {
+      listeners_destroyed_ < listener_states_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
                      gpr_time_from_seconds(1, GPR_TIMESPAN)) >= 0) {
       last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
       VLOG(2) << "Waiting for " << channels_.size() << " channels "
               << connections_open_ << " connections and "
-              << listeners_.size() - listeners_destroyed_ << "/"
-              << listeners_.size()
+              << listener_states_.size() - listeners_destroyed_ << "/"
+              << listener_states_.size()
               << " listeners to be destroyed before shutting down server";
     }
     return;
@@ -1197,18 +1490,15 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
 }
 
 void Server::StopListening() {
-  for (auto& listener : listeners_) {
-    if (listener.listener == nullptr) continue;
+  for (auto& listener_state : listener_states_) {
+    if (listener_state->listener() == nullptr) continue;
     channelz::ListenSocketNode* channelz_listen_socket_node =
-        listener.listener->channelz_listen_socket_node();
+        listener_state->listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
       channelz_node_->RemoveChildListenSocket(
           channelz_listen_socket_node->uuid());
     }
-    GRPC_CLOSURE_INIT(&listener.destroy_done, ListenerDestroyDone, this,
-                      grpc_schedule_on_exec_ctx);
-    listener.listener->SetOnDestroyDone(&listener.destroy_done);
-    listener.listener.reset();
+    listener_state->Stop();
   }
 }
 
@@ -1234,9 +1524,10 @@ void Server::SendGoaways() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
-    CHECK(ShutdownCalled() || listeners_.empty());
-    CHECK(listeners_destroyed_ == listeners_.size());
+    CHECK(ShutdownCalled() || listener_states_.empty());
+    CHECK(listeners_destroyed_ == listener_states_.size());
   }
+  listener_states_.clear();
   Unref();
 }
 
@@ -1407,12 +1698,12 @@ Server::RegisteredMethod* Server::GetRegisteredMethod(
     const absl::string_view& host, const absl::string_view& path) {
   if (registered_methods_.empty()) return nullptr;
   // check for an exact match with host
-  auto it = registered_methods_.find(std::make_pair(host, path));
+  auto it = registered_methods_.find(std::pair(host, path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
   // check for wildcard method definition (no host set)
-  it = registered_methods_.find(std::make_pair("", path));
+  it = registered_methods_.find(std::pair("", path));
   if (it != registered_methods_.end()) {
     return it->second.get();
   }
@@ -1794,8 +2085,8 @@ void grpc_server_register_completion_queue(grpc_server* server,
   CHECK(!reserved);
   auto cq_type = grpc_get_cq_completion_type(cq);
   if (cq_type != GRPC_CQ_NEXT && cq_type != GRPC_CQ_CALLBACK) {
-    LOG(INFO) << "Completion queue of type " << static_cast<int>(cq_type)
-              << " is being registered as a server-completion-queue";
+    VLOG(2) << "Completion queue of type " << static_cast<int>(cq_type)
+            << " is being registered as a server-completion-queue";
     // Ideally we should log an error and abort but ruby-wrapped-language API
     // calls grpc_completion_queue_pluck() on server completion queues
   }
@@ -1821,7 +2112,6 @@ void grpc_server_start(grpc_server* server) {
 
 void grpc_server_shutdown_and_notify(grpc_server* server,
                                      grpc_completion_queue* cq, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_shutdown_and_notify(server=" << server << ", cq=" << cq
@@ -1830,7 +2120,6 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
 }
 
 void grpc_server_cancel_all_calls(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_cancel_all_calls(server=" << server << ")";
@@ -1838,7 +2127,6 @@ void grpc_server_cancel_all_calls(grpc_server* server) {
 }
 
 void grpc_server_destroy(grpc_server* server) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO) << "grpc_server_destroy(server=" << server << ")";
   grpc_core::Server::FromC(server)->Orphan();
@@ -1849,12 +2137,10 @@ grpc_call_error grpc_server_request_call(
     grpc_metadata_array* request_metadata,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_call("
-      << "server=" << server << ", call=" << call << ", details=" << details
-      << ", initial_metadata=" << request_metadata
+      << "grpc_server_request_call(" << "server=" << server << ", call=" << call
+      << ", details=" << details << ", initial_metadata=" << request_metadata
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag;
   return grpc_core::Server::FromC(server)->RequestCall(
@@ -1868,15 +2154,13 @@ grpc_call_error grpc_server_request_registered_call(
     grpc_byte_buffer** optional_payload,
     grpc_completion_queue* cq_bound_to_call,
     grpc_completion_queue* cq_for_notification, void* tag_new) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   auto* rm =
       static_cast<grpc_core::Server::RegisteredMethod*>(registered_method);
   GRPC_TRACE_LOG(api, INFO)
-      << "grpc_server_request_registered_call("
-      << "server=" << server << ", registered_method=" << registered_method
-      << ", call=" << call << ", deadline=" << deadline
-      << ", request_metadata=" << request_metadata
+      << "grpc_server_request_registered_call(" << "server=" << server
+      << ", registered_method=" << registered_method << ", call=" << call
+      << ", deadline=" << deadline << ", request_metadata=" << request_metadata
       << ", optional_payload=" << optional_payload
       << ", cq_bound_to_call=" << cq_bound_to_call
       << ", cq_for_notification=" << cq_for_notification << ", tag=" << tag_new
@@ -1888,21 +2172,20 @@ grpc_call_error grpc_server_request_registered_call(
 
 void grpc_server_set_config_fetcher(
     grpc_server* server, grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_set_config_fetcher(server=" << server
       << ", config_fetcher=" << server_config_fetcher << ")";
   grpc_core::Server::FromC(server)->set_config_fetcher(
-      std::unique_ptr<grpc_server_config_fetcher>(server_config_fetcher));
+      std::unique_ptr<grpc_core::ServerConfigFetcher>(
+          grpc_core::ServerConfigFetcher::FromC(server_config_fetcher)));
 }
 
 void grpc_server_config_fetcher_destroy(
     grpc_server_config_fetcher* server_config_fetcher) {
-  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_server_config_fetcher_destroy(config_fetcher="
       << server_config_fetcher << ")";
-  delete server_config_fetcher;
+  delete grpc_core::ServerConfigFetcher::FromC(server_config_fetcher);
 }

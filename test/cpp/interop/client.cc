@@ -16,19 +16,18 @@
 //
 //
 
-#include <memory>
-#include <unordered_map>
-
-#include "absl/flags/flag.h"
-#include "absl/log/log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
 
-#include "src/core/lib/gprpp/crash.h"
+#include <memory>
+#include <unordered_map>
+
+#include "absl/flags/flag.h"
+#include "absl/log/log.h"
+#include "src/core/util/crash.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"

@@ -31,6 +31,14 @@ df -h /tmpfs /
 launchctl limit maxfiles
 ulimit -a
 
+# Use temp variable to detect version
+# will be cleaned up after migration is complete
+os_version=$(sw_vers -productVersion)
+is_sonoma=false
+if [[ "$os_version" == "14."* ]]; then
+  is_sonoma=true
+fi
+
 # WARNING: TRY TO KEEP THIS FILE AS LEAN AS POSSIBLE
 # The rules:
 # - think twice before adding installer that takes long time (builds are already slow)
@@ -47,17 +55,28 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # - Kokoro MacOS Mojave: 27fa87c94a6cf7be40fc8f8fc96bc7c387b7781e
 brew config
 
+if $is_sonoma; then
+  brew install cmake
+  brew install gnupg
+  export PATH="/opt/homebrew/bin::${PATH}"
+  cmake --version
+fi
+
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.16.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+echo $DIR
+pwd
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
   export RUN_TESTS_FLAGS="--filter_pr_tests --base_branch origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH $RUN_TESTS_FLAGS"
 fi
 
-if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
+# Changes not needed for sonoma(Already have version available)
+# cleanup this once migration complete
+if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ] && ! $is_sonoma;
 then
   # Workaround for https://github.com/rvm/rvm/issues/5133
   export CURL_CA_BUNDLE=$(pwd)/etc/roots.pem
@@ -125,26 +144,6 @@ then
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
-  # Force reinstall of python3.7 to upgrade its patch version.
-  # Kokoro mac workers come with python 3.7.3 and that version
-  # suffers from https://bugs.python.org/issue22490.
-  # See https://github.com/grpc/grpc/pull/28963.
-  time curl -O https://www.python.org/ftp/python/3.7.9/python-3.7.9-macosx10.9.pkg
-  echo "bf54a14eef23467991e8c7a88c7307762e484c024a94ec1ee292ac1db3d41fc9  python-3.7.9-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.7.9-macosx10.9.pkg -target /
-  python3.7 --version
-
-  # Force reinstall of python3.8 to upgrade its patch version.
-  # Kokoro mac workers come with python 3.8.2 and that version
-  # suffers from https://bugs.python.org/issue22490.
-  # See https://github.com/grpc/grpc/pull/28963.
-  time curl -O https://www.python.org/ftp/python/3.8.10/python-3.8.10-macosx10.9.pkg
-  echo "4c65bc7534d5f07edacbe0fbd609b5734dbf3ac02f5444f9bd97963d589d8afd  python-3.8.10-macosx10.9.pkg" > /tmp/python_installer_checksum.sha256
-  shasum -c /tmp/python_installer_checksum.sha256
-  time sudo installer -pkg ./python-3.8.10-macosx10.9.pkg -target /
-  python3.8 --version
-
   # Install Python 3.9 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.9" ]; then
     time curl -O https://www.python.org/ftp/python/3.9.10/python-3.9.10-macosx10.9.pkg
@@ -176,6 +175,14 @@ then
     shasum -c /tmp/python_installer_checksum.sha256
     time sudo installer -pkg ./python-3.12.0rc2-macos11.pkg -target /
   fi
+
+  # Install Python 3.13 if it doesn't exist
+  if [ ! -f "/usr/local/bin/python3.13" ]; then
+    time curl -O https://www.python.org/ftp/python/3.13.0/python-3.13.0rc2-macos11.pkg
+    echo "75579065f9ee5c25207353fbe0f79275123ff556  python-3.13.0rc2-macos11.pkg" > /tmp/python_installer_checksum.sha256
+    shasum -c /tmp/python_installer_checksum.sha256
+    time sudo installer -pkg ./python-3.13.0rc2-macos11.pkg -target /
+  fi
 fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_CSHARP}" == "true" ]
@@ -197,21 +204,37 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PHP}" == "true" ]
 then
   time brew install php@8.1 || true
-  export LDFLAGS="-L/usr/local/opt/php@8.1/lib ${LDFLAGS}"
-  export CPPFLAGS="-I/usr/local/opt/php@8.1/include ${CPPFLAGS}"
-  export PATH="/usr/local/opt/php@8.1/bin:/usr/local/opt/php@8.1/sbin:${PATH}"
+  if [ -e "/usr/local/opt/php@8.1/" ]; then
+    PHP_PATH="/usr/local/opt/php@8.1/"
+  elif [ -e "/opt/homebrew/opt/php@8.1" ]; then
+    PHP_PATH="/opt/homebrew/opt/php@8.1"
+  else
+    echo "Error: Unable to check php install path" >&2
+    exit 1
+  fi
+
+  export LDFLAGS="-L${PHP_PATH}/lib ${LDFLAGS}"
+  export CPPFLAGS="-I${PHP_PATH}include ${CPPFLAGS}"
+  export PATH="${PHP_PATH}/bin:${PHP_PATH}/sbin:${PATH}"
 
   # the exit code from "brew install php@8.1" is useless
   # so instead we check if PHP was indeed installed successfully.
   # Failing early is better than cryptic errors later in the build process.
-  /usr/local/opt/php@8.1/bin/php --version
+  php --version
 
-  # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
-  mkdir -p /usr/local/lib/php/pecl
-
-  # Download the right version of phpunit to match PHP version
-  sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
-  sudo chmod +x /usr/local/bin/phpunit
+  if $is_sonoma; then
+    php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+    php -r "if (hash_file('sha384', 'composer-setup.php') === 'dac665fdc30fdd8ec78b38b9800061b4150413ff2e3b6f88543c636f7cd84f6db9189d43a81e5503cda447da73c7e5b6') { echo 'Installer verified'.PHP_EOL; } else { echo 'Installer corrupt'.PHP_EOL; unlink('composer-setup.php'); exit(1); }"
+    php composer-setup.php --install-dir /tmp
+    php -r "unlink('composer-setup.php');"
+    php /tmp/composer.phar global require phpunit/phpunit:9.5.9
+  else
+    # Workaround for https://github.com/Homebrew/homebrew-core/issues/41081
+    mkdir -p /usr/local/lib/php/pecl
+    # Download the right version of phpunit to match PHP version
+    sudo curl -sSL https://phar.phpunit.de/phpunit-9.5.9.phar -o /usr/local/bin/phpunit
+    sudo chmod +x /usr/local/bin/phpunit
+  fi
 fi
 
 # TODO(jtattermusch): better debugging of clock skew, remove once not needed

@@ -16,15 +16,15 @@
 //
 //
 
-#include <algorithm>
-#include <memory>
-#include <vector>
-
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/channel_arguments.h>
+
+#include <algorithm>
+#include <memory>
+#include <vector>
 
 #include "src/cpp/server/load_reporter/load_reporting_service_server_builder_plugin.h"
 

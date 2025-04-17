@@ -19,13 +19,6 @@
 #ifndef GRPCPP_IMPL_CALL_OP_SET_H
 #define GRPCPP_IMPL_CALL_OP_SET_H
 
-#include <cstring>
-#include <map>
-#include <memory>
-
-#include "absl/log/absl_check.h"
-#include "absl/log/absl_log.h"
-
 #include <grpc/grpc.h>
 #include <grpc/impl/compression_types.h>
 #include <grpc/impl/grpc_types.h>
@@ -44,6 +37,13 @@
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/string_ref.h>
+
+#include <cstring>
+#include <map>
+#include <memory>
+
+#include "absl/log/absl_check.h"
+#include "absl/log/absl_log.h"
 
 namespace grpc {
 

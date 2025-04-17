@@ -15,13 +15,13 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
 #define GRPC_TEST_CORE_TEST_UTIL_PASSTHROUGH_ENDPOINT_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
+
+#include <memory>
 
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {

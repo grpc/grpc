@@ -48,7 +48,7 @@ name, will return both the resolved addresses and the service config.
 
 The name resolver returns the service config to the gRPC client in JSON form.
 Individual resolver implementations determine where and in what format the
-service config is stored.  If the resolver implemention obtains the
+service config is stored.  If the resolver implementation obtains the
 service config in protobuf form, it must convert it to JSON.
 Alternatively, a resolver implementation may obtain the service config
 already in JSON form, in which case it may return it directly.  Or it

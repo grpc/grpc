@@ -19,10 +19,9 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_HISTOGRAM_H
 #define GRPC_TEST_CORE_TEST_UTIL_HISTOGRAM_H
 
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
-
-#include <grpc/support/port_platform.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -31,7 +31,7 @@ import jobset
 _PORT_SERVER_PORT = 32766
 
 
-def start_port_server():
+def start_port_server(verbose=False):
     # check if a compatible port server is running
     # if incompatible (version mismatch) ==> start a new one
     # if not running ==> start a new one
@@ -45,7 +45,8 @@ def start_port_server():
         logging.info("detected port server running version %d", version)
         running = True
     except Exception as e:
-        logging.exception("failed to detect port server")
+        if verbose:
+            logging.exception("failed to detect port server")
         running = False
     if running:
         current_version = int(

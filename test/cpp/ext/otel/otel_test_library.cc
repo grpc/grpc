@@ -18,6 +18,8 @@
 
 #include "test/cpp/ext/otel/otel_test_library.h"
 
+#include <grpcpp/grpcpp.h>
+
 #include <atomic>
 #include <memory>
 
@@ -28,17 +30,108 @@
 #include "opentelemetry/sdk/metrics/export/metric_producer.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "opentelemetry/sdk/metrics/metric_reader.h"
-
-#include <grpcpp/grpcpp.h>
-
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/notification.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/fake_stats_plugin.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+
+namespace {
+
+template <typename T>
+std::string ToString(T value) {
+  return absl::StrCat("\"", std::to_string(value), "\"");
+}
+
+std::string ToString(bool value) { return value ? "true" : "false"; }
+
+std::string ToString(std::string value) { return value; }
+
+template <typename T>
+std::string ToString(const std::vector<T>& value) {
+  return absl::StrCat("[",
+                      absl::StrJoin(value, ", ",
+                                    [](std::string* out, T item) {
+                                      absl::StrAppend(out, ToString(item));
+                                    }),
+                      "]");
+}
+
+std::string ToString(
+    const opentelemetry::sdk::common::OwnedAttributeValue& value) {
+  return std::visit([](const auto& value) { return ToString(value); }, value);
+}
+
+std::string ToString(
+    const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(point_attributes.GetAttributes(), ", ",
+                    [](std::string* out, const auto& attribute) {
+                      absl::StrAppend(out, "{", ToString(attribute.first), ",",
+                                      ToString(attribute.second), "}");
+                    }),
+      "}");
+}
+
+std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
+  return std::visit([](const auto& value) { return ToString(value); }, value);
+}
+
+struct PointTypeVisitor {
+  std::string operator()(
+      const opentelemetry::sdk::metrics::SumPointData& point) {
+    return absl::StrFormat("{value = %s, is_monotonic = %s}",
+                           ToString(point.value_),
+                           ToString(point.is_monotonic_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::LastValuePointData& point) {
+    return absl::StrFormat(
+        "{value = %s, is_lastvalue_valid = %s, sample_ts = %ldns}",
+        ToString(point.value_), ToString(point.is_lastvalue_valid_),
+        point.sample_ts_.time_since_epoch().count());
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::HistogramPointData& point) {
+    return absl::StrFormat(
+        "{boundaries = %s, sum = %s, min = %s, max = %s, counts = %s, count = "
+        "%ld, record_min_max = %s}",
+        ToString(point.boundaries_), ToString(point.sum_), ToString(point.min_),
+        ToString(point.max_), ToString(point.counts_), point.count_,
+        ToString(point.record_min_max_));
+  }
+
+  std::string operator()(
+      const opentelemetry::sdk::metrics::DropPointData& /*point*/) {
+    return "<DropPointData>";
+  }
+};
+
+std::string ToString(const opentelemetry::sdk::metrics::PointType& point_type) {
+  return std::visit(PointTypeVisitor(), point_type);
+}
+
+}  // namespace
+
+OPENTELEMETRY_BEGIN_NAMESPACE
+namespace sdk {
+namespace metrics {
+
+void PrintTo(const PointDataAttributes& point_data_attributes,
+             std::ostream* os) {
+  *os << "{attributes = " << ToString(point_data_attributes.attributes)
+      << ", point_data = " << ToString(point_data_attributes.point_data) << "}";
+}
+
+}  // namespace metrics
+}  // namespace sdk
+OPENTELEMETRY_END_NAMESPACE
 
 namespace grpc {
 namespace testing {
@@ -263,8 +356,8 @@ OpenTelemetryPluginEnd2EndTest::BuildAndRegisterOpenTelemetryPlugin(
   grpc::internal::OpenTelemetryPluginBuilderImpl ot_builder;
   absl::Status expected_status;
   if (!options.use_meter_provider) {
-    expected_status =
-        absl::InvalidArgumentError("Need to configure a valid meter provider.");
+    expected_status = absl::InvalidArgumentError(
+        "Need to configure a valid meter provider or tracer provider.");
   }
   auto reader = ConfigureOTBuilder(std::move(options), &ot_builder);
   EXPECT_EQ(ot_builder.BuildAndRegisterGlobal(), expected_status);

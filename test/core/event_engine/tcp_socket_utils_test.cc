@@ -14,7 +14,6 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 
 #include <errno.h>
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
@@ -45,14 +44,12 @@
 #endif  // GPR_WINDOWS
 #endif  // GRPC_HAVE_UNIX_SOCKET
 
+#include <grpc/event_engine/event_engine.h>
+
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/iomgr/sockaddr.h"
 
 namespace grpc_event_engine {

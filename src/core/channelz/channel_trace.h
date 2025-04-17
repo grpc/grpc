@@ -19,18 +19,17 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
 #define GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
 
-#include <stddef.h>
-#include <stdint.h>
-
-#include "absl/base/thread_annotations.h"
-
 #include <grpc/slice.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <sys/types.h>
 
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "absl/base/thread_annotations.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -55,6 +54,19 @@ class ChannelTrace {
     Warning,
     Error
   };
+
+  static const char* SeverityString(ChannelTrace::Severity severity) {
+    switch (severity) {
+      case ChannelTrace::Severity::Info:
+        return "CT_INFO";
+      case ChannelTrace::Severity::Warning:
+        return "CT_WARNING";
+      case ChannelTrace::Severity::Error:
+        return "CT_ERROR";
+      default:
+        GPR_UNREACHABLE_CODE(return "CT_UNKNOWN");
+    }
+  }
 
   // Adds a new trace event to the tracing object
   //
@@ -84,6 +96,19 @@ class ChannelTrace {
   // object may incorporate the json before rendering.
   Json RenderJson() const;
 
+  void ForEachTraceEvent(
+      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                             RefCountedPtr<BaseNode>)>
+          callback) const {
+    MutexLock lock(&mu_);
+    ForEachTraceEventLocked(callback);
+  }
+  std::string creation_timestamp() const;
+  uint64_t num_events_logged() const {
+    MutexLock lock(&mu_);
+    return num_events_logged_;
+  }
+
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
 
@@ -101,15 +126,15 @@ class ChannelTrace {
 
     ~TraceEvent();
 
-    // Renders the data inside of this TraceEvent into a json object. This is
-    // used by the ChannelTrace, when it is rendering itself.
-    Json RenderTraceEvent() const;
-
     // set and get for the next_ pointer.
     TraceEvent* next() const { return next_; }
     void set_next(TraceEvent* next) { next_ = next; }
 
     size_t memory_usage() const { return memory_usage_; }
+    gpr_timespec timestamp() const { return timestamp_; }
+    Severity severity() const { return severity_; }
+    std::string description() const;
+    RefCountedPtr<BaseNode> referenced_entity() const;
 
    private:
     const gpr_timespec timestamp_;
@@ -123,6 +148,10 @@ class ChannelTrace {
 
   // Internal helper to add and link in a trace event
   void AddTraceEventHelper(TraceEvent* new_trace_event);
+  void ForEachTraceEventLocked(
+      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                             RefCountedPtr<BaseNode>)>) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   const size_t max_event_memory_;
   const gpr_timespec time_created_;

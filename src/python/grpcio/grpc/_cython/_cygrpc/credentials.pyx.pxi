@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import atexit
 
 def _spawn_callback_in_thread(cb_func, args):
   t = ForkManagedThread(target=cb_func, args=args)
@@ -41,7 +42,7 @@ cdef int _get_metadata(void *state,
                        grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
                        size_t *num_creds_md,
                        grpc_status_code *status,
-                       const char **error_details) except * with gil:
+                       const char **error_details) except -1 with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -65,10 +66,58 @@ cdef int _get_metadata(void *state,
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) except * with gil:
-  cpython.Py_DECREF(<object>state)
+# Protects access to GIL from _destroy() and to g_shutting_down.
+# Do NOT hold this while holding GIL to prevent a deadlock.
+cdef mutex g_shutdown_mu
+# Number of C-core clean up calls in progress. Set to -1 when Python is shutting
+# down.
+cdef int g_shutting_down = 0
+
+# This is called by C-core when the plugin is destroyed, which may race between
+# GIL destruction during process shutdown. Since GIL destruction happens after
+# Python's exit handlers, we mark that Python is shutting down from an exit
+# handler and don't grab GIL in this function afterwards using a C mutex.
+cdef void _destroy(void *state) noexcept nogil:
+  global g_shutdown_mu
+  global g_shutting_down
+  g_shutdown_mu.lock()
+  if g_shutting_down > -1:
+    g_shutting_down += 1
+    g_shutdown_mu.unlock()
+    with gil:
+      cpython.Py_DECREF(<object>state)
+    g_shutdown_mu.lock()
+    g_shutting_down -= 1
+  g_shutdown_mu.unlock()
   grpc_shutdown()
 
+
+g_shutdown_handler_registered = False
+
+def _maybe_register_shutdown_handler():
+  global g_shutdown_handler_registered
+  if g_shutdown_handler_registered:
+    return
+  g_shutdown_handler_registered = True
+  atexit.register(_on_shutdown)
+
+cdef void _on_shutdown() noexcept nogil:
+  global g_shutdown_mu
+  global g_shutting_down
+  # Wait for up to ~2s if C-core is still cleaning up.
+  cdef int wait_ms = 10
+  while wait_ms < 1500:
+    g_shutdown_mu.lock()
+    if g_shutting_down == 0:
+      g_shutting_down = -1
+      g_shutdown_mu.unlock()
+      return
+    g_shutdown_mu.unlock()
+    with gil:
+      time.sleep(wait_ms / 1000)
+    wait_ms = wait_ms * 2
+  with gil:
+    _LOGGER.error('Timed out waiting for C-core clean-up')
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
 
@@ -83,6 +132,7 @@ cdef class MetadataPluginCallCredentials(CallCredentials):
     c_metadata_plugin.state = <void *>self._metadata_plugin
     c_metadata_plugin.type = self._name
     cpython.Py_INCREF(self._metadata_plugin)
+    _maybe_register_shutdown_handler()
     fork_handlers_and_grpc_init()
     # TODO(yihuazhang): Expose min_security_level via the Python API so that
     # applications can decide what minimum security level their plugins require.

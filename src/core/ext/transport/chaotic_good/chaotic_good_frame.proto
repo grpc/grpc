@@ -1,0 +1,67 @@
+// Copyright 2024 The gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package chaotic_good_frame;
+
+message Settings {
+    enum Features {
+        UNSPECIFIED = 0;
+        CHUNKING = 1;
+    }
+
+    // Connection id
+    // - sent server->client on the control channel to specify the
+    //   data channel connection id, one for each desired connection
+    // - exactly one sent client->server on the data channel to 
+    //   complete the connection
+    repeated bytes connection_id = 1;
+    // Flag true if this is a data channel (and not a control channel)
+    bool data_channel = 2;
+    // Requested alignment for the data channel
+    // Client and server each send this with their preferences
+    uint32 alignment = 3;
+    // Max chunk size allowed to be sent to a peer (0 or omitted: no limit)
+    // Sent on the control channel, applies to all messages.
+    uint32 max_chunk_size = 4;
+    // Set of feature flags supported by this endpoint.
+    // Sent client->server on the control channel to advertise its list
+    // And server->client to confirm the set that will be used.
+    repeated Features supported_features = 5;
+}
+
+message UnknownMetadata {
+    string key = 1;
+    bytes value = 2;
+}
+
+message ClientMetadata {
+    optional string path = 1;
+    optional string authority = 2;
+    optional uint64 timeout_ms = 3;
+
+    repeated UnknownMetadata unknown_metadata = 100;
+}
+
+message ServerMetadata {
+    optional uint32 status = 1;
+    optional bytes message = 2;
+
+    repeated UnknownMetadata unknown_metadata = 100;
+}
+
+message BeginMessage {
+    uint64 length = 1;
+}

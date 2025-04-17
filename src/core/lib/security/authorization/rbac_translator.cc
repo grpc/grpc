@@ -14,6 +14,9 @@
 
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -31,16 +34,10 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/matchers/matchers.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
+#include "src/core/util/matchers.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -277,8 +274,8 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
 
 absl::StatusOr<Rbac::Policy> ParseRule(const Json& json,
                                        std::string* policy_name) {
-  absl::optional<Rbac::Principal> principals;
-  absl::optional<Rbac::Permission> permissions;
+  std::optional<Rbac::Principal> principals;
+  std::optional<Rbac::Permission> permissions;
   for (const auto& object : json.object()) {
     if (object.first == "name") {
       if (object.second.type() != Json::Type::kString) {

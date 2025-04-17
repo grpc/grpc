@@ -15,33 +15,26 @@
 // TODO(ctiller): Add a unit test suite for these filters once it's practical to
 // mock transport operations.
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/channel_idle/legacy_channel_idle_filter.h"
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/support/port_platform.h>
+
 #include <functional>
+#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
 #include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/support/log.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/no_destruct.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/per_cpu.h"
-#include "src/core/lib/gprpp/status_helper.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,17 +46,24 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/http2_errors.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/no_destruct.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/per_cpu.h"
+#include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/status_helper.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
-namespace {
+using http2::Http2ErrorCode;
 
+namespace {
 constexpr Duration kDefaultIdleTimeout = Duration::Minutes(30);
 
 // If these settings change, make sure that we are not sending a GOAWAY for
-// inproc transport, since a GOAWAY to inproc ends up destroying the transport.
+// inproc transport, since a GOAWAY to inproc ends up destroying the
+// transport.
 const auto kDefaultMaxConnectionAge = Duration::Infinity();
 const auto kDefaultMaxConnectionAgeGrace = Duration::Infinity();
 const auto kDefaultMaxConnectionIdle = Duration::Infinity();
@@ -108,9 +108,11 @@ struct LegacyMaxAgeFilter::Config {
         return absl::Uniform(bit_gen, min, max);
       }
     };
-    static NoDestruct<PerCpu<BitGen>> bit_gen(PerCpuOptions().SetMaxShards(8));
-    const double multiplier = bit_gen->this_cpu().MakeUniformDouble(
-        1.0 - kMaxConnectionAgeJitter, 1.0 + kMaxConnectionAgeJitter);
+    const double multiplier = []() {
+      SharedBitGen g;
+      return absl::Uniform(g, 1.0 - kMaxConnectionAgeJitter,
+                           1.0 + kMaxConnectionAgeJitter);
+    }();
     // GRPC_MILLIS_INF_FUTURE - 0.5 converts the value to float, so that result
     // will not be cast to int implicitly before the comparison.
     return Config{args_max_age * multiplier, args_max_idle * multiplier,
@@ -187,7 +189,8 @@ void LegacyMaxAgeFilter::PostInit() {
                 grpc_transport_op* op = grpc_make_transport_op(nullptr);
                 op->goaway_error = grpc_error_set_int(
                     GRPC_ERROR_CREATE("max_age"),
-                    StatusIntProperty::kHttp2Error, GRPC_HTTP2_NO_ERROR);
+                    StatusIntProperty::kHttp2Error,
+                    static_cast<intptr_t>(Http2ErrorCode::kNoError));
                 grpc_channel_element* elem =
                     grpc_channel_stack_element(channel_stack, 0);
                 elem->filter->start_transport_op(elem, op);
@@ -208,7 +211,7 @@ void LegacyMaxAgeFilter::PostInit() {
           // OnDone -- close the connection if the promise completed
           // successfully.
           // (if it did not, it was cancelled)
-          if (status.ok()) CloseChannel();
+          if (status.ok()) CloseChannel("max connection age");
         },
         std::move(arena)));
   }
@@ -223,7 +226,7 @@ ArenaPromise<ServerMetadataHandle> LegacyChannelIdleFilter::MakeCallPromise(
   return ArenaPromise<ServerMetadataHandle>(
       [decrementer = Decrementer(this),
        next = next_promise_factory(std::move(call_args))]() mutable
-      -> Poll<ServerMetadataHandle> { return next(); });
+          -> Poll<ServerMetadataHandle> { return next(); });
 }
 
 bool LegacyChannelIdleFilter::StartTransportOp(grpc_transport_op* op) {
@@ -274,16 +277,16 @@ void LegacyChannelIdleFilter::StartIdleTimer() {
   activity_.Set(MakeActivity(
       std::move(promise), ExecCtxWakeupScheduler{},
       [channel_stack, this](absl::Status status) {
-        if (status.ok()) CloseChannel();
+        if (status.ok()) CloseChannel("connection idle");
       },
       std::move(arena)));
 }
 
-void LegacyChannelIdleFilter::CloseChannel() {
+void LegacyChannelIdleFilter::CloseChannel(absl::string_view reason) {
   auto* op = grpc_make_transport_op(nullptr);
   op->disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE("enter idle"),
-      StatusIntProperty::ChannelConnectivityState, GRPC_CHANNEL_IDLE);
+      GRPC_ERROR_CREATE(reason), StatusIntProperty::ChannelConnectivityState,
+      GRPC_CHANNEL_IDLE);
   // Pass the transport op down to the channel stack.
   auto* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);

@@ -16,21 +16,18 @@
 //
 //
 
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/slice.h>
+#include <grpc/support/time.h>
 #include <netinet/in.h>
-#include <stdint.h>
-#include <stdio.h>
-
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
+#include <stdint.h>
+#include <stdio.h>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/slice.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/port.h"
 #include "test/core/test_util/test_config.h"
@@ -40,6 +37,11 @@
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_TCP
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -47,20 +49,12 @@
 
 #include <string>
 
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 #include "test/core/test_util/tls_utils.h"
 
 #define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
@@ -382,7 +376,7 @@ static bool client_ssl_test(char* server_alpn_preferred) {
 }
 
 TEST(ClientSslTest, MainTest) {
-  // Handshake succeeeds when the server has h2 as the ALPN preference.
+  // Handshake succeeds when the server has h2 as the ALPN preference.
   ASSERT_TRUE(client_ssl_test(const_cast<char*>("h2")));
 
 // TODO(gtcooke94) Figure out why test is failing with OpenSSL and fix it.

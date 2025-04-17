@@ -16,16 +16,13 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <sys/resource.h>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
 
 int main(int argc, char** argv) {

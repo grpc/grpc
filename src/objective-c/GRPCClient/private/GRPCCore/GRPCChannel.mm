@@ -18,8 +18,6 @@
 
 #import "GRPCChannel.h"
 
-#include <grpc/support/log.h>
-
 #import "../../internal/GRPCCallOptions+Internal.h"
 #import "../GRPCTransport+Private.h"
 #import "ChannelArgsUtil.h"
@@ -30,7 +28,6 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 
-#import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
 #import <GRPCClient/version.h>
 
@@ -82,12 +79,6 @@
           }
           return factory;
         }
-      case GRPCTransportTypeCronet: {
-        id<GRPCCoreTransportFactory> transportFactory =
-            (id<GRPCCoreTransportFactory>)[[GRPCTransportRegistry sharedInstance]
-                getTransportFactoryWithID:gGRPCCoreCronetID];
-        return [transportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
-      }
       case GRPCTransportTypeInsecure:
         return [GRPCInsecureChannelFactory sharedInstance];
       default:
@@ -171,8 +162,6 @@
 
 - (NSString *)getTransportTypeString {
   switch (_callOptions.transportType) {
-    case GRPCTransportTypeCronet:
-      return @"cronet";
     case GRPCTransportTypeInsecure:
     case GRPCTransportTypeChttp2BoringSSL:
       return @"cfstream";
@@ -263,8 +252,7 @@
   NSAssert(_unmanagedChannel != NULL, @"Channel should have valid unmanaged channel.");
   if (_unmanagedChannel == NULL) return NULL;
 
-  NSString *serverAuthority =
-      callOptions.transportType == GRPCTransportTypeCronet ? nil : callOptions.serverAuthority;
+  NSString *serverAuthority = callOptions.serverAuthority;
   NSTimeInterval timeout = callOptions.timeout;
   NSAssert(timeout >= 0, @"Invalid timeout");
   if (timeout < 0) return NULL;

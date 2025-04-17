@@ -17,13 +17,15 @@
 #ifndef GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_FILTER_H
 #define GRPC_SRC_CORE_CLIENT_CHANNEL_CLIENT_CHANNEL_FILTER_H
 
+#include <grpc/grpc.h>
+#include <grpc/impl/connectivity_state.h>
 #include <grpc/support/port_platform.h>
-
 #include <stddef.h>
 
 #include <atomic>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -32,26 +34,18 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/connectivity_state.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/dynamic_filters.h"
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
@@ -60,14 +54,19 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
+#include "src/core/util/work_serializer.h"
 
 //
 // Client channel filter
@@ -79,9 +78,6 @@
 //
 // Calls on a disconnected client channel are queued until a connection is
 // established.
-
-// Channel arg key for server URI string.
-#define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
@@ -227,7 +223,7 @@ class ClientChannelFilter final {
 
   absl::Status CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      const absl::optional<std::string>& health_check_service_name,
+      const std::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const ChannelArgs& args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -247,7 +243,7 @@ class ClientChannelFilter final {
       RefCountedPtr<ConfigSelector> config_selector, std::string lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
-  void UpdateServiceConfigInDataPlaneLocked()
+  void UpdateServiceConfigInDataPlaneLocked(const ChannelArgs& args)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
 
   void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_);
@@ -316,6 +312,8 @@ class ClientChannelFilter final {
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(*work_serializer_);
+  RefCountedPtr<const Blackboard> blackboard_
+      ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
@@ -376,8 +374,7 @@ class ClientChannelFilter::LoadBalancedCall
  protected:
   ClientChannelFilter* chand() const { return chand_; }
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer() const {
-    return DownCast<ClientCallTracer::CallAttemptTracer*>(
-        arena_->GetContext<CallTracerInterface>());
+    return call_attempt_tracer_;
   }
   ConnectedSubchannel* connected_subchannel() const {
     return connected_subchannel_.get();
@@ -403,7 +400,7 @@ class ClientChannelFilter::LoadBalancedCall
   //   it will be queued instead.)
   // - The pick completed successfully.  A connected subchannel is
   //   stored and an OK status will be returned.
-  absl::optional<absl::Status> PickSubchannel(bool was_queued);
+  std::optional<absl::Status> PickSubchannel(bool was_queued);
 
   void RecordCallCompletion(absl::Status status,
                             grpc_metadata_batch* recv_trailing_metadata,
@@ -433,10 +430,13 @@ class ClientChannelFilter::LoadBalancedCall
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannelFilter::lb_mu_) = 0;
 
   ClientChannelFilter* chand_;
+  // When we start a new attempt for a call, we might not have cleaned up the
+  // previous attempt yet leading to a situation where we have two active call
+  // attempt tracers, and so we cannot rely on the arena to give us the right
+  // tracer when performing cleanup.
+  ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
 
   absl::AnyInvocable<void()> on_commit_;
-
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;
@@ -536,7 +536,7 @@ class ClientChannelFilter::FilterBasedLoadBalancedCall final
   CallCombiner* call_combiner_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
-  absl::optional<Slice> peer_string_;
+  std::optional<Slice> peer_string_;
 
   // Set when we get a cancel_stream op.
   grpc_error_handle cancel_error_;

@@ -16,19 +16,17 @@
 //
 //
 
+#include <grpc/byte_buffer.h>
+#include <grpc/byte_buffer_reader.h>
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/slice.h>
 #include <string.h>
 
 #include <memory>
 
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/byte_buffer_reader.h>
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/slice.h>
-
 #include "test/core/test_util/test_config.h"
 
 TEST(GrpcByteBufferReaderTest, TestReadOneSlice) {

@@ -1,5 +1,5 @@
 source 'https://github.com/CocoaPods/Specs.git'
-platform :ios, '10.0'
+platform :ios, '15.0'
 
 # Without this we get linker errors due to files with same names but different paths
 # ref: https://github.com/CocoaPods/CocoaPods/issues/8289#issuecomment-1022723820
@@ -16,4 +16,12 @@ target 'SwiftUseFrameworks' do
   pod 'gRPC-C++', :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
   pod 'BoringSSL-GRPC', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+end
+
+post_install do |installer|
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['CLANG_CXX_LANGUAGE_STANDARD'] = 'c++17'
+    end
+  end
 end

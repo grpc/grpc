@@ -82,6 +82,10 @@ chttp2_hpack_parser:
 chttp2_new_stream:
   default: false
   description: HTTP/2 incoming stream creation.
+chttp2_server_refcount:
+  debug_only: true
+  default: false
+  description: Refcounting in Chttp2 Server.
 client_channel:
   default: false
   description: Client channel control plane activity, including resolver and load balancing policy interaction.
@@ -112,9 +116,6 @@ cq_refcount:
   debug_only: true
   default: false
   description: Completion queue refcounting.
-cronet:
-  default: false
-  description: Cronet transport engine.
 dns_resolver:
   default: false
   description: The active DNS resolver.
@@ -225,6 +226,10 @@ pending_tags:
   debug_only: true
   default: false
   description: Still-in-progress tags on completion queues. The `api` tracer must be enabled for this flag to have any effect.
+http2_ph2_transport:
+  debug_only: true
+  default: false
+  description: Promise Based HTTP2 transport.
 pick_first:
   default: false
   description: Pick first load balancing policy.
@@ -308,6 +313,9 @@ timer:
 timer_check:
   default: false
   description: more detailed trace of timer logic in grpc internals.
+token_fetcher_credentials:
+  default: false
+  description: Token fetcher call credentials framework, used for (e.g.) oauth2 token fetcher credentials.
 tsi:
   default: false
   description: TSI transport security.
@@ -333,32 +341,12 @@ xds_cluster_impl_lb:
 xds_cluster_manager_lb:
   default: false
   description: XDS Cluster manager LB policy.
-xds_cluster_resource_type_test:
-  default: true
-  description: XDS Cluster resource type.
-  internal: true
-xds_common_types_test:
-  default: true
-  description: XDS Common types.
-  internal: true
-xds_endpoint_resource_type_test:
-  default: true
-  description: XDS Endpoint resource type.
-  internal: true
-xds_listener_resource_type_test:
-  default: true
-  description: XDS Listener resource type.
-  internal: true
 xds_override_host_lb:
   default: false
   description: XDS Override host LB.
 xds_resolver:
   default: false
   description: XDS Resolver.
-xds_route_config_resource_type_test:
-  default: true
-  description: XDS Route config resource type.
-  internal: true
 xds_server_config_fetcher:
   default: false
   description: XDS Server config fetcher.

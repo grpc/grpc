@@ -41,7 +41,7 @@ ruby --version
 # log gem versions for easier debugging if things go wrong
 gem list || true
 
-# avoid polluting the global gem diretory
+# avoid polluting the global gem directory
 # by configuring "bundle install" to install all the gems
 # into a project-local directory
 export BUNDLE_PATH=bundle_local_gems

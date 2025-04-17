@@ -32,7 +32,7 @@ then
   # running on PR, generate size diff
   DIFF_BASE="origin/${KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH}"
 else
-  # running as continous build, only generate numbers for the current revision
+  # running as continuous build, only generate numbers for the current revision
   DIFF_BASE=""
 fi
 

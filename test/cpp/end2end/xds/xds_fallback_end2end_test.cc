@@ -12,35 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-#include <iostream>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/support/status.h>
+
 #include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/strip.h"
-
-#include <grpcpp/create_channel.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/support/status.h>
-
-#include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
-#include "src/cpp/client/secure_credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "src/core/config/config_vars.h"
+#include "src/proto/grpc/testing/echo.pb.h"
 #include "src/proto/grpc/testing/echo_messages.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/end2end/xds/xds_end2end_test_lib.h"
@@ -123,8 +111,6 @@ class XdsFallbackTest : public XdsEnd2endTest {
 };
 
 TEST_P(XdsFallbackTest, FallbackAndRecover) {
-  grpc_core::testing::ScopedEnvVar fallback_enabled(
-      "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   auto broken_balancer = CreateAndStartBalancer("Broken balancer");
   broken_balancer->ads_service()->ForceADSFailure(
       Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
@@ -151,31 +137,7 @@ TEST_P(XdsFallbackTest, FallbackAndRecover) {
   broken_balancer->Shutdown();
 }
 
-TEST_P(XdsFallbackTest, EnvVarNotSet) {
-  InitClient(XdsBootstrapBuilder().SetServers({
-      balancer_->target(),
-      fallback_balancer_->target(),
-  }));
-  // Primary xDS server has backends_[0] configured and fallback server has
-  // backends_[1]
-  CreateAndStartBackends(2);
-  SetXdsResourcesForServer(balancer_.get(), 0);
-  SetXdsResourcesForServer(fallback_balancer_.get(), 1);
-  balancer_->ads_service()->ForceADSFailure(
-      Status(StatusCode::RESOURCE_EXHAUSTED, kErrorMessage));
-  // Primary server down, failure should be reported
-  CheckRpcSendFailure(
-      DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-      absl::StrFormat("server.example.com: UNAVAILABLE: xDS channel for server "
-                      "localhost:%d: xDS call failed with no responses "
-                      "received; status: RESOURCE_EXHAUSTED: test forced ADS "
-                      "stream failure \\(node ID:xds_end2end_test\\)",
-                      balancer_->port()));
-}
-
 TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
-  grpc_core::testing::ScopedEnvVar fallback_enabled(
-      "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   InitClient(XdsBootstrapBuilder().SetServers(
       {balancer_->target(), fallback_balancer_->target()}));
   balancer_->ads_service()->ForceADSFailure(
@@ -185,17 +147,16 @@ TEST_P(XdsFallbackTest, PrimarySecondaryNotAvailable) {
   CheckRpcSendFailure(
       DEBUG_LOCATION, StatusCode::UNAVAILABLE,
       absl::StrFormat(
-          "server.example.com: UNAVAILABLE: xDS channel for server "
-          "localhost:%d: xDS call failed with no responses received; "
-          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure \\(node "
-          "ID:xds_end2end_test\\)",
+          "empty address list \\(LDS resource server.example.com: "
+          "xDS channel for server localhost:%d: "
+          "xDS call failed with no responses received; "
+          "status: RESOURCE_EXHAUSTED: test forced ADS stream failure "
+          "\\(node ID:xds_end2end_test\\)\\)",
           fallback_balancer_->port()));
 }
 
 TEST_P(XdsFallbackTest, UsesCachedResourcesAfterFailure) {
   constexpr absl::string_view kServerName2 = "server2.example.com";
-  grpc_core::testing::ScopedEnvVar fallback_enabled(
-      "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   InitClient(XdsBootstrapBuilder().SetServers(
       {balancer_->target(), fallback_balancer_->target()}));
   // 4 backends - cross product of two data plane targets and two balancers
@@ -223,8 +184,6 @@ TEST_P(XdsFallbackTest, PerAuthorityFallback) {
   // Use cleanup in case test assertion fails
   auto balancer2_cleanup =
       absl::MakeCleanup([&]() { fallback_balancer2->Shutdown(); });
-  grpc_core::testing::ScopedEnvVar fallback_enabled(
-      "GRPC_EXPERIMENTAL_XDS_FALLBACK", "1");
   grpc_core::testing::ScopedExperimentalEnvVar env_var(
       "GRPC_EXPERIMENTAL_XDS_FEDERATION");
   const char* kAuthority1 = "xds1.example.com";

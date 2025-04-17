@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/telemetry")
 
@@ -22,7 +23,6 @@ grpc_cc_test(
     name = "call_tracer_test",
     srcs = ["call_tracer_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -39,7 +39,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -49,19 +48,14 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "stats_test",
-    timeout = "long",
     srcs = ["stats_test.cc"],
     external_deps = [
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
-    language = "C++",
-    tags = [
-        "cpu:10",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
@@ -73,7 +67,6 @@ grpc_cc_test(
     name = "trace_flags_test",
     srcs = ["trace_flags_test.cc"],
     external_deps = ["gtest"],
-    language = "C++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

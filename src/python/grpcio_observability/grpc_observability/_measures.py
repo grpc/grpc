@@ -17,7 +17,7 @@ from opencensus.stats import measure
 # These measure definitions should be kept in sync across opencensus implementations.
 # https://github.com/census-instrumentation/opencensus-java/blob/master/contrib/grpc_metrics/src/main/java/io/opencensus/contrib/grpc/metrics/RpcMeasureConstants.java.
 
-# Unit constatns
+# Unit constants
 UNIT_BYTES = "By"
 UNIT_MILLISECONDS = "ms"
 UNIT_COUNT = "1"

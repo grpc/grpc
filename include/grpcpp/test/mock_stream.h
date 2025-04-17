@@ -19,14 +19,13 @@
 #ifndef GRPCPP_TEST_MOCK_STREAM_H
 #define GRPCPP_TEST_MOCK_STREAM_H
 
-#include <stdint.h>
-
-#include <gmock/gmock.h>
-
 #include <grpcpp/impl/call.h>
 #include <grpcpp/support/async_stream.h>
 #include <grpcpp/support/async_unary_call.h>
 #include <grpcpp/support/sync_stream.h>
+#include <stdint.h>
+
+#include "gmock/gmock.h"
 
 namespace grpc {
 namespace testing {

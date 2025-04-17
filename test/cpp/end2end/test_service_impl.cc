@@ -18,20 +18,18 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include <string>
-#include <thread>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpcpp/alarm.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/notification.h"
+#include <string>
+#include <thread>
+
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "gtest/gtest.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/notification.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
 
@@ -80,10 +78,9 @@ int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     const std::string& key, const std::string& value) {
   int count = 0;
-  for (const auto& metadatum : metadata) {
-    if (ToString(metadatum.first) == key &&
-        ToString(metadatum.second) == value) {
-      count++;
+  for (const auto& [k, v] : metadata) {
+    if (ToString(k) == key && ToString(v) == value) {
+      ++count;
     }
   }
   return count;
@@ -232,6 +229,15 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
         FinishWhenCancelledAsync();
         return;
       }
+      if (req_->has_param() &&
+          req_->param().compression_algorithm() != RequestParams::NONE) {
+        if (req_->param().compression_algorithm() == RequestParams::DEFLATE) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
+        } else if (req_->param().compression_algorithm() ==
+                   RequestParams::GZIP) {
+          ctx_->set_compression_algorithm(GRPC_COMPRESS_GZIP);
+        }
+      }
       resp_->set_message(req_->message());
       internal::MaybeEchoDeadline(ctx_, req_, resp_);
       if (service_->host_) {
@@ -264,9 +270,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
-          ctx_->AddInitialMetadata(ToString(metadatum.first),
-                                   ToString(metadatum.second));
+        for (const auto& [key, value] : client_metadata) {
+          ctx_->AddInitialMetadata(ToString(key), ToString(value));
         }
         StartSendInitialMetadata();
       }
@@ -274,9 +279,8 @@ ServerUnaryReactor* CallbackTestServiceImpl::Echo(
       if (req_->has_param() && req_->param().echo_metadata()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (const auto& metadatum : client_metadata) {
-          ctx_->AddTrailingMetadata(ToString(metadatum.first),
-                                    ToString(metadatum.second));
+        for (const auto& [key, value] : client_metadata) {
+          ctx_->AddTrailingMetadata(ToString(key), ToString(value));
         }
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||

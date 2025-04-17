@@ -14,16 +14,15 @@
 #ifndef GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_H
 #define GRPC_EVENT_ENGINE_MEMORY_ALLOCATOR_H
 
+#include <grpc/event_engine/internal/memory_allocator_impl.h>
+#include <grpc/slice.h>
+#include <grpc/support/port_platform.h>
 #include <stdlib.h>  // for abort()
 
 #include <algorithm>
 #include <memory>
 #include <type_traits>
 #include <vector>
-
-#include <grpc/event_engine/internal/memory_allocator_impl.h>
-#include <grpc/slice.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_event_engine {
 namespace experimental {

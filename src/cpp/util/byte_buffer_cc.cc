@@ -16,9 +16,6 @@
 //
 //
 
-#include <algorithm>
-#include <vector>
-
 #include <grpc/byte_buffer.h>
 #include <grpc/byte_buffer_reader.h>
 #include <grpc/grpc.h>
@@ -27,6 +24,9 @@
 #include <grpcpp/support/byte_buffer.h>
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
+
+#include <algorithm>
+#include <vector>
 
 namespace grpc {
 

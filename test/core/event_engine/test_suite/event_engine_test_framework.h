@@ -14,16 +14,14 @@
 
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_FRAMEWORK_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_TEST_SUITE_EVENT_ENGINE_TEST_FRAMEWORK_H
+#include <grpc/event_engine/event_engine.h>
+
 #include <memory>
 #include <utility>
 
-#include <gtest/gtest.h>
-
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
+#include "gtest/gtest.h"
 
 extern absl::AnyInvocable<
     std::shared_ptr<grpc_event_engine::experimental::EventEngine>()>*

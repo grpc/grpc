@@ -3,10 +3,11 @@
  *     envoy/admin/v3/tap.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_
-#define ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_
+#ifndef ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_
+#define ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -85,6 +86,7 @@ UPB_INLINE const struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest
   const struct envoy_config_tap_v3_TapConfig* default_val = NULL;
   const struct envoy_config_tap_v3_TapConfig* ret;
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__tap__v3__TapConfig_msg_init);
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
@@ -100,6 +102,7 @@ UPB_INLINE void envoy_admin_v3_TapRequest_set_config_id(envoy_admin_v3_TapReques
 }
 UPB_INLINE void envoy_admin_v3_TapRequest_set_tap_config(envoy_admin_v3_TapRequest *msg, struct envoy_config_tap_v3_TapConfig* value) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  UPB_PRIVATE(_upb_MiniTable_StrongReference)(&envoy__config__tap__v3__TapConfig_msg_init);
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutable_tap_config(envoy_admin_v3_TapRequest* msg, upb_Arena* arena) {
@@ -117,4 +120,4 @@ UPB_INLINE struct envoy_config_tap_v3_TapConfig* envoy_admin_v3_TapRequest_mutab
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_TAP_PROTO_UPB_H_ */
+#endif  /* ENVOY_ADMIN_V3_TAP_PROTO_UPB_H__UPB_H_ */

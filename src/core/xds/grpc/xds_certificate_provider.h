@@ -19,6 +19,10 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_CERTIFICATE_PROVIDER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_CERTIFICATE_PROVIDER_H
 
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
 #include <string>
@@ -26,17 +30,12 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/matchers/matchers.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
-#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {

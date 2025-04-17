@@ -18,17 +18,14 @@
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
 
-#include <inttypes.h>
-
 #include <google/protobuf/repeated_ptr_field.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <grpcpp/support/status.h>
+#include <inttypes.h>
 
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"
@@ -226,8 +223,8 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
                                           load_key_);
       const auto& load_report_interval = initial_request.load_report_interval();
       load_report_interval_ms_ =
-          static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
-                                     load_report_interval.nanos() / 1000);
+          static_cast<unsigned long>((load_report_interval.seconds() * 1000) +
+                                     (load_report_interval.nanos() / 1000));
       LOG(INFO) << "[LRS " << service_
                 << "] Initial request received. Start load reporting (load "
                    "balanced host: "

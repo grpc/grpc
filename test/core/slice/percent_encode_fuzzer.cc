@@ -16,37 +16,44 @@
 //
 //
 
+#include <grpc/grpc.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <utility>
 
 #include "absl/log/check.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/log.h>
-
+#include "fuzztest/fuzztest.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
 
-bool squelch = true;
-bool leak_check = true;
+using fuzztest::Arbitrary;
+using fuzztest::ElementOf;
+using fuzztest::VectorOf;
 
-static void test(const uint8_t* data, size_t size,
-                 grpc_core::PercentEncodingType type) {
-  grpc_init();
-  auto input = grpc_core::Slice::FromCopiedBuffer(
-      reinterpret_cast<const char*>(data), size);
-  auto output = grpc_core::PercentEncodeSlice(input.Ref(), type);
+namespace grpc_core {
+namespace {
+
+void RoundTrips(std::vector<uint8_t> buffer, PercentEncodingType type) {
+  auto input = Slice::FromCopiedBuffer(
+      reinterpret_cast<const char*>(buffer.data()), buffer.size());
+  auto output = PercentEncodeSlice(input.Ref(), type);
   auto permissive_decoded_output =
-      grpc_core::PermissivePercentDecodeSlice(std::move(output));
+      PermissivePercentDecodeSlice(std::move(output));
   // decoded output must always match the input
   CHECK(input == permissive_decoded_output);
-  grpc_shutdown();
 }
+FUZZ_TEST(MyTestSuite, RoundTrips)
+    .WithDomains(VectorOf(Arbitrary<uint8_t>()),
+                 ElementOf({PercentEncodingType::URL,
+                            PercentEncodingType::Compatible}));
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  test(data, size, grpc_core::PercentEncodingType::URL);
-  test(data, size, grpc_core::PercentEncodingType::Compatible);
-  return 0;
+void DecodeDoesntCrash(std::vector<uint8_t> buffer) {
+  PermissivePercentDecodeSlice(Slice::FromCopiedBuffer(
+      reinterpret_cast<const char*>(buffer.data()), buffer.size()));
 }
+FUZZ_TEST(MyTestSuite, DecodeDoesntCrash)
+    .WithDomains(VectorOf(Arbitrary<uint8_t>()));
+
+}  // namespace
+}  // namespace grpc_core

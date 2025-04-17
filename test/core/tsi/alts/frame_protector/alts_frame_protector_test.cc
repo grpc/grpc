@@ -18,16 +18,13 @@
 
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 
+#include <grpc/support/alloc.h>
 #include <stdbool.h>
 
-#include <gtest/gtest.h>
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "gtest/gtest.h"
 #include "src/core/tsi/alts/crypt/gsec.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/crash.h"
 #include "test/core/tsi/alts/crypt/gsec_test_util.h"
 #include "test/core/tsi/transport_security_test_lib.h"
 
@@ -401,6 +398,19 @@ TEST(AltsFrameProtectorTest, MainTest) {
   alts_test_do_round_trip_vector_tests();
   alts_test_do_round_trip_all(/*rekey=*/false);
   alts_test_do_round_trip_all(/*rekey=*/true);
+}
+
+TEST(AltsFrameProtectorTest, MemoryLeakTest) {
+  tsi_frame_protector* client_frame_protector = nullptr;
+  // Create a key with a wrong key length (off-by-one).
+  uint8_t* key = nullptr;
+  size_t key_length = kAes128GcmKeyLength - 1;
+  gsec_test_random_array(&key, key_length);
+  EXPECT_EQ(alts_create_frame_protector(key, key_length, /*is_client=*/true,
+                                        /*is_rekey=*/false, nullptr,
+                                        &client_frame_protector),
+            TSI_INTERNAL_ERROR);
+  gpr_free(key);
 }
 
 int main(int argc, char** argv) {

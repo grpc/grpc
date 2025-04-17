@@ -14,6 +14,8 @@
 
 #include "src/core/lib/security/authorization/grpc_server_authz_filter.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -22,26 +24,17 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
-
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/latent_see.h"
 
 namespace grpc_core {
-
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerInitialMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerTrailingMetadata;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnClientToServerHalfClose;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnServerToClientMessage;
-const NoInterceptor GrpcServerAuthzFilter::Call::OnFinalize;
 
 GrpcServerAuthzFilter::GrpcServerAuthzFilter(
     RefCountedPtr<grpc_auth_context> auth_context, const ChannelArgs& args,
@@ -64,13 +57,12 @@ GrpcServerAuthzFilter::Create(const ChannelArgs& args, ChannelFilter::Args) {
 
 bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
   EvaluateArgs args(&initial_metadata, &per_channel_evaluate_args_);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-    VLOG(2) << "checking request: url_path=" << args.GetPath()
-            << ", transport_security_type=" << args.GetTransportSecurityType()
-            << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",")
-            << "], dns_sans=[" << absl::StrJoin(args.GetDnsSans(), ",")
-            << "], subject=" << args.GetSubject();
-  }
+  GRPC_TRACE_VLOG(grpc_authz_api, 2)
+      << "checking request: url_path=" << args.GetPath()
+      << ", transport_security_type=" << args.GetTransportSecurityType()
+      << ", uri_sans=[" << absl::StrJoin(args.GetUriSans(), ",")
+      << "], dns_sans=[" << absl::StrJoin(args.GetDnsSans(), ",")
+      << "], subject=" << args.GetSubject();
   grpc_authorization_policy_provider::AuthorizationEngines engines =
       provider_->engines();
   if (engines.deny_engine != nullptr) {
@@ -87,10 +79,9 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
     AuthorizationEngine::Decision decision =
         engines.allow_engine->Evaluate(args);
     if (decision.type == AuthorizationEngine::Decision::Type::kAllow) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_authz_api)) {
-        VLOG(2) << "chand=" << this << ": request allowed by policy "
-                << decision.matching_policy_name;
-      }
+      GRPC_TRACE_VLOG(grpc_authz_api, 2)
+          << "chand=" << this << ": request allowed by policy "
+          << decision.matching_policy_name;
       return true;
     }
   }
@@ -101,6 +92,8 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
 
 absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, GrpcServerAuthzFilter* filter) {
+  GRPC_LATENT_SEE_INNER_SCOPE(
+      "GrpcServerAuthzFilter::Call::OnClientInitialMetadata");
   if (!filter->IsAuthorized(md)) {
     return absl::PermissionDeniedError("Unauthorized RPC request rejected.");
   }

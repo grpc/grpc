@@ -14,19 +14,18 @@
 
 #include "src/core/lib/event_engine/thready_event_engine/thready_event_engine.h"
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 #include <type_traits>
 #include <vector>
 
-#include <grpc/support/port_platform.h>
+#include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/thd.h"
 
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/thd.h"
-
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 void ThreadyEventEngine::Asynchronously(absl::AnyInvocable<void()> fn) {
   grpc_core::Thread t("thready_event_engine", std::move(fn), nullptr,
@@ -180,5 +179,4 @@ void ThreadyEventEngine::ThreadyDNSResolver::LookupTXT(
       name);
 }
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental

@@ -16,10 +16,11 @@
 //
 //
 
-#include <utility>
-
+#include <grpc/slice_buffer.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 // FIXME: "posix" files shouldn't be depending on _GNU_SOURCE
 #ifndef _GNU_SOURCE
@@ -32,6 +33,12 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <grpc/byte_buffer.h>
+#include <grpc/event_engine/endpoint_config.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
+#include <grpc/support/time.h>
 #include <inttypes.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -47,14 +54,6 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/event_engine/endpoint_config.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-#include <grpc/support/time.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/memory_allocator_factory.h"
@@ -62,7 +61,6 @@
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/gprpp/strerror.h"
 #include "src/core/lib/iomgr/event_engine_shims/closure.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -76,6 +74,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/strerror.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};
 static constexpr grpc_core::Duration kRetryAcceptWaitTime{
@@ -128,7 +127,6 @@ static grpc_error_handle CreateEventEngineListener(
         [s](int listener_fd, std::unique_ptr<EventEngine::Endpoint> ep,
             bool is_external, MemoryAllocator /*allocator*/,
             SliceBuffer* pending_data) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           grpc_pollset* read_notifier_pollset;
           grpc_tcp_server_acceptor* acceptor;
@@ -215,7 +213,6 @@ static grpc_error_handle CreateEventEngineListener(
   } else {
     EventEngine::Listener::AcceptCallback accept_cb =
         [s](std::unique_ptr<EventEngine::Endpoint> ep, MemoryAllocator) {
-          grpc_core::ApplicationCallbackExecCtx app_ctx;
           grpc_core::ExecCtx exec_ctx;
           void* cb_arg;
           {
@@ -479,6 +476,7 @@ static void on_read(void* arg, grpc_error_handle err) {
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
     acceptor->external_connection = false;
+    acceptor->pending_data = nullptr;
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
         grpc_tcp_create(fdobj, sp->server->options, addr_uri.value()),
@@ -638,7 +636,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
             }
             DCHECK_GT(*listen_fd, 0);
             s->listen_fd_to_index_map.insert_or_assign(
-                *listen_fd, std::make_tuple(s->n_bind_ports, fd_index++));
+                *listen_fd, std::tuple(s->n_bind_ports, fd_index++));
           });
     } else {
       port = s->ee_listener->Bind(
@@ -930,7 +928,13 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
     acceptor->fd_index = -1;
     acceptor->external_connection = true;
     acceptor->listener_fd = listener_fd;
-    acceptor->pending_data = buf;
+    if (buf != nullptr && buf->data.raw.slice_buffer.length > 0) {
+      acceptor->pending_data = grpc_raw_byte_buffer_create(nullptr, 0);
+      grpc_slice_buffer_swap(&acceptor->pending_data->data.raw.slice_buffer,
+                             &buf->data.raw.slice_buffer);
+    } else {
+      acceptor->pending_data = nullptr;
+    }
     s_->on_accept_cb(s_->on_accept_cb_arg,
                      grpc_tcp_create(fdobj, s_->options, addr_uri.value()),
                      read_notifier_pollset, acceptor);

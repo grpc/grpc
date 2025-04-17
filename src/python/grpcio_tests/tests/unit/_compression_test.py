@@ -296,7 +296,7 @@ class CompressionTest(unittest.TestCase):
         self.assertGreaterEqual(
             compression_ratio,
             -1.0 * _COMPRESSION_RATIO_THRESHOLD,
-            msg="Actual compession ratio: {}".format(compression_ratio),
+            msg="Actual compression ratio: {}".format(compression_ratio),
         )
 
     def assertConfigurationCompressed(

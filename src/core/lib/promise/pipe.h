@@ -15,23 +15,19 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_PIPE_H
 
+#include <grpc/support/port_platform.h>
 #include <stdint.h>
 #include <stdlib.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 #include <utility>
+#include <variant>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/support/port_platform.h>
-
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/if.h"
@@ -40,6 +36,8 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -191,7 +189,7 @@ class Center : public InterceptorList<T> {
   // Return Pending if there is no value.
   // Return the value if one was retrieved.
   // Return nullopt if the send end is closed and no value had been pushed.
-  Poll<absl::optional<T>> Next() {
+  Poll<std::optional<T>> Next() {
     GRPC_TRACE_LOG(promise_primitives, INFO) << DebugOpString("Next");
     DCHECK_NE(refs_, 0);
     switch (value_state_) {
@@ -208,9 +206,9 @@ class Center : public InterceptorList<T> {
         return std::move(value_);
       case ValueState::kClosed:
       case ValueState::kCancelled:
-        return absl::nullopt;
+        return std::nullopt;
     }
-    GPR_UNREACHABLE_CODE(return absl::nullopt);
+    GPR_UNREACHABLE_CODE(return std::nullopt);
   }
 
   // Check if the pipe is closed for sending (if there is a value still queued
@@ -519,8 +517,8 @@ class Next {
   Next(Next&& other) noexcept = default;
   Next& operator=(Next&& other) noexcept = default;
 
-  Poll<absl::optional<T>> operator()() {
-    return center_ == nullptr ? absl::nullopt : center_->Next();
+  Poll<std::optional<T>> operator()() {
+    return center_ == nullptr ? std::nullopt : center_->Next();
   }
 
  private:
@@ -553,7 +551,7 @@ class PipeReceiver {
   // available.
   auto Next() {
     return Seq(pipe_detail::Next<T>(center_), [center = center_](
-                                                  absl::optional<T> value) {
+                                                  std::optional<T> value) {
       bool open = value.has_value();
       bool cancelled = center == nullptr ? true : center->cancelled();
       return If(
@@ -561,7 +559,7 @@ class PipeReceiver {
           [center = std::move(center), value = std::move(value)]() mutable {
             auto run = center->Run(std::move(value));
             return Map(std::move(run), [center = std::move(center)](
-                                           absl::optional<T> value) mutable {
+                                           std::optional<T> value) mutable {
               if (value.has_value()) {
                 center->value() = std::move(*value);
                 return NextResult<T>(std::move(center));
@@ -634,13 +632,12 @@ class Push {
 
   Poll<bool> operator()() {
     if (center_ == nullptr) {
-      if (GRPC_TRACE_FLAG_ENABLED(promise_primitives)) {
-        VLOG(2) << GetContext<Activity>()->DebugTag()
-                << " Pipe push has a null center";
-      }
+      GRPC_TRACE_VLOG(promise_primitives, 2)
+          << GetContext<Activity>()->DebugTag()
+          << " Pipe push has a null center";
       return false;
     }
-    if (auto* p = absl::get_if<T>(&state_)) {
+    if (auto* p = std::get_if<T>(&state_)) {
       auto r = center_->Push(p);
       if (auto* ok = r.value_if_ready()) {
         state_.template emplace<AwaitingAck>();
@@ -649,7 +646,7 @@ class Push {
         return Pending{};
       }
     }
-    DCHECK(absl::holds_alternative<AwaitingAck>(state_));
+    DCHECK(std::holds_alternative<AwaitingAck>(state_));
     return center_->PollAck();
   }
 
@@ -661,7 +658,7 @@ class Push {
       : center_(std::move(center)), state_(std::move(push)) {}
 
   RefCountedPtr<Center<T>> center_;
-  absl::variant<T, AwaitingAck> state_;
+  std::variant<T, AwaitingAck> state_;
 };
 
 }  // namespace pipe_detail

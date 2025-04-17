@@ -3,10 +3,11 @@
  *     envoy/admin/v3/clusters.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_MINITABLE_H_
-#define ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_MINITABLE_H_
+#ifndef ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPB_MINITABLE_H_
+#define ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPB_MINITABLE_H_
 
 #include "upb/generated_code_support.h"
 
@@ -18,9 +19,13 @@ extern "C" {
 #endif
 
 extern const upb_MiniTable envoy__admin__v3__Clusters_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__Clusters_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__ClusterStatus_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__ClusterStatus_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__HostStatus_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__HostStatus_msg_init_ptr;
 extern const upb_MiniTable envoy__admin__v3__HostHealthStatus_msg_init;
+extern const upb_MiniTable* envoy__admin__v3__HostHealthStatus_msg_init_ptr;
 
 extern const upb_MiniTableFile envoy_admin_v3_clusters_proto_upb_file_layout;
 
@@ -30,4 +35,4 @@ extern const upb_MiniTableFile envoy_admin_v3_clusters_proto_upb_file_layout;
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_MINITABLE_H_ */
+#endif  /* ENVOY_ADMIN_V3_CLUSTERS_PROTO_UPB_H__UPB_MINITABLE_H_ */

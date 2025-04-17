@@ -20,32 +20,33 @@
 
 #ifdef GPR_WINDOWS
 
-#include <memory>
-
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/slice_buffer.h>
 
+#include <memory>
+
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
+#include "src/core/lib/event_engine/extensions/supports_win_sockets.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/surface/init_internally.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
-class WindowsEventEngine : public EventEngine,
-                           public grpc_core::KeepsGrpcInitialized {
+class WindowsEventEngine
+    : public grpc_core::KeepsGrpcInitialized,
+      public ExtendedType<EventEngine, EventEngineWindowsSocketSupport> {
  public:
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
@@ -95,6 +96,9 @@ class WindowsEventEngine : public EventEngine,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
 
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromWinSocket(
+      SOCKET socket, const EndpointConfig& config) override;
+
   // Retrieve the base ThreadPool.
   // This is public because most classes that know the concrete
   // WindowsEventEngine type are effectively friends.
@@ -126,7 +130,7 @@ class WindowsEventEngine : public EventEngine,
     // runs once.
     OnConnectCallback TakeCallback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-    // Create an Endpoint, transfering held object ownership to the endpoint.
+    // Create an Endpoint, transferring held object ownership to the endpoint.
     //
     // This can only be called once, and the connection state is no longer valid
     // after an endpoint has been created. Callers must guarantee that the
@@ -277,8 +281,7 @@ class WindowsEventEngine : public EventEngine,
   IOCPWorkClosure iocp_worker_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif
 

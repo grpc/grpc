@@ -3,10 +3,11 @@
  *     envoy/config/overload/v3/overload.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPBDEFS_H_
-#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPBDEFS_H_
+#ifndef ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -74,4 +75,4 @@ UPB_INLINE const upb_MessageDef *envoy_config_overload_v3_OverloadManager_getmsg
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_CONFIG_OVERLOAD_V3_OVERLOAD_PROTO_UPB_H__UPBDEFS_H_ */

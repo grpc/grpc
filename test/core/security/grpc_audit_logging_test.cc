@@ -16,10 +16,11 @@
 //
 //
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
-
-#include <gtest/gtest.h>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -27,10 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/port_platform.h>
-
+#include "gtest/gtest.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"

@@ -15,6 +15,19 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_FILTER_STACK_CALL_H
 
+#include <grpc/byte_buffer.h>
+#include <grpc/compression.h>
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/call.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/atm.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <stdlib.h>
@@ -29,25 +42,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/byte_buffer.h>
-#include <grpc/compression.h>
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/call.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/atm.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-#include <grpc/support/string_util.h>
-
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/promise/context.h"
@@ -56,11 +52,12 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server_interface.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
 
@@ -134,7 +131,7 @@ class FilterStackCall final : public Call {
 
   static size_t InitialSizeEstimate() {
     return sizeof(FilterStackCall) +
-           sizeof(BatchControl) * kMaxConcurrentBatches;
+           (sizeof(BatchControl) * kMaxConcurrentBatches);
   }
 
   char* GetPeer() final;
@@ -303,7 +300,7 @@ class FilterStackCall final : public Call {
   grpc_call_final_info final_info_;
 
   SliceBuffer send_slice_buffer_;
-  absl::optional<SliceBuffer> receiving_slice_buffer_;
+  std::optional<SliceBuffer> receiving_slice_buffer_;
   uint32_t receiving_stream_flags_;
   uint32_t test_only_last_message_flags_ = 0;
   // Compression algorithm for *incoming* data

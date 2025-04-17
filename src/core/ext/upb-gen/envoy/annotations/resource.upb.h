@@ -3,10 +3,11 @@
  *     envoy/annotations/resource.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H_
-#define ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H_
+#ifndef ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H__UPB_H_
+#define ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H__UPB_H_
 
 #include "upb/generated_code_support.h"
 
@@ -90,7 +91,7 @@ UPB_INLINE const envoy_annotations_ResourceAnnotation* envoy_annotations_resourc
   const upb_MiniTableExtension* ext = &envoy_annotations_resource_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   const envoy_annotations_ResourceAnnotation* default_val = NULL;
   const envoy_annotations_ResourceAnnotation* ret;
   _upb_Message_GetExtensionField((upb_Message*)msg, ext, &default_val, &ret);
@@ -100,7 +101,7 @@ UPB_INLINE void envoy_annotations_set_resource(struct google_protobuf_ServiceOpt
   const upb_MiniTableExtension* ext = &envoy_annotations_resource_ext;
   UPB_ASSUME(upb_MiniTableField_IsScalar(&ext->UPB_PRIVATE(field)));
   UPB_ASSUME(UPB_PRIVATE(_upb_MiniTableField_GetRep)(
-                 &ext->UPB_PRIVATE(field)) == kUpb_FieldRep_8Byte);
+                 &ext->UPB_PRIVATE(field)) == UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte));
   bool ok = upb_Message_SetExtension((upb_Message*)msg, ext, &val, arena);
   UPB_ASSERT(ok);
 }
@@ -119,4 +120,4 @@ UPB_INLINE struct envoy_annotations_ResourceAnnotation* envoy_annotations_mutabl
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H_ */
+#endif  /* ENVOY_ANNOTATIONS_RESOURCE_PROTO_UPB_H__UPB_H_ */

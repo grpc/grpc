@@ -19,12 +19,12 @@
 #ifndef GRPC_TEST_CPP_QPS_QPS_WORKER_H
 #define GRPC_TEST_CPP_QPS_QPS_WORKER_H
 
-#include <memory>
-
 #include <grpc/support/atm.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 #include "test/cpp/qps/server.h"
 

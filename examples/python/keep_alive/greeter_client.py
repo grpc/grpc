@@ -37,7 +37,7 @@ def run():
     grpc.keepalive_time_ms: The period (in milliseconds) after which a keepalive ping is
         sent on the transport.
     grpc.keepalive_timeout_ms: The amount of time (in milliseconds) the sender of the keepalive
-        ping waits for an acknowledgement. If it does not receive an acknowledgment within this
+        ping waits for an acknowledgement. If it does not receive an acknowledgement within this
         time, it will close the connection.
     grpc.keepalive_permit_without_calls: If set to 1 (0 : false; 1 : true), allows keepalive
         pings to be sent even if there are no calls in flight.
@@ -60,9 +60,9 @@ def run():
         unary_call(stub, 1, "you")
 
         # Run 30s, run this with GRPC_VERBOSITY=DEBUG GRPC_TRACE=http_keepalive to observe logs.
-        # Client will be closed after receveing GOAWAY from server.
+        # Client will be closed after receiving GOAWAY from server.
         for i in range(30):
-            print(f"{i} seconds paased.")
+            print(f"{i} seconds passed.")
             sleep(1)
 
 

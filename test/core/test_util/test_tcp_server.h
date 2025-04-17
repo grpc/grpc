@@ -19,9 +19,9 @@
 #ifndef GRPC_TEST_CORE_TEST_UTIL_TEST_TCP_SERVER_H
 #define GRPC_TEST_CORE_TEST_UTIL_TEST_TCP_SERVER_H
 
-#include <vector>
-
 #include <grpc/support/sync.h>
+
+#include <vector>
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"

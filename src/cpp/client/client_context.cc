@@ -16,6 +16,19 @@
 //
 //
 
+#include <grpc/compression.h>
+#include <grpc/grpc.h>
+#include <grpc/impl/compression_types.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/impl/interceptor_common.h>
+#include <grpcpp/impl/sync.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/support/client_interceptor.h>
 #include <stdlib.h>
 
 #include <map>
@@ -26,23 +39,7 @@
 
 #include "absl/log/check.h"
 #include "absl/strings/str_format.h"
-
-#include <grpc/compression.h>
-#include <grpc/grpc.h>
-#include <grpc/impl/compression_types.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/time.h>
-#include <grpcpp/channel.h>
-#include <grpcpp/client_context.h>
-#include <grpcpp/impl/interceptor_common.h>
-#include <grpcpp/impl/sync.h>
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/server_context.h>
-#include <grpcpp/support/client_interceptor.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 
 namespace grpc {
 
@@ -120,7 +117,7 @@ std::unique_ptr<ClientContext> ClientContext::FromCallbackServerContext(
 
 void ClientContext::AddMetadata(const std::string& meta_key,
                                 const std::string& meta_value) {
-  send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
+  send_initial_metadata_.insert(std::pair(meta_key, meta_value));
 }
 
 void ClientContext::set_call(grpc_call* call,

@@ -22,9 +22,8 @@
 
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
-
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/status_helper.h"
 #include "test/core/test_util/test_config.h"
 
 namespace {
@@ -109,10 +108,7 @@ TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
       error, grpc_core::StatusIntProperty::kRpcStatus, &code));
   ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
   // Status message checks
-  std::string message;
-  ASSERT_TRUE(grpc_error_get_str(
-      error, grpc_core::StatusStrProperty::kDescription, &message));
-  ASSERT_EQ(message, "Making tea");
+  ASSERT_EQ(error.message(), "Making tea");
 }
 
 TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {

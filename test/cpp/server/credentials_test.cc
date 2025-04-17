@@ -14,12 +14,6 @@
 // limitations under the License.
 //
 
-#include <memory>
-
-#include <gtest/gtest.h>
-
-#include "absl/log/check.h"
-
 #include <grpc/grpc.h>
 #include <grpc/grpc_crl_provider.h>
 #include <grpc/grpc_security.h>
@@ -27,13 +21,19 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/security/tls_crl_provider.h>
 
+#include <memory>
+
+#include "absl/log/check.h"
+#include "gtest/gtest.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define SERVER_CERT_PATH "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define CRL_DIR_PATH "test/core/tsi/test_creds/crl_data/crls"
+#define MALFORMED_CERT_PATH "src/core/tsi/test_creds/malformed-cert.pem"
 
 namespace {
 
@@ -50,6 +50,7 @@ using ::grpc::experimental::NoOpCertificateVerifier;
 using ::grpc::experimental::StaticDataCertificateProvider;
 using ::grpc::experimental::TlsServerCredentials;
 using ::grpc::experimental::TlsServerCredentialsOptions;
+using ::grpc_core::testing::GetFileContents;
 
 }  // namespace
 
@@ -114,6 +115,42 @@ TEST(
       GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY);
   auto server_credentials = grpc::experimental::TlsServerCredentials(options);
   CHECK_NE(server_credentials.get(), nullptr);
+}
+
+TEST(CredentialsTest,
+     StaticDataCertificateProviderValidationSuccessWithAllCredentials) {
+  std::string root_certificates = GetFileContents(CA_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest, StaticDataCertificateProviderWithMalformedRoot) {
+  std::string root_certificates = GetFileContents(MALFORMED_CERT_PATH);
+  experimental::IdentityKeyCertPair key_cert_pair;
+  key_cert_pair.private_key = GetFileContents(SERVER_KEY_PATH);
+  key_cert_pair.certificate_chain = GetFileContents(SERVER_CERT_PATH);
+  StaticDataCertificateProvider provider(root_certificates, {key_cert_pair});
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
+}
+
+TEST(CredentialsTest,
+     FileWatcherCertificateProviderValidationSuccessWithAllCredentials) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          CA_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
+}
+
+TEST(CredentialsTest, FileWatcherCertificateProviderWithMalformedRoot) {
+  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
+                                          MALFORMED_CERT_PATH, 1);
+  EXPECT_EQ(provider.ValidateCredentials(),
+            absl::FailedPreconditionError(
+                "Failed to parse root certificates as PEM: Invalid PEM."));
 }
 
 TEST(CredentialsTest, TlsServerCredentialsWithCrlChecking) {

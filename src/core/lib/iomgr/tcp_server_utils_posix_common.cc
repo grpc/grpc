@@ -24,6 +24,8 @@
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON
 
 #include <errno.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/sync.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -34,17 +36,13 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/support/alloc.h>
-#include <grpc/support/sync.h>
-
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/gprpp/crash.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
+#include "src/core/util/crash.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
@@ -275,10 +273,7 @@ error:
   if (fd >= 0) {
     close(fd);
   }
-  grpc_error_handle ret = grpc_error_set_int(
-      GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1),
-      grpc_core::StatusIntProperty::kFd, fd);
-  return ret;
+  return GRPC_ERROR_CREATE_REFERENCING("Unable to configure socket", &err, 1);
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP_SERVER_UTILS_COMMON

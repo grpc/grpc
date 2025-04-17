@@ -16,15 +16,14 @@
 //
 //
 
+#include <grpc/status.h>
+
 #include <memory>
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/status.h>
-
 #include "src/core/ext/transport/chttp2/transport/internal.h"
-#include "src/core/lib/gprpp/time.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/tests/cancel_test_helpers.h"
 
@@ -129,42 +128,42 @@ void CancelAfterInvoke3(CoreEnd2endTest& test,
               ::testing::AnyOf(mode->ExpectedStatus(), GRPC_STATUS_INTERNAL));
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke6) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterInvoke6) {
   CancelAfterInvoke6(*this, std::make_unique<CancelCancellationMode>(),
                      kCancelTimeout);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke5) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterInvoke5) {
   CancelAfterInvoke5(*this, std::make_unique<CancelCancellationMode>(),
                      kCancelTimeout);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke4) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterInvoke4) {
   CancelAfterInvoke4(*this, std::make_unique<CancelCancellationMode>(),
                      kCancelTimeout);
 }
 
-CORE_END2END_TEST(CoreEnd2endTest, CancelAfterInvoke3) {
+CORE_END2END_TEST(CoreEnd2endTests, CancelAfterInvoke3) {
   CancelAfterInvoke3(*this, std::make_unique<CancelCancellationMode>(),
                      kCancelTimeout);
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke6) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterInvoke6) {
   CancelAfterInvoke6(*this, std::make_unique<DeadlineCancellationMode>(),
                      kDeadlineTimeout);
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke5) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterInvoke5) {
   CancelAfterInvoke5(*this, std::make_unique<DeadlineCancellationMode>(),
                      kDeadlineTimeout);
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke4) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterInvoke4) {
   CancelAfterInvoke4(*this, std::make_unique<DeadlineCancellationMode>(),
                      kDeadlineTimeout);
 }
 
-CORE_END2END_TEST(CoreDeadlineTest, DeadlineAfterInvoke3) {
+CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterInvoke3) {
   CancelAfterInvoke3(*this, std::make_unique<DeadlineCancellationMode>(),
                      kDeadlineTimeout);
 }

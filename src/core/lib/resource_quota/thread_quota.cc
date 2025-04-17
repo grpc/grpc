@@ -14,10 +14,9 @@
 
 #include "src/core/lib/resource_quota/thread_quota.h"
 
-#include "absl/log/check.h"
-
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
+#include "absl/log/check.h"
 
 namespace grpc_core {
 

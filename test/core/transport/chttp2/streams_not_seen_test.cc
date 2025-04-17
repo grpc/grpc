@@ -16,6 +16,16 @@
 //
 //
 
+#include <grpc/credentials.h>
+#include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/impl/propagation_bits.h>
+#include <grpc/slice.h>
+#include <grpc/slice_buffer.h>
+#include <grpc/status.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -24,6 +34,7 @@
 #include <atomic>
 #include <memory>
 #include <new>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -35,32 +46,14 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
-#include "absl/types/optional.h"
 #include "gtest/gtest.h"
-
-#include <grpc/credentials.h>
-#include <grpc/grpc.h>
-#include <grpc/grpc_security.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/impl/propagation_bits.h>
-#include <grpc/slice.h>
-#include <grpc/slice_buffer.h>
-#include <grpc/status.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
-
+#include "src/core/call/metadata_batch.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/notification.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -70,8 +63,12 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/debug_location.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"
@@ -96,13 +93,13 @@ class TrailingMetadataRecordingFilter {
     trailing_metadata_available_ = false;
   }
 
-  static absl::optional<GrpcStreamNetworkState::ValueType>
+  static std::optional<GrpcStreamNetworkState::ValueType>
   stream_network_state() {
     return stream_network_state_;
   }
 
   static void reset_stream_network_state() {
-    stream_network_state_ = absl::nullopt;
+    stream_network_state_ = std::nullopt;
   }
 
   static void reset_state() {
@@ -193,8 +190,7 @@ class TrailingMetadataRecordingFilter {
   }
 
   static bool trailing_metadata_available_;
-  static absl::optional<GrpcStreamNetworkState::ValueType>
-      stream_network_state_;
+  static std::optional<GrpcStreamNetworkState::ValueType> stream_network_state_;
 };
 
 grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
@@ -218,7 +214,7 @@ grpc_channel_filter TrailingMetadataRecordingFilter::kFilterVtable = {
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_trailing-metadata-recording-filter"),
 };
 bool TrailingMetadataRecordingFilter::trailing_metadata_available_;
-absl::optional<GrpcStreamNetworkState::ValueType>
+std::optional<GrpcStreamNetworkState::ValueType>
     TrailingMetadataRecordingFilter::stream_network_state_;
 
 class StreamsNotSeenTest : public ::testing::Test {
@@ -347,7 +343,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   void SendGoaway(uint32_t last_stream_id) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer,
+                              &http2_ztrace_collector_);
     WriteBuffer(&buffer);
     grpc_slice_buffer_destroy(&buffer);
   }
@@ -453,6 +450,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
+  Http2ZTraceCollector http2_ztrace_collector_;
 };
 
 // Client's HTTP2 transport starts a new stream, sends the request on the wire,

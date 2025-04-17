@@ -3,7 +3,8 @@
  *     xds/service/orca/v3/orca.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
 #include <stddef.h>
 #include "upb/generated_code_support.h"
@@ -14,8 +15,9 @@
 // Must be last.
 #include "upb/port/def.inc"
 
-static const upb_MiniTableSub xds_service_orca_v3_OrcaLoadReportRequest_submsgs[1] = {
-  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init},
+extern const struct upb_MiniTable UPB_PRIVATE(_kUpb_MiniTable_StaticallyTreeShaken);
+static const upb_MiniTableSubInternal xds_service_orca_v3_OrcaLoadReportRequest__submsgs[1] = {
+  {.UPB_PRIVATE(submsg) = &google__protobuf__Duration_msg_init_ptr},
 };
 
 static const upb_MiniTableField xds_service_orca_v3_OrcaLoadReportRequest__fields[2] = {
@@ -24,7 +26,7 @@ static const upb_MiniTableField xds_service_orca_v3_OrcaLoadReportRequest__field
 };
 
 const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init = {
-  &xds_service_orca_v3_OrcaLoadReportRequest_submsgs[0],
+  &xds_service_orca_v3_OrcaLoadReportRequest__submsgs[0],
   &xds_service_orca_v3_OrcaLoadReportRequest__fields[0],
   UPB_SIZE(24, 32), 2, kUpb_ExtMode_NonExtendable, 2, UPB_FASTTABLE_MASK(24), 0,
 #ifdef UPB_TRACING_ENABLED
@@ -38,6 +40,7 @@ const upb_MiniTable xds__service__orca__v3__OrcaLoadReportRequest_msg_init = {
   })
 };
 
+const upb_MiniTable* xds__service__orca__v3__OrcaLoadReportRequest_msg_init_ptr = &xds__service__orca__v3__OrcaLoadReportRequest_msg_init;
 static const upb_MiniTable *messages_layout[1] = {
   &xds__service__orca__v3__OrcaLoadReportRequest_msg_init,
 };

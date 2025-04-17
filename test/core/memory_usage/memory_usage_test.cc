@@ -16,6 +16,11 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/support/time.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -37,19 +42,12 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/core/v3/health_check.pb.h"
 #include "google/protobuf/wrappers.pb.h"
-
-#include <grpc/grpc.h>
-#include <grpc/support/time.h>
-#include <grpcpp/security/server_credentials.h>
-#include <grpcpp/server.h>
-#include <grpcpp/server_builder.h>
-
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/env.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/env.h"
 #include "src/core/util/subprocess.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.pb.h"
-#include "src/proto/grpc/testing/xds/v3/health_check.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"

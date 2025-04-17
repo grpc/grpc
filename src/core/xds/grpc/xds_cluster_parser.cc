@@ -38,48 +38,57 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/transport_sockets/http_11_proxy/v3/upstream_http_11_connect.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
 #include "envoy/extensions/upstreams/http/v3/http_protocol_options.upb.h"
 #include "google/protobuf/any.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "upb/base/string_view.h"
-#include "upb/text/encode.h"
-
-#include "src/core/lib/config/core_configuration.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/gprpp/time.h"
-#include "src/core/lib/gprpp/validation_errors.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
+#include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
+#include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/util/validation_errors.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_lb_policy_registry.h"
+#include "src/core/xds/grpc/xds_metadata_parser.h"
+#include "src/core/xds/xds_client/lrs_client.h"
+#include "src/core/xds/xds_client/xds_backend_metric_propagation.h"
+#include "upb/base/string_view.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core {
 
+// TODO(roth): Remove this once the feature passes interop tests.
+bool XdsHttpConnectEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_HTTP_CONNECT");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
+
 namespace {
+
+constexpr absl::string_view kUpstreamTlsContextType =
+    "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext";
+
+constexpr absl::string_view kHttp11ProxyType =
+    "envoy.extensions.transport_sockets.http_11_proxy.v3"
+    ".Http11ProxyUpstreamTransport";
 
 CommonTlsContext UpstreamTlsContextParse(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_TransportSocket* transport_socket,
-    ValidationErrors* errors) {
-  ValidationErrors::ScopedField field(errors, ".typed_config");
-  const auto* typed_config =
-      envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-  auto extension = ExtractXdsExtension(context, typed_config, errors);
-  if (!extension.has_value()) return {};
-  if (extension->type !=
-      "envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext") {
-    ValidationErrors::ScopedField field(errors, ".type_url");
-    errors->AddError("unsupported transport socket type");
-    return {};
-  }
-  absl::string_view* serialized_upstream_tls_context =
-      absl::get_if<absl::string_view>(&extension->value);
+    const XdsExtension& extension, ValidationErrors* errors) {
+  const absl::string_view* serialized_upstream_tls_context =
+      std::get_if<absl::string_view>(&extension.value);
   if (serialized_upstream_tls_context == nullptr) {
     errors->AddError("can't decode UpstreamTlsContext");
     return {};
@@ -101,11 +110,44 @@ CommonTlsContext UpstreamTlsContextParse(
     common_tls_context =
         CommonTlsContextParse(context, common_tls_context_proto, errors);
   }
-  if (absl::holds_alternative<absl::monostate>(
+  if (std::holds_alternative<std::monostate>(
           common_tls_context.certificate_validation_context.ca_certs)) {
     errors->AddError("no CA certs configured");
   }
   return common_tls_context;
+}
+
+CommonTlsContext Http11ProxyUpstreamTransportParse(
+    const XdsResourceType::DecodeContext& context,
+    const XdsExtension& extension, ValidationErrors* errors) {
+  const absl::string_view* serialized =
+      std::get_if<absl::string_view>(&extension.value);
+  if (serialized == nullptr) {
+    errors->AddError("can't decode Http11ProxyUpstreamTransport");
+    return {};
+  }
+  const auto* http_11_proxy =
+      envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_parse(
+          serialized->data(), serialized->size(), context.arena);
+  if (http_11_proxy == nullptr) {
+    errors->AddError("can't decode Http11ProxyUpstreamTransport");
+    return {};
+  }
+  const auto* transport_socket =
+      envoy_extensions_transport_sockets_http_11_proxy_v3_Http11ProxyUpstreamTransport_transport_socket(
+          http_11_proxy);
+  if (transport_socket == nullptr) return {};
+  ValidationErrors::ScopedField field(errors, ".transport_socket.typed_config");
+  const auto* typed_config =
+      envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+  auto wrapped_extension = ExtractXdsExtension(context, typed_config, errors);
+  if (!wrapped_extension.has_value()) return {};
+  if (wrapped_extension->type != kUpstreamTlsContextType) {
+    ValidationErrors::ScopedField field(errors, ".type_url");
+    errors->AddError("unsupported transport socket type");
+    return {};
+  }
+  return UpstreamTlsContextParse(context, *wrapped_extension, errors);
 }
 
 XdsClusterResource::Eds EdsConfigParse(
@@ -258,7 +300,7 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
       envoy_config_cluster_v3_Cluster_load_balancing_policy(cluster);
   if (load_balancing_policy != nullptr) {
     const auto& registry =
-        static_cast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+        DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
             .lb_policy_registry();
     ValidationErrors::ScopedField field(errors, ".load_balancing_policy");
     const size_t original_error_count = errors->size();
@@ -300,22 +342,22 @@ void ParseLbPolicyConfig(const XdsResourceType::DecodeContext& context,
     uint64_t max_ring_size = 8388608;
     if (ring_hash_config != nullptr) {
       ValidationErrors::ScopedField field(errors, ".ring_hash_lb_config");
-      const google_protobuf_UInt64Value* uint64_value =
+      auto value = ParseUInt64Value(
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
+              ring_hash_config));
+      if (value.has_value()) {
         ValidationErrors::ScopedField field(errors, ".maximum_ring_size");
-        max_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        max_ring_size = *value;
         if (max_ring_size > 8388608 || max_ring_size == 0) {
           errors->AddError("must be in the range of 1 to 8388608");
         }
       }
-      uint64_value =
+      value = ParseUInt64Value(
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (uint64_value != nullptr) {
+              ring_hash_config));
+      if (value.has_value()) {
         ValidationErrors::ScopedField field(errors, ".minimum_ring_size");
-        min_ring_size = google_protobuf_UInt64Value_value(uint64_value);
+        min_ring_size = *value;
         if (min_ring_size > 8388608 || min_ring_size == 0) {
           errors->AddError("must be in the range of 1 to 8388608");
         }
@@ -361,7 +403,7 @@ void ParseUpstreamConfig(
     return;
   }
   absl::string_view* serialized_http_protocol_options =
-      absl::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&extension->value);
   if (serialized_http_protocol_options == nullptr) {
     errors->AddError("can't decode HttpProtocolOptions");
     return;
@@ -412,24 +454,23 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
             custom_cluster_type);
     if (typed_config == nullptr) {
       errors.AddError("field not present");
+    } else if (absl::string_view type_url = absl::StripPrefix(
+                   UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
+                   "type.googleapis.com/");
+               type_url ==
+               "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
+      // Retrieve aggregate clusters.
+      ValidationErrors::ScopedField field(
+          &errors,
+          ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
+      absl::string_view serialized_config =
+          UpbStringToAbsl(google_protobuf_Any_value(typed_config));
+      cds_update->type =
+          AggregateClusterParse(context, serialized_config, &errors);
     } else {
-      absl::string_view type_url = absl::StripPrefix(
-          UpbStringToAbsl(google_protobuf_Any_type_url(typed_config)),
-          "type.googleapis.com/");
-      if (type_url != "envoy.extensions.clusters.aggregate.v3.ClusterConfig") {
-        ValidationErrors::ScopedField field(&errors, ".type_url");
-        errors.AddError(
-            absl::StrCat("unknown cluster_type extension: ", type_url));
-      } else {
-        // Retrieve aggregate clusters.
-        ValidationErrors::ScopedField field(
-            &errors,
-            ".value[envoy.extensions.clusters.aggregate.v3.ClusterConfig]");
-        absl::string_view serialized_config =
-            UpbStringToAbsl(google_protobuf_Any_value(typed_config));
-        cds_update->type =
-            AggregateClusterParse(context, serialized_config, &errors);
-      }
+      ValidationErrors::ScopedField field(&errors, ".type_url");
+      errors.AddError(
+          absl::StrCat("unknown cluster_type extension: ", type_url));
     }
   } else {
     ValidationErrors::ScopedField field(&errors, ".type");
@@ -441,9 +482,24 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
   auto* transport_socket =
       envoy_config_cluster_v3_Cluster_transport_socket(cluster);
   if (transport_socket != nullptr) {
-    ValidationErrors::ScopedField field(&errors, ".transport_socket");
-    cds_update->common_tls_context =
-        UpstreamTlsContextParse(context, transport_socket, &errors);
+    ValidationErrors::ScopedField field(&errors,
+                                        ".transport_socket.typed_config");
+    const auto* typed_config =
+        envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+    auto extension = ExtractXdsExtension(context, typed_config, &errors);
+    if (extension.has_value()) {
+      if (XdsHttpConnectEnabled() && extension->type == kHttp11ProxyType) {
+        cds_update->use_http_connect = true;
+        cds_update->common_tls_context =
+            Http11ProxyUpstreamTransportParse(context, *extension, &errors);
+      } else if (extension->type == kUpstreamTlsContextType) {
+        cds_update->common_tls_context =
+            UpstreamTlsContextParse(context, *extension, &errors);
+      } else {
+        ValidationErrors::ScopedField field(&errors, ".type_url");
+        errors.AddError("unsupported transport socket type");
+      }
+    }
   }
   // Record LRS server name (if any).
   const envoy_config_core_v3_ConfigSource* lrs_server =
@@ -453,9 +509,35 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       ValidationErrors::ScopedField field(&errors, ".lrs_server");
       errors.AddError("ConfigSource is not self");
     }
-    cds_update->lrs_load_reporting_server.emplace(
-        static_cast<const GrpcXdsServer&>(context.server));
+    cds_update->lrs_load_reporting_server =
+        std::static_pointer_cast<const GrpcXdsServerTarget>(
+            context.server.target());
   }
+  // Record LRS metric propagation.
+  auto propagation = MakeRefCounted<BackendMetricPropagation>();
+  if (XdsOrcaLrsPropagationChangesEnabled()) {
+    size_t size;
+    upb_StringView const* metrics =
+        envoy_config_cluster_v3_Cluster_lrs_report_endpoint_metrics(cluster,
+                                                                    &size);
+    for (size_t i = 0; i < size; ++i) {
+      absl::string_view metric_name = UpbStringToAbsl(metrics[i]);
+      if (metric_name == "cpu_utilization") {
+        propagation->propagation_bits |= propagation->kCpuUtilization;
+      } else if (metric_name == "mem_utilization") {
+        propagation->propagation_bits |= propagation->kMemUtilization;
+      } else if (metric_name == "application_utilization") {
+        propagation->propagation_bits |= propagation->kApplicationUtilization;
+      } else if (absl::ConsumePrefix(&metric_name, "named_metrics.")) {
+        if (metric_name == "*") {
+          propagation->propagation_bits |= propagation->kNamedMetricsAll;
+        } else {
+          propagation->named_metric_keys.emplace(metric_name);
+        }
+      }
+    }
+  }
+  cds_update->lrs_backend_metric_propagation = std::move(propagation);
   // Protocol options.
   auto* upstream_config =
       envoy_config_cluster_v3_Cluster_upstream_config(cluster);
@@ -478,13 +560,10 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       const auto* threshold = thresholds[i];
       if (envoy_config_cluster_v3_CircuitBreakers_Thresholds_priority(
               threshold) == envoy_config_core_v3_DEFAULT) {
-        const google_protobuf_UInt32Value* max_requests =
+        auto value = ParseUInt32Value(
             envoy_config_cluster_v3_CircuitBreakers_Thresholds_max_requests(
-                threshold);
-        if (max_requests != nullptr) {
-          cds_update->max_concurrent_requests =
-              google_protobuf_UInt32Value_value(max_requests);
-        }
+                threshold));
+        if (value.has_value()) cds_update->max_concurrent_requests = *value;
         break;
       }
     }
@@ -515,91 +594,80 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
       outlier_detection_update.max_ejection_time =
           ParseDuration(duration, &errors);
     }
-    const google_protobuf_UInt32Value* max_ejection_percent =
+    auto max_ejection_percent = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_max_ejection_percent(
-            outlier_detection);
-    if (max_ejection_percent != nullptr) {
-      outlier_detection_update.max_ejection_percent =
-          google_protobuf_UInt32Value_value(max_ejection_percent);
+            outlier_detection));
+    if (max_ejection_percent.has_value()) {
+      outlier_detection_update.max_ejection_percent = *max_ejection_percent;
       if (outlier_detection_update.max_ejection_percent > 100) {
         ValidationErrors::ScopedField field(&errors, ".max_ejection_percent");
         errors.AddError("value must be <= 100");
       }
     }
-    const google_protobuf_UInt32Value* enforcing_success_rate =
+    auto enforcement_percentage = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_enforcing_success_rate(
-            outlier_detection);
-    if (enforcing_success_rate != nullptr) {
-      uint32_t enforcement_percentage =
-          google_protobuf_UInt32Value_value(enforcing_success_rate);
-      if (enforcement_percentage > 100) {
+            outlier_detection));
+    if (enforcement_percentage.has_value()) {
+      if (*enforcement_percentage > 100) {
         ValidationErrors::ScopedField field(&errors, ".enforcing_success_rate");
         errors.AddError("value must be <= 100");
       }
-      if (enforcement_percentage != 0) {
+      if (*enforcement_percentage != 0) {
         OutlierDetectionConfig::SuccessRateEjection success_rate_ejection;
-        success_rate_ejection.enforcement_percentage = enforcement_percentage;
-        const google_protobuf_UInt32Value* minimum_hosts =
+        success_rate_ejection.enforcement_percentage = *enforcement_percentage;
+        auto minimum_hosts = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_minimum_hosts(
-                outlier_detection);
-        if (minimum_hosts != nullptr) {
-          success_rate_ejection.minimum_hosts =
-              google_protobuf_UInt32Value_value(minimum_hosts);
+                outlier_detection));
+        if (minimum_hosts.has_value()) {
+          success_rate_ejection.minimum_hosts = *minimum_hosts;
         }
-        const google_protobuf_UInt32Value* request_volume =
+        auto request_volume = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_request_volume(
-                outlier_detection);
-        if (request_volume != nullptr) {
-          success_rate_ejection.request_volume =
-              google_protobuf_UInt32Value_value(request_volume);
+                outlier_detection));
+        if (request_volume.has_value()) {
+          success_rate_ejection.request_volume = *request_volume;
         }
-        const google_protobuf_UInt32Value* stdev_factor =
+        auto stdev_factor = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_success_rate_stdev_factor(
-                outlier_detection);
-        if (stdev_factor != nullptr) {
-          success_rate_ejection.stdev_factor =
-              google_protobuf_UInt32Value_value(stdev_factor);
+                outlier_detection));
+        if (stdev_factor.has_value()) {
+          success_rate_ejection.stdev_factor = *stdev_factor;
         }
         outlier_detection_update.success_rate_ejection = success_rate_ejection;
       }
     }
-    const google_protobuf_UInt32Value* enforcing_failure_percentage =
+    enforcement_percentage = ParseUInt32Value(
         envoy_config_cluster_v3_OutlierDetection_enforcing_failure_percentage(
-            outlier_detection);
-    if (enforcing_failure_percentage != nullptr) {
-      uint32_t enforcement_percentage =
-          google_protobuf_UInt32Value_value(enforcing_failure_percentage);
-      if (enforcement_percentage > 100) {
+            outlier_detection));
+    if (enforcement_percentage.has_value()) {
+      if (*enforcement_percentage > 100) {
         ValidationErrors::ScopedField field(&errors,
                                             ".enforcing_failure_percentage");
         errors.AddError("value must be <= 100");
       }
-      if (enforcement_percentage != 0) {
+      if (*enforcement_percentage != 0) {
         OutlierDetectionConfig::FailurePercentageEjection
             failure_percentage_ejection;
         failure_percentage_ejection.enforcement_percentage =
-            enforcement_percentage;
-        const google_protobuf_UInt32Value* minimum_hosts =
+            *enforcement_percentage;
+        auto minimum_hosts = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(
-                outlier_detection);
-        if (minimum_hosts != nullptr) {
-          failure_percentage_ejection.minimum_hosts =
-              google_protobuf_UInt32Value_value(minimum_hosts);
+                outlier_detection));
+        if (minimum_hosts.has_value()) {
+          failure_percentage_ejection.minimum_hosts = *minimum_hosts;
         }
-        const google_protobuf_UInt32Value* request_volume =
+        auto request_volume = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(
-                outlier_detection);
-        if (request_volume != nullptr) {
-          failure_percentage_ejection.request_volume =
-              google_protobuf_UInt32Value_value(request_volume);
+                outlier_detection));
+        if (request_volume.has_value()) {
+          failure_percentage_ejection.request_volume = *request_volume;
         }
-        const google_protobuf_UInt32Value* threshold =
+        auto threshold = ParseUInt32Value(
             envoy_config_cluster_v3_OutlierDetection_failure_percentage_threshold(
-                outlier_detection);
-        if (threshold != nullptr) {
-          failure_percentage_ejection.threshold =
-              google_protobuf_UInt32Value_value(threshold);
-          if (enforcement_percentage > 100) {
+                outlier_detection));
+        if (threshold.has_value()) {
+          failure_percentage_ejection.threshold = *threshold;
+          if (*enforcement_percentage > 100) {
             ValidationErrors::ScopedField field(
                 &errors, ".failure_percentage_threshold");
             errors.AddError("value must be <= 100");
@@ -641,36 +709,11 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
     cds_update->override_host_statuses.Add(
         XdsHealthStatus(XdsHealthStatus::kHealthy));
   }
-  // Record telemetry labels (if any).
-  const envoy_config_core_v3_Metadata* metadata =
-      envoy_config_cluster_v3_Cluster_metadata(cluster);
-  if (metadata != nullptr) {
-    google_protobuf_Struct* telemetry_labels_struct;
-    if (envoy_config_core_v3_Metadata_filter_metadata_get(
-            metadata,
-            StdStringToUpbString(
-                absl::string_view("com.google.csm.telemetry_labels")),
-            &telemetry_labels_struct)) {
-      size_t iter = kUpb_Map_Begin;
-      const google_protobuf_Struct_FieldsEntry* fields_entry;
-      while ((fields_entry = google_protobuf_Struct_fields_next(
-                  telemetry_labels_struct, &iter)) != nullptr) {
-        // Adds any entry whose value is a string to telemetry_labels.
-        const google_protobuf_Value* value =
-            google_protobuf_Struct_FieldsEntry_value(fields_entry);
-        if (google_protobuf_Value_has_string_value(value)) {
-          if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
-                  fields_entry)) == "service_name") {
-            cds_update->service_telemetry_label = RefCountedStringValue(
-                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
-          } else if (UpbStringToAbsl(google_protobuf_Struct_FieldsEntry_key(
-                         fields_entry)) == "service_namespace") {
-            cds_update->namespace_telemetry_label = RefCountedStringValue(
-                UpbStringToAbsl(google_protobuf_Value_string_value(value)));
-          }
-        }
-      }
-    }
+  // Parse metadata.
+  {
+    ValidationErrors::ScopedField field(&errors, ".metadata");
+    cds_update->metadata = ParseXdsMetadataMap(
+        context, envoy_config_cluster_v3_Cluster_metadata(cluster), &errors);
   }
   // Return result.
   if (!errors.ok()) {
@@ -682,7 +725,7 @@ absl::StatusOr<std::shared_ptr<const XdsClusterResource>> CdsResourceParse(
 
 void MaybeLogCluster(const XdsResourceType::DecodeContext& context,
                      const envoy_config_cluster_v3_Cluster* cluster) {
-  if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer) && ABSL_VLOG_IS_ON(2)) {
+  if (GRPC_TRACE_FLAG_ENABLED(xds_client) && ABSL_VLOG_IS_ON(2)) {
     const upb_MessageDef* msg_type =
         envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab);
     char buf[10240];
@@ -712,13 +755,13 @@ XdsResourceType::DecodeResult XdsClusterResourceType::Decode(
       UpbStringToStdString(envoy_config_cluster_v3_Cluster_name(resource));
   auto cds_resource = CdsResourceParse(context, resource);
   if (!cds_resource.ok()) {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(ERROR) << "[xds_client " << context.client << "] invalid Cluster "
                  << *result.name << ": " << cds_resource.status();
     }
     result.resource = cds_resource.status();
   } else {
-    if (GRPC_TRACE_FLAG_ENABLED_OBJ(*context.tracer)) {
+    if (GRPC_TRACE_FLAG_ENABLED(xds_client)) {
       LOG(INFO) << "[xds_client " << context.client << "] parsed Cluster "
                 << *result.name << ": " << (*cds_resource)->ToString();
     }

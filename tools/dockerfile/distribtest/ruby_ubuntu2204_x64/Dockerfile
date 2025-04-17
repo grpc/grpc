@@ -26,11 +26,11 @@ RUN apt-get update -y && apt-get install -y \
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
-# Install Ruby 2.7
+# Install Ruby 3.0
 RUN /bin/bash -l -c "rvm pkg install openssl"
-RUN /bin/bash -l -c "rvm install ruby-2.7 --with-openssl-dir=/usr/local/rvm/usr"
-RUN /bin/bash -l -c "rvm use --default ruby-2.7"
+RUN /bin/bash -l -c "rvm install ruby-3.0 --with-openssl-dir=/usr/local/rvm/usr"
+RUN /bin/bash -l -c "rvm use --default ruby-3.0"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.7' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.0' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"

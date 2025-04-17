@@ -17,8 +17,12 @@
 #ifndef GRPC_SRC_CORE_LOAD_BALANCING_HEALTH_CHECK_CLIENT_INTERNAL_H
 #define GRPC_SRC_CORE_LOAD_BALANCING_HEALTH_CHECK_CLIENT_INTERNAL_H
 
+#include <grpc/impl/connectivity_state.h>
+#include <grpc/support/port_platform.h>
+
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -26,22 +30,17 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include <grpc/impl/connectivity_state.h>
-#include <grpc/support/port_platform.h>
-
 #include "src/core/client_channel/subchannel.h"
 #include "src/core/client_channel/subchannel_interface_internal.h"
 #include "src/core/client_channel/subchannel_stream_client.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/gprpp/unique_type_name.h"
-#include "src/core/lib/gprpp/work_serializer.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/load_balancing/subchannel_interface.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
+#include "src/core/util/unique_type_name.h"
+#include "src/core/util/work_serializer.h"
 
 namespace grpc_core {
 
@@ -66,10 +65,10 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   UniqueTypeName type() const override { return Type(); }
 
   void AddWatcher(HealthWatcher* watcher,
-                  const absl::optional<std::string>& health_check_service_name);
+                  const std::optional<std::string>& health_check_service_name);
   void RemoveWatcher(
       HealthWatcher* watcher,
-      const absl::optional<std::string>& health_check_service_name);
+      const std::optional<std::string>& health_check_service_name);
 
  private:
   class ConnectivityWatcher;
@@ -125,7 +124,7 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
         std::make_shared<WorkSerializer>(
             producer_->subchannel_->event_engine());
 
-    absl::optional<grpc_connectivity_state> state_
+    std::optional<grpc_connectivity_state> state_
         ABSL_GUARDED_BY(&HealthProducer::mu_);
     absl::Status status_ ABSL_GUARDED_BY(&HealthProducer::mu_);
     OrphanablePtr<SubchannelStreamClient> stream_client_
@@ -143,7 +142,7 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   grpc_pollset_set* interested_parties_;
 
   Mutex mu_;
-  absl::optional<grpc_connectivity_state> state_ ABSL_GUARDED_BY(&mu_);
+  std::optional<grpc_connectivity_state> state_ ABSL_GUARDED_BY(&mu_);
   absl::Status status_ ABSL_GUARDED_BY(&mu_);
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_
       ABSL_GUARDED_BY(&mu_);
@@ -158,7 +157,7 @@ class HealthWatcher final : public InternalSubchannelDataWatcherInterface {
  public:
   HealthWatcher(
       std::shared_ptr<WorkSerializer> work_serializer,
-      absl::optional<std::string> health_check_service_name,
+      std::optional<std::string> health_check_service_name,
       std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
           watcher)
       : work_serializer_(std::move(work_serializer)),
@@ -191,7 +190,7 @@ class HealthWatcher final : public InternalSubchannelDataWatcherInterface {
 
  private:
   std::shared_ptr<WorkSerializer> work_serializer_;
-  absl::optional<std::string> health_check_service_name_;
+  std::optional<std::string> health_check_service_name_;
   std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>
       watcher_;
   RefCountedPtr<HealthProducer> producer_;

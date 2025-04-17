@@ -16,13 +16,6 @@
 //
 //
 
-#include <thread>
-
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
-#include "absl/log/log.h"
-
 #include <grpc++/grpc++.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
@@ -30,9 +23,14 @@
 #include <grpcpp/ext/server_load_reporting.h>
 #include <grpcpp/server_builder.h>
 
+#include <thread>
+
+#include "absl/log/log.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "src/core/client_channel/backup_poller.h"
-#include "src/core/lib/config/config_vars.h"
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/config/config_vars.h"
+#include "src/core/util/crash.h"
 #include "src/proto/grpc/lb/v1/load_reporter.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

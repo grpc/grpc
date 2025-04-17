@@ -14,6 +14,9 @@
 
 #include "src/core/lib/promise/pipe.h"
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/grpc.h>
+
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -22,18 +25,14 @@
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/grpc.h>
-
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_wakeup_schedulers.h"
 
 using testing::MockFunction;
@@ -196,7 +195,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
                  }),
             // Verify both that the send failed and that we executed the close.
             [](const std::tuple<bool, absl::Status>& result) {
-              EXPECT_EQ(result, std::make_tuple(false, absl::OkStatus()));
+              EXPECT_EQ(result, std::tuple(false, absl::OkStatus()));
               return absl::OkStatus();
             });
       },
@@ -364,7 +363,7 @@ TEST(PipeTest, CanCancelSendWithInterceptor) {
   MakeActivity(
       [] {
         auto* pipe = GetContext<Arena>()->ManagedNew<Pipe<int>>();
-        pipe->sender.InterceptAndMap([](int) { return absl::nullopt; });
+        pipe->sender.InterceptAndMap([](int) { return std::nullopt; });
         return Seq(
             // Concurrently:
             // - wait for a received value (will stall forever since we push
@@ -425,7 +424,7 @@ TEST(PipeTest, CanFlowControlThroughManyStages) {
                               return 2;
                             })),
                    [](std::tuple<int, bool, bool, int> result) {
-                     EXPECT_EQ(result, std::make_tuple(1, true, true, 2));
+                     EXPECT_EQ(result, std::tuple(1, true, true, 2));
                      return absl::OkStatus();
                    });
       },

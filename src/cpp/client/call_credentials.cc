@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/log/check.h"
-#include "absl/strings/str_cat.h"
+#include "src/core/credentials/call/call_credentials.h"
 
 #include <grpc/support/port_platform.h>
 #include <grpcpp/security/credentials.h>
 
-#include "src/core/lib/security/credentials/credentials.h"
+#include "absl/log/check.h"
+#include "absl/strings/str_cat.h"
 
 namespace grpc {
 

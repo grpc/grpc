@@ -18,21 +18,20 @@
 
 #include "test/cpp/qps/usage_timer.h"
 
+#include <grpc/support/time.h>
+
 #include <fstream>
 #include <sstream>
 #include <string>
 
 #include "absl/log/log.h"
-
-#include <grpc/support/time.h>
-
-#include "src/core/lib/gprpp/crash.h"
+#include "src/core/util/crash.h"
 #ifdef __linux__
 #include <sys/resource.h>
 #include <sys/time.h>
 
 static double time_double(struct timeval* tv) {
-  return tv->tv_sec + 1e-6 * tv->tv_usec;
+  return tv->tv_sec + (1e-6 * tv->tv_usec);
 }
 #endif
 
@@ -40,7 +39,7 @@ UsageTimer::UsageTimer() : start_(Sample()) {}
 
 double UsageTimer::Now() {
   auto ts = gpr_now(GPR_CLOCK_REALTIME);
-  return ts.tv_sec + 1e-9 * ts.tv_nsec;
+  return ts.tv_sec + (1e-9 * ts.tv_nsec);
 }
 
 static void get_resource_usage(double* utime, double* stime) {

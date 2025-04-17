@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_STDOUT_LOGGER_H
 #define GRPC_SRC_CORE_LIB_SECURITY_AUTHORIZATION_STDOUT_LOGGER_H
 
+#include <grpc/grpc_audit_logging.h>
+#include <grpc/support/json.h>
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <string>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-
-#include <grpc/grpc_audit_logging.h>
-#include <grpc/support/json.h>
-#include <grpc/support/port_platform.h>
 
 namespace grpc_core {
 namespace experimental {

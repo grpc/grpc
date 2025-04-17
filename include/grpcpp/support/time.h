@@ -19,10 +19,10 @@
 #ifndef GRPCPP_SUPPORT_TIME_H
 #define GRPCPP_SUPPORT_TIME_H
 
-#include <chrono>
-
 #include <grpc/impl/grpc_types.h>
 #include <grpcpp/support/config.h>
+
+#include <chrono>
 
 namespace grpc {
 

@@ -22,7 +22,6 @@ grpc_cc_test(
     name = "miscompile_with_no_unique_address_test",
     srcs = ["miscompile_with_no_unique_address_test.cc"],
     external_deps = ["gtest"],
-    language = "c++",
     uses_event_engine = False,
     uses_polling = False,
     deps = [

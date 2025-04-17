@@ -15,14 +15,13 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 #define GRPC_SRC_CORE_LIB_PROMISE_EXEC_CTX_WAKEUP_SCHEDULER_H
 
-#include "absl/status/status.h"
-
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/gprpp/debug_location.h"
+#include "absl/status/status.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/debug_location.h"
 
 namespace grpc_core {
 

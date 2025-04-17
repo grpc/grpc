@@ -20,13 +20,14 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 
-#include "absl/strings/str_cat.h"
-
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/str_cat.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/lib/transport/http2_errors.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/util/useful.h"
+
+using grpc_core::http2::Http2ErrorCode;
 
 namespace grpc_core {
 
@@ -59,6 +60,9 @@ void Http2Settings::Diff(
     cb(kGrpcPreferredReceiveCryptoFrameSizeWireId,
        preferred_receive_crypto_message_size_);
   }
+  if (allow_security_frame_ != old.allow_security_frame_) {
+    cb(kGrpcAllowSecurityFrameWireId, allow_security_frame_);
+  }
 }
 
 std::string Http2Settings::WireIdToName(uint16_t wire_id) {
@@ -79,18 +83,20 @@ std::string Http2Settings::WireIdToName(uint16_t wire_id) {
       return std::string(allow_true_binary_metadata_name());
     case kGrpcPreferredReceiveCryptoFrameSizeWireId:
       return std::string(preferred_receive_crypto_message_size_name());
+    case kGrpcAllowSecurityFrameWireId:
+      return std::string(allow_security_frame_name());
     default:
       return absl::StrCat("UNKNOWN (", wire_id, ")");
   }
 }
 
-grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
+Http2ErrorCode Http2Settings::Apply(uint16_t key, uint32_t value) {
   switch (key) {
     case kHeaderTableSizeWireId:
       header_table_size_ = value;
       break;
     case kEnablePushWireId:
-      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
+      if (value > 1) return Http2ErrorCode::kProtocolError;
       enable_push_ = value != 0;
       break;
     case kMaxConcurrentStreamsWireId:
@@ -98,13 +104,13 @@ grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
       break;
     case kInitialWindowSizeWireId:
       if (value > max_initial_window_size()) {
-        return GRPC_HTTP2_FLOW_CONTROL_ERROR;
+        return Http2ErrorCode::kFlowControlError;
       }
       initial_window_size_ = value;
       break;
     case kMaxFrameSizeWireId:
       if (value < min_max_frame_size() || value > max_max_frame_size()) {
-        return GRPC_HTTP2_PROTOCOL_ERROR;
+        return Http2ErrorCode::kProtocolError;
       }
       max_frame_size_ = value;
       break;
@@ -112,7 +118,7 @@ grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
       max_header_list_size_ = std::min(value, 16777216u);
       break;
     case kGrpcAllowTrueBinaryMetadataWireId:
-      if (value > 1) return GRPC_HTTP2_PROTOCOL_ERROR;
+      if (value > 1) return Http2ErrorCode::kProtocolError;
       allow_true_binary_metadata_ = value != 0;
       break;
     case kGrpcPreferredReceiveCryptoFrameSizeWireId:
@@ -120,16 +126,20 @@ grpc_http2_error_code Http2Settings::Apply(uint16_t key, uint32_t value) {
           Clamp(value, min_preferred_receive_crypto_message_size(),
                 max_preferred_receive_crypto_message_size());
       break;
+    case kGrpcAllowSecurityFrameWireId:
+      if (value > 1) return Http2ErrorCode::kProtocolError;
+      allow_security_frame_ = value != 0;
+      break;
   }
-  return GRPC_HTTP2_NO_ERROR;
+  return Http2ErrorCode::kNoError;
 }
 
-absl::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
+std::optional<Http2SettingsFrame> Http2SettingsManager::MaybeSendUpdate() {
   switch (update_state_) {
     case UpdateState::kSending:
-      return absl::nullopt;
+      return std::nullopt;
     case UpdateState::kIdle:
-      if (local_ == sent_) return absl::nullopt;
+      if (local_ == sent_) return std::nullopt;
       break;
     case UpdateState::kFirst:
       break;

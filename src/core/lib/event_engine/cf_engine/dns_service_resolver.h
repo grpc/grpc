@@ -21,18 +21,15 @@
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <dns_sd.h>
+#include <grpc/event_engine/event_engine.h>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
-
-#include <grpc/event_engine/event_engine.h>
-
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/util/ref_counted.h"
+#include "src/core/util/ref_counted_ptr.h"
 
-namespace grpc_event_engine {
-namespace experimental {
+namespace grpc_event_engine::experimental {
 
 class DNSServiceResolverImpl
     : public grpc_core::RefCounted<DNSServiceResolverImpl> {
@@ -112,8 +109,7 @@ class DNSServiceResolver : public EventEngine::DNSResolver {
   grpc_core::RefCountedPtr<DNSServiceResolverImpl> impl_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 #endif  // AVAILABLE_MAC_OS_X_VERSION_10_12_AND_LATER
 #endif  // GPR_APPLE

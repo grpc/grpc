@@ -16,6 +16,9 @@
 //
 //
 
+#include <grpc/grpc.h>
+#include <grpc/impl/channel_arg_names.h>
+#include <grpc/status.h>
 #include <stddef.h>
 
 #include <algorithm>
@@ -24,16 +27,11 @@
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-
-#include <grpc/grpc.h>
-#include <grpc/impl/channel_arg_names.h>
-#include <grpc/status.h>
-
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/gprpp/crash.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/crash.h"
+#include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"
 
 namespace grpc_core {
@@ -55,7 +53,7 @@ auto MakeVec(F init) {
   return v;
 }
 
-CORE_END2END_TEST(ResourceQuotaTest, ResourceQuota) {
+CORE_END2END_TEST(ResourceQuotaTests, ResourceQuota) {
   if (IsEventEngineListenerEnabled()) {
     GTEST_SKIP() << "Not with event engine listener";
   }

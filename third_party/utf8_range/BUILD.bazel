@@ -4,13 +4,23 @@
 # license that can be found in the LICENSE file or at
 # https://opensource.org/licenses/MIT.
 
+load("@rules_license//rules:license.bzl", "license")
+
 DEFAULT_VISIBILITY = [
     "//src/google/protobuf:__subpackages__",
     "//third_party/utf8_range:__subpackages__",
     "//util/utf8/internal:__subpackages__",
 ]
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_applicable_licenses = ["//third_party/utf8_range:license"],
+    default_visibility = ["//visibility:public"],
+)
+
+license(
+    name = "license",
+    package_name = "utf8_range",
+)
 
 licenses(["notice"])
 
@@ -25,6 +35,8 @@ filegroup(
     srcs = [
         "utf8_range.c",
         "utf8_range.h",
+        "utf8_range_neon.inc",
+        "utf8_range_sse.inc",
     ],
     visibility = ["//:__subpackages__"],
 )
@@ -34,7 +46,11 @@ cc_library(
     srcs = [
         "utf8_range.c",
     ],
-    hdrs = ["utf8_range.h"],
+    hdrs = [
+        "utf8_range.h",
+        "utf8_range_neon.inc",
+        "utf8_range_sse.inc",
+    ],
     strip_include_prefix = "/third_party/utf8_range",
 )
 
@@ -45,7 +61,7 @@ cc_library(
     strip_include_prefix = "/third_party/utf8_range",
     deps = [
         ":utf8_range",
-        "@com_google_absl//absl/strings",
+        "@abseil-cpp//absl/strings",
     ],
 )
 
@@ -58,8 +74,8 @@ cc_test(
     deps = [
         ":utf8_range",
         ":utf8_validity",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-        "@com_google_googletest//:gtest_main",
+        "@abseil-cpp//absl/strings",
+        "@googletest//:gtest",
+        "@googletest//:gtest_main",
     ],
 )

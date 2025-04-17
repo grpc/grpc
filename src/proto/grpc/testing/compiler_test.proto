@@ -64,6 +64,8 @@ service ServiceA {
 service ServiceB {
   // ServiceB trailing comment 1
 
+  option deprecated = true;
+
   // MethodB1 leading comment 1
   rpc MethodB1(Request) returns (Response);
   // MethodB1 trailing comment 1

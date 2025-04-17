@@ -18,14 +18,6 @@
 
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "upb/mem/arena.hpp"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
@@ -33,9 +25,12 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
@@ -43,6 +38,9 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/memory.h"
+#include "src/core/util/sync.h"
+#include "upb/mem/arena.hpp"
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
@@ -349,22 +347,22 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_attributes_size(identity) != 0) {
-    size_t iter = kUpb_Map_Begin;
-    grpc_gcp_Identity_AttributesEntry* peer_attributes_entry =
-        grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
-    while (peer_attributes_entry != nullptr) {
-      upb_StringView key = grpc_gcp_Identity_AttributesEntry_key(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(
-              peer_attributes_entry));
-      upb_StringView val = grpc_gcp_Identity_AttributesEntry_value(
-          const_cast<grpc_gcp_Identity_AttributesEntry*>(
-              peer_attributes_entry));
-      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
-                                               context_arena.ptr());
-      peer_attributes_entry =
-          grpc_gcp_Identity_attributes_nextmutable(peer_identity, &iter);
+    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
+    // v30.0.
+    const upb_Map* upb_map =
+        _grpc_gcp_Identity_attributes_upb_map(peer_identity);
+    if (upb_map) {
+      size_t iter = kUpb_Map_Begin;
+      upb_MessageValue k, v;
+      while (upb_Map_Next(upb_map, &k, &v, &iter)) {
+        upb_StringView key = k.str_val;
+        upb_StringView val = v.str_val;
+        grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                                 context_arena.ptr());
+      }
     }
   }
+
   size_t serialized_ctx_length;
   char* serialized_ctx = grpc_gcp_AltsContext_serialize(
       context, context_arena.ptr(), &serialized_ctx_length);
@@ -484,7 +482,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
 
 struct alts_tsi_handshaker_continue_handshaker_next_args {
   alts_tsi_handshaker* handshaker;
-  std::unique_ptr<unsigned char> received_bytes;
+  unsigned char* received_bytes;
   size_t received_bytes_size;
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
@@ -509,13 +507,13 @@ static void alts_tsi_handshaker_create_channel(
   grpc_channel_credentials_release(creds);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
-          handshaker, next_args->received_bytes.get(),
-          next_args->received_bytes_size, next_args->cb, next_args->user_data,
-          next_args->error);
+          handshaker, next_args->received_bytes, next_args->received_bytes_size,
+          next_args->cb, next_args->user_data, next_args->error);
   if (continue_next_result != TSI_OK) {
     next_args->cb(continue_next_result, next_args->user_data, nullptr, 0,
                   nullptr);
   }
+  gpr_free(next_args->received_bytes);
   delete next_args;
 }
 
@@ -539,6 +537,10 @@ static tsi_result handshaker_next(
       return TSI_HANDSHAKE_SHUTDOWN;
     }
   }
+
+  if (!handshaker->is_client && received_bytes_size == 0) {
+    return TSI_INCOMPLETE_DATA;
+  }
   if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         new alts_tsi_handshaker_continue_handshaker_next_args();
@@ -547,9 +549,9 @@ static tsi_result handshaker_next(
     args->received_bytes_size = received_bytes_size;
     args->error = error;
     if (received_bytes_size > 0) {
-      args->received_bytes = std::unique_ptr<unsigned char>(
-          static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
-      memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
+      args->received_bytes =
+          static_cast<unsigned char*>(gpr_zalloc(received_bytes_size));
+      memcpy(args->received_bytes, received_bytes, received_bytes_size);
     }
     args->cb = cb;
     args->user_data = user_data;

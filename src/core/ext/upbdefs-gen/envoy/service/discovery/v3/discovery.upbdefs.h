@@ -3,10 +3,11 @@
  *     envoy/service/discovery/v3/discovery.proto
  *
  * Do not edit -- your changes will be discarded when the file is
- * regenerated. */
+ * regenerated.
+ * NO CHECKED-IN PROTOBUF GENCODE */
 
-#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPBDEFS_H_
-#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPBDEFS_H_
+#ifndef ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPBDEFS_H_
+#define ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
@@ -31,6 +32,11 @@ UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceLocator_Dyna
 UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceName_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceName");
+}
+
+UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_ResourceError_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "envoy.service.discovery.v3.ResourceError");
 }
 
 UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_DiscoveryRequest_getmsgdef(upb_DefPool *s) {
@@ -94,4 +100,4 @@ UPB_INLINE const upb_MessageDef *envoy_service_discovery_v3_Resource_CacheContro
 
 #include "upb/port/undef.inc"
 
-#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPBDEFS_H_ */
+#endif  /* ENVOY_SERVICE_DISCOVERY_V3_DISCOVERY_PROTO_UPB_H__UPBDEFS_H_ */

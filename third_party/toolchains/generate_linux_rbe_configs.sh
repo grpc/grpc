@@ -42,12 +42,12 @@ LINUX_RBE_DOCKER_IMAGE=$(cat ${LINUX_RBE_DOCKERFILE_DIR}.current_version)
 # Bazel version used for configuring
 # Needs to be the oldest of the versions from bazel/supported_versions.txt chosen 
 # so that the result is compatible with other supported bazel versions.
-BAZEL_VERSION=6.5.0
+BAZEL_VERSION=7.4.1
 
 # TODO(jtattermusch): experiment with --cpp_env_json to simplify bazel build configuration.
 
 # Where to store the generated configs (relative to repo root)
-CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2004
+CONFIG_OUTPUT_PATH=third_party/toolchains/rbe_ubuntu2004_bazel7
 
 # Delete old generated configs.
 rm -rf "${REPO_ROOT}/${CONFIG_OUTPUT_PATH}"

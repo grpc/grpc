@@ -55,6 +55,10 @@ GRPC_LLVM_WARNING_FLAGS = [
     # Exceptions but will be removed
     "-Wno-deprecated-declarations",
     "-Wno-unused-function",
+    # alignment issues
+    "-Walign-mismatch",
+    "-Wover-aligned",
+    "-Wunaligned-access",
 ]
 
 GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
@@ -85,7 +89,9 @@ GRPC_LLVM_WINDOWS_WARNING_FLAGS = GRPC_LLVM_WARNING_FLAGS + [
 
     # protobuf offenses
     "-Wno-cast-align",
+    "-Wno-format-nonliteral",
     "-Wno-inconsistent-missing-destructor-override",
+    "-Wno-language-extension-token",
 
     # xxhash offenses
     "-Wno-disabled-macro-expansion",

@@ -15,52 +15,43 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H
 
-#include <memory>
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/config/core_configuration.h"
-#include "src/core/lib/gprpp/debug_location.h"
+#include <memory>
 
-namespace grpc_event_engine {
-namespace experimental {
+#include "src/core/config/core_configuration.h"
+#include "src/core/util/debug_location.h"
 
-/// Access the shared global EventEngine instance.
-///
-/// GetDefaultEventEngine is a lazy thing: either a shared global EventEngine
-/// instance exists and will be returned, or that shared global instance will be
-/// created and returned. The returned shared_ptr<EventEngine>'s life is
-/// determined by the shared_ptr, and therefore EventEngines may be created and
-/// destroyed multiple times through the life of your gRPC process, there is no
-/// guarantee of one persistent global instance like in iomgr.
-///
-/// Why would we do this? To begin with, users may provide their own EventEngine
-/// instances on channel or server creation; if they do that, there is some
-/// chance that a default EventEngine instance will not have to be created, and
-/// applications will not have to pay the (probably small) price of
-/// instantiating an engine they do not own. The other major consideration is
-/// that gRPC shutdown is likely going away. Without a well-defined point at
-/// which a persistent global EventEngine instance can safely be shut down, we
-/// risk undefined behavior and various documented breakages if the engine is
-/// not shut down cleanly before the process exits. Therefore, allowing the
-/// EventEngine lifetimes to be determined by the scopes in which they are
-/// needed is a fine solution.
-///
-/// If you're writing code that needs an EventEngine, prefer 1) getting the
-/// EventEngine from somewhere it is already cached - preconditioned
-/// ChannelArgs, or the channel stack for example - or 2) if not otherwise
-/// available, call \a GetDefaultEventEngine and save that shared_ptr to ensure
-/// the Engine's lifetime is at least as long as you need it to be.
-std::shared_ptr<EventEngine> GetDefaultEventEngine(
-    grpc_core::SourceLocation location = grpc_core::SourceLocation());
+namespace grpc_event_engine::experimental {
 
 /// On ingress, ensure that an EventEngine exists in channel args via
 /// preconditioning.
 void RegisterEventEngineChannelArgPreconditioning(
     grpc_core::CoreConfiguration::Builder* builder);
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+/// Register a default EventEngine that is reset and destroyed when this object
+/// is destroyed.
+///
+/// Usage:
+///
+///   {
+///     DefaultEventEngineScope engine_holder(std::make_shared<MyEngine>());
+///     // returns the instance of MyEngine
+///     auto engine = GetDefaultEventEngine();
+///   }
+///   // returns some default internal instance. The previous instance has been
+///   // destroyed.
+///   auto engine = GetDefaultEventEngine();
+///
+class DefaultEventEngineScope {
+ public:
+  explicit DefaultEventEngineScope(std::shared_ptr<EventEngine> engine) {
+    SetDefaultEventEngine(std::move(engine));
+  }
+  ~DefaultEventEngineScope() { ShutdownDefaultEventEngine(); }
+};
+
+}  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_DEFAULT_EVENT_ENGINE_H

@@ -19,10 +19,10 @@
 #ifndef GRPCPP_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
 #define GRPCPP_EXT_PROTO_SERVER_REFLECTION_PLUGIN_H
 
-#include <memory>
-
 #include <grpcpp/impl/server_builder_plugin.h>
 #include <grpcpp/support/config.h>
+
+#include <memory>
 
 namespace grpc {
 class ProtoServerReflection;

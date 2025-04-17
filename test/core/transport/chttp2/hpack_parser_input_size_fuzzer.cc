@@ -15,6 +15,10 @@
 // For all inputs, ensure parsing one byte at a time produces the same result as
 // parsing the entire input at once.
 
+#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/slice.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/time.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -28,26 +32,21 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
-
-#include <grpc/event_engine/memory_allocator.h>
-#include <grpc/slice.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/time.h>
-
+#include "fuzztest/fuzztest.h"
+#include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/status_helper.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/status_helper.h"
 #include "test/core/test_util/slice_splitter.h"
 
-bool squelch = true;
-bool leak_check = true;
+extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
 
 namespace grpc_core {
 namespace {
@@ -136,24 +135,16 @@ std::string Stringify(absl::StatusOr<std::string> result) {
   }
 }
 
-}  // namespace
-}  // namespace grpc_core
-
-extern gpr_timespec (*gpr_now_impl)(gpr_clock_type clock_type);
-
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+void SameHpackResultRegardlessOfSplitMode(std::vector<uint8_t> buffer) {
   gpr_now_impl = [](gpr_clock_type clock_type) {
     return gpr_timespec{10, 0, clock_type};
   };
-  auto slice = grpc_core::Slice::FromCopiedBuffer(data, size);
-  auto full = grpc_core::Stringify(
-      grpc_core::TestVector(GRPC_SLICE_SPLIT_IDENTITY, slice.Ref()));
-  auto one_byte = grpc_core::Stringify(
-      grpc_core::TestVector(GRPC_SLICE_SPLIT_ONE_BYTE, slice.Ref()));
-  if (full != one_byte) {
-    fprintf(stderr, "MISMATCHED RESULTS\nFULL SLICE: %s\nONE BYTE: %s\n",
-            full.c_str(), one_byte.c_str());
-    abort();
-  }
-  return 0;
+  auto slice = Slice::FromCopiedBuffer(buffer.data(), buffer.size());
+  auto full = Stringify(TestVector(GRPC_SLICE_SPLIT_IDENTITY, slice.Ref()));
+  auto one_byte = Stringify(TestVector(GRPC_SLICE_SPLIT_ONE_BYTE, slice.Ref()));
+  EXPECT_EQ(full, one_byte);
 }
+FUZZ_TEST(HpackParser, SameHpackResultRegardlessOfSplitMode);
+
+}  // namespace
+}  // namespace grpc_core

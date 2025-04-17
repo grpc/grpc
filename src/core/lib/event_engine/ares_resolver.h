@@ -14,46 +14,31 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 
+#include <grpc/support/port_platform.h>
+
 #include <utility>
 
 #include "absl/status/status.h"
-
-#include <grpc/support/port_platform.h>
-
 #include "src/core/lib/debug/trace.h"
 
 #if GRPC_ARES == 1
 
+#include <ares.h>
+#include <grpc/event_engine/event_engine.h>
+
 #include <list>
 #include <memory>
-
-#include <ares.h>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-#include "absl/types/variant.h"
-
-#include <grpc/event_engine/event_engine.h>
-#include <grpc/support/log.h>
-
 #include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
-#include "src/core/lib/gprpp/orphanable.h"
-#include "src/core/lib/gprpp/sync.h"
+#include "src/core/util/orphanable.h"
+#include "src/core/util/sync.h"
 
-namespace grpc_event_engine {
-namespace experimental {
-
-#define GRPC_ARES_RESOLVER_TRACE_LOG(format, ...)        \
-  do {                                                   \
-    if (GRPC_TRACE_FLAG_ENABLED(cares_resolver)) {       \
-      LOG(INFO) << "(EventEngine c-ares resolver) "      \
-                << absl::StrFormat(format, __VA_ARGS__); \
-    }                                                    \
-  } while (0)
+namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
@@ -101,9 +86,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
   using FdNodeList = std::list<std::unique_ptr<FdNode>>;
 
   using CallbackType =
-      absl::variant<EventEngine::DNSResolver::LookupHostnameCallback,
-                    EventEngine::DNSResolver::LookupSRVCallback,
-                    EventEngine::DNSResolver::LookupTXTCallback>;
+      std::variant<EventEngine::DNSResolver::LookupHostnameCallback,
+                   EventEngine::DNSResolver::LookupSRVCallback,
+                   EventEngine::DNSResolver::LookupTXTCallback>;
 
   void CheckSocketsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeStartTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -131,14 +116,13 @@ class AresResolver : public RefCountedDNSResolverInterface {
   FdNodeList fd_node_list_ ABSL_GUARDED_BY(mutex_);
   int id_ ABSL_GUARDED_BY(mutex_) = 0;
   absl::flat_hash_map<int, CallbackType> callback_map_ ABSL_GUARDED_BY(mutex_);
-  absl::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
+  std::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   std::shared_ptr<EventEngine> event_engine_;
 };
 
-}  // namespace experimental
-}  // namespace grpc_event_engine
+}  // namespace grpc_event_engine::experimental
 
 // Exposed in this header for C-core tests only
 extern void (*event_engine_grpc_ares_test_only_inject_config)(

@@ -19,28 +19,27 @@
 #ifndef GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
 #define GRPC_SRC_CORE_LIB_SURFACE_LEGACY_CHANNEL_H
 
-#include <string>
-
-#include "absl/status/statusor.h"
-#include "absl/types/optional.h"
-
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
+#include <optional>
+#include <string>
+
+#include "absl/status/statusor.h"
+#include "src/core/call/call_arena_allocator.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"  // IWYU pragma: keep
-#include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/time.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/call_arena_allocator.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -62,7 +61,7 @@ class LegacyChannel final : public Channel {
   grpc_call* CreateCall(grpc_call* parent_call, uint32_t propagation_mask,
                         grpc_completion_queue* cq,
                         grpc_pollset_set* pollset_set_alternative, Slice path,
-                        absl::optional<Slice> authority, Timestamp deadline,
+                        std::optional<Slice> authority, Timestamp deadline,
                         bool registered_method) override;
 
   void StartCall(UnstartedCallHandler) override {

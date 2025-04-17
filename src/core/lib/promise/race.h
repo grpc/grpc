@@ -15,15 +15,15 @@
 #ifndef GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 #define GRPC_SRC_CORE_LIB_PROMISE_RACE_H
 
-#include <utility>
-
 #include <grpc/support/port_platform.h>
+
+#include <utility>
 
 namespace grpc_core {
 
-namespace promise_detail {
-
-// Implementation type for Race combinator.
+/// Run all the promises, return the first result that's available.
+/// If two results are simultaneously available, bias towards the first result
+/// listed.
 template <typename... Promises>
 class Race;
 
@@ -68,16 +68,8 @@ class Race<Promise> {
   Promise promise_;
 };
 
-}  // namespace promise_detail
-
-/// Run all the promises, return the first result that's available.
-/// If two results are simultaneously available, bias towards the first result
-/// listed.
 template <typename... Promises>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION promise_detail::Race<Promises...> Race(
-    Promises... promises) {
-  return promise_detail::Race<Promises...>(std::move(promises)...);
-}
+Race(Promises...) -> Race<Promises...>;
 
 }  // namespace grpc_core
 
