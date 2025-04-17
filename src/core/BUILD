@@ -4921,6 +4921,7 @@ grpc_cc_library(
         "no_destruct",
         "per_cpu",
         "poll",
+        "shared_bit_gen",
         "single_set_ptr",
         "sleep",
         "status_helper",
@@ -5347,6 +5348,7 @@ grpc_cc_library(
         "match",
         "metrics",
         "pollset_set",
+        "shared_bit_gen",
         "slice",
         "slice_refcount",
         "status_helper",
@@ -6235,6 +6237,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "shared_bit_gen",
+    srcs = ["util/shared_bit_gen.cc"],
     hdrs = [
         "util/shared_bit_gen.h",
     ],
@@ -6512,6 +6515,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "metrics",
         "resolved_address",
+        "shared_bit_gen",
         "subchannel_interface",
         "time",
         "useful",
@@ -6689,6 +6693,7 @@ grpc_cc_library(
         "lb_endpoint_list",
         "lb_policy",
         "lb_policy_factory",
+        "shared_bit_gen",
         "//:config",
         "//:debug_location",
         "//:endpoint_addresses",
@@ -6747,6 +6752,7 @@ grpc_cc_library(
         "metrics",
         "ref_counted",
         "resolved_address",
+        "shared_bit_gen",
         "static_stride_scheduler",
         "stats_data",
         "subchannel_interface",
@@ -6813,6 +6819,7 @@ grpc_cc_library(
         "pollset_set",
         "ref_counted",
         "resolved_address",
+        "shared_bit_gen",
         "subchannel_interface",
         "sync",
         "unique_type_name",
@@ -6905,6 +6912,7 @@ grpc_cc_library(
         "lb_policy_factory",
         "lb_policy_registry",
         "pollset_set",
+        "shared_bit_gen",
         "sync",
         "time",
         "validation_errors",
@@ -7382,6 +7390,7 @@ grpc_cc_library(
         "metadata_batch",
         "pollset_set",
         "ref_counted",
+        "shared_bit_gen",
         "slice",
         "time",
         "xds_dependency_manager",
@@ -7814,6 +7823,19 @@ grpc_cc_library(
     deps = [
         "useful",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_transport_chttp2_plugin",
+    srcs = [
+        "ext/transport/chttp2/chttp2_plugin.cc",
+    ],
+    deps = [
+        "endpoint_transport",
+        "grpc_transport_chttp2_client_connector",
+        "grpc_transport_chttp2_server",
+        "//:config",
     ],
 )
 
@@ -8407,6 +8429,7 @@ grpc_cc_library(
         "metrics",
         "race",
         "resource_quota",
+        "shared_bit_gen",
         "sleep",
         "slice",
         "slice_buffer",
@@ -8843,6 +8866,7 @@ grpc_cc_library(
         "metadata_batch",
         "race",
         "resource_quota",
+        "shared_bit_gen",
         "sleep",
         "slice",
         "slice_buffer",
@@ -9344,6 +9368,17 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "endpoint_transport",
+    hdrs = [
+        "transport/endpoint_transport.h",
+    ],
+    deps = [
+        "channel_args",
+        "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
     name = "timeout_encoding",
     srcs = [
         "lib/transport/timeout_encoding.cc",
@@ -9445,6 +9480,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
+    defines = select({
+        "//:grpc_no_ztrace": ["GRPC_NO_ZTRACE"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/container:flat_hash_set",
     ],

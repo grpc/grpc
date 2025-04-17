@@ -153,7 +153,7 @@ void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
 absl::StatusOr<std::unique_ptr<HttpServerFilter>> HttpServerFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   return std::make_unique<HttpServerFilter>(
-      args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
+      args, args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
       args.GetBool(
               GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS)
           .value_or(false));

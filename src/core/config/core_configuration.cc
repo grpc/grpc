@@ -46,7 +46,9 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       lb_policy_registry_(builder->lb_policy_registry_.Build()),
       proxy_mapper_registry_(builder->proxy_mapper_registry_.Build()),
       certificate_provider_registry_(
-          builder->certificate_provider_registry_.Build()) {}
+          builder->certificate_provider_registry_.Build()),
+      endpoint_transport_registry_(
+          builder->endpoint_transport_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(
     absl::AnyInvocable<void(Builder*)> builder) {

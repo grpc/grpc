@@ -37,7 +37,6 @@
 #include "src/core/util/useful.h"
 
 namespace grpc_event_engine::experimental {
-namespace {
 
 absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
@@ -88,8 +87,6 @@ LookupHostnameBlocking(absl::string_view name, absl::string_view default_port) {
   }
   return addresses;
 }
-
-}  // namespace
 
 NativePosixDNSResolver::NativePosixDNSResolver(
     std::shared_ptr<EventEngine> event_engine)
