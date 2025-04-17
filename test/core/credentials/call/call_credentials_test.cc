@@ -941,8 +941,7 @@ TEST_F(CredentialsTest, TestValidStsCredsOptions) {
   CHECK_OK(sts_url);
   absl::string_view host;
   absl::string_view port;
-  std::string authtority = sts_url->authority();
-  CHECK(SplitHostPort(authtority, &host, &port));
+  CHECK(SplitHostPort(sts_url->authority(), &host, &port));
   CHECK(host == "foo.com");
   CHECK(port == "5555");
 }

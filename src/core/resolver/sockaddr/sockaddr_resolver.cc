@@ -86,8 +86,7 @@ bool ParseUri(const URI& uri,
       // Skip targets which are empty.
       continue;
     }
-    auto ith_uri = URI::Create(uri.scheme(), /*user_info=*/"", /*host_port=*/"",
-                               std::string(ith_path), {}, "");
+    auto ith_uri = URI::Create(uri.scheme(), "", std::string(ith_path), {}, "");
     grpc_resolved_address addr;
     if (!ith_uri.ok() || !parse(*ith_uri, &addr)) {
       errors_found = true;

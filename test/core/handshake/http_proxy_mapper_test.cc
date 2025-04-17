@@ -224,28 +224,6 @@ TEST(ProxyForAddressTest, BadProxy) {
   EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER), std::nullopt);
 }
 
-TEST(ProxyForAddressTest, UserInfo) {
-  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
-                                "http://username:password@proxy.google.com");
-  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
-            "proxy.google.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
-            "test.google.com:443");
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
-            "Proxy-Authorization:Basic dXNlcm5hbWU6cGFzc3dvcmQ=");
-}
-
-TEST(ProxyForAddressTest, PctEncodedUserInfo) {
-  auto args = ChannelArgs().Set(GRPC_ARG_HTTP_PROXY,
-                                "http://usern%40me:password@proxy.google.com");
-  EXPECT_EQ(HttpProxyMapper().MapName("dns:///test.google.com:443", &args),
-            "proxy.google.com");
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_SERVER),
-            "test.google.com:443");
-  EXPECT_EQ(args.GetString(GRPC_ARG_HTTP_CONNECT_HEADERS),
-            "Proxy-Authorization:Basic dXNlcm5AbWU6cGFzc3dvcmQ=");
-}
-
 class IncludedAddressesTest
     : public ::testing::TestWithParam<absl::string_view> {};
 

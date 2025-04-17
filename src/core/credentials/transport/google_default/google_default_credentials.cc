@@ -217,9 +217,9 @@ static int is_metadata_server_reachable() {
   detector.is_done = 0;
   detector.success = 0;
   memset(&request, 0, sizeof(grpc_http_request));
-  auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
-                                    GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri =
+      grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
+                             {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,

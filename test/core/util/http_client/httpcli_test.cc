@@ -194,7 +194,7 @@ TEST_F(HttpRequestTest, Get) {
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
   auto uri = grpc_core::URI::Create(
-      "http", /*user_info=*/"", host, "/get",
+      "http", host, "/get",
       /*query_parameter_pairs=*/{{"foo", "bar"}, {"baz", "quux"}},
       /*fragment=*/"");
   CHECK(uri.ok());
@@ -222,7 +222,7 @@ TEST_F(HttpRequestTest, Post) {
   req.body = const_cast<char*>("hello");
   req.body_length = 5;
   auto uri = grpc_core::URI::Create(
-      "http", /*user_info=*/"", host, "/post",
+      "http", host, "/post",
       /*query_parameter_pairs=*/{{"foo", "bar"}, {"mumble", "frotz"}},
       /*fragment=*/"");
   CHECK(uri.ok());
@@ -278,8 +278,7 @@ TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(grpc_http_request));
       auto uri = grpc_core::URI::Create(
-          "http", /*user_info=*/"",
-          "dont-care-since-wont-be-resolved.test.com:443", "/get",
+          "http", "dont-care-since-wont-be-resolved.test.com:443", "/get",
           {} /* query params */, "" /* fragment */);
       CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
@@ -334,9 +333,9 @@ TEST_F(HttpRequestTest, CancelGetWhileReadingResponse) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = grpc_core::URI::Create(
-          "http", /*user_info=*/"", fake_http_server_ptr->address(), "/get",
-          {} /* query params */, "" /* fragment */);
+      auto uri = grpc_core::URI::Create("http", fake_http_server_ptr->address(),
+                                        "/get", {} /* query params */,
+                                        "" /* fragment */);
       CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
@@ -395,9 +394,9 @@ TEST_F(HttpRequestTest, CancelGetRacesWithConnectionFailure) {
       grpc_http_request req;
       grpc_core::ExecCtx exec_ctx;
       memset(&req, 0, sizeof(req));
-      auto uri = grpc_core::URI::Create(
-          "http", /*user_info=*/"", fake_server_address, "/get",
-          {} /* query params */, "" /* fragment */);
+      auto uri =
+          grpc_core::URI::Create("http", fake_server_address, "/get",
+                                 {} /* query params */, "" /* fragment */);
       CHECK(uri.ok());
       grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
           grpc_core::HttpRequest::Get(
@@ -461,9 +460,8 @@ TEST_F(HttpRequestTest, CallerPollentsAreNotReferencedAfterCallbackIsRan) {
   grpc_polling_entity wrapped_pollset_set_to_destroy_eagerly =
       grpc_polling_entity_create_from_pollset_set(
           request_state.pollset_set_to_destroy_eagerly);
-  auto uri =
-      grpc_core::URI::Create("http", /*user_info=*/"", fake_server_address,
-                             "/get", {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", fake_server_address, "/get",
+                                    {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(
@@ -514,8 +512,8 @@ TEST_F(HttpRequestTest,
   std::string host = absl::StrFormat("localhost:%d", g_server_port);
   LOG(INFO) << "requesting from " << host;
   memset(&req, 0, sizeof(req));
-  auto uri = grpc_core::URI::Create("http", /*user_info=*/"", host, "/get",
-                                    {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", host, "/get", {} /* query params */,
+                                    "" /* fragment */);
   CHECK(uri.ok());
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> http_request =
       grpc_core::HttpRequest::Get(

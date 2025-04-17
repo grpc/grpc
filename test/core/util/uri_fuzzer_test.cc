@@ -42,10 +42,6 @@ void ParseRoundTrips(std::string buffer) {
       << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
   EXPECT_EQ(uri->authority(), uri2->authority())
       << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
-  EXPECT_EQ(uri->user_info(), uri2->user_info())
-      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
-  EXPECT_EQ(uri->host_port(), uri2->host_port())
-      << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
   EXPECT_EQ(uri->path(), uri2->path())
       << GRPC_DUMP_ARGS(absl::CEscape(buffer), absl::CEscape(buffer2));
   EXPECT_EQ(uri->query_parameter_pairs(), uri2->query_parameter_pairs())
