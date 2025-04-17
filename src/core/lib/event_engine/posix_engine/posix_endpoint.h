@@ -31,6 +31,14 @@
 #include <optional>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/hash/hash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -42,14 +50,6 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -623,7 +623,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
-  virtual std::vector<size_t> AllWriteMetrics() override { return {}; }
+  std::vector<size_t> AllWriteMetrics() override { return {}; }
   std::optional<absl::string_view> GetMetricName(size_t) override {
     return std::nullopt;
   }
