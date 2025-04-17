@@ -79,6 +79,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
                           ->memory_quota()
                           ->CreateMemoryOwner()),
         self_reservation_(memory_owner_.MakeReservation(sizeof(*this))) {
+    GRPC_TRACE_LOG(secure_endpoint, INFO)
+        << "FrameProtector: " << this << " protector: " << protector_
+        << " zero_copy_protector: " << zero_copy_protector_
+        << " leftover_nslices: " << leftover_nslices;
     if (leftover_nslices > 0) {
       leftover_bytes_ = std::make_unique<SliceBuffer>();
       for (size_t i = 0; i < leftover_nslices; i++) {
@@ -105,6 +109,18 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   Mutex* read_mu() ABSL_LOCK_RETURNED(read_mu_) { return &read_mu_; }
   Mutex* write_mu() ABSL_LOCK_RETURNED(write_mu_) { return &write_mu_; }
+
+  void TraceOp(absl::string_view op, grpc_slice_buffer* slices) {
+    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
+      size_t i;
+      for (i = 0; i < slices->count; i++) {
+        char* data =
+            grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        VLOG(2) << op << " " << this << ": " << data;
+        gpr_free(data);
+      }
+    }
+  }
 
   void MaybePostReclaimer() {
     if (!has_posted_reclaimer_.exchange(true, std::memory_order_relaxed)) {
@@ -146,15 +162,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   }
 
   void FinishRead(bool ok) {
-    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
-      size_t i;
-      for (i = 0; i < read_buffer_->count; i++) {
-        char* data = grpc_dump_slice(read_buffer_->slices[i],
-                                     GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "READ " << this << ": " << data;
-        gpr_free(data);
-      }
-    }
+    TraceOp("FinishRead", read_buffer_);
     // TODO(yangg) experiment with moving this block after read_cb to see if it
     // helps latency
     source_buffer_.Clear();
@@ -243,6 +251,9 @@ class FrameProtector : public RefCounted<FrameProtector> {
           absl::StrCat("Unwrap failed (", tsi_result_to_string(result), ")"));
     }
 
+    GRPC_TRACE_LOG(secure_endpoint, INFO)
+        << "Unprotect: " << this << " read_status: " << read_status;
+
     return read_status;
   }
 
@@ -252,6 +263,9 @@ class FrameProtector : public RefCounted<FrameProtector> {
   }
 
   bool MaybeCompleteReadImmediately() {
+    GRPC_TRACE_LOG(secure_endpoint, INFO)
+        << "MaybeCompleteReadImmediately: " << this
+        << " leftover_bytes_: " << leftover_bytes_.get();
     if (leftover_bytes_ != nullptr) {
       grpc_slice_buffer_swap(leftover_bytes_->c_slice_buffer(),
                              source_buffer_.c_slice_buffer());
@@ -285,14 +299,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
     output_buffer_.Clear();
 
-    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
-      for (size_t i = 0; i < slices->count; i++) {
-        char* data =
-            grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << "WRITE " << this << ": " << data;
-        gpr_free(data);
-      }
-    }
+    TraceOp("Protect", slices);
 
     tsi_result result = TSI_OK;
     if (zero_copy_protector_ != nullptr) {
@@ -633,13 +640,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
   ~SecureEndpoint() override { impl_->Shutdown(); }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* in_args) override {
-    return impl_->Read(std::move(on_read), buffer, in_args);
+            ReadArgs in_args) override {
+    return impl_->Read(std::move(on_read), buffer, std::move(in_args));
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override {
-    return impl_->Write(std::move(on_writable), data, args);
+             SliceBuffer* data, WriteArgs args) override {
+    return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {
@@ -652,6 +659,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
   void* QueryExtension(absl::string_view id) override {
     return impl_->QueryExtension(id);
+  }
+
+  std::vector<size_t> AllWriteMetrics() override {
+    return impl_->AllWriteMetrics();
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) override {
+    return impl_->GetMetricName(key);
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) override {
+    return impl_->GetMetricKey(name);
   }
 
  private:
@@ -670,43 +689,45 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                         grpc_event_engine::experimental::EventEngine>()) {}
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs*) {
+              SliceBuffer* buffer, ReadArgs args) {
       on_read_ = std::move(on_read);
       frame_protector_.BeginRead(buffer->c_slice_buffer());
       if (frame_protector_.MaybeCompleteReadImmediately()) {
         return MaybeFinishReadImmediately();
       }
-      ReadArgs args;
-      args.read_hint_bytes = frame_protector_.min_progress_size();
-      return wrapped_ep_->Read(
-                 [impl = Ref()](absl::Status status) mutable {
-                   {
-                     grpc_core::MutexLock lock(
-                         impl->frame_protector_.read_mu());
-                     if (status.ok() && impl->wrapped_ep_ == nullptr) {
-                       status =
-                           absl::CancelledError("secure endpoint shutdown");
-                     }
-                     status =
-                         impl->frame_protector_.Unprotect(std::move(status));
-                   }
-                   auto on_read = std::move(impl->on_read_);
-                   impl.reset();
-                   on_read(status);
-                 },
-                 frame_protector_.source_buffer(), &args) &&
-             MaybeFinishReadImmediately();
+      args.set_read_hint_bytes(frame_protector_.min_progress_size());
+      bool read_completed_immediately = wrapped_ep_->Read(
+          [impl = Ref()](absl::Status status) mutable {
+            {
+              grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
+              if (status.ok() && impl->wrapped_ep_ == nullptr) {
+                status = absl::CancelledError("secure endpoint shutdown");
+              }
+              status = impl->frame_protector_.Unprotect(std::move(status));
+            }
+            if (status.ok()) {
+              impl->frame_protector_.TraceOp(
+                  "Read",
+                  impl->frame_protector_.source_buffer()->c_slice_buffer());
+            }
+            auto on_read = std::move(impl->on_read_);
+            impl->frame_protector_.FinishRead(status.ok());
+            impl.reset();
+            on_read(status);
+          },
+          frame_protector_.source_buffer(), std::move(args));
+      if (read_completed_immediately) return MaybeFinishReadImmediately();
+      return false;
     }
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) {
+               SliceBuffer* data, WriteArgs args) {
       GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
       tsi_result result;
       {
         grpc_core::MutexLock lock(frame_protector_.write_mu());
-        result = frame_protector_.Protect(
-            data->c_slice_buffer(),
-            args == nullptr ? 1024 * 1024 : args->max_frame_size);
+        result = frame_protector_.Protect(data->c_slice_buffer(),
+                                          args.max_frame_size());
       }
       if (result != TSI_OK) {
         event_engine_->Run(
@@ -717,13 +738,15 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         return false;
       }
       on_write_ = std::move(on_writable);
+      frame_protector_.TraceOp(
+          "Write", frame_protector_.output_buffer()->c_slice_buffer());
       return wrapped_ep_->Write(
           [impl = Ref()](absl::Status status) mutable {
             auto on_write = std::move(impl->on_write_);
             impl.reset();
             on_write(status);
           },
-          frame_protector_.output_buffer(), args);
+          frame_protector_.output_buffer(), std::move(args));
     }
 
     const EventEngine::ResolvedAddress& GetPeerAddress() const {
@@ -744,10 +767,25 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       frame_protector_.Shutdown();
     }
 
+    virtual std::vector<size_t> AllWriteMetrics() {
+      return wrapped_ep_->AllWriteMetrics();
+    }
+
+    virtual std::optional<absl::string_view> GetMetricName(size_t key) {
+      return wrapped_ep_->GetMetricName(key);
+    }
+
+    virtual std::optional<size_t> GetMetricKey(absl::string_view name) {
+      return wrapped_ep_->GetMetricKey(name);
+    }
+
    private:
     bool MaybeFinishReadImmediately() {
       grpc_core::MutexLock lock(frame_protector_.read_mu());
+      frame_protector_.TraceOp(
+          "Read(Imm)", frame_protector_.source_buffer()->c_slice_buffer());
       auto status = frame_protector_.Unprotect(absl::OkStatus());
+      frame_protector_.FinishRead(status.ok());
       if (status.ok()) return true;
       event_engine_->Run([impl = Ref(), status = std::move(status)]() mutable {
         auto on_read = std::move(impl->on_read_);

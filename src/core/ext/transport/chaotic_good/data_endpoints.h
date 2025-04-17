@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -271,9 +272,7 @@ class Endpoint final {
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
-           grpc_event_engine::experimental::EventEngine* event_engine,
-           std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-               stats_plugin_group);
+           TransportContextPtr ctx);
 
  private:
   static auto WriteLoop(uint32_t id,
@@ -292,13 +291,9 @@ class DataEndpoints {
  public:
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
-  explicit DataEndpoints(
-      std::vector<PendingConnection> endpoints,
-      grpc_event_engine::experimental::EventEngine* event_engine,
-      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group,
-      bool enable_tracing,
-      data_endpoints_detail::Clock* clock = DefaultClock());
+  explicit DataEndpoints(std::vector<PendingConnection> endpoints,
+                         TransportContextPtr ctx, bool enable_tracing,
+                         data_endpoints_detail::Clock* clock = DefaultClock());
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id

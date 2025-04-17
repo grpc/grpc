@@ -81,6 +81,7 @@
 #include "src/core/util/debug_location.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
@@ -140,41 +141,35 @@ Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
 }
 
 void Server::ListenerState::Start() {
-  if (IsServerListenerEnabled()) {
-    if (server_->config_fetcher() != nullptr) {
-      auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
-      config_fetcher_watcher_ = watcher.get();
-      server_->config_fetcher()->StartWatch(
-          grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
-          std::move(watcher));
-    } else {
-      {
-        MutexLock lock(&mu_);
-        started_ = true;
-        is_serving_ = true;
-      }
-      listener_->Start();
-    }
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
+    config_fetcher_watcher_ = watcher.get();
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
+        std::move(watcher));
   } else {
+    {
+      MutexLock lock(&mu_);
+      started_ = true;
+      is_serving_ = true;
+    }
     listener_->Start();
   }
 }
 
 void Server::ListenerState::Stop() {
-  if (IsServerListenerEnabled()) {
-    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-        connections;
-    {
-      MutexLock lock(&mu_);
-      // Orphan the connections so that they can start cleaning up.
-      connections = std::move(connections_);
-      connections_.clear();
-      is_serving_ = false;
-    }
-    if (config_fetcher_watcher_ != nullptr) {
-      CHECK_NE(server_->config_fetcher(), nullptr);
-      server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
-    }
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&mu_);
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
+    connections_.clear();
+    is_serving_ = false;
+  }
+  if (config_fetcher_watcher_ != nullptr) {
+    CHECK_NE(server_->config_fetcher(), nullptr);
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
   GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
                     grpc_schedule_on_exec_ctx);
@@ -732,7 +727,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         if (server_->pending_backlog_protector_.Reject(pending_promises_.size(),
-                                                       server_->bitgen_)) {
+                                                       SharedBitGen())) {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
         }
@@ -1068,6 +1063,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
     channelz_node->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Server created"));
+    channelz_node->SetChannelArgs(args);
   }
   return channelz_node;
 }
@@ -1256,7 +1252,8 @@ grpc_error_handle Server::SetupTransport(
     // TODO(ctiller): post-v3-transition make this method take an
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
-    auto destination = MakeCallDestination(args.SetObject(transport));
+    auto destination = MakeCallDestination(
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1274,7 +1271,9 @@ grpc_error_handle Server::SetupTransport(
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
+        "",
+        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node),
+        GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }

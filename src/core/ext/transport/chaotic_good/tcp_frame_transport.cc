@@ -21,6 +21,7 @@
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/join.h"
@@ -78,12 +79,11 @@ std::string TcpFrameHeader::ToString() const {
 TcpFrameTransport::TcpFrameTransport(
     Options options, PromiseEndpoint control_endpoint,
     std::vector<PendingConnection> pending_data_endpoints,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
-    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-        stats_plugin_group)
-    : control_endpoint_(std::move(control_endpoint), event_engine.get()),
-      data_endpoints_(std::move(pending_data_endpoints), event_engine.get(),
-                      std::move(stats_plugin_group), options.enable_tracing),
+    TransportContextPtr ctx)
+    : ctx_(ctx),
+      control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
+      data_endpoints_(std::move(pending_data_endpoints), ctx,
+                      options.enable_tracing),
       options_(options) {}
 
 auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,

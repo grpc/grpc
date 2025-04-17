@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_FRAME_TRANSPORT_H
 
 #include "src/core/ext/transport/chaotic_good/frame.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/match_promise.h"
 #include "src/core/lib/promise/mpsc.h"
@@ -91,6 +92,7 @@ class FrameTransport : public InternallyRefCounted<FrameTransport> {
 
   virtual void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
                      RefCountedPtr<FrameTransportSink> sink) = 0;
+  virtual TransportContextPtr ctx() = 0;
 };
 
 }  // namespace chaotic_good

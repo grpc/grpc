@@ -110,7 +110,8 @@ class MockServerConnectionFactory : public ServerConnectionFactory {
 };
 
 TEST_F(TransportTest, ReadAndWriteOneMessage) {
-  auto owned_frame_transport = MakeOrphanable<MockFrameTransport>();
+  auto owned_frame_transport =
+      MakeOrphanable<MockFrameTransport>(event_engine());
   auto* frame_transport = owned_frame_transport.get();
   auto call_destination = MakeRefCounted<StrictMock<MockCallDestination>>();
   EXPECT_CALL(*call_destination, Orphaned()).Times(1);

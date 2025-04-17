@@ -28,16 +28,9 @@
 #include <cstdint>
 #include <memory>
 #include <new>
+#include <optional>
 #include <utility>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
@@ -49,6 +42,14 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/functional/any_invocable.h"
+#include "absl/hash/hash.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 
@@ -473,13 +474,11 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   bool Read(
       absl::AnyInvocable<void(absl::Status)> on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-          args);
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args);
   bool Write(
       absl::AnyInvocable<void(absl::Status)> on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-          args);
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args);
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const {
     return peer_address_;
@@ -610,20 +609,26 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
       : impl_(new PosixEndpointImpl(handle, on_shutdown, std::move(engine),
                                     std::move(allocator), options)) {}
 
-  bool Read(
-      absl::AnyInvocable<void(absl::Status)> on_read,
-      grpc_event_engine::experimental::SliceBuffer* buffer,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-          args) override {
-    return impl_->Read(std::move(on_read), buffer, args);
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+            grpc_event_engine::experimental::SliceBuffer* buffer,
+            grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
+                args) override {
+    return impl_->Read(std::move(on_read), buffer, std::move(args));
   }
 
-  bool Write(
-      absl::AnyInvocable<void(absl::Status)> on_writable,
-      grpc_event_engine::experimental::SliceBuffer* data,
-      const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-          args) override {
-    return impl_->Write(std::move(on_writable), data, args);
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             grpc_event_engine::experimental::SliceBuffer* data,
+             grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+                 args) override {
+    return impl_->Write(std::move(on_writable), data, std::move(args));
+  }
+
+  virtual std::vector<size_t> AllWriteMetrics() override { return {}; }
+  std::optional<absl::string_view> GetMetricName(size_t) override {
+    return std::nullopt;
+  }
+  std::optional<size_t> GetMetricKey(absl::string_view) override {
+    return std::nullopt;
   }
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
@@ -665,17 +670,18 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
  public:
   PosixEndpoint() = default;
 
-  bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
-            grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
-            const grpc_event_engine::experimental::EventEngine::Endpoint::
-                ReadArgs* /*args*/) override {
+  bool Read(
+      absl::AnyInvocable<void(absl::Status)> /*on_read*/,
+      grpc_event_engine::experimental::SliceBuffer* /*buffer*/,
+      grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs /*args*/)
+      override {
     grpc_core::Crash("PosixEndpoint::Read not supported on this platform");
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
              grpc_event_engine::experimental::SliceBuffer* /*data*/,
-             const grpc_event_engine::experimental::EventEngine::Endpoint::
-                 WriteArgs* /*args*/) override {
+             grpc_event_engine::experimental::EventEngine::Endpoint::
+                 WriteArgs /*args*/) override {
     grpc_core::Crash("PosixEndpoint::Write not supported on this platform");
   }
 

@@ -35,6 +35,7 @@
 #include "src/core/call/metadata_compression_traits.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder_table.h"
+#include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/timeout_encoding.h"
@@ -353,6 +354,7 @@ class HPackCompressor {
     bool use_true_binary_metadata;
     size_t max_frame_size;
     CallTracerInterface* call_tracer;
+    Http2ZTraceCollector* ztrace_collector;
   };
 
   template <typename HeaderSet>

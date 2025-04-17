@@ -39,6 +39,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/slice_cast.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/internal/write_event.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />
@@ -147,6 +148,7 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/client_channel.cc" role="src" />
@@ -337,6 +339,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/stateful_session/stateful_session_service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/alpn/alpn.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/chttp2_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/server/chttp2_server.cc" role="src" />
@@ -383,6 +386,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
@@ -1292,6 +1296,7 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/blocking_dns.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/can_track_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/chaotic_good_extension.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/iomgr_compatible.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
@@ -1748,6 +1753,7 @@
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_dependency_manager.h" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/resolver/xds/xds_resolver_attributes.h" role="src" />
+    <file baseinstalldir="/" name="src/core/server/add_port.cc" role="src" />
     <file baseinstalldir="/" name="src/core/server/server.cc" role="src" />
     <file baseinstalldir="/" name="src/core/server/server.h" role="src" />
     <file baseinstalldir="/" name="src/core/server/server_call_tracer_filter.cc" role="src" />
@@ -1782,6 +1788,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/endpoint_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
@@ -1940,6 +1947,8 @@
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted_string.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ring_buffer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/shared_bit_gen.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/shared_bit_gen.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/single_set_ptr.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/sorted_pack.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/spinlock.h" role="src" />
