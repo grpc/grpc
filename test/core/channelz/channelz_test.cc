@@ -363,6 +363,44 @@ TEST_P(ChannelzChannelTest, ZTrace) {
   EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
 }
 
+class TestSubObjectDataSource final : public DataSource {
+ public:
+  using DataSource::DataSource;
+  void AddData(DataSink& sink) override { sink.AddChildObjects({child_}); }
+
+  int64_t child_id() const { return child_->uuid(); }
+
+ private:
+  RefCountedPtr<SocketNode> child_ =
+      MakeRefCounted<SocketNode>("foo", "bar", "baz", nullptr);
+};
+
+TEST_P(ChannelzChannelTest, SubObjectDataSource) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  TestSubObjectDataSource data_source(channelz_channel->Ref());
+  auto json = channelz_channel->RenderJson();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  const Json::Object& object = json.object();
+  auto it_additional_info = object.find("additionalInfo");
+  ASSERT_NE(it_additional_info, object.end());
+  ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
+  const Json::Object& additional_info = it_additional_info->second.object();
+  auto it_child_objects = additional_info.find("childObjects");
+  ASSERT_NE(it_child_objects, additional_info.end());
+  ASSERT_EQ(it_child_objects->second.type(), Json::Type::kObject);
+  const Json::Object& child_objects = it_child_objects->second.object();
+  auto it = child_objects.find("subSockets");
+  ASSERT_NE(it, child_objects.end());
+  ASSERT_EQ(it->second.type(), Json::Type::kArray);
+  const Json::Array& sub_sockets = it->second.array();
+  ASSERT_EQ(sub_sockets.size(), 1);
+  ASSERT_EQ(sub_sockets[0].type(), Json::Type::kNumber);
+  EXPECT_EQ(sub_sockets[0].string(), std::to_string(data_source.child_id()));
+}
+
 TEST(ChannelzChannelTest, ChannelzDisabled) {
   ExecCtx exec_ctx;
   // explicitly disable channelz

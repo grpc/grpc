@@ -688,6 +688,8 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
+  // null by default, set by the transport data source upon first query
+  grpc_core::RefCountedPtr<grpc_core::channelz::CallNode> channelz_call_node;
 
   // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
   // https://github.com/grpc/grpc/pull/38729 for more information.)
