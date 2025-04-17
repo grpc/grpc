@@ -70,13 +70,13 @@ TEST_F(WindowsEndpointTest, BasicCommunication) {
         EXPECT_EQ(slice.as_string_view(), message);
         read_done.Notify();
       },
-      &read_buffer, nullptr));
+      &read_buffer, EventEngine::Endpoint::ReadArgs()));
   grpc_core::Notification write_done;
   SliceBuffer write_buffer;
   write_buffer.Append(Slice::FromCopiedString(message));
   EXPECT_FALSE(
       client.Write([&write_done](absl::Status) { write_done.Notify(); },
-                   &write_buffer, nullptr));
+                   &write_buffer, EventEngine::Endpoint::WriteArgs()));
   iocp.Work(5s, []() {});
   // Cleanup
   write_done.WaitForNotification();
@@ -124,11 +124,12 @@ TEST_F(WindowsEndpointTest, Conversation) {
     void WriteAndQueueReader(WindowsEndpoint* writer, WindowsEndpoint* reader) {
       write_buffer.Clear();
       write_buffer.Append(Slice::FromCopiedString(messages[exchange]));
-      EXPECT_FALSE(
-          writer->Write([](absl::Status) {}, &write_buffer, /*args=*/nullptr));
+      EXPECT_FALSE(writer->Write([](absl::Status) {}, &write_buffer,
+                                 EventEngine::Endpoint::WriteArgs()));
       auto cb = [this](absl::Status status) { ReadCB(status); };
       read_buffer.Clear();
-      EXPECT_FALSE(reader->Read(cb, &read_buffer, /*args=*/nullptr));
+      EXPECT_FALSE(
+          reader->Read(cb, &read_buffer, EventEngine::Endpoint::ReadArgs()));
     }
 
     // Asserts that the received string matches, then queues the next Write/Read
