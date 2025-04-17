@@ -168,7 +168,7 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
 
-  LOG(ERROR)<<"ADDR family is : "<<addr->sa_family<<" .";
+  LOG(ERROR)<<"ADDR family is : "<<int(addr->sa_family)<<" .";
   if (addr->sa_family == GRPC_AF_INET) {
     // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
