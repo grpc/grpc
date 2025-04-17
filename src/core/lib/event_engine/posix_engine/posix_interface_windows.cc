@@ -183,7 +183,7 @@ int EventEnginePosixInterface::ConfigureSocket(const FileDescriptor& fd,
       "EventEnginePosixInterface::ConfigureSocket");
 }
 
-std::optional<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
+PosixErrorOr<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
   grpc_core::Crash(
       "unimplemented on this platform: "
       "EventEnginePosixInterface::GetFd");
@@ -207,7 +207,7 @@ void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
       "unimplemented on this platform: EventEnginePosixInterface::Close");
 }
 
-PosixErrorOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
+absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,
     int protocol, DSMode& dsmode) {
@@ -252,11 +252,15 @@ absl::Status EventEnginePosixInterface::SetSocketNoSigpipeIfPossible(
       "EventEnginePosixInterface::SetSocketNoSigpipeIfPossible");
 }
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
 void EventEnginePosixInterface::AdvanceGeneration() {
   grpc_core::Crash(
       "unimplemented on this platform: "
       "EventEnginePosixInterface::AdvanceGeneration");
 }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 absl::Status EventEnginePosixInterface::SetSocketMutator(
     const FileDescriptor& fd, grpc_fd_usage usage,
