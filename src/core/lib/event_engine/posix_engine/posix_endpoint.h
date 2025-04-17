@@ -623,7 +623,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
-  virtual std::vector<size_t> AllWriteMetrics() override { return {}; }
+  std::vector<size_t> AllWriteMetrics() override { return {}; }
   std::optional<absl::string_view> GetMetricName(size_t) override {
     return std::nullopt;
   }
