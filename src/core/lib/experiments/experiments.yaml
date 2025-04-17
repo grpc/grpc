@@ -230,7 +230,7 @@
   expiry: 2025/10/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_dns", "event_engine_secure_endpoint"]
+  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
 - name: server_global_callbacks_ownership
   description:
     If set, server global callbacks ownership is fixed to not be owned by gRPC.
