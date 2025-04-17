@@ -465,7 +465,7 @@ absl::Time FuzzingEventEngine::NowAsAbslTime() {
 std::vector<size_t> FuzzingEventEngine::FuzzingEndpoint::AllWriteMetrics() {
   std::vector<size_t> out;
   out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
-for (const auto& [key, _] : g_fuzzing_event_engine->endpoint_metrics_by_id_) {
+  for (const auto& [key, _] : g_fuzzing_event_engine->endpoint_metrics_by_id_) {
     out.push_back(key);
   }
   return out;
