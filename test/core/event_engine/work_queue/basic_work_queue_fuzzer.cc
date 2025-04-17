@@ -20,11 +20,11 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
-#include "fuzztest/fuzztest.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/work_queue/basic_work_queue.h"
 #include "test/core/event_engine/work_queue/work_queue_fuzzer.pb.h"
+#include "fuzztest/fuzztest.h"
+#include "absl/functional/any_invocable.h"
 
 namespace grpc_event_engine {
 namespace experimental {
