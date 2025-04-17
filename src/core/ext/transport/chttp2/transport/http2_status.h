@@ -254,7 +254,7 @@ class Http2Status {
       case Http2ErrorType::kStreamError:
         return "Stream Error";
       default:
-        CHECK(false);
+        DCHECK(false);
     }
   }
 

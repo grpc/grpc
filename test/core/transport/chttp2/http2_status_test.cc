@@ -204,7 +204,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// ValueOrHttp2Status Tests
+// ValueOrHttp2Status Tests - Values
 // These tests first create the specific type of ValueOrHttp2Status object.
 // Then check the following:
 // 1. Status is ok
@@ -221,6 +221,11 @@ TEST(ValueOrHttp2Status, ValueHttp2WindowUpdateFrame) { CHECK(true); }
 TEST(ValueOrHttp2Status, ValueStdString) { CHECK(true); }
 
 TEST(ValueOrHttp2Status, ValueHttp2Frame) { CHECK(true); }
+
+///////////////////////////////////////////////////////////////////////////////
+// ValueOrHttp2Status Tests - Errors
+// These tests first create the specific type of ValueOrHttp2Status object.
+// Then check the following:
 
 TEST(ValueOrHttp2Status, Http2ConnectionError) { CHECK(true); }
 
