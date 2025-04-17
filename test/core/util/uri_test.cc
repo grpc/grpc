@@ -81,6 +81,10 @@ TEST_F(URIParserTest, BasicExamplesAreParsedCorrectly) {
                {{"1", "2"}}, {{"1", "2"}}, "buckle/my/shoe");
 }
 
+TEST_F(URIParserTest, SchemeIsCaseInsensitive) {
+  TestSucceeds("DnS:///foo", "dns", "", "", "", "/foo", {}, {}, "");
+}
+
 TEST_F(URIParserTest, UncommonValidExamplesAreParsedCorrectly) {
   TestSucceeds("scheme:path//is/ok", "scheme", "", "", "", "path//is/ok", {},
                {}, "");
@@ -135,7 +139,6 @@ TEST_F(URIParserTest, QueryParamMapRemainsValiditAfterMovingTheURI) {
     ASSERT_TRUE(uri.ok()) << uri.status().ToString();
     uri_copy = std::move(*uri);
   }
-  // ASSERT_EQ(uri_copy.query_parameter_map().find("a")->second, "2");
   ASSERT_THAT(uri_copy.query_parameter_map(), Contains(Pair("a", "2")));
 }
 
@@ -454,7 +457,7 @@ TEST(URITest, ToStringPercentEncoding) {
       "%#[]");
   ASSERT_TRUE(uri.ok()) << uri.status().ToString();
   EXPECT_EQ(uri->scheme(),
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
+            "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789+-."
             "%:/?#[]@!$&'()*,;=");
   EXPECT_EQ(uri->authority(),
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
@@ -503,7 +506,7 @@ TEST(URITest, ToStringPercentEncoding) {
             "%#[]");
   EXPECT_EQ(
       // Scheme
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-."
+      "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz0123456789+-."
       "%25%3A%2F%3F%23%5B%5D%40%21%24%26%27%28%29%2A%2C%3B%3D"
       // Authority
       "://abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
