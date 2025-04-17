@@ -39,6 +39,7 @@
     <file baseinstalldir="/" name="include/grpc/event_engine/extensible.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/memory_allocator_impl.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/internal/slice_cast.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/event_engine/internal/write_event.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_allocator.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/memory_request.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/port.h" role="src" />

@@ -127,6 +127,7 @@ Pod::Spec.new do |s|
                       'include/grpc/event_engine/extensible.h',
                       'include/grpc/event_engine/internal/memory_allocator_impl.h',
                       'include/grpc/event_engine/internal/slice_cast.h',
+                      'include/grpc/event_engine/internal/write_event.h',
                       'include/grpc/event_engine/memory_allocator.h',
                       'include/grpc/event_engine/memory_request.h',
                       'include/grpc/event_engine/port.h',

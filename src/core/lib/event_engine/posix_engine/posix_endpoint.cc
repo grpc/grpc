@@ -593,7 +593,7 @@ void PosixEndpointImpl::HandleRead(absl::Status status) {
 
 bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
                              SliceBuffer* buffer,
-                             const EventEngine::Endpoint::ReadArgs* args) {
+                             EventEngine::Endpoint::ReadArgs args) {
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
@@ -601,8 +601,8 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
   incoming_buffer_->Swap(last_read_buffer_);
-  if (args != nullptr && grpc_core::IsTcpFrameSizeTuningEnabled()) {
-    min_progress_size_ = std::max(static_cast<int>(args->read_hint_bytes), 1);
+  if (grpc_core::IsTcpFrameSizeTuningEnabled()) {
+    min_progress_size_ = std::max(static_cast<int>(args.read_hint_bytes()), 1);
   } else {
     min_progress_size_ = 1;
   }
@@ -1160,7 +1160,7 @@ void PosixEndpointImpl::HandleWrite(absl::Status status) {
 
 bool PosixEndpointImpl::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const EventEngine::Endpoint::WriteArgs* args) {
+    EventEngine::Endpoint::WriteArgs args) {
   absl::Status status = absl::OkStatus();
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
@@ -1194,9 +1194,8 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_ = data;
     outgoing_byte_idx_ = 0;
   }
-  if (args != nullptr) {
-    outgoing_buffer_arg_ = args->google_specific;
-  }
+  outgoing_buffer_arg_ =
+      args.GetDeprecatedAndDiscouragedGoogleSpecificPointer();
   if (outgoing_buffer_arg_) {
     CHECK(poller_->CanTrackErrors());
   }

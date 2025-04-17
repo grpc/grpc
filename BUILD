@@ -300,6 +300,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
     "include/grpc/event_engine/internal/slice_cast.h",
+    "include/grpc/event_engine/internal/write_event.h",
 ]
 
 GRPCXX_SRCS = [
