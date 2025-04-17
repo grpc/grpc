@@ -34,6 +34,7 @@
 #include <cmath>
 #include <cstdint>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "test/core/call/yodel/yodel_test.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
@@ -165,6 +166,8 @@ grpc_event_engine::experimental::Slice DataFrameHeader(
 
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
+  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+      .WillOnce(::testing::Return(1));
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   chaotic_good::DataEndpoints data_endpoints(
@@ -187,6 +190,10 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
   util::testing::MockPromiseEndpoint ep1(1234);
   util::testing::MockPromiseEndpoint ep2(1235);
+  EXPECT_CALL(*ep1.endpoint, GetMetricKey("delivery_rate"))
+      .WillOnce(::testing::Return(1));
+  EXPECT_CALL(*ep2.endpoint, GetMetricKey("delivery_rate"))
+      .WillOnce(::testing::Return(2));
   auto close_ep1 =
       ep1.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
   auto close_ep2 =
@@ -230,6 +237,8 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
+  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+      .WillOnce(::testing::Return(1));
   ep.ExpectRead({DataFrameHeader(5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
