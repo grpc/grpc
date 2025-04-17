@@ -840,6 +840,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "grpc_base",
+        "add_port",
         # standard plugins
         "census",
         "//src/core:grpc_backend_metric_filter",
@@ -859,6 +860,7 @@ grpc_cc_library(
         "//src/core:grpc_resolver_dns_native",
         "//src/core:grpc_resolver_sockaddr",
         "//src/core:grpc_transport_chttp2_client_connector",
+        "//src/core:grpc_transport_chttp2_plugin",
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
@@ -1688,7 +1690,6 @@ grpc_cc_library(
         "//src/core:lib/surface/channel_create.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
@@ -1699,21 +1700,19 @@ grpc_cc_library(
         "channel_arg_names",
         "channelz",
         "config",
-        "gpr",
+        "exec_ctx",
+        "gpr_public_hdrs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_public_hdrs",
+        "grpc_security_base",
         "legacy_channel",
-        "ref_counted_ptr",
         "stats",
-        "//src/core:arena",
         "//src/core:channel_args",
+        "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_transport",
         "//src/core:experiments",
-        "//src/core:iomgr_fwd",
-        "//src/core:ref_counted",
-        "//src/core:slice",
         "//src/core:stats_data",
     ],
 )
@@ -1798,6 +1797,21 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "add_port",
+    srcs = [
+        "//src/core:server/add_port.cc",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "config",
+        "exec_ctx",
+        "grpc_security_base",
+        "server",
+        "//src/core:channel_args",
     ],
 )
 
@@ -3047,6 +3061,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
         "//src/core:channel_init",
+        "//src/core:endpoint_transport",
         "//src/core:handshaker_registry",
         "//src/core:lb_policy_registry",
         "//src/core:proxy_mapper_registry",

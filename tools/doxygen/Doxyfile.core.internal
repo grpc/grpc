@@ -1126,6 +1126,7 @@ src/core/ext/transport/README.md \
 src/core/ext/transport/chttp2/README.md \
 src/core/ext/transport/chttp2/alpn/alpn.cc \
 src/core/ext/transport/chttp2/alpn/alpn.h \
+src/core/ext/transport/chttp2/chttp2_plugin.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.cc \
 src/core/ext/transport/chttp2/client/chttp2_connector.h \
 src/core/ext/transport/chttp2/server/chttp2_server.cc \
@@ -2548,6 +2549,7 @@ src/core/resolver/xds/xds_dependency_manager.cc \
 src/core/resolver/xds/xds_dependency_manager.h \
 src/core/resolver/xds/xds_resolver.cc \
 src/core/resolver/xds/xds_resolver_attributes.h \
+src/core/server/add_port.cc \
 src/core/server/server.cc \
 src/core/server/server.h \
 src/core/server/server_call_tracer_filter.cc \
@@ -2582,6 +2584,7 @@ src/core/telemetry/stats_data.h \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
+src/core/transport/endpoint_transport.h \
 src/core/tsi/README.md \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \
