@@ -123,7 +123,7 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
         grpc_sockaddr_in* addr4_out = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
         addr4_out->sin_family = GRPC_AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
-        //LOG(ERROR)<<"Setting family to ipv4 ";
+        LOG(ERROR)<<"Setting family to ipv4 ";
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
         addr4_out->sin_port = addr6->sin6_port;
         resolved_addr4_out->len =
