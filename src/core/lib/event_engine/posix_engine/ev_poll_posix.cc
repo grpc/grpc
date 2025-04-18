@@ -732,7 +732,7 @@ void PollPoller::HandleForkInChild() {
     handle = poll_handles_list_head_;
   }
   while (handle != nullptr) {
-    handle->ShutdownHandle(absl::ResourceExhaustedError("Closed on fork"));
+    handle->ShutdownHandle(absl::UnavailableError("Closed on fork"));
     handle = handle->PollerHandlesListPos().next;
   }
 }

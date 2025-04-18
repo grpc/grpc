@@ -464,7 +464,7 @@ void Epoll1Poller::HandleForkInChild() {
   {
     grpc_core::MutexLock lock(&mu_);
     for (EventHandle* handle : fork_handles_set_) {
-      handle->ShutdownHandle(absl::ResourceExhaustedError("Closed on fork"));
+      handle->ShutdownHandle(absl::UnavailableError("Closed on fork"));
     }
   }
   g_epoll_set_ = {};

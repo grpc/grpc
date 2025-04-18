@@ -60,10 +60,5 @@ TEST(FileDescriptorCollectionTest, RemoveHonorsGeneration) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  // TODO(ctiller): EventEngine temporarily needs grpc to be initialized first
-  // until we clear out the iomgr shutdown code.
-  grpc_init();
-  int r = RUN_ALL_TESTS();
-  grpc_shutdown();
-  return r;
+  return RUN_ALL_TESTS();
 }

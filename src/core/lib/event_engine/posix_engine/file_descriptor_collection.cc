@@ -34,6 +34,8 @@ FileDescriptorCollection::FileDescriptorCollection(
     : generation_(other.generation_) {
   grpc_core::MutexLock lock(&other.mu_);
   file_descriptors_ = std::move(other.file_descriptors_);
+  other.generation_ = -1;
+  other.file_descriptors_.clear();
 }
 
 FileDescriptorCollection& FileDescriptorCollection::operator=(
@@ -42,6 +44,8 @@ FileDescriptorCollection& FileDescriptorCollection::operator=(
   grpc_core::MutexLock self_lock(&mu_);
   grpc_core::MutexLock other_lock(&other.mu_);
   file_descriptors_ = std::move(other.file_descriptors_);
+  other.generation_ = -1;
+  other.file_descriptors_.clear();
   return *this;
 }
 
