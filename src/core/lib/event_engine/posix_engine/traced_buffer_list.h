@@ -24,6 +24,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -111,7 +112,8 @@ class TracedBufferList {
   ~TracedBufferList() = default;
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
-  void AddNewEntry(int32_t seq_no, int fd, void* arg);
+  void AddNewEntry(int32_t seq_no, EventEnginePosixInterface* posix_interface,
+                   const FileDescriptor& fd, void* arg);
   // Processes a received timestamp based on sock_extended_err and
   // scm_timestamping structures. It will invoke the timestamps callback if the
   // timestamp type is SCM_TSTAMP_ACK.
