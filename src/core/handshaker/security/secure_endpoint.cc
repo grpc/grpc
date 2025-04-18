@@ -127,7 +127,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
         char* data = grpc_dump_slice(first, GPR_DUMP_HEX | GPR_DUMP_ASCII);
         LOG(INFO) << op << " first:" << this << ": " << data;
         gpr_free(data);
-        grpc_slice_unref(first);
+        grpc_core::CSliceUnref(first);
       }
     }
   }
