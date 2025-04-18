@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from grpc._errors import InternalError
 
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
