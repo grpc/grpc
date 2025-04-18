@@ -117,7 +117,46 @@ TEST(AltsSecurityConnectorTest, MissingSecurityLevelPropertyFailure) {
   tsi_peer_destruct(&peer);
 }
 
-TEST(AltsSecurityConnectorTest, MissingTransportProtocol) {
+TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
+  tsi_peer peer;
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
+                &peer.properties[0]),
+            TSI_OK);
+  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
+                "unknown", "alice", &peer.properties[1]),
+            TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_alts_auth_context_from_tsi_peer(&peer);
+  ASSERT_EQ(ctx, nullptr);
+  tsi_peer_destruct(&peer);
+}
+
+static bool test_identity(const grpc_auth_context* ctx,
+                          const char* expected_property_name,
+                          const char* expected_identity) {
+  grpc_auth_property_iterator it;
+  const grpc_auth_property* prop;
+  EXPECT_TRUE(grpc_auth_context_peer_is_authenticated(ctx));
+  it = grpc_auth_context_peer_identity(ctx);
+  prop = grpc_auth_property_iterator_next(&it);
+  EXPECT_NE(prop, nullptr);
+  if (strcmp(prop->name, expected_property_name) != 0) {
+    LOG(ERROR) << "Expected peer identity property name "
+               << expected_property_name << " and got " << prop->name;
+    return false;
+  }
+  if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
+    LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
+               << prop->value;
+    return false;
+  }
+  return true;
+}
+
+TEST(AltsSecurityConnectorTest,
+     AltsPeerToAuthContextSuccessWithMissingTransportProtocol) {
   tsi_peer peer;
   ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
@@ -160,47 +199,13 @@ TEST(AltsSecurityConnectorTest, MissingTransportProtocol) {
       TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
-  ASSERT_EQ(ctx, nullptr);
+  ASSERT_NE(ctx, nullptr);
+  ASSERT_TRUE(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
+                            "alice"));
+  ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
+  grpc_slice_unref(serialized_alts_ctx);
   tsi_peer_destruct(&peer);
-}
-
-TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
-  tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
-  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
-                TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
-                &peer.properties[0]),
-            TSI_OK);
-  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
-                "unknown", "alice", &peer.properties[1]),
-            TSI_OK);
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_alts_auth_context_from_tsi_peer(&peer);
-  ASSERT_EQ(ctx, nullptr);
-  tsi_peer_destruct(&peer);
-}
-
-static bool test_identity(const grpc_auth_context* ctx,
-                          const char* expected_property_name,
-                          const char* expected_identity) {
-  grpc_auth_property_iterator it;
-  const grpc_auth_property* prop;
-  EXPECT_TRUE(grpc_auth_context_peer_is_authenticated(ctx));
-  it = grpc_auth_context_peer_identity(ctx);
-  prop = grpc_auth_property_iterator_next(&it);
-  EXPECT_NE(prop, nullptr);
-  if (strcmp(prop->name, expected_property_name) != 0) {
-    LOG(ERROR) << "Expected peer identity property name "
-               << expected_property_name << " and got " << prop->name;
-    return false;
-  }
-  if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
-               << prop->value;
-    return false;
-  }
-  return true;
 }
 
 TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
@@ -244,9 +249,10 @@ TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
           reinterpret_cast<char*>(GRPC_SLICE_START_PTR(serialized_alts_ctx)),
           GRPC_SLICE_LENGTH(serialized_alts_ctx), &peer.properties[4]),
       TSI_OK);
-  ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
-                TSI_ALTS_TRANSPORT_PROTOCOL, "foo", &peer.properties[5]),
-            TSI_OK);
+  ASSERT_EQ(
+      tsi_construct_string_peer_property_from_cstring(
+          TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL, "foo", &peer.properties[5]),
+      TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
   ASSERT_NE(ctx, nullptr);

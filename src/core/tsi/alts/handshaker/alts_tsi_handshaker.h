@@ -34,7 +34,8 @@
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 #define TSI_ALTS_CONTEXT "alts_context"
-#define TSI_ALTS_TRANSPORT_PROTOCOL "alts_transport_protocol"
+#define TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL \
+  "alts_negotiated_transport_protocol"
 
 const size_t kTsiAltsNumOfPeerProperties = 6;
 

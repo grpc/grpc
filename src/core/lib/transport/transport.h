@@ -70,9 +70,7 @@
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
 /** A comma separated list of supported transport protocols. If non-empty,
- allows the client and server to attempt to negotiate transport protocols.
- NOTE: This is an experimental feature. It is not fully implemented and is not
- currently functional. */
+ allows the client and server to attempt to negotiate transport protocols. */
 #define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.internal.transport_protocols"
 
 namespace grpc_core {

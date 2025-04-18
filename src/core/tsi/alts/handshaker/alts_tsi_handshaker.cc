@@ -82,7 +82,7 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice serialized_context;
   // Peer's maximum frame size.
   size_t max_frame_size;
-  char* transport_protocol;
+  char* negotiated_transport_protocol;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -151,13 +151,14 @@ static tsi_result handshaker_result_extract_peer(
   }
   index++;
   CHECK_NE(&peer->properties[index], nullptr);
-  if (result->transport_protocol != nullptr) {
+  if (result->negotiated_transport_protocol != nullptr) {
     ok = tsi_construct_string_peer_property_from_cstring(
-        TSI_ALTS_TRANSPORT_PROTOCOL, result->transport_protocol,
-        &peer->properties[index]);
+        TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL,
+        result->negotiated_transport_protocol, &peer->properties[index]);
   } else {
     ok = tsi_construct_string_peer_property_from_cstring(
-        TSI_ALTS_TRANSPORT_PROTOCOL, "", &peer->properties[index]);
+        TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL, "http/2",
+        &peer->properties[index]);
   }
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
@@ -262,7 +263,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->peer_identity);
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
-  gpr_free(result->transport_protocol);
+  gpr_free(result->negotiated_transport_protocol);
   grpc_core::CSliceUnref(result->rpc_versions);
   grpc_core::CSliceUnref(result->serialized_context);
   gpr_free(result);
@@ -346,9 +347,9 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     upb_StringView transport_protocol =
         grpc_gcp_NegotiatedTransportProtocol_transport_protocol(
             negotiated_transport_protocol);
-    sresult->transport_protocol =
+    sresult->negotiated_transport_protocol =
         static_cast<char*>(gpr_zalloc(transport_protocol.size + 1));
-    memcpy(sresult->transport_protocol, transport_protocol.data,
+    memcpy(sresult->negotiated_transport_protocol, transport_protocol.data,
            transport_protocol.size);
   }
   upb::Arena rpc_versions_arena;
