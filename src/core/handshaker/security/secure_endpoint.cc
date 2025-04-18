@@ -731,14 +731,20 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
+        // If we get a zero length frame, just complete without looking at
+        // anything further
         if (data->Length() == 0) return true;
         grpc_core::MutexLock lock(&write_queue_mu_);
-        frame_protector_.TraceOp("WriteQ", data->c_slice_buffer());
+        // If there's been a failure observed asynchronously, then fail out with
+        // that error.
         if (!writing_.ok()) {
           event_engine_->Run(
               [on_write = std::move(on_writable),
                status = writing_.status()]() mutable { on_write(status); });
+          return false;
         }
+        // If we're already writing (== encrypting on another thread) we need to
+        // queue the writes up to do after that completes.
         if (*writing_) {
           last_write_args_ = std::move(args);
           for (size_t i = 0; i < data->Count(); i++) {
@@ -746,18 +752,28 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           }
           frame_protector_.TraceOp("PendingQ",
                                    pending_writes_.c_slice_buffer());
+          // If we're under our max buffer cap then return immediately: we can
+          // queue up some more bytes and get more efficient encryption for
+          // them.
           if (pending_writes_.Length() <= max_buffered_writes_) {
             return true;
           }
+          // Otherwise we'll wait until the buffer is drained.
           on_write_ = std::move(on_writable);
           return false;
         }
+        // We're not already writing. If this write is large then we push the
+        // write onto the event engine. This allows concurrency with whatever is
+        // calling us (often under some mutual exclusion device).
         if (data->Length() > large_write_threshold_) {
           CHECK(pending_writes_.Count() == 0);
           writing_ = true;
           last_write_args_ = std::move(args);
           pending_writes_ = std::move(*data);
           frame_protector_.TraceOp("Pending", pending_writes_.c_slice_buffer());
+          // If we're below our max buffer level, claim to have completed
+          // immediately in the event that there's more data coming. If we're
+          // above it, then hold onto the write callback to call later.
           const bool finish_immediately =
               pending_writes_.Length() <= max_buffered_writes_;
           if (!finish_immediately) {
@@ -765,11 +781,13 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           } else {
             on_write_ = nullptr;
           }
+          // Queue the encryption work.
           event_engine_->Run(
               [impl = Ref()]() mutable { impl->FinishAsyncWrite(); });
           return finish_immediately;
         }
       }
+      // A small write: encrypt inline and write to the socket.
       {
         grpc_core::MutexLock lock(frame_protector_.write_mu());
         result = frame_protector_.Protect(data->c_slice_buffer(),
@@ -830,6 +848,11 @@ class SecureEndpoint final : public EventEngine::Endpoint {
    private:
     bool MaybeFinishReadImmediately() {
       grpc_core::MutexLock lock(frame_protector_.read_mu());
+      // If the read is large, since we got the bytes whilst still calling read,
+      // offload the decryption to event engine.
+      // That way we can do the decryption off this thread (which is usually
+      // under some mutual exclusion device) and publish the bytes using the
+      // async callback path.
       if (grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
           frame_protector_.source_buffer()->Length() > large_read_threshold_) {
         event_engine_->Run([impl = Ref()]() mutable {
@@ -878,27 +901,40 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       tsi_result result;
       SliceBuffer data;
       WriteArgs args;
+      // If writes complete immediately we'll loop back to here.
       do {
         {
+          // Check to see if we've written all the bytes.
           grpc_core::ReleasableMutexLock lock(&write_queue_mu_);
           if (pending_writes_.Count() == 0) {
             writing_ = false;
             lock.Release();
+            // If we have, callback if we have one.
+            // (we may not have an on_write_ callback if we claimed to have
+            // finished the write immediately in Write()).
             auto on_write = std::move(on_write_);
             if (on_write != nullptr) on_write(absl::OkStatus());
             return;
           }
+          // There's more data - grab it under the queue lock.
           data = std::move(pending_writes_);
           frame_protector_.TraceOp("data", data.c_slice_buffer());
           args = std::move(last_write_args_);
           pending_writes_.Clear();
         }
         {
+          // Now grab the frame protector write mutex - this is held for some
+          // time (we do the encryption inside of it) - so it's a different
+          // mutex to the queue mutex above.
           grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
+          // If the endpoint closed whilst waiting for this callback, then fail
+          // out the write and we're done.
           if (wrapped_ep_ == nullptr) {
             lock.Release();
             auto status = absl::CancelledError("secure endpoint shutdown");
             {
+              // Need to grab the queue mutex again, it's a bit inefficient, but
+              // a super rare path...
               grpc_core::MutexLock lock(&write_queue_mu_);
               writing_ = status;
             }
@@ -910,6 +946,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                                             args.max_frame_size());
         }
         if (result != TSI_OK) {
+          // Protection failed... fail the write and we're done.
           auto status = GRPC_ERROR_CREATE(
               absl::StrCat("Wrap failed (", tsi_result_to_string(result), ")"));
           {
@@ -920,12 +957,17 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           if (on_write != nullptr) on_write(status);
           return;
         }
+        // Write out the protected bytes - returns true if it finishes
+        // immediately, in which case we'll loop.
       } while (wrapped_ep_->Write(
           [impl = Ref()](absl::Status status) mutable {
+            // Async completion path: if we completed successfully then loop
+            // back into FinishAsyncWrite to see if there's more writing to do.
             if (status.ok()) {
               impl->FinishAsyncWrite();
               return;
             }
+            // Write failed: push the failure up via the callback if it's there.
             {
               grpc_core::MutexLock lock(&impl->write_queue_mu_);
               impl->writing_ = status;
