@@ -124,9 +124,12 @@ static VALUE grpc_rb_event_thread(void* arg) {
   grpc_rb_event* event;
   (void)arg;
   while (true) {
-    event = (grpc_rb_event*)rb_thread_call_without_gvl(
+#ifdef RB_NOGVL_OFFLOAD_SAFE
+
+#endif
+    event = (grpc_rb_event*)rb_nogvl(
         grpc_rb_wait_for_event_no_gil, NULL, grpc_rb_event_unblocking_func,
-        NULL);
+        NULL, RB_NOGVL_OFFLOAD_SAFE);
     if (event == NULL) {
       // Indicates that the thread needs to shut down
       break;
@@ -160,8 +163,8 @@ void grpc_rb_event_queue_thread_stop() {
         "GRPC_RUBY: call credentials thread stop: thread not running");
     return;
   }
-  rb_thread_call_without_gvl(grpc_rb_event_unblocking_func_wrapper, NULL, NULL,
-                             NULL);
+  rb_nogvl(grpc_rb_event_unblocking_func_wrapper, NULL, NULL,
+           NULL, RB_NOGVL_OFFLOAD_SAFE);
   rb_funcall(g_event_thread, rb_intern("join"), 0);
   g_event_thread = Qnil;
 }
