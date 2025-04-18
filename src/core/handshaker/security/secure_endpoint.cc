@@ -127,7 +127,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
         char* data = grpc_dump_slice(first, GPR_DUMP_HEX | GPR_DUMP_ASCII);
         LOG(INFO) << op << " first:" << this << ": " << data;
         gpr_free(data);
-        grpc_core::CSliceUnref(first);
+        CSliceUnref(first);
       }
     }
   }
@@ -729,6 +729,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                SliceBuffer* data, WriteArgs args) {
       GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
       tsi_result result;
+      frame_protector_.TraceOp("Write", data->c_slice_buffer());
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
         if (data->Length() == 0) return true;
         grpc_core::MutexLock lock(&write_queue_mu_);
