@@ -70,7 +70,11 @@
 #define GRPC_ARG_TRANSPORT "grpc.internal.transport"
 
 /** A comma separated list of supported transport protocols. If non-empty,
- allows the client and server to attempt to negotiate transport protocols. */
+ allows the client and server to attempt to negotiate transport protocols.
+ Transport protocol negotiation is currently during ALTS handshakes. If this
+ argument is not provided a negotiation will not occur and the transport
+ protocol will default to http/2.
+ */
 #define GRPC_ARG_TRANSPORT_PROTOCOLS "grpc.internal.transport_protocols"
 
 namespace grpc_core {
