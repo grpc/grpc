@@ -49,7 +49,12 @@
 #include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
+  "grpc.internal.no_subchannel.channelz_channel_node"
+
+// Channel arg key for the containing base node
+#define GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE \
+  "grpc.internal.no_subchannel.channelz_containing_base_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
@@ -92,6 +97,7 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -108,6 +114,8 @@ class BaseNode : public RefCounted<BaseNode> {
         return "listen_socket";
       case EntityType::kSocket:
         return "socket";
+      case EntityType::kCall:
+        return "call";
     }
     return "unknown";
   }
@@ -117,6 +125,13 @@ class BaseNode : public RefCounted<BaseNode> {
 
  public:
   ~BaseNode() override;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE;
+  }
+  static int ChannelArgsCompare(const BaseNode* a, const BaseNode* b) {
+    return QsortCompare(a, b);
+  }
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
@@ -165,6 +180,8 @@ class DataSink {
  public:
   virtual void AddAdditionalInfo(absl::string_view name,
                                  Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
 
  protected:
   ~DataSink() = default;
@@ -582,6 +599,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz
