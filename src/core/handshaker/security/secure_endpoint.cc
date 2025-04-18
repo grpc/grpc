@@ -853,6 +853,8 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       // That way we can do the decryption off this thread (which is usually
       // under some mutual exclusion device) and publish the bytes using the
       // async callback path.
+      // (remember there's at most one outstanding read and write on an
+      // EventEngine::Endpoint allowed, so this doesn't risk ordering issues.)
       if (grpc_core::IsSecureEndpointOffloadLargeReadsEnabled() &&
           frame_protector_.source_buffer()->Length() > large_read_threshold_) {
         event_engine_->Run([impl = Ref()]() mutable {
