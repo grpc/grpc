@@ -9478,6 +9478,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "spiffe_utils",
+    srcs = [
+        "//src/core:credentials/transport/tls/spiffe_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:credentials/transport/tls/spiffe_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "status_helper",
+    ],
+)
+
+grpc_cc_library(
     name = "ztrace_collector",
     hdrs = ["channelz/ztrace_collector.h"],
     defines = select({
