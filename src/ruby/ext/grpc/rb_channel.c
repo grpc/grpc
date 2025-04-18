@@ -255,9 +255,9 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   GRPC_RUBY_ASSERT(ch);
   stack.channel = ch;
   stack.wrapper = wrapper;
-  rb_thread_call_without_gvl(
+  rb_nogvl(
       channel_init_try_register_connection_polling_without_gil, &stack, NULL,
-      NULL);
+      NULL, RB_NOGVL_OFFLOAD_SAFE);
   if (ch == NULL) {
     rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
              target_chars);
@@ -315,7 +315,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
 
   stack.bg = wrapper->bg_wrapped;
   stack.try_to_connect = RTEST(try_to_connect_param) ? 1 : 0;
-  rb_thread_call_without_gvl(get_state_without_gil, &stack, NULL, NULL);
+  rb_nogvl(get_state_without_gil, &stack, NULL, NULL, RB_NOGVL_OFFLOAD_SAFE);
 
   return LONG2NUM(stack.out);
 }
@@ -399,9 +399,10 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   stack.deadline = grpc_rb_time_timeval(deadline, 0),
   stack.last_state = NUM2LONG(last_state);
 
-  op_success = rb_thread_call_without_gvl(
+  op_success = rb_nogvl(
       wait_for_watch_state_op_complete_without_gvl, &stack,
-      wait_for_watch_state_op_complete_unblocking_func, wrapper->bg_wrapped);
+      wait_for_watch_state_op_complete_unblocking_func, wrapper->bg_wrapped
+      RB_NOGVL_OFFLOAD_SAFE);
 
   return op_success ? Qtrue : Qfalse;
 }
@@ -416,8 +417,8 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(
     // There must be one ref at this point, held by the ruby-level channel
     // object, drop this one here.
     GRPC_RUBY_ASSERT(bg->refcount == 1);
-    rb_thread_call_without_gvl(channel_safe_destroy_without_gil, bg, NULL,
-                               NULL);
+    rb_nogvl(channel_safe_destroy_without_gil, bg, NULL,
+             NULL, RB_NOGVL_OFFLOAD_SAFE);
     // re-create C-core channel
     const char* target_str = StringValueCStr(target);
     grpc_channel* channel;
@@ -445,9 +446,9 @@ static void grpc_rb_channel_maybe_recreate_channel_after_fork(
     channel_init_try_register_stack stack;
     stack.channel = channel;
     stack.wrapper = wrapper;
-    rb_thread_call_without_gvl(
+    rb_nogvl(
         channel_init_try_register_connection_polling_without_gil, &stack, NULL,
-        NULL);
+        NULL, RB_NOGVL_OFFLOAD_SAFE);
   }
 }
 
@@ -527,8 +528,8 @@ static VALUE grpc_rb_channel_destroy(VALUE self) {
 
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   if (wrapper->bg_wrapped != NULL) {
-    rb_thread_call_without_gvl(channel_safe_destroy_without_gil,
-                               wrapper->bg_wrapped, NULL, NULL);
+    rb_nogvl(channel_safe_destroy_without_gil,
+             wrapper->bg_wrapped, NULL, NULL, RB_NOGVL_OFFLOAD_SAFE);
     wrapper->bg_wrapped = NULL;
   }
 
@@ -741,8 +742,9 @@ static VALUE run_poll_channels_loop(void* arg) {
   grpc_absl_log(
       GPR_DEBUG,
       "GRPC_RUBY: run_poll_channels_loop - create connection polling thread");
-  rb_thread_call_without_gvl(run_poll_channels_loop_no_gil, NULL,
-                             run_poll_channels_loop_unblocking_func, NULL);
+  rb_nogvl(run_poll_channels_loop_no_gil, NULL,
+           run_poll_channels_loop_unblocking_func, NULL
+           RB_NOGVL_OFFLOAD_SAFE);
   return Qnil;
 }
 
@@ -782,8 +784,8 @@ void grpc_rb_channel_polling_thread_start() {
   if (!RTEST(g_channel_polling_thread)) {
     grpc_absl_log(GPR_ERROR,
                   "GRPC_RUBY: failed to spawn channel polling thread");
-    rb_thread_call_without_gvl(set_abort_channel_polling_without_gil, NULL,
-                               NULL, NULL);
+    rb_nogvl(set_abort_channel_polling_without_gil, NULL,
+             NULL, NULL, RB_NOGVL_OFFLOAD_SAFE);
     return;
   }
 }
@@ -795,8 +797,8 @@ void grpc_rb_channel_polling_thread_stop() {
         "GRPC_RUBY: channel polling thread stop: thread was not started");
     return;
   }
-  rb_thread_call_without_gvl(run_poll_channels_loop_unblocking_func_wrapper,
-                             NULL, NULL, NULL);
+  rb_nogvl(run_poll_channels_loop_unblocking_func_wrapper,
+           NULL, NULL, NULL, RB_NOGVL_OFFLOAD_SAFE);
   rb_funcall(g_channel_polling_thread, rb_intern("join"), 0);
   // state associated with the channel polling thread is destroyed, reset so
   // we can start again later
