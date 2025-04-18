@@ -738,7 +738,7 @@ class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
       return {{EventEngine::ResolvedAddress()}};
     }
     if (absl::StartsWith(name, "localhost")) {
-      const std::vector<absl::string_view> parts = absl::StrSplit(name, ":");
+      const std::vector<absl::string_view> parts = absl::StrSplit(name, ':');
       std::string addr_str = "127.0.0.1";
       if (parts.size() > 1) {
         absl::StrAppend(&addr_str, ":", parts[1]);

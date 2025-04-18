@@ -92,7 +92,7 @@ CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload10Times) {
   }
 }
 
-TEST(Fuzzers, CoreLargeSendTests_RequestResponseWithPayload10TimesRegression1) {
+TEST(Fuzzers, RequestResponseWithPayload10TimesRegression1) {
   // With the fuzzer exception removed from RequestResponseWithPayload10Times,
   // this configuration regularly timed out with gzip taking ~3s, and deflate
   // taking 1-2s.
