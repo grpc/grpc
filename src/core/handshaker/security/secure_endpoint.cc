@@ -904,7 +904,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       SliceBuffer data;
       WriteArgs args;
       // If writes complete immediately we'll loop back to here.
-      do {
+      while (true) {
         {
           // Check to see if we've written all the bytes.
           grpc_core::ReleasableMutexLock lock(&write_queue_mu_);
@@ -924,30 +924,29 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           args = std::move(last_write_args_);
           pending_writes_.Clear();
         }
-        {
-          // Now grab the frame protector write mutex - this is held for some
-          // time (we do the encryption inside of it) - so it's a different
-          // mutex to the queue mutex above.
-          grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
-          // If the endpoint closed whilst waiting for this callback, then fail
-          // out the write and we're done.
-          if (wrapped_ep_ == nullptr) {
-            lock.Release();
-            auto status = absl::CancelledError("secure endpoint shutdown");
-            {
-              // Need to grab the queue mutex again, it's a bit inefficient, but
-              // a super rare path...
-              grpc_core::MutexLock lock(&write_queue_mu_);
-              writing_ = status;
-            }
-            auto on_write = std::move(on_write_);
-            if (on_write != nullptr) on_write(status);
-            return;
+        // Now grab the frame protector write mutex - this is held for some
+        // time (we do the encryption inside of it) - so it's a different
+        // mutex to the queue mutex above.
+        grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
+        // If the endpoint closed whilst waiting for this callback, then fail
+        // out the write and we're done.
+        if (wrapped_ep_ == nullptr) {
+          lock.Release();
+          auto status = absl::CancelledError("secure endpoint shutdown");
+          {
+            // Need to grab the queue mutex again, it's a bit inefficient, but
+            // a super rare path...
+            grpc_core::MutexLock lock(&write_queue_mu_);
+            writing_ = status;
           }
-          result = frame_protector_.Protect(data.c_slice_buffer(),
-                                            args.max_frame_size());
+          auto on_write = std::move(on_write_);
+          if (on_write != nullptr) on_write(status);
+          return;
         }
+        result = frame_protector_.Protect(data.c_slice_buffer(),
+                                          args.max_frame_size());
         if (result != TSI_OK) {
+          lock.Release();
           // Protection failed... fail the write and we're done.
           auto status = GRPC_ERROR_CREATE(
               absl::StrCat("Wrap failed (", tsi_result_to_string(result), ")"));
@@ -961,24 +960,28 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         }
         // Write out the protected bytes - returns true if it finishes
         // immediately, in which case we'll loop.
-      } while (wrapped_ep_->Write(
-          [impl = Ref()](absl::Status status) mutable {
-            // Async completion path: if we completed successfully then loop
-            // back into FinishAsyncWrite to see if there's more writing to do.
-            if (status.ok()) {
-              impl->FinishAsyncWrite();
-              return;
-            }
-            // Write failed: push the failure up via the callback if it's there.
-            {
-              grpc_core::MutexLock lock(&impl->write_queue_mu_);
-              impl->writing_ = status;
-            }
-            auto on_write = std::move(impl->on_write_);
-            impl.reset();
-            if (on_write != nullptr) on_write(status);
-          },
-          frame_protector_.output_buffer(), std::move(args)));
+        const bool write_finished_immediately = wrapped_ep_->Write(
+            [impl = Ref()](absl::Status status) mutable {
+              // Async completion path: if we completed successfully then loop
+              // back into FinishAsyncWrite to see if there's more writing to
+              // do.
+              if (status.ok()) {
+                impl->FinishAsyncWrite();
+                return;
+              }
+              // Write failed: push the failure up via the callback if it's
+              // there.
+              {
+                grpc_core::MutexLock lock(&impl->write_queue_mu_);
+                impl->writing_ = status;
+              }
+              auto on_write = std::move(impl->on_write_);
+              impl.reset();
+              if (on_write != nullptr) on_write(status);
+            },
+            frame_protector_.output_buffer(), std::move(args));
+        if (!write_finished_immediately) break;
+      }
     }
 
     grpc_core::Mutex write_queue_mu_;
