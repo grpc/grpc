@@ -30,15 +30,15 @@ namespace grpc_event_engine::experimental {
 
 class PosixError {
  public:
-  static constexpr PosixError WrongGeneration() {
+  static PosixError WrongGeneration() {
     return PosixError(WrongGenerationError());
   }
 
-  static constexpr PosixError Error(int errno_value) {
+  static PosixError Error(int errno_value) {
     return PosixError(PosixErrorValue{errno_value});
   }
 
-  constexpr PosixError() : PosixError(std::monostate()) {}
+  PosixError() : PosixError(std::monostate()) {}
 
   bool ok() const { return std::holds_alternative<std::monostate>(payload_); }
 
@@ -73,7 +73,7 @@ class PosixError {
   using Payload =
       std::variant<std::monostate, PosixErrorValue, WrongGenerationError>;
 
-  explicit constexpr PosixError(Payload error) : payload_(error) {}
+  explicit PosixError(Payload error) : payload_(error) {}
 
   Payload payload_;
 };
