@@ -807,8 +807,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     }
 
     void Shutdown() {
-      grpc_core::MutexLock lock(frame_protector_.read_mu());
-      wrapped_ep_.reset();
+      std::unique_ptr<EventEngine::Endpoint> wrapped_ep;
+      grpc_core::MutexLock write_lock(frame_protector_.write_mu());
+      grpc_core::MutexLock read_lock(frame_protector_.read_mu());
+      wrapped_ep = std::move(wrapped_ep_);
       frame_protector_.Shutdown();
     }
 
@@ -891,7 +893,18 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           pending_writes_.Clear();
         }
         {
-          grpc_core::MutexLock lock(frame_protector_.write_mu());
+          grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
+          if (wrapped_ep_ == nullptr) {
+            lock.Release();
+            auto status = absl::CancelledError("secure endpoint shutdown");
+            {
+              grpc_core::MutexLock lock(&write_queue_mu_);
+              writing_ = status;
+            }
+            auto on_write = std::move(on_write_);
+            if (on_write != nullptr) on_write(status);
+            return;
+          }
           result = frame_protector_.Protect(data.c_slice_buffer(),
                                             args.max_frame_size());
         }
