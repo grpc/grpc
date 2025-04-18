@@ -790,7 +790,10 @@ std::shared_ptr<PollPoller> MakePollPoller(Scheduler* /*scheduler*/,
   return nullptr;
 }
 
-void PollPoller::AdvanceGeneration() { grpc_core::Crash("unimplemented"); }
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+void PollPoller::HandleForkInChild() { grpc_core::Crash("unimplemented"); }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+
 void PollPoller::ResetKickState() { grpc_core::Crash("unimplemented"); }
 void PollPoller::Close() { grpc_core::Crash("unimplemented"); }
 
