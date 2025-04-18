@@ -111,13 +111,23 @@ class FrameProtector : public RefCounted<FrameProtector> {
   Mutex* write_mu() ABSL_LOCK_RETURNED(write_mu_) { return &write_mu_; }
 
   void TraceOp(absl::string_view op, grpc_slice_buffer* slices) {
-    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint) && ABSL_VLOG_IS_ON(2)) {
+    if (GRPC_TRACE_FLAG_ENABLED(secure_endpoint)) {
       size_t i;
-      for (i = 0; i < slices->count; i++) {
-        char* data =
-            grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
-        VLOG(2) << op << " " << this << ": " << data;
+      if (slices->length < 64) {
+        for (i = 0; i < slices->count; i++) {
+          char* data =
+              grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          LOG(INFO) << op << " " << this << ": " << data;
+          gpr_free(data);
+        }
+      } else {
+        grpc_slice first = GRPC_SLICE_MALLOC(64);
+        grpc_slice_buffer_copy_first_into_buffer(slices, 64,
+                                                 GRPC_SLICE_START_PTR(first));
+        char* data = grpc_dump_slice(first, GPR_DUMP_HEX | GPR_DUMP_ASCII);
+        LOG(INFO) << op << " first:" << this << ": " << data;
         gpr_free(data);
+        grpc_slice_unref(first);
       }
     }
   }
@@ -722,6 +732,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
         if (data->Length() == 0) return true;
         grpc_core::MutexLock lock(&write_queue_mu_);
+        frame_protector_.TraceOp("WriteQ", data->c_slice_buffer());
         if (!writing_.ok()) {
           event_engine_->Run(
               [on_write = std::move(on_writable),
@@ -730,8 +741,10 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         if (*writing_) {
           last_write_args_ = std::move(args);
           for (size_t i = 0; i < data->Count(); i++) {
-            pending_writes_.Append(data->RefSlice(i));
+            pending_writes_.AppendIndexed(data->RefSlice(i));
           }
+          frame_protector_.TraceOp("PendingQ",
+                                   pending_writes_.c_slice_buffer());
           if (pending_writes_.Length() <= max_buffered_writes_) {
             return true;
           }
@@ -743,6 +756,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           writing_ = true;
           last_write_args_ = std::move(args);
           pending_writes_ = std::move(*data);
+          frame_protector_.TraceOp("Pending", pending_writes_.c_slice_buffer());
           const bool finish_immediately =
               pending_writes_.Length() <= max_buffered_writes_;
           if (!finish_immediately) {
@@ -852,6 +866,11 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       on_read(status);
     }
 
+    std::string WritingString() ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_queue_mu_) {
+      if (!writing_.ok()) return writing_.status().ToString();
+      return *writing_ ? "true" : "false";
+    }
+
     void FinishAsyncWrite() {
       tsi_result result;
       SliceBuffer data;
@@ -866,7 +885,8 @@ class SecureEndpoint final : public EventEngine::Endpoint {
             if (on_write != nullptr) on_write(absl::OkStatus());
             return;
           }
-          auto data = std::move(pending_writes_);
+          data = std::move(pending_writes_);
+          frame_protector_.TraceOp("data", data.c_slice_buffer());
           args = std::move(last_write_args_);
           pending_writes_.Clear();
         }
