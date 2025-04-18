@@ -112,10 +112,6 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
   CHECK(resolved_addr != resolved_addr4_out);
   const grpc_sockaddr* addr =
       reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
-  grpc_sockaddr_in* addr4_out =
-      resolved_addr4_out == nullptr
-          ? nullptr
-          : reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
   if (addr->sa_family == GRPC_AF_INET6) {
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(addr);
@@ -124,9 +120,10 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
-        addr4_out->sin_family = GRPC_AF_INET;
+        grpc_sockaddr_in* addr4_out = reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4_out->addr);
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
+        addr4_out->sin_family = GRPC_AF_INET;
         addr4_out->sin_port = addr6->sin6_port;
         resolved_addr4_out->len =
             static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -166,6 +163,8 @@ int grpc_sockaddr_is_wildcard(const grpc_resolved_address* resolved_addr,
     resolved_addr = &addr4_normalized;
   }
   addr = reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+
+  //(ERROR)<<"ADDR family is : "<<int(addr->sa_family)<<" .";
   if (addr->sa_family == GRPC_AF_INET) {
     // Check for 0.0.0.0
     const grpc_sockaddr_in* addr4 =
