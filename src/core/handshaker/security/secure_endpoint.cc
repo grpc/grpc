@@ -722,7 +722,12 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
         if (data->Length() == 0) return true;
         grpc_core::MutexLock lock(&write_queue_mu_);
-        if (writing_) {
+        if (!writing_.ok()) {
+          event_engine_->Run(
+              [on_write = std::move(on_writable),
+               status = writing_.status()]() mutable { on_write(status); });
+        }
+        if (*writing_) {
           last_write_args_ = std::move(args);
           for (size_t i = 0; i < data->Count(); i++) {
             pending_writes_.Append(data->RefSlice(i));
@@ -738,10 +743,16 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           writing_ = true;
           last_write_args_ = std::move(args);
           pending_writes_ = std::move(*data);
-          on_write_ = std::move(on_writable);
+          const bool finish_immediately =
+              pending_writes_.Length() <= max_buffered_writes_;
+          if (!finish_immediately) {
+            on_write_ = std::move(on_writable);
+          } else {
+            on_write_ = nullptr;
+          }
           event_engine_->Run(
               [impl = Ref()]() mutable { impl->FinishAsyncWrite(); });
-          return false;
+          return finish_immediately;
         }
       }
       {
@@ -852,7 +863,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
             writing_ = false;
             lock.Release();
             auto on_write = std::move(on_write_);
-            on_write(absl::OkStatus());
+            if (on_write != nullptr) on_write(absl::OkStatus());
             return;
           }
           auto data = std::move(pending_writes_);
@@ -865,9 +876,14 @@ class SecureEndpoint final : public EventEngine::Endpoint {
                                             args.max_frame_size());
         }
         if (result != TSI_OK) {
+          auto status = GRPC_ERROR_CREATE(
+              absl::StrCat("Wrap failed (", tsi_result_to_string(result), ")"));
+          {
+            grpc_core::MutexLock lock(&write_queue_mu_);
+            writing_ = status;
+          }
           auto on_write = std::move(on_write_);
-          on_write(GRPC_ERROR_CREATE(absl::StrCat(
-              "Wrap failed (", tsi_result_to_string(result), ")")));
+          if (on_write != nullptr) on_write(status);
           return;
         }
       } while (wrapped_ep_->Write(
@@ -876,15 +892,19 @@ class SecureEndpoint final : public EventEngine::Endpoint {
               impl->FinishAsyncWrite();
               return;
             }
+            {
+              grpc_core::MutexLock lock(&impl->write_queue_mu_);
+              impl->writing_ = status;
+            }
             auto on_write = std::move(impl->on_write_);
             impl.reset();
-            on_write(status);
+            if (on_write != nullptr) on_write(status);
           },
           frame_protector_.output_buffer(), std::move(args)));
     }
 
     grpc_core::Mutex write_queue_mu_;
-    bool writing_ ABSL_GUARDED_BY(write_queue_mu_) = false;
+    absl::StatusOr<bool> writing_ ABSL_GUARDED_BY(write_queue_mu_) = false;
     WriteArgs last_write_args_ ABSL_GUARDED_BY(write_queue_mu_);
     SliceBuffer pending_writes_ ABSL_GUARDED_BY(write_queue_mu_);
     grpc_core::FrameProtector frame_protector_;
