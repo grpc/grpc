@@ -84,6 +84,9 @@ class FakeTransport final : public Transport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
   void Orphan() override {}
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 };
 }  // namespace
 

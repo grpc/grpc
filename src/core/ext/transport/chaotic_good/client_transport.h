@@ -81,6 +81,9 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return ctx_->socket_node;
+  }
 
   void StartCall(CallHandler call_handler) override;
 

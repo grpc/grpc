@@ -53,8 +53,6 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
     Transport* transport = nullptr;
     // Channel args to be passed to filters.
     ChannelArgs channel_args;
-    // Channelz socket node of the connected transport, if any.
-    RefCountedPtr<channelz::SocketNode> socket_node;
 
     void Reset() {
       if (transport != nullptr) {
@@ -62,7 +60,6 @@ class SubchannelConnector : public InternallyRefCounted<SubchannelConnector> {
         transport = nullptr;
       }
       channel_args = ChannelArgs();
-      socket_node.reset();
     }
   };
 

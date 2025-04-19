@@ -42,6 +42,7 @@
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -559,6 +560,8 @@ class Transport : public InternallyRefCounted<Transport> {
     op->disconnect_with_error = error;
     PerformOp(op);
   }
+
+  virtual RefCountedPtr<channelz::SocketNode> GetSocketNode() const = 0;
 };
 
 class FilterStackTransport : public Transport {
