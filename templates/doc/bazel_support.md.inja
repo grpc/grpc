@@ -1,6 +1,6 @@
 # Bazel Support
 
-## Basic Usage
+{{"##"}} Basic Usage
 
 The `grpc/grpc` repository's primary build system is Bazel. Rules are provided
 for C++, Python, and Objective-C. While C++ supports other build systems such as
@@ -32,7 +32,7 @@ load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 grpc_extra_deps()
 ```
 
-## Supported Versions
+{{"##"}} Supported Versions
 
 gRPC supports building with the latest stable release of Bazel,
 as well as the previous major version release for at least 6 months
@@ -43,7 +43,8 @@ However individual releases may have a broader
 compatibility range. The currently supported versions are captured by the
 following list:
 
-- [`8.0.1`](https://github.com/bazelbuild/bazel/releases/tag/8.0.1)
-- [`7.4.1`](https://github.com/bazelbuild/bazel/releases/tag/7.4.1)
+## for version in supported_bazel_versions
+- [`{{version}}`](https://github.com/bazelbuild/bazel/releases/tag/{{version}})
+## endfor
 
 NOTE: gRPC doesn't support bzlmod yet.
