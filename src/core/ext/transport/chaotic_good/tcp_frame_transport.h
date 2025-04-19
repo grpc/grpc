@@ -74,14 +74,15 @@ class TcpFrameTransport final : public FrameTransport {
                     std::vector<PendingConnection> pending_data_endpoints,
                     TransportContextPtr ctx);
 
-  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
   TransportContextPtr ctx() override { return ctx_; }
 
  private:
-  auto WriteFrame(const FrameInterface& frame);
-  auto WriteLoop(MpscReceiver<Frame> frames);
+  auto WriteFrame(const FrameInterface& frame,
+                  std::shared_ptr<TcpCallTracer> call_tracer);
+  auto WriteLoop(MpscReceiver<OutgoingFrame> frames);
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes();

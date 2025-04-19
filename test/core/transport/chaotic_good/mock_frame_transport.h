@@ -34,7 +34,7 @@ class MockFrameTransport final : public FrameTransport {
       : ctx_(MakeRefCounted<TransportContext>(std::move(event_engine))) {}
   ~MockFrameTransport() override;
 
-  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
 
   void ExpectWrite(Frame frame, SourceLocation whence = {}) {

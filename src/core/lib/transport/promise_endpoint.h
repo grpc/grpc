@@ -44,6 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -51,6 +52,9 @@ namespace grpc_core {
 // Wrapper around event engine endpoint that provides a promise like API.
 class PromiseEndpoint {
  public:
+  using WriteArgs =
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs;
+
   PromiseEndpoint(
       std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
           endpoint,
@@ -69,7 +73,7 @@ class PromiseEndpoint {
   // Concurrent writes are not supported, which means callers should not call
   // `Write()` before the previous write finishes. Doing that results in
   // undefined behavior.
-  auto Write(SliceBuffer data) {
+  auto Write(SliceBuffer data, WriteArgs write_args) {
     GRPC_LATENT_SEE_PARENT_SCOPE("GRPC:Write");
     // Start write and assert previous write finishes.
     auto prev = write_state_->state.exchange(WriteState::kWriting,
@@ -91,8 +95,7 @@ class PromiseEndpoint {
             ExecCtx exec_ctx;
             write_state->Complete(std::move(status));
           },
-          &write_state_->buffer,
-          grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
+          &write_state_->buffer, std::move(write_args));
       if (completed) write_state_->waker = Waker();
     }
     return If(

@@ -175,7 +175,8 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
         send_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
     frame.SerializePayload(send_buffer);
     return TrySeq(
-        connect_result_.endpoint.Write(std::move(send_buffer)),
+        connect_result_.endpoint.Write(std::move(send_buffer),
+                                       PromiseEndpoint::WriteArgs{}),
         [this]() {
           return connect_result_.endpoint.ReadSlice(
               TcpFrameHeader::kFrameHeaderSize);

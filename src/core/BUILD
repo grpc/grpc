@@ -8100,6 +8100,7 @@ grpc_cc_library(
     ],
     deps = [
         "chaotic_good_frame",
+        "chaotic_good_frame_transport",
         "if",
         "loop",
         "map",
@@ -9088,6 +9089,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "sync",
+        "//:context_list_entry",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
