@@ -232,6 +232,7 @@ void ExpandVersion(nlohmann::json& config) {
   settings["version"]["php"] = php_version;
   ExpandOneVersion(settings, "core_version");
   settings["php_version"]["php_current_version"] = "8.1";
+  settings["php_version"]["php_debian_version"] = "buster";
   settings["php_version"]["php_composer"] = php_composer;
   settings["python_version"]["pep440"] = pep440;
   settings["ruby_version"]["ruby_version"] = ruby_version;
