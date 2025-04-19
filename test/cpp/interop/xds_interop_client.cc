@@ -530,7 +530,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 }
 
 int main(int argc, char** argv) {
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       grpc::testing::RegisterRpcBehaviorLbPolicy);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);

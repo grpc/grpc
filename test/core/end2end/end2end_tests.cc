@@ -43,8 +43,6 @@ using grpc_event_engine::experimental::SetDefaultEventEngine;
 
 namespace grpc_core {
 
-bool CoreEnd2endTest::core_configuration_reset_ = true;
-
 Slice RandomSlice(size_t length) {
   size_t i;
   static const char chars[] = "abcdefghijklmnopqrstuvwxyz1234567890";
@@ -75,10 +73,8 @@ CoreEnd2endTest::CoreEnd2endTest(
         OverridesFromFuzzConfigVars(fuzzing_args->config_vars());
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
     if (suite_name == "NoLoggingTests") overrides.trace = std::nullopt;
-    if (core_configuration_reset_) {
-      ConfigVars::SetOverrides(overrides);
-      TestOnlyReloadExperimentsFromConfigVariables();
-    }
+    ConfigVars::SetOverrides(overrides);
+    TestOnlyReloadExperimentsFromConfigVariables();
     FuzzingEventEngine::Options options;
     options.max_delay_run_after = std::chrono::milliseconds(500);
     options.max_delay_write = std::chrono::microseconds(5);
@@ -107,9 +103,7 @@ CoreEnd2endTest::CoreEnd2endTest(
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
     ConfigVars::SetOverrides(overrides);
   }
-  if (core_configuration_reset_) {
-    CoreConfiguration::Reset();
-  }
+  CoreConfiguration::Reset();
   initialized_ = false;
   grpc_prewarm_os_for_tests();
 }

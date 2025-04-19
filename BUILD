@@ -3056,6 +3056,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:client_channel"],
     deps = [
+        "debug_location",
         "gpr",
         "grpc_resolver",
         "//src/core:certificate_provider_registry",

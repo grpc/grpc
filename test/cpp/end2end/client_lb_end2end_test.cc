@@ -682,7 +682,7 @@ class AuthorityOverrideTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAuthorityOverrideLoadBalancingPolicy(builder);
         });
@@ -2306,7 +2306,7 @@ class ClientLbPickArgsTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterTestPickArgsLoadBalancingPolicy(builder,
                                                              SavePickArgs);
@@ -2489,7 +2489,7 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
               builder, ReportTrailerIntercepted);
@@ -2892,7 +2892,7 @@ class ClientLbAddressTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterAddressTestLoadBalancingPolicy(builder,
                                                             SaveAddress);
@@ -2961,7 +2961,7 @@ class OobBackendMetricTest : public ClientLbEnd2endTest {
 
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterOobBackendMetricTestLoadBalancingPolicy(
               builder, BackendMetricCallback);
@@ -3082,7 +3082,7 @@ class ControlPlaneStatusRewritingTest : public ClientLbEnd2endTest {
  protected:
   static void SetUpTestSuite() {
     grpc_core::CoreConfiguration::Reset();
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           grpc_core::RegisterFailLoadBalancingPolicy(
               builder, absl::AbortedError("nope"));
