@@ -105,7 +105,7 @@ Pod::Spec.new do |s|
   }
 
   s.preserve_paths = 'protoc',
-                      'google/**/*.proto' # Well-known protobuf types
+                     'google/**/*.proto' # Well-known protobuf types
 
   # Restrict the protobuf runtime version to the one supported by this version of protoc.
   s.dependency 'Protobuf', '~> 4.0'
