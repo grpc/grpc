@@ -61,19 +61,19 @@ void AddCApis(nlohmann::json& config) {
       auto args = absl::StripAsciiWhitespace(args_and_close);
       auto last_space = type_and_name.rfind(' ');
       auto last_star = type_and_name.rfind('*');
-      auto type_end = last_space == std::string::npos ? last_star : (
-        last_star == std::string::npos ? last_space : std::max(last_space, last_star)
-      );
+      auto type_end = last_space == std::string::npos
+                          ? last_star
+                          : (last_star == std::string::npos
+                                 ? last_space
+                                 : std::max(last_space, last_star));
       auto return_type_unstripped = type_and_name.substr(0, type_end + 1);
       auto return_type = absl::StripAsciiWhitespace(return_type_unstripped);
       auto name_unstripped = type_and_name.substr(type_end + 1);
       auto name = absl::StripAsciiWhitespace(name_unstripped);
-      auto api = nlohmann::json{
-        {"name", name},
-        {"return_type", return_type},
-        {"arguments", args},
-        {"header", header}
-      };
+      auto api = nlohmann::json{{"name", name},
+                                {"return_type", return_type},
+                                {"arguments", args},
+                                {"header", header}};
       apis.push_back(api);
       auto first_slash = header.find('/');
       c_api_headers.insert(header.substr(first_slash + 1));
@@ -183,6 +183,7 @@ void ExpandVersion(nlohmann::json& config) {
   auto version = ExpandOneVersion(settings, "version");
   std::string php_version =
       absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  std::string php_composer = php_version;
   if (version.tag.has_value()) {
     if (version.tag == "dev") {
       php_version += "dev";
@@ -231,6 +232,7 @@ void ExpandVersion(nlohmann::json& config) {
   settings["version"]["php"] = php_version;
   ExpandOneVersion(settings, "core_version");
   settings["php_version"]["php_current_version"] = "8.1";
+  settings["php_version"]["php_composer"] = php_composer;
   settings["python_version"]["pep440"] = pep440;
   settings["ruby_version"]["ruby_version"] = ruby_version;
 }
@@ -319,7 +321,7 @@ void AddAbseilMetadata(nlohmann::json& config) {
 }
 
 class TransitiveDepsCalculator {
-public:
+ public:
   void DeclareDeps(std::string name, std::set<std::string> deps) {
     auto& dst = deps_[name];
     for (const auto& dep : deps) dst.insert(dep);
@@ -331,7 +333,7 @@ public:
     return deps;
   }
 
-private:
+ private:
   void Fill(std::string which, std::set<std::string>* out) {
     auto it = deps_.find(which);
     if (it == deps_.end()) return;
