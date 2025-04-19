@@ -23,19 +23,8 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
-  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
+{% include "../download_phpunit9.include" %}
 
+{% include "../pecl_ext_build_src.include" %}
 
-WORKDIR /github/grpc
-
-COPY . .
-
-RUN pear package && \
-  find . -name grpc-*.tgz | xargs -I{} pecl install {}
-
-
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
-     "--ignore-valgrind-undef-errors"]
-
+{% include "../dockerfile_cmd.include" %}

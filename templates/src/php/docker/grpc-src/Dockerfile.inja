@@ -1,4 +1,4 @@
-# Copyright 2020 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.2-zts-buster
+FROM php:{{settings.php_version.php_current_version}}-{{settings.php_version.php_debian_version}}
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
@@ -23,19 +23,21 @@ ARG MAKEFLAGS=-j8
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
-  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
-
+{% include "../download_phpunit9.include" %}
 
 WORKDIR /github/grpc
 
 COPY . .
 
-RUN pear package && \
-  find . -name grpc-*.tgz | xargs -I{} pecl install {}
+RUN make shared_c static_c
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
-     "--ignore-valgrind-undef-errors"]
+WORKDIR /github/grpc/src/php/ext/grpc
 
+RUN phpize && \
+  GRPC_LIB_SUBDIR=libs/opt ./configure --enable-grpc=/github/grpc --enable-tests && \
+  make && \
+  make install
+
+
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--ignore-valgrind-undef-errors"]

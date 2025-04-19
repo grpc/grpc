@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:buster
+FROM debian:{{settings.php_version.php_debian_version}}
 
 RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
   autoconf bison build-essential git libtool \
@@ -23,10 +23,7 @@ RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
-  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
-
+{% include "../download_phpunit9.include" %}
 
 WORKDIR /github/php-src
 
@@ -44,14 +41,6 @@ RUN git checkout php-8.1.27 && \
   make && make install
 
 
-WORKDIR /github/grpc
+{% include "../pecl_ext_build_src.include" %}
 
-COPY . .
-
-RUN pear package && \
-  find . -name grpc-*.tgz | xargs -I{} pecl install {}
-
-
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
-     "--ignore-valgrind-undef-errors"]
-
+{% include "../dockerfile_cmd.include" %}

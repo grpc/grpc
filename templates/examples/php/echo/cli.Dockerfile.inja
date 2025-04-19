@@ -12,28 +12,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM php:8.1-alpine3.18
-
-RUN apk add autoconf g++ make zlib-dev git bash wget linux-headers
-
-ARG MAKEFLAGS=-j8
+FROM composer:1.8.6 as composer
 
 
-WORKDIR /tmp
-
-RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
-  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
-  chmod +x /usr/local/bin/phpunit
+FROM grpc-php/base as grpc-base
 
 
-WORKDIR /github/grpc
+FROM php:{{settings.php_version.php_current_version}}-{{settings.php_version.php_debian_version}}
 
-COPY . .
-
-RUN pear package && \
-  find . -name grpc-*.tgz | xargs -I{} pecl install {}
+RUN apt-get -qq update && apt-get -qq install -y git
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
-     "--ignore-valgrind-undef-errors"]
+{% include "copy_from_grpc_base.include" %}
 
+RUN docker-php-ext-enable grpc
+
+
+WORKDIR /github/grpc-php/examples/echo
+
+COPY client.php .
+COPY composer.json .
+COPY echo.proto .
+
+RUN protoc -I=. echo.proto --php_out=. --grpc_out=.
+
+RUN composer install
+
+
+CMD ["/bin/bash"]
