@@ -381,6 +381,13 @@ void AddSupportedBazelVersions(nlohmann::json& config) {
   config["supported_bazel_versions"] = versions;
   config["primary_bazel_version"] = versions.front();
 }
+
+void ExpandSupportedPythonVersions(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  const auto& supported_python_versions = settings["supported_python_versions"];
+  settings["min_python_version"] = supported_python_versions.front();
+  settings["max_python_version"] = supported_python_versions.back();
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -391,4 +398,5 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddPhpConfig(config);
   ExpandVersion(config);
   AddSupportedBazelVersions(config);
+  ExpandSupportedPythonVersions(config);
 }
