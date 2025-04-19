@@ -1,12 +1,12 @@
 # This file has been automatically generated from a template file.
 # Please make modifications to
-# `templates/src/objective-c/!ProtoCompiler-gRPCPlugin.podspec.template`
+# `templates/src/objective-c/!ProtoCompiler-gRPCCppPlugin.podspec.template`
 # instead. This file can be regenerated from the template by running
 # `tools/buildgen/generate_projects.sh`.
 
 # CocoaPods podspec for the gRPC Proto Compiler Plugin
 #
-# Copyright 2016, Google Inc.
+# Copyright 2019, Google Inc.
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -41,21 +41,19 @@ Pod::Spec.new do |s|
   # Because CocoaPods installs pods in alphabetical order, beginning this pod's name with an
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
-  s.name     = '!ProtoCompiler-gRPCPlugin'
-  v = '${settings.version.string}'
+  s.name     = '!ProtoCompiler-gRPCCppPlugin'
+  v = '{{settings.version}}'
   s.version  = v
-  s.summary  = 'The gRPC ProtoC plugin generates Objective-C files from .proto services.'
+  s.summary  = 'The gRPC ProtoC plugin generates C++ files from .proto services.'
   s.description = <<-DESC
     This podspec only downloads the gRPC protoc plugin so that local pods generating protos can use
     it in their invocation of protoc, as part of their prepare_command.
-    The generated code will have a dependency on the gRPC Objective-C Proto runtime of the same
-    version. The runtime can be obtained as the "gRPC-ProtoRPC" pod.
   DESC
   s.homepage = 'https://grpc.io'
   s.license  = {
     :type => 'Apache License, Version 2.0',
     :text => <<-LICENSE
-      Copyright 2015, Google Inc.
+      Copyright 2019, Google Inc.
       All rights reserved.
 
       Redistribution and use in source and binary forms, with or without
@@ -88,7 +86,7 @@ Pod::Spec.new do |s|
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
   repo = 'grpc/grpc'
-  file = "grpc_objective_c_plugin-#{v}-macos-x86_64.zip"
+  file = "grpc_cpp_plugin-#{v}-macos-x86_64.zip"
   s.source = {
     :http => "https://github.com/#{repo}/releases/download/v#{v}/#{file}",
     # TODO(jcanizales): Add sha1 or sha256
@@ -97,12 +95,12 @@ Pod::Spec.new do |s|
 
   repo_root = '../..'
   bazel = "#{repo_root}/tools/bazel"
-  plugin = 'grpc_objective_c_plugin'
+  plugin = 'grpc_cpp_plugin'
 
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '${settings.protobuf_version}'
+  s.dependency '!ProtoCompiler', '{{settings.protobuf_version}}'
 
   s.ios.deployment_target = '15.0'
   s.osx.deployment_target = '11.0'
@@ -110,17 +108,12 @@ Pod::Spec.new do |s|
   s.watchos.deployment_target = '6.0'
   s.visionos.deployment_target = '1.0'
 
-  # Restrict the gRPC runtime version to the one supported by this plugin.
-  s.dependency 'gRPC-ProtoRPC', v
-
   # This is only for local development of the plugin: If the Podfile brings this pod from a local
   # directory using `:path`, CocoaPods won't download the zip file and so the plugin won't be
   # present in this pod's directory. We use that knowledge to check for the existence of the file
   # and, if absent, compile the plugin from the local sources.
   s.prepare_command = <<-CMD
     set -e
-    if [ ! -f #{plugin} ]; then
-      #{bazel} build //src/compiler:grpc_objective_c_plugin
-    fi
+    #{bazel} build //src/compiler:grpc_cpp_plugin
   CMD
 end
