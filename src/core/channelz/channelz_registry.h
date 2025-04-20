@@ -171,7 +171,7 @@ class ChannelzRegistry final {
     static size_t NodeShardIndex(BaseNode* node) ;
     static void AddNodeToHead(BaseNode* node, BaseNode*& head);
     static void RemoveNodeFromHead(BaseNode* node, BaseNode*& head);
-    void NumberNurseryNodes() ABSL_EXCLUSIVE_LOCKS_REQUIRED(index_mu_);
+    void NumberNurseryNodes(size_t nursery_index) ABSL_EXCLUSIVE_LOCKS_REQUIRED(index_mu_);
 
     static constexpr size_t kNodeShards = 63;
     int64_t uuid_generator_{1};

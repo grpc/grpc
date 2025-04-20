@@ -195,13 +195,19 @@ void ChannelzRegistry::ShardedNodeMap::IterateNodes(
     intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
     absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
   MutexLock index_lock(&index_mu_);
-  NumberNurseryNodes();
-  for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
-    BaseNode* node = it->second;
-    if (entity_type.has_value() && node->type() != entity_type) continue;
-    auto node_ref = node->RefIfNonZero();
-    if (node_ref == nullptr) continue;
-    if (!callback(std::move(node_ref))) break;
+  size_t next_nursery_to_number = 0;
+  while (true) {
+    for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
+      BaseNode* node = it->second;
+      start_node = node->uuid_ + 1;
+      if (entity_type.has_value() && node->type() != entity_type) continue;
+      auto node_ref = node->RefIfNonZero();
+      if (node_ref == nullptr) continue;
+      if (!callback(std::move(node_ref))) return;
+    }
+    if (next_nursery_to_number == kNodeShards) return;
+    NumberNurseryNodes(next_nursery_to_number);
+    ++next_nursery_to_number;
   }
 }
 
@@ -230,19 +236,17 @@ void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
   }
 }
 
-void ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes() {
-  for (size_t i = 0; i < kNodeShards; ++i) {
-    BaseNodeList& node_shard = node_list_[i];
-    MutexLock lock(&node_shard.mu);
-    BaseNode* nursery = std::exchange(node_shard.nursery, nullptr);
-    while (nursery != nullptr) {
-      BaseNode* n = nursery->next_;
-      RemoveNodeFromHead(n, nursery);
-      AddNodeToHead(n, node_shard.numbered);
-      n->uuid_ = uuid_generator_;
-      ++uuid_generator_;
-      index_.emplace(n->uuid_, n);
-    }
+void ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(size_t nursery_index) {
+  BaseNodeList& node_shard = node_list_[nursery_index];
+  MutexLock lock(&node_shard.mu);
+  BaseNode* nursery = std::exchange(node_shard.nursery, nullptr);
+  while (nursery != nullptr) {
+    BaseNode* n = nursery->next_;
+    RemoveNodeFromHead(n, nursery);
+    AddNodeToHead(n, node_shard.numbered);
+    n->uuid_ = uuid_generator_;
+    ++uuid_generator_;
+    index_.emplace(n->uuid_, n);
   }
 }
 
