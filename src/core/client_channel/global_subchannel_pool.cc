@@ -119,4 +119,8 @@ size_t GlobalSubchannelPool::ShardIndex(const SubchannelKey& key) {
   return absl::HashOf(addr) % kShards;
 }
 
+GlobalSubchannelPool::GlobalSubchannelPool() = default;
+
+GlobalSubchannelPool::~GlobalSubchannelPool() = default;
+
 }  // namespace grpc_core

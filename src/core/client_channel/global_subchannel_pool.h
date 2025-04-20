@@ -72,8 +72,8 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:
-  GlobalSubchannelPool() {}
-  ~GlobalSubchannelPool() override {}
+  GlobalSubchannelPool();
+  ~GlobalSubchannelPool() override;
 
   static const size_t kShards = 127;
 
