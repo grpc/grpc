@@ -206,8 +206,9 @@ void ChannelzRegistry::ShardedNodeMap::IterateNodes(
       if (!callback(std::move(node_ref))) return;
     }
     if (next_nursery_to_number == kNodeShards) return;
-    NumberNurseryNodes(next_nursery_to_number);
-    ++next_nursery_to_number;
+    if (NumberNurseryNodes(next_nursery_to_number)) {
+      ++next_nursery_to_number;
+    }
   }
 }
 
@@ -236,18 +237,22 @@ void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
   }
 }
 
-void ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(size_t nursery_index) {
+bool ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(size_t nursery_index) {
+  static constexpr size_t kBatchSize = 64;
   BaseNodeList& node_shard = node_list_[nursery_index];
   MutexLock lock(&node_shard.mu);
-  BaseNode* nursery = std::exchange(node_shard.nursery, nullptr);
-  while (nursery != nullptr) {
+  BaseNode*& nursery = node_shard.nursery;
+  size_t count = 0;
+  while (nursery != nullptr && count < kBatchSize) {
     BaseNode* n = nursery->next_;
     RemoveNodeFromHead(n, nursery);
     AddNodeToHead(n, node_shard.numbered);
     n->uuid_ = uuid_generator_;
     ++uuid_generator_;
     index_.emplace(n->uuid_, n);
+    ++count;
   }
+  return nursery == nullptr;
 }
 
 RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
