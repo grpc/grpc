@@ -47,6 +47,7 @@ EXPERIMENT_ENABLES = {
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
+    "shard_global_connection_pool": "shard_global_connection_pool",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -120,6 +121,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -191,6 +193,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -262,6 +265,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
