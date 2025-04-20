@@ -100,7 +100,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-inline bool IsShardChannelzIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -150,7 +151,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-inline bool IsShardChannelzIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -200,7 +202,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-inline bool IsShardChannelzIndexEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }

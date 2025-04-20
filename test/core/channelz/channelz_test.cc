@@ -565,7 +565,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
-  if (grpc_core::IsShardChannelzIndexEnabled()) {
+  if (IsShardChannelzIndexEnabled()) {
     GTEST_SKIP() << "This test validates implementation details of the legacy "
                     "stack, not the contract guaranteed by the API.";
   }
@@ -592,7 +592,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
-  if (grpc_core::IsShardChannelzIndexEnabled()) {
+  if (IsShardChannelzIndexEnabled()) {
     GTEST_SKIP() << "This test validates implementation details of the legacy "
                     "stack, not the contract guaranteed by the API.";
   }
@@ -631,7 +631,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
-  if (grpc_core::IsShardChannelzIndexEnabled()) {
+  if (IsShardChannelzIndexEnabled()) {
     GTEST_SKIP() << "This test validates implementation details of the legacy "
                     "stack, not the contract guaranteed by the API.";
   }

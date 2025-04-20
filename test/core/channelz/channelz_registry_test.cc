@@ -132,7 +132,7 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
 TEST(ChannelzRegistry, ThreadStressTest) {
   std::vector<std::thread> threads;
   threads.reserve(30);
-  grpc_core::Notification done;
+  Notification done;
   for (int i = 0; i < 10; ++i) {
     threads.emplace_back(std::thread([&done]() {
       while (!done.HasBeenNotified()) {
