@@ -40,7 +40,7 @@ class ChannelzRegistry final {
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
-  static void Unregister(intptr_t uuid) { Default()->InternalUnregister(uuid); }
+  static void Unregister(BaseNode* node) { Default()->InternalUnregister(node); }
   static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
     return Default()->InternalGet(uuid);
   }
@@ -118,7 +118,7 @@ class ChannelzRegistry final {
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregister(intptr_t uuid);
+  void InternalUnregister(BaseNode* node);
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.

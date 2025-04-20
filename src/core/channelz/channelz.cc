@@ -168,7 +168,7 @@ BaseNode::BaseNode(EntityType type, std::string name)
   ChannelzRegistry::Register(this);
 }
 
-BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+BaseNode::~BaseNode() { ChannelzRegistry::Unregister(this); }
 
 std::string BaseNode::RenderJsonString() {
   Json json = RenderJson();

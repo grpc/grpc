@@ -91,7 +91,8 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
   node_map_[node->uuid_] = node;
 }
 
-void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
+void ChannelzRegistry::InternalUnregister(BaseNode* node) {
+  const intptr_t uuid = node->uuid_;
   CHECK_GE(uuid, 1);
   MutexLock lock(&mu_);
   CHECK(uuid <= uuid_generator_);
