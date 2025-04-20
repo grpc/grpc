@@ -1278,6 +1278,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:time",
         "//src/core:time_precise",
+        "//src/core:shared_bit_gen",
         "//src/core:useful",
     ],
 )

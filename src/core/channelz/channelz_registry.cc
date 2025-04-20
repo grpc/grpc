@@ -41,6 +41,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/shared_bit_gen.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -194,6 +195,12 @@ void ChannelzRegistry::ShardedNodeMap::Unregister(BaseNode* node) {
 void ChannelzRegistry::ShardedNodeMap::IterateNodes(
     intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
     absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+  // Mitigate drain hotspotting by randomizing the drain order each query.
+  std::vector<size_t> nursery_visitation_order;
+  for (size_t i = 0; i < kNodeShards; ++i) {
+    nursery_visitation_order.push_back(i);
+  }
+  absl::c_shuffle(nursery_visitation_order, SharedBitGen());
   MutexLock index_lock(&index_mu_);
   size_t next_nursery_to_number = 0;
   while (true) {
@@ -206,7 +213,7 @@ void ChannelzRegistry::ShardedNodeMap::IterateNodes(
       if (!callback(std::move(node_ref))) return;
     }
     if (next_nursery_to_number == kNodeShards) return;
-    if (NumberNurseryNodes(next_nursery_to_number)) {
+    if (NumberNurseryNodes(nursery_visitation_order[next_nursery_to_number])) {
       ++next_nursery_to_number;
     }
   }
