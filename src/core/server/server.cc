@@ -1288,9 +1288,10 @@ grpc_error_handle Server::SetupTransport(
       if (grpc_cq_pollset(cqs_[cq_idx]) == accepting_pollset) break;
     }
     if (cq_idx == cqs_.size()) {
+      SharedBitGen bitgen;
       // Completion queue not found.  Pick a random one to publish new calls to.
       cq_idx =
-          SharedBitGen::Get().Uniform(std::max<size_t>(1, cqs_.size()));
+          absl::Uniform(bitgen, size_t{0}, std::max<size_t>(1, cqs_.size()));
     }
     intptr_t channelz_socket_uuid = 0;
     if (socket_node != nullptr) {

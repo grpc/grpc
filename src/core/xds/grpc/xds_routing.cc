@@ -33,6 +33,7 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/matchers.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 
 namespace grpc_core {
@@ -149,9 +150,10 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
 }
 
 bool UnderFraction(const uint32_t fraction_per_million) {
+  SharedBitGen bitgen;
   // Generate a random number in [0, 1000000).
   const uint32_t random_number =
-      SharedBitGen::Get().Uniform(uint32_t(1000000));
+      absl::Uniform(bitgen, uint32_t{0}, uint32_t{1000000});
   return random_number < fraction_per_million;
 }
 

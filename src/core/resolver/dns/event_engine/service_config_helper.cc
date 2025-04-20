@@ -27,6 +27,7 @@
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_core {
@@ -81,7 +82,8 @@ absl::StatusOr<std::string> ChooseServiceConfig(
     }
     // Check percentage, if specified.
     if (choice.percentage != -1) {
-      int random_pct = SharedBitGen::Get().Uniform(100);
+      SharedBitGen bitgen;
+      int random_pct = absl::Uniform(bitgen, 0, 100);
       if (random_pct > choice.percentage || choice.percentage == 0) {
         continue;
       }
