@@ -27,6 +27,7 @@ grpc_cc_test(
     tags = [
         # b/117517566.
         "grpc:no-internal-poller",
+        "channelz_test",
     ],
     deps = [
         "//:gpr",
@@ -47,6 +48,7 @@ grpc_cc_test(
     tags = [
         # b/117517566.
         "grpc:no-internal-poller",
+        "channelz_test",
     ],
     deps = [
         "//:gpr",
@@ -64,6 +66,9 @@ grpc_cc_test(
     srcs = ["channelz_registry_test.cc"],
     external_deps = [
         "gtest",
+    ],
+    tags = [
+        "channelz_test",
     ],
     uses_event_engine = False,
     uses_polling = False,
@@ -84,6 +89,7 @@ grpc_cc_test(
     ],
     tags = [
         "no_windows",
+        "channelz_test",
     ],
     deps = [
         "//:grpc",

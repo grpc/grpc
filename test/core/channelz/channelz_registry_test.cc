@@ -21,10 +21,12 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <thread>
 #include <vector>
 
 #include "gtest/gtest.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/util/notification.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -124,6 +126,44 @@ TEST_F(ChannelzRegistryTest, TestUnregistration) {
     RefCountedPtr<BaseNode> retrieved =
         ChannelzRegistry::Get(more_channels[i]->uuid());
     EXPECT_EQ(more_channels[i], retrieved);
+  }
+}
+
+TEST(ChannelzRegistry, ThreadStressTest) {
+  std::vector<std::thread> threads;
+  threads.reserve(30);
+  grpc_core::Notification done;
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back(std::thread([&done]() {
+      while (!done.HasBeenNotified()) {
+        auto a = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto b = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto c = MakeRefCounted<ChannelNode>("x", 1, false);
+        auto d = MakeRefCounted<ChannelNode>("x", 1, false);
+      }
+    }));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back(std::thread([&done]() {
+      intptr_t last_uuid = 0;
+      while (!done.HasBeenNotified()) {
+        intptr_t uuid = MakeRefCounted<ChannelNode>("x", 1, false)->uuid();
+        EXPECT_GT(uuid, last_uuid);
+        last_uuid = uuid;
+      }
+    }));
+  }
+  for (int i = 0; i < 10; ++i) {
+    threads.emplace_back([&done]() {
+      while (!done.HasBeenNotified()) {
+        ChannelzRegistry::GetAllEntities();
+      }
+    });
+  }
+  absl::SleepFor(absl::Seconds(10));
+  done.Notify();
+  for (auto& thread : threads) {
+    thread.join();
   }
 }
 

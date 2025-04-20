@@ -47,6 +47,7 @@ EXPERIMENT_ENABLES = {
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
+    "shard_channelz_index": "shard_channelz_index",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -68,6 +69,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",
@@ -139,6 +143,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",
@@ -210,6 +217,9 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",

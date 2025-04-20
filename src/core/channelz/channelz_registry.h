@@ -25,6 +25,7 @@
 #include <map>
 #include <string>
 
+#include "absl/container/btree_map.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -40,9 +41,14 @@ class ChannelzRegistry final {
   static void Register(BaseNode* node) {
     return Default()->InternalRegister(node);
   }
-  static void Unregister(BaseNode* node) { Default()->InternalUnregister(node); }
+  static void Unregister(BaseNode* node) {
+    Default()->InternalUnregister(node);
+  }
   static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
     return Default()->InternalGet(uuid);
+  }
+  static intptr_t NumberNode(BaseNode* node) {
+    return Default()->InternalNumberNode(node);
   }
 
   static RefCountedPtr<SubchannelNode> GetSubchannel(intptr_t uuid) {
@@ -104,25 +110,103 @@ class ChannelzRegistry final {
   // Test only helper function to reset to initial state.
   static void TestOnlyReset() {
     auto* p = Default();
-    MutexLock lock(&p->mu_);
-    p->node_map_.clear();
-    p->uuid_generator_ = 0;
+    p->node_map_ = MakeNodeMap();
   }
 
  private:
+  ChannelzRegistry() : node_map_(MakeNodeMap()) {}
+
+  class NodeMapInterface {
+   public:
+    virtual ~NodeMapInterface() = default;
+
+    virtual void Register(BaseNode* node) = 0;
+    virtual void Unregister(BaseNode* node) = 0;
+
+    virtual void IterateNodes(
+        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
+        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) = 0;
+    virtual RefCountedPtr<BaseNode> GetNode(intptr_t uuid) = 0;
+
+    virtual intptr_t NumberNode(BaseNode* node) = 0;
+  };
+
+  class LegacyNodeMap final : public NodeMapInterface {
+   public:
+    void Register(BaseNode* node) override;
+    void Unregister(BaseNode* node) override;
+
+    void IterateNodes(
+        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
+        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) override;
+    RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
+
+    intptr_t NumberNode(BaseNode* node) override { return node->uuid_; }
+
+   private:
+    Mutex mu_;
+    std::map<intptr_t, BaseNode*> node_map_ ABSL_GUARDED_BY(mu_);
+    intptr_t uuid_generator_ ABSL_GUARDED_BY(mu_) = 1;
+  };
+
+  class ShardedNodeMap final : public NodeMapInterface {
+   public:
+    void Register(BaseNode* node) override;
+    void Unregister(BaseNode* node) override;
+
+    void IterateNodes(
+        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
+        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) override;
+    RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
+
+    intptr_t NumberNode(BaseNode* node) override;
+
+   private:
+    struct BaseNodeList {
+      Mutex mu;
+      BaseNode* nursery ABSL_GUARDED_BY(mu) = nullptr;
+      BaseNode* numbered ABSL_GUARDED_BY(mu) = nullptr;
+    };
+    struct NodeIndex {
+      Mutex mu;
+      absl::btree_map<intptr_t, BaseNode*> map;
+    };
+
+    static size_t NodeShardIndex(BaseNode* node);
+    static size_t IndexShardIndex(intptr_t uuid);
+    static void AddNodeToHead(BaseNode* node, BaseNode*& head);
+    static void RemoveNodeFromHead(BaseNode* node, BaseNode*& head);
+    void NumberNurseryNodes();
+
+    static constexpr size_t kNodeShards = 63;
+    static constexpr size_t kIndexShardShiftBits = 5;
+    static constexpr size_t kIndexShards = 1 << kIndexShardShiftBits;
+    std::atomic<int64_t> uuid_generator_{1};
+    BaseNodeList node_list_[kNodeShards];
+    NodeIndex node_index_[kIndexShards];
+  };
+
+  static std::unique_ptr<NodeMapInterface> MakeNodeMap();
+
   // Returned the singleton instance of ChannelzRegistry;
   static ChannelzRegistry* Default();
 
   // globally registers an Entry. Returns its unique uuid
-  void InternalRegister(BaseNode* node);
+  void InternalRegister(BaseNode* node) { node_map_->Register(node); }
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregister(BaseNode* node);
+  void InternalUnregister(BaseNode* node) { node_map_->Unregister(node); }
+
+  intptr_t InternalNumberNode(BaseNode* node) {
+    return node_map_->NumberNode(node);
+  }
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
+  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid) {
+    return node_map_->GetNode(uuid);
+  }
 
   template <typename T, BaseNode::EntityType entity_type>
   RefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
@@ -139,14 +223,8 @@ class ChannelzRegistry final {
     const int kPaginationLimit = 100;
     std::vector<RefCountedPtr<T>> top_level_channels;
     RefCountedPtr<BaseNode> node_after_pagination_limit;
-    {
-      MutexLock lock(&mu_);
-      for (auto it = node_map_.lower_bound(start_id); it != node_map_.end();
-           ++it) {
-        BaseNode* node = it->second;
-        RefCountedPtr<BaseNode> node_ref;
-        if (node->type() == entity_type &&
-            (node_ref = node->RefIfNonZero()) != nullptr) {
+    node_map_->IterateNodes(
+        start_id, entity_type, [&](RefCountedPtr<BaseNode> node) {
           // Check if we are over pagination limit to determine if we need to
           // set the "end" element. If we don't go through this block, we know
           // that when the loop terminates, we have <= to kPaginationLimit.
@@ -154,13 +232,12 @@ class ChannelzRegistry final {
           // refcount, we need to decrease it, but we can't unref while
           // holding the lock, because this may lead to a deadlock.
           if (top_level_channels.size() == kPaginationLimit) {
-            node_after_pagination_limit = std::move(node_ref);
-            break;
+            node_after_pagination_limit = std::move(node);
+            return false;
           }
-          top_level_channels.emplace_back(node_ref->RefAsSubclass<T>());
-        }
-      }
-    }
+          top_level_channels.emplace_back(node->RefAsSubclass<T>());
+          return true;
+        });
     return std::tuple(std::move(top_level_channels),
                       node_after_pagination_limit == nullptr);
   }
@@ -168,10 +245,7 @@ class ChannelzRegistry final {
   void InternalLogAllEntities();
   std::vector<RefCountedPtr<BaseNode>> InternalGetAllEntities();
 
-  // protects members
-  Mutex mu_;
-  std::map<intptr_t, BaseNode*> node_map_ ABSL_GUARDED_BY(mu_);
-  intptr_t uuid_generator_ ABSL_GUARDED_BY(mu_) = 0;
+  std::unique_ptr<NodeMapInterface> node_map_;
 };
 
 }  // namespace channelz
