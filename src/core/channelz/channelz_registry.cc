@@ -40,8 +40,8 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
-#include "src/core/util/sync.h"
 #include "src/core/util/shared_bit_gen.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -244,7 +244,8 @@ void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
   }
 }
 
-bool ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(size_t nursery_index) {
+bool ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(
+    size_t nursery_index) {
   static constexpr size_t kBatchSize = 64;
   BaseNodeList& node_shard = node_list_[nursery_index];
   MutexLock lock(&node_shard.mu);

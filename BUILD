@@ -1274,11 +1274,11 @@ grpc_cc_library(
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:time",
         "//src/core:time_precise",
-        "//src/core:shared_bit_gen",
         "//src/core:useful",
     ],
 )
