@@ -69,9 +69,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",
@@ -117,6 +114,9 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
+            ],
+            "channelz_test": [
+                "shard_channelz_index",
             ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
@@ -143,9 +143,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",
@@ -191,6 +188,9 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
+            ],
+            "channelz_test": [
+                "shard_channelz_index",
             ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
@@ -217,9 +217,6 @@ EXPERIMENTS = {
         "dbg": {
         },
         "off": {
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "callv3_client_auth_filter",
                 "error_flatten",
@@ -265,6 +262,9 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
+            ],
+            "channelz_test": [
+                "shard_channelz_index",
             ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",

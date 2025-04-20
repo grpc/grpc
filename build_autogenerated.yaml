@@ -2102,6 +2102,7 @@ libs:
   - absl/algorithm:container
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -3185,6 +3186,7 @@ libs:
   - absl/algorithm:container
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -4978,6 +4980,7 @@ libs:
   - z
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:flat_hash_set
   - absl/container:inlined_vector
@@ -6777,6 +6780,7 @@ targets:
   - z
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
@@ -10843,6 +10847,7 @@ targets:
   - z
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref

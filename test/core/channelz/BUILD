@@ -88,8 +88,8 @@ grpc_cc_test(
         "gtest_main",
     ],
     tags = [
-        "no_windows",
         "channelz_test",
+        "no_windows",
     ],
     deps = [
         "//:grpc",
