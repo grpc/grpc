@@ -59,7 +59,9 @@ TEST_F(ChannelzRegistryTest, UuidsAreIncreasing) {
     channelz_channels.push_back(CreateTestNode());
   }
   for (size_t i = 1; i < channelz_channels.size(); ++i) {
-    EXPECT_LT(channelz_channels[i - 1]->uuid(), channelz_channels[i]->uuid())
+    const intptr_t prev_uuid = channelz_channels[i - 1]->uuid();
+    const intptr_t curr_uuid = channelz_channels[i]->uuid();
+    EXPECT_LT(prev_uuid, curr_uuid)
         << "Uuids must always be increasing";
   }
 }
