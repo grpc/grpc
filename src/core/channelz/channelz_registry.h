@@ -167,23 +167,17 @@ class ChannelzRegistry final {
       BaseNode* nursery ABSL_GUARDED_BY(mu) = nullptr;
       BaseNode* numbered ABSL_GUARDED_BY(mu) = nullptr;
     };
-    struct NodeIndex {
-      Mutex mu;
-      absl::btree_map<intptr_t, BaseNode*> map;
-    };
 
-    static size_t NodeShardIndex(BaseNode* node);
-    static size_t IndexShardIndex(intptr_t uuid);
+    static size_t NodeShardIndex(BaseNode* node) ;
     static void AddNodeToHead(BaseNode* node, BaseNode*& head);
     static void RemoveNodeFromHead(BaseNode* node, BaseNode*& head);
-    void NumberNurseryNodes();
+    void NumberNurseryNodes() ABSL_EXCLUSIVE_LOCKS_REQUIRED(index_mu_);
 
     static constexpr size_t kNodeShards = 63;
-    static constexpr size_t kIndexShardShiftBits = 5;
-    static constexpr size_t kIndexShards = 1 << kIndexShardShiftBits;
-    std::atomic<int64_t> uuid_generator_{1};
+    int64_t uuid_generator_{1};
     BaseNodeList node_list_[kNodeShards];
-    NodeIndex node_index_[kIndexShards];
+    Mutex index_mu_;
+    absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
   };
 
   static std::unique_ptr<NodeMapInterface> MakeNodeMap();

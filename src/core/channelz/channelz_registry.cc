@@ -187,23 +187,16 @@ void ChannelzRegistry::ShardedNodeMap::Unregister(BaseNode* node) {
   RemoveNodeFromHead(node, head);
   node_shard.mu.Unlock();
   if (node->uuid_ == -1) return;
-  const size_t index_shard_index = IndexShardIndex(node->uuid_);
-  NodeIndex& index_shard = node_index_[index_shard_index];
-  MutexLock index_lock(&index_shard.mu);
-  index_shard.map.erase(node->uuid_ >> kIndexShardShiftBits);
+  MutexLock index_lock(&index_mu_);
+  index_.erase(node->uuid_);
 }
 
 void ChannelzRegistry::ShardedNodeMap::IterateNodes(
     intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
     absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+  MutexLock index_lock(&index_mu_);
   NumberNurseryNodes();
-  intptr_t end = uuid_generator_.load(std::memory_order_relaxed);
-  for (intptr_t uuid = start_node; uuid < end; ++uuid) {
-    const size_t index_shard_index = IndexShardIndex(uuid);
-    NodeIndex& index_shard = node_index_[index_shard_index];
-    MutexLock index_lock(&index_shard.mu);
-    auto it = index_shard.map.find(uuid >> kIndexShardShiftBits);
-    if (it == index_shard.map.end()) continue;
+  for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
     BaseNode* node = it->second;
     if (entity_type.has_value() && node->type() != entity_type) continue;
     auto node_ref = node->RefIfNonZero();
@@ -246,22 +239,18 @@ void ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes() {
       BaseNode* n = nursery->next_;
       RemoveNodeFromHead(n, nursery);
       AddNodeToHead(n, node_shard.numbered);
-      n->uuid_ = uuid_generator_.fetch_add(1);
-      const size_t index_shard_index = IndexShardIndex(n->uuid_);
-      NodeIndex& index_shard = node_index_[index_shard_index];
-      MutexLock index_lock(&index_shard.mu);
-      index_shard.map.emplace(n->uuid_ >> kIndexShardShiftBits, n);
+      n->uuid_ = uuid_generator_;
+      ++uuid_generator_;
+      index_.emplace(n->uuid_, n);
     }
   }
 }
 
 RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
     intptr_t uuid) {
-  const size_t index_shard_index = IndexShardIndex(uuid);
-  NodeIndex& index_shard = node_index_[index_shard_index];
-  MutexLock lock(&index_shard.mu);
-  auto it = index_shard.map.find(uuid >> kIndexShardShiftBits);
-  if (it == index_shard.map.end()) return nullptr;
+  MutexLock index_lock(&index_mu_);
+  auto it = index_.find(uuid);
+  if (it == index_.end()) return nullptr;
   BaseNode* node = it->second;
   return node->RefIfNonZero();
 }
@@ -269,26 +258,21 @@ RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
 intptr_t ChannelzRegistry::ShardedNodeMap::NumberNode(BaseNode* node) {
   const size_t node_shard_index = NodeShardIndex(node);
   BaseNodeList& node_shard = node_list_[node_shard_index];
+  MutexLock index_lock(&index_mu_);
   MutexLock lock(&node_shard.mu);
   intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
   if (uuid != -1) return uuid;
-  uuid = uuid_generator_.fetch_add(1);
+  uuid = uuid_generator_;
+  ++uuid_generator_;
   node->uuid_ = uuid;
   RemoveNodeFromHead(node, node_shard.nursery);
   AddNodeToHead(node, node_shard.numbered);
-  const size_t index_shard_index = IndexShardIndex(uuid);
-  NodeIndex& index_shard = node_index_[index_shard_index];
-  MutexLock index_lock(&index_shard.mu);
-  index_shard.map.emplace(uuid >> kIndexShardShiftBits, node);
+  index_.emplace(uuid, node);
   return uuid;
 }
 
 size_t ChannelzRegistry::ShardedNodeMap::NodeShardIndex(BaseNode* node) {
   return absl::HashOf(static_cast<void*>(node)) % kNodeShards;
-}
-
-size_t ChannelzRegistry::ShardedNodeMap::IndexShardIndex(intptr_t uuid) {
-  return uuid & (kIndexShards - 1);
 }
 
 }  // namespace channelz
