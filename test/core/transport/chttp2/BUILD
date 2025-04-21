@@ -617,6 +617,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_status",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 

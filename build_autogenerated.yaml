@@ -12236,6 +12236,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
