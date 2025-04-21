@@ -125,11 +125,14 @@ void AssemblerFuzzer(
   // std::vector<MessageHandle> ExtractGrpcMessages(
   //          std::vector<SliceBuffer> buffers);
   //
-  //   void TheFuzzer(std::vector<uint8_t> bytes, std::vector<size_t>
-  //   span_lengths1, std::vector<size_t> span_lengths2) { CHECK_EQ(
-  //     PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
-  //     PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
-  // }
+  // void TheFuzzer(
+  //    std::vector<uint8_t> bytes,
+  //    std::vector<size_t>
+  //    span_lengths1, std::vector<size_t> span_lengths2) {
+  //        CHECK_EQ(
+  //            PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
+  //            PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
+  //    }
 }
 
 FUZZ_TEST(GrpcMessageAssemblerTest, AssemblerFuzzer);
