@@ -212,7 +212,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
 // 3. Get message
 // 4. Get absl status
 
-TEST(ValueOrHttp2Status, ValuePrimitiveDataType) { CHECK(true); }
+TEST(ValueOrHttp2Status, ValuePrimitiveDataType) {}
 
 TEST(ValueOrHttp2Status, ValueHttp2DataFrame) { CHECK(true); }
 
@@ -236,8 +236,8 @@ TEST(ValueOrHttp2Status, Http2ConnectionError) {
 
   auto test_lambda = []() -> ValueOrHttp2Status<int> {
     return Http2Status::Http2ConnectionError(code, "Message1");
-  } ValueOrHttp2Status<int>
-                                 result = test_lambda();
+  };
+  ValueOrHttp2Status<int> result = test_lambda();
 
   // 1. IsOk() is false
   EXPECT_FALSE(result.IsOk());
@@ -253,13 +253,96 @@ TEST(ValueOrHttp2Status, Http2ConnectionError) {
   absl::Status absl_status = result.GetAbslConnectionError();
   EXPECT_FALSE(absl_status.ok());
   ASSERT_DEATH({ result.GetStreamErrorCode(); }, "");
+
+  // 5. message
+  std::string message = result.DebugString();
+  EXPECT_GT(message, 1);
+  EXPECT_STREQ(message, "Message1");
 }
 
-TEST(ValueOrHttp2Status, Http2StreamError) { CHECK(true); }
+TEST(ValueOrHttp2Status, Http2StreamError) {
+  const Http2ErrorCode code = Http2ErrorCode::kProtocolError;
+  auto test_lambda = []() -> ValueOrHttp2Status<std::string> {
+    return Http2Status::Http2StreamError(code, "Message1");
+  };
+  ValueOrHttp2Status<int> result = test_lambda();
 
-TEST(ValueOrHttp2Status, AbslConnectionError) { CHECK(true); }
+  // 1. IsOk() is false
+  EXPECT_FALSE(result.IsOk());
 
-TEST(ValueOrHttp2Status, AbslStreamError) { CHECK(true); }
+  // 2. Http2ErrorType
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kStreamError);
+
+  // 3. Http2ErrorCode
+  EXPECT_EQ(result.GetStreamErrorCode(), code);
+  ASSERT_DEATH({ result.GetConnectionErrorCode(); }, "");
+
+  // 4. Absl status
+  absl::Status absl_status = result.GetAbslStreamError();
+  EXPECT_FALSE(absl_status.ok());
+  ASSERT_DEATH({ result.GetConnectionErrorCode(); }, "");
+
+  // 5. message
+  std::string message = result.DebugString();
+  EXPECT_GT(message, 1);
+  EXPECT_STREQ(message, "Message1");
+}
+
+TEST(ValueOrHttp2Status, AbslConnectionError) {
+  constexpr absl::Status code = absl::StatusCode::kCancelled;
+  auto test_lambda = [code]() -> ValueOrHttp2Status<std::string> {
+    return Http2Status::AbslConnectionError(code, "Message1");
+  };
+  ValueOrHttp2Status<int> result = test_lambda();
+
+  // 1. IsOk() is false
+  EXPECT_FALSE(result.IsOk());
+
+  // 2. Http2ErrorType
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+  // 3. Http2ErrorCode
+  EXPECT_EQ(result.GetConnectionErrorCode(), code);
+  ASSERT_DEATH({ result.GetStreamErrorCode(); }, "");
+
+  // 4. Absl status
+  absl::Status absl_status = result.GetAbslConnectionError();
+  EXPECT_FALSE(absl_status.ok());
+  ASSERT_DEATH({ result.GetStreamErrorCode(); }, "");
+
+  // 5. message
+  std::string message = result.DebugString();
+  EXPECT_GT(message, 1);
+  EXPECT_STREQ(message, "Message1");
+}
+
+TEST(ValueOrHttp2Status, AbslStreamError) {
+  constexpr absl::Status code = absl::StatusCode::kCancelled;
+  auto test_lambda = [code]() -> ValueOrHttp2Status<std::string> {
+    return Http2Status::AbslStreamError(code, "Message1");
+  };
+  ValueOrHttp2Status<int> result = test_lambda();
+
+  // 1. IsOk() is false
+  EXPECT_FALSE(result.IsOk());
+
+  // 2. Http2ErrorType
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+  // 3. Http2ErrorCode
+  EXPECT_EQ(result.GetStreamErrorCode(), code);
+  ASSERT_DEATH({ result.GetConnectionErrorCode(); }, "");
+
+  // 4. Absl status
+  absl::Status absl_status = result.GetAbslStreamError();
+  EXPECT_FALSE(absl_status.ok());
+  ASSERT_DEATH({ result.GetConnectionErrorCode(); }, "");
+
+  // 5. message
+  std::string message = result.DebugString();
+  EXPECT_GT(message, 1);
+  EXPECT_STREQ(message, "Message1");
+}
 
 }  // namespace testing
 }  // namespace http2
