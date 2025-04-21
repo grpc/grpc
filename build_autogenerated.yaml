@@ -5077,6 +5077,18 @@ targets:
   - linux
   - posix
   - mac
+- name: http2_common_test_inputs
+  build: test
+  language: c
+  headers:
+  - src/core/ext/transport/chttp2/transport/http2_status.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
+  src: []
+  deps:
+  - absl/log:check
+  - absl/log:log
+  - absl/status:status
+  - absl/strings:strings
 - name: multiple_server_queues_test
   build: test
   language: c

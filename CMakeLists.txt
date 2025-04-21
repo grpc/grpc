@@ -1261,6 +1261,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_c fd_conservation_posix_test)
   endif()
+  add_dependencies(buildtests_c http2_common_test_inputs)
   add_dependencies(buildtests_c multiple_server_queues_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX OR _gRPC_PLATFORM_WINDOWS)
     add_dependencies(buildtests_c pollset_windows_starvation_test)
@@ -6309,6 +6310,35 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(http2_common_test_inputs
+)
+target_compile_features(http2_common_test_inputs PUBLIC cxx_std_17)
+target_include_directories(http2_common_test_inputs
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+
+target_link_libraries(http2_common_test_inputs
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::check
+  absl::log
+  absl::status
+  absl::strings
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 

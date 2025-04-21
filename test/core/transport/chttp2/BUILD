@@ -487,6 +487,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "http2_common_test_inputs",
+    srcs = [
+        "http2_common_test_inputs.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
+    deps = [
+        "//src/core:http2_status",
+    ],
+)
+
+grpc_cc_test(
     name = "http2_settings_test",
     srcs = [
         "http2_settings_test.cc",
