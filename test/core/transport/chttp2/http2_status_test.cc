@@ -30,6 +30,24 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+constexpr absl::string_view kStr1024 =
+    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
+    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 ";
+
 std::vector<Http2ErrorCode> GetErrorCodes() {
   std::vector<Http2ErrorCode> codes;
   // codes.push_back(Http2ErrorCode::kNoError);
@@ -252,13 +270,41 @@ TEST(ValueOrHttp2StatusTest, ValuePrimitiveDataType) {
   EXPECT_EQ(result1, 100);
 }
 
-TEST(ValueOrHttp2StatusTest, ValueHttp2DataFrame) { CHECK(true); }
+TEST(ValueOrHttp2StatusTest, ValueSliceBuffer) {
+  auto test_lambda = []() -> ValueOrHttp2Status<SliceBuffer> {
+    SliceBuffer payload;
+    payload.Append(Slice::FromCopiedString(kStr1024));
+    return ValueOrHttp2Status<SliceBuffer>(std::move(payload));
+  };
+  ValueOrHttp2Status<SliceBuffer> result = test_lambda();
 
-TEST(ValueOrHttp2StatusTest, ValueHttp2WindowUpdateFrame) { CHECK(true); }
+  // 1. IsOk() is false
+  EXPECT_TRUE(result.IsOk());
 
-TEST(ValueOrHttp2StatusTest, ValueStdString) { CHECK(true); }
+  // 2. Http2ErrorType
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2Status::Http2ErrorType type = result.GetErrorType(); },
+      "");
 
-TEST(ValueOrHttp2StatusTest, ValueHttp2Frame) { CHECK(true); }
+  // 3. Http2ErrorCode
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
+      "");
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
+
+  // 4. Absl status
+  ASSERT_DEATH(
+      { GRPC_UNUSED absl::Status result1 = result.GetAbslConnectionError(); },
+      "");
+  ASSERT_DEATH(
+      { GRPC_UNUSED absl::Status result2 = result.GetAbslStreamError(); }, "");
+
+  // 5. Value
+  SliceBuffer result3 = TakeValue(result);
+  EXPECT_EQ(result3.Length(), 1024);
+  EXPECT_STREQ(result3.JoinIntoString().c_str(), std::string(kStr1024).c_str());
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ValueOrHttp2Status Tests - Errors

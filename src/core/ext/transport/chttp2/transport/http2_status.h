@@ -342,14 +342,13 @@ class ValueOrHttp2Status {
   }
 
  private:
-  friend T TakeValue(ValueOrHttp2Status<T>&& value);
   std::optional<T> value_;
   std::optional<Http2Status> status_;
 };
 
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
-    ValueOrHttp2Status<T>&& value) {
+    ValueOrHttp2Status<T>& value) {
   return std::move(value.value());
 }
 
