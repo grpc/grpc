@@ -383,7 +383,7 @@ TEST(ValueOrHttp2StatusTest, Http2StreamError) {
 
 TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
   constexpr absl::StatusCode code = absl::StatusCode::kCancelled;
-  auto test_lambda = [code]() -> ValueOrHttp2Status<std::string> {
+  auto test_lambda = []() -> ValueOrHttp2Status<std::string> {
     return ValueOrHttp2Status<std::string>(
         Http2Status::AbslConnectionError(code, "Message1"));
   };
@@ -398,7 +398,8 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
 
   // 3. Http2ErrorCode
   ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); }, "");
+      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
+      "");
   ASSERT_DEATH(
       { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
 
@@ -430,8 +431,7 @@ TEST(ValueOrHttp2StatusTest, AbslStreamError) {
 
   // 3. Http2ErrorCode
   ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetStreamErrorCode(); },
-      "");
+      { GRPC_UNUSED Http2ErrorCode code1 = result.GetStreamErrorCode(); }, "");
   ASSERT_DEATH(
       { GRPC_UNUSED Http2ErrorCode code2 = result.GetConnectionErrorCode(); },
       "");
