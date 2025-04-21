@@ -19,6 +19,8 @@
 #ifndef GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
 #define GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
 
+#include <grpc/support/port_platform.h>
+
 #include <memory>
 #include <utility>
 
@@ -56,7 +58,8 @@ constexpr uint8_t kFlags5 = 5;
 
 // Returns all Http2ErrorCode values EXCEPT kNoError
 // This is because we want to test only invalid cases.
-std::vector<Http2ErrorCode> GetErrorCodes() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::vector<Http2ErrorCode>
+GetErrorCodes() {
   std::vector<Http2ErrorCode> codes;
   // codes.push_back(Http2ErrorCode::kNoError);
   codes.push_back(Http2ErrorCode::kProtocolError);
@@ -76,7 +79,8 @@ std::vector<Http2ErrorCode> GetErrorCodes() {
 
 // Returns a small subset of available absl::StatusCode values.
 // These are the values that we expect to use in the HTTP2 transport.
-std::vector<absl::StatusCode> FewAbslErrorCodes() {
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::vector<absl::StatusCode>
+FewAbslErrorCodes() {
   std::vector<absl::StatusCode> codes;
   codes.push_back(absl::StatusCode::kCancelled);
   codes.push_back(absl::StatusCode::kInvalidArgument);
