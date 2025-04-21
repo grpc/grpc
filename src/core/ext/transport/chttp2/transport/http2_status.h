@@ -144,7 +144,7 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
-  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
+  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamError() const {
     switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
@@ -158,7 +158,7 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
-  GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionErrorCode() const {
+  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslConnectionErrorCode() const {
     switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
