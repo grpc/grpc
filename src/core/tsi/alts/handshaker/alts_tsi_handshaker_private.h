@@ -83,6 +83,9 @@ void alts_handshaker_client_on_status_received_for_testing(
 
 void alts_handshaker_client_ref_for_testing(alts_handshaker_client* c);
 
+std::optional<absl::string_view> alts_tsi_handshaker_get_protocols_for_testing(
+    tsi_handshaker* handshaker);
+
 }  // namespace internal
 }  // namespace grpc_core
 

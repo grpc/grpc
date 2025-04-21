@@ -749,5 +749,11 @@ alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
   return handshaker->client;
 }
 
+std::optional<absl::string_view> alts_tsi_handshaker_get_protocols_for_testing(
+    tsi_handshaker* handshaker) {
+  return (reinterpret_cast<alts_tsi_handshaker*>(handshaker))
+      ->preferred_transport_protocols;
+}
+
 }  // namespace internal
 }  // namespace grpc_core
