@@ -70,7 +70,7 @@
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2025/06/01
   owner: roth@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test"]
+  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
   allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
