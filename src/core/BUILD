@@ -9178,12 +9178,17 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/strings",
+        "absl/log:check",
         "absl/log",
+        "absl/memory",
     ],
     deps = [
         "call_filters",
         "call_final_info",
+        "channel_args",
         "metadata",
+        "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
@@ -9474,6 +9479,30 @@ grpc_cc_library(
     deps = [
         "time",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "spiffe_utils",
+    srcs = [
+        "//src/core:credentials/transport/tls/spiffe_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:credentials/transport/tls/spiffe_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "status_helper",
     ],
 )
 
