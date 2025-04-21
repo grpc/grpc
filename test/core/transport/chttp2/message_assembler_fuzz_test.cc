@@ -115,6 +115,21 @@ void AssemblerFuzzer(
   // 2. A mix of valid gRPC messages and malformed gRPC messages. In this test
   // all are malformed gRPC messages.
   // 3. Valid and invalid states of is_end_stream.
+
+  // Handy pseudocode :
+  //
+  // Takes in a very large vector of bytes and splits it to random lengths
+  // std::vector<SliceBuffer> Split(std::vector<uint8_t> bytes,
+  //                                std::vector<size_t> span_lengths);
+  //
+  // std::vector<MessageHandle> ExtractGrpcMessages(
+  //          std::vector<SliceBuffer> buffers);
+  //
+  //   void TheFuzzer(std::vector<uint8_t> bytes, std::vector<size_t>
+  //   span_lengths1, std::vector<size_t> span_lengths2) { CHECK_EQ(
+  //     PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
+  //     PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
+  // }
 }
 
 FUZZ_TEST(GrpcMessageAssemblerTest, AssemblerFuzzer);
