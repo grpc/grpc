@@ -24,9 +24,6 @@
 
 #include <cstdlib>
 
-#include "src/core/lib/surface/init.h"
-#include "src/core/tsi/transport_security_interface.h"
-
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
 // can't be in grpc, it has to be in gpr.
@@ -60,14 +57,16 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "absl/synchronization/mutex.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 // --- Constants. ---
@@ -149,7 +148,7 @@ struct tsi_ssl_frame_protector {
   size_t buffer_offset;
   // Ensures that protect, protect_flush, and unprotect are not called
   // concurrently.
-  absl::Mutex mu;
+  grpc_core::Mutex mu;
 };
 // --- Library Initialization. ---
 
@@ -1303,7 +1302,7 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
                                         size_t* protected_output_frames_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  absl::MutexLock l(&impl->mu);
+  grpc_core::MutexLock l(&impl->mu);
   return grpc_core::SslProtectorProtect(
       unprotected_bytes, impl->buffer_size, impl->buffer_offset, impl->buffer,
       impl->ssl, impl->network_io, unprotected_bytes_size,
@@ -1315,7 +1314,7 @@ static tsi_result ssl_protector_protect_flush(
     size_t* protected_output_frames_size, size_t* still_pending_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  absl::MutexLock l(&impl->mu);
+  grpc_core::MutexLock l(&impl->mu);
   return grpc_core::SslProtectorProtectFlush(
       impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
       protected_output_frames, protected_output_frames_size,
@@ -1328,7 +1327,7 @@ static tsi_result ssl_protector_unprotect(
     size_t* unprotected_bytes_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  absl::MutexLock l(&impl->mu);
+  grpc_core::MutexLock l(&impl->mu);
   return grpc_core::SslProtectorUnprotect(
       protected_frames_bytes, impl->ssl, impl->network_io,
       protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
