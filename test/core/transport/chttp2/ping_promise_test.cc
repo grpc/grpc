@@ -45,12 +45,15 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
  public:
   MOCK_METHOD(Promise<absl::Status>, SendPing, (), (override));
   MOCK_METHOD(Promise<absl::Status>, KeepAliveTimeout, (), (override));
+  MOCK_METHOD(bool, NeedToSendKeepAlivePing, (), (override));
 
   void ExpectSendPing(int& end_after) {
+    DCHECK_GT(end_after, 0);
     EXPECT_CALL(*this, SendPing())
         .Times(end_after)
         .WillRepeatedly([&end_after] {
-          LOG(INFO) << "ExpectSendPing Called. Remaining times: " << end_after;
+          LOG(INFO) << "ExpectSendPing Called. Remaining times: "
+                    << end_after - 1;
           if (--end_after == 0) {
             return Immediate(absl::CancelledError());
           }
@@ -59,11 +62,12 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
   }
 
   void ExpectSendPingWithSleep(Duration duration, int& end_after) {
+    DCHECK_GT(end_after, 0);
     EXPECT_CALL(*this, SendPing())
         .Times(end_after)
         .WillRepeatedly([duration, &end_after] {
           LOG(INFO) << "ExpectSendPingWithSleep Called. Remaining times: "
-                    << end_after;
+                    << end_after - 1;
           return If((--end_after == 0),
                     TrySeq(Sleep(duration),
                            [] { return Immediate(absl::CancelledError()); }),
@@ -76,6 +80,12 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
     EXPECT_CALL(*this, KeepAliveTimeout()).WillOnce([] {
       return (Immediate(absl::OkStatus()));
     });
+  }
+
+  void ExpectNeedToSendKeepAlivePing(int times, bool return_value) {
+    EXPECT_CALL(*this, NeedToSendKeepAlivePing())
+        .Times(times)
+        .WillRepeatedly([return_value] { return return_value; });
   }
 };
 
@@ -100,6 +110,8 @@ class KeepAliveSystemTest : public YodelTest {
 };
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
+  // Simple test to trigger two keepalive pings. The first one resolves
+  // successfully and the second one returns a failure.
   InitParty();
   int end_after = 2;
   Duration keepalive_timeout = Duration::Infinity();
@@ -109,6 +121,8 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectSendPing(end_after);
+  keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/2,
+                                                      /*return_value=*/true);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
                                     keepalive_timeout, keepalive_interval);
@@ -121,15 +135,22 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
 }
 
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
+  // Simple test to simulate sending a keepalive ping and not receiving any data
+  // within the keepalive timeout. The test asserts that:
+  // 1. The keepalive timeout is triggered.
+  // 2. The keepalive ping is sent.
   InitParty();
   int end_after = 1;
   Duration keepalive_timeout = Duration::Seconds(1);
   Duration keepalive_interval = Duration::Seconds(1);
+
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
+  keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
+                                                      /*return_value=*/true);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
                                     keepalive_timeout, keepalive_interval);
@@ -141,23 +162,24 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   event_engine()->UnsetGlobalHooks();
 }
 
-// TODO(akshitpatel) : [PH2][P0] : This test is meaningless unless we have a way
-// to ensure that sending keepalive ping is skipped. Find a way to assert that.
 YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
-  // This test simulates 5 read cycles and asserts the following:
-  // 1. No keepalive pings are sent when data is received.
+  // Test to simulate reading of data at certain intervals. The test asserts
+  // that:
+  // 1. The keepalive ping is not sent as long as there is data read within the
+  //    keepalive interval.
   InitParty();
   int end_after = 1;
-  Duration keepalive_timeout = Duration::Seconds(100);
+  Duration keepalive_timeout = Duration::Hours(1);
   Duration keepalive_interval = Duration::Hours(1);
   int read_loop_end_after = 5;
-
   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
       keep_alive_interface =
           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
 
-  // break the keepalive loop
+  // Break keepalive loop
   keep_alive_interface->ExpectSendPing(end_after);
+  keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
+                                                      /*return_value=*/true);
 
   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
                                     keepalive_timeout, keepalive_interval);
@@ -166,15 +188,16 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
 
   party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
                  return TrySeq(
-                     Sleep(Duration::Seconds(1)),
-                     [&read_loop_end_after,
-                      &keep_alive_system]() mutable -> LoopCtl<absl::Status> {
+                     [&keep_alive_system] {
                        keep_alive_system.GotData();
-                       if (--read_loop_end_after == 0) {
-                         return Continue();
-                       }
-
                        return absl::OkStatus();
+                     },
+                     Sleep(Duration::Minutes(75)),
+                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+                       if (--read_loop_end_after == 0) {
+                         return absl::OkStatus();
+                       }
+                       return Continue();
                      });
                }),
                [](auto) { LOG(INFO) << "ReadData end"; });
@@ -183,5 +206,49 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
+
+// YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
+//   InitParty();
+//   int end_after = 1;
+//   Duration keepalive_timeout = Duration::Seconds(1);
+//   Duration keepalive_interval = Duration::Hours(1);
+//   int read_loop_end_after = 5;
+//   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
+//       keep_alive_interface =
+//           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+
+//   // Break keepalive loop
+//   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1),
+//   end_after); keep_alive_interface->ExpectKeepAliveTimeout();
+//   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
+//                                                       /*return_value=*/true);
+
+//   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
+//                                     keepalive_timeout, keepalive_interval);
+//   auto party = GetParty();
+//   keep_alive_system.Spawn(party);
+
+//   party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]()
+//   {
+//                  return TrySeq(
+//                      [&keep_alive_system] {
+//                        keep_alive_system.GotData();
+//                        return absl::OkStatus();
+//                      },
+//                      Sleep(Duration::Minutes(75)),
+//                      [&read_loop_end_after]() mutable ->
+//                      LoopCtl<absl::Status> {
+//                        if (--read_loop_end_after == 0) {
+//                          return absl::OkStatus();
+//                        }
+//                        return Continue();
+//                      });
+//                }),
+//                [](auto) { LOG(INFO) << "ReadData end"; });
+
+//   WaitForAllPendingWork();
+//   event_engine()->TickUntilIdle();
+//   event_engine()->UnsetGlobalHooks();
+// }
 
 }  // namespace grpc_core

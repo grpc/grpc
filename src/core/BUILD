@@ -9468,6 +9468,7 @@ grpc_cc_library(
         "race",
         "sleep",
         "time",
+        "try_join",
         "try_seq",
         "//:promise",
     ],
