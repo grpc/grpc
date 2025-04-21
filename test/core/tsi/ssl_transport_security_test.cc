@@ -61,6 +61,8 @@ const size_t kSessionTicketEncryptionKeySize = 80;
 const size_t kSessionTicketEncryptionKeySize = 48;
 #endif
 
+constexpr static size_t kTls13FrameOverhead = 22;
+
 typedef enum AlpnMode {
   NO_ALPN,
   ALPN_CLIENT_NO_SERVER,
@@ -1030,7 +1032,7 @@ TEST_P(SslTransportSecurityTest, Protect) {
   ASSERT_NE(protector, nullptr);
   std::string buffer(1024, 'a');
   std::string protected_bytes = Protect(protector, buffer);
-  EXPECT_EQ(protected_bytes.size(), buffer.size() + 22);
+  EXPECT_EQ(protected_bytes.size(), buffer.size() + kTls13FrameOverhead);
   tsi_frame_protector_destroy(protector);
 }
 
@@ -1080,7 +1082,8 @@ TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnClient) {
     std::string second_buffer(2048, 'b');
     std::string second_protected_buffer =
         Protect(client_protector, second_buffer);
-    EXPECT_EQ(second_protected_buffer.size(), second_buffer.size() + 22);
+    EXPECT_EQ(second_protected_buffer.size(),
+              second_buffer.size() + kTls13FrameOverhead);
   });
   std::thread unprotect_thread([&client_protector, protected_bytes, buffer]() {
     std::string unprotected_bytes =
@@ -1118,7 +1121,8 @@ TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnServer) {
     // The protected bytes may be prefixed by a TLS record containing session
     // tickets, so the total number of protected bytes is greater or equal to
     // the expected bytes, based on the length of the plaintext.
-    EXPECT_GE(second_protected_buffer.size(), second_buffer.size() + 22);
+    EXPECT_GE(second_protected_buffer.size(),
+              second_buffer.size() + kTls13FrameOverhead);
   });
   std::thread unprotect_thread([&server_protector, protected_bytes, buffer]() {
     std::string unprotected_bytes =
