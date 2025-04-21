@@ -486,7 +486,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_library(
     name = "http2_common_test_inputs",
     srcs = [
         "http2_common_test_inputs.h",
