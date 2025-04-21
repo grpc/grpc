@@ -305,19 +305,14 @@ class ValueOrHttp2Status {
   // compile issue with std::move. Check with tests.
 
   // NOLINTNEXTLINE(google-explicit-constructor)
-  explicit ValueOrHttp2Status(T value) : value_(std::move(value)) {
+  ValueOrHttp2Status(T value) : value_(std::move(value)) {
     DCHECK(value_.has_value() && !status_.has_value());
   }
 
   // NOLINTNEXTLINE(google-explicit-constructor)
-  explicit ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
+  ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
     CHECK(status_.value().GetType() != Http2Status::Http2ErrorType::kOk);
     DCHECK(!value_.has_value() && status_.has_value());
-  }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {
-    DCHECK(value_.has_value() ^ status_.has_value());
-    return value_.has_value();
   }
 
   // Prefer TakeValue when you want std::move to be used
@@ -330,6 +325,11 @@ class ValueOrHttp2Status {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
     DCHECK(value_.has_value() && !status_.has_value());
     return value_.value();
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {
+    DCHECK(value_.has_value() ^ status_.has_value());
+    return value_.has_value();
   }
 
   GRPC_MUST_USE_RESULT Http2Status::Http2ErrorType GetErrorType() const {
