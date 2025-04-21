@@ -5,7 +5,7 @@ Package for gRPC Python tools.
 
 Supported Python Versions
 -------------------------
-Python >= 3.6
+Python >= 3.9, <=3.13
 
 Installation
 ------------
