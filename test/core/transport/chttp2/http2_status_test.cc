@@ -226,8 +226,34 @@ TEST(ValueOrHttp2Status, ValueHttp2Frame) { CHECK(true); }
 // ValueOrHttp2Status Tests - Errors
 // These tests first create the specific type of ValueOrHttp2Status object.
 // Then check the following:
+// 1. IsOk() is false
+// 2. Http2ErrorType
+// 3. Http2ErrorCode
+// 4. Absl status
 
-TEST(ValueOrHttp2Status, Http2ConnectionError) { CHECK(true); }
+TEST(ValueOrHttp2Status, Http2ConnectionError) {
+  const Http2ErrorCode code = Http2ErrorCode::kProtocolError;
+
+  auto test_lambda = []() -> ValueOrHttp2Status<int> {
+    return Http2Status::Http2ConnectionError(code, "Message1");
+  } ValueOrHttp2Status<int>
+                                 result = test_lambda();
+
+  // 1. IsOk() is false
+  EXPECT_FALSE(result.IsOk());
+
+  // 2. Http2ErrorType
+  EXPECT_EQ(result.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+  // 3. Http2ErrorCode
+  EXPECT_EQ(result.GetConnectionErrorCode(), code);
+  ASSERT_DEATH({ result.GetStreamErrorCode(); }, "");
+
+  // 4. Absl status
+  absl::Status absl_status = result.GetAbslConnectionError();
+  EXPECT_FALSE(absl_status.ok());
+  ASSERT_DEATH({ result.GetStreamErrorCode(); }, "");
+}
 
 TEST(ValueOrHttp2Status, Http2StreamError) { CHECK(true); }
 
