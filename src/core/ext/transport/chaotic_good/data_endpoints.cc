@@ -142,9 +142,9 @@ NextWrite OutputBuffer::TakePendingAndStartWrite(uint64_t current_time) {
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
 
-Poll<Empty> OutputBuffers::PollWrite(
-    uint64_t payload_tag, uint64_t send_time, SliceBuffer& output_buffer,
-    std::shared_ptr<TcpCallTracer>& call_tracer_ref) {
+Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
+                                     SliceBuffer& output_buffer,
+                                     std::shared_ptr<TcpCallTracer>&) {
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const uint32_t length = output_buffer.Length();

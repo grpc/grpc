@@ -121,7 +121,7 @@ class MessageChunker {
           MessageFrame frame;
           frame.message = std::move(message);
           frame.stream_id = stream_id;
-          return output.Send(OutgoingFrame{std::move(frame)});
+          return output.Send(OutgoingFrame{std::move(frame), nullptr});
         });
   }
 
