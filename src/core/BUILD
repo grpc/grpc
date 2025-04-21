@@ -9178,12 +9178,17 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/status",
+        "absl/strings",
+        "absl/log:check",
         "absl/log",
+        "absl/memory",
     ],
     deps = [
         "call_filters",
         "call_final_info",
+        "channel_args",
         "metadata",
+        "status_helper",
         "type_list",
         "//:grpc_base",
         "//:grpc_public_hdrs",
