@@ -13173,7 +13173,6 @@ targets:
   headers:
   - src/core/call/message.h
   - src/core/ext/transport/chttp2/transport/frame.h
-  - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
@@ -13277,6 +13276,7 @@ targets:
   - absl/status:statusor
   - absl/types:span
   - gpr
+  - http2_common_test_inputs
 - name: message_compress_test
   gtest: true
   build: test

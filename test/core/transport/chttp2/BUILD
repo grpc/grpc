@@ -548,6 +548,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":http2_common_test_inputs",
         "//:chttp2_frame",
         "//:ref_counted_ptr",
         "//src/core:message",

@@ -21045,6 +21045,7 @@ target_link_libraries(message_assembler_test
   absl::statusor
   absl::span
   gpr
+  http2_common_test_inputs
 )
 
 
