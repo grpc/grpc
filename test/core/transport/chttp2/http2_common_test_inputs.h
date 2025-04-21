@@ -22,6 +22,10 @@
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 
+namespace grpc_core {
+namespace http2 {
+namespace testing {
+
 constexpr absl::string_view kStr1024 =
     "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
     "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
@@ -76,3 +80,7 @@ std::vector<absl::StatusCode> FewAbslErrorCodes() {
   codes.push_back(absl::StatusCode::kInternal);
   return codes;
 }
+
+}  // namespace testing
+}  // namespace http2
+}  // namespace grpc_core
