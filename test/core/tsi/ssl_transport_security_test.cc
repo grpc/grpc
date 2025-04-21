@@ -28,6 +28,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <string>
+#include <thread>
+
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
@@ -1013,6 +1016,119 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
 #endif
   ssl_fixture_->SetForceClientAuth(true);
   DoHandshake();
+}
+
+TEST_P(SslTransportSecurityTest, Protect) {
+  LOG(INFO) << "ssl_tsi_test_protect";
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &protector),
+            TSI_OK);
+  ASSERT_NE(protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(protector, buffer);
+  EXPECT_EQ(protected_bytes.size(), buffer.size() + 22);
+  tsi_frame_protector_destroy(protector);
+}
+
+TEST_P(SslTransportSecurityTest, ProtectAndUnprotect) {
+  LOG(INFO) << "ssl_tsi_test_protect_and_unprotect";
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(client_protector, buffer);
+  std::string unprotected_bytes = Unprotect(server_protector, protected_bytes);
+  EXPECT_EQ(unprotected_bytes, buffer);
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
+}
+
+TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnClient) {
+  LOG(INFO) << "ssl_tsi_test_protect_and_unprotect";
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(server_protector, buffer);
+  std::thread protect_thread([&client_protector]() {
+    std::string second_buffer(2048, 'b');
+    std::string second_protected_buffer =
+        Protect(client_protector, second_buffer);
+    EXPECT_EQ(second_protected_buffer.size(), second_buffer.size() + 22);
+  });
+  std::thread unprotect_thread([&client_protector, protected_bytes, buffer]() {
+    std::string unprotected_bytes =
+        Unprotect(client_protector, protected_bytes);
+    EXPECT_EQ(unprotected_bytes, buffer);
+  });
+  protect_thread.join();
+  unprotect_thread.join();
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
+}
+
+TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnServer) {
+  LOG(INFO) << "ssl_tsi_test_protect_and_unprotect";
+  SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
+  DoHandshake();
+  tsi_frame_protector* client_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->client_result,
+                /*max_output_protected_frame_size=*/nullptr, &client_protector),
+            TSI_OK);
+  ASSERT_NE(client_protector, nullptr);
+  tsi_frame_protector* server_protector;
+  EXPECT_EQ(tsi_handshaker_result_create_frame_protector(
+                ssl_tsi_test_fixture_->server_result,
+                /*max_output_protected_frame_size=*/nullptr, &server_protector),
+            TSI_OK);
+  ASSERT_NE(server_protector, nullptr);
+  std::string buffer(1024, 'a');
+  std::string protected_bytes = Protect(client_protector, buffer);
+  std::thread protect_thread([&server_protector]() {
+    std::string second_buffer(20, 'b');
+    std::string second_protected_buffer =
+        Protect(server_protector, second_buffer);
+    // The protected bytes may be prefixed by a TLS record containing session
+    // tickets, so the total number of protected bytes is greater or equal to
+    // the expected bytes, based on the length of the plaintext.
+    EXPECT_GE(second_protected_buffer.size(), second_buffer.size() + 22);
+  });
+  std::thread unprotect_thread([&server_protector, protected_bytes, buffer]() {
+    std::string unprotected_bytes =
+        Unprotect(server_protector, protected_bytes);
+    EXPECT_GE(unprotected_bytes, buffer);
+  });
+  protect_thread.join();
+  unprotect_thread.join();
+  tsi_frame_protector_destroy(client_protector);
+  tsi_frame_protector_destroy(server_protector);
 }
 
 static const tsi_ssl_handshaker_factory_vtable* original_vtable;
