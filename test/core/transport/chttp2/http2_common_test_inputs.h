@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
+#define GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
+
 #include <memory>
 #include <utility>
 
@@ -84,3 +87,5 @@ std::vector<absl::StatusCode> FewAbslErrorCodes() {
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_TRANSPORT_CHTTP2_HTTP2_COMMON_TEST_INPUTS_H
