@@ -397,9 +397,7 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
             Http2Status::Http2ErrorType::kConnectionError);
 
   // 3. Http2ErrorCode
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
-      "");
+  EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
   ASSERT_DEATH(
       { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
 
@@ -430,8 +428,7 @@ TEST(ValueOrHttp2StatusTest, AbslStreamError) {
   EXPECT_EQ(result.GetErrorType(), Http2Status::Http2ErrorType::kStreamError);
 
   // 3. Http2ErrorCode
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetStreamErrorCode(); }, "");
+  EXPECT_EQ(result.GetStreamErrorCode(), Http2ErrorCode::kInternalError);
   ASSERT_DEATH(
       { GRPC_UNUSED Http2ErrorCode code2 = result.GetConnectionErrorCode(); },
       "");

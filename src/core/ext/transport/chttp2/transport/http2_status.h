@@ -144,7 +144,7 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
-  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamError() const {
+  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
     switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
@@ -169,10 +169,10 @@ class Http2Status {
       default:
         CHECK(false);
     }
-    GPR_UNREACHABLE_CODE(return absl::OkStatus());
+    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
   }
 
-  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamErrorCode() const {
+  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamErrorCode() const {
     switch (error_type_) {
       case Http2ErrorType::kOk:
         CHECK(false);
@@ -183,7 +183,7 @@ class Http2Status {
       default:
         CHECK(false);
     }
-    GPR_UNREACHABLE_CODE(return absl::OkStatus());
+    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
   }
 
   bool IsOk() const { return (http2_code_ == Http2ErrorCode::kNoError); }
@@ -218,6 +218,8 @@ class Http2Status {
     absl_code_ = ErrorCodeToStatusCode();
     Validate();
   }
+
+  absl::Status AbslError() const { return absl::Status(absl_code_, message_); }
 
   void Validate() const {
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
