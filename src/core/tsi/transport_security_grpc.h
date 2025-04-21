@@ -63,6 +63,7 @@ tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
 // Base for tsi_zero_copy_grpc_protector implementations.
+// Implementations must guarantee that protect and unprotect can be called concurrently.
 struct tsi_zero_copy_grpc_protector_vtable {
   tsi_result (*protect)(tsi_zero_copy_grpc_protector* self,
                         grpc_slice_buffer* unprotected_slices,
