@@ -575,6 +575,7 @@ grpc_fuzz_test(
         "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
