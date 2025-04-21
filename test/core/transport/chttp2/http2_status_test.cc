@@ -397,10 +397,10 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
             Http2Status::Http2ErrorType::kConnectionError);
 
   // 3. Http2ErrorCode
-  // Bug
-  // EXPECT_EQ(result.GetConnectionErrorCode(), code);
   ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetStreamErrorCode(); }, "");
+      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); }, "");
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
 
   // 4. Absl status
   absl::Status absl_status = result.GetAbslConnectionError();
@@ -429,10 +429,11 @@ TEST(ValueOrHttp2StatusTest, AbslStreamError) {
   EXPECT_EQ(result.GetErrorType(), Http2Status::Http2ErrorType::kStreamError);
 
   // 3. Http2ErrorCode
-  // Bug
-  // EXPECT_EQ(result.GetStreamErrorCode(), code);
   ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
+      { GRPC_UNUSED Http2ErrorCode code1 = result.GetStreamErrorCode(); },
+      "");
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2ErrorCode code2 = result.GetConnectionErrorCode(); },
       "");
 
   // 4. Absl status

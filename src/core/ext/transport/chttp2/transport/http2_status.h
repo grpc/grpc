@@ -158,6 +158,34 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
+  GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionErrorCode() const {
+    switch (error_type_) {
+      case Http2ErrorType::kOk:
+        CHECK(false);
+      case Http2ErrorType::kConnectionError:
+        return absl_code_;
+      case Http2ErrorType::kStreamError:
+        CHECK(false);
+      default:
+        CHECK(false);
+    }
+    GPR_UNREACHABLE_CODE(return absl::OkStatus());
+  }
+
+  GRPC_MUST_USE_RESULT absl::Status GetAbslStreamErrorCode() const {
+    switch (error_type_) {
+      case Http2ErrorType::kOk:
+        CHECK(false);
+      case Http2ErrorType::kConnectionError:
+        CHECK(false);
+      case Http2ErrorType::kStreamError:
+        return absl_code_;
+      default:
+        CHECK(false);
+    }
+    GPR_UNREACHABLE_CODE(return absl::OkStatus());
+  }
+
   bool IsOk() const { return (http2_code_ == Http2ErrorCode::kNoError); }
 
   std::string DebugString() const {
@@ -334,6 +362,16 @@ class ValueOrHttp2Status {
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
     DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslStreamError();
+  }
+
+  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslConnectionErrorCode() const {
+    DCHECK(!value_.has_value() && status_.has_value());
+    return status_.value().GetAbslConnectionErrorCode();
+  }
+
+  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamErrorCode() const {
+    DCHECK(!value_.has_value() && status_.has_value());
+    return status_.value().GetAbslStreamErrorCode();
   }
 
   std::string DebugString() const {
