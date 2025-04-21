@@ -107,6 +107,7 @@ class Http2Status {
       default:
         CHECK(false);
     }
+    GPR_UNREACHABLE_CODE(return http2_code_);
   }
 
   // We only expect to use this in 2 places
@@ -124,6 +125,7 @@ class Http2Status {
       default:
         CHECK(false);
     }
+    GPR_UNREACHABLE_CODE(return http2_code_);
   }
 
   // If an error code needs to be used along with promises, or passed out of the
@@ -139,6 +141,7 @@ class Http2Status {
       default:
         CHECK(false);
     }
+    GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
@@ -152,6 +155,7 @@ class Http2Status {
       default:
         CHECK(false);
     }
+    GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
   bool IsOk() const { return (http2_code_ == Http2ErrorCode::kNoError); }
@@ -243,6 +247,7 @@ class Http2Status {
         DCHECK(false) << "This error code should never be used";
         return absl::StatusCode::kUnknown;
     }
+    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
   }
 
   std::string DebugGetType() const {
@@ -256,6 +261,7 @@ class Http2Status {
       default:
         DCHECK(false);
     }
+    GPR_UNREACHABLE_CODE(return "Invalid");
   }
 
   const Http2ErrorCode http2_code_;
@@ -284,7 +290,7 @@ class ValueOrHttp2Status {
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   explicit ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
-    CHECK(status_.GetType() != Http2Status::Http2ErrorType::kOk);
+    CHECK(status_.value().GetType() != Http2Status::Http2ErrorType::kOk);
     DCHECK(value_.has_value() ^ status_.has_value());
   }
 
@@ -338,7 +344,7 @@ class ValueOrHttp2Status {
  private:
   friend T TakeValue(ValueOrHttp2Status<T>&& value);
   std::optional<T> value_;
-  std::optional<T> status_;
+  std::optional<Http2Status> status_;
 };
 
 template <typename T>
