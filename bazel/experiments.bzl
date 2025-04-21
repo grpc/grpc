@@ -85,6 +85,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_fork_test": [
                 "event_engine_fork",
             ],
@@ -153,6 +156,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_fork_test": [
                 "event_engine_fork",
             ],
@@ -220,6 +226,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
