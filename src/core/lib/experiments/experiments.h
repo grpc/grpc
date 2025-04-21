@@ -102,8 +102,6 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -155,8 +153,6 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -208,8 +204,6 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
@@ -249,7 +243,6 @@ enum ExperimentIds {
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerGlobalCallbacksOwnership,
-  kExperimentIdServerListener,
   kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
@@ -379,10 +372,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
   return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() {
-  return IsExperimentEnabled<kExperimentIdServerListener>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_PROMISE_EXEC_CTX_REMOVAL
 inline bool IsSleepPromiseExecCtxRemovalEnabled() {

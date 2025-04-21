@@ -15,18 +15,20 @@
 #include "metadata_for_wrapped_languages.h"
 
 #include <fstream>
+#include <initializer_list>
 #include <optional>
+#include <regex>
 #include <set>
 #include <vector>
-#include <regex>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/str_join.h"
-#include "absl/strings/escaping.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "utils.h"
 
 namespace {
@@ -82,7 +84,8 @@ void AddCApis(nlohmann::json& config) {
   config["c_api_headers"] = c_api_headers;
 }
 
-void AddPhpConfig(nlohmann::json& config) {
+auto MakePhpConfig(const nlohmann::json& config,
+                   std::initializer_list<std::string> remove_libs) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
     srcs.insert(src);
@@ -102,9 +105,9 @@ void AddPhpConfig(nlohmann::json& config) {
       php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
     }
   }
-  php_full_deps.erase("z");
-  php_full_deps.erase("cares");
-  php_full_deps.erase("@zlib//:zlib");
+  for (const auto& lib : remove_libs) {
+    php_full_deps.erase(lib);
+  }
   for (const auto& dep : php_full_deps) {
     auto it = lib_maps.find(dep);
     if (it != lib_maps.end()) {
@@ -113,13 +116,34 @@ void AddPhpConfig(nlohmann::json& config) {
       srcs.insert(src.begin(), src.end());
     }
   }
-  config["php_config_m4"]["srcs"] = srcs;
-
   std::set<std::string> dirs;
   for (const auto& src : srcs) {
     dirs.insert(src.substr(0, src.rfind('/')));
   }
+  return std::pair(std::move(srcs), std::move(dirs));
+}
+
+void AddPhpConfig(nlohmann::json& config) {
+  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+
+  config["php_config_m4"]["srcs"] = srcs;
   config["php_config_m4"]["dirs"] = dirs;
+
+  std::vector<std::string> windows_srcs;
+  for (const auto& src : w32_srcs) {
+    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
+  }
+  config["php_config_w32"]["srcs"] = windows_srcs;
+  std::set<std::string> windows_dirs;
+  for (const auto& dir : w32_dirs) {
+    std::vector<std::string> frags = absl::StrSplit(dir, '/');
+    for (size_t i = 0; i < frags.size(); ++i) {
+      windows_dirs.insert(
+          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
+    }
+  }
+  config["php_config_w32"]["dirs"] = windows_dirs;
 }
 
 struct Version {
@@ -168,6 +192,11 @@ void ExpandVersion(nlohmann::json& config) {
       LOG(FATAL) << "Unknown tag: " << *version.tag;
     }
   }
+  std::string ruby_version =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    ruby_version += "." + *version.tag;
+  }
   std::string pep440 =
       absl::StrCat(version.major, ".", version.minor, ".", version.patch);
   if (version.tag.has_value()) {
@@ -180,12 +209,30 @@ void ExpandVersion(nlohmann::json& config) {
                  << " to pep440";
     }
   }
+  for (std::string language :
+       {"cpp", "csharp", "node", "objc", "php", "python", "ruby"}) {
+    std::string version_tag = absl::StrCat(language, "_version");
+    Version v = version;
+    if (auto override_major =
+            settings.find(absl::StrCat(language, "_major_version"));
+        override_major != settings.end()) {
+      std::string override_value = *override_major;
+      CHECK(absl::SimpleAtoi(override_value, &v.major));
+    }
+    settings[version_tag] = nlohmann::json::object();
+    settings[version_tag]["string"] =
+        absl::StrCat(v.major, ".", v.minor, ".", v.patch,
+                     v.tag.has_value() ? absl::StrCat("-", *v.tag) : "");
+    settings[version_tag]["major"] = v.major;
+    settings[version_tag]["minor"] = v.minor;
+    settings[version_tag]["patch"] = v.patch;
+    settings[version_tag]["tag_or_empty"] = v.tag.value_or("");
+  }
   settings["version"]["php"] = php_version;
   ExpandOneVersion(settings, "core_version");
-  settings["php_version"] = nlohmann::json::object();
   settings["php_version"]["php_current_version"] = "8.1";
-  settings["python_version"] = nlohmann::json::object();
   settings["python_version"]["pep440"] = pep440;
+  settings["ruby_version"]["ruby_version"] = ruby_version;
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {

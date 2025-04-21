@@ -48,7 +48,6 @@ EXPERIMENT_ENABLES = {
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
-    "server_listener": "server_listener",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -87,6 +86,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_fork_test": [
                 "event_engine_fork",
             ],
@@ -119,7 +121,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -132,9 +133,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "server_listener",
             ],
         },
     },
@@ -159,6 +157,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_fork_test": [
                 "event_engine_fork",
             ],
@@ -191,7 +192,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -204,9 +204,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "server_listener",
             ],
         },
     },
@@ -231,6 +228,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "error_tests": [
+                "error_flatten",
+            ],
             "event_engine_fork_test": [
                 "event_engine_fork",
             ],
@@ -263,7 +263,6 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
-                "server_listener",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -276,9 +275,6 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
-            ],
-            "xds_end2end_test": [
-                "server_listener",
             ],
         },
     },

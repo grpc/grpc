@@ -92,8 +92,6 @@
   default: false
 - name: server_global_callbacks_ownership
   default: false
-- name: server_listener
-  default: true
 - name: server_privacy
   default: false
 - name: sleep_promise_exec_ctx_removal

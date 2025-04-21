@@ -314,6 +314,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["error_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

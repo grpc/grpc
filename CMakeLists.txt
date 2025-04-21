@@ -1727,6 +1727,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx socket_utils_test)
   endif()
   add_dependencies(buildtests_cxx sorted_pack_test)
+  add_dependencies(buildtests_cxx spiffe_utils_test)
   add_dependencies(buildtests_cxx spinlock_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx ssl_transport_security_test)
@@ -2252,6 +2253,7 @@ add_library(grpc
   src/core/ext/filters/stateful_session/stateful_session_filter.cc
   src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   src/core/ext/transport/chttp2/alpn/alpn.cc
+  src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -2855,6 +2857,7 @@ add_library(grpc
   src/core/resolver/xds/xds_config.cc
   src/core/resolver/xds/xds_dependency_manager.cc
   src/core/resolver/xds/xds_resolver.cc
+  src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/server/server_config_selector_filter.cc
@@ -2924,6 +2927,7 @@ add_library(grpc
   src/core/util/posix/directory_reader.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -3047,6 +3051,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -3322,6 +3327,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/http/message_compress/compression_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
+  src/core/ext/transport/chttp2/chttp2_plugin.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
   src/core/ext/transport/chttp2/server/chttp2_server.cc
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -3608,6 +3614,7 @@ add_library(grpc_unsecure
   src/core/resolver/resolver.cc
   src/core/resolver/resolver_registry.cc
   src/core/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/server/add_port.cc
   src/core/server/server.cc
   src/core/server/server_call_tracer_filter.cc
   src/core/service_config/service_config_channel_arg_filter.cc
@@ -3645,6 +3652,7 @@ add_library(grpc_unsecure
   src/core/util/per_cpu.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -3732,6 +3740,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -5902,6 +5911,7 @@ add_library(grpc_authorization_provider
   src/core/util/matchers.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -5980,6 +5990,7 @@ foreach(_hdr
   include/grpc/event_engine/extensible.h
   include/grpc/event_engine/internal/memory_allocator_impl.h
   include/grpc/event_engine/internal/slice_cast.h
+  include/grpc/event_engine/internal/write_event.h
   include/grpc/event_engine/memory_allocator.h
   include/grpc/event_engine/memory_request.h
   include/grpc/event_engine/port.h
@@ -7281,6 +7292,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.h
     test/core/end2end/cq_verifier.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
+    test/core/test_util/postmortem.cc
     test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
     test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   )
@@ -8372,6 +8384,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8418,6 +8431,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
+    test/core/test_util/postmortem.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -8465,6 +8479,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/util/subprocess_windows.cc
     test/core/bad_ssl/bad_ssl_test.cc
     test/core/end2end/cq_verifier.cc
+    test/core/test_util/postmortem.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -8510,6 +8525,7 @@ add_executable(bad_streaming_id_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/bad_streaming_id.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -8554,6 +8570,7 @@ add_executable(badreq_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/badreq.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -9542,6 +9559,7 @@ add_executable(call_utils_test
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -9606,6 +9624,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(cancel_ares_query_test
   test/core/end2end/cq_verifier.cc
   test/core/test_util/fake_udp_and_tcp_server.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/socket_use_after_close_detector.cc
   test/cpp/naming/cancel_ares_query_test.cc
 )
@@ -10743,6 +10762,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(chttp2_server_listener_test
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
   test/core/transport/chttp2/chttp2_server_listener_test.cc
 )
 if(WIN32 AND MSVC)
@@ -11937,6 +11957,7 @@ add_executable(connection_prefix_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/connection_prefix.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -11980,6 +12001,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12793,6 +12815,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   add_executable(dualstack_socket_test
     test/core/end2end/cq_verifier.cc
     test/core/end2end/dualstack_socket_test.cc
+    test/core/test_util/postmortem.cc
   )
   if(WIN32 AND MSVC)
     if(BUILD_SHARED_LIBS)
@@ -12874,6 +12897,7 @@ add_executable(duplicate_header_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/duplicate_header.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -12966,6 +12990,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
+    test/core/test_util/postmortem.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13155,6 +13180,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
+    test/core/test_util/postmortem.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13255,6 +13281,7 @@ add_executable(end2end_http2_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13354,6 +13381,7 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13541,6 +13569,7 @@ add_executable(end2end_http2_security_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13728,6 +13757,7 @@ add_executable(end2end_http2_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13827,6 +13857,7 @@ add_executable(end2end_inproc_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14014,6 +14045,7 @@ add_executable(end2end_inproc_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14113,6 +14145,7 @@ add_executable(end2end_posix_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14300,6 +14333,7 @@ add_executable(end2end_posix_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -15612,6 +15646,7 @@ add_executable(filter_fusion_test
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
   src/core/util/time_averaged_stats.cc
@@ -16469,6 +16504,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(goaway_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/goaway_server_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -16597,6 +16633,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(graceful_shutdown_test
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
   test/core/transport/chttp2/graceful_shutdown_test.cc
 )
 if(WIN32 AND MSVC)
@@ -17962,6 +17999,7 @@ add_executable(h2_ssl_cert_test
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fuzz_config_vars.cc
+  test/core/test_util/postmortem.cc
   test/core/test_util/test_call_creds.cc
 )
 if(WIN32 AND MSVC)
@@ -18007,6 +18045,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(h2_ssl_session_reuse_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_ssl_session_reuse_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18050,6 +18089,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(h2_tls_peer_property_external_verifier_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18181,6 +18221,7 @@ add_executable(head_of_line_blocking_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/head_of_line_blocking.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -18306,6 +18347,7 @@ add_executable(headers_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/headers.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19261,6 +19303,7 @@ add_executable(initial_settings_frame_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/initial_settings_frame.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -19713,6 +19756,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(invalid_call_argument_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/invalid_call_argument_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -20066,6 +20110,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(lame_client_test
   test/core/end2end/cq_verifier.cc
   test/core/surface/lame_client_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -21507,6 +21552,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(no_server_test
   test/core/end2end/cq_verifier.cc
   test/core/end2end/no_server_test.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -22334,6 +22380,7 @@ add_executable(out_of_bounds_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/out_of_bounds.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -26645,6 +26692,7 @@ add_executable(server_registered_method_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/server_registered_method.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27015,6 +27063,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(shared_bit_gen_test
+  src/core/util/shared_bit_gen.cc
   test/core/util/shared_bit_gen_test.cc
 )
 target_compile_features(shared_bit_gen_test PUBLIC cxx_std_17)
@@ -27130,6 +27179,7 @@ add_executable(simple_request_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/simple_request.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -27458,6 +27508,49 @@ target_include_directories(sorted_pack_test
 target_link_libraries(sorted_pack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(spiffe_utils_test
+  src/core/credentials/transport/tls/spiffe_utils.cc
+  test/core/credentials/transport/tls/spiffe_utils_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(spiffe_utils_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(spiffe_utils_test PUBLIC cxx_std_17)
+target_include_directories(spiffe_utils_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(spiffe_utils_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -28011,6 +28104,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(streams_not_seen_test
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
   test/core/transport/chttp2/streams_not_seen_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30015,6 +30109,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(too_many_pings_test
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
   test/core/transport/chttp2/too_many_pings_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30439,6 +30534,7 @@ add_executable(unknown_frame_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/unknown_frame.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -30964,6 +31060,7 @@ add_executable(window_overflow_bad_client_test
   test/core/bad_client/bad_client.cc
   test/core/bad_client/tests/window_overflow.cc
   test/core/end2end/cq_verifier.cc
+  test/core/test_util/postmortem.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

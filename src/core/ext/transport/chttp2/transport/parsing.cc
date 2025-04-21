@@ -74,6 +74,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 
 using grpc_core::HPackParser;
@@ -544,10 +545,6 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
-  t->http2_ztrace_collector.Append(grpc_core::H2DataTrace<true>{
-      t->incoming_stream_id,
-      (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
-      t->incoming_frame_size});
   grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
       t->incoming_frame_size);
   if (bdp_est) {
@@ -634,6 +631,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
 
   t->ping_rate_policy.ReceivedDataFrame();
 
+  grpc_core::SharedBitGen g;
   // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == nullptr) {
@@ -705,7 +703,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                             grpc_core::RandomEarlyDetection(
                                 t->settings.local().max_concurrent_streams(),
                                 t->settings.acked().max_concurrent_streams())
-                                .Reject(t->stream_map.size(), t->bitgen))) {
+                                .Reject(t->stream_map.size(), g))) {
       // We are under the limit of max concurrent streams for the current
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
@@ -988,8 +986,9 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
             ? s->call_tracer
             : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
   }
-  grpc_error_handle error = parser->Parse(
-      slice, is_last != 0, absl::BitGenRef(t->bitgen), call_tracer);
+  grpc_core::SharedBitGen g;
+  grpc_error_handle error =
+      parser->Parse(slice, is_last != 0, absl::BitGenRef(g), call_tracer);
   if (!error.ok()) {
     return error;
   }

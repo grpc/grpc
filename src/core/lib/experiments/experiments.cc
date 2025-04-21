@@ -149,9 +149,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -255,8 +252,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -401,9 +396,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -507,8 +499,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -653,9 +643,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -759,8 +746,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,

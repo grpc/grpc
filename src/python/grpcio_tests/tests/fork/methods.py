@@ -446,7 +446,7 @@ def _in_progress_bidi_continue_call(channel):
             raise ValueError(
                 "Expected inherited code CANCELLED, got %s" % inherited_code
             )
-        if inherited_details != "Channel closed due to fork":
+        if "Channel closed due to fork" not in inherited_details:
             raise ValueError(
                 "Expected inherited details Channel closed due to fork, got %s"
                 % inherited_details
