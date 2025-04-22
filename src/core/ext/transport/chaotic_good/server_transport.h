@@ -140,9 +140,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                            BeginMessageFrame frame);
     auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
                            MessageChunkFrame frame);
-    auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                        CallInitiator call_initiator);
-    auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
+    auto SendCallInitialMetadataAndBody(
+        uint32_t stream_id, CallInitiator call_initiator,
+        std::shared_ptr<TcpCallTracer> call_tracer);
+    auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator,
+                      std::shared_ptr<TcpCallTracer> call_tracer);
     auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
     auto ProcessNextFrame(IncomingFrame frame);
 
@@ -156,7 +158,7 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
     Party::SpawnSerializer* incoming_frame_spawner_;
     MessageChunker message_chunker_;
-    MpscSender<Frame> outgoing_frames_;
+    MpscSender<OutgoingFrame> outgoing_frames_;
     RefCountedPtr<Party> party_;
   };
 
