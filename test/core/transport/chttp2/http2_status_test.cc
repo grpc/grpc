@@ -42,6 +42,19 @@ TEST(Http2StatusTest, MoveTest) {
   test_lambda();
 }
 
+TEST(Http2StatusTest, ReturnTest) {
+  auto test_lambda = []() -> Http2Status {
+    constexpr absl::string_view kMessage = "Message2";
+    Http2Status status1 = Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, std::string(kMessage));
+    EXPECT_GT(status1.DebugString().size(), 1);
+    return status1;
+  };
+
+  Http2Status status2 = test_lambda();
+  EXPECT_GT(status2.DebugString().size(), 1);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Http2Status Tests
 // These tests first create the specific type of Http2Status object.
