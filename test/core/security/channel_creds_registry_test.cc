@@ -54,7 +54,7 @@ class TestChannelCredsFactory : public ChannelCredsFactory<> {
    public:
     absl::string_view type() const override { return Type(); }
     bool Equals(const ChannelCredsConfig&) const override { return true; }
-    std::string ToString() const override { return "{}"; }
+    Json ToJson() const override { return Json::FromObject({}); }
   };
 
   static absl::string_view Type() { return "test"; }

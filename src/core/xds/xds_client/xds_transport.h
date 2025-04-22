@@ -96,7 +96,7 @@ class XdsTransportFactory : public DualRefCounted<XdsTransportFactory> {
   // *status will be set if there is an error creating the channel,
   // although the returned channel must still accept calls (which may fail).
   virtual RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server, absl::Status* status) = 0;
+      const XdsBootstrap::XdsServer& server, absl::Status* status) = 0;
 };
 
 }  // namespace grpc_core

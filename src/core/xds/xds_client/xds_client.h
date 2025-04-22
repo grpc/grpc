@@ -213,9 +213,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
                            bool delay_unsubscription)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-    absl::string_view server_uri() const {
-      return server_.target()->server_uri();
-    }
+    absl::string_view server_uri() const { return server_.server_uri(); }
 
    private:
     class ConnectivityFailureWatcher;

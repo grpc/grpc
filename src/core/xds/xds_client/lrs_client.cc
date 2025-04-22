@@ -389,7 +389,7 @@ class LrsClient::LrsChannel::LrsCall final
 
 LrsClient::LrsChannel::LrsChannel(
     WeakRefCountedPtr<LrsClient> lrs_client,
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server)
+    std::shared_ptr<const XdsBootstrap::XdsServer> server)
     : DualRefCounted<LrsChannel>(GRPC_TRACE_FLAG_ENABLED(xds_client_refcount)
                                      ? "LrsChannel"
                                      : nullptr),
@@ -791,8 +791,7 @@ void LrsClient::Orphaned() {
 }
 
 RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> server,
-    const char* reason) {
+    std::shared_ptr<const XdsBootstrap::XdsServer> server, const char* reason) {
   std::string key = server->Key();
   auto it = lrs_channel_map_.find(key);
   if (it != lrs_channel_map_.end()) {
@@ -806,7 +805,7 @@ RefCountedPtr<LrsClient::LrsChannel> LrsClient::GetOrCreateLrsChannelLocked(
 }
 
 RefCountedPtr<LrsClient::ClusterDropStats> LrsClient::AddClusterDropStats(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
+    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name) {
   auto key =
       std::pair(std::string(cluster_name), std::string(eds_service_name));
@@ -869,7 +868,7 @@ void LrsClient::RemoveClusterDropStats(
 
 RefCountedPtr<LrsClient::ClusterLocalityStats>
 LrsClient::AddClusterLocalityStats(
-    std::shared_ptr<const XdsBootstrap::XdsServerTarget> lrs_server,
+    std::shared_ptr<const XdsBootstrap::XdsServer> lrs_server,
     absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> locality,
     RefCountedPtr<const BackendMetricPropagation> backend_metric_propagation) {
@@ -955,7 +954,7 @@ void LrsClient::ResetBackoff() {
 }
 
 LrsClient::ClusterLoadReportMap LrsClient::BuildLoadReportSnapshotLocked(
-    const XdsBootstrap::XdsServerTarget& lrs_server, bool send_all_clusters,
+    const XdsBootstrap::XdsServer& lrs_server, bool send_all_clusters,
     const std::set<std::string>& clusters) {
   GRPC_TRACE_LOG(xds_client, INFO)
       << "[lrs_client " << this << "] start building load report";

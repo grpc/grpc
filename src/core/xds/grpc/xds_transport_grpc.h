@@ -51,8 +51,7 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   void Orphaned() override {}
 
   RefCountedPtr<XdsTransport> GetTransport(
-      const XdsBootstrap::XdsServerTarget& server,
-      absl::Status* status) override;
+      const XdsBootstrap::XdsServer& server, absl::Status* status) override;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -61,7 +60,7 @@ class GrpcXdsTransportFactory final : public XdsTransportFactory {
   grpc_pollset_set* interested_parties_;
 
   Mutex mu_;
-  absl::flat_hash_map<std::string /*XdsServerTarget key*/, GrpcXdsTransport*>
+  absl::flat_hash_map<std::string /*XdsServer key*/, GrpcXdsTransport*>
       transports_ ABSL_GUARDED_BY(&mu_);
 };
 
@@ -71,8 +70,7 @@ class GrpcXdsTransportFactory::GrpcXdsTransport final
   class GrpcStreamingCall;
 
   GrpcXdsTransport(WeakRefCountedPtr<GrpcXdsTransportFactory> factory,
-                   const XdsBootstrap::XdsServerTarget& server,
-                   absl::Status* status);
+                   const XdsBootstrap::XdsServer& server, absl::Status* status);
   ~GrpcXdsTransport() override;
 
   void Orphaned() override;
