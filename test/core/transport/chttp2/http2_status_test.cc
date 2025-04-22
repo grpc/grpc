@@ -31,50 +31,6 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-constexpr absl::string_view kStr1024 =
-    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "1000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "2000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "3000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "4000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "5000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "6000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "7000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 "
-    "8000001 0000002 0000003 0000004 0000005 0000006 0000007 0000008 ";
-
-std::vector<Http2ErrorCode> GetErrorCodes() {
-  std::vector<Http2ErrorCode> codes;
-  // codes.push_back(Http2ErrorCode::kNoError);
-  codes.push_back(Http2ErrorCode::kProtocolError);
-  codes.push_back(Http2ErrorCode::kInternalError);
-  codes.push_back(Http2ErrorCode::kFlowControlError);
-  codes.push_back(Http2ErrorCode::kSettingsTimeout);
-  codes.push_back(Http2ErrorCode::kStreamClosed);
-  codes.push_back(Http2ErrorCode::kFrameSizeError);
-  codes.push_back(Http2ErrorCode::kRefusedStream);
-  codes.push_back(Http2ErrorCode::kCancel);
-  codes.push_back(Http2ErrorCode::kCompressionError);
-  codes.push_back(Http2ErrorCode::kConnectError);
-  codes.push_back(Http2ErrorCode::kEnhanceYourCalm);
-  codes.push_back(Http2ErrorCode::kInadequateSecurity);
-  return codes;
-}
-
-std::vector<absl::StatusCode> FewAbslErrorCodes() {
-  std::vector<absl::StatusCode> codes;
-  codes.push_back(absl::StatusCode::kCancelled);
-  codes.push_back(absl::StatusCode::kInvalidArgument);
-  codes.push_back(absl::StatusCode::kInternal);
-  return codes;
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Http2Status Tests
 // These tests first create the specific type of Http2Status object.
@@ -416,7 +372,7 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
 
 TEST(ValueOrHttp2StatusTest, AbslStreamError) {
   constexpr absl::StatusCode code = absl::StatusCode::kCancelled;
-  auto test_lambda = [code]() -> ValueOrHttp2Status<std::string> {
+  auto test_lambda = []() -> ValueOrHttp2Status<std::string> {
     return ValueOrHttp2Status<std::string>(
         Http2Status::AbslStreamError(code, "Message1"));
   };
