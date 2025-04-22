@@ -149,6 +149,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -255,6 +258,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -402,6 +407,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -508,6 +516,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -655,6 +665,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -761,6 +774,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
