@@ -283,7 +283,8 @@ void InputQueue::Cancel(uint64_t payload_tag) {
 
 auto Endpoint::WriteLoop(uint32_t id,
                          RefCountedPtr<OutputBuffers> output_buffers,
-                         std::shared_ptr<PromiseEndpoint> endpoint) {
+                         std::shared_ptr<PromiseEndpoint> endpoint,
+                         std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
   output_buffers->AddEndpoint(id);
   std::vector<size_t> requested_metrics;
   std::optional<size_t> data_rate_metric =
@@ -294,13 +295,13 @@ auto Endpoint::WriteLoop(uint32_t id,
   return Loop([id, endpoint = std::move(endpoint),
                output_buffers = std::move(output_buffers),
                requested_metrics = std::move(requested_metrics),
-               data_rate_metric]() {
+               data_rate_metric, ztrace_collector]() {
     return TrySeq(
         output_buffers->Next(id),
         [endpoint, id,
          requested_metrics = absl::Span<const size_t>(requested_metrics),
-         data_rate_metric,
-         output_buffers](data_endpoints_detail::NextWrite next_write) {
+         data_rate_metric, output_buffers,
+         ztrace_collector](data_endpoints_detail::NextWrite next_write) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Write " << next_write.bytes.Length()
               << "b to data endpoint #" << id;
@@ -310,9 +311,25 @@ auto Endpoint::WriteLoop(uint32_t id,
             write_args.set_metrics_sink(EventEngine::Endpoint::WriteEventSink(
                 requested_metrics,
                 {EventEngine::Endpoint::WriteEvent::kSendMsg},
-                [data_rate_metric, id, output_buffers](
-                    EventEngine::Endpoint::WriteEvent event, absl::Time,
+                [data_rate_metric, id, output_buffers, ztrace_collector,
+                 endpoint](
+                    EventEngine::Endpoint::WriteEvent event,
+                    absl::Time timestamp,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
+                  ztrace_collector->Append([event, timestamp, &metrics,
+                                            endpoint = endpoint.get()]() {
+                    EndpointWriteMetricsTrace trace{timestamp, event, {}};
+                    trace.metrics.reserve(metrics.size());
+                    for (const auto [id, value] : metrics) {
+                      if (auto name =
+                              endpoint->GetEventEngineEndpoint()->GetMetricName(
+                                  id);
+                          name.has_value()) {
+                        trace.metrics.push_back({*name, value});
+                      }
+                    }
+                    return trace;
+                  });
                   if (event != EventEngine::Endpoint::WriteEvent::kSendMsg) {
                     return;
                   }
@@ -405,13 +422,14 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
               read_party->Spawn(
                   "read",
                   [id, input_queues = std::move(input_queues), endpoint,
-                   ztrace_collector = std::move(ztrace_collector)]() {
+                   ztrace_collector]() {
                     return ReadLoop(id, input_queues, endpoint,
                                     ztrace_collector);
                   },
                   [](absl::Status) {});
               return Map(
-                  WriteLoop(id, std::move(output_buffers), std::move(endpoint)),
+                  WriteLoop(id, std::move(output_buffers), std::move(endpoint),
+                            std::move(ztrace_collector)),
                   [read_party](auto x) { return x; });
             });
       },
