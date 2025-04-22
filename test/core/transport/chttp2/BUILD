@@ -486,6 +486,20 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "http2_common_test_inputs",
+    srcs = [
+        "http2_common_test_inputs.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
+    deps = [
+        "//src/core:http2_status",
+    ],
+)
+
 grpc_cc_test(
     name = "http2_settings_test",
     srcs = [
@@ -540,6 +554,7 @@ grpc_cc_test(
         "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -560,6 +575,7 @@ grpc_fuzz_test(
         "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -602,6 +618,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_status",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
