@@ -58,8 +58,7 @@ constexpr uint8_t kFlags5 = 5;
 
 // Returns all Http2ErrorCode values EXCEPT kNoError
 // This is because we want to test only invalid cases.
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::vector<Http2ErrorCode>
-GetErrorCodes() {
+inline std::vector<Http2ErrorCode> GetErrorCodes() {
   std::vector<Http2ErrorCode> codes;
   // codes.push_back(Http2ErrorCode::kNoError);
   codes.push_back(Http2ErrorCode::kProtocolError);
@@ -79,8 +78,7 @@ GetErrorCodes() {
 
 // Returns a small subset of available absl::StatusCode values.
 // These are the values that we expect to use in the HTTP2 transport.
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION std::vector<absl::StatusCode>
-FewAbslErrorCodes() {
+inline std::vector<absl::StatusCode> FewAbslErrorCodes() {
   std::vector<absl::StatusCode> codes;
   codes.push_back(absl::StatusCode::kCancelled);
   codes.push_back(absl::StatusCode::kInvalidArgument);
