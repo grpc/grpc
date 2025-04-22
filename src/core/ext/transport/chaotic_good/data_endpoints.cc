@@ -318,7 +318,7 @@ auto Endpoint::WriteLoop(uint32_t id,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
                   ztrace_collector->Append([event, timestamp, &metrics,
                                             endpoint = endpoint.get()]() {
-                    EndpointWriteMetricsTrace trace{timestamp, event};
+                    EndpointWriteMetricsTrace trace{timestamp, event, {}};
                     trace.metrics.reserve(metrics.size());
                     for (const auto [id, value] : metrics) {
                       if (auto name =
