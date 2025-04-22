@@ -268,8 +268,41 @@ TEST(ValueOrHttp2StatusTest, ValueSliceBuffer) {
   EXPECT_STREQ(result3.JoinIntoString().c_str(), std::string(kStr1024).c_str());
 }
 
-// TODO(tjagtap): [PH2][P2] : some http2 frame types used to give some
-// compile issue with std::move. Check with tests.
+TEST(ValueOrHttp2StatusTest, ValueHttp2WindowUpdateFrame) {
+  auto test_lambda = []() -> ValueOrHttp2Status<Http2WindowUpdateFrame> {
+    return ValueOrHttp2Status<Http2WindowUpdateFrame>(
+        Http2WindowUpdateFrame{0, 100});
+  };
+  ValueOrHttp2Status<Http2WindowUpdateFrame> result = test_lambda();
+
+  // 1. IsOk() is false
+  EXPECT_TRUE(result.IsOk());
+
+  // 2. Value
+  Http2WindowUpdateFrame result3 = result.value();
+  EXPECT_EQ(result3.stream_id, 0);
+  EXPECT_EQ(result3.increment, 100);
+}
+
+TEST(ValueOrHttp2StatusTest, ValueHttp2DataFrame) {
+  auto test_lambda = []() -> ValueOrHttp2Status<Http2DataFrame> {
+    SliceBuffer temp;
+    temp.Append(Slice::FromCopiedString(kStr1024));
+    Http2DataFrame frame = Http2DataFrame{1, false, std::move(temp)};
+    return ValueOrHttp2Status<Http2DataFrame>(std::move(frame));
+  };
+  ValueOrHttp2Status<Http2DataFrame> result = test_lambda();
+
+  // 1. IsOk() is false
+  EXPECT_TRUE(result.IsOk());
+
+  // 2. Value
+  Http2DataFrame result3 = TakeValue(std::move(result));
+  EXPECT_EQ(result3.stream_id, 1);
+  EXPECT_EQ(result3.end_stream, false);
+  EXPECT_STREQ(result3.payload.JoinIntoString().c_str(),
+               std::string(kStr1024).c_str());
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // ValueOrHttp2Status Tests - Errors
