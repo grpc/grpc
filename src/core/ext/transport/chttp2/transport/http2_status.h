@@ -33,9 +33,6 @@
 namespace grpc_core {
 namespace http2 {
 
-// #define STATUS_LOG
-#define STATUS_LOG DVLOG(3)
-
 // These error codes are as per RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-error-codes
 // The RFC tells us to use 32 bit, but since this is our internal

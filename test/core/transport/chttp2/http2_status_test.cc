@@ -60,15 +60,15 @@ TEST(Http2StatusTest, ReturnTest) {
 // Then check the following:
 // 1. Http2ErrorType
 // 2. Http2ErrorCode
-// 3. message
+// 3. DebugString
 // 4. Return of IsOk() function
 // 5. Absl status
 
 TEST(Http2StatusTest, OkTest) {
   Http2Status status = Http2Status::Ok();
-  Http2Status::Http2ErrorType type = status.GetType();
 
   // 1. Http2ErrorType
+  Http2Status::Http2ErrorType type = status.GetType();
   EXPECT_EQ(type, Http2Status::Http2ErrorType::kOk);
 
   // 2. Http2ErrorCode
@@ -78,7 +78,7 @@ TEST(Http2StatusTest, OkTest) {
   ASSERT_DEATH(
       { GRPC_UNUSED Http2ErrorCode code2 = status.GetStreamErrorCode(); }, "");
 
-  // 3. message
+  // 3. DebugString
   EXPECT_GT(status.DebugString().size(), 1);
 
   // 4. Return of IsOk() function
@@ -116,7 +116,7 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetStreamErrorCode(); },
         "");
 
-    // 3. message
+    // 3. DebugString
     EXPECT_GT(status.DebugString().size(), 1);
 
     // 4. Return of IsOk() function
@@ -125,6 +125,7 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
     // 5. Absl status
     absl::Status absl_status = status.GetAbslConnectionError();
     EXPECT_FALSE(absl_status.ok());
+    EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
   }
 }
 
@@ -142,7 +143,7 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetConnectionErrorCode(); },
         "");
 
-    // 3. message
+    // 3. DebugString
     EXPECT_GT(status.DebugString().size(), 1);
 
     // 4. Return of IsOk() function
@@ -151,7 +152,26 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
     // 5. Absl status
     absl::Status absl_status = status.GetAbslStreamError();
     EXPECT_FALSE(absl_status.ok());
+    EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
   }
+}
+
+TEST(Http2StatusTest, Http2ConnectionCrashOnOk) {
+  ASSERT_DEATH(
+      {
+        GRPC_UNUSED Http2Status status = Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kNoError, "Message1");
+      },
+      "");
+}
+
+TEST(Http2StatusTest, Http2StreamCrashOnOk) {
+  ASSERT_DEATH(
+      {
+        GRPC_UNUSED Http2Status status =
+            Http2Status::Http2StreamError(Http2ErrorCode::kNoError, "Message1");
+      },
+      "");
 }
 
 TEST(Http2StatusTest, AbslConnectionErrorTest) {
@@ -168,7 +188,7 @@ TEST(Http2StatusTest, AbslConnectionErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetStreamErrorCode(); },
         "");
 
-    // 3. message
+    // 3. DebugString
     EXPECT_GT(status.DebugString().size(), 1);
 
     // 4. Return of IsOk() function
@@ -178,6 +198,7 @@ TEST(Http2StatusTest, AbslConnectionErrorTest) {
     absl::Status absl_status = status.GetAbslConnectionError();
     EXPECT_FALSE(absl_status.ok());
     EXPECT_EQ(absl_status.code(), code);
+    EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
   }
 }
 
@@ -195,7 +216,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetConnectionErrorCode(); },
         "");
 
-    // 3. message
+    // 3. DebugString
     EXPECT_GT(status.DebugString().size(), 1);
 
     // 4. Return of IsOk() function
@@ -205,6 +226,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
     absl::Status absl_status = status.GetAbslStreamError();
     EXPECT_FALSE(absl_status.ok());
     EXPECT_EQ(absl_status.code(), code);
+    EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
   }
 }
 
