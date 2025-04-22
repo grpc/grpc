@@ -73,6 +73,9 @@ class InprocServerTransport final : public ServerTransport {
   ClientTransport* client_transport() override { return nullptr; }
   ServerTransport* server_transport() override { return this; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
@@ -212,6 +215,9 @@ class InprocClientTransport final : public ClientTransport {
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
@@ -258,8 +264,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
       server->SetupTransport(server_transport.get(), nullptr,
                              server->channel_args()
                                  .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
-                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
-                             nullptr);
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
   if (!error.ok()) {
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }
