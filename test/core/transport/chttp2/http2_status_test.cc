@@ -234,10 +234,11 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
 // ValueOrHttp2Status Tests - Values
 // These tests first create the specific type of ValueOrHttp2Status object.
 // Then check the following:
-// 1. Status is ok
-// 2. Extract the value either via value() or TakeValue
-// 3. Get message
-// 4. Get absl status
+// 1. IsOk() is false
+// 2. Http2ErrorType
+// 3. Http2ErrorCode
+// 4. Absl status
+// 5. Value
 
 TEST(ValueOrHttp2StatusTest, ValuePrimitiveDataType) {
   auto test_lambda = []() -> ValueOrHttp2Status<int> {
@@ -249,11 +250,9 @@ TEST(ValueOrHttp2StatusTest, ValuePrimitiveDataType) {
   EXPECT_TRUE(result.IsOk());
 
   // 2. Http2ErrorType
-  // BUG
-  // ASSERT_DEATH(
-  //     { GRPC_UNUSED Http2Status::Http2ErrorType type = result.GetErrorType();
-  //     },
-  //     "");
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2Status::Http2ErrorType type = result.GetErrorType(); },
+      "");
 
   // 3. Http2ErrorCode
   ASSERT_DEATH(

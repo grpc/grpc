@@ -337,38 +337,23 @@ class ValueOrHttp2Status {
   }
 
   GRPC_MUST_USE_RESULT Http2Status::Http2ErrorType GetErrorType() const {
-    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetType();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetConnectionErrorCode();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetStreamErrorCode();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
-    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslConnectionError();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
-    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslStreamError();
-  }
-
-  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslConnectionErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetAbslConnectionErrorCode();
-  }
-
-  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetAbslStreamErrorCode();
   }
 
   std::string DebugString() const {
