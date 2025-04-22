@@ -269,7 +269,7 @@ TEST(ValueOrHttp2StatusTest, ValueSliceBuffer) {
       { GRPC_UNUSED absl::Status result2 = result.GetAbslStreamError(); }, "");
 
   // 5. Value
-  SliceBuffer result3 = TakeValue(result);
+  SliceBuffer result3 = TakeValue(std::move(result));
   EXPECT_EQ(result3.Length(), 1024);
   EXPECT_STREQ(result3.JoinIntoString().c_str(), std::string(kStr1024).c_str());
 }
