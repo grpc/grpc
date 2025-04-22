@@ -66,7 +66,7 @@ TEST(AltsSecurityConnectorTest, EmptyPeerPropertyFailure) {
 
 TEST(AltsSecurityConnectorTest, MissingRpcProtocolVersionsPropertyFailure) {
   tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsMinNumOfPeerProperties, &peer), TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                 &peer.properties[0]),
@@ -83,7 +83,7 @@ TEST(AltsSecurityConnectorTest, MissingRpcProtocolVersionsPropertyFailure) {
 
 TEST(AltsSecurityConnectorTest, MissingSecurityLevelPropertyFailure) {
   tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsMinNumOfPeerProperties, &peer), TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                 &peer.properties[0]),
@@ -119,7 +119,7 @@ TEST(AltsSecurityConnectorTest, MissingSecurityLevelPropertyFailure) {
 
 TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
   tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsMinNumOfPeerProperties, &peer), TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                 &peer.properties[0]),
@@ -133,7 +133,7 @@ TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
   tsi_peer_destruct(&peer);
 }
 
-static bool test_identity(const grpc_auth_context* ctx,
+static bool test_property(const grpc_auth_context* ctx,
                           const char* expected_property_name,
                           const char* expected_identity) {
   grpc_auth_property_iterator it;
@@ -155,10 +155,9 @@ static bool test_identity(const grpc_auth_context* ctx,
   return true;
 }
 
-TEST(AltsSecurityConnectorTest,
-     AltsPeerToAuthContextSuccessWithMissingTransportProtocol) {
+TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
   tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsMinNumOfPeerProperties, &peer), TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                 &peer.properties[0]),
@@ -200,7 +199,7 @@ TEST(AltsSecurityConnectorTest,
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
   ASSERT_NE(ctx, nullptr);
-  ASSERT_TRUE(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
+  ASSERT_TRUE(test_property(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
                             "alice"));
   ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
@@ -208,9 +207,11 @@ TEST(AltsSecurityConnectorTest,
   tsi_peer_destruct(&peer);
 }
 
-TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
+TEST(AltsSecurityConnectorTest,
+     AltsPeerToAuthContextSuccessWithProtocolNegotiation) {
   tsi_peer peer;
-  ASSERT_EQ(tsi_construct_peer(kTsiAltsNumOfPeerProperties, &peer), TSI_OK);
+  ASSERT_EQ(tsi_construct_peer(kTsiAltsMinNumOfPeerProperties + 1, &peer),
+            TSI_OK);
   ASSERT_EQ(tsi_construct_string_peer_property_from_cstring(
                 TSI_CERTIFICATE_TYPE_PEER_PROPERTY, TSI_ALTS_CERTIFICATE_TYPE,
                 &peer.properties[0]),
@@ -256,49 +257,12 @@ TEST(AltsSecurityConnectorTest, AltsPeerToAuthContextSuccess) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_alts_auth_context_from_tsi_peer(&peer);
   ASSERT_NE(ctx, nullptr);
-  ASSERT_TRUE(test_identity(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
+  ASSERT_TRUE(test_property(ctx.get(), TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY,
                             "alice"));
   ctx.reset(DEBUG_LOCATION, "test");
   grpc_slice_unref(serialized_peer_versions);
   grpc_slice_unref(serialized_alts_ctx);
   tsi_peer_destruct(&peer);
-}
-
-TEST(AltsSecurityConnectorTest, ChannelSuccess) {
-  grpc_alts_credentials_options* alts_options =
-      grpc_alts_credentials_client_options_create();
-  grpc_channel_credentials* channel_creds =
-      grpc_alts_credentials_create_customized(alts_options, "test",
-                                              /* enable_untrusted_alts=*/true);
-  grpc_core::ChannelArgs channel_args;
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-      channel_security_connector = channel_creds->create_security_connector(
-          /*call_creds=*/nullptr, "target", &channel_args);
-  ASSERT_NE(channel_security_connector, nullptr);
-  grpc_core::HandshakeManager handshake_manager;
-  channel_security_connector->add_handshakers(
-      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
-  grpc_channel_credentials_release(channel_creds);
-  grpc_alts_credentials_options_destroy(alts_options);
-}
-
-TEST(AltsSecurityConnectorTest, ChannelSuccessWithProtocolArg) {
-  grpc_alts_credentials_options* alts_options =
-      grpc_alts_credentials_client_options_create();
-  grpc_channel_credentials* channel_creds =
-      grpc_alts_credentials_create_customized(alts_options, "test",
-                                              /* enable_untrusted_alts=*/true);
-  grpc_core::ChannelArgs channel_args;
-  channel_args = channel_args.Set(GRPC_ARG_TRANSPORT_PROTOCOLS, "foo,bar,baz");
-  grpc_core::RefCountedPtr<grpc_channel_security_connector>
-      channel_security_connector = channel_creds->create_security_connector(
-          /*call_creds=*/nullptr, "target", &channel_args);
-  ASSERT_NE(channel_security_connector, nullptr);
-  grpc_core::HandshakeManager handshake_manager;
-  channel_security_connector->add_handshakers(
-      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
-  grpc_channel_credentials_release(channel_creds);
-  grpc_alts_credentials_options_destroy(alts_options);
 }
 
 int main(int argc, char** argv) {

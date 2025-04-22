@@ -94,8 +94,11 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  CHECK_EQ(kTsiAltsNumOfPeerProperties, 6u);
-  tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
+  const int peer_properties_count =
+      (result && result->negotiated_transport_protocol)
+          ? (kTsiAltsMinNumOfPeerProperties + 1)
+          : kTsiAltsMinNumOfPeerProperties;
+  tsi_result ok = tsi_construct_peer(peer_properties_count, peer);
   int index = 0;
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to construct tsi peer";
@@ -149,22 +152,18 @@ static tsi_result handshaker_result_extract_peer(
     tsi_peer_destruct(peer);
     LOG(ERROR) << "Failed to set tsi peer property";
   }
-  index++;
-  CHECK_NE(&peer->properties[index], nullptr);
   if (result->negotiated_transport_protocol != nullptr) {
+    index++;
+    CHECK_NE(&peer->properties[index], nullptr);
     ok = tsi_construct_string_peer_property_from_cstring(
         TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL,
         result->negotiated_transport_protocol, &peer->properties[index]);
-  } else {
-    ok = tsi_construct_string_peer_property_from_cstring(
-        TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL, "http/2",
-        &peer->properties[index]);
+    if (ok != TSI_OK) {
+      tsi_peer_destruct(peer);
+      LOG(ERROR) << "Failed to set tsi peer property";
+    }
   }
-  if (ok != TSI_OK) {
-    tsi_peer_destruct(peer);
-    LOG(ERROR) << "Failed to set tsi peer property";
-  }
-  CHECK(++index == kTsiAltsNumOfPeerProperties);
+  CHECK(++index == peer_properties_count);
   return ok;
 }
 

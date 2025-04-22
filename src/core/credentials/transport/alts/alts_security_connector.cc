@@ -245,11 +245,6 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
   size_t i = 0;
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* tsi_prop = &peer->properties[i];
-    // This would be the case if an optional property was not provided, i.e.
-    // TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL
-    if (tsi_prop->name == nullptr) {
-      continue;
-    }
     // Add service account to auth context.
     if (strcmp(tsi_prop->name, TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY) == 0) {
       grpc_auth_context_add_property(

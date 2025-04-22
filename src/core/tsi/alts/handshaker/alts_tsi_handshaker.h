@@ -37,7 +37,7 @@
 #define TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL \
   "alts_negotiated_transport_protocol"
 
-const size_t kTsiAltsNumOfPeerProperties = 6;
+const size_t kTsiAltsMinNumOfPeerProperties = 5;
 
 // Frame size negotiation extends send frame size range to
 // [kTsiAltsMinFrameSize, kTsiAltsMaxFrameSize].
