@@ -60,10 +60,12 @@ Chttp2PingRatePolicy::RequestSendPing(Duration next_allowed_ping_interval,
                                       size_t inflight_pings) const {
   if (max_inflight_pings_ > 0) {
     if (!IsMaxInflightPingsStrictLimitEnabled()) {
+      LOG(INFO) << "Experiment Off";
       if (inflight_pings > static_cast<size_t>(max_inflight_pings_)) {
         return TooManyRecentPings{};
       }
     } else {
+      LOG(INFO) << "Experiment On";
       if (inflight_pings >= static_cast<size_t>(max_inflight_pings_)) {
         return TooManyRecentPings{};
       }
