@@ -202,8 +202,8 @@ class GRPC_DLL CoreConfiguration {
   }
 
   // TODO(ctiller): Remove once all usage is cleaned up
-  static void RegisterBuilder(
-      absl::AnyInvocable<void(Builder*)> builder, SourceLocation whence = {}) {
+  static void RegisterBuilder(absl::AnyInvocable<void(Builder*)> builder,
+                              SourceLocation whence = {}) {
     RegisterBuilder(BuilderScope::kEphemeral, std::move(builder), whence);
   }
 
