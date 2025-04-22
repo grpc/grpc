@@ -266,6 +266,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return channelz_socket;
+  }
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;

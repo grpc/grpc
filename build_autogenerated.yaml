@@ -7433,7 +7433,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -7471,7 +7473,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8265,7 +8269,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -8327,7 +8333,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8389,7 +8397,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -8451,7 +8461,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8601,7 +8613,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -8663,7 +8677,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8721,7 +8737,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -8783,7 +8801,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8841,7 +8861,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -8903,7 +8925,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9049,7 +9073,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -9111,7 +9137,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9257,7 +9285,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -9319,7 +9349,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9377,7 +9409,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -9439,7 +9473,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9585,7 +9621,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -9647,7 +9685,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9705,7 +9745,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -9767,7 +9809,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -11757,7 +11801,9 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
   - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
@@ -11817,7 +11863,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
