@@ -211,7 +211,7 @@ g_stands_for = "groovy"  # @unused
 
 core_version = "44.1.1"  # @unused
 
-version = "1.68.2"  # @unused
+version = "1.68.3"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
