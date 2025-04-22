@@ -198,11 +198,7 @@ class Http2Status {
                         ". Http2 Code: ", http2_code_);
   }
 
-  Http2Status(Http2Status&& move_status) noexcept
-      : http2_code_(move_status.http2_code_),
-        error_type_(move_status.error_type_),
-        absl_code_(move_status.absl_code_),
-        message_(std::move(move_status.message_)) {}
+  Http2Status(Http2Status&& move_status) noexcept = default;
 
  private:
   explicit Http2Status()
