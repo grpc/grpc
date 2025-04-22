@@ -161,7 +161,8 @@ class WorkStealingThreadPool final : public ThreadPool {
       // The main body of the lifeguard thread.
       void LifeguardMain();
       // Starts a new thread if the pool is backlogged
-      void MaybeStartNewThread();
+      // Return true if a new thread was started.
+      bool MaybeStartNewThread();
 
       WorkStealingThreadPoolImpl* pool_;
       grpc_core::BackOff backoff_;
