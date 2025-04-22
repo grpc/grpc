@@ -70,7 +70,8 @@
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2025/06/01
   owner: roth@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
+  test_tags:
+    ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
   allow_in_fuzzing_config: false
 - name: event_engine_callback_cq
   description: Use EventEngine instead of the CallbackAlternativeCQ.
@@ -100,14 +101,19 @@
   allow_in_fuzzing_config: false
   uses_polling: true
 - name: event_engine_for_all_other_endpoints
-  description:
-    Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
+  description: Use EventEngine endpoints for all call sites, including direct uses of grpc_tcp_create.
   expiry: 2025/07/01
   owner: hork@google.com
   test_tags: ["core_end2end_test"]
   allow_in_fuzzing_config: false
   uses_polling: true
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_dns", "event_engine_dns_non_client_channel"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+      "event_engine_dns",
+      "event_engine_dns_non_client_channel",
+    ]
 - name: event_engine_fork
   description: Enables event engine fork handling, including onfork events and file descriptor generations
   expiry: 2025/08/01
@@ -145,6 +151,12 @@
   expiry: 2025/07/31
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
+- name: max_inflight_pings_strict_limit
+  description:
+    If set, the max inflight pings limit is strictly enforced.
+  expiry: 2025/06/30
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: max_pings_wo_data_throttle
   description: Experiment to throttle pings to a period of 1 min when
     GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
@@ -215,25 +227,27 @@
   owner: ctiller@google.com
   test_tags: []
 - name: rst_stream_fix
-  description:
-    Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
+  description: Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
   expiry: 2025/06/06
   owner: yashkt@google.com
-  test_tags: []  
+  test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: server_global_callbacks_ownership
-  description:
-    If set, server global callbacks ownership is fixed to not be owned by gRPC.
+  description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
   expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
+- name: shard_global_connection_pool
+  description: If set, shard the global connection pool to improve parallelism.
+  expiry: 2025/09/09
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: sleep_promise_exec_ctx_removal
-  description:
-    If set, polling the sleep promise does not rely on the ExecCtx.
+  description: If set, polling the sleep promise does not rely on the ExecCtx.
   expiry: 2025/06/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]

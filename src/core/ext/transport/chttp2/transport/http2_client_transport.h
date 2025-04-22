@@ -92,6 +92,10 @@ class Http2ClientTransport final : public ClientTransport {
   void Orphan() override;
   void AbortWithError();
 
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
+
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),

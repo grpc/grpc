@@ -370,7 +370,7 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
                 std::move(self->connection_->endpoint_),
                 std::move(std::get<ControlConnection>(self->data_).config),
                 self->connection_->listener_->data_connection_listener_),
-            nullptr, self->connection_->args(), nullptr);
+            nullptr, self->connection_->args());
       });
 }
 
