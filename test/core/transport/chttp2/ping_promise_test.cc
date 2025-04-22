@@ -207,48 +207,52 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
   event_engine()->UnsetGlobalHooks();
 }
 
-// YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
-//   InitParty();
-//   int end_after = 1;
-//   Duration keepalive_timeout = Duration::Seconds(1);
-//   Duration keepalive_interval = Duration::Hours(1);
-//   int read_loop_end_after = 5;
-//   std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-//       keep_alive_interface =
-//           std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
+  // Test to simulate reading of data at certain intervals. The test asserts
+  // that:
+  // 1. The keepalive ping is not sent as long as there is data read within the
+  //    keepalive interval.
+  // 2. Keepalive timeout is triggered once no data is read within the
+  //    keepalive timeout.
+  InitParty();
+  int end_after = 1;
+  Duration keepalive_timeout = Duration::Seconds(1);
+  Duration keepalive_interval = Duration::Hours(1);
+  int read_loop_end_after = 5;
+  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
+      keep_alive_interface =
+          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
 
-//   // Break keepalive loop
-//   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1),
-//   end_after); keep_alive_interface->ExpectKeepAliveTimeout();
-//   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
-//                                                       /*return_value=*/true);
+  // Break keepalive loop
+  keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
+  keep_alive_interface->ExpectKeepAliveTimeout();
+  keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
+                                                      /*return_value=*/true);
 
-//   KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-//                                     keepalive_timeout, keepalive_interval);
-//   auto party = GetParty();
-//   keep_alive_system.Spawn(party);
+  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
+                                    keepalive_timeout, keepalive_interval);
+  auto party = GetParty();
+  keep_alive_system.Spawn(party);
 
-//   party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]()
-//   {
-//                  return TrySeq(
-//                      [&keep_alive_system] {
-//                        keep_alive_system.GotData();
-//                        return absl::OkStatus();
-//                      },
-//                      Sleep(Duration::Minutes(75)),
-//                      [&read_loop_end_after]() mutable ->
-//                      LoopCtl<absl::Status> {
-//                        if (--read_loop_end_after == 0) {
-//                          return absl::OkStatus();
-//                        }
-//                        return Continue();
-//                      });
-//                }),
-//                [](auto) { LOG(INFO) << "ReadData end"; });
+  party->Spawn("ReadData", Loop([&read_loop_end_after, &keep_alive_system]() {
+                 return TrySeq(
+                     [&keep_alive_system] {
+                       keep_alive_system.GotData();
+                       return absl::OkStatus();
+                     },
+                     Sleep(Duration::Minutes(75)),
+                     [&read_loop_end_after]() mutable -> LoopCtl<absl::Status> {
+                       if (--read_loop_end_after == 0) {
+                         return absl::OkStatus();
+                       }
+                       return Continue();
+                     });
+               }),
+               [](auto) { LOG(INFO) << "ReadData end"; });
 
-//   WaitForAllPendingWork();
-//   event_engine()->TickUntilIdle();
-//   event_engine()->UnsetGlobalHooks();
-// }
+  WaitForAllPendingWork();
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
 
 }  // namespace grpc_core
