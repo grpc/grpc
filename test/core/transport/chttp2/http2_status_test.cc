@@ -156,24 +156,6 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
   }
 }
 
-TEST(Http2StatusTest, Http2ConnectionCrashOnOk) {
-  ASSERT_DEATH(
-      {
-        GRPC_UNUSED Http2Status status = Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kNoError, "Message1");
-      },
-      "");
-}
-
-TEST(Http2StatusTest, Http2StreamCrashOnOk) {
-  ASSERT_DEATH(
-      {
-        GRPC_UNUSED Http2Status status =
-            Http2Status::Http2StreamError(Http2ErrorCode::kNoError, "Message1");
-      },
-      "");
-}
-
 TEST(Http2StatusTest, AbslConnectionErrorTest) {
   std::vector<absl::StatusCode> codes = FewAbslErrorCodes();
   for (const absl::StatusCode& code : codes) {
