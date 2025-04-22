@@ -141,8 +141,3 @@ FUZZ_TEST(GrpcMessageAssemblerTest, AssemblerFuzzer);
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
