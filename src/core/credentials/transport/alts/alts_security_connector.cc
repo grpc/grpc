@@ -51,12 +51,9 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted_ptr.h"
-
-using grpc_core::internal::alts_tsi_handshaker_get_protocols_for_testing;
 
 void grpc_alts_set_rpc_protocol_versions(
     grpc_gcp_rpc_protocol_versions* rpc_versions) {
@@ -110,12 +107,8 @@ class grpc_alts_channel_security_connector final
               true, interested_parties, &handshaker,
               user_specified_max_frame_size,
               args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
-    protocols_ = alts_tsi_handshaker_get_protocols_for_testing(handshaker);
-    handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
-  }
-
-  std::optional<absl::string_view> get_last_handshaker_protocol_for_test() {
-    return protocols_;
+    handshake_manager->Add(
+        grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
@@ -142,7 +135,6 @@ class grpc_alts_channel_security_connector final
   }
 
  private:
-  std::optional<absl::string_view> protocols_ = std::nullopt;
   char* target_name_;
 };
 
@@ -168,12 +160,8 @@ class grpc_alts_server_security_connector final
               creds->options(), nullptr, creds->handshaker_service_url(), false,
               interested_parties, &handshaker, user_specified_max_frame_size,
               args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
-    protocols_ = alts_tsi_handshaker_get_protocols_for_testing(handshaker);
-    handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
-  }
-
-  std::optional<absl::string_view> get_last_handshaker_protocol_for_test() {
-    return protocols_;
+    handshake_manager->Add(
+        grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
@@ -190,9 +178,6 @@ class grpc_alts_server_security_connector final
     return server_security_connector_cmp(
         static_cast<const grpc_server_security_connector*>(other));
   }
-
- private:
-  std::optional<absl::string_view> protocols_ = std::nullopt;
 };
 }  // namespace
 
@@ -292,19 +277,6 @@ RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     return nullptr;
   }
   return ctx;
-}
-
-std::optional<absl::string_view> get_last_handshaker_protocol_for_test(
-    grpc_channel_security_connector* connector) {
-  return (static_cast<grpc_alts_channel_security_connector*>(connector))
-      ->get_last_handshaker_protocol_for_test();
-}
-
-std::optional<absl::string_view>
-get_last_handshaker_protocol_for_server_for_test(
-    grpc_server_security_connector* connector) {
-  return (static_cast<grpc_alts_server_security_connector*>(connector))
-      ->get_last_handshaker_protocol_for_test();
 }
 
 }  // namespace internal

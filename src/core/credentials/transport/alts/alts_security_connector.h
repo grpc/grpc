@@ -71,11 +71,6 @@ namespace internal {
 // Exposed only for testing.
 RefCountedPtr<grpc_auth_context> grpc_alts_auth_context_from_tsi_peer(
     const tsi_peer* peer);
-std::optional<absl::string_view> get_last_handshaker_protocol_for_test(
-    grpc_channel_security_connector* connector);
-std::optional<absl::string_view>
-get_last_handshaker_protocol_for_server_for_test(
-    grpc_server_security_connector* connector);
 
 }  // namespace internal
 }  // namespace grpc_core

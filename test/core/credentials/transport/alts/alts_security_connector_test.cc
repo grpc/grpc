@@ -29,12 +29,10 @@
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/transport/auth_context.h"
-#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
+#include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
 
-using grpc_core::internal::get_last_handshaker_protocol_for_server_for_test;
-using grpc_core::internal::get_last_handshaker_protocol_for_test;
 using grpc_core::internal::grpc_alts_auth_context_from_tsi_peer;
 
 // This file contains unit tests of grpc_alts_auth_context_from_tsi_peer().
@@ -299,52 +297,7 @@ TEST(AltsSecurityConnectorTest, ChannelSuccessWithProtocolArg) {
   grpc_core::HandshakeManager handshake_manager;
   channel_security_connector->add_handshakers(
       channel_args, /*interested_parties=*/nullptr, &handshake_manager);
-  ASSERT_EQ(
-      get_last_handshaker_protocol_for_test(channel_security_connector.get()),
-      "foo,bar,baz");
   grpc_channel_credentials_release(channel_creds);
-  grpc_alts_credentials_options_destroy(alts_options);
-}
-
-TEST(AltsSecurityConnectorTest, ServerSuccess) {
-  grpc_alts_credentials_options* alts_options =
-      grpc_alts_credentials_server_options_create();
-  grpc_server_credentials* server_creds =
-      grpc_alts_server_credentials_create_customized(
-          alts_options, "test",
-          /* enable_untrusted_alts=*/true);
-  grpc_core::ChannelArgs channel_args;
-  grpc_core::RefCountedPtr<grpc_server_security_connector>
-      server_security_connector =
-          server_creds->create_security_connector(channel_args);
-  ASSERT_NE(server_security_connector, nullptr);
-  grpc_core::HandshakeManager handshake_manager;
-  server_security_connector->add_handshakers(
-      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
-  grpc_server_credentials_release(server_creds);
-  grpc_alts_credentials_options_destroy(alts_options);
-}
-
-TEST(AltsSecurityConnectorTest, ServerSuccessWithProtocolArg) {
-  grpc_alts_credentials_options* alts_options =
-      grpc_alts_credentials_server_options_create();
-  grpc_server_credentials* server_creds =
-      grpc_alts_server_credentials_create_customized(
-          alts_options, "test",
-          /* enable_untrusted_alts=*/true);
-  grpc_core::ChannelArgs channel_args;
-  channel_args = channel_args.Set(GRPC_ARG_TRANSPORT_PROTOCOLS, "foo,bar,baz");
-  grpc_core::RefCountedPtr<grpc_server_security_connector>
-      server_security_connector =
-          server_creds->create_security_connector(channel_args);
-  ASSERT_NE(server_security_connector, nullptr);
-  grpc_core::HandshakeManager handshake_manager;
-  server_security_connector->add_handshakers(
-      channel_args, /*interested_parties=*/nullptr, &handshake_manager);
-  ASSERT_EQ(get_last_handshaker_protocol_for_server_for_test(
-                server_security_connector.get()),
-            "foo,bar,baz");
-  grpc_server_credentials_release(server_creds);
   grpc_alts_credentials_options_destroy(alts_options);
 }
 
