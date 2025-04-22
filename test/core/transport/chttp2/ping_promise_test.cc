@@ -163,16 +163,14 @@ PING_SYSTEM_TEST(TestPingRequest) {
   EXPECT_FALSE(ping_system.PingRequested());
   execution_order.append("3");
 
-  party->Spawn(
-      "PingAckReceived",
-      Map([&ping_system, id,
-           this] { return ping_system.AckPing(id, event_engine().get()); },
-          [&execution_order, &ping_system](bool) {
-            execution_order.append("4");
-            EXPECT_EQ(ping_system.CountPingInflight(), 0);
-            return absl::OkStatus();
-          }),
-      [](auto) { LOG(INFO) << "Reached PingAck end"; });
+  party->Spawn("PingAckReceived",
+               Map([&ping_system, id] { return ping_system.AckPing(id); },
+                   [&execution_order, &ping_system](bool) {
+                     execution_order.append("4");
+                     EXPECT_EQ(ping_system.CountPingInflight(), 0);
+                     return absl::OkStatus();
+                   }),
+               [](auto) { LOG(INFO) << "Reached PingAck end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -218,23 +216,18 @@ PING_SYSTEM_TEST(TestPingUnrelatedAck) {
   execution_order.append("3");
   party->Spawn(
       "PingAckReceived",
-      TrySeq(
-          Map(
-              [&ping_system, id, this] {
-                return ping_system.AckPing(id + 1, event_engine().get());
-              },
-              [&execution_order, &ping_system](bool) {
-                execution_order.append("4");
-                EXPECT_EQ(ping_system.CountPingInflight(), 1);
-                return absl::OkStatus();
-              }),
-          Map([&ping_system, id,
-               this] { return ping_system.AckPing(id, event_engine().get()); },
-              [&execution_order, &ping_system](bool) {
-                execution_order.append("5");
-                EXPECT_EQ(ping_system.CountPingInflight(), 0);
-                return absl::OkStatus();
-              })),
+      TrySeq(Map([&ping_system, id] { return ping_system.AckPing(id + 1); },
+                 [&execution_order, &ping_system](bool) {
+                   execution_order.append("4");
+                   EXPECT_EQ(ping_system.CountPingInflight(), 1);
+                   return absl::OkStatus();
+                 }),
+             Map([&ping_system, id] { return ping_system.AckPing(id); },
+                 [&execution_order, &ping_system](bool) {
+                   execution_order.append("5");
+                   EXPECT_EQ(ping_system.CountPingInflight(), 0);
+                   return absl::OkStatus();
+                 })),
       [](auto) { LOG(INFO) << "Reached PingAck end"; });
 
   WaitForAllPendingWork();
@@ -277,16 +270,14 @@ PING_SYSTEM_TEST(TestPingWaitForAck) {
   EXPECT_EQ(ping_system.CountPingInflight(), 1);
   EXPECT_FALSE(ping_system.PingRequested());
   execution_order.append("3");
-  party->Spawn(
-      "PingAckReceived",
-      Map([&ping_system, id,
-           this] { return ping_system.AckPing(id, event_engine().get()); },
-          [&execution_order, &ping_system](bool) {
-            EXPECT_EQ(ping_system.CountPingInflight(), 0);
-            execution_order.append("4");
-            return absl::OkStatus();
-          }),
-      [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
+  party->Spawn("PingAckReceived",
+               Map([&ping_system, id] { return ping_system.AckPing(id); },
+                   [&execution_order, &ping_system](bool) {
+                     EXPECT_EQ(ping_system.CountPingInflight(), 0);
+                     execution_order.append("4");
+                     return absl::OkStatus();
+                   }),
+               [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();
@@ -478,10 +469,9 @@ PING_SYSTEM_TEST(TestPingSystemAck) {
   party->Spawn("PingAckReceived",
                TrySeq(Sleep(Duration::Seconds(1)),
                       Map(
-                          [&ping_system, this, &cb] {
+                          [&ping_system, &cb] {
                             auto args = cb();
-                            return ping_system.AckPing(args.opaque_data,
-                                                       event_engine().get());
+                            return ping_system.AckPing(args.opaque_data);
                           },
                           [](bool) { return absl::OkStatus(); })),
                [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });
@@ -528,10 +518,9 @@ PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
   party->Spawn("DelayedPingAckReceived",
                TrySeq(Sleep(Duration::Hours(1)),
                       Map(
-                          [&ping_system, this, &cb] {
+                          [&ping_system, &cb] {
                             auto args = cb();
-                            return ping_system.AckPing(args.opaque_data,
-                                                       event_engine().get());
+                            return ping_system.AckPing(args.opaque_data);
                           },
                           [](bool) { return absl::OkStatus(); })),
                [](auto) { LOG(INFO) << "Reached PingAckReceived end"; });

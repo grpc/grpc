@@ -74,9 +74,8 @@ class PingSystem {
     void CancelCallbacks() { ping_callbacks_.CancelAll(event_engine_.get()); }
     uint64_t StartPing() { return ping_callbacks_.StartPing(bitgen_); }
     bool PingRequested() { return ping_callbacks_.ping_requested(); }
-    bool AckPing(uint64_t id,
-                 grpc_event_engine::experimental::EventEngine* event_engine) {
-      return ping_callbacks_.AckPing(id, event_engine);
+    bool AckPing(uint64_t id) {
+      return ping_callbacks_.AckPing(id, event_engine_.get());
     }
     size_t CountPingInflight() { return ping_callbacks_.pings_inflight(); }
 
@@ -142,10 +141,7 @@ class PingSystem {
 
   uint64_t StartPing() { return ping_callbacks_.StartPing(); }
   bool PingRequested() { return ping_callbacks_.PingRequested(); }
-  bool AckPing(uint64_t id,
-               grpc_event_engine::experimental::EventEngine* event_engine) {
-    return ping_callbacks_.AckPing(id, event_engine);
-  }
+  bool AckPing(uint64_t id) { return ping_callbacks_.AckPing(id); }
   size_t CountPingInflight() { return ping_callbacks_.CountPingInflight(); }
 
  private:
