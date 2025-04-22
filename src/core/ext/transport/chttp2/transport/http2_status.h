@@ -160,39 +160,10 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
-  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslConnectionErrorCode() const {
-    switch (error_type_) {
-      case Http2ErrorType::kOk:
-        CHECK(false);
-      case Http2ErrorType::kConnectionError:
-        return absl_code_;
-      case Http2ErrorType::kStreamError:
-        CHECK(false);
-      default:
-        CHECK(false);
-    }
-    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
-  }
-
-  GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamErrorCode() const {
-    switch (error_type_) {
-      case Http2ErrorType::kOk:
-        CHECK(false);
-      case Http2ErrorType::kConnectionError:
-        CHECK(false);
-      case Http2ErrorType::kStreamError:
-        return absl_code_;
-      default:
-        CHECK(false);
-    }
-    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
-  }
-
   bool IsOk() const { return (http2_code_ == Http2ErrorCode::kNoError); }
 
   std::string DebugString() const {
-    return absl::StrCat(DebugGetType(), ": ", message_,
-                        ". Http2 Code: ", http2_code_);
+    return absl::StrCat(DebugGetType(), ": ", message_);
   }
 
   Http2Status(Http2Status&& move_status) noexcept = default;
@@ -301,7 +272,7 @@ class Http2Status {
   const std::string message_;
 };
 
-// TODO(tjagtap): [PH2][P2] : We can add more methods and helpers as needed.
+// We can add more methods and helpers as needed.
 // This class is similar to ValueOrFailure but a more minamilasit version.
 // Reference :
 // https://github.com/grpc/grpc/blob/master/src/core/lib/promise/status_flag.h
@@ -337,22 +308,27 @@ class ValueOrHttp2Status {
   }
 
   GRPC_MUST_USE_RESULT Http2Status::Http2ErrorType GetErrorType() const {
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetType();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorCode() const {
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetConnectionErrorCode();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorCode() const {
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetStreamErrorCode();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslConnectionError();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslStreamError();
   }
 

@@ -117,7 +117,7 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
         "");
 
     // 3. DebugString
-    EXPECT_GT(status.DebugString().size(), 1);
+    EXPECT_STREQ(status.DebugString().c_str(), "Connection Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -144,7 +144,7 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
         "");
 
     // 3. DebugString
-    EXPECT_GT(status.DebugString().size(), 1);
+    EXPECT_STREQ(status.DebugString().c_str(), "Stream Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -189,7 +189,7 @@ TEST(Http2StatusTest, AbslConnectionErrorTest) {
         "");
 
     // 3. DebugString
-    EXPECT_GT(status.DebugString().size(), 1);
+    EXPECT_STREQ(status.DebugString().c_str(), "Connection Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -217,7 +217,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
         "");
 
     // 3. DebugString
-    EXPECT_GT(status.DebugString().size(), 1);
+    EXPECT_STREQ(status.DebugString().c_str(), "Stream Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -235,10 +235,7 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
 // These tests first create the specific type of ValueOrHttp2Status object.
 // Then check the following:
 // 1. IsOk() is false
-// 2. Http2ErrorType
-// 3. Http2ErrorCode
-// 4. Absl status
-// 5. Value
+// 2. Value
 
 TEST(ValueOrHttp2StatusTest, ValuePrimitiveDataType) {
   auto test_lambda = []() -> ValueOrHttp2Status<int> {
@@ -249,26 +246,7 @@ TEST(ValueOrHttp2StatusTest, ValuePrimitiveDataType) {
   // 1. IsOk() is false
   EXPECT_TRUE(result.IsOk());
 
-  // 2. Http2ErrorType
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2Status::Http2ErrorType type = result.GetErrorType(); },
-      "");
-
-  // 3. Http2ErrorCode
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
-      "");
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
-
-  // 4. Absl status
-  ASSERT_DEATH(
-      { GRPC_UNUSED absl::Status result1 = result.GetAbslConnectionError(); },
-      "");
-  ASSERT_DEATH(
-      { GRPC_UNUSED absl::Status result2 = result.GetAbslStreamError(); }, "");
-
-  // 5. Value
+  // 2. Value
   int result1 = result.value();
   EXPECT_EQ(result1, 100);
 }
@@ -284,30 +262,14 @@ TEST(ValueOrHttp2StatusTest, ValueSliceBuffer) {
   // 1. IsOk() is false
   EXPECT_TRUE(result.IsOk());
 
-  // 2. Http2ErrorType
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2Status::Http2ErrorType type = result.GetErrorType(); },
-      "");
-
-  // 3. Http2ErrorCode
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code1 = result.GetConnectionErrorCode(); },
-      "");
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
-
-  // 4. Absl status
-  ASSERT_DEATH(
-      { GRPC_UNUSED absl::Status result1 = result.GetAbslConnectionError(); },
-      "");
-  ASSERT_DEATH(
-      { GRPC_UNUSED absl::Status result2 = result.GetAbslStreamError(); }, "");
-
-  // 5. Value
+  // 2. Value
   SliceBuffer result3 = TakeValue(std::move(result));
   EXPECT_EQ(result3.Length(), 1024);
   EXPECT_STREQ(result3.JoinIntoString().c_str(), std::string(kStr1024).c_str());
 }
+
+// TODO(tjagtap): [PH2][P2] : some http2 frame types used to give some
+// compile issue with std::move. Check with tests.
 
 ///////////////////////////////////////////////////////////////////////////////
 // ValueOrHttp2Status Tests - Errors
@@ -317,9 +279,7 @@ TEST(ValueOrHttp2StatusTest, ValueSliceBuffer) {
 // 2. Http2ErrorType
 // 3. Http2ErrorCode
 // 4. Absl status
-
-// TODO(tjagtap): [PH2][P0] : some http2 frame types used to give some
-// compile issue with std::move. Check with tests.
+// 5. DebugString
 
 TEST(ValueOrHttp2StatusTest, Http2ConnectionError) {
   auto test_lambda = []() -> ValueOrHttp2Status<int> {
@@ -345,11 +305,11 @@ TEST(ValueOrHttp2StatusTest, Http2ConnectionError) {
   EXPECT_FALSE(absl_status.ok());
   ASSERT_DEATH(
       { GRPC_UNUSED absl::Status result1 = result.GetAbslStreamError(); }, "");
+  EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
 
-  // 5. message
+  // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_GT(message.size(), 1);
-  // EXPECT_STREQ(message, "Message1");
+  EXPECT_STREQ(message.c_str(), "Connection Error: Message1");
 }
 
 TEST(ValueOrHttp2StatusTest, Http2StreamError) {
@@ -377,11 +337,11 @@ TEST(ValueOrHttp2StatusTest, Http2StreamError) {
   ASSERT_DEATH(
       { GRPC_UNUSED absl::Status result1 = result.GetAbslConnectionError(); },
       "");
+  EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
 
-  // 5. message
+  // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_GT(message.size(), 1);
-  // EXPECT_STREQ(message, "Message1");
+  EXPECT_STREQ(message.c_str(), "Stream Error: Message1");
 }
 
 TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
@@ -408,11 +368,11 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
   EXPECT_FALSE(absl_status.ok());
   ASSERT_DEATH(
       { GRPC_UNUSED absl::Status result1 = result.GetAbslStreamError(); }, "");
+  EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
 
-  // 5. message
+  // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_GT(message.size(), 1);
-  // EXPECT_STREQ(message, "Message1");
+  EXPECT_STREQ(message.c_str(), "Connection Error: Message1");
 }
 
 TEST(ValueOrHttp2StatusTest, AbslStreamError) {
@@ -440,11 +400,11 @@ TEST(ValueOrHttp2StatusTest, AbslStreamError) {
   ASSERT_DEATH(
       { GRPC_UNUSED absl::Status result1 = result.GetAbslConnectionError(); },
       "");
+  EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
 
-  // 5. message
+  // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_GT(message.size(), 1);
-  // EXPECT_STREQ(message, "Message1");
+  EXPECT_STREQ(message.c_str(), "Stream Error: Message1");
 }
 
 }  // namespace testing
