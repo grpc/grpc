@@ -23,7 +23,7 @@
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/tcp_tracer.h"
 
 namespace grpc_core {
 namespace chaotic_good {
