@@ -99,7 +99,7 @@ struct EndpointWriteMetricsTrace {
     }
     object["metadata_type"] = Json::FromString(name);
     object["fathom_timestamp"] = Json::FromString(absl::StrCat(timestamp));
-    for (const auto [name, value] : metrics) {
+    for (const auto& [name, value] : metrics) {
       object.emplace(name, Json::FromNumber(value));
     }
   }
