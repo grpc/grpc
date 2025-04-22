@@ -18,7 +18,6 @@
 # Note that remote build and test execution is left unconfigured.
 
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
-startup --output_base=out_bin
 
 # the RBE instance to use
 build --remote_instance_name=projects/grpc-testing/instances/default_instance
