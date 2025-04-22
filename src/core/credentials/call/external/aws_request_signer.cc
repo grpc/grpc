@@ -151,8 +151,9 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   canonical_request_vector.emplace_back(query);
   canonical_request_vector.emplace_back("\n");
   // 4. CanonicalHeaders
+  std::string authority = url_.authority();
   if (request_headers_.empty()) {
-    request_headers_.insert({"host", url_.authority()});
+    request_headers_.insert({"host", authority});
     if (!token_.empty()) {
       request_headers_.insert({"x-amz-security-token", token_});
     }
@@ -198,7 +199,7 @@ std::map<std::string, std::string> AwsRequestSigner::GetSignedRequestHeaders() {
   string_to_sign_vector.emplace_back("\n");
   // 3. CredentialScope
   std::pair<absl::string_view, absl::string_view> host_parts =
-      absl::StrSplit(url_.authority(), absl::MaxSplits('.', 1));
+      absl::StrSplit(authority, absl::MaxSplits('.', 1));
   std::string service_name(host_parts.first);
   std::string credential_scope = absl::StrFormat(
       "%s/%s/%s/aws4_request", request_date_short, region_, service_name);

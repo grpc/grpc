@@ -89,6 +89,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;

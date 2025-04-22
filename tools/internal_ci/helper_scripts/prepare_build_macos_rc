@@ -58,6 +58,8 @@ brew config
 if $is_sonoma; then
   brew install cmake
   brew install gnupg
+  export PATH="/opt/homebrew/bin::${PATH}"
+  cmake --version
 fi
 
 # Add GCP credentials for BQ access

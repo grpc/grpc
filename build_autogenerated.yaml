@@ -152,6 +152,7 @@ libs:
   - include/grpc/event_engine/extensible.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
   - include/grpc/event_engine/internal/slice_cast.h
+  - include/grpc/event_engine/internal/write_event.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -306,7 +307,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -1120,6 +1120,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
@@ -1127,6 +1128,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
   - src/core/tsi/alts/frame_protector/alts_crypter.h
@@ -1200,6 +1202,7 @@ libs:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
@@ -1374,6 +1377,7 @@ libs:
   - src/core/ext/filters/stateful_session/stateful_session_filter.cc
   - src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc
   - src/core/ext/transport/chttp2/alpn/alpn.cc
+  - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -1977,6 +1981,7 @@ libs:
   - src/core/resolver/xds/xds_config.cc
   - src/core/resolver/xds/xds_dependency_manager.cc
   - src/core/resolver/xds/xds_resolver.cc
+  - src/core/server/add_port.cc
   - src/core/server/server.cc
   - src/core/server/server_call_tracer_filter.cc
   - src/core/server/server_config_selector_filter.cc
@@ -2046,6 +2051,7 @@ libs:
   - src/core/util/posix/directory_reader.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -2222,6 +2228,7 @@ libs:
   - include/grpc/event_engine/extensible.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
   - include/grpc/event_engine/internal/slice_cast.h
+  - include/grpc/event_engine/internal/write_event.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -2341,7 +2348,6 @@ libs:
   - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h
   - src/core/ext/transport/chttp2/transport/chttp2_transport.h
-  - src/core/ext/transport/chttp2/transport/context_list_entry.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
@@ -2691,6 +2697,7 @@ libs:
   - src/core/service_config/service_config_impl.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/default_tcp_tracer.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
@@ -2698,6 +2705,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
@@ -2742,6 +2750,7 @@ libs:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
@@ -2836,6 +2845,7 @@ libs:
   - src/core/ext/filters/http/message_compress/compression_filter.cc
   - src/core/ext/filters/http/server/http_server_filter.cc
   - src/core/ext/filters/message_size/message_size_filter.cc
+  - src/core/ext/transport/chttp2/chttp2_plugin.cc
   - src/core/ext/transport/chttp2/client/chttp2_connector.cc
   - src/core/ext/transport/chttp2/server/chttp2_server.cc
   - src/core/ext/transport/chttp2/transport/bin_decoder.cc
@@ -3122,6 +3132,7 @@ libs:
   - src/core/resolver/resolver.cc
   - src/core/resolver/resolver_registry.cc
   - src/core/resolver/sockaddr/sockaddr_resolver.cc
+  - src/core/server/add_port.cc
   - src/core/server/server.cc
   - src/core/server/server_call_tracer_filter.cc
   - src/core/service_config/service_config_channel_arg_filter.cc
@@ -3159,6 +3170,7 @@ libs:
   - src/core/util/per_cpu.cc
   - src/core/util/random_early_detection.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -4300,6 +4312,7 @@ libs:
   - include/grpc/event_engine/extensible.h
   - include/grpc/event_engine/internal/memory_allocator_impl.h
   - include/grpc/event_engine/internal/slice_cast.h
+  - include/grpc/event_engine/internal/write_event.h
   - include/grpc/event_engine/memory_allocator.h
   - include/grpc/event_engine/memory_request.h
   - include/grpc/event_engine/port.h
@@ -4633,6 +4646,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
@@ -4670,6 +4684,7 @@ libs:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
@@ -4949,6 +4964,7 @@ libs:
   - src/core/util/matchers.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -5397,12 +5413,14 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/test_util/postmortem.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/test_util/postmortem.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
@@ -5707,9 +5725,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5720,11 +5740,13 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5739,11 +5761,13 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5758,10 +5782,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5772,10 +5798,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6454,6 +6482,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
@@ -6487,6 +6516,7 @@ targets:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
@@ -6732,6 +6762,7 @@ targets:
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -6764,10 +6795,12 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
@@ -7396,7 +7429,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -7433,7 +7469,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -7477,8 +7515,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/chttp2_server_listener_test.cc
   deps:
   - gtest
@@ -7923,10 +7963,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7936,9 +7978,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8158,9 +8202,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8190,10 +8236,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8217,7 +8265,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8262,6 +8313,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8277,7 +8329,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8303,6 +8357,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8338,7 +8393,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8383,6 +8441,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8398,7 +8457,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8512,6 +8573,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8547,7 +8609,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8592,6 +8657,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8607,7 +8673,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8633,6 +8701,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8664,7 +8733,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8709,6 +8781,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8724,7 +8797,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8750,6 +8825,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8781,7 +8857,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -8826,6 +8905,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8841,7 +8921,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -8955,6 +9037,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8986,7 +9069,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9031,6 +9117,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9046,7 +9133,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9160,6 +9249,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9191,7 +9281,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9236,6 +9329,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9251,7 +9345,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9277,6 +9373,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9308,7 +9405,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9353,6 +9453,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9368,7 +9469,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9482,6 +9585,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9513,7 +9617,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9558,6 +9665,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9573,7 +9681,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9599,6 +9709,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9630,7 +9741,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -9675,6 +9789,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9690,7 +9805,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -9804,6 +9921,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10474,6 +10592,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
@@ -10507,6 +10626,7 @@ targets:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
   - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
@@ -10752,6 +10872,7 @@ targets:
   - src/core/util/load_file.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
   - src/core/util/time_averaged_stats.cc
@@ -11242,9 +11363,11 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/event_engine/util/delegating_event_engine.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11277,8 +11400,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
@@ -11671,7 +11796,10 @@ targets:
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
   - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good_legacy/client_transport.h
@@ -11715,6 +11843,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -11729,7 +11858,9 @@ targets:
   - src/core/ext/transport/chaotic_good/frame_header.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
   - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
   - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
@@ -11756,6 +11887,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -11767,9 +11899,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11779,9 +11913,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11819,10 +11955,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11944,10 +12082,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12290,10 +12430,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12544,9 +12686,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12663,9 +12807,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13351,9 +13497,11 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13671,10 +13819,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15273,10 +15423,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15377,6 +15529,7 @@ targets:
   headers:
   - src/core/util/shared_bit_gen.h
   src:
+  - src/core/util/shared_bit_gen.cc
   - test/core/util/shared_bit_gen_test.cc
   deps:
   - gtest
@@ -15408,10 +15561,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15520,6 +15675,18 @@ targets:
   deps:
   - gtest
   uses_polling: false
+- name: spiffe_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/credentials/transport/tls/spiffe_utils.h
+  src:
+  - src/core/credentials/transport/tls/spiffe_utils.cc
+  - test/core/credentials/transport/tls/spiffe_utils_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: spinlock_test
   gtest: true
   build: test
@@ -15690,8 +15857,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
   - gtest
@@ -16326,8 +16495,10 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
@@ -16486,10 +16657,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16681,10 +16854,12 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
+  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
+  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util

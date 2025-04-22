@@ -18,8 +18,11 @@
 #include <atomic>
 #include <chrono>
 #include <cstdint>
+#include <memory>
 
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
@@ -32,26 +35,6 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace data_endpoints_detail {
-
-struct DataFrameHeader {
-  enum { kFrameHeaderSize = 20 };
-  uint64_t payload_tag;
-  uint64_t send_timestamp;
-  uint32_t payload_length;
-
-  // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
-  // kFrameHeaderSize bytes are consumed.
-  static absl::StatusOr<DataFrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of kFrameHeaderSize bytes.
-  void Serialize(uint8_t* data) const;
-
-  template <typename Sink>
-  friend void AbslStringify(Sink& sink, const DataFrameHeader& frame) {
-    sink.Append(absl::StrCat("DataFrameHeader{payload_tag:", frame.payload_tag,
-                             ",send_timestamp:", frame.send_timestamp,
-                             ",payload_length:", frame.payload_length, "}"));
-  }
-};
 
 class Clock {
  public:
@@ -133,7 +116,9 @@ class OutputBuffer {
 // The set of output buffers for all connected data endpoints
 class OutputBuffers : public RefCounted<OutputBuffers> {
  public:
-  explicit OutputBuffers(Clock* clock) : clock_(clock) {}
+  OutputBuffers(Clock* clock,
+                std::shared_ptr<TcpZTraceCollector> ztrace_collector)
+      : ztrace_collector_(std::move(ztrace_collector)), clock_(clock) {}
 
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer) {
     return [payload_tag, send_time = clock_->Now(),
@@ -157,6 +142,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
                         SliceBuffer& output_buffer);
   Poll<SliceBuffer> PollNext(uint32_t connection_id);
 
+  const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   Mutex mu_;
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
@@ -244,16 +230,16 @@ class Endpoint final {
   Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
-           grpc_event_engine::experimental::EventEngine* event_engine,
-           std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-               stats_plugin_group);
+           TransportContextPtr ctx,
+           std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
  private:
   static auto WriteLoop(uint32_t id,
                         RefCountedPtr<OutputBuffers> output_buffers,
                         std::shared_ptr<PromiseEndpoint> endpoint);
   static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
-                       std::shared_ptr<PromiseEndpoint> endpoint);
+                       std::shared_ptr<PromiseEndpoint> endpoint,
+                       std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
   RefCountedPtr<Party> party_;
 };
@@ -265,13 +251,11 @@ class DataEndpoints {
  public:
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
-  explicit DataEndpoints(
-      std::vector<PendingConnection> endpoints,
-      grpc_event_engine::experimental::EventEngine* event_engine,
-      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
-          stats_plugin_group,
-      bool enable_tracing,
-      data_endpoints_detail::Clock* clock = DefaultClock());
+  explicit DataEndpoints(std::vector<PendingConnection> endpoints,
+                         TransportContextPtr ctx,
+                         std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+                         bool enable_tracing,
+                         data_endpoints_detail::Clock* clock = DefaultClock());
 
   // Try to queue output_buffer against a data endpoint.
   // Returns a promise that resolves to the data endpoint connection id

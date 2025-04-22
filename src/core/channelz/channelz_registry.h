@@ -97,6 +97,10 @@ class ChannelzRegistry final {
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
 
+  static std::vector<RefCountedPtr<BaseNode>> GetAllEntities() {
+    return Default()->InternalGetAllEntities();
+  }
+
   // Test only helper function to reset to initial state.
   static void TestOnlyReset() {
     auto* p = Default();
@@ -162,6 +166,7 @@ class ChannelzRegistry final {
   }
 
   void InternalLogAllEntities();
+  std::vector<RefCountedPtr<BaseNode>> InternalGetAllEntities();
 
   // protects members
   Mutex mu_;

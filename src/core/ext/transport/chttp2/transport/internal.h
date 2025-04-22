@@ -41,7 +41,6 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
@@ -74,6 +73,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
@@ -266,6 +266,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return channelz_socket;
+  }
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
@@ -291,7 +295,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
-  absl::BitGen bitgen;
 
   // On the client side, when the transport is first created, the
   // endpoint will already have been added to this pollset_set, and it
@@ -689,6 +692,8 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
+  // null by default, set by the transport data source upon first query
+  grpc_core::RefCountedPtr<grpc_core::channelz::CallNode> channelz_call_node;
 
   // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
   // https://github.com/grpc/grpc/pull/38729 for more information.)

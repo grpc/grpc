@@ -94,6 +94,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_inflight_pings_strict_limit =
+    "If set, the max inflight pings limit is strictly enforced.";
+const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -150,9 +153,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_shard_global_connection_pool =
+    "If set, shard the global connection pool to improve parallelism.";
+const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -217,6 +220,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_inflight_pings_strict_limit",
+     description_max_inflight_pings_strict_limit,
+     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
@@ -254,8 +261,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"shard_global_connection_pool", description_shard_global_connection_pool,
+     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -345,6 +353,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_inflight_pings_strict_limit =
+    "If set, the max inflight pings limit is strictly enforced.";
+const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -401,9 +412,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_shard_global_connection_pool =
+    "If set, shard the global connection pool to improve parallelism.";
+const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -468,6 +479,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_inflight_pings_strict_limit",
+     description_max_inflight_pings_strict_limit,
+     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
@@ -505,8 +520,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"shard_global_connection_pool", description_shard_global_connection_pool,
+     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,
@@ -596,6 +612,9 @@ const char* const description_local_connector_secure =
     "Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP "
     "connections.";
 const char* const additional_constraints_local_connector_secure = "{}";
+const char* const description_max_inflight_pings_strict_limit =
+    "If set, the max inflight pings limit is strictly enforced.";
+const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
 const char* const description_max_pings_wo_data_throttle =
     "Experiment to throttle pings to a period of 1 min when "
     "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
@@ -652,9 +671,9 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_server_listener =
-    "If set, the new server listener classes are used.";
-const char* const additional_constraints_server_listener = "{}";
+const char* const description_shard_global_connection_pool =
+    "If set, shard the global connection pool to improve parallelism.";
+const char* const additional_constraints_shard_global_connection_pool = "{}";
 const char* const description_sleep_promise_exec_ctx_removal =
     "If set, polling the sleep promise does not rely on the ExecCtx.";
 const char* const additional_constraints_sleep_promise_exec_ctx_removal = "{}";
@@ -719,6 +738,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      true},
     {"local_connector_secure", description_local_connector_secure,
      additional_constraints_local_connector_secure, nullptr, 0, false, true},
+    {"max_inflight_pings_strict_limit",
+     description_max_inflight_pings_strict_limit,
+     additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
+     true},
     {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
      additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
@@ -756,8 +779,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"server_listener", description_server_listener,
-     additional_constraints_server_listener, nullptr, 0, true, true},
+    {"shard_global_connection_pool", description_shard_global_connection_pool,
+     additional_constraints_shard_global_connection_pool, nullptr, 0, true,
+     true},
     {"sleep_promise_exec_ctx_removal",
      description_sleep_promise_exec_ctx_removal,
      additional_constraints_sleep_promise_exec_ctx_removal, nullptr, 0, false,

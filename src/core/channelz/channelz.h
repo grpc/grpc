@@ -49,7 +49,12 @@
 #include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
+  "grpc.internal.no_subchannel.channelz_channel_node"
+
+// Channel arg key for the containing base node
+#define GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE \
+  "grpc.internal.no_subchannel.channelz_containing_base_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
@@ -92,13 +97,41 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
+
+  static absl::string_view EntityTypeString(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "top_level_channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+    return "unknown";
+  }
 
  protected:
   BaseNode(EntityType type, std::string name);
 
  public:
   ~BaseNode() override;
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE;
+  }
+  static int ChannelArgsCompare(const BaseNode* a, const BaseNode* b) {
+    return QsortCompare(a, b);
+  }
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
@@ -147,6 +180,8 @@ class DataSink {
  public:
   virtual void AddAdditionalInfo(absl::string_view name,
                                  Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
 
  protected:
   ~DataSink() = default;
@@ -159,7 +194,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddData(DataSink& sink) = 0;
+  virtual void AddData(DataSink&) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
@@ -564,6 +599,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz

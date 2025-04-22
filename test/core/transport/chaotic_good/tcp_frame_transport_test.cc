@@ -142,12 +142,14 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
       TcpFrameTransport::Options{server_alignment, client_alignment,
                                  server_inlined_payload_size_threshold},
       std::move(client), std::move(pending_connections_client),
-      std::static_pointer_cast<EventEngine>(engine), nullptr);
+      MakeRefCounted<TransportContext>(
+          std::static_pointer_cast<EventEngine>(engine), nullptr));
   auto server_transport = MakeOrphanable<TcpFrameTransport>(
       TcpFrameTransport::Options{client_alignment, server_alignment,
                                  client_inlined_payload_size_threshold},
       std::move(server), std::move(pending_connections_server),
-      std::static_pointer_cast<EventEngine>(engine), nullptr);
+      MakeRefCounted<TransportContext>(
+          std::static_pointer_cast<EventEngine>(engine), nullptr));
   auto client_arena = SimpleArenaAllocator()->MakeArena();
   auto server_arena = SimpleArenaAllocator()->MakeArena();
   client_arena->SetContext(static_cast<EventEngine*>(engine.get()));

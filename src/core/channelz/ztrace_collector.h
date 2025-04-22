@@ -15,6 +15,8 @@
 #ifndef GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
 
+#include <grpc/support/time.h>
+
 #include <memory>
 #include <tuple>
 #include <vector>
@@ -26,19 +28,51 @@
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
+#ifdef GRPC_NO_ZTRACE
 namespace grpc_core::channelz {
+namespace ztrace_collector_detail {
+class ZTraceImpl final : public ZTrace {
+ public:
+  explicit ZTraceImpl() {}
 
+  void Run(Timestamp deadline, std::map<std::string, std::string> args,
+           std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+               event_engine,
+           absl::AnyInvocable<void(Json)> callback) override {
+    event_engine->Run([callback = std::move(callback)]() mutable {
+      callback(Json::FromBool(false));
+    });
+  }
+};
+
+class StubImpl {
+ public:
+  template <typename T>
+  void Append(const T&) {}
+
+  std::unique_ptr<ZTrace> MakeZTrace() {
+    return std::make_unique<ZTraceImpl>();
+  }
+};
+}  // namespace ztrace_collector_detail
+
+template <typename...>
+class ZTraceCollector : public ztrace_collector_detail::StubImpl {};
+}  // namespace grpc_core::channelz
+#else
+namespace grpc_core::channelz {
 namespace ztrace_collector_detail {
 
 template <typename T>
-using Collection = std::deque<std::pair<gpr_cycle_counter, T>>;
+using Collection = std::deque<std::pair<gpr_cycle_counter, T> >;
 
 template <typename T>
 void AppendResults(const Collection<T>& data, Json::Array& results) {
   for (const auto& value : data) {
     Json::Object object;
-    object["timestamp"] = Json::FromString(
-        gpr_format_timespec(gpr_cycle_counter_to_time(value.first)));
+    object["timestamp"] =
+        Json::FromString(gpr_format_timespec(gpr_convert_clock_type(
+            gpr_cycle_counter_to_time(value.first), GPR_CLOCK_REALTIME)));
     value.second.RenderJson(object);
     results.emplace_back(Json::FromObject(std::move(object)));
   }
@@ -124,7 +158,7 @@ class ZTraceCollector {
     void Append(std::pair<gpr_cycle_counter, T> value) {
       memory_used_ += value.second.MemoryUsage();
       while (memory_used_ > memory_cap_) RemoveMostRecent();
-      std::get<Collection<T>>(data).push_back(std::move(value));
+      std::get<Collection<T> >(data).push_back(std::move(value));
     }
     void RemoveMostRecent() {
       RemoveMostRecentState state;
@@ -134,12 +168,12 @@ class ZTraceCollector {
     }
     template <typename T>
     void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
-      auto& collection = std::get<Collection<T>>(data);
+      auto& collection = std::get<Collection<T> >(data);
       if (collection.empty()) return;
       if (state->enact == nullptr ||
           collection.front().first > state->most_recent) {
         state->enact = +[](Instance* instance) {
-          auto& collection = std::get<Collection<T>>(instance->data);
+          auto& collection = std::get<Collection<T> >(instance->data);
           const size_t ent_usage = collection.front().second.MemoryUsage();
           CHECK_GE(instance->memory_used_, ent_usage);
           instance->memory_used_ -= ent_usage;
@@ -154,7 +188,7 @@ class ZTraceCollector {
                          memory_used = memory_used_]() mutable {
         Json::Array entries;
         (ztrace_collector_detail::AppendResults(
-             std::get<Collection<Data>>(data), entries),
+             std::get<Collection<Data> >(data), entries),
          ...);
         Json::Object result;
         result["entries"] = Json::FromArray(entries);
@@ -167,6 +201,7 @@ class ZTraceCollector {
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
     Config config;
+    const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
     grpc_event_engine::experimental::EventEngine::TaskHandle task_handle{
         grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid};
@@ -175,7 +210,7 @@ class ZTraceCollector {
   };
   struct Impl : public RefCounted<Impl> {
     Mutex mu;
-    absl::flat_hash_set<RefCountedPtr<Instance>> instances ABSL_GUARDED_BY(mu);
+    absl::flat_hash_set<RefCountedPtr<Instance> > instances ABSL_GUARDED_BY(mu);
   };
   class ZTraceImpl final : public ZTrace {
    public:
@@ -188,7 +223,22 @@ class ZTraceCollector {
       auto instance = MakeRefCounted<Instance>(std::move(args), event_engine,
                                                std::move(callback));
       auto impl = std::move(impl_);
+      RefCountedPtr<Instance> oldest_instance;
       MutexLock lock(&impl->mu);
+      if (impl->instances.size() > 20) {
+        // Eject oldest running trace
+        Timestamp oldest_time = Timestamp::InfFuture();
+        for (auto& instance : impl->instances) {
+          if (instance->start_time < oldest_time) {
+            oldest_time = instance->start_time;
+            oldest_instance = instance;
+          }
+        }
+        CHECK(oldest_instance != nullptr);
+        impl->instances.erase(oldest_instance);
+        oldest_instance->Finish(
+            absl::ResourceExhaustedError("Too many concurrent ztrace queries"));
+      }
       instance->task_handle = event_engine->RunAfter(
           deadline - Timestamp::Now(), [instance, impl]() {
             bool finish;
@@ -225,7 +275,7 @@ class ZTraceCollector {
           }
         } break;
         default: {
-          std::vector<RefCountedPtr<Instance>> finished;
+          std::vector<RefCountedPtr<Instance> > finished;
           for (auto& instance : impl->instances) {
             const bool finishes = instance->config.Finishes(value.second);
             instance->Append(value);
@@ -244,7 +294,7 @@ class ZTraceCollector {
 
   SingleSetRefCountedPtr<Impl> impl_;
 };
-
 }  // namespace grpc_core::channelz
+#endif  // GRPC_NO_ZTRACE
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_ZTRACE_COLLECTOR_H
