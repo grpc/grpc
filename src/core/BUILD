@@ -8243,6 +8243,7 @@ grpc_cc_library(
         "mpsc",
         "pipe",
         "//:promise",
+        "//:tcp_tracer",
     ],
 )
 
