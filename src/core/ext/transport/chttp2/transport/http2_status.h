@@ -147,6 +147,8 @@ class Http2Status {
     GPR_UNREACHABLE_CODE(return absl::OkStatus());
   }
 
+  // If an error code needs to be used along with promises, or passed out of the
+  // transport, this function should be used.
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
     switch (error_type_) {
       case Http2ErrorType::kOk:
@@ -228,7 +230,10 @@ class Http2Status {
     Validate();
   }
 
-  absl::Status AbslError() const { return absl::Status(absl_code_, message_); }
+  absl::Status AbslError() const {
+    if (IsOk()) return absl::OkStatus();
+    return absl::Status(absl_code_, message_);
+  }
 
   void Validate() const {
     DCHECK((http2_code_ == Http2ErrorCode::kNoError &&
@@ -277,9 +282,9 @@ class Http2Status {
         return absl::StatusCode::kUnknown;
       default:
         DCHECK(false) << "This error code should never be used";
-        return absl::StatusCode::kUnknown;
+        GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
     }
-    GPR_UNREACHABLE_CODE(return absl::StatusCode::kOk);
+    GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
   }
 
   std::string DebugGetType() const {
@@ -300,7 +305,7 @@ class Http2Status {
   const Http2ErrorType error_type_;
   absl::StatusCode absl_code_;
 
-  std::string message_;
+  const std::string message_;
 };
 
 // TODO(tjagtap): [PH2][P2] : We can add more methods and helpers as needed.
@@ -312,9 +317,6 @@ class Http2Status {
 template <typename T>
 class ValueOrHttp2Status {
  public:
-  // TODO(tjagtap): [PH2][P0] : some http2 frame types used to give some
-  // compile issue with std::move. Check with tests.
-
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrHttp2Status(T value) : value_(std::move(value)) {
     DCHECK(value_.has_value() && !status_.has_value());
@@ -322,17 +324,15 @@ class ValueOrHttp2Status {
 
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
-    CHECK(status_.value().GetType() != Http2Status::Http2ErrorType::kOk);
     DCHECK(!value_.has_value() && status_.has_value());
+    CHECK(status_.value().GetType() != Http2Status::Http2ErrorType::kOk);
   }
 
-  // Prefer TakeValue when you want std::move to be used
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
     DCHECK(value_.has_value() && !status_.has_value());
     return value_.value();
   }
 
-  // Prefer TakeValue when you want std::move to be used
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
     DCHECK(value_.has_value() && !status_.has_value());
     return value_.value();
@@ -349,44 +349,37 @@ class ValueOrHttp2Status {
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetConnectionErrorCode();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetStreamErrorCode();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslConnectionError();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslStreamError();
   }
 
   GRPC_MUST_USE_RESULT absl::StatusCode GetAbslConnectionErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslConnectionErrorCode();
   }
 
   GRPC_MUST_USE_RESULT absl::StatusCode GetAbslStreamErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().GetAbslStreamErrorCode();
   }
 
   std::string DebugString() const {
-    DCHECK(!value_.has_value() && status_.has_value() &&
-           (status_.value().GetType() != Http2Status::Http2ErrorType::kOk));
+    DCHECK(!value_.has_value() && status_.has_value());
     return status_.value().DebugString();
   }
 
