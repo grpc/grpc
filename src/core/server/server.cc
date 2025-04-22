@@ -1239,10 +1239,9 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-grpc_error_handle Server::SetupTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args,
-    const RefCountedPtr<channelz::SocketNode>& socket_node) {
+grpc_error_handle Server::SetupTransport(Transport* transport,
+                                         grpc_pollset* accepting_pollset,
+                                         const ChannelArgs& args) {
   GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1253,7 +1252,8 @@ grpc_error_handle Server::SetupTransport(
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(
-        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node));
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1272,7 +1272,8 @@ grpc_error_handle Server::SetupTransport(
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
         "",
-        args.SetObject(transport).SetObject<channelz::BaseNode>(socket_node),
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()),
         GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
@@ -1292,7 +1293,7 @@ grpc_error_handle Server::SetupTransport(
       cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
     }
     intptr_t channelz_socket_uuid = 0;
-    if (socket_node != nullptr) {
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
       channelz_socket_uuid = socket_node->uuid();
       channelz_node_->AddChildSocket(socket_node);
     }
