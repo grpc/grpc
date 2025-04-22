@@ -151,6 +151,12 @@
   expiry: 2025/07/31
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
+- name: max_inflight_pings_strict_limit
+  description:
+    If set, the max inflight pings limit is strictly enforced.
+  expiry: 2025/06/30
+  owner: akshitpatel@google.com
+  test_tags: []
 - name: max_pings_wo_data_throttle
   description: Experiment to throttle pings to a period of 1 min when
     GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
