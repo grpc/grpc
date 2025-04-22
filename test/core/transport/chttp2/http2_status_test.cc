@@ -31,6 +31,14 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+TEST(Http2StatusTest, MoveTest) {
+  Http2Status old_status = Http2Status::Http2ConnectionError(code, "Message1");
+  EXPECT_GT(old_status.DebugString().size(), 1);
+  auto test_lambda = [new_status = std::move(old_status)]() {
+    LOG(INFO) << new_status.DebugString();
+    EXPECT_GT(new_status.DebugString().size(), 1);
+  } test_lambda();
+}
 ///////////////////////////////////////////////////////////////////////////////
 // Http2Status Tests
 // These tests first create the specific type of Http2Status object.

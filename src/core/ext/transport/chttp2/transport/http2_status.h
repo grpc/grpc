@@ -33,6 +33,9 @@
 namespace grpc_core {
 namespace http2 {
 
+// #define STATUS_LOG
+#define STATUS_LOG DVLOG(3)
+
 // These error codes are as per RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-error-codes
 // The RFC tells us to use 32 bit, but since this is our internal
@@ -192,6 +195,12 @@ class Http2Status {
     return absl::StrCat(DebugGetType(), ": ", message_,
                         ". Http2 Code: ", http2_code_);
   }
+
+  Http2Status(Http2Status&& move_status)
+      : error_type_(move_status.error_type_),
+        http2_code_(move_status.http2_code_),
+        absl_code_(move_status.absl_code_),
+        message_(std::move(move_status.message_)) {}
 
  private:
   explicit Http2Status()
