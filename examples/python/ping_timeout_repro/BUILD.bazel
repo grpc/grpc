@@ -1,0 +1,86 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@rules_python//python:defs.bzl", "py_binary")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
+
+proto_library(
+    name = "helloworld_proto",
+    srcs = ["helloworld.proto"],
+)
+
+py_proto_library(
+    name = "helloworld_py_pb2",
+    deps = [":helloworld_proto"],
+)
+
+py_grpc_library(
+    name = "helloworld_py_pb2_grpc",
+    srcs = [":helloworld_proto"],
+    deps = [":helloworld_py_pb2"],
+)
+
+py_binary(
+    name = "greeter_server_py",
+    srcs = ["greeter_server.py"],
+    main = "greeter_server.py",
+    imports = ["."],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        ":helloworld_py_pb2",
+        ":helloworld_py_pb2_grpc",
+    ],
+)
+
+py_binary(
+    name = "repro_greeter_client_py",
+    srcs = ["repro_greeter_client.py"],
+    main = "repro_greeter_client.py",
+    imports = ["."],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        ":helloworld_py_pb2",
+        ":helloworld_py_pb2_grpc",
+    ],
+)
+
+cc_binary(
+    name = "repro_greeter_client_cpp",
+    srcs = ["repro_greeter_client.cc"],
+    # main = "repro_greeter_client.cc",
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
+    ],
+)
+
+cc_binary(
+    name = "greeter_server_cpp",
+    srcs = ["greeter_server.cc"],
+    # main = "greeter_server.cc",
+    defines = ["BAZEL_BUILD"],
+    deps = [
+        "//:grpc++",
+        "//:grpc++_reflection",
+        "//examples/protos:helloworld_cc_grpc",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/log:initialize",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
