@@ -570,9 +570,9 @@ Poller::WorkResult PollPoller::Work(
     while (head != nullptr) {
       {
         grpc_core::MutexLock lock(head->mu());
-        // There shouldn't be any orphaned posix_interface() at this point. This
-        // is because prior to marking a handle as orphaned it is first removed
-        // from poll handle list for the poller under the poller lock.
+        // There shouldn't be any orphaned fds at this point. This is because
+        // prior to marking a handle as orphaned it is first removed from
+        // poll handle list for the poller under the poller lock.
         CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
           if (auto file_descriptor = posix_interface().GetFd(head->WrappedFd());
