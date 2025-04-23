@@ -49,6 +49,10 @@ class GrpcMessageAssembler {
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
+    if constexpr (sizeof(size_t) <= 4) {
+      CHECK(message_buffer_.Length() < UINT32_MAX - payload.Length())
+          << "SliceBuffer overflow for 32 bit";
+    }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0u);
   }
@@ -60,10 +64,12 @@ class GrpcMessageAssembler {
     if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
     }
+    if constexpr (sizeof(size_t) <= 4) {
+      CHECK(message_buffer_.Length() < UINT32_MAX - payload.Length())
+          << "SliceBuffer overflow for 32 bit";
+    }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
-    uint64_t total_length =
-        static_cast<uint64_t>(header.length) + kGrpcHeaderSizeInBytes;
-    if (message_buffer_.Length() >= total_length) {
+    if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
