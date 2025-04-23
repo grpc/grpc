@@ -37,7 +37,7 @@ class MockFrameTransport final : public FrameTransport {
                 "local", "remote", "chaotic_good remote", nullptr))) {}
   ~MockFrameTransport() override;
 
-  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
 
   void ExpectWrite(Frame frame, SourceLocation whence = {}) {

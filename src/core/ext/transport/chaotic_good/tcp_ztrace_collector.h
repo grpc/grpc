@@ -76,6 +76,35 @@ struct WriteFrameHeaderTrace {
   }
 };
 
+struct EndpointWriteMetricsTrace {
+  absl::Time timestamp;
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent
+      write_event;
+  std::vector<std::pair<absl::string_view, size_t>> metrics;
+
+  size_t MemoryUsage() const {
+    return sizeof(*this) + sizeof(metrics[0]) * metrics.size();
+  }
+
+  void RenderJson(Json::Object& object) const {
+    std::string name;
+    switch (write_event) {
+      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
+          kSendMsg:
+        name = "SEND_MSG_METRICS";
+        break;
+      default:
+        name = absl::StrCat("ENDPOINT_WRITE_METRICS_TYPE_",
+                            static_cast<int>(write_event));
+    }
+    object["metadata_type"] = Json::FromString(name);
+    object["fathom_timestamp"] = Json::FromString(absl::StrCat(timestamp));
+    for (const auto& [name, value] : metrics) {
+      object.emplace(name, Json::FromNumber(value));
+    }
+  }
+};
+
 struct WriteLargeFrameHeaderTrace {
   TcpDataFrameHeader data_header;
   std::vector<double> lb_decisions;
@@ -96,9 +125,11 @@ struct WriteLargeFrameHeaderTrace {
   }
 };
 
-using TcpZTraceCollector = channelz::ZTraceCollector<
-    tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
-    ReadDataHeaderTrace, WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace>;
+using TcpZTraceCollector =
+    channelz::ZTraceCollector<tcp_ztrace_collector_detail::Config,
+                              ReadFrameHeaderTrace, ReadDataHeaderTrace,
+                              WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
+                              EndpointWriteMetricsTrace>;
 
 }  // namespace grpc_core::chaotic_good
 
