@@ -128,7 +128,7 @@ class InProcessCHTTP2 {
       CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args(), nullptr)));
+                                      core_server->channel_args())));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                           nullptr);
     }

@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -140,8 +141,3 @@ FUZZ_TEST(GrpcMessageAssemblerTest, AssemblerFuzzer);
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

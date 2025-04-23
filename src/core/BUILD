@@ -8094,12 +8094,45 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_tcp_frame_header",
+    srcs = [
+        "ext/transport/chaotic_good/tcp_frame_header.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/tcp_frame_header.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "chaotic_good_frame_header",
+        "chaotic_good_serialize_little_endian",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_tcp_ztrace_collector",
+    srcs = [
+        "ext/transport/chaotic_good/tcp_ztrace_collector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/tcp_ztrace_collector.h",
+    ],
+    deps = [
+        "chaotic_good_frame_header",
+        "chaotic_good_tcp_frame_header",
+        "ztrace_collector",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_message_chunker",
     hdrs = [
         "ext/transport/chaotic_good/message_chunker.h",
     ],
     deps = [
         "chaotic_good_frame",
+        "chaotic_good_frame_transport",
         "if",
         "loop",
         "map",
@@ -8169,6 +8202,8 @@ grpc_cc_library(
         "1999",
         "chaotic_good_pending_connection",
         "chaotic_good_serialize_little_endian",
+        "chaotic_good_tcp_frame_header",
+        "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "default_tcp_tracer",
         "event_engine_context",
@@ -8208,6 +8243,7 @@ grpc_cc_library(
         "mpsc",
         "pipe",
         "//:promise",
+        "//:tcp_tracer",
     ],
 )
 
@@ -8233,6 +8269,8 @@ grpc_cc_library(
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_serialize_little_endian",
+        "chaotic_good_tcp_frame_header",
+        "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "event_engine_tcp_socket_utils",
         "if",
@@ -8254,6 +8292,7 @@ grpc_cc_library(
         "channel_args",
         "metrics",
         "ref_counted",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:ref_counted_ptr",
     ],
@@ -9088,6 +9127,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "sync",
+        "//:context_list_entry",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
