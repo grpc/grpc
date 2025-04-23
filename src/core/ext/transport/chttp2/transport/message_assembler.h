@@ -61,7 +61,9 @@ class GrpcMessageAssembler {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
-    if (message_buffer_.Length() >= header.length + kGrpcHeaderSizeInBytes) {
+    uint64_t total_length =
+        static_cast<uint64_t>(header.length) + kGrpcHeaderSizeInBytes;
+    if (message_buffer_.Length() >= total_length) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
