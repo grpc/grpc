@@ -20,15 +20,8 @@
 
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "src/core/lib/promise/if.h"
-#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
-#include "src/core/lib/promise/race.h"
-#include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_join.h"
-#include "src/core/lib/promise/try_seq.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {

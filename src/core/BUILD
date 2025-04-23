@@ -9453,7 +9453,6 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/status",
-        "absl/random",
     ],
     deps = [
         "1999",
@@ -9461,13 +9460,8 @@ grpc_cc_library(
         "latch",
         "loop",
         "map",
-        "match",
-        "ping_abuse_policy",
-        "ping_callbacks",
-        "ping_rate_policy",
         "race",
         "sleep",
-        "time",
         "try_join",
         "try_seq",
         "//:promise",

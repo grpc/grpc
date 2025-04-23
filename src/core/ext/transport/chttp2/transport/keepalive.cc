@@ -17,6 +17,14 @@
 //
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
+#include "src/core/lib/promise/if.h"
+#include "src/core/lib/promise/loop.h"
+#include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/race.h"
+#include "src/core/lib/promise/sleep.h"
+#include "src/core/lib/promise/try_join.h"
+#include "src/core/lib/promise/try_seq.h"
+
 namespace grpc_core {
 namespace http2 {
 KeepaliveManager::KeepaliveManager(
