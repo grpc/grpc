@@ -241,11 +241,13 @@ ChannelzRegistry::ShardedNodeMap::QueryNodes(
       n->uuid_ = uuid_generator_;
       ++uuid_generator_;
       index_.emplace(n->uuid_, n);
-      if (result.size() == max_results) {
-        node_after_end = std::move(node_ref);
-        return std::tuple(std::move(result), false);
+      if (n->uuid_ >= start_node) {
+        if (result.size() == max_results) {
+          node_after_end = std::move(node_ref);
+          return std::tuple(std::move(result), false);
+        }
+        result.emplace_back(std::move(node_ref));
       }
-      result.emplace_back(std::move(node_ref));
       n = next;
     }
   }
