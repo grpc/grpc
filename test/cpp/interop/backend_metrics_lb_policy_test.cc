@@ -101,7 +101,8 @@ class Server {
 
 TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {
   LoadReportTracker tracker;
-  grpc_core::CoreConfiguration::RegisterBuilder(RegisterBackendMetricsLbPolicy);
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+      RegisterBackendMetricsLbPolicy);
   Server server;
   ChannelArguments args = tracker.GetChannelArguments();
   args.SetLoadBalancingPolicyName("test_backend_metrics_load_balancer");

@@ -570,6 +570,10 @@ class ChannelArgs {
   bool operator<(const ChannelArgs& other) const;
   bool operator==(const ChannelArgs& other) const;
 
+  friend int QsortCompare(const ChannelArgs& lhs, const ChannelArgs& rhs) {
+    return QsortCompare(lhs.args_, rhs.args_);
+  }
+
   // Helpers for commonly accessed things
 
   bool WantMinimalStack() const;

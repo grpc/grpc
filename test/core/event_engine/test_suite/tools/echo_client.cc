@@ -81,7 +81,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
         CHECK_OK(status);
         write_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::WriteArgs());
   write_done.WaitForNotification();
 }
 
@@ -99,7 +99,7 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
                    << received.as_string_view();
         read_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::ReadArgs());
   read_done.WaitForNotification();
 }
 

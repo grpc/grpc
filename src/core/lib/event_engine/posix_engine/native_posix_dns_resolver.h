@@ -28,6 +28,9 @@
 
 namespace grpc_event_engine::experimental {
 
+absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+LookupHostnameBlocking(absl::string_view name, absl::string_view default_port);
+
 // An asynchronous DNS resolver which uses the native platform's getaddrinfo
 // API. Only supports A/AAAA records.
 class NativePosixDNSResolver : public EventEngine::DNSResolver {

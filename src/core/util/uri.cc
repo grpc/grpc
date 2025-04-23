@@ -353,6 +353,7 @@ URI::URI(std::string scheme, std::string user_info, std::string host_port,
       path_(std::move(path)),
       query_parameter_pairs_(std::move(query_parameter_pairs)),
       fragment_(std::move(fragment)) {
+  absl::AsciiStrToLower(&scheme_);
   for (const auto& kv : query_parameter_pairs_) {
     query_parameter_map_[kv.key] = kv.value;
   }

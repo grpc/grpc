@@ -55,6 +55,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["error_tests"],
     deps = [
         "//:gpr",
         "//:grpc",
