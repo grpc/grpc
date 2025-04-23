@@ -190,8 +190,10 @@ class Http2Status {
 
   explicit Http2Status(const Http2ErrorCode code, const Http2ErrorType type,
                        std::string& message)
-      : http2_code_(code), error_type_(type), message_(std::move(message)) {
-    absl_code_ = ErrorCodeToStatusCode();
+      : http2_code_(code),
+        error_type_(type),
+        absl_code_(ErrorCodeToStatusCode()),
+        message_(std::move(message)) {
     Validate();
   }
 
@@ -304,9 +306,9 @@ class Http2Status {
 
   const Http2ErrorCode http2_code_;
   const Http2ErrorType error_type_;
-  absl::StatusCode absl_code_;
+  const absl::StatusCode absl_code_;
 
-  const std::string message_;
+  std::string message_;
 };
 
 // We can add more methods and helpers as needed.
@@ -320,63 +322,63 @@ class ValueOrHttp2Status {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrHttp2Status(T value) : value_(std::move(value)) {
-    DCHECK(value_.has_value() && !status_.has_value());
+    DCHECK(std::holds_alternative<T>(value_));
   }
 
   // NOLINTNEXTLINE(google-explicit-constructor)
-  ValueOrHttp2Status(Http2Status status) : status_(std::move(status)) {
-    DCHECK(!value_.has_value() && status_.has_value());
-    CHECK(status_.value().GetType() != Http2Status::Http2ErrorType::kOk);
+  ValueOrHttp2Status(Http2Status status) : value_(std::move(status)) {
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    CHECK(std::get<Http2Status>(value_).GetType() !=
+          Http2Status::Http2ErrorType::kOk);
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
-    DCHECK(value_.has_value() && !status_.has_value());
-    return value_.value();
+    DCHECK(std::holds_alternative<T>(value_));
+    return std::get<T>(value_);
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
-    DCHECK(value_.has_value() && !status_.has_value());
-    return value_.value();
+    DCHECK(std::holds_alternative<T>(value_));
+    return std::get<T>(value_);
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {
-    DCHECK(value_.has_value() ^ status_.has_value());
-    return value_.has_value();
+    return std::holds_alternative<T>(value_);
   }
 
   GRPC_MUST_USE_RESULT Http2Status::Http2ErrorType GetErrorType() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetType();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).GetType();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetConnectionErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetConnectionErrorCode();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).GetConnectionErrorCode();
   }
 
   GRPC_MUST_USE_RESULT Http2ErrorCode GetStreamErrorCode() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetStreamErrorCode();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).GetStreamErrorCode();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslConnectionError() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetAbslConnectionError();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).GetAbslConnectionError();
   }
 
   GRPC_MUST_USE_RESULT absl::Status GetAbslStreamError() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().GetAbslStreamError();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).GetAbslStreamError();
   }
 
   std::string DebugString() const {
-    DCHECK(!value_.has_value() && status_.has_value());
-    return status_.value().DebugString();
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_).DebugString();
   }
 
  private:
-  std::optional<T> value_;
-  std::optional<Http2Status> status_;
+  // TODO(tjagtap) : [PH2][P1] : Convert this to std::variant in next PR.
+  std::variant<T, Http2Status> value_;
 };
 
 template <typename T>
