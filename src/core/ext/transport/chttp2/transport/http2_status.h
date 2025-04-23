@@ -163,7 +163,8 @@ class Http2Status {
   bool IsOk() const { return (http2_code_ == Http2ErrorCode::kNoError); }
 
   std::string DebugString() const {
-    return absl::StrCat(DebugGetType(), ": ", message_);
+    return absl::StrCat(DebugGetType(), ": {Error Code:", DebugGetCode(),
+                        ", Message:", message_, "}");
   }
 
   Http2Status(Http2Status&& move_status) = default;
@@ -259,6 +260,42 @@ class Http2Status {
         return "Connection Error";
       case Http2ErrorType::kStreamError:
         return "Stream Error";
+      default:
+        DCHECK(false);
+    }
+    GPR_UNREACHABLE_CODE(return "Invalid");
+  }
+
+  std::string DebugGetCode() const {
+    switch (http2_code_) {
+      case Http2ErrorCode::kNoError:
+        return "NO_ERROR";
+      case Http2ErrorCode::kProtocolError:
+        return "PROTOCOL_ERROR";
+      case Http2ErrorCode::kInternalError:
+        return "INTERNAL_ERROR";
+      case Http2ErrorCode::kFlowControlError:
+        return "FLOW_CONTROL_ERROR";
+      case Http2ErrorCode::kSettingsTimeout:
+        return "SETTINGS_TIMEOUT";
+      case Http2ErrorCode::kStreamClosed:
+        return "STREAM_CLOSED";
+      case Http2ErrorCode::kFrameSizeError:
+        return "FRAME_SIZE_ERROR";
+      case Http2ErrorCode::kRefusedStream:
+        return "REFUSED_STREAM";
+      case Http2ErrorCode::kCancel:
+        return "CANCEL";
+      case Http2ErrorCode::kCompressionError:
+        return "COMPRESSION_ERROR";
+      case Http2ErrorCode::kConnectError:
+        return "CONNECT_ERROR";
+      case Http2ErrorCode::kEnhanceYourCalm:
+        return "ENHANCE_YOUR_CALM";
+      case Http2ErrorCode::kInadequateSecurity:
+        return "INADEQUATE_SECURITY";
+      case Http2ErrorCode::kDoNotUse:
+        return "HTTP_1_1_REQUIRED";
       default:
         DCHECK(false);
     }

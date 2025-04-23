@@ -60,7 +60,7 @@ TEST(Http2StatusTest, ReturnTest) {
 // Then check the following:
 // 1. Http2ErrorType
 // 2. Http2ErrorCode
-// 3. DebugString
+// 3. (Optional) DebugString
 // 4. Return of IsOk() function
 // 5. Absl status
 
@@ -116,9 +116,6 @@ TEST(Http2StatusTest, Http2ConnectionErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetStreamErrorCode(); },
         "");
 
-    // 3. DebugString
-    EXPECT_STREQ(status.DebugString().c_str(), "Connection Error: Message1");
-
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
 
@@ -142,9 +139,6 @@ TEST(Http2StatusTest, Http2StreamErrorTest) {
     ASSERT_DEATH(
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetConnectionErrorCode(); },
         "");
-
-    // 3. DebugString
-    EXPECT_STREQ(status.DebugString().c_str(), "Stream Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -170,9 +164,6 @@ TEST(Http2StatusTest, AbslConnectionErrorTest) {
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetStreamErrorCode(); },
         "");
 
-    // 3. DebugString
-    EXPECT_STREQ(status.DebugString().c_str(), "Connection Error: Message1");
-
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
 
@@ -197,9 +188,6 @@ TEST(Http2StatusTest, AbslStreamErrorTest) {
     ASSERT_DEATH(
         { GRPC_UNUSED Http2ErrorCode code1 = status.GetConnectionErrorCode(); },
         "");
-
-    // 3. DebugString
-    EXPECT_STREQ(status.DebugString().c_str(), "Stream Error: Message1");
 
     // 4. Return of IsOk() function
     EXPECT_FALSE(status.IsOk());
@@ -324,7 +312,9 @@ TEST(ValueOrHttp2StatusTest, Http2ConnectionError) {
 
   // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_STREQ(message.c_str(), "Connection Error: Message1");
+  EXPECT_STREQ(
+      message.c_str(),
+      "Connection Error: {Error Code:PROTOCOL_ERROR, Message:Message1}");
 }
 
 TEST(ValueOrHttp2StatusTest, Http2StreamError) {
@@ -356,7 +346,8 @@ TEST(ValueOrHttp2StatusTest, Http2StreamError) {
 
   // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_STREQ(message.c_str(), "Stream Error: Message1");
+  EXPECT_STREQ(message.c_str(),
+               "Stream Error: {Error Code:PROTOCOL_ERROR, Message:Message1}");
 }
 
 TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
@@ -387,7 +378,9 @@ TEST(ValueOrHttp2StatusTest, AbslConnectionError) {
 
   // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_STREQ(message.c_str(), "Connection Error: Message1");
+  EXPECT_STREQ(
+      message.c_str(),
+      "Connection Error: {Error Code:INTERNAL_ERROR, Message:Message1}");
 }
 
 TEST(ValueOrHttp2StatusTest, AbslStreamError) {
@@ -419,7 +412,8 @@ TEST(ValueOrHttp2StatusTest, AbslStreamError) {
 
   // 5. DebugString
   std::string message = result.DebugString();
-  EXPECT_STREQ(message.c_str(), "Stream Error: Message1");
+  EXPECT_STREQ(message.c_str(),
+               "Stream Error: {Error Code:INTERNAL_ERROR, Message:Message1}");
 }
 
 }  // namespace testing
