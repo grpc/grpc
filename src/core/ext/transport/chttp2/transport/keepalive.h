@@ -33,8 +33,7 @@
 namespace grpc_core {
 namespace http2 {
 
-// KeepAlive
-class KeepAliveSystemInterface {
+class KeepAliveInterface {
  public:
   // Returns a promise that sends a ping frame and resolves when the ack is
   // received.
@@ -45,18 +44,27 @@ class KeepAliveSystemInterface {
 
   // Returns true if a keepalive ping needs to be sent.
   virtual bool NeedToSendKeepAlivePing() = 0;
-  virtual ~KeepAliveSystemInterface() = default;
+  virtual ~KeepAliveInterface() = default;
 };
 
-class KeepAliveSystem {
+class KeepaliveManager {
  public:
-  KeepAliveSystem(
-      std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface,
-      Duration keepalive_timeout, Duration keepalive_interval);
+  KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
+                   Duration keepalive_timeout, Duration keepalive_interval);
   void Spawn(Party* party);
 
   // Needs to be called when any data is read from the peer.
-  void GotData() { ReceivedData(); }
+  void GotData() {
+    if (keep_alive_timeout_triggered_) {
+      VLOG(2)
+          << "KeepAlive timeout triggered. Not setting data_received_ to true";
+      return;
+    }
+    VLOG(2) << "Data received. Setting data_received_ to true";
+    data_received_in_last_cycle_ = true;
+    auto waker = std::move(waker_);
+    waker.Wakeup();
+  }
   void SetKeepAliveTimeout(Duration keepalive_timeout) {
     keepalive_timeout_ = keepalive_timeout;
   }
@@ -86,7 +94,7 @@ class KeepAliveSystem {
 
   auto WaitForData() {
     return [this]() -> Poll<absl::Status> {
-      if (IsDataReceivedInLastCycle()) {
+      if (data_received_in_last_cycle_) {
         VLOG(2) << "WaitForData: Data received. Poll resolved";
         return absl::OkStatus();
       } else {
@@ -96,20 +104,8 @@ class KeepAliveSystem {
       }
     };
   }
-  // Needs to be called when data is read from the peer.
-  void ReceivedData() {
-    if (IsKeepAliveTimeoutTriggered()) {
-      VLOG(2)
-          << "KeepAlive timeout triggered. Not setting data_received_ to true";
-      return;
-    }
-    VLOG(2) << "Data received. Setting data_received_ to true";
-    state_ |= kDataReceivedInLastCycle;
-    auto waker = std::move(waker_);
-    waker.Wakeup();
-  }
   auto SendPing() {
-    DCHECK(!IsDataReceivedInLastCycle());
+    DCHECK_EQ(data_received_in_last_cycle_, false);
     return keep_alive_interface_->SendPing();
   }
 
@@ -117,29 +113,18 @@ class KeepAliveSystem {
   // keepalive ping. This also means that there can be scenarios where we would
   // send one keepalive ping in ~(2*keepalive_interval).
   bool NeedToSendKeepAlivePing() {
-    return (IsDataReceivedInLastCycle() == false) &&
+    return (data_received_in_last_cycle_ == false) &&
            (keep_alive_interface_->NeedToSendKeepAlivePing());
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsKeepAliveTimeoutTriggered()
-      const {
-    return (state_ & kKeepAliveTimeoutTriggered);
-  }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsDataReceivedInLastCycle() const {
-    return (state_ & kDataReceivedInLastCycle);
-  }
-
-  std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface_;
-  // bit to indicate if data is received in the last cycle
-  static constexpr uint8_t kDataReceivedInLastCycle = 0;
-  // bit to indicate if the keepalive timeout is triggered
-  static constexpr uint8_t kKeepAliveTimeoutTriggered = 1;
+  std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
   // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
   // by the ping timeout. Otherwise, this field can be used to set a specific
   // timeout for keepalive pings.
   Duration keepalive_timeout_;
   Duration keepalive_interval_;
-  uint8_t state_ = 0;
+  bool data_received_in_last_cycle_ = false;
+  bool keep_alive_timeout_triggered_ = false;
   Waker waker_;
 };
 

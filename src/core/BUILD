@@ -9443,12 +9443,12 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "ping_promise",
+    name = "keepalive",
     srcs = [
-        "ext/transport/chttp2/transport/ping_promise.cc",
+        "ext/transport/chttp2/transport/keepalive.cc",
     ],
     hdrs = [
-        "ext/transport/chttp2/transport/ping_promise.h",
+        "ext/transport/chttp2/transport/keepalive.h",
     ],
     external_deps = [
         "absl/log",

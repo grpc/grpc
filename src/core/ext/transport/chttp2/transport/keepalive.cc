@@ -15,21 +15,21 @@
 // limitations under the License.
 //
 //
-#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
 namespace grpc_core {
 namespace http2 {
-KeepAliveSystem::KeepAliveSystem(
-    std::unique_ptr<KeepAliveSystemInterface> keep_alive_interface,
+KeepaliveManager::KeepaliveManager(
+    std::unique_ptr<KeepAliveInterface> keep_alive_interface,
     Duration keepalive_timeout, Duration keepalive_interval)
     : keep_alive_interface_(std::move(keep_alive_interface)),
       keepalive_timeout_(keepalive_timeout),
       keepalive_interval_(keepalive_interval) {}
 
-auto KeepAliveSystem::WaitForKeepAliveTimeout() {
+auto KeepaliveManager::WaitForKeepAliveTimeout() {
   return TrySeq(Sleep(keepalive_timeout_), [this] {
     return If(
-        IsDataReceivedInLastCycle(),
+        data_received_in_last_cycle_,
         [] {
           VLOG(2) << "Keepalive timeout triggered but "
                   << "received data. Resolving with ok status";
@@ -41,15 +41,15 @@ auto KeepAliveSystem::WaitForKeepAliveTimeout() {
           // Once the keepalive timeout is triggered, ensure that
           // WaitForData() is never resolved. This is needed as the keepalive
           // loop should break once the timeout is triggered.
-          state_ |= kKeepAliveTimeoutTriggered;
+          keep_alive_timeout_triggered_ = true;
           return TrySeq(keep_alive_interface_->KeepAliveTimeout(), [] {
             return absl::CancelledError("keepalive timeout");
           });
         });
   });
 }
-auto KeepAliveSystem::TimeoutAndSendPing() {
-  DCHECK_EQ(IsDataReceivedInLastCycle(), false);
+auto KeepaliveManager::TimeoutAndSendPing() {
+  DCHECK_EQ(data_received_in_last_cycle_, false);
   DCHECK(keepalive_timeout_ != Duration::Infinity());
 
   return Map(TryJoin<absl::StatusOr>(
@@ -61,8 +61,8 @@ auto KeepAliveSystem::TimeoutAndSendPing() {
                return absl::OkStatus();
              });
 }
-auto KeepAliveSystem::MaybeSendKeepAlivePing() {
-  LOG(INFO) << "KeepAliveSystem::MaybeSendKeepAlivePing";
+auto KeepaliveManager::MaybeSendKeepAlivePing() {
+  LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
   return TrySeq(If(
                     NeedToSendKeepAlivePing(),
                     [this]() {
@@ -73,12 +73,12 @@ auto KeepAliveSystem::MaybeSendKeepAlivePing() {
                     },
                     []() { return Immediate(absl::OkStatus()); }),
                 [this] {
-                  state_ &= ~kDataReceivedInLastCycle;
+                  data_received_in_last_cycle_ = false;
                   return Immediate(absl::OkStatus());
                 });
 }
 
-void KeepAliveSystem::Spawn(Party* party) {
+void KeepaliveManager::Spawn(Party* party) {
   party->Spawn("KeepAlive", Loop([this]() {
                  return TrySeq(
                      Sleep(keepalive_interval_),

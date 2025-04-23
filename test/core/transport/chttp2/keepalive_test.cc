@@ -15,7 +15,7 @@
 // limitations under the License.
 //
 //
-#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
 #include <memory>
 
@@ -33,15 +33,15 @@
 namespace grpc_core {
 
 namespace {
-using ::grpc_core::http2::KeepAliveSystem;
-using ::grpc_core::http2::KeepAliveSystemInterface;
+using ::grpc_core::http2::KeepAliveInterface;
+using ::grpc_core::http2::KeepaliveManager;
 
 using ::testing::MockFunction;
 using ::testing::StrictMock;
 using ::testing::WithArgs;
 }  // namespace
 
-class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
+class MockKeepAliveInterface : public KeepAliveInterface {
  public:
   MOCK_METHOD(Promise<absl::Status>, SendPing, (), (override));
   MOCK_METHOD(Promise<absl::Status>, KeepAliveTimeout, (), (override));
@@ -89,7 +89,7 @@ class MockKeepAliveSystemInterface : public KeepAliveSystemInterface {
   }
 };
 
-class KeepAliveSystemTest : public YodelTest {
+class KeepaliveManagerTest : public YodelTest {
  protected:
   using YodelTest::YodelTest;
 
@@ -109,7 +109,7 @@ class KeepAliveSystemTest : public YodelTest {
   RefCountedPtr<Party> party_;
 };
 
-YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
+YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
   // Simple test to trigger two keepalive pings. The first one resolves
   // successfully and the second one returns a failure.
   InitParty();
@@ -117,15 +117,14 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
   Duration keepalive_timeout = Duration::Infinity();
   Duration keepalive_interval = Duration::Seconds(1);
 
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+  std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
+      std::make_unique<StrictMock<MockKeepAliveInterface>>();
   keep_alive_interface->ExpectSendPing(end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/2,
                                                       /*return_value=*/true);
 
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    keepalive_timeout, keepalive_interval);
+  KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
+                                     keepalive_timeout, keepalive_interval);
   auto party = GetParty();
   keep_alive_system.Spawn(party);
 
@@ -134,7 +133,7 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAlive) {
   event_engine()->UnsetGlobalHooks();
 }
 
-YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
+YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
   // Simple test to simulate sending a keepalive ping and not receiving any data
   // within the keepalive timeout. The test asserts that:
   // 1. The keepalive timeout is triggered.
@@ -144,16 +143,15 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   Duration keepalive_timeout = Duration::Seconds(1);
   Duration keepalive_interval = Duration::Seconds(1);
 
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+  std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
+      std::make_unique<StrictMock<MockKeepAliveInterface>>();
   keep_alive_interface->ExpectKeepAliveTimeout();
   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
 
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    keepalive_timeout, keepalive_interval);
+  KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
+                                     keepalive_timeout, keepalive_interval);
   auto party = GetParty();
   keep_alive_system.Spawn(party);
 
@@ -162,7 +160,7 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeout) {
   event_engine()->UnsetGlobalHooks();
 }
 
-YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
+YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
   // Test to simulate reading of data at certain intervals. The test asserts
   // that:
   // 1. The keepalive ping is not sent as long as there is data read within the
@@ -172,17 +170,16 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
   Duration keepalive_timeout = Duration::Hours(1);
   Duration keepalive_interval = Duration::Hours(1);
   int read_loop_end_after = 5;
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+  std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
+      std::make_unique<StrictMock<MockKeepAliveInterface>>();
 
   // Break keepalive loop
   keep_alive_interface->ExpectSendPing(end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
 
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    keepalive_timeout, keepalive_interval);
+  KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
+                                     keepalive_timeout, keepalive_interval);
   auto party = GetParty();
   keep_alive_system.Spawn(party);
 
@@ -207,7 +204,7 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveWithData) {
   event_engine()->UnsetGlobalHooks();
 }
 
-YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
+YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeoutWithData) {
   // Test to simulate reading of data at certain intervals. The test asserts
   // that:
   // 1. The keepalive ping is not sent as long as there is data read within the
@@ -219,9 +216,8 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
   Duration keepalive_timeout = Duration::Seconds(1);
   Duration keepalive_interval = Duration::Hours(1);
   int read_loop_end_after = 5;
-  std::unique_ptr<StrictMock<MockKeepAliveSystemInterface>>
-      keep_alive_interface =
-          std::make_unique<StrictMock<MockKeepAliveSystemInterface>>();
+  std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
+      std::make_unique<StrictMock<MockKeepAliveInterface>>();
 
   // Break keepalive loop
   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
@@ -229,8 +225,8 @@ YODEL_TEST(KeepAliveSystemTest, TestKeepAliveTimeoutWithData) {
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
 
-  KeepAliveSystem keep_alive_system(std::move(keep_alive_interface),
-                                    keepalive_timeout, keepalive_interval);
+  KeepaliveManager keep_alive_system(std::move(keep_alive_interface),
+                                     keepalive_timeout, keepalive_interval);
   auto party = GetParty();
   keep_alive_system.Spawn(party);
 

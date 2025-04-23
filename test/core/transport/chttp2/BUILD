@@ -679,9 +679,9 @@ grpc_cc_library(
 )
 
 grpc_fuzz_test(
-    name = "ping_promise_test",
+    name = "keepalive_test",
     srcs = [
-        "ping_promise_test.cc",
+        "keepalive_test.cc",
     ],
     external_deps = [
         "fuzztest",
@@ -689,8 +689,8 @@ grpc_fuzz_test(
         "gtest",
     ],
     deps = [
+        "//src/core:keepalive",
         "//src/core:map",
-        "//src/core:ping_promise",
         "//src/core:try_seq",
         "//test/core/call/yodel:yodel_test",
     ],
