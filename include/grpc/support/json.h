@@ -74,7 +74,7 @@ class Json {
     return json;
   }
   template <typename T>
-  static std::enable_if<std::is_arithmetic_v<T>, Json> FromNumber(T value) {
+  static std::enable_if_t<std::is_arithmetic_v<T>, Json> FromNumber(T value) {
     Json json;
     json.value_ = NumberValue{absl::StrCat(value)};
     return json;
