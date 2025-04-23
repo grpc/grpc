@@ -241,6 +241,11 @@
   expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
+- name: shard_channelz_index
+  description: If set, shard the channelz index for better concurrency
+  expiry: 2025/06/01
+  owner: ctiller@google.com
+  test_tags: [channelz_test]
 - name: shard_global_connection_pool
   description: If set, shard the global connection pool to improve parallelism.
   expiry: 2025/09/09

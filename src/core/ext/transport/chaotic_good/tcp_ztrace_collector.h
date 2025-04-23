@@ -80,7 +80,7 @@ struct EndpointWriteMetricsTrace {
   absl::Time timestamp;
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent
       write_event;
-  std::vector<std::pair<absl::string_view, size_t>> metrics;
+  std::vector<std::pair<absl::string_view, int64_t>> metrics;
 
   size_t MemoryUsage() const {
     return sizeof(*this) + sizeof(metrics[0]) * metrics.size();
