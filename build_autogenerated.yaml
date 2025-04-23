@@ -10073,6 +10073,9 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
   uses_polling: false
 - name: evaluate_args_test
   gtest: true
