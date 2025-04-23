@@ -25,8 +25,10 @@
 namespace grpc_core {
 
 std::atomic<CoreConfiguration*> CoreConfiguration::config_{nullptr};
-std::atomic<CoreConfiguration::RegisteredBuilder*> CoreConfiguration::builders_{
-    nullptr};
+std::atomic<CoreConfiguration::RegisteredBuilder*>
+    CoreConfiguration::builders_[static_cast<size_t>(BuilderScope::kCount)]{
+        nullptr, nullptr};
+std::atomic<bool> CoreConfiguration::has_config_ever_been_produced_{false};
 void (*CoreConfiguration::default_builder_)(CoreConfiguration::Builder*);
 
 CoreConfiguration::Builder::Builder() = default;
@@ -46,18 +48,31 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       lb_policy_registry_(builder->lb_policy_registry_.Build()),
       proxy_mapper_registry_(builder->proxy_mapper_registry_.Build()),
       certificate_provider_registry_(
-          builder->certificate_provider_registry_.Build()) {}
+          builder->certificate_provider_registry_.Build()),
+      endpoint_transport_registry_(
+          builder->endpoint_transport_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(
-    absl::AnyInvocable<void(Builder*)> builder) {
+    BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,
+    SourceLocation whence) {
   CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
+  if (scope == BuilderScope::kPersistent) {
+    CHECK(!has_config_ever_been_produced_.load(std::memory_order_relaxed))
+        << "Persistent builders cannot be registered after the first "
+           "CoreConfiguration has been produced";
+  }
+  CHECK_NE(scope, BuilderScope::kCount);
+  auto& head = builders_[static_cast<size_t>(scope)];
   RegisteredBuilder* n = new RegisteredBuilder();
+  VLOG(4) << "Registering " << scope << " builder from " << whence.file() << ":"
+          << whence.line();
   n->builder = std::move(builder);
-  n->next = builders_.load(std::memory_order_relaxed);
-  while (!builders_.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
-                                          std::memory_order_relaxed)) {
+  n->whence = whence;
+  n->next = head.load(std::memory_order_relaxed);
+  while (!head.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
+                                     std::memory_order_relaxed)) {
   }
   CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
@@ -65,6 +80,7 @@ void CoreConfiguration::RegisterBuilder(
 }
 
 const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
+  has_config_ever_been_produced_.store(true, std::memory_order_relaxed);
   // Construct builder, pass it up to code that knows about build configuration
   Builder builder;
   // The linked list of builders stores things in reverse registration order.
@@ -72,13 +88,21 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
   // actually need to run things in forward registration order, so we iterate
   // once over the linked list to build a vector of builders, and then iterate
   // over said vector in reverse to actually run the builders.
+  // Note that we also iterate scopes in reverse order here too, so that when
+  // we run the builders in the reverse generated order we'll actually run
+  // persistent builders before ephemeral ones.
   std::vector<RegisteredBuilder*> registered_builders;
-  for (RegisteredBuilder* b = builders_.load(std::memory_order_acquire);
-       b != nullptr; b = b->next) {
-    registered_builders.push_back(b);
+  for (auto scope : {BuilderScope::kEphemeral, BuilderScope::kPersistent}) {
+    for (RegisteredBuilder* b = builders_[static_cast<size_t>(scope)].load(
+             std::memory_order_acquire);
+         b != nullptr; b = b->next) {
+      registered_builders.push_back(b);
+    }
   }
   for (auto it = registered_builders.rbegin(); it != registered_builders.rend();
        ++it) {
+    VLOG(4) << "Running builder from " << (*it)->whence.file() << ":"
+            << (*it)->whence.line();
     (*it)->builder(&builder);
   }
   // Finally, call the built in configuration builder.
@@ -100,12 +124,27 @@ const CoreConfiguration& CoreConfiguration::BuildNewAndMaybeSet() {
 void CoreConfiguration::Reset() {
   delete config_.exchange(nullptr, std::memory_order_acquire);
   RegisteredBuilder* builder =
-      builders_.exchange(nullptr, std::memory_order_acquire);
+      builders_[static_cast<size_t>(BuilderScope::kEphemeral)].exchange(
+          nullptr, std::memory_order_acquire);
   while (builder != nullptr) {
     RegisteredBuilder* next = builder->next;
     delete builder;
     builder = next;
   }
+}
+
+void CoreConfiguration::
+    ResetEverythingIncludingPersistentBuildersAbsolutelyNotRecommended() {
+  has_config_ever_been_produced_.store(false, std::memory_order_relaxed);
+  RegisteredBuilder* builder =
+      builders_[static_cast<size_t>(BuilderScope::kPersistent)].exchange(
+          nullptr, std::memory_order_acquire);
+  while (builder != nullptr) {
+    RegisteredBuilder* next = builder->next;
+    delete builder;
+    builder = next;
+  }
+  Reset();
 }
 
 }  // namespace grpc_core

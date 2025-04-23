@@ -142,20 +142,22 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
       TcpFrameTransport::Options{server_alignment, client_alignment,
                                  server_inlined_payload_size_threshold},
       std::move(client), std::move(pending_connections_client),
-      std::static_pointer_cast<EventEngine>(engine), nullptr);
+      MakeRefCounted<TransportContext>(
+          std::static_pointer_cast<EventEngine>(engine), nullptr));
   auto server_transport = MakeOrphanable<TcpFrameTransport>(
       TcpFrameTransport::Options{client_alignment, server_alignment,
                                  client_inlined_payload_size_threshold},
       std::move(server), std::move(pending_connections_server),
-      std::static_pointer_cast<EventEngine>(engine), nullptr);
+      MakeRefCounted<TransportContext>(
+          std::static_pointer_cast<EventEngine>(engine), nullptr));
   auto client_arena = SimpleArenaAllocator()->MakeArena();
   auto server_arena = SimpleArenaAllocator()->MakeArena();
   client_arena->SetContext(static_cast<EventEngine*>(engine.get()));
   server_arena->SetContext(static_cast<EventEngine*>(engine.get()));
   auto client_party = Party::Make(client_arena);
   auto server_party = Party::Make(server_arena);
-  MpscReceiver<Frame> client_receiver(client_max_buffer_hint);
-  MpscReceiver<Frame> server_receiver(server_max_buffer_hint);
+  MpscReceiver<OutgoingFrame> client_receiver(client_max_buffer_hint);
+  MpscReceiver<OutgoingFrame> server_receiver(server_max_buffer_hint);
   auto client_sender = client_receiver.MakeSender();
   auto server_sender = server_receiver.MakeSender();
   auto client_sink =
@@ -167,10 +169,12 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
   server_transport->Start(server_party.get(), std::move(server_receiver),
                           server_sink);
   for (const auto& frame : send_on_client_frames) {
-    client_sender.UnbufferedImmediateSend(CopyFrame(frame));
+    client_sender.UnbufferedImmediateSend(
+        UntracedOutgoingFrame(CopyFrame(frame)));
   }
   for (const auto& frame : send_on_server_frames) {
-    server_sender.UnbufferedImmediateSend(CopyFrame(frame));
+    server_sender.UnbufferedImmediateSend(
+        UntracedOutgoingFrame(CopyFrame(frame)));
   }
   auto deadline = Timestamp::Now() + Duration::Hours(6);
   while (!client_sink->done() || !server_sink->done()) {

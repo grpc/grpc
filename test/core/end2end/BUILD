@@ -50,6 +50,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
     ],
 )
 
@@ -194,6 +195,7 @@ grpc_cc_library(
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:postmortem",
             "//test/core/test_util:test_call_creds",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,

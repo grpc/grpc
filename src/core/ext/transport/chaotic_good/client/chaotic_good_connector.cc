@@ -175,7 +175,8 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
         send_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
     frame.SerializePayload(send_buffer);
     return TrySeq(
-        connect_result_.endpoint.Write(std::move(send_buffer)),
+        connect_result_.endpoint.Write(std::move(send_buffer),
+                                       PromiseEndpoint::WriteArgs{}),
         [this]() {
           return connect_result_.endpoint.ReadSlice(
               TcpFrameHeader::kFrameHeaderSize);
@@ -252,14 +253,16 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               if (!parse_status.ok()) {
                 return parse_status;
               }
+              auto socket_node = TcpFrameTransport::MakeSocketNode(
+                  result_notifier_ptr->args.channel_args,
+                  result.connect_result.endpoint);
               auto frame_transport = MakeOrphanable<TcpFrameTransport>(
                   result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
                   result_notifier_ptr->config.TakePendingDataEndpoints(),
-                  result_notifier_ptr->args.channel_args
-                      .GetObjectRef<EventEngine>(),
-                  result_notifier_ptr->args.channel_args.GetObjectRef<
-                      GlobalStatsPluginRegistry::StatsPluginGroup>());
+                  MakeRefCounted<TransportContext>(
+                      result_notifier_ptr->args.channel_args,
+                      std::move(socket_node)));
               auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
                   result_notifier_ptr->args.channel_args,
                   std::move(frame_transport),

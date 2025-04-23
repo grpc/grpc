@@ -14,7 +14,7 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_health_checking/python_version.py.template`!!!
 
-SUPPORTED_PYTHON_VERSIONS = ['3.9', '3.10', '3.11', '3.12', '3.13']
+SUPPORTED_PYTHON_VERSIONS = ["3.9","3.10","3.11","3.12","3.13"]
 
 MIN_PYTHON_VERSION = 3.9
 MAX_PYTHON_VERSION = 3.13

@@ -80,9 +80,12 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
+inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
 inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -100,8 +103,11 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
+inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -130,9 +136,12 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
+inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
 inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -150,8 +159,11 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
+inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -180,9 +192,12 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
+inline bool IsEventEngineSecureEndpointEnabled() { return false; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
+inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
 inline bool IsMaxPingsWoDataThrottleEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MONITORING_EXPERIMENT
@@ -200,8 +215,11 @@ inline bool IsRqFastRejectEnabled() { return false; }
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() { return true; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
+inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
+inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
 inline bool IsTcpFrameSizeTuningEnabled() { return false; }
 inline bool IsTcpRcvLowatEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
@@ -222,9 +240,11 @@ enum ExperimentIds {
   kExperimentIdEventEngineListener,
   kExperimentIdEventEngineCallbackCq,
   kExperimentIdEventEngineForAllOtherEndpoints,
+  kExperimentIdEventEngineSecureEndpoint,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdKeepAlivePingTimerBatch,
   kExperimentIdLocalConnectorSecure,
+  kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMaxPingsWoDataThrottle,
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
@@ -238,7 +258,9 @@ enum ExperimentIds {
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdServerGlobalCallbacksOwnership,
-  kExperimentIdServerListener,
+  kExperimentIdShardChannelzIndex,
+  kExperimentIdShardGlobalConnectionPool,
+  kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdTcpFrameSizeTuning,
   kExperimentIdTcpRcvLowat,
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
@@ -296,6 +318,10 @@ inline bool IsEventEngineCallbackCqEnabled() {
 inline bool IsEventEngineForAllOtherEndpointsEnabled() {
   return IsExperimentEnabled<kExperimentIdEventEngineForAllOtherEndpoints>();
 }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
+inline bool IsEventEngineSecureEndpointEnabled() {
+  return IsExperimentEnabled<kExperimentIdEventEngineSecureEndpoint>();
+}
 #define GRPC_EXPERIMENT_IS_INCLUDED_FREE_LARGE_ALLOCATOR
 inline bool IsFreeLargeAllocatorEnabled() {
   return IsExperimentEnabled<kExperimentIdFreeLargeAllocator>();
@@ -307,6 +333,10 @@ inline bool IsKeepAlivePingTimerBatchEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
   return IsExperimentEnabled<kExperimentIdLocalConnectorSecure>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
+inline bool IsMaxInflightPingsStrictLimitEnabled() {
+  return IsExperimentEnabled<kExperimentIdMaxInflightPingsStrictLimit>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_PINGS_WO_DATA_THROTTLE
 inline bool IsMaxPingsWoDataThrottleEnabled() {
@@ -360,9 +390,17 @@ inline bool IsScheduleCancellationOverWriteEnabled() {
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
   return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
 }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_LISTENER
-inline bool IsServerListenerEnabled() {
-  return IsExperimentEnabled<kExperimentIdServerListener>();
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
+inline bool IsShardChannelzIndexEnabled() {
+  return IsExperimentEnabled<kExperimentIdShardChannelzIndex>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
+inline bool IsShardGlobalConnectionPoolEnabled() {
+  return IsExperimentEnabled<kExperimentIdShardGlobalConnectionPool>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SLEEP_PROMISE_EXEC_CTX_REMOVAL
+inline bool IsSleepPromiseExecCtxRemovalEnabled() {
+  return IsExperimentEnabled<kExperimentIdSleepPromiseExecCtxRemoval>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_TCP_FRAME_SIZE_TUNING
 inline bool IsTcpFrameSizeTuningEnabled() {

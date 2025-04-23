@@ -372,21 +372,24 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       write_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   return TrySeq(
-      self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
+      self->connection_->endpoint_.Write(std::move(write_buffer),
+                                         PromiseEndpoint::WriteArgs{}),
+      [self]() {
         auto config =
             std::move(std::get<ControlConnection>(self->data_).config);
+        auto& ep = self->connection_->endpoint_;
+        auto socket_node =
+            TcpFrameTransport::MakeSocketNode(self->connection_->args(), ep);
         auto frame_transport = MakeOrphanable<TcpFrameTransport>(
-            config.MakeTcpFrameTransportOptions(),
-            std::move(self->connection_->endpoint_),
+            config.MakeTcpFrameTransportOptions(), std::move(ep),
             config.TakePendingDataEndpoints(),
-            self->connection_->args().GetObjectRef<EventEngine>(),
-            self->connection_->args()
-                .GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>());
+            MakeRefCounted<TransportContext>(self->connection_->args(),
+                                             std::move(socket_node)));
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(self->connection_->args(),
                                            std::move(frame_transport),
                                            config.MakeMessageChunker()),
-            nullptr, self->connection_->args(), nullptr);
+            nullptr, self->connection_->args());
       });
 }
 
@@ -400,7 +403,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       write_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return TrySeq(self->connection_->endpoint_.Write(std::move(write_buffer)),
+  return TrySeq(self->connection_->endpoint_.Write(
+                    std::move(write_buffer), PromiseEndpoint::WriteArgs{}),
                 [self]() mutable {
                   self->connection_->listener_->data_connection_listener_
                       ->FinishDataConnection(

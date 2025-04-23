@@ -551,6 +551,8 @@ Subchannel::Subchannel(SubchannelKey key,
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
+    channelz_node_->SetChannelArgs(args_);
+    args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
 }
 
@@ -792,7 +794,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 }
 
 bool Subchannel::PublishTransportLocked() {
-  auto socket_node = std::move(connecting_result_.socket_node);
+  auto socket_node = connecting_result_.transport->GetSocketNode();
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.

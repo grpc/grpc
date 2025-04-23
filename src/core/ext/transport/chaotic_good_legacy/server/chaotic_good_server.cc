@@ -363,14 +363,16 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   return TrySeq(
-      self->connection_->endpoint_.Write(std::move(write_buffer)), [self]() {
+      self->connection_->endpoint_.Write(std::move(write_buffer),
+                                         PromiseEndpoint::WriteArgs{}),
+      [self]() {
         return self->connection_->listener_->server_->SetupTransport(
             new ChaoticGoodServerTransport(
                 self->connection_->args(),
                 std::move(self->connection_->endpoint_),
                 std::move(std::get<ControlConnection>(self->data_).config),
                 self->connection_->listener_->data_connection_listener_),
-            nullptr, self->connection_->args(), nullptr);
+            nullptr, self->connection_->args());
       });
 }
 
@@ -384,7 +386,8 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       write_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
   frame.SerializePayload(write_buffer);
   // ignore encoding errors: they will be logged separately already
-  return TrySeq(self->connection_->endpoint_.Write(std::move(write_buffer)),
+  return TrySeq(self->connection_->endpoint_.Write(
+                    std::move(write_buffer), PromiseEndpoint::WriteArgs()),
                 [self]() mutable {
                   self->connection_->listener_->data_connection_listener_
                       ->FinishDataConnection(

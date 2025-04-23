@@ -73,7 +73,7 @@ static absl::StatusOr<std::string> grpc_sockaddr_to_uri_unix_if_possible(
     path = unix_addr->sun_path;
   }
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
-      std::move(scheme), /*authority=*/"", std::move(path),
+      std::move(scheme), /*user_info=*/"", /*host_port=*/"", std::move(path),
       /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
@@ -124,9 +124,9 @@ int grpc_sockaddr_is_v4mapped(const grpc_resolved_address* resolved_addr,
       if (resolved_addr4_out != nullptr) {
         // Normalize ::ffff:0.0.0.0/96 to IPv4.
         memset(resolved_addr4_out, 0, sizeof(*resolved_addr4_out));
-        addr4_out->sin_family = GRPC_AF_INET;
         // s6_addr32 would be nice, but it's non-standard.
         memcpy(&addr4_out->sin_addr, &addr6->sin6_addr.s6_addr[12], 4);
+        addr4_out->sin_family = GRPC_AF_INET;
         addr4_out->sin_port = addr6->sin6_port;
         resolved_addr4_out->len =
             static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
@@ -318,9 +318,9 @@ absl::StatusOr<std::string> grpc_sockaddr_to_uri(
 
   auto path = grpc_sockaddr_to_string(resolved_addr, false /* normalize */);
   if (!path.ok()) return path;
-  absl::StatusOr<grpc_core::URI> uri =
-      grpc_core::URI::Create(scheme, /*authority=*/"", std::move(path.value()),
-                             /*query_parameter_pairs=*/{}, /*fragment=*/"");
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Create(
+      scheme, /*user_info=*/"", /*host_port=*/"", std::move(path.value()),
+      /*query_parameter_pairs=*/{}, /*fragment=*/"");
   if (!uri.ok()) return uri.status();
   return uri->ToString();
 }

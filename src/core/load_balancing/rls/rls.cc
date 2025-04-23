@@ -97,6 +97,7 @@
 #include "src/core/util/match.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
@@ -401,7 +402,8 @@ class RlsLb final : public LoadBalancingPolicy {
       size_t Size() const ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // Pick subchannel for request based on the entry's state.
-      PickResult Pick(PickArgs args) ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
+      PickResult Pick(PickArgs args, absl::string_view lookup_service)
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(&RlsLb::mu_);
 
       // If the cache entry is in backoff state, resets the backoff and, if
       // applicable, its backoff timer. The method does not update the LB
@@ -693,6 +695,7 @@ class RlsLb final : public LoadBalancingPolicy {
 
   template <typename HandleType>
   void MaybeExportPickCount(HandleType handle, absl::string_view target,
+                            absl::string_view lookup_service,
                             const PickResult& pick_result);
 
   const std::string instance_uuid_;
@@ -1000,7 +1003,7 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::Pick(PickArgs args) {
       GRPC_TRACE_LOG(rls_lb, INFO)
           << "[rlslb " << lb_policy_.get() << "] picker=" << this
           << ": using cache entry " << entry;
-      return entry->Pick(args);
+      return entry->Pick(args, config_->lookup_service());
     }
     // If the entry is in backoff, then use the default target if set,
     // or else fail the pick.
@@ -1026,7 +1029,8 @@ LoadBalancingPolicy::PickResult RlsLb::Picker::PickFromDefaultTargetOrFail(
         << reason << "; using default target";
     auto pick_result = default_child_policy_->Pick(args);
     lb_policy_->MaybeExportPickCount(kMetricDefaultTargetPicks,
-                                     config_->default_target(), pick_result);
+                                     config_->default_target(),
+                                     config_->lookup_service(), pick_result);
     return pick_result;
   }
   GRPC_TRACE_LOG(rls_lb, INFO)
@@ -1137,7 +1141,8 @@ size_t RlsLb::Cache::Entry::Size() const {
   return lb_policy_->cache_.EntrySizeForKey(*lru_iterator_);
 }
 
-LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
+LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(
+    PickArgs args, absl::string_view lookup_service) {
   size_t i = 0;
   ChildPolicyWrapper* child_policy_wrapper = nullptr;
   // Skip targets before the last one that are in state TRANSIENT_FAILURE.
@@ -1167,7 +1172,8 @@ LoadBalancingPolicy::PickResult RlsLb::Cache::Entry::Pick(PickArgs args) {
       << "; delegating";
   auto pick_result = child_policy_wrapper->Pick(args);
   lb_policy_->MaybeExportPickCount(kMetricTargetPicks,
-                                   child_policy_wrapper->target(), pick_result);
+                                   child_policy_wrapper->target(),
+                                   lookup_service, pick_result);
   // Add header data.
   if (!header_data_.empty()) {
     auto* complete_pick =
@@ -1847,9 +1853,9 @@ RlsLb::ResponseInfo RlsLb::RlsRequest::ParseResponseProto() {
 
 std::string GenerateUUID() {
   absl::uniform_int_distribution<uint64_t> distribution;
-  absl::BitGen bitgen;
-  uint64_t hi = distribution(bitgen);
-  uint64_t lo = distribution(bitgen);
+  SharedBitGen g;
+  uint64_t hi = distribution(g);
+  uint64_t lo = distribution(g);
   return GenerateUUIDv4(hi, lo);
 }
 
@@ -2114,6 +2120,7 @@ void RlsLb::UpdatePickerLocked() {
 
 template <typename HandleType>
 void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
+                                 absl::string_view lookup_service,
                                  const PickResult& pick_result) {
   absl::string_view pick_result_string = Match(
       pick_result.result,
@@ -2125,11 +2132,10 @@ void RlsLb::MaybeExportPickCount(HandleType handle, absl::string_view target,
       [](const LoadBalancingPolicy::PickResult::Drop&) { return "drop"; });
   if (pick_result_string.empty()) return;  // Don't report queued picks.
   auto& stats_plugins = channel_control_helper()->GetStatsPluginGroup();
-  stats_plugins.AddCounter(
-      handle, 1,
-      {channel_control_helper()->GetTarget(), config_->lookup_service(), target,
-       pick_result_string},
-      {});
+  stats_plugins.AddCounter(handle, 1,
+                           {channel_control_helper()->GetTarget(),
+                            lookup_service, target, pick_result_string},
+                           {});
 }
 
 //
