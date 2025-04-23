@@ -1,4 +1,4 @@
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
-#define GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_H
 
-#include <grpcpp/security/credentials.h>
-#include <grpcpp/security/server_credentials.h>
+#include "absl/strings/string_view.h"
 
-#include <memory>
+namespace grpc_core::chaotic_good {
 
-namespace grpc {
+absl::string_view WireFormatPreferences();
 
-std::shared_ptr<ChannelCredentials> ChaoticGoodInsecureChannelCredentials();
-std::shared_ptr<ServerCredentials> ChaoticGoodInsecureServerCredentials();
+}  // namespace grpc_core::chaotic_good
 
-}  // namespace grpc
-
-#endif  // GRPC_SRC_CPP_EXT_CHAOTIC_GOOD_H
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CHAOTIC_GOOD_H
