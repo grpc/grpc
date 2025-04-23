@@ -51,7 +51,7 @@ class GrpcMessageAssembler {
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) <= 4) {
       CHECK(message_buffer_.Length() < UINT32_MAX - payload.Length())
-          << "SliceBuffer overflow for 32 bit";
+          << "SliceBuffer overflow for 32 bit platforms.";
     }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0u);
@@ -67,7 +67,7 @@ class GrpcMessageAssembler {
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) <= 4) {
       CHECK(message_buffer_.Length() < UINT32_MAX - header.length)
-          << "SliceBuffer overflow for 32 bit";
+          << "SliceBuffer overflow for 32 bit platforms.";
     }
     if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
       SliceBuffer discard;
