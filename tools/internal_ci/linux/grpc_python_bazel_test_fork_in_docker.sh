@@ -16,7 +16,7 @@
 set -ex
 
 RESULTSTORE_RESULTS_FLAG="--bazelrc=tools/remote_build/include/test_locally_with_resultstore_results.bazelrc"
-BAZEL_FLAGS="--test_output=errors"
+BAZEL_FLAGS="--test_output=errors --config=python_defines"
 
 python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path python_bazel_tests_fork_support
 
