@@ -64,11 +64,11 @@ class GrpcMessageAssembler {
     if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
     }
+    GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) <= 4) {
-      CHECK(message_buffer_.Length() < UINT32_MAX - payload.Length())
+      CHECK(message_buffer_.Length() < UINT32_MAX - header.length)
           << "SliceBuffer overflow for 32 bit";
     }
-    GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
