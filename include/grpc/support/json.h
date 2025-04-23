@@ -22,6 +22,7 @@
 
 #include <map>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <variant>
 #include <vector>
@@ -72,27 +73,8 @@ class Json {
     json.value_ = NumberValue{std::move(str)};
     return json;
   }
-  static Json FromNumber(int32_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(uint32_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(int64_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(uint64_t value) {
-    Json json;
-    json.value_ = NumberValue{absl::StrCat(value)};
-    return json;
-  }
-  static Json FromNumber(double value) {
+  template <typename T>
+  static std::enable_if<std::is_arithmetic_v<T>, Json> FromNumber(T value) {
     Json json;
     json.value_ = NumberValue{absl::StrCat(value)};
     return json;
