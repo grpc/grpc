@@ -44,3 +44,8 @@ grpc_cc_binary(
     name = "gen_switch",
     srcs = ["gen_switch.cc"],
 )
+
+# TODO(ladynana): Replace this dummy target with the actual experiments compiler target.
+grpc_cc_library(
+    name = "experiments_compiler",
+)
