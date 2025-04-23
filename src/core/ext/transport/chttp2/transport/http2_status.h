@@ -377,7 +377,6 @@ class ValueOrHttp2Status {
   }
 
  private:
-  // TODO(tjagtap) : [PH2][P1] : Convert this to std::variant in next PR.
   std::variant<T, Http2Status> value_;
 };
 
