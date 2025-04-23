@@ -75,7 +75,6 @@ struct secure_endpoint : public grpc_endpoint {
         protector(protector),
         zero_copy_protector(zero_copy_protector) {
     this->vtable = vtbl;
-    gpr_mu_init(&protector_mu);
     GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_write, ::on_write, this, grpc_schedule_on_exec_ctx);
     grpc_slice_buffer_init(&source_buffer);
@@ -113,13 +112,11 @@ struct secure_endpoint : public grpc_endpoint {
     grpc_core::CSliceUnref(write_staging_buffer);
     grpc_slice_buffer_destroy(&output_buffer);
     grpc_slice_buffer_destroy(&protector_staging_buffer);
-    gpr_mu_destroy(&protector_mu);
   }
 
   grpc_core::OrphanablePtr<grpc_endpoint> wrapped_ep;
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
-  gpr_mu protector_mu;
   grpc_core::Mutex read_mu;
   grpc_core::Mutex write_mu;
   // saved upper level callbacks and user_data.
@@ -288,11 +285,9 @@ static void on_read(void* user_data, grpc_error_handle error) {
           size_t unprotected_buffer_size_written =
               static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          gpr_mu_lock(&ep->protector_mu);
           result = tsi_frame_protector_unprotect(
               ep->protector, message_bytes, &processed_message_size, cur,
               &unprotected_buffer_size_written);
-          gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
             LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
@@ -443,11 +438,9 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         while (message_size > 0) {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          gpr_mu_lock(&ep->protector_mu);
           result = tsi_frame_protector_protect(ep->protector, message_bytes,
                                                &processed_message_size, cur,
                                                &protected_buffer_size_to_send);
-          gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
@@ -466,11 +459,9 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         size_t still_pending_size;
         do {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
-          gpr_mu_lock(&ep->protector_mu);
           result = tsi_frame_protector_protect_flush(
               ep->protector, cur, &protected_buffer_size_to_send,
               &still_pending_size);
-          gpr_mu_unlock(&ep->protector_mu);
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
           if (cur == end) {
