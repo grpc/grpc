@@ -166,7 +166,7 @@ class Http2Status {
     return absl::StrCat(DebugGetType(), ": ", message_);
   }
 
-  Http2Status(Http2Status&& move_status) noexcept = default;
+  Http2Status(Http2Status&& move_status) = default;
 
  private:
   explicit Http2Status()
