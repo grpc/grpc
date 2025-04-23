@@ -548,6 +548,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   const intptr_t kMidQuery = 40;
   ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
+  ChannelzRegistry::GetAllEntities();  // Force uuids to be fresh
   (void)channels;  // suppress unused variable error
   // Only query for the end of the channels.
   std::string json_str = ChannelzRegistry::GetTopChannelsJson(kMidQuery);
