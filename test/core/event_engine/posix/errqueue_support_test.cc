@@ -23,7 +23,7 @@ namespace {
 TEST(KernelSupportsErrqueueTest, Basic) {
 #ifdef GPR_LINUX
   bool expected_value = true;
-#elif
+#else
   bool expected_value = false;
 #endif
   EXPECT_EQ(KernelSupportsErrqueue(), expected_value);
