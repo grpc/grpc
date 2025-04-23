@@ -345,11 +345,12 @@ PING_SYSTEM_TEST(TestPingSystemNoAck) {
 
   party->Spawn(
       "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Seconds(100),
-                                       /*ping_timeout=*/Duration::Seconds(10),
-                                       party),
-             []() { return absl::OkStatus(); }),
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Seconds(100),
+                                         /*ping_timeout=*/Duration::Seconds(
+                                             10));
+      },
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   WaitForAllPendingWork();
@@ -395,11 +396,12 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
 
   party->Spawn(
       "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Hours(1),
-                                       /*ping_timeout=*/Duration::Seconds(100),
-                                       party),
-             []() { return absl::OkStatus(); }),
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Hours(1),
+                                         /*ping_timeout=*/Duration::Seconds(
+                                             100));
+      },
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   // Ping 2
@@ -414,19 +416,21 @@ PING_SYSTEM_TEST(TestPingSystemDelayedPing) {
 
   party->Spawn(
       "PingSystem2",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Hours(1),
-                                       /*ping_timeout=*/Duration::Seconds(100),
-                                       party),
-             []() { return absl::OkStatus(); }),
-      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Hours(1),
+                                         /*ping_timeout=*/Duration::Seconds(
+                                             100));
+      },
+      [](auto) { LOG(INFO) << "Reached PingManager end"; });
   party->Spawn(
       "PingSystem3",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Hours(1),
-                                       /*ping_timeout=*/Duration::Seconds(100),
-                                       party),
-             []() { return absl::OkStatus(); }),
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Hours(1),
+                                         /*ping_timeout=*/Duration::Seconds(
+                                             100));
+      },
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   WaitForAllPendingWork();
@@ -458,13 +462,15 @@ PING_SYSTEM_TEST(TestPingSystemAck) {
                       []() { return absl::OkStatus(); }),
                [](auto) { LOG(INFO) << "Reached PingRequest end"; });
 
-  party->Spawn("PingSystem",
-               TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                                Duration::Seconds(100),
-                                                /*ping_timeout=*/
-                                                Duration::Hours(1), party),
-                      []() { return absl::OkStatus(); }),
-               [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+  party->Spawn(
+      "PingSystem",
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Seconds(100),
+                                         /*ping_timeout=*/
+                                         Duration::Hours(1));
+      },
+      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   party->Spawn("PingAckReceived",
                TrySeq(Sleep(Duration::Seconds(1)),
@@ -508,11 +514,11 @@ PING_SYSTEM_TEST(TestPingSystemDelayedAck) {
 
   party->Spawn(
       "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Seconds(100),
-                                       /*ping_timeout=*/Duration::Seconds(2),
-                                       party),
-             []() { return absl::OkStatus(); }),
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Seconds(100),
+                                         /*ping_timeout=*/Duration::Seconds(2));
+      },
       [](auto) { LOG(INFO) << "Reached PingSystem end"; });
 
   party->Spawn("DelayedPingAckReceived",
@@ -545,15 +551,15 @@ PING_SYSTEM_TEST(TestPingSystemNoPingRequest) {
 
   party->Spawn(
       "PingSystem",
-      TrySeq(ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
-                                       Duration::Seconds(100),
-                                       /*ping_timeout=*/Duration::Seconds(2),
-                                       party),
-             [&on_done]() {
-               on_done.Call(absl::OkStatus());
-               return absl::OkStatus();
-             }),
-      [](auto) { LOG(INFO) << "Reached PingSystem end"; });
+      [&ping_system] {
+        return ping_system.MaybeSendPing(/*next_allowed_ping_interval=*/
+                                         Duration::Seconds(100),
+                                         /*ping_timeout=*/Duration::Seconds(2));
+      },
+      [&on_done](auto) {
+        on_done.Call(absl::OkStatus());
+        LOG(INFO) << "Reached PingSystem end";
+      });
 
   WaitForAllPendingWork();
   event_engine()->TickUntilIdle();

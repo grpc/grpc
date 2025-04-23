@@ -20,6 +20,7 @@
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/map.h"
+#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -62,13 +63,13 @@ PingSystem::PingSystem(
       ping_rate_policy_(channel_args, /*is_client=*/true),
       ping_interface_(std::move(ping_interface)) {}
 
-void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {
+void PingSystem::TriggerDelayedPing(Duration wait) {
   // Spawn at most once.
   if (delayed_ping_spawned_) {
     return;
   }
   delayed_ping_spawned_ = true;
-  party->Spawn(
+  GetContext<Party>()->Spawn(
       "DelayedPing",
       [this, wait]() mutable {
         VLOG(2) << "Scheduling delayed ping after wait=" << wait;
@@ -79,42 +80,40 @@ void PingSystem::TriggerDelayedPing(Duration wait, Party* party) {
       [this](auto) { delayed_ping_spawned_ = false; });
 }
 
-bool PingSystem::NeedToPing(Duration next_allowed_ping_interval, Party* party) {
-  bool send_ping_now = false;
+bool PingSystem::NeedToPing(Duration next_allowed_ping_interval) {
   if (!ping_callbacks_.PingRequested()) {
-    return send_ping_now;
+    return false;
   }
 
-  Match(
+  return Match(
       ping_rate_policy_.RequestSendPing(next_allowed_ping_interval,
                                         ping_callbacks_.CountPingInflight()),
-      [&send_ping_now, this](Chttp2PingRatePolicy::SendGranted) {
-        send_ping_now = true;
+      [this](Chttp2PingRatePolicy::SendGranted) {
         // TODO(akshitpatel) : [PH2][P1] : Update some keepalive flags.
         PING_LOG << "CLIENT" << "[" << "PH2"
                  << "]: Ping sent" << ping_rate_policy_.GetDebugString();
+        return true;
       },
       [this](Chttp2PingRatePolicy::TooManyRecentPings) {
         PING_LOG << "CLIENT" << "[" << "PH2"
                  << "]: Ping delayed too many recent pings: "
                  << ping_rate_policy_.GetDebugString();
+        return false;
       },
-      [this, party](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
+      [this](Chttp2PingRatePolicy::TooSoon too_soon) mutable {
         PING_LOG << "]: Ping delayed not enough time elapsed since last "
                     "ping. Last ping:"
                  << too_soon.last_ping
                  << ", minimum wait:" << too_soon.next_allowed_ping_interval
                  << ", need to wait:" << too_soon.wait;
-        TriggerDelayedPing(too_soon.wait, party);
+        TriggerDelayedPing(too_soon.wait);
+        return false;
       });
-
-  return send_ping_now;
 }
 
 void PingSystem::SpawnTimeout(Duration ping_timeout,
                               const uint64_t opaque_data) {
-  Party* party = GetContext<Party>();
-  party->Spawn(
+  GetContext<Party>()->Spawn(
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
         return AssertResultType<absl::Status>(Race(
@@ -130,9 +129,9 @@ void PingSystem::SpawnTimeout(Duration ping_timeout,
 }
 
 Promise<absl::Status> PingSystem::MaybeSendPing(
-    Duration next_allowed_ping_interval, Duration ping_timeout, Party* party) {
+    Duration next_allowed_ping_interval, Duration ping_timeout) {
   return If(
-      NeedToPing(next_allowed_ping_interval, party),
+      NeedToPing(next_allowed_ping_interval),
       [this, ping_timeout]() mutable {
         const uint64_t opaque_data = ping_callbacks_.StartPing();
         return AssertResultType<absl::Status>(

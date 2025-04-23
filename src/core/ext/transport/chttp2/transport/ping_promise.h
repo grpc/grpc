@@ -20,14 +20,13 @@
 
 #include <memory>
 
-#include "absl/random/random.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/promise/map.h"
-#include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
@@ -61,7 +60,6 @@ class PingSystemInterface {
 class PingSystem {
   class PingPromiseCallbacks {
     Chttp2PingCallbacks ping_callbacks_;
-    absl::BitGen bitgen_;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
 
    public:
@@ -72,7 +70,7 @@ class PingSystem {
     Promise<absl::Status> RequestPing(absl::AnyInvocable<void()> on_initiate);
     Promise<absl::Status> WaitForPingAck();
     void CancelCallbacks() { ping_callbacks_.CancelAll(event_engine_.get()); }
-    uint64_t StartPing() { return ping_callbacks_.StartPing(bitgen_); }
+    uint64_t StartPing() { return ping_callbacks_.StartPing(SharedBitGen()); }
     bool PingRequested() { return ping_callbacks_.ping_requested(); }
     bool AckPing(uint64_t id) {
       return ping_callbacks_.AckPing(id, event_engine_.get());
@@ -101,10 +99,8 @@ class PingSystem {
   // Returns a promise that determines if a ping frame should be sent to the
   // peer. If a ping frame is sent, it also spawns a timeout promise that
   // handles the ping timeout.
-  // The Party raw pointer is only used for promise creation and is guaranteed
-  // to be dropped inline when this function returns.
   Promise<absl::Status> MaybeSendPing(Duration next_allowed_ping_interval,
-                                      Duration ping_timeout, Party* party);
+                                      Duration ping_timeout);
 
   // Ping Rate policy wrapper
   void ReceivedDataFrame() { ping_rate_policy_.ReceivedDataFrame(); }
@@ -151,8 +147,8 @@ class PingSystem {
   bool delayed_ping_spawned_ = false;
   std::unique_ptr<PingSystemInterface> ping_interface_;
 
-  void TriggerDelayedPing(Duration wait, Party* party);
-  bool NeedToPing(Duration next_allowed_ping_interval, Party* party);
+  void TriggerDelayedPing(Duration wait);
+  bool NeedToPing(Duration next_allowed_ping_interval);
   void SpawnTimeout(Duration ping_timeout, uint64_t opaque_data);
 
   void SentPing() { ping_rate_policy_.SentPing(); }
