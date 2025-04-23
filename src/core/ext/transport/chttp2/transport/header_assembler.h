@@ -23,6 +23,7 @@
 #include "absl/log/log.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -52,7 +53,7 @@ class HeaderAssembler {
 
     // Manage if last frame
     if (frame.end_headers) {
-      EndHeader();
+      EndHeadersFlagSet();
     }
     return Http2ErrorCode::kNoError;
   }
@@ -71,13 +72,13 @@ class HeaderAssembler {
 
     // Manage if last frame
     if (frame.end_headers) {
-      EndHeader();
+      EndHeadersFlagSet();
     }
     return Http2ErrorCode::kNoError;
   }
 
-  void GetCompleteHeader() {
-    // grpc_core::HPackParser hpack_parser_;
+  void ReadMetadata(HPackParser& parser, bool is_initial_metadata,
+                    bool is_client) {
     // Validate
     DCHECK_EQ(in_progress_, false);
     DCHECK_EQ(can_extract_, true);
@@ -87,7 +88,7 @@ class HeaderAssembler {
   }
 
  private:
-  void EndHeader() {
+  void EndHeadersFlagSet() {
     DCHECK_EQ(in_progress_, true);
     DCHECK_GT(stream_id_, 0);
     in_progress_ = false;

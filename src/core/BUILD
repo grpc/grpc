@@ -7648,6 +7648,7 @@ grpc_cc_library(
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
