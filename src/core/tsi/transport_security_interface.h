@@ -129,7 +129,8 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 //   to make sure that there are no more protected bytes buffered in the
 //   protector.
 //
-// Can be called concurrently with tsi_frame_protector_protect_flush or tsi_frame_protector_unprotect.
+// Can be called concurrently with tsi_frame_protector_protect_flush or
+// tsi_frame_protector_unprotect.
 
 // A typical way to call this method would be:
 
@@ -178,7 +179,8 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
 // - still_pending_bytes is an output parameter indicating the number of bytes
 //   that still need to be flushed from the protector.
 //
-// Can be called concurrently with tsi_frame_protector_protect or tsi_frame_protector_unprotect.
+// Can be called concurrently with tsi_frame_protector_protect or
+// tsi_frame_protector_unprotect.
 tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size);
@@ -199,12 +201,14 @@ tsi_result tsi_frame_protector_protect_flush(
 //   is the number of bytes actually written.
 //   If *unprotected_bytes_size is unchanged, there may be more data remaining
 //   to unprotect, and the caller should call this function again.
-// - Returns TSI_OK in case of success. Success includes cases where there is not enough data to output a frame in which case
+// - Returns TSI_OK in case of success. Success includes cases where there is
+// not enough data to output a frame in which case
 //   unprotected_bytes_size will be set to 0 and cases where the internal buffer
 //   needs to be read before new protected data can be processed in which case
 //   protected_frames_size will be set to 0.
 //
-// Can be called concurrently with tsi_frame_protector_protect or tsi_frame_protector_protect_flush.
+// Can be called concurrently with tsi_frame_protector_protect or
+// tsi_frame_protector_protect_flush.
 tsi_result tsi_frame_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,
