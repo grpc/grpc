@@ -29,7 +29,7 @@
 
 namespace grpc_core {
 namespace http2 {
-using SendPingArgs = ::grpc_core::http2::PingSystemInterface::SendPingArgs;
+using SendPingArgs = ::grpc_core::http2::PingInterface::SendPingArgs;
 using Callback = absl::AnyInvocable<void()>;
 
 #define PING_LOG                                           \
@@ -38,7 +38,7 @@ using Callback = absl::AnyInvocable<void()>;
                 GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
                 GRPC_TRACE_FLAG_ENABLED(http2_ping)))
 
-Promise<absl::Status> PingSystem::PingPromiseCallbacks::RequestPing(
+Promise<absl::Status> PingManager::PingPromiseCallbacks::RequestPing(
     Callback on_initiate) {
   std::shared_ptr<Latch<void>> latch = std::make_shared<Latch<void>>();
   auto on_ack = [latch]() { latch->Set(); };
@@ -46,7 +46,7 @@ Promise<absl::Status> PingSystem::PingPromiseCallbacks::RequestPing(
   return Map(latch->Wait(), [latch](Empty) { return absl::OkStatus(); });
 }
 
-Promise<absl::Status> PingSystem::PingPromiseCallbacks::WaitForPingAck() {
+Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
   std::shared_ptr<Latch<void>> latch = std::make_shared<Latch<void>>();
   auto on_ack = [latch]() { latch->Set(); };
   ping_callbacks_.OnPingAck(std::move(on_ack));
@@ -54,16 +54,16 @@ Promise<absl::Status> PingSystem::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingSystem::PingSystem(
+PingManager::PingManager(
     const ChannelArgs& channel_args,
-    std::unique_ptr<PingSystemInterface> ping_interface,
+    std::unique_ptr<PingInterface> ping_interface,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
       ping_rate_policy_(channel_args, /*is_client=*/true),
       ping_interface_(std::move(ping_interface)) {}
 
-void PingSystem::TriggerDelayedPing(Duration wait) {
+void PingManager::TriggerDelayedPing(Duration wait) {
   // Spawn at most once.
   if (delayed_ping_spawned_) {
     return;
@@ -80,7 +80,7 @@ void PingSystem::TriggerDelayedPing(Duration wait) {
       [this](auto) { delayed_ping_spawned_ = false; });
 }
 
-bool PingSystem::NeedToPing(Duration next_allowed_ping_interval) {
+bool PingManager::NeedToPing(Duration next_allowed_ping_interval) {
   if (!ping_callbacks_.PingRequested()) {
     return false;
   }
@@ -111,8 +111,8 @@ bool PingSystem::NeedToPing(Duration next_allowed_ping_interval) {
       });
 }
 
-void PingSystem::SpawnTimeout(Duration ping_timeout,
-                              const uint64_t opaque_data) {
+void PingManager::SpawnTimeout(Duration ping_timeout,
+                               const uint64_t opaque_data) {
   GetContext<Party>()->Spawn(
       "PingTimeout",
       [this, ping_timeout, opaque_data]() {
@@ -128,7 +128,7 @@ void PingSystem::SpawnTimeout(Duration ping_timeout,
       [](auto) {});
 }
 
-Promise<absl::Status> PingSystem::MaybeSendPing(
+Promise<absl::Status> PingManager::MaybeSendPing(
     Duration next_allowed_ping_interval, Duration ping_timeout) {
   return If(
       NeedToPing(next_allowed_ping_interval),

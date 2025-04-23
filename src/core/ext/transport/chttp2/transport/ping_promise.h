@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 namespace http2 {
-class PingSystemInterface {
+class PingInterface {
  public:
   struct SendPingArgs {
     bool ack = false;
@@ -51,13 +51,13 @@ class PingSystemInterface {
 
   // Returns a promise that handles the ping timeout.
   virtual Promise<absl::Status> PingTimeout() = 0;
-  virtual ~PingSystemInterface() = default;
+  virtual ~PingInterface() = default;
 };
 
 // The code in this class is NOT thread safe. It has been designed to run on a
 // single thread. This guarantee is achieved by spawning all the promises
 // returned by this class on the same transport party.
-class PingSystem {
+class PingManager {
   class PingPromiseCallbacks {
     Chttp2PingCallbacks ping_callbacks_;
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;
@@ -91,10 +91,10 @@ class PingSystem {
   };
 
  public:
-  PingSystem(const ChannelArgs& channel_args,
-             std::unique_ptr<PingSystemInterface> ping_interface,
-             std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-                 event_engine);
+  PingManager(const ChannelArgs& channel_args,
+              std::unique_ptr<PingInterface> ping_interface,
+              std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+                  event_engine);
 
   // Returns a promise that determines if a ping frame should be sent to the
   // peer. If a ping frame is sent, it also spawns a timeout promise that
@@ -145,7 +145,7 @@ class PingSystem {
   Chttp2PingAbusePolicy ping_abuse_policy_;
   Chttp2PingRatePolicy ping_rate_policy_;
   bool delayed_ping_spawned_ = false;
-  std::unique_ptr<PingSystemInterface> ping_interface_;
+  std::unique_ptr<PingInterface> ping_interface_;
 
   void TriggerDelayedPing(Duration wait);
   bool NeedToPing(Duration next_allowed_ping_interval);
