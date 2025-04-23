@@ -33,7 +33,11 @@
 
 namespace grpc_core {
 namespace http2 {
-namespace testing {}  // namespace testing
+namespace testing {
+
+TEST(HeaderAssemblerTest, Constructor) { HeaderAssembler assembler; }
+
+}  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
 
