@@ -109,7 +109,7 @@ class KeepAliveSystem {
     waker.Wakeup();
   }
   auto SendPing() {
-    DCHECK_EQ(IsDataReceivedInLastCycle(), 0);
+    DCHECK(!IsDataReceivedInLastCycle());
     return keep_alive_interface_->SendPing();
   }
 
