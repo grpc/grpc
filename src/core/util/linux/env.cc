@@ -37,7 +37,8 @@ namespace grpc_core {
 
 std::optional<std::string> GetEnv(const char* name) {
   char* result = nullptr;
-#if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)) && !defined(GRPC_FORCE_INSECURE_GETENV)
+#if (__GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)) && \
+    !defined(GRPC_FORCE_INSECURE_GETENV)
   result = secure_getenv(name);
 #else
   result = getenv(name);
