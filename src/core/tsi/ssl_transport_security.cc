@@ -69,6 +69,11 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/useful.h"
 
+// Name of the environment variable controlling OpenSSL cleanup timeout.
+// This variable allows users to specify the timeout (in seconds) for OpenSSL
+// resource cleanup during gRPC shutdown. If not set, a default timeout is used.
+#define GRPC_OPENSSL_CLEANUP_TIMEOUT_ENV "GRPC_OPENSSL_CLEANUP_TIMEOUT"
+
 // --- Constants. ---
 
 #define TSI_SSL_MAX_BIO_WRITE_ATTEMPTS 100
@@ -194,7 +199,10 @@ static void init_openssl(void) {
   // otherwise may happen before gRPC removes all references to OPENSSL. Below
   // exit handler is guaranteed to run after OPENSSL's.
   std::atexit([]() {
-    const char* env = std::getenv("GRPC_OPENSSL_CLEANUP_TIMEOUT");
+    // Retrieve the OpenSSL cleanup timeout from the environment variable.
+    // This allows users to override the default cleanup timeout for OpenSSL
+    // resource deallocation during gRPC shutdown.
+    const char* env = std::getenv(GRPC_OPENSSL_CLEANUP_TIMEOUT_ENV);
     int timeout_sec = 2;
     if (env != nullptr) {
       timeout_sec = std::stoi(env);
