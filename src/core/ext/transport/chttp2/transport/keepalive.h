@@ -18,7 +18,6 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_PROMISE_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_PING_PROMISE_H
 
-#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/promise.h"
