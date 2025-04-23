@@ -650,6 +650,20 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
           sink.AddAdditionalInfo("http2", std::move(http2_info));
+          std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
+              children;
+          children.reserve(t->stream_map.size());
+          for (auto [id, stream] : t->stream_map) {
+            if (stream->channelz_call_node == nullptr) {
+              stream->channelz_call_node =
+                  grpc_core::MakeRefCounted<grpc_core::channelz::CallNode>(
+                      absl::StrCat("chttp2 ",
+                                   t->is_client ? "client" : "server",
+                                   " stream ", stream->id));
+            }
+            children.push_back(stream->channelz_call_node);
+          }
+          sink.AddChildObjects(std::move(children));
           n.Notify();
         }),
         absl::OkStatus());
@@ -3428,13 +3442,6 @@ bool grpc_chttp2_transport::
 
 absl::string_view grpc_chttp2_transport::GetTransportName() const {
   return "chttp2";
-}
-
-grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
-  grpc_chttp2_transport* t =
-      reinterpret_cast<grpc_chttp2_transport*>(transport);
-  return t->channelz_socket;
 }
 
 grpc_core::Transport* grpc_create_chttp2_transport(

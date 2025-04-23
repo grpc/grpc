@@ -121,7 +121,7 @@ void WindowsEndpoint::AsyncIOState::DoTcpRead(SliceBuffer* buffer) {
 }
 
 bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                           SliceBuffer* buffer, const ReadArgs* /* args */) {
+                           SliceBuffer* buffer, ReadArgs /* args */) {
   if (io_state_->socket->IsShutdown()) {
     io_state_->thread_pool->Run([on_read = std::move(on_read)]() mutable {
       on_read(absl::InternalError("Socket is shutting down."));
@@ -142,7 +142,7 @@ bool WindowsEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
 }
 
 bool WindowsEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                            SliceBuffer* data, const WriteArgs* /* args */) {
+                            SliceBuffer* data, WriteArgs /* args */) {
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "WindowsEndpoint::" << this << " writing";
   if (io_state_->socket->IsShutdown()) {

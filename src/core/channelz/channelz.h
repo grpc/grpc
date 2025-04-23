@@ -97,6 +97,7 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
 
   static absl::string_view EntityTypeString(EntityType type) {
@@ -113,6 +114,8 @@ class BaseNode : public RefCounted<BaseNode> {
         return "listen_socket";
       case EntityType::kSocket:
         return "socket";
+      case EntityType::kCall:
+        return "call";
     }
     return "unknown";
   }
@@ -138,7 +141,11 @@ class BaseNode : public RefCounted<BaseNode> {
   std::string RenderJsonString();
 
   EntityType type() const { return type_; }
-  intptr_t uuid() const { return uuid_; }
+  intptr_t uuid() {
+    const intptr_t id = uuid_.load(std::memory_order_relaxed);
+    if (id > 0) return id;
+    return UuidSlow();
+  }
   const std::string& name() const { return name_; }
 
   void RunZTrace(absl::string_view name, Timestamp deadline,
@@ -152,16 +159,20 @@ class BaseNode : public RefCounted<BaseNode> {
   void PopulateJsonFromDataSources(Json::Object& json);
 
  private:
+  intptr_t UuidSlow();
+
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
   // allow data source to register/unregister itself
   friend class DataSource;
   const EntityType type_;
-  intptr_t uuid_;
+  std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;
   absl::InlinedVector<DataSource*, 3> data_sources_
       ABSL_GUARDED_BY(data_sources_mu_);
+  BaseNode* prev_;
+  BaseNode* next_;
 };
 
 class ZTrace {
@@ -177,6 +188,8 @@ class DataSink {
  public:
   virtual void AddAdditionalInfo(absl::string_view name,
                                  Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
 
  protected:
   ~DataSink() = default;
@@ -189,7 +202,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddData(DataSink& sink) = 0;
+  virtual void AddData(DataSink&) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
@@ -594,6 +607,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz

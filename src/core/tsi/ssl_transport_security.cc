@@ -24,9 +24,6 @@
 
 #include <cstdlib>
 
-#include "src/core/lib/surface/init.h"
-#include "src/core/tsi/transport_security_interface.h"
-
 // TODO(jboeuf): refactor inet_ntop into a portability header.
 // Note: for whomever reads this and tries to refactor this, this
 // can't be in grpc, it has to be in gpr.
@@ -61,12 +58,15 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/ssl_types.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 // Name of the environment variable controlling OpenSSL cleanup timeout.
@@ -151,6 +151,9 @@ struct tsi_ssl_frame_protector {
   unsigned char* buffer;
   size_t buffer_size;
   size_t buffer_offset;
+  // Ensures that protect, protect_flush, and unprotect are not called
+  // concurrently.
+  gpr_mu mu;
 };
 // --- Library Initialization. ---
 
@@ -1315,11 +1318,13 @@ static tsi_result ssl_protector_protect(tsi_frame_protector* self,
                                         size_t* protected_output_frames_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-
-  return grpc_core::SslProtectorProtect(
+  gpr_mu_lock(&impl->mu);
+  tsi_result result = grpc_core::SslProtectorProtect(
       unprotected_bytes, impl->buffer_size, impl->buffer_offset, impl->buffer,
       impl->ssl, impl->network_io, unprotected_bytes_size,
       protected_output_frames, protected_output_frames_size);
+  gpr_mu_unlock(&impl->mu);
+  return result;
 }
 
 static tsi_result ssl_protector_protect_flush(
@@ -1327,10 +1332,13 @@ static tsi_result ssl_protector_protect_flush(
     size_t* protected_output_frames_size, size_t* still_pending_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  return grpc_core::SslProtectorProtectFlush(
+  gpr_mu_lock(&impl->mu);
+  tsi_result result = grpc_core::SslProtectorProtectFlush(
       impl->buffer_offset, impl->buffer, impl->ssl, impl->network_io,
       protected_output_frames, protected_output_frames_size,
       still_pending_size);
+  gpr_mu_unlock(&impl->mu);
+  return result;
 }
 
 static tsi_result ssl_protector_unprotect(
@@ -1339,9 +1347,12 @@ static tsi_result ssl_protector_unprotect(
     size_t* unprotected_bytes_size) {
   tsi_ssl_frame_protector* impl =
       reinterpret_cast<tsi_ssl_frame_protector*>(self);
-  return grpc_core::SslProtectorUnprotect(
+  gpr_mu_lock(&impl->mu);
+  tsi_result result = grpc_core::SslProtectorUnprotect(
       protected_frames_bytes, impl->ssl, impl->network_io,
       protected_frames_bytes_size, unprotected_bytes, unprotected_bytes_size);
+  gpr_mu_unlock(&impl->mu);
+  return result;
 }
 
 static void ssl_protector_destroy(tsi_frame_protector* self) {
@@ -1350,6 +1361,7 @@ static void ssl_protector_destroy(tsi_frame_protector* self) {
   if (impl->buffer != nullptr) gpr_free(impl->buffer);
   if (impl->ssl != nullptr) SSL_free(impl->ssl);
   if (impl->network_io != nullptr) BIO_free(impl->network_io);
+  gpr_mu_destroy(&impl->mu);
   gpr_free(self);
 }
 
@@ -1555,6 +1567,7 @@ static tsi_result ssl_handshaker_result_create_frame_protector(
   impl->ssl = nullptr;
   protector_impl->network_io = impl->network_io;
   impl->network_io = nullptr;
+  gpr_mu_init(&protector_impl->mu);
   protector_impl->base.vtable = &frame_protector_vtable;
   *protector = &protector_impl->base;
   return TSI_OK;

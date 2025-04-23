@@ -46,6 +46,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/resolver/fake/fake_resolver.h"
@@ -675,8 +676,6 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count = 0;
   op->data.send_status_from_server.status = GRPC_STATUS_OK;
-  grpc_slice status_details = grpc_slice_from_static_string("xyz");
-  op->data.send_status_from_server.status_details = &status_details;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -688,11 +687,11 @@ void PerformCallWithResponsePayload(grpc_channel* channel, grpc_server* server,
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  CHECK(status == GRPC_STATUS_OK);
-  CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
-  CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-  CHECK_EQ(was_cancelled, 0);
-  CHECK(byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
+  EXPECT_EQ(status, GRPC_STATUS_OK);
+  EXPECT_EQ(grpc_core::StringViewFromSlice(call_details.method), "/foo");
+  EXPECT_EQ(was_cancelled, 0);
+  EXPECT_TRUE(
+      byte_buffer_eq_slice(response_payload_recv, response_payload_slice));
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

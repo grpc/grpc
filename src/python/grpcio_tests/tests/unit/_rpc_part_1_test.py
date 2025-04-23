@@ -129,8 +129,7 @@ class RPCPart1Test(BaseRPCTest, unittest.TestCase):
         # sanity checks on to make sure returned string contains default members
         # of the error
         debug_error_string = exception_context.exception.debug_error_string()
-        self.assertIn("grpc_status", debug_error_string)
-        self.assertIn("grpc_message", debug_error_string)
+        self.assertIn("Exception calling application", debug_error_string)
 
     def testFailedUnaryRequestFutureUnaryResponse(self):
         request = b"\x37\x17"
