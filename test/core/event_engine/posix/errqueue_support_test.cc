@@ -19,15 +19,12 @@ namespace grpc_event_engine {
 namespace experimental {
 namespace {
 
+#ifdef GPR_LINUX
 // Expect all our linux testing environments to support errqueue.
 TEST(KernelSupportsErrqueueTest, Basic) {
-#ifdef GPR_LINUX
-  bool expected_value = true;
-#else
-  bool expected_value = false;
-#endif
-  EXPECT_EQ(KernelSupportsErrqueue(), expected_value);
+  EXPECT_EQ(KernelSupportsErrqueue(), true);
 }
+#endif
 
 }  // namespace
 }  // namespace experimental
