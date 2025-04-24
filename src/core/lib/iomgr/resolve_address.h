@@ -123,6 +123,11 @@ void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver);
 std::shared_ptr<DNSResolver> GetDNSResolver(
     SourceLocation location = SourceLocation());
 
+// DO NOT USE
+// This is exclusively for the iomgr ares resolver backup.
+// TODO(hork): remove when iomgr dns can be deleted.
+std::shared_ptr<DNSResolver> GetDNSResolverForAresBackupOnly();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H

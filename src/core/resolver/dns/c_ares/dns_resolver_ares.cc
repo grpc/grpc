@@ -215,7 +215,14 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
       query_timeout_ms_(
           std::max(0, channel_args()
                           .GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
-                          .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {}
+                          .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {
+  if (grpc_core::IsEventEngineDnsEnabled() &&
+      grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    grpc_core::Crash(
+        "The iomgr Ares DNS resolver should not be instantiated when all "
+        "EventEngine DNS experiments are on.");
+  }
+}
 
 AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
   GRPC_TRACE_VLOG(cares_resolver, 2)
@@ -716,7 +723,8 @@ class AresDNSResolver final : public DNSResolver {
   }
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
-  std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
+  std::shared_ptr<DNSResolver> default_resolver_ =
+      GetDNSResolverForAresBackupOnly();
   Mutex mu_;
   TaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;

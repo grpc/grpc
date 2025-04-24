@@ -64,4 +64,8 @@ std::string DNSResolver::HandleToString(TaskHandle handle) {
   return absl::StrCat("{", handle.keys[0], ",", handle.keys[1], "}");
 }
 
+std::shared_ptr<DNSResolver> GetDNSResolverForAresBackupOnly() {
+  return *g_dns_resolver;
+}
+
 }  // namespace grpc_core
