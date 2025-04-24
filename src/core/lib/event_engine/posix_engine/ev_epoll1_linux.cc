@@ -247,7 +247,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
 Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
     : scheduler_(scheduler), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = posix_interface().EpollCreateAndCloexec().value();
-  wakeup_fd_ = *CreateWakeupFd(&posix_interface());
+  wakeup_fd_ = CreateWakeupFd(&posix_interface()).value();
   CHECK(wakeup_fd_ != nullptr);
   CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)

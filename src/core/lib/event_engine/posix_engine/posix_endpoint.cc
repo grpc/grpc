@@ -611,17 +611,6 @@ bool PosixEndpointImpl::Read(absl::AnyInvocable<void(absl::Status)> on_read,
   grpc_core::ReleasableMutexLock lock(&read_mu_);
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "Endpoint[" << this << "]: Read";
-  if (handle_->IsHandleShutdown()) {
-    engine_->Run(
-        [on_read = std::move(on_read),
-         status = TcpAnnotateError(absl::InternalError("Handle was shut down")),
-         this]() mutable {
-          GRPC_TRACE_LOG(event_engine_endpoint, INFO)
-              << "Endpoint[" << this << "]: Read failed: " << status;
-          on_read(status);
-        });
-    return false;
-  }
   CHECK(read_cb_ == nullptr);
   incoming_buffer_ = buffer;
   incoming_buffer_->Clear();
