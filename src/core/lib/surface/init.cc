@@ -123,17 +123,21 @@ void grpc_init(void) {
       g_shutting_down_cv->SignalAll();
     }
     grpc_iomgr_init();
+    bool sorting_initialized = false;
     // Initialize DNS Resolver
     if (!grpc_core::IsEventEngineDnsEnabled() ||
         !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality still relies on the iomgr resolver
       address_sorting_init();
+      sorting_initialized = true;
       grpc_resolver_dns_ares_init();
     }
     if (grpc_core::IsEventEngineDnsEnabled() ||
         grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality relies on the EE resolver.
-      address_sorting_init();
+      if (!sorting_initialized) {
+        address_sorting_init();
+      }
       auto status = AresInit();
       if (status.ok()) {
         // TODO(hork): remove this once we remove the iomgr dns system.
@@ -154,15 +158,19 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
+    bool sorting_shutdown = false;
     if (!grpc_core::IsEventEngineDnsEnabled() ||
         !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality still relies on the iomgr resolver
       address_sorting_shutdown();
+      sorting_shutdown = true;
       grpc_resolver_dns_ares_shutdown();
     }
     if (grpc_core::IsEventEngineDnsEnabled() ||
         grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-      address_sorting_shutdown();
+      if (!sorting_shutdown) {
+        address_sorting_shutdown();
+      }
       // Some functionality relies on the EE resolver.
       AresShutdown();
     }
