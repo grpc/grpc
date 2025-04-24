@@ -135,7 +135,10 @@ void grpc_init(void) {
       // Some functionality relies on the EE resolver.
       address_sorting_init();
       auto status = AresInit();
-      if (!status.ok()) {
+      if (status.ok()) {
+        // TODO(hork): remove this once we remove the iomgr dns system.
+        grpc_resolver_dns_ares_reset_dns_resolver();
+      } else {
         VLOG(2) << "AresInit failed: " << status.message();
       }
     }
