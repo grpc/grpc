@@ -75,6 +75,10 @@ class Http2ServerTransport final : public ServerTransport {
   void Orphan() override;
   void AbortWithError();
 
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
+
  private:
   // Reading from the endpoint.
 

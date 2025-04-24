@@ -223,6 +223,7 @@ grpc_cc_test(
         "//:parse_address",
         "//:uri",
         "//src/core:channel_args",
+        "//src/core:chaotic_good",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
         "//src/core:notification",

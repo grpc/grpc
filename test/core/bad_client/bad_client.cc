@@ -79,8 +79,7 @@ static void server_setup_transport(void* ts, grpc_core::Transport* transport) {
   CHECK(GRPC_LOG_IF_ERROR(
       "SetupTransport",
       core_server->SetupTransport(transport, /*accepting_pollset=*/nullptr,
-                                  core_server->channel_args(),
-                                  /*socket_node=*/nullptr)));
+                                  core_server->channel_args())));
 }
 
 // Sets the read_done event

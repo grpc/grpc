@@ -125,6 +125,7 @@ Podfile.lock
 bazel-*
 bazel_format_virtual_environment/
 tools/bazel-*
+.bazel_rbe
 
 # Bazel wrapper
 bazel_wrapper

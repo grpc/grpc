@@ -40,9 +40,10 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
-#include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/useful.h"
 #include "test/core/memory_usage/memstats.h"
 #include "test/core/test_util/test_config.h"
@@ -255,19 +256,19 @@ int main(int argc, char** argv) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_MINIMAL_STACK), 1));
   }
+  const std::string kChaoticGoodWireFormatPreferences(
+      grpc_core::chaotic_good::WireFormatPreferences());
   if (absl::GetFlag(FLAGS_chaotic_good)) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0));
+    args_vec.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
+        const_cast<char*>(kChaoticGoodWireFormatPreferences.c_str())));
   }
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
 
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    channel = grpc_chaotic_good_channel_create(
-        absl::GetFlag(FLAGS_target).c_str(), &args);
-  } else {
-    channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
-                                  grpc_insecure_credentials_create(), &args);
-  }
+  channel = grpc_channel_create(absl::GetFlag(FLAGS_target).c_str(),
+                                grpc_insecure_credentials_create(), &args);
 
   int call_idx = 0;
   const int warmup_iterations = absl::GetFlag(FLAGS_warmup);

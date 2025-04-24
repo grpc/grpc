@@ -29,12 +29,14 @@
 #include "absl/time/time.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/server/server.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
@@ -80,8 +82,16 @@ class ChaoticGoodServerTest : public ::testing::Test {
   void StartServer() {
     port_ = grpc_pick_unused_port_or_die();
     addr_ = absl::StrCat("[::1]:", port_);
-    server_ = grpc_server_create(nullptr, nullptr);
-    grpc_server_add_chaotic_good_port(server_, addr_.c_str());
+    server_ =
+        grpc_server_create(ChannelArgs()
+                               .Set(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+                                    WireFormatPreferences())
+                               .ToC()
+                               .get(),
+                           nullptr);
+    auto* creds = grpc_insecure_server_credentials_create();
+    grpc_server_add_http2_port(server_, addr_.c_str(), creds);
+    grpc_server_credentials_release(creds);
     grpc_server_start(server_);
   }
 

@@ -173,7 +173,8 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
         send_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
     frame.SerializePayload(send_buffer);
     return TrySeq(
-        connect_result_.endpoint.Write(std::move(send_buffer)),
+        connect_result_.endpoint.Write(std::move(send_buffer),
+                                       PromiseEndpoint::WriteArgs{}),
         [this]() {
           return connect_result_.endpoint.ReadSlice(
               FrameHeader::kFrameHeaderSize);
@@ -294,41 +295,21 @@ class ChaoticGoodChannelFactory final : public ClientChannelFactory {
 };
 
 }  // namespace
-}  // namespace chaotic_good_legacy
-}  // namespace grpc_core
 
-grpc_channel* grpc_chaotic_good_legacy_channel_create(
-    const char* target, const grpc_channel_args* args) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_chaotic_good_channel_create(target=" << target
-      << ",  args=" << (void*)args << ")";
-  grpc_channel* channel = nullptr;
-  grpc_error_handle error;
+absl::StatusOr<grpc_channel*> CreateLegacyChaoticGoodChannel(
+    std::string target, const ChannelArgs& args) {
   // Create channel.
-  auto r = grpc_core::ChannelCreate(
+  auto r = ChannelCreate(
       target,
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(args)
-          .SetObject(
-              grpc_core::NoDestructSingleton<
-                  grpc_core::chaotic_good_legacy::ChaoticGoodChannelFactory>::
-                  Get())
+      args.SetObject(NoDestructSingleton<ChaoticGoodChannelFactory>::Get())
           .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
+  } else {
+    return r.status();
   }
-  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
-  error = absl_status_to_grpc_error(r.status());
-  intptr_t integer;
-  grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                         &integer)) {
-    status = static_cast<grpc_status_code>(integer);
-  }
-  channel = grpc_lame_client_channel_create(
-      target, status, "Failed to create chaotic good client channel");
-  return channel;
 }
+
+}  // namespace chaotic_good_legacy
+}  // namespace grpc_core

@@ -233,7 +233,7 @@ class ClientChannelTest : public YodelTest {
   }
 
   void InitCoreConfiguration() override {
-    CoreConfiguration::RegisterBuilder(
+    CoreConfiguration::RegisterEphemeralBuilder(
         [this](CoreConfiguration::Builder* builder) {
           builder->resolver_registry()->RegisterResolverFactory(
               std::make_unique<TestResolverFactory>(this));

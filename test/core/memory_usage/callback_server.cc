@@ -31,7 +31,8 @@
 #include "absl/flags/parse.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
-#include "src/cpp/ext/chaotic_good.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
@@ -99,12 +100,16 @@ int main(int argc, char** argv) {
   grpc::ServerBuilder* builder =
       absl::GetFlag(FLAGS_use_xds) ? &xds_builder : &normal_builder;
 
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    builder->AddChannelArgument(
+        GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+        std::string(grpc_core::chaotic_good::WireFormatPreferences()));
+  }
+
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ServerCredentials> creds =
       grpc::InsecureServerCredentials();
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    creds = grpc::ChaoticGoodInsecureServerCredentials();
-  } else if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_secure)) {
     LOG(INFO) << "Supposed to be secure, is not yet";
     // TODO (chennancy) Add in secure credentials
   }

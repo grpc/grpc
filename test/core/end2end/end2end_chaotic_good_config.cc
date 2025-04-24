@@ -43,6 +43,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h"
 #include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -50,6 +51,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/no_destruct.h"
@@ -88,7 +90,7 @@
 
 namespace grpc_core {
 
-class ChaoticGoodFixture : public CoreTestFixture {
+class ChaoticGoodFixture : public InsecureFixture {
  public:
   explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
                               std::string localaddr = JoinHostPort(
@@ -101,33 +103,20 @@ class ChaoticGoodFixture : public CoreTestFixture {
   const std::string& localaddr() const { return localaddr_; }
 
  private:
-  grpc_server* MakeServer(
-      const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
-    auto* server = grpc_server_create(
-        args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
-            .ToC()
-            .get(),
-        nullptr);
-    grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_chaotic_good_port(server, localaddr_.c_str()));
-    pre_server_start(server);
-    grpc_server_start(server);
-    return server;
+  ChannelArgs MutateClientArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+        .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+        .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
+        .Set(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+             chaotic_good::WireFormatPreferences());
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue*) override {
-    auto* client = grpc_chaotic_good_channel_create(
-        localaddr_.c_str(),
-        args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
-            .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
-            .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
-            .ToC()
-            .get());
-    return client;
+  ChannelArgs MutateServerArgs(ChannelArgs args) override {
+    return args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+        .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+        .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
+        .Set(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+             chaotic_good::WireFormatPreferences());
   }
 
   int data_connections_;

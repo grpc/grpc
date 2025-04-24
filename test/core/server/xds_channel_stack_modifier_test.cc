@@ -84,12 +84,16 @@ class FakeTransport final : public Transport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
   void Orphan() override {}
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 };
 }  // namespace
 
 // Test filters insertion
 TEST(XdsChannelStackModifierTest, XdsHttpFiltersInsertion) {
-  CoreConfiguration::Reset();
+  CoreConfiguration::
+      ResetEverythingIncludingPersistentBuildersAbsolutelyNotRecommended();
   grpc_init();
   // Add 2 test filters to XdsChannelStackModifier
   const grpc_channel_filter test_filter_1 = {

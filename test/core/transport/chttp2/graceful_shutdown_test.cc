@@ -97,8 +97,8 @@ class GracefulShutdownTest : public ::testing::Test {
         false);
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     CHECK(core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args(),
-                                      nullptr) == absl::OkStatus());
+                                      core_server->channel_args()) ==
+          absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                         nullptr);
     // Start polling on the client

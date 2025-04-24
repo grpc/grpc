@@ -38,13 +38,12 @@ SubchannelKey::SubchannelKey(const grpc_resolved_address& address,
                              const ChannelArgs& args)
     : address_(address), args_(args) {}
 
-bool SubchannelKey::operator<(const SubchannelKey& other) const {
-  if (address_.len < other.address_.len) return true;
-  if (address_.len > other.address_.len) return false;
+int SubchannelKey::Compare(const SubchannelKey& other) const {
+  if (address_.len < other.address_.len) return -1;
+  if (address_.len > other.address_.len) return 1;
   int r = memcmp(address_.addr, other.address_.addr, address_.len);
-  if (r < 0) return true;
-  if (r > 0) return false;
-  return args_ < other.args();
+  if (r != 0) return r;
+  return QsortCompare(args_, other.args_);
 }
 
 std::string SubchannelKey::ToString() const {

@@ -1316,7 +1316,7 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline OperationExecutor<
     T>::~OperationExecutor() {
   if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
+    if (ops_ != end_ops_) ops_->early_destroy(promise_data_);
     gpr_free_aligned(promise_data_);
   }
 }
@@ -1349,7 +1349,10 @@ OperationExecutor<T>::InitStep(T input, void* call_data) {
         ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
                            ops_->channel_data, std::move(input));
     if (auto* r = p.value_if_ready()) {
-      if (r->ok == nullptr) return std::move(*r);
+      if (r->ok == nullptr) {
+        ops_ = end_ops_;
+        return std::move(*r);
+      }
       input = std::move(r->ok);
       ++ops_;
       continue;

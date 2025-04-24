@@ -37,8 +37,9 @@ tsi_result tsi_handshaker_result_create_zero_copy_grpc_protector(
 // - unprotected_slices is the unprotected data to be protected.
 // - protected_slices is the protected output frames. One or more frames
 //   may be produced in this protect function.
-// - This method returns TSI_OK in case of success or a specific error code in
+// - Returns TSI_OK in case of success or a specific error code in
 //   case of failure.
+// - Can be called concurrently with tsi_zero_copy_grpc_protector_unprotect.
 tsi_result tsi_zero_copy_grpc_protector_protect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* unprotected_slices,
     grpc_slice_buffer* protected_slices);
@@ -46,11 +47,12 @@ tsi_result tsi_zero_copy_grpc_protector_protect(
 // Outputs unprotected bytes.
 // - protected_slices is the bytes of protected frames.
 // - unprotected_slices is the unprotected output data.
-// - if min_progress_size is not null, it returns the size of the last
+// - If min_progress_size is not null, it returns the size of the last
 //   incomplete frame which could not be fully unprotected.
-// - This method returns TSI_OK in case of success. Success includes cases where
+// - Returns TSI_OK in case of success. Success includes cases where
 //   there is not enough data to output in which case unprotected_slices has 0
 //   bytes.
+// - Can be called concurrently with tsi_zero_copy_grpc_protector_protect.
 tsi_result tsi_zero_copy_grpc_protector_unprotect(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     grpc_slice_buffer* unprotected_slices, int* min_progress_size);
@@ -63,6 +65,8 @@ tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
 // Base for tsi_zero_copy_grpc_protector implementations.
+// Implementations must guarantee that protect and unprotect can be called
+// concurrently.
 struct tsi_zero_copy_grpc_protector_vtable {
   tsi_result (*protect)(tsi_zero_copy_grpc_protector* self,
                         grpc_slice_buffer* unprotected_slices,

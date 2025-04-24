@@ -39,7 +39,7 @@ MockFrameTransport::~MockFrameTransport() {
 }
 
 void MockFrameTransport::Start(Party* party,
-                               MpscReceiver<Frame> outgoing_frames,
+                               MpscReceiver<OutgoingFrame> outgoing_frames,
                                RefCountedPtr<FrameTransportSink> sink) {
   CHECK(sink_ == nullptr);
   sink_ = sink;
@@ -56,17 +56,17 @@ void MockFrameTransport::Start(Party* party,
                   outgoing_frames = std::move(outgoing_frames)]() mutable {
               return TrySeq(
                   outgoing_frames.Next(),
-                  [self](Frame frame) -> LoopCtl<absl::Status> {
+                  [self](OutgoingFrame frame) -> LoopCtl<absl::Status> {
                     if (self->expected_writes_.empty()) {
-                      ADD_FAILURE()
-                          << "Unexpected write of "
-                          << absl::ConvertVariantTo<FrameInterface&>(frame)
-                                 .ToString();
+                      ADD_FAILURE() << "Unexpected write of "
+                                    << absl::ConvertVariantTo<FrameInterface&>(
+                                           frame.payload)
+                                           .ToString();
                       return Continue{};
                     }
                     auto expected = std::move(self->expected_writes_.front());
                     self->expected_writes_.pop();
-                    EXPECT_EQ(expected.frame, frame)
+                    EXPECT_EQ(expected.frame, frame.payload)
                         << " from " << expected.whence.file() << ":"
                         << expected.whence.line();
                     return Continue{};

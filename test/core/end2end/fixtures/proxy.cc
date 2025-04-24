@@ -32,6 +32,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -83,7 +84,7 @@ typedef struct {
 
   grpc_core::Mutex* initial_metadata_mu;
   bool p2s_initial_metadata_received ABSL_GUARDED_BY(initial_metadata_mu);
-  grpc_op* deferred_trailing_metadata_op ABSL_GUARDED_BY(initial_metadata_mu);
+  bool trailing_metadata_op_deferred ABSL_GUARDED_BY(initial_metadata_mu);
 
   grpc_byte_buffer* c2p_msg;
   grpc_byte_buffer* p2s_msg;
@@ -169,12 +170,6 @@ static void unrefpc(proxy_call* pc, const char* /*reason*/) {
     grpc_metadata_array_destroy(&pc->p2s_initial_metadata);
     grpc_metadata_array_destroy(&pc->p2s_trailing_metadata);
     grpc_slice_unref(pc->p2s_status_details);
-    {
-      grpc_core::MutexLock lock(pc->initial_metadata_mu);
-      if (pc->deferred_trailing_metadata_op != nullptr) {
-        gpr_free(pc->deferred_trailing_metadata_op);
-      }
-    }
     delete pc->initial_metadata_mu;
     gpr_free(pc);
   }
@@ -196,39 +191,49 @@ static void on_c2p_sent_status(void* arg, int /*success*/) {
 
 static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
-  grpc_op op;
+  grpc_op op[2];  // Possible deferred trailing metadata-op as well.
   grpc_call_error err;
-  memset(&op, 0, sizeof(op));
-  if (!pc->proxy->shutdown) {
-    if (!grpc_call_is_trailers_only(pc->p2s)) {
-      op.op = GRPC_OP_SEND_INITIAL_METADATA;
-      op.flags = 0;
-      op.reserved = nullptr;
-      op.data.send_initial_metadata.count = pc->p2s_initial_metadata.count;
-      op.data.send_initial_metadata.metadata =
-          pc->p2s_initial_metadata.metadata;
-      refpc(pc, "on_c2p_sent_initial_metadata");
-      err = grpc_call_start_batch(pc->c2p, &op, 1,
-                                  new_closure(on_c2p_sent_initial_metadata, pc),
-                                  nullptr);
-      CHECK_EQ(err, GRPC_CALL_OK);
-    }
-    grpc_op* deferred_trailing_metadata_op = nullptr;
-    {
-      grpc_core::MutexLock lock(pc->initial_metadata_mu);
-      // Start the batch without the mutex held, just in case.
-      // This will be nullptr if the trailing metadata has not yet been seen.
-      deferred_trailing_metadata_op = pc->deferred_trailing_metadata_op;
-      pc->p2s_initial_metadata_received = true;
-    }
-    if (deferred_trailing_metadata_op != nullptr) {
-      refpc(pc, "on_c2p_sent_status");
-      err = grpc_call_start_batch(pc->c2p, deferred_trailing_metadata_op, 1,
-                                  new_closure(on_c2p_sent_status, pc), nullptr);
-      CHECK_EQ(err, GRPC_CALL_OK);
-    }
+  auto cleanup = absl::MakeCleanup(
+      [pc]() { unrefpc(pc, "on_p2s_recv_initial_metadata"); });
+  if (pc->proxy->shutdown) {
+    return;
   }
-  unrefpc(pc, "on_p2s_recv_initial_metadata");
+  bool trailing_metadata_op_deferred = false;
+  {
+    grpc_core::MutexLock lock(pc->initial_metadata_mu);
+    trailing_metadata_op_deferred = pc->trailing_metadata_op_deferred;
+    pc->p2s_initial_metadata_received = true;
+  }
+  if (grpc_call_is_trailers_only(pc->p2s) && !trailing_metadata_op_deferred) {
+    // Handled by on_p2s_status
+    return;
+  }
+  memset(op, 0, sizeof(op));
+  int op_count = 0;
+  op[op_count].op = GRPC_OP_SEND_INITIAL_METADATA;
+  if (!grpc_call_is_trailers_only(pc->p2s)) {
+    op[op_count].data.send_initial_metadata.count =
+        pc->p2s_initial_metadata.count;
+    op[op_count].data.send_initial_metadata.metadata =
+        pc->p2s_initial_metadata.metadata;
+  }
+  op_count++;
+  if (trailing_metadata_op_deferred) {
+    op[op_count].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+    op[op_count].data.send_status_from_server.trailing_metadata_count =
+        pc->p2s_trailing_metadata.count;
+    op[op_count].data.send_status_from_server.trailing_metadata =
+        pc->p2s_trailing_metadata.metadata;
+    op[op_count].data.send_status_from_server.status = pc->p2s_status;
+    op[op_count].data.send_status_from_server.status_details =
+        &pc->p2s_status_details;
+    op_count++;
+  }
+  refpc(pc, "on_c2p_sent_initial_metadata");
+  err = grpc_call_start_batch(pc->c2p, op, op_count,
+                              new_closure(on_c2p_sent_initial_metadata, pc),
+                              nullptr);
+  CHECK_EQ(err, GRPC_CALL_OK);
 }
 
 static void on_p2s_sent_initial_metadata(void* arg, int /*success*/) {
@@ -342,55 +347,43 @@ static void on_p2s_status(void* arg, int success) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   grpc_op op[2];  // Possibly send empty initial metadata also if trailers-only
   grpc_call_error err;
-
-  memset(op, 0, sizeof(op));
-
-  if (!pc->proxy->shutdown) {
-    CHECK(success);
-
-    int op_count = 0;
-    if (grpc_call_is_trailers_only(pc->p2s)) {
-      op[op_count].op = GRPC_OP_SEND_INITIAL_METADATA;
-      op_count++;
-    }
-
-    op[op_count].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
-    op[op_count].flags = 0;
-    op[op_count].reserved = nullptr;
-    op[op_count].data.send_status_from_server.trailing_metadata_count =
-        pc->p2s_trailing_metadata.count;
-    op[op_count].data.send_status_from_server.trailing_metadata =
-        pc->p2s_trailing_metadata.metadata;
-    op[op_count].data.send_status_from_server.status = pc->p2s_status;
-    op[op_count].data.send_status_from_server.status_details =
-        &pc->p2s_status_details;
-    op_count++;
-
-    // TODO(ctiller): The current core implementation requires initial
-    // metadata batches to be started *after* initial metadata batches have
-    // been completed. The C++ Callback API does this accounting too, for
-    // example.
-    //
-    // This entire fixture will need a redesign when the batch API goes away.
-    bool op_deferred = false;
-    {
-      grpc_core::MutexLock lock(pc->initial_metadata_mu);
-      if (!pc->p2s_initial_metadata_received) {
-        op_deferred = true;
-        pc->deferred_trailing_metadata_op =
-            static_cast<grpc_op*>(gpr_malloc(sizeof(op)));
-        memcpy(pc->deferred_trailing_metadata_op, &op, sizeof(op));
-      }
-    }
-    if (!op_deferred) {
-      refpc(pc, "on_c2p_sent_status");
-      err = grpc_call_start_batch(pc->c2p, op, op_count,
-                                  new_closure(on_c2p_sent_status, pc), nullptr);
-      CHECK_EQ(err, GRPC_CALL_OK);
+  auto cleanup = absl::MakeCleanup([pc]() { unrefpc(pc, "on_p2s_status"); });
+  if (pc->proxy->shutdown) {
+    return;
+  }
+  CHECK(success);
+  // TODO(ctiller): The current core implementation requires initial
+  // metadata batches to be started *after* initial metadata batches have
+  // been completed. The C++ Callback API does this accounting too, for
+  // example.
+  //
+  // This entire fixture will need a redesign when the batch API goes away.
+  {
+    grpc_core::MutexLock lock(pc->initial_metadata_mu);
+    if (!pc->p2s_initial_metadata_received) {
+      pc->trailing_metadata_op_deferred = true;
+      return;
     }
   }
-
-  unrefpc(pc, "on_p2s_status");
+  memset(op, 0, sizeof(op));
+  int op_count = 0;
+  if (grpc_call_is_trailers_only(pc->p2s)) {
+    op[op_count].op = GRPC_OP_SEND_INITIAL_METADATA;
+    op_count++;
+  }
+  op[op_count].op = GRPC_OP_SEND_STATUS_FROM_SERVER;
+  op[op_count].data.send_status_from_server.trailing_metadata_count =
+      pc->p2s_trailing_metadata.count;
+  op[op_count].data.send_status_from_server.trailing_metadata =
+      pc->p2s_trailing_metadata.metadata;
+  op[op_count].data.send_status_from_server.status = pc->p2s_status;
+  op[op_count].data.send_status_from_server.status_details =
+      &pc->p2s_status_details;
+  op_count++;
+  refpc(pc, "on_c2p_sent_status");
+  err = grpc_call_start_batch(pc->c2p, op, op_count,
+                              new_closure(on_c2p_sent_status, pc), nullptr);
+  CHECK_EQ(err, GRPC_CALL_OK);
 }
 
 static void on_c2p_closed(void* arg, int /*success*/) {
@@ -413,7 +406,6 @@ static void on_new_call(void* arg, int success) {
     {
       grpc_core::MutexLock lock(pc->initial_metadata_mu);
       pc->p2s_initial_metadata_received = false;
-      pc->deferred_trailing_metadata_op = nullptr;
     }
     pc->c2p = proxy->new_call;
     pc->p2s = grpc_channel_create_call(

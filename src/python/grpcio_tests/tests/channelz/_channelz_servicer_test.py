@@ -223,50 +223,6 @@ class ChannelzServicerTest(unittest.TestCase):
         )
         self.assertEqual(len(resp.channel), k_channels)
 
-    def test_many_requests_many_channel(self):
-        k_channels = 4
-        self._pairs = _generate_channel_server_pairs(k_channels)
-        k_success = 11
-        k_failed = 13
-        for i in range(k_success):
-            self._send_successful_unary_unary(0)
-            self._send_successful_unary_unary(2)
-        for i in range(k_failed):
-            self._send_failed_unary_unary(1)
-            self._send_failed_unary_unary(2)
-
-        # The first channel saw only successes
-        resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(0))
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_success)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
-        # The second channel saw only failures
-        resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(1))
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The third channel saw both successes and failures
-        resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(2))
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_success + k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The fourth channel saw nothing
-        resp = self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=self._get_channel_id(3))
-        )
-        self.assertEqual(resp.channel.data.calls_started, 0)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
     def test_many_subchannels(self):
         k_channels = 4
         self._pairs = _generate_channel_server_pairs(k_channels)

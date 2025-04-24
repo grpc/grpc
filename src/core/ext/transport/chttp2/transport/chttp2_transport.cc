@@ -3444,13 +3444,6 @@ absl::string_view grpc_chttp2_transport::GetTransportName() const {
   return "chttp2";
 }
 
-grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
-  grpc_chttp2_transport* t =
-      reinterpret_cast<grpc_chttp2_transport*>(transport);
-  return t->channelz_socket;
-}
-
 grpc_core::Transport* grpc_create_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,
     grpc_core::OrphanablePtr<grpc_endpoint> ep, const bool is_client) {

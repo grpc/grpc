@@ -124,6 +124,10 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return nullptr;
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
@@ -1264,8 +1268,8 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
   inproc_transports_create(&server_transport, &client_transport);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_error_handle error = core_server->SetupTransport(
-      server_transport, nullptr, server_args, nullptr);
+  grpc_error_handle error =
+      core_server->SetupTransport(server_transport, nullptr, server_args);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
     auto new_channel = grpc_core::ChannelCreate(

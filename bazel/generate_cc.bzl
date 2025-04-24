@@ -192,7 +192,6 @@ _generate_cc = rule(
         ),
         "plugin": attr.label(
             executable = True,
-            providers = ["files_to_run"],
             cfg = "exec",
         ),
         "flags": attr.string_list(

@@ -36,8 +36,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/notification.h"
-#include "src/cpp/ext/chaotic_good.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/memory_usage/memstats.h"
@@ -53,9 +54,7 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   // Set the authentication mechanism.
   std::shared_ptr<grpc::ChannelCredentials> creds =
       grpc::InsecureChannelCredentials();
-  if (absl::GetFlag(FLAGS_chaotic_good)) {
-    creds = grpc::ChaoticGoodInsecureChannelCredentials();
-  } else if (absl::GetFlag(FLAGS_secure)) {
+  if (absl::GetFlag(FLAGS_secure)) {
     // TODO (chennancy) Add in secure credentials
     LOG(INFO) << "Supposed to be secure, is not yet";
   }
@@ -64,7 +63,13 @@ std::shared_ptr<grpc::Channel> CreateChannelForTest(int index) {
   grpc::ChannelArguments channel_args;
   channel_args.SetInt(GRPC_ARG_MAX_CONNECTION_IDLE_MS, INT_MAX);
   channel_args.SetInt(GRPC_ARG_MAX_CONNECTION_AGE_MS, INT_MAX);
-  // Arg to bypass mechanism that combines channels on the serverside if they
+  const std::string kChaoticGoodWireFormatPreferences(
+      grpc_core::chaotic_good::WireFormatPreferences());
+  if (absl::GetFlag(FLAGS_chaotic_good)) {
+    channel_args.SetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+                           kChaoticGoodWireFormatPreferences);
+  }
+  // Arg to bypass mechanism that combines channels on the server side if they
   // have the same channel args. Allows for one channel per connection
   channel_args.SetInt("grpc.memory_usage_counter", index);
 

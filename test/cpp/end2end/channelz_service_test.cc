@@ -447,6 +447,10 @@ TEST_P(ChannelzServerTest, ManyChannels) {
 }
 
 TEST_P(ChannelzServerTest, ManyRequestsManyChannels) {
+  if (grpc_core::IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ResetStubs();
   const int kNumChannels = 4;
   ConfigureProxy(kNumChannels);

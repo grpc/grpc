@@ -30,4 +30,4 @@ cp -r /var/local/jenkins/service_account $HOME || true
 # Build the interop client and server
 (cd src/google.golang.org/grpc/interop/client && go install)
 (cd src/google.golang.org/grpc/interop/server && go install)
-  
+

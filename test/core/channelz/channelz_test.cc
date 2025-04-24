@@ -565,6 +565,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture pre_channels[40];  // will take uuid[1, 40]
   (void)pre_channels;               // suppress unused variable error
@@ -588,6 +592,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
   {
@@ -623,6 +631,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   const intptr_t kLoopIterations = 50;
   ExecCtx exec_ctx;
   std::vector<std::unique_ptr<ChannelFixture>> even_channels;
