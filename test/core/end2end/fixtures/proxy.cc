@@ -193,7 +193,6 @@ static void on_p2s_recv_initial_metadata(void* arg, int /*success*/) {
   proxy_call* pc = static_cast<proxy_call*>(arg);
   grpc_op op[2];  // Possible deferred trailing metadata-op as well.
   grpc_call_error err;
-
   auto cleanup = absl::MakeCleanup(
       [pc]() { unrefpc(pc, "on_p2s_recv_initial_metadata"); });
   if (pc->proxy->shutdown) {
