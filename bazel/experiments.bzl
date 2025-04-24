@@ -34,6 +34,7 @@ EXPERIMENT_ENABLES = {
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
+    "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
@@ -46,7 +47,11 @@ EXPERIMENT_ENABLES = {
     "rq_fast_reject": "rq_fast_reject",
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
+    "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
+    "shard_channelz_index": "shard_channelz_index",
+    "shard_global_connection_pool": "shard_global_connection_pool",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
@@ -77,6 +82,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -84,6 +91,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -111,12 +121,16 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -145,6 +159,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -152,6 +168,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -179,12 +198,16 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",
@@ -213,6 +236,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -220,6 +245,9 @@ EXPERIMENTS = {
             "endpoint_test": [
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
+            ],
+            "error_tests": [
+                "error_flatten",
             ],
             "event_engine_fork_test": [
                 "event_engine_fork",
@@ -247,12 +275,16 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
+            "channelz_test": [
+                "shard_channelz_index",
+            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "posix_ee_skip_grpc_init",
+                "shard_global_connection_pool",
             ],
             "cpp_end2end_test": [
                 "posix_ee_skip_grpc_init",

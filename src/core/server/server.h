@@ -353,10 +353,9 @@ class Server : public ServerInterface,
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
   // Takes ownership of a ref on resource_user from the caller.
-  grpc_error_handle SetupTransport(
-      Transport* transport, grpc_pollset* accepting_pollset,
-      const ChannelArgs& args,
-      const RefCountedPtr<channelz::SocketNode>& socket_node)
+  grpc_error_handle SetupTransport(Transport* transport,
+                                   grpc_pollset* accepting_pollset,
+                                   const ChannelArgs& args)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
@@ -697,7 +696,6 @@ class Server : public ServerInterface,
           channel_args_.GetInt(GRPC_ARG_SERVER_MAX_PENDING_REQUESTS_HARD_LIMIT)
               .value_or(3000)))};
   const Duration max_time_in_pending_queue_;
-  absl::BitGen bitgen_ ABSL_GUARDED_BY(mu_call_);
 
   std::list<ChannelData*> channels_;
   absl::flat_hash_set<OrphanablePtr<ServerTransport>> connections_

@@ -67,7 +67,7 @@ FakeStatsClientFilter::FakeStatsClientFilter(
     : fake_client_call_tracer_factory_(fake_client_call_tracer_factory) {}
 
 void RegisterFakeStatsPlugin() {
-  CoreConfiguration::RegisterBuilder(
+  CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) mutable {
         builder->channel_init()
             ->RegisterFilter(GRPC_CLIENT_CHANNEL,

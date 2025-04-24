@@ -129,14 +129,14 @@ grpc_channel_filter FailFirstTenCallsFilter::kFilterVtable = {
 // Tests transparent retries when the call was never sent out on the wire.
 CORE_END2END_TEST(RetryTests, RetryTransparentNotSentOnWire) {
   SKIP_IF_V3();  // Need to convert filter
-  SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED();
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailFirstTenCallsFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &FailFirstTenCallsFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
   auto c =
       NewClientCall("/service/method").Timeout(Duration::Minutes(1)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);

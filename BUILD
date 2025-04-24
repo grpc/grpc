@@ -58,6 +58,11 @@ config_setting(
 )
 
 config_setting(
+    name = "grpc_no_ztrace_define",
+    values = {"define": "grpc_no_ztrace=true"},
+)
+
+config_setting(
     name = "grpc_experiments_are_final_define",
     values = {"define": "grpc_experiments_are_final=true"},
 )
@@ -121,6 +126,19 @@ selects.config_setting_group(
     match_any = [
         ":grpc_no_xds_define",
         # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
+)
+
+selects.config_setting_group(
+    name = "grpc_no_ztrace",
+    match_any = [
+        ":grpc_no_ztrace_define",
+        # In addition to disabling ztrace support when --define=grpc_no_ztrace=true is
         # specified, we also disable it on mobile platforms where it is not
         # likely to be needed and where reducing the binary size is more
         # important.
@@ -282,6 +300,7 @@ GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/slice.h",
     "include/grpc/event_engine/slice_buffer.h",
     "include/grpc/event_engine/internal/slice_cast.h",
+    "include/grpc/event_engine/internal/write_event.h",
 ]
 
 GRPCXX_SRCS = [
@@ -822,6 +841,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     deps = [
         "grpc_base",
+        "add_port",
         # standard plugins
         "census",
         "//src/core:grpc_backend_metric_filter",
@@ -841,6 +861,7 @@ grpc_cc_library(
         "//src/core:grpc_resolver_dns_native",
         "//src/core:grpc_resolver_sockaddr",
         "//src/core:grpc_transport_chttp2_client_connector",
+        "//src/core:grpc_transport_chttp2_plugin",
         "//src/core:grpc_transport_chttp2_server",
         "//src/core:grpc_transport_inproc",
         "//src/core:grpc_fault_injection_filter",
@@ -1230,6 +1251,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:btree",
         "absl/log",
         "absl/log:check",
         "absl/status:statusor",
@@ -1252,6 +1274,7 @@ grpc_cc_library(
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:time",
@@ -1670,7 +1693,6 @@ grpc_cc_library(
         "//src/core:lib/surface/channel_create.h",
     ],
     external_deps = [
-        "absl/base:core_headers",
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
@@ -1681,21 +1703,19 @@ grpc_cc_library(
         "channel_arg_names",
         "channelz",
         "config",
-        "gpr",
+        "exec_ctx",
+        "gpr_public_hdrs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_public_hdrs",
+        "grpc_security_base",
         "legacy_channel",
-        "ref_counted_ptr",
         "stats",
-        "//src/core:arena",
         "//src/core:channel_args",
+        "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_transport",
         "//src/core:experiments",
-        "//src/core:iomgr_fwd",
-        "//src/core:ref_counted",
-        "//src/core:slice",
         "//src/core:stats_data",
     ],
 )
@@ -1771,6 +1791,7 @@ grpc_cc_library(
         "//src/core:resolved_address",
         "//src/core:seq",
         "//src/core:server_interface",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:status_helper",
@@ -1779,6 +1800,21 @@ grpc_cc_library(
         "//src/core:try_join",
         "//src/core:try_seq",
         "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "add_port",
+    srcs = [
+        "//src/core:server/add_port.cc",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "config",
+        "exec_ctx",
+        "grpc_security_base",
+        "server",
+        "//src/core:channel_args",
     ],
 )
 
@@ -3022,12 +3058,14 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:client_channel"],
     deps = [
+        "debug_location",
         "gpr",
         "grpc_resolver",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
         "//src/core:channel_init",
+        "//src/core:endpoint_transport",
         "//src/core:handshaker_registry",
         "//src/core:lb_policy_registry",
         "//src/core:proxy_mapper_registry",
@@ -3377,6 +3415,7 @@ grpc_cc_library(
     deps = [
         "gpr_platform",
         "//src/core:experiments",
+        "//src/core:shared_bit_gen",
         "//src/core:time",
     ],
 )
@@ -4753,6 +4792,7 @@ grpc_cc_library(
         "//src/core:random_early_detection",
         "//src/core:ref_counted",
         "//src/core:resource_quota",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
@@ -4782,24 +4822,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpcpp_chaotic_good",
-    srcs = [
-        "src/cpp/ext/chaotic_good.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/chaotic_good.h",
-    ],
-    visibility = ["//bazel:chaotic_good"],
-    deps = [
-        "gpr",
-        "grpc++_base",
-        "grpc_public_hdrs",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
     ],
 )
 

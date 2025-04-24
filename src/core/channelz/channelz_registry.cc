@@ -24,8 +24,11 @@
 #include <grpc/support/string_util.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <memory>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -37,6 +40,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -85,45 +89,20 @@ ChannelzRegistry* ChannelzRegistry::Default() {
   return singleton;
 }
 
-void ChannelzRegistry::InternalRegister(BaseNode* node) {
-  MutexLock lock(&mu_);
-  node->uuid_ = ++uuid_generator_;
-  node_map_[node->uuid_] = node;
-}
-
-void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  CHECK_GE(uuid, 1);
-  MutexLock lock(&mu_);
-  CHECK(uuid <= uuid_generator_);
-  node_map_.erase(uuid);
-}
-
-RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
-  MutexLock lock(&mu_);
-  if (uuid < 1 || uuid > uuid_generator_) {
-    return nullptr;
-  }
-  auto it = node_map_.find(uuid);
-  if (it == node_map_.end()) return nullptr;
-  // Found node.  Return only if its refcount is not zero (i.e., when we
-  // know that there is no other thread about to destroy it).
-  BaseNode* node = it->second;
-  return node->RefIfNonZero();
+std::vector<RefCountedPtr<BaseNode>>
+ChannelzRegistry::InternalGetAllEntities() {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  node_map_->IterateNodes(0, std::nullopt,
+                          [&nodes](RefCountedPtr<BaseNode> node) {
+                            nodes.push_back(node);
+                            return true;
+                          });
+  return nodes;
 }
 
 void ChannelzRegistry::InternalLogAllEntities() {
-  std::vector<RefCountedPtr<BaseNode>> nodes;
-  {
-    MutexLock lock(&mu_);
-    for (auto& p : node_map_) {
-      RefCountedPtr<BaseNode> node = p.second->RefIfNonZero();
-      if (node != nullptr) {
-        nodes.emplace_back(std::move(node));
-      }
-    }
-  }
-  for (size_t i = 0; i < nodes.size(); ++i) {
-    std::string json = nodes[i]->RenderJsonString();
+  for (const auto& p : InternalGetAllEntities()) {
+    std::string json = p->RenderJsonString();
     LOG(INFO) << json;
   }
 }
@@ -134,6 +113,183 @@ std::string ChannelzRegistry::GetTopChannelsJson(intptr_t start_channel_id) {
 
 std::string ChannelzRegistry::GetServersJson(intptr_t start_server_id) {
   return RenderArray(GetServers(start_server_id), "server");
+}
+
+std::unique_ptr<ChannelzRegistry::NodeMapInterface>
+ChannelzRegistry::MakeNodeMap() {
+  if (IsShardChannelzIndexEnabled()) {
+    return std::make_unique<ShardedNodeMap>();
+  } else {
+    return std::make_unique<LegacyNodeMap>();
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// LegacyNodeMap
+
+void ChannelzRegistry::LegacyNodeMap::Register(BaseNode* node) {
+  MutexLock lock(&mu_);
+  node->uuid_ = uuid_generator_;
+  ++uuid_generator_;
+  node_map_[node->uuid_] = node;
+}
+
+void ChannelzRegistry::LegacyNodeMap::Unregister(BaseNode* node) {
+  const intptr_t uuid = node->uuid_;
+  CHECK_GE(uuid, 1);
+  MutexLock lock(&mu_);
+  CHECK(uuid <= uuid_generator_);
+  node_map_.erase(uuid);
+}
+
+void ChannelzRegistry::LegacyNodeMap::IterateNodes(
+    intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
+    absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+  MutexLock lock(&mu_);
+  for (auto it = node_map_.lower_bound(start_node); it != node_map_.end();
+       ++it) {
+    BaseNode* node = it->second;
+    if (entity_type.has_value() && node->type() != entity_type) continue;
+    auto node_ref = node->RefIfNonZero();
+    if (node_ref == nullptr) continue;
+    if (!callback(std::move(node_ref))) break;
+  }
+}
+
+RefCountedPtr<BaseNode> ChannelzRegistry::LegacyNodeMap::GetNode(
+    intptr_t uuid) {
+  MutexLock lock(&mu_);
+  if (uuid < 1 || uuid > uuid_generator_) return nullptr;
+  auto it = node_map_.find(uuid);
+  if (it == node_map_.end()) return nullptr;
+  // Found node.  Return only if its refcount is not zero (i.e., when we
+  // know that there is no other thread about to destroy it).
+  BaseNode* node = it->second;
+  return node->RefIfNonZero();
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// ShardedNodeMap
+
+void ChannelzRegistry::ShardedNodeMap::Register(BaseNode* node) {
+  DCHECK_EQ(node->uuid_, -1);
+  const size_t node_shard_index = NodeShardIndex(node);
+  BaseNodeList& node_shard = node_list_[node_shard_index];
+  MutexLock lock(&node_shard.mu);
+  AddNodeToHead(node, node_shard.nursery);
+}
+
+void ChannelzRegistry::ShardedNodeMap::Unregister(BaseNode* node) {
+  const size_t node_shard_index = NodeShardIndex(node);
+  BaseNodeList& node_shard = node_list_[node_shard_index];
+  node_shard.mu.Lock();
+  const bool id_allocated = node->uuid_.load(std::memory_order_relaxed) != -1;
+  BaseNode*& head = id_allocated ? node_shard.numbered : node_shard.nursery;
+  RemoveNodeFromHead(node, head);
+  node_shard.mu.Unlock();
+  if (node->uuid_ == -1) return;
+  MutexLock index_lock(&index_mu_);
+  index_.erase(node->uuid_);
+}
+
+void ChannelzRegistry::ShardedNodeMap::IterateNodes(
+    intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
+    absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+  // Mitigate drain hotspotting by randomizing the drain order each query.
+  std::vector<size_t> nursery_visitation_order;
+  for (size_t i = 0; i < kNodeShards; ++i) {
+    nursery_visitation_order.push_back(i);
+  }
+  absl::c_shuffle(nursery_visitation_order, SharedBitGen());
+  MutexLock index_lock(&index_mu_);
+  size_t next_nursery_to_number = 0;
+  while (true) {
+    for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
+      BaseNode* node = it->second;
+      start_node = node->uuid_ + 1;
+      if (entity_type.has_value() && node->type() != entity_type) continue;
+      auto node_ref = node->RefIfNonZero();
+      if (node_ref == nullptr) continue;
+      if (!callback(std::move(node_ref))) return;
+    }
+    if (next_nursery_to_number == kNodeShards) return;
+    if (NumberNurseryNodes(nursery_visitation_order[next_nursery_to_number])) {
+      ++next_nursery_to_number;
+    }
+  }
+}
+
+void ChannelzRegistry::ShardedNodeMap::AddNodeToHead(BaseNode* node,
+                                                     BaseNode*& head) {
+  if (head == nullptr) {
+    head = node;
+    node->prev_ = node->next_ = node;
+  } else {
+    node->prev_ = head->prev_;
+    node->next_ = head;
+    node->next_->prev_ = node;
+    node->prev_->next_ = node;
+  }
+}
+
+void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
+                                                          BaseNode*& head) {
+  if (node->next_ == node) {
+    CHECK_EQ(head, node);
+    head = nullptr;
+  } else {
+    node->prev_->next_ = node->next_;
+    node->next_->prev_ = node->prev_;
+    if (head == node) head = node->next_;
+  }
+}
+
+bool ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(
+    size_t nursery_index) {
+  static constexpr size_t kBatchSize = 64;
+  BaseNodeList& node_shard = node_list_[nursery_index];
+  MutexLock lock(&node_shard.mu);
+  BaseNode*& nursery = node_shard.nursery;
+  size_t count = 0;
+  while (nursery != nullptr && count < kBatchSize) {
+    BaseNode* n = nursery->next_;
+    RemoveNodeFromHead(n, nursery);
+    AddNodeToHead(n, node_shard.numbered);
+    n->uuid_ = uuid_generator_;
+    ++uuid_generator_;
+    index_.emplace(n->uuid_, n);
+    ++count;
+  }
+  return nursery == nullptr;
+}
+
+RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
+    intptr_t uuid) {
+  MutexLock index_lock(&index_mu_);
+  auto it = index_.find(uuid);
+  if (it == index_.end()) return nullptr;
+  BaseNode* node = it->second;
+  return node->RefIfNonZero();
+}
+
+intptr_t ChannelzRegistry::ShardedNodeMap::NumberNode(BaseNode* node) {
+  const size_t node_shard_index = NodeShardIndex(node);
+  BaseNodeList& node_shard = node_list_[node_shard_index];
+  MutexLock index_lock(&index_mu_);
+  MutexLock lock(&node_shard.mu);
+  intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
+  if (uuid != -1) return uuid;
+  uuid = uuid_generator_;
+  ++uuid_generator_;
+  node->uuid_ = uuid;
+  RemoveNodeFromHead(node, node_shard.nursery);
+  AddNodeToHead(node, node_shard.numbered);
+  index_.emplace(uuid, node);
+  return uuid;
+}
+
+size_t ChannelzRegistry::ShardedNodeMap::NodeShardIndex(BaseNode* node) {
+  return absl::HashOf(static_cast<void*>(node)) % kNodeShards;
 }
 
 }  // namespace channelz
