@@ -168,6 +168,11 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // Invoked whenever the subchannel's connectivity state changes.
     // There will be only one invocation of this method on a given watcher
     // instance at any given time.
+    //
+    // Note: This will be invoked while holding the subchannel's
+    // internal lock, so callers MUST NOT call back into the subchannel
+    // from inside this call.  The recommended usage is for the watcher
+    // to hop into a WorkSerializer before delivering the notification.
     virtual void OnConnectivityStateChange(grpc_connectivity_state state,
                                            const absl::Status& status) = 0;
 
@@ -282,9 +287,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   // the subchannel's state.
   class ConnectivityStateWatcherList final {
    public:
-    explicit ConnectivityStateWatcherList(Subchannel* subchannel)
-        : subchannel_(subchannel) {}
-
     ~ConnectivityStateWatcherList() { Clear(); }
 
     void AddWatcherLocked(
@@ -300,7 +302,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     bool empty() const { return watchers_.empty(); }
 
    private:
-    Subchannel* subchannel_;
     absl::flat_hash_set<RefCountedPtr<ConnectivityStateWatcherInterface>,
                         RefCountedPtrHash<ConnectivityStateWatcherInterface>,
                         RefCountedPtrEq<ConnectivityStateWatcherInterface>>
@@ -361,8 +362,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   absl::Status status_ ABSL_GUARDED_BY(mu_);
   // The list of connectivity state watchers.
   ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
-  // Used for sending connectivity state notifications.
-  WorkSerializer work_serializer_;
 
   // Active connection, or null.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);

@@ -120,9 +120,6 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
 
     WeakRefCountedPtr<HealthProducer> producer_;
     absl::string_view health_check_service_name_;
-    std::shared_ptr<WorkSerializer> work_serializer_ =
-        std::make_shared<WorkSerializer>(
-            producer_->subchannel_->event_engine());
 
     std::optional<grpc_connectivity_state> state_
         ABSL_GUARDED_BY(&HealthProducer::mu_);
@@ -140,6 +137,8 @@ class HealthProducer final : public Subchannel::DataProducerInterface {
   RefCountedPtr<Subchannel> subchannel_;
   ConnectivityWatcher* connectivity_watcher_;
   grpc_pollset_set* interested_parties_;
+
+  ManualConstructor<WorkSerializer> work_serializer_;
 
   Mutex mu_;
   std::optional<grpc_connectivity_state> state_ ABSL_GUARDED_BY(&mu_);

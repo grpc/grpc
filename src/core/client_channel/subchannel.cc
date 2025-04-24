@@ -452,9 +452,7 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& watcher : watchers_) {
-    subchannel_->work_serializer_.Run([watcher, state, status]() {
-      watcher->OnConnectivityStateChange(state, status);
-    });
+    watcher->OnConnectivityStateChange(state, status);
   }
 }
 
@@ -512,8 +510,6 @@ Subchannel::Subchannel(SubchannelKey key,
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
-      watcher_list_(this),
-      work_serializer_(args_.GetObjectRef<EventEngine>()),
       backoff_(ParseArgsForBackoffValues(args_, &min_connect_timeout_)),
       event_engine_(args_.GetObjectRef<EventEngine>()) {
   // A grpc_init is added here to ensure that grpc_shutdown does not happen
@@ -611,11 +607,7 @@ void Subchannel::WatchConnectivityState(
   if (interested_parties != nullptr) {
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
-  work_serializer_.Run(
-      [watcher, state = state_, status = status_]() {
-        watcher->OnConnectivityStateChange(state, status);
-      },
-      DEBUG_LOCATION);
+  watcher->OnConnectivityStateChange(state_, status_);
   watcher_list_.AddWatcherLocked(std::move(watcher));
 }
 
