@@ -101,6 +101,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -156,6 +158,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -211,6 +215,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -254,6 +260,8 @@ enum ExperimentIds {
   kExperimentIdRqFastReject,
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdSecureEndpointOffloadLargeReads,
+  kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdShardChannelzIndex,
   kExperimentIdShardGlobalConnectionPool,
@@ -382,6 +390,14 @@ inline bool IsRstStreamFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_OFFLOAD_LARGE_READS
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() {
+  return IsExperimentEnabled<kExperimentIdSecureEndpointOffloadLargeReads>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_OFFLOAD_LARGE_WRITES
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
+  return IsExperimentEnabled<kExperimentIdSecureEndpointOffloadLargeWrites>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
