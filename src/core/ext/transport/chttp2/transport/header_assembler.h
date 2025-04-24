@@ -19,6 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
 
+#include <grpc/support/port_platform.h>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/call/message.h"
@@ -33,16 +35,17 @@ namespace http2 {
 
 class HeaderAssembler {
  public:
-  Http2ErrorCode AppendHeaderFrame(Http2HeaderFrame& frame) {
+  Http2ErrorCode AppendHeaderFrame(GRPC_UNUSED Http2HeaderFrame& frame) {
     return Http2ErrorCode::kNoError;
   }
 
-  Http2ErrorCode AppendContinuationFrame(Http2ContinuationFrame& frame) {
+  Http2ErrorCode AppendContinuationFrame(
+      GRPC_UNUSED Http2ContinuationFrame& frame) {
     return Http2ErrorCode::kNoError;
   }
 
  private:
-  uint32_t stream_id_;
+  GRPC_UNUSED uint32_t stream_id_;
 };
 
 }  // namespace http2

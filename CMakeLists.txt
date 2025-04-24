@@ -18513,6 +18513,7 @@ target_link_libraries(header_assembler_test
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
+  absl::btree
   absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref

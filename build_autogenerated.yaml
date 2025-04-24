@@ -12498,6 +12498,7 @@ targets:
   - z
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
