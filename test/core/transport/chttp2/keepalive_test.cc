@@ -26,7 +26,6 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/sleep.h"
-#include "src/core/util/notification.h"
 #include "test/core/call/yodel/yodel_test.h"
 
 namespace grpc_core {
@@ -35,9 +34,7 @@ namespace {
 using ::grpc_core::http2::KeepAliveInterface;
 using ::grpc_core::http2::KeepaliveManager;
 
-using ::testing::MockFunction;
 using ::testing::StrictMock;
-using ::testing::WithArgs;
 }  // namespace
 
 class MockKeepAliveInterface : public KeepAliveInterface {
