@@ -616,21 +616,19 @@ class ClientChannelFilter::SubchannelWrapper final
       parent_.reset(DEBUG_LOCATION, "WatcherWrapper");
     }
 
-    void OnConnectivityStateChange(
-        RefCountedPtr<ConnectivityStateWatcherInterface> self,
-        grpc_connectivity_state state, const absl::Status& status) override {
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   const absl::Status& status) override {
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": connectivity change for subchannel wrapper " << parent_.get()
           << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
-      self.release();  // Held by callback.
       parent_->chand_->work_serializer_->Run(
-          [this, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-              *parent_->chand_->work_serializer_) {
-            ApplyUpdateInControlPlaneWorkSerializer(state, status);
-            Unref();
-          });
+          [self = RefAsSubclass<WatcherWrapper>(), state, status]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                  *self->parent_->chand_->work_serializer_) {
+                self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+              });
     }
 
     grpc_pollset_set* interested_parties() override {
