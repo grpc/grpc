@@ -57,11 +57,11 @@ auto KeepaliveManager::WaitForKeepAliveTimeout() {
   });
 }
 auto KeepaliveManager::TimeoutAndSendPing() {
-  DCHECK_EQ(data_received_in_last_cycle_, false);
+  DCHECK(!data_received_in_last_cycle_);
   DCHECK(keepalive_timeout_ != Duration::Infinity());
 
   return Map(TryJoin<absl::StatusOr>(
-                 SendPing(), Race(WaitForData(), WaitForKeepAliveTimeout())),
+                 Race(WaitForData(), WaitForKeepAliveTimeout()), SendPing()),
              [](auto result) {
                if (!result.ok()) {
                  return result.status();
