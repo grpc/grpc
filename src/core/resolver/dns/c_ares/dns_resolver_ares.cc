@@ -218,7 +218,7 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
                           .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {
   if (grpc_core::IsEventEngineDnsEnabled() &&
       grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-    grpc_core::Crash(
+    Crash(
         "The iomgr Ares DNS resolver should not be instantiated when all "
         "EventEngine DNS experiments are on.");
   }
