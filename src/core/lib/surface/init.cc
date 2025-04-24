@@ -124,15 +124,16 @@ void grpc_init(void) {
     }
     grpc_iomgr_init();
     // Initialize DNS Resolver
-    address_sorting_init();
     if (!grpc_core::IsEventEngineDnsEnabled() ||
         !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality still relies on the iomgr resolver
+      address_sorting_init();
       grpc_resolver_dns_ares_init();
     }
     if (grpc_core::IsEventEngineDnsEnabled() ||
         grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality relies on the EE resolver.
+      address_sorting_init();
       auto status = AresInit();
       if (!status.ok()) {
         VLOG(2) << "AresInit failed: " << status.message();
@@ -150,14 +151,15 @@ void grpc_shutdown_internal_locked(void)
     grpc_core::ExecCtx exec_ctx(0);
     grpc_iomgr_shutdown_background_closure();
     grpc_timer_manager_set_threading(false);  // shutdown timer_manager thread
-    address_sorting_shutdown();
     if (!grpc_core::IsEventEngineDnsEnabled() ||
         !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
       // Some functionality still relies on the iomgr resolver
+      address_sorting_shutdown();
       grpc_resolver_dns_ares_shutdown();
     }
     if (grpc_core::IsEventEngineDnsEnabled() ||
         grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+      address_sorting_shutdown();
       // Some functionality relies on the EE resolver.
       AresShutdown();
     }
