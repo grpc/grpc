@@ -404,6 +404,7 @@ struct RefCountedPtrHash {
     return absl::Hash<WeakRefCountedPtr<T>>{}(p);
   }
   size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+  size_t operator()(const T* p) const { return absl::Hash<const T*>{}(p); }
 };
 template <typename T>
 struct RefCountedPtrEq {

@@ -501,7 +501,7 @@ class ClientChannelFilter::SubchannelWrapper final
       if (subchannel_node != nullptr) {
         auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
         if (it == chand_->subchannel_refcount_map_.end()) {
-          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+          subchannel_node->AddParent(chand_->channelz_node_);
           it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
                    .first;
         }
@@ -533,8 +533,7 @@ class ClientChannelFilter::SubchannelWrapper final
           CHECK(it != chand_->subchannel_refcount_map_.end());
           --it->second;
           if (it->second == 0) {
-            chand_->channelz_node_->RemoveChildSubchannel(
-                subchannel_node->uuid());
+            subchannel_node->RemoveParent(chand_->channelz_node_);
             chand_->subchannel_refcount_map_.erase(it);
           }
         }
