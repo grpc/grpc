@@ -580,6 +580,7 @@ PosixEventEngine::~PosixEventEngine() {
   }
   timer_manager_.Shutdown();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  polling_cycle_.reset();
   poller_manager_.TriggerShutdown();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->Quiesce();
