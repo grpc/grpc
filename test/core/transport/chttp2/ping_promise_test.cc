@@ -379,7 +379,9 @@ PING_SYSTEM_TEST(TestPingManagerDelayedPing) {
   ping_interface->ExpectTriggerWrite(/*call_after*/ Timestamp::Now() +
                                      Duration::Hours(1));
 
-  PingManager ping_system(GetChannelArgs(), std::move(ping_interface),
+  auto channel_args =
+      GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2);
+  PingManager ping_system(channel_args, std::move(ping_interface),
                           event_engine());
   auto party = GetParty();
 
