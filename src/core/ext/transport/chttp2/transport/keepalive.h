@@ -105,7 +105,7 @@ class KeepaliveManager {
   // keepalive ping. This also means that there can be scenarios where we would
   // send one keepalive ping in ~(2*keepalive_interval).
   bool NeedToSendKeepAlivePing() {
-    return (data_received_in_last_cycle_ == false) &&
+    return (!data_received_in_last_cycle_) &&
            (keep_alive_interface_->NeedToSendKeepAlivePing());
   }
 
