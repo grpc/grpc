@@ -23,7 +23,9 @@ RUN apt-get -qq update && apt-get -qq -y upgrade && apt-get -qq install -y \
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar &&   mv phpunit-9.5.9.phar /usr/local/bin/phpunit &&   chmod +x /usr/local/bin/phpunit
+RUN wget https://phar.phpunit.de/phpunit-9.5.9.phar && \
+  mv phpunit-9.5.9.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
 
 
 WORKDIR /github/php-src
@@ -46,8 +48,10 @@ WORKDIR /github/grpc
 
 COPY . .
 
-RUN pear package &&   find . -name grpc-*.tgz | xargs -I{} pecl install {}
+RUN pear package && \
+  find . -name grpc-*.tgz | xargs -I{} pecl install {}
 
 
-CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests",      "--ignore-valgrind-undef-errors"]
+CMD ["/github/grpc/src/php/bin/run_tests.sh", "--skip-persistent-channel-tests", \
+     "--ignore-valgrind-undef-errors"]
 

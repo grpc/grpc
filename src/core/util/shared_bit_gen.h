@@ -36,7 +36,7 @@ class SharedBitGen {
  private:
   // TODO(ctiller): Perhaps use per-cpu storage? Would add additional overhead
   // for the mutex acquisition.
-  static inline thread_local absl::BitGen bit_gen_;
+  static thread_local absl::BitGen bit_gen_;
 };
 
 }  // namespace grpc_core
