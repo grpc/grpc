@@ -144,11 +144,30 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_secure_endpoint_offload_large_reads =
+    "If a large read needs to be decrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_reads =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -251,10 +270,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"secure_endpoint_offload_large_reads",
+     description_secure_endpoint_offload_large_reads,
+     additional_constraints_secure_endpoint_offload_large_reads,
+     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -397,11 +426,30 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_secure_endpoint_offload_large_reads =
+    "If a large read needs to be decrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_reads =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -504,10 +552,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"secure_endpoint_offload_large_reads",
+     description_secure_endpoint_offload_large_reads,
+     additional_constraints_secure_endpoint_offload_large_reads,
+     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -650,11 +708,30 @@ const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
     "{}";
+const char* const description_secure_endpoint_offload_large_reads =
+    "If a large read needs to be decrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_reads =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_reads[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
+const char* const description_secure_endpoint_offload_large_writes =
+    "If a large read write to be encrypted, use a separate thread.";
+const char* const additional_constraints_secure_endpoint_offload_large_writes =
+    "{}";
+const uint8_t required_experiments_secure_endpoint_offload_large_writes[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineSecureEndpoint)};
 const char* const description_server_global_callbacks_ownership =
     "If set, server global callbacks ownership is fixed to not be owned by "
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
+const char* const description_shard_channelz_index =
+    "If set, shard the channelz index for better concurrency";
+const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -757,10 +834,20 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
      true},
+    {"secure_endpoint_offload_large_reads",
+     description_secure_endpoint_offload_large_reads,
+     additional_constraints_secure_endpoint_offload_large_reads,
+     required_experiments_secure_endpoint_offload_large_reads, 3, false, true},
+    {"secure_endpoint_offload_large_writes",
+     description_secure_endpoint_offload_large_writes,
+     additional_constraints_secure_endpoint_offload_large_writes,
+     required_experiments_secure_endpoint_offload_large_writes, 3, false, true},
     {"server_global_callbacks_ownership",
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
+    {"shard_channelz_index", description_shard_channelz_index,
+     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},

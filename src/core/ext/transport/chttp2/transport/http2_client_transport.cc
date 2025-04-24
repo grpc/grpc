@@ -345,7 +345,8 @@ auto Http2ClientTransport::WriteFromQueue() {
                   Serialize(absl::Span<Http2Frame>(frames), output_buf);
                   HTTP2_CLIENT_DLOG
                       << "Http2ClientTransport WriteFromQueue Promise";
-                  return endpoint.Write(std::move(output_buf));
+                  return endpoint.Write(std::move(output_buf),
+                                        PromiseEndpoint::WriteArgs{});
                 });
 }
 

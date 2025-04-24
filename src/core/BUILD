@@ -8078,6 +8078,25 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good",
+    srcs = [
+        "ext/transport/chaotic_good/chaotic_good.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/chaotic_good.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    visibility = ["//bazel:chaotic_good"],
+    deps = [
+        "chaotic_good_connector",
+        "chaotic_good_server",
+        "//:config",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_config",
     hdrs = [
         "ext/transport/chaotic_good/config.h",
@@ -8132,6 +8151,7 @@ grpc_cc_library(
     ],
     deps = [
         "chaotic_good_frame",
+        "chaotic_good_frame_transport",
         "if",
         "loop",
         "map",
@@ -8242,6 +8262,7 @@ grpc_cc_library(
         "mpsc",
         "pipe",
         "//:promise",
+        "//:tcp_tracer",
     ],
 )
 
@@ -8475,6 +8496,7 @@ grpc_cc_library(
         "time",
         "try_seq",
         "//:channelz",
+        "//:config",
         "//:gpr_platform",
         "//:grpc_base",
         "//:handshaker",
@@ -8912,6 +8934,7 @@ grpc_cc_library(
         "time",
         "try_seq",
         "//:channelz",
+        "//:config",
         "//:gpr_platform",
         "//:grpc_base",
         "//:handshaker",
@@ -9125,6 +9148,7 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "sync",
+        "//:context_list_entry",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -9414,6 +9438,10 @@ grpc_cc_library(
     hdrs = [
         "transport/endpoint_transport.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
+    visibility = ["//bazel:chaotic_good"],
     deps = [
         "channel_args",
         "//:grpc_public_hdrs",

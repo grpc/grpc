@@ -1251,6 +1251,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:btree",
         "absl/log",
         "absl/log:check",
         "absl/status:statusor",
@@ -1273,6 +1274,7 @@ grpc_cc_library(
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:time",
@@ -3056,6 +3058,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:client_channel"],
     deps = [
+        "debug_location",
         "gpr",
         "grpc_resolver",
         "//src/core:certificate_provider_registry",
@@ -4819,24 +4822,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpcpp_chaotic_good",
-    srcs = [
-        "src/cpp/ext/chaotic_good.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/chaotic_good.h",
-    ],
-    visibility = ["//bazel:chaotic_good"],
-    deps = [
-        "gpr",
-        "grpc++_base",
-        "grpc_public_hdrs",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
     ],
 )
 
