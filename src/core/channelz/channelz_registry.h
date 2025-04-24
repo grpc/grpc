@@ -245,6 +245,10 @@ class ChannelzRegistry final {
   std::unique_ptr<NodeMapInterface> node_map_;
 };
 
+// `additionalInfo` section is not yet in the protobuf format, so we
+// provide a utility to strip it for compatibility.
+std::string StripAdditionalInfoFromJson(absl::string_view json);
+
 }  // namespace channelz
 }  // namespace grpc_core
 

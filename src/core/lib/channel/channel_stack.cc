@@ -171,13 +171,42 @@ grpc_error_handle grpc_channel_stack_init(
         grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
+  stack->channelz_data_source.Init(
+      channel_args.GetObjectRef<grpc_core::channelz::BaseNode>());
   return first_error;
+}
+
+void grpc_channel_stack::ChannelStackDataSource::AddData(
+    grpc_core::channelz::DataSink& sink) {
+  using grpc_core::Json;
+  Json::Object output;
+  output["type"] = Json::FromString("v1");
+  Json::Array elements;
+  grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
+      reinterpret_cast<char*>(this) -
+      offsetof(grpc_channel_stack, channelz_data_source));
+  output["call_stack_size"] = Json::FromNumber(channel_stack->call_stack_size);
+  grpc_channel_element* elems = CHANNEL_ELEMS_FROM_STACK(channel_stack);
+  elements.reserve(channel_stack->count);
+  for (size_t i = 0; i < channel_stack->count; i++) {
+    grpc_channel_element& e = elems[i];
+    Json::Object element;
+    element["type"] = Json::FromString(std::string(e.filter->name.name()));
+    element["call_data_size"] = Json::FromNumber(e.filter->sizeof_call_data);
+    element["channel_data_size"] =
+        Json::FromNumber(e.filter->sizeof_channel_data);
+    elements.emplace_back(Json::FromObject(std::move(element)));
+  }
+  output["elements"] = Json::FromArray(std::move(elements));
+  sink.AddAdditionalInfo("channelStack", std::move(output));
 }
 
 void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   grpc_channel_element* channel_elems = CHANNEL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
+
+  stack->channelz_data_source.Destroy();
 
   // destroy per-filter data
   for (i = 0; i < count; i++) {
@@ -286,11 +315,11 @@ grpc_channel_stack* grpc_channel_stack_from_top_element(
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_channel_stack)));
 }
 
-grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
-  return reinterpret_cast<grpc_call_stack*>(
-      reinterpret_cast<char*>(elem) -
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
-}
+  grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
+    return reinterpret_cast<grpc_call_stack*>(
+        reinterpret_cast<char*>(elem) -
+        GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+  }
 
-void grpc_channel_stack_no_post_init(grpc_channel_stack*,
-                                     grpc_channel_element*) {}
+  void grpc_channel_stack_no_post_init(grpc_channel_stack*,
+                                       grpc_channel_element*) {}
