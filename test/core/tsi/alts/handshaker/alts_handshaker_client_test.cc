@@ -61,15 +61,9 @@ using grpc_core::internal::
 using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 
-typedef struct alts_handshaker_client_test_config {
-  grpc_channel* channel;
-  grpc_completion_queue* cq;
-  alts_handshaker_client* client;
-  alts_handshaker_client* server;
-  grpc_slice out_frame;
-} alts_handshaker_client_test_config;
+namespace {
 
-void validate_transport_protocols(
+void VerifyTransportProtocolPreferences(
     const grpc_gcp_TransportProtocolPreferences* protocol_preferences,
     bool is_server) {
   ASSERT_NE(protocol_preferences, nullptr);
@@ -90,6 +84,16 @@ void validate_transport_protocols(
   ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
                                      upb_StringView_FromString("foo")));
 }
+
+}  // namespace
+
+typedef struct alts_handshaker_client_test_config {
+  grpc_channel* channel;
+  grpc_completion_queue* cq;
+  alts_handshaker_client* client;
+  alts_handshaker_client* server;
+  grpc_slice out_frame;
+} alts_handshaker_client_test_config;
 
 static void validate_rpc_protocol_versions(
     const grpc_gcp_RpcProtocolVersions* versions) {
@@ -237,7 +241,7 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
-grpc_call_error check_client_start_success_with_negotiation(
+grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
     grpc_call* /*call*/, const grpc_op* op, size_t nops,
     grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed
@@ -252,7 +256,7 @@ grpc_call_error check_client_start_success_with_negotiation(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartClientHandshakeReq* client_start =
       grpc_gcp_HandshakerReq_client_start(req);
-  validate_transport_protocols(
+  VerifyTransportProtocolPreferences(
       grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
           client_start),
       /*is_server=*/false);
@@ -320,7 +324,7 @@ static grpc_call_error check_server_start_success_with_negotiation(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartServerHandshakeReq* server_start =
       grpc_gcp_HandshakerReq_server_start(req);
-  validate_transport_protocols(
+  VerifyTransportProtocolPreferences(
       grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
           server_start),
       /*is_server=*/true);
@@ -529,7 +533,7 @@ TEST(AltsHandshakerClientTest,
   alts_handshaker_client_test_config* config = create_config();
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
-      config->client, check_client_start_success_with_negotiation);
+      config->client, VerifyClientSuccessWithProtocolNegotiation);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
