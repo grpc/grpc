@@ -32,6 +32,8 @@
 namespace grpc_core {
 namespace http2 {
 
+constexpr uint32_t kOneGb = 1073741824u;
+
 // For the mapping of gRPC Messages to Http2DataFrame, we can have
 // 1. One gRPC Message in one Http2DataFrame
 // 2. Many gRPC Messages in one Http2DataFrame
@@ -44,14 +46,22 @@ class GrpcMessageAssembler {
  public:
   // Input : The input must contain the payload from the Http2DataFrame.
   // This function will move the payload into an internal buffer.
-  void AppendNewDataFrame(SliceBuffer& payload, const bool is_end_stream) {
+  absl::Status AppendNewDataFrame(SliceBuffer& payload,
+                                  const bool is_end_stream) {
     DCHECK(!is_end_stream_)
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) <= 4) {
-      CHECK(message_buffer_.Length() < UINT32_MAX - payload.Length())
-          << "SliceBuffer overflow for 32 bit platforms.";
+      if (message_buffer_.Length() < UINT32_MAX - payload.Length()) {
+        if (message_buffer_.Length() == 0) {
+          payload.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
+                                                 message_buffer_);
+        }
+        // STREAM_ERROR
+        return absl::Status::InternalError(
+            "Stream Error: SliceBuffer overflow for 32 bit platforms.");
+      }
     }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0u);
@@ -66,8 +76,10 @@ class GrpcMessageAssembler {
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) <= 4) {
-      CHECK(message_buffer_.Length() < UINT32_MAX - header.length)
-          << "SliceBuffer overflow for 32 bit platforms.";
+      if (header.length > kOneGb) {
+        return absl::Status::InternalError(
+            "Stream Error: SliceBuffer overflow for 32 bit platforms.");
+      }
     }
     if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
       SliceBuffer discard;
