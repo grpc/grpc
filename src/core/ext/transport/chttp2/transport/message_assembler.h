@@ -32,7 +32,7 @@
 namespace grpc_core {
 namespace http2 {
 
-constexpr uint32_t kOneGb = 1073741824u;
+constexpr uint32_t kOneGb = (1024u * 1024u * 1024u);
 
 // For the mapping of gRPC Messages to Http2DataFrame, we can have
 // 1. One gRPC Message in one Http2DataFrame
