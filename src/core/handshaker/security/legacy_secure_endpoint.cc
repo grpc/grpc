@@ -39,6 +39,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/handshaker/security/secure_endpoint.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -75,6 +76,7 @@ struct secure_endpoint : public grpc_endpoint {
         protector(protector),
         zero_copy_protector(zero_copy_protector) {
     this->vtable = vtbl;
+    gpr_mu_init(&protector_mu);
     GRPC_CLOSURE_INIT(&on_read, ::on_read, this, grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_INIT(&on_write, ::on_write, this, grpc_schedule_on_exec_ctx);
     grpc_slice_buffer_init(&source_buffer);
@@ -112,11 +114,13 @@ struct secure_endpoint : public grpc_endpoint {
     grpc_core::CSliceUnref(write_staging_buffer);
     grpc_slice_buffer_destroy(&output_buffer);
     grpc_slice_buffer_destroy(&protector_staging_buffer);
+    gpr_mu_destroy(&protector_mu);
   }
 
   grpc_core::OrphanablePtr<grpc_endpoint> wrapped_ep;
   struct tsi_frame_protector* protector;
   struct tsi_zero_copy_grpc_protector* zero_copy_protector;
+  gpr_mu protector_mu;
   grpc_core::Mutex read_mu;
   grpc_core::Mutex write_mu;
   // saved upper level callbacks and user_data.
@@ -268,9 +272,15 @@ static void on_read(void* user_data, grpc_error_handle error) {
       // avoid reading of small slices from the network.
       // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
       // frame protector code path as well.
+      if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+        gpr_mu_lock(&ep->protector_mu);
+      }
       result = tsi_zero_copy_grpc_protector_unprotect(
           ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
           &min_progress_size);
+      if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+        gpr_mu_unlock(&ep->protector_mu);
+      }
       min_progress_size = std::max(1, min_progress_size);
       ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
@@ -420,9 +430,16 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         grpc_slice_buffer_move_first(slices,
                                      static_cast<size_t>(max_frame_size),
                                      &ep->protector_staging_buffer);
+        if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+          gpr_mu_lock(&ep->protector_mu);
+        }
         result = tsi_zero_copy_grpc_protector_protect(
             ep->zero_copy_protector, &ep->protector_staging_buffer,
             &ep->output_buffer);
+
+        if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+          gpr_mu_unlock(&ep->protector_mu);
+        }
       }
       if (result == TSI_OK && slices->length > 0) {
         result = tsi_zero_copy_grpc_protector_protect(
@@ -438,9 +455,15 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         while (message_size > 0) {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
+          if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+            gpr_mu_lock(&ep->protector_mu);
+          }
           result = tsi_frame_protector_protect(ep->protector, message_bytes,
                                                &processed_message_size, cur,
                                                &protected_buffer_size_to_send);
+          if (!IsTsiFrameProtectorWithoutLocksEnabled()) {
+            gpr_mu_unlock(&ep->protector_mu);
+          }
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
