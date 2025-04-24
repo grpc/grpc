@@ -342,7 +342,7 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   // Validate peer identity.
   tsi_peer peer;
   ASSERT_EQ(tsi_handshaker_result_extract_peer(result, &peer), TSI_OK);
-  ASSERT_GE(peer.property_count, kTsiAltsMinNumOfPeerProperties);
+  ASSERT_EQ(peer.property_count, kTsiAltsMinNumOfPeerProperties + 1);
   ASSERT_EQ(memcmp(TSI_ALTS_CERTIFICATE_TYPE, peer.properties[0].value.data,
                    peer.properties[0].value.length),
             0);
@@ -445,7 +445,7 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   // Validate peer identity.
   tsi_peer peer;
   ASSERT_EQ(tsi_handshaker_result_extract_peer(result, &peer), TSI_OK);
-  ASSERT_GE(peer.property_count, kTsiAltsMinNumOfPeerProperties);
+  ASSERT_EQ(peer.property_count, kTsiAltsMinNumOfPeerProperties + 1);
   ASSERT_EQ(memcmp(TSI_ALTS_CERTIFICATE_TYPE, peer.properties[0].value.data,
                    peer.properties[0].value.length),
             0);

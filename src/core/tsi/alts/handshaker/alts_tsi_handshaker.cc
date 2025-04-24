@@ -67,7 +67,7 @@ struct alts_tsi_handshaker {
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
   // The list of preferred transport protocols.
-  std::optional<absl::string_view> preferred_transport_protocols;
+  std::optional<std::string> preferred_transport_protocols;
 };
 
 // Main struct for ALTS TSI handshaker result.
@@ -82,7 +82,7 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice serialized_context;
   // Peer's maximum frame size.
   size_t max_frame_size;
-  char* negotiated_transport_protocol;
+  std::optional<std::string> negotiated_transport_protocol;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -95,7 +95,7 @@ static tsi_result handshaker_result_extract_peer(
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
   const int peer_properties_count =
-      (result && result->negotiated_transport_protocol)
+      (result && result->negotiated_transport_protocol.has_value())
           ? (kTsiAltsMinNumOfPeerProperties + 1)
           : kTsiAltsMinNumOfPeerProperties;
   tsi_result ok = tsi_construct_peer(peer_properties_count, peer);
@@ -152,12 +152,13 @@ static tsi_result handshaker_result_extract_peer(
     tsi_peer_destruct(peer);
     LOG(ERROR) << "Failed to set tsi peer property";
   }
-  if (result->negotiated_transport_protocol != nullptr) {
+  if (result->negotiated_transport_protocol.has_value()) {
     index++;
     CHECK_NE(&peer->properties[index], nullptr);
     ok = tsi_construct_string_peer_property_from_cstring(
         TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL,
-        result->negotiated_transport_protocol, &peer->properties[index]);
+        result->negotiated_transport_protocol.value().c_str(),
+        &peer->properties[index]);
     if (ok != TSI_OK) {
       tsi_peer_destruct(peer);
       LOG(ERROR) << "Failed to set tsi peer property";
@@ -262,7 +263,6 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->peer_identity);
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
-  gpr_free(result->negotiated_transport_protocol);
   grpc_core::CSliceUnref(result->rpc_versions);
   grpc_core::CSliceUnref(result->serialized_context);
   gpr_free(result);
@@ -331,7 +331,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* sresult =
-      grpc_core::Zalloc<alts_tsi_handshaker_result>();
+      static_cast<alts_tsi_handshaker_result*>(
+          gpr_zalloc(sizeof(alts_tsi_handshaker_result)));
   sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
@@ -342,14 +343,16 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   sresult->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
   const grpc_gcp_NegotiatedTransportProtocol* negotiated_transport_protocol =
       grpc_gcp_HandshakerResult_transport_protocol(hresult);
+
+  sresult->negotiated_transport_protocol = std::nullopt;
   if (negotiated_transport_protocol != nullptr) {
     upb_StringView transport_protocol =
         grpc_gcp_NegotiatedTransportProtocol_transport_protocol(
             negotiated_transport_protocol);
-    sresult->negotiated_transport_protocol =
-        static_cast<char*>(gpr_zalloc(transport_protocol.size + 1));
-    memcpy(sresult->negotiated_transport_protocol, transport_protocol.data,
-           transport_protocol.size);
+    if (transport_protocol.size != 0) {
+      sresult->negotiated_transport_protocol =
+          std::string(transport_protocol.data, transport_protocol.size);
+    }
   }
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
@@ -677,7 +680,7 @@ tsi_result alts_tsi_handshaker_create(
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
     size_t user_specified_max_frame_size,
-    std::optional<absl::string_view> preferred_transport_protocols) {
+    std::optional<std::string> preferred_transport_protocols) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     LOG(ERROR) << "Invalid arguments to alts_tsi_handshaker_create()";

@@ -106,7 +106,7 @@ class grpc_alts_channel_security_connector final
               creds->options(), target_name_, creds->handshaker_service_url(),
               true, interested_parties, &handshaker,
               user_specified_max_frame_size,
-              args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
+              args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -159,7 +159,7 @@ class grpc_alts_server_security_connector final
     CHECK(alts_tsi_handshaker_create(
               creds->options(), nullptr, creds->handshaker_service_url(), false,
               interested_parties, &handshaker, user_specified_max_frame_size,
-              args.GetString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
+              args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS)) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
