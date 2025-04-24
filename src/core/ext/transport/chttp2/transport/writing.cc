@@ -402,7 +402,10 @@ class DataSendContext {
         std::min<int64_t>(
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
-             static_cast<int64_t>(write_context_->target_write_size())}),
+             static_cast<int64_t>(write_context_->target_write_size()) -
+                 (grpc_core::IsChttp2BoundWriteSizeEnabled()
+                      ? static_cast<int64_t>(t_->outbuf.Length())
+                      : 0)}),
         0, std::numeric_limits<uint32_t>::max());
   }
 
