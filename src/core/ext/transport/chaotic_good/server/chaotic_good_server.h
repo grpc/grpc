@@ -83,6 +83,9 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
             endpoint);
     ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
+    const ChannelArgs& handshake_result_args() const {
+      return handshake_result_args_.value();
+    }
 
     void Orphan() override;
 
@@ -133,6 +136,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
+    std::optional<ChannelArgs> handshake_result_args_;
   };
 
   class DataConnectionListener final : public ServerConnectionFactory {
@@ -206,9 +210,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   const RefCountedPtr<DataConnectionListener> data_connection_listener_;
 };
 
+absl::StatusOr<int> AddChaoticGoodPort(Server* server, std::string addr,
+                                       const ChannelArgs& args);
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
-
-int grpc_server_add_chaotic_good_port(grpc_server* server, const char* addr);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_SERVER_CHAOTIC_GOOD_SERVER_H
