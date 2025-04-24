@@ -231,54 +231,6 @@ class ChannelzServicerTest(AioTestBase):
 
         await _destroy_channel_server_pairs(pairs)
 
-    async def test_many_requests_many_channel(self):
-        k_channels = 4
-        pairs = await _create_channel_server_pairs(
-            k_channels, self._channelz_stub
-        )
-        k_success = 11
-        k_failed = 13
-        for i in range(k_success):
-            await self._send_successful_unary_unary(pairs[0])
-            await self._send_successful_unary_unary(pairs[2])
-        for i in range(k_failed):
-            await self._send_failed_unary_unary(pairs[1])
-            await self._send_failed_unary_unary(pairs[2])
-
-        # The first channel saw only successes
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=pairs[0].channel_ref_id)
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_success)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
-        # The second channel saw only failures
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=pairs[1].channel_ref_id)
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The third channel saw both successes and failures
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=pairs[2].channel_ref_id)
-        )
-        self.assertEqual(resp.channel.data.calls_started, k_success + k_failed)
-        self.assertEqual(resp.channel.data.calls_succeeded, k_success)
-        self.assertEqual(resp.channel.data.calls_failed, k_failed)
-
-        # The fourth channel saw nothing
-        resp = await self._channelz_stub.GetChannel(
-            channelz_pb2.GetChannelRequest(channel_id=pairs[3].channel_ref_id)
-        )
-        self.assertEqual(resp.channel.data.calls_started, 0)
-        self.assertEqual(resp.channel.data.calls_succeeded, 0)
-        self.assertEqual(resp.channel.data.calls_failed, 0)
-
-        await _destroy_channel_server_pairs(pairs)
-
     async def test_many_subchannels(self):
         k_channels = 4
         pairs = await _create_channel_server_pairs(

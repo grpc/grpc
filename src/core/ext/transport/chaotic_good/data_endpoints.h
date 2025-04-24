@@ -47,45 +47,25 @@ class Clock {
 class SendRate {
  public:
   explicit SendRate(
-      double initial_rate = 1.25 /*10 gigabits/sec in bytes/nanosec*/)
+      double initial_rate = 0 /* <=0 ==> not set, bytes per nanosecond */)
       : current_rate_(initial_rate) {}
-  void StartSend(uint64_t current_time, uint64_t send_size) {
-    CHECK_NE(current_time, 0u);
-    send_start_time_ = current_time;
-    send_size_ = send_size;
-  }
-  void MaybeCompleteSend(uint64_t current_time) {
-    if (send_start_time_ == 0) return;
-    if (current_time > send_start_time_) {
-      const double rate = static_cast<double>(send_size_) /
-                          static_cast<double>(current_time - send_start_time_);
-      current_rate_ = 0.9 * current_rate_ + 0.1 * rate;
-    }
-    send_start_time_ = 0;
-  }
-  double DeliveryTime(uint64_t current_time, size_t bytes) {
-    // start time relative to the current time for this send
-    double start_time = 0.0;
-    if (send_start_time_ != 0) {
-      // Use integer subtraction to avoid rounding errors, getting everything
-      // with a zero base of 'now' to maximize precision.
-      // Since we have uint64_ts and want a signed double result we need to
-      // care about argument ordering to get a valid result.
-      const double send_start_time_relative_to_now =
-          current_time > send_start_time_
-              ? -static_cast<double>(current_time - send_start_time_)
-              : static_cast<double>(send_start_time_ - current_time);
-      const double predicted_end_time =
-          send_start_time_relative_to_now + current_rate_ * send_size_;
-      if (predicted_end_time > start_time) start_time = predicted_end_time;
-    }
-    return start_time + bytes / current_rate_;
-  }
+  void StartSend(uint64_t current_time, uint64_t send_size);
+  void MaybeCompleteSend(uint64_t current_time);
+  void SetCurrentRate(double bytes_per_nanosecond);
+  bool IsRateMeasurementStale() const;
+  // Returns double nanoseconds from now.
+  double DeliveryTime(uint64_t current_time, size_t bytes);
 
  private:
   uint64_t send_start_time_ = 0;
   uint64_t send_size_ = 0;
   double current_rate_;  // bytes per nanosecond
+  Timestamp last_rate_measurement_ = Timestamp::ProcessEpoch();
+};
+
+struct NextWrite {
+  SliceBuffer bytes;
+  bool trace;
 };
 
 // Buffered writes for one data endpoint
@@ -98,19 +78,18 @@ class OutputBuffer {
     flush_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
   }
   bool HavePending() const { return pending_.Length() > 0; }
-  SliceBuffer TakePendingAndStartWrite(uint64_t current_time) {
-    send_rate_.StartSend(current_time, pending_.Length());
-    return std::move(pending_);
-  }
-  void MaybeCompleteSend(uint64_t current_time) {
-    send_rate_.MaybeCompleteSend(current_time);
+  NextWrite TakePendingAndStartWrite(uint64_t current_time);
+  void MaybeCompleteSend(uint64_t current_time);
+  void UpdateSendRate(double bytes_per_nanosecond) {
+    rate_probe_outstanding_ = false;
+    send_rate_.SetCurrentRate(bytes_per_nanosecond);
   }
 
  private:
   Waker flush_waker_;
-  size_t pending_max_ = 64 * 1024 * 1024;
   SliceBuffer pending_;
   SendRate send_rate_;
+  bool rate_probe_outstanding_ = false;
 };
 
 // The set of output buffers for all connected data endpoints
@@ -120,10 +99,12 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
                 std::shared_ptr<TcpZTraceCollector> ztrace_collector)
       : ztrace_collector_(std::move(ztrace_collector)), clock_(clock) {}
 
-  auto Write(uint64_t payload_tag, SliceBuffer output_buffer) {
+  auto Write(uint64_t payload_tag, SliceBuffer output_buffer,
+             std::shared_ptr<TcpCallTracer> call_tracer) {
     return [payload_tag, send_time = clock_->Now(),
-            output_buffer = std::move(output_buffer), this]() mutable {
-      return PollWrite(payload_tag, send_time, output_buffer);
+            output_buffer = std::move(output_buffer),
+            call_tracer = std::move(call_tracer), this]() mutable {
+      return PollWrite(payload_tag, send_time, output_buffer, call_tracer);
     };
   }
 
@@ -137,10 +118,14 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
     return ready_endpoints_.load(std::memory_order_relaxed);
   }
 
+  void UpdateSendRate(uint32_t connection_id, double bytes_per_nanosecond);
+
  private:
   Poll<Empty> PollWrite(uint64_t payload_tag, uint64_t send_time,
-                        SliceBuffer& output_buffer);
-  Poll<SliceBuffer> PollNext(uint32_t connection_id);
+                        SliceBuffer& output_buffer,
+                        std::shared_ptr<TcpCallTracer>& call_tracer);
+  Poll<NextWrite> PollNext(uint32_t connection_id);
+  void UpdateMetrics(size_t output_buffer, const TcpConnectionMetrics& metrics);
 
   const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   Mutex mu_;
@@ -236,7 +221,8 @@ class Endpoint final {
  private:
   static auto WriteLoop(uint32_t id,
                         RefCountedPtr<OutputBuffers> output_buffers,
-                        std::shared_ptr<PromiseEndpoint> endpoint);
+                        std::shared_ptr<PromiseEndpoint> endpoint,
+                        std::shared_ptr<TcpZTraceCollector> ztrace_collector);
   static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint,
                        std::shared_ptr<TcpZTraceCollector> ztrace_collector);
@@ -263,8 +249,10 @@ class DataEndpoints {
   // Connection ids returned by this class are 0 based (which is different
   // to how chaotic good communicates them on the wire - those are 1 based
   // to allow for the control channel identification)
-  auto Write(uint64_t tag, SliceBuffer output_buffer) {
-    return output_buffers_->Write(tag, std::move(output_buffer));
+  auto Write(uint64_t tag, SliceBuffer output_buffer,
+             std::shared_ptr<TcpCallTracer> call_tracer) {
+    return output_buffers_->Write(tag, std::move(output_buffer),
+                                  std::move(call_tracer));
   }
 
   ReadTicket Read(uint64_t tag) { return input_queues_->Read(tag); }
