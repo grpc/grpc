@@ -52,13 +52,13 @@ class GrpcMessageAssembler {
         << "Calling this function when a previous frame was marked as the last "
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
-    if constexpr (sizeof(size_t) <= 4) {
-      if (message_buffer_.Length() < UINT32_MAX - payload.Length()) {
-        // STREAM_ERROR
-        return absl::Status::InternalError(
-            "Stream Error: SliceBuffer overflow for 32 bit platforms.");
-      }
-    }
+    // if constexpr (sizeof(size_t) == 4) {
+    //   if (message_buffer_.Length() >= UINT32_MAX - payload.Length()) {
+    //     // STREAM_ERROR
+    //     return absl::Status(absl::StatusCode::kInternal,
+    //         "Stream Error: SliceBuffer overflow for 32 bit platforms.");
+    //   }
+    // }
     payload.MoveFirstNBytesIntoSliceBuffer(payload.Length(), message_buffer_);
     DCHECK_EQ(payload.Length(), 0u);
   }
@@ -71,12 +71,12 @@ class GrpcMessageAssembler {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
-    if constexpr (sizeof(size_t) <= 4) {
-      if (header.length > kOneGb) {
-        return absl::Status::InternalError(
-            "Stream Error: SliceBuffer overflow for 32 bit platforms.");
-      }
-    }
+    // if constexpr (sizeof(size_t) == 4) {
+    //   if (header.length > kOneGb) {
+    //     return absl::Status(absl::StatusCode::kInternal,
+    //         "Stream Error: SliceBuffer overflow for 32 bit platforms.");
+    //   }
+    // }
     if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
