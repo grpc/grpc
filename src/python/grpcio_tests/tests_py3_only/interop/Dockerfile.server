@@ -8,7 +8,7 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN tools/bazel build -c dbg --config=python_defines //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
+RUN tools/bazel build -c dbg --config=python //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
 RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_server* /artifacts/
 
 ENV TINI_VERSION v0.19.0

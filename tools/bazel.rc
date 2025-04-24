@@ -150,7 +150,7 @@ build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY
 
 build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
 
-build:python_defines --copt=-DGRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+build:python --copt=-DGRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check
