@@ -53,4 +53,5 @@ grpc_cc_library(
 # TODO(ladynana): Replace this dummy test with the actual experiments compiler test.
 grpc_cc_test(
     name = "experiments_compiler_test",
+    srcs = ["experiments_compiler_test.cc"],
 )
