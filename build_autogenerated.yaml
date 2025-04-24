@@ -7414,85 +7414,6 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
-- name: chaotic_good_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good/client_transport.h
-  - src/core/ext/transport/chaotic_good/config.h
-  - src/core/ext/transport/chaotic_good/control_endpoint.h
-  - src/core/ext/transport/chaotic_good/data_endpoints.h
-  - src/core/ext/transport/chaotic_good/frame.h
-  - src/core/ext/transport/chaotic_good/frame_header.h
-  - src/core/ext/transport/chaotic_good/frame_transport.h
-  - src/core/ext/transport/chaotic_good/message_chunker.h
-  - src/core/ext/transport/chaotic_good/message_reassembly.h
-  - src/core/ext/transport/chaotic_good/pending_connection.h
-  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good/server_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
-  - src/core/ext/transport/chaotic_good/transport_context.h
-  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
-  - src/core/ext/transport/chaotic_good_legacy/config.h
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
-  - src/core/ext/transport/chaotic_good_legacy/frame.h
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
-  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
-  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
-  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
-  - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_pipe.h
-  - src/core/lib/promise/join.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/switch.h
-  - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
-  - src/core/util/seq_bit_set.h
-  - src/cpp/ext/chaotic_good.h
-  src:
-  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good/client_transport.cc
-  - src/core/ext/transport/chaotic_good/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good/frame.cc
-  - src/core/ext/transport/chaotic_good/frame_header.cc
-  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good/server_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
-  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
-  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
-  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
-  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
-  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame.cc
-  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
-  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
-  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
-  - src/core/util/seq_bit_set.cc
-  - src/cpp/ext/chaotic_good.cc
-  - test/cpp/ext/chaotic_good_test.cc
-  deps:
-  - gtest
-  - grpc++
-  - grpc_test_util
 - name: check_gcp_environment_linux_test
   gtest: true
   build: test
@@ -8255,6 +8176,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8325,6 +8247,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8383,6 +8306,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8453,6 +8377,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8599,6 +8524,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8669,6 +8595,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8723,6 +8650,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8793,6 +8721,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -8847,6 +8776,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -8917,6 +8847,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9059,6 +8990,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9129,6 +9061,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9271,6 +9204,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9341,6 +9275,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9395,6 +9330,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9465,6 +9401,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9607,6 +9544,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9677,6 +9615,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -9731,6 +9670,7 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
   - src/core/ext/transport/chaotic_good/client_transport.h
   - src/core/ext/transport/chaotic_good/config.h
@@ -9801,6 +9741,7 @@ targets:
   - test/core/end2end/end2end_test_fuzzer.proto
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - test/core/test_util/fuzz_config_vars.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
   - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
   - src/core/ext/transport/chaotic_good/client_transport.cc
   - src/core/ext/transport/chaotic_good/control_endpoint.cc
@@ -10067,6 +10008,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: errqueue_support_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/errqueue_support_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: evaluate_args_test
   gtest: true
   build: test

@@ -1,4 +1,4 @@
-// Copyright 2024 gRPC authors.
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/cpp/ext/chaotic_good.h"
-
-#include <grpcpp/create_channel.h>
-
 #include "gtest/gtest.h"
-#include "test/core/test_util/test_config.h"
+#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 
-namespace grpc {
+namespace grpc_event_engine {
+namespace experimental {
 namespace {
 
-TEST(ChaoticGoodTest, CreateChannel) {
-  auto creds = ChaoticGoodInsecureChannelCredentials();
-  auto channel = CreateChannel("localhost:50051", creds);
+#ifdef GPR_LINUX
+// Expect all our linux testing environments to support errqueue.
+TEST(KernelSupportsErrqueueTest, Basic) {
+  EXPECT_EQ(KernelSupportsErrqueue(), true);
 }
+#endif
 
 }  // namespace
-}  // namespace grpc
+}  // namespace experimental
+}  // namespace grpc_event_engine
 
 int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int r = RUN_ALL_TESTS();
+  return r;
 }
