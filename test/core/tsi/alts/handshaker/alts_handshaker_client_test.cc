@@ -69,7 +69,7 @@ typedef struct alts_handshaker_client_test_config {
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
 
-static void validate_transport_protocols(
+void validate_transport_protocols(
     const grpc_gcp_TransportProtocolPreferences* protocol_preferences,
     bool is_server) {
   ASSERT_NE(protocol_preferences, nullptr);
@@ -81,13 +81,13 @@ static void validate_transport_protocols(
   ASSERT_EQ(transport_protocol_count, 2);
 
   if (is_server) {
-    EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
                                        upb_StringView_FromString("bar")));
   } else {
-    EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
                                        upb_StringView_FromString("baz")));
   }
-  EXPECT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
+  ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
                                      upb_StringView_FromString("foo")));
 }
 
@@ -237,7 +237,7 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
   return GRPC_CALL_OK;
 }
 
-static grpc_call_error check_client_start_success_with_negotiation(
+grpc_call_error check_client_start_success_with_negotiation(
     grpc_call* /*call*/, const grpc_op* op, size_t nops,
     grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed

@@ -133,22 +133,22 @@ TEST(AltsSecurityConnectorTest, UnknownPeerPropertyFailure) {
   tsi_peer_destruct(&peer);
 }
 
-static bool test_property(const grpc_auth_context* ctx,
-                          const char* expected_property_name,
-                          const char* expected_identity) {
+bool test_property(const grpc_auth_context* ctx,
+                   const std::string expected_property_name,
+                   const std::string expected_value) {
   grpc_auth_property_iterator it;
   const grpc_auth_property* prop;
   EXPECT_TRUE(grpc_auth_context_peer_is_authenticated(ctx));
   it = grpc_auth_context_peer_identity(ctx);
   prop = grpc_auth_property_iterator_next(&it);
   EXPECT_NE(prop, nullptr);
-  if (strcmp(prop->name, expected_property_name) != 0) {
-    LOG(ERROR) << "Expected peer identity property name "
+  if (expected_property_name.compare(std::string(prop->name)) != 0) {
+    LOG(ERROR) << "Expected property name "
                << expected_property_name << " and got " << prop->name;
     return false;
   }
-  if (strncmp(prop->value, expected_identity, prop->value_length) != 0) {
-    LOG(ERROR) << "Expected peer identity " << expected_identity << " and got "
+  if (expected_value.compare(0, prop->value_length, prop->value) != 0) {
+    LOG(ERROR) << "Expected value " << expected_value << " and got "
                << prop->value;
     return false;
   }
