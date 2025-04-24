@@ -75,6 +75,7 @@ class GrpcMessageAssembler {
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) == 4) {
       if (header.length > kOneGb) {
+        // STREAM_ERROR
         return absl::Status(
             absl::StatusCode::kInternal,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
