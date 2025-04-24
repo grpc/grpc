@@ -53,8 +53,8 @@ Clients should accept these arguments:
       any character except semi-colons.
 * -- google_c2p_universe_domain=UNIVERSE_DOMAIN
     * Universe domain to configure for the google-c2p resolver. Optional,
-      defaults to the empty string, in which case we should not explicitly
-      configure a univere domain.
+      defaults to the empty string in which case we should *not* explicitly
+      configure a universe domain.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.
