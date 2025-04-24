@@ -79,17 +79,18 @@
 namespace grpc_core {
 
 // Move only type that tracks call startup.
-// Allows observation of when client_initial_metadata has been processed by
-// the end of the local call stack. Interested observers can call Wait() to
-// obtain a promise that will resolve when all local client_initial_metadata
-// processing has completed. The result of this token is either true on
-// successful completion, or false if the metadata was not sent. To set a
-// successful completion, call Complete(true). For failure, call
+// Allows observation of when client_initial_metadata has been processed by the
+// end of the local call stack.
+// Interested observers can call Wait() to obtain a promise that will resolve
+// when all local client_initial_metadata processing has completed.
+// The result of this token is either true on successful completion, or false
+// if the metadata was not sent.
+// To set a successful completion, call Complete(true). For failure, call
 // Complete(false).
-// If Complete is not called, the destructor of a still held token will
-// complete with failure. Transports should hold this token until
-// client_initial_metadata has passed any flow control (eg
-// MAX_CONCURRENT_STREAMS for http2).
+// If Complete is not called, the destructor of a still held token will complete
+// with failure.
+// Transports should hold this token until client_initial_metadata has passed
+// any flow control (eg MAX_CONCURRENT_STREAMS for http2).
 class ClientInitialMetadataOutstandingToken {
  public:
   static ClientInitialMetadataOutstandingToken Empty() {
