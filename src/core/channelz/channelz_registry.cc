@@ -45,6 +45,7 @@
 
 namespace grpc_core {
 namespace channelz {
+
 namespace {
 template <typename T>
 std::string RenderArray(std::tuple<T, bool> values_and_end,
@@ -66,23 +67,39 @@ std::string RenderArray(std::tuple<T, bool> values_and_end,
 }
 
 Json RemoveAdditionalInfo(const Json& json) {
-  if (json.type() != Json::Type::kObject) return json;
-  Json::Object out;
-  for (const auto& [key, value] : json.object()) {
-    if (key == "additionalInfo") continue;
-    out[key] = RemoveAdditionalInfo(value);
+  switch (json.type()) {
+    case Json::Type::kArray: {
+      Json::Array out;
+      for (const auto& node : json.array()) {
+        out.emplace_back(RemoveAdditionalInfo(node));
+      }
+      return Json::FromArray(std::move(out));
+    } break;
+    case Json::Type::kObject: {
+      Json::Object out;
+      for (const auto& [key, value] : json.object()) {
+        if (key == "additionalInfo") continue;
+        out[key] = RemoveAdditionalInfo(value);
+      }
+      return Json::FromObject(std::move(out));
+    } break;
+    default:
+      return json;
   }
-  return Json::FromObject(std::move(out));
 }
 
 // TODO(ctiller): Temporary hack to remove fields that are objectionable to the
 // protobuf parser (because we've not published them in protobuf yet).
 char* ApplyHacks(const std::string& json_str) {
-  auto json = JsonParse(json_str);
-  if (!json.ok()) return gpr_strdup(json_str.c_str());
-  return gpr_strdup(JsonDump(RemoveAdditionalInfo(*json)).c_str());
+  return gpr_strdup(StripAdditionalInfoFromJson(json_str).c_str());
 }
 }  // namespace
+
+std::string StripAdditionalInfoFromJson(absl::string_view json_str) {
+  auto json = JsonParse(json_str);
+  if (!json.ok()) return gpr_strdup(std::string(json_str).c_str());
+  return JsonDump(RemoveAdditionalInfo(*json));
+}
 
 ChannelzRegistry* ChannelzRegistry::Default() {
   static ChannelzRegistry* singleton = new ChannelzRegistry();

@@ -24,6 +24,7 @@
 #include <grpcpp/support/config.h>
 
 #include "gtest/gtest.h"
+#include "src/core/channelz/channelz_registry.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/json/json.h"
@@ -42,14 +43,15 @@ template <typename Message>
 void ValidateProtoJsonTranslation(absl::string_view json_str) {
   Message msg;
   grpc::protobuf::json::JsonParseOptions parse_options;
+  auto stripped = grpc_core::channelz::StripAdditionalInfoFromJson(json_str);
   // If the following line is failing, then uncomment the last line of the
   // comment, and uncomment the lines that print the two strings. You can
   // then compare the output, and determine what fields are missing.
   //
   // parse_options.ignore_unknown_fields = true;
   grpc::protobuf::util::Status s =
-      grpc::protobuf::json::JsonStringToMessage(json_str, &msg, parse_options);
-  EXPECT_TRUE(s.ok());
+      grpc::protobuf::json::JsonStringToMessage(stripped, &msg, parse_options);
+  EXPECT_TRUE(s.ok()) << s;
   std::string proto_json_str;
   grpc::protobuf::json::JsonPrintOptions print_options;
   // We usually do not want this to be true, however it can be helpful to
@@ -64,7 +66,7 @@ void ValidateProtoJsonTranslation(absl::string_view json_str) {
   ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
   ASSERT_EQ(parsed_json->type(), grpc_core::Json::Type::kObject);
   proto_json_str = grpc_core::JsonDump(*parsed_json);
-  EXPECT_EQ(json_str, proto_json_str);
+  EXPECT_EQ(stripped, proto_json_str);
 }
 
 }  // namespace
