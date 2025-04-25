@@ -77,7 +77,9 @@ void AssemblerFuzzer(
       // To avoid this test DCHECK, we are always passing is_end_stream as
       // false. Consider computing the index of the last index payload in each
       // step and setting is_end_stream to true for the last payload.
-      assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
+      absl::Status result =
+          assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
+      VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
       EXPECT_EQ(payload.Length(), 0);
     } else {
       CHECK(std::holds_alternative<uint8_t>(step));

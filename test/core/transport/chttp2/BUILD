@@ -717,3 +717,21 @@ grpc_cc_library(
         "//src/core:slice_buffer",
     ],
 )
+
+grpc_fuzz_test(
+    name = "ping_promise_test",
+    srcs = [
+        "ping_promise_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:map",
+        "//src/core:ping_promise",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)

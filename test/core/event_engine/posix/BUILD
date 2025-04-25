@@ -268,3 +268,22 @@ grpc_cc_test(
         "//test/core/test_util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "errqueue_support_test",
+    srcs = ["errqueue_support_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        # Only relevant for linux
+        "no_mac",
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:posix_event_engine_internal_errqueue",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
