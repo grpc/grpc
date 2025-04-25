@@ -272,15 +272,9 @@ static void on_read(void* user_data, grpc_error_handle error) {
       // avoid reading of small slices from the network.
       // TODO(vigneshbabu): Set min_progress_size in the regular (non-zero-copy)
       // frame protector code path as well.
-      if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
-        gpr_mu_lock(&ep->protector_mu);
-      }
       result = tsi_zero_copy_grpc_protector_unprotect(
           ep->zero_copy_protector, &ep->source_buffer, ep->read_buffer,
           &min_progress_size);
-      if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
-        gpr_mu_unlock(&ep->protector_mu);
-      }
       min_progress_size = std::max(1, min_progress_size);
       ep->min_progress_size = result != TSI_OK ? 1 : min_progress_size;
     } else {
@@ -295,9 +289,17 @@ static void on_read(void* user_data, grpc_error_handle error) {
           size_t unprotected_buffer_size_written =
               static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          result = tsi_frame_protector_unprotect(
-              ep->protector, message_bytes, &processed_message_size, cur,
-              &unprotected_buffer_size_written);
+          if (grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_unprotect(
+                ep->protector, message_bytes, &processed_message_size, cur,
+                &unprotected_buffer_size_written);
+          } else {
+            gpr_mu_lock(&ep->protector_mu);
+            result = tsi_frame_protector_unprotect(
+                ep->protector, message_bytes, &processed_message_size, cur,
+                &unprotected_buffer_size_written);
+            gpr_mu_unlock(&ep->protector_mu);
+          }
           if (result != TSI_OK) {
             LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
@@ -430,16 +432,9 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         grpc_slice_buffer_move_first(slices,
                                      static_cast<size_t>(max_frame_size),
                                      &ep->protector_staging_buffer);
-        if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
-          gpr_mu_lock(&ep->protector_mu);
-        }
         result = tsi_zero_copy_grpc_protector_protect(
             ep->zero_copy_protector, &ep->protector_staging_buffer,
             &ep->output_buffer);
-
-        if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
-          gpr_mu_unlock(&ep->protector_mu);
-        }
       }
       if (result == TSI_OK && slices->length > 0) {
         result = tsi_zero_copy_grpc_protector_protect(
@@ -455,13 +450,15 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         while (message_size > 0) {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
+          if (grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_protect(
+                ep->protector, message_bytes, &processed_message_size, cur,
+                &protected_buffer_size_to_send);
+          } else {
             gpr_mu_lock(&ep->protector_mu);
-          }
-          result = tsi_frame_protector_protect(ep->protector, message_bytes,
-                                               &processed_message_size, cur,
-                                               &protected_buffer_size_to_send);
-          if (!grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_protect(
+                ep->protector, message_bytes, &processed_message_size, cur,
+                &protected_buffer_size_to_send);
             gpr_mu_unlock(&ep->protector_mu);
           }
           if (result != TSI_OK) {
@@ -482,9 +479,17 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
         size_t still_pending_size;
         do {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
-          result = tsi_frame_protector_protect_flush(
-              ep->protector, cur, &protected_buffer_size_to_send,
-              &still_pending_size);
+          if (grpc_core::IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_protect_flush(
+                ep->protector, cur, &protected_buffer_size_to_send,
+                &still_pending_size);
+          } else {
+            gpr_mu_lock(&ep->protector_mu);
+            result = tsi_frame_protector_protect_flush(
+                ep->protector, cur, &protected_buffer_size_to_send,
+                &still_pending_size);
+            gpr_mu_unlock(&ep->protector_mu);
+          }
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
           if (cur == end) {
