@@ -7644,6 +7644,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "http2_status",
         "message",
         ":slice",
         ":slice_buffer",
