@@ -64,6 +64,8 @@ grpc_cc_library(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//src/core:endpoint_transport",
+        "//src/core:chaotic_good",
     ],
 )
 

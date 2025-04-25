@@ -28,6 +28,8 @@
 #include <vector>
 
 #include "absl/log/log.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/crash.h"
 #include "src/proto/grpc/testing/control.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
@@ -137,6 +139,16 @@ class Server {
                      << "' does not have a value";
           break;
       }
+    }
+    switch (config.protocol()) {
+      case Protocol::HTTP2:
+        break;
+      case Protocol::CHAOTIC_GOOD:
+        builder->AddChannelArgument(
+            GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+            std::string(grpc_core::chaotic_good::WireFormatPreferences()));
+      default:
+        LOG(FATAL) << "Unknown protocol: " << config.protocol();
     }
   }
 
