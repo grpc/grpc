@@ -26,8 +26,11 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -90,6 +93,10 @@ class Http2ClientTransport final : public ClientTransport {
 
   void Orphan() override;
   void AbortWithError();
+
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
@@ -175,6 +182,8 @@ class Http2ClientTransport final : public ClientTransport {
     CallHandler call;
     HttpStreamState stream_state;
     TransportSendQeueue send_queue;
+    GrpcMessageAssembler assembler;
+    HeaderAssembler header_assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
   uint32_t NextStreamId(
@@ -198,6 +207,7 @@ class Http2ClientTransport final : public ClientTransport {
   // This also tracks the stream_id for creating new streams.
   InterActivityMutex<uint32_t> stream_id_mutex_;
   HPackCompressor encoder_;
+  HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);

@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chaotic_good/message_chunker.h"
 #include "src/core/ext/transport/chaotic_good/message_reassembly.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/event_engine/default_event_engine.h"  // IWYU pragma: keep
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/context.h"
@@ -90,6 +91,9 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return frame_transport_->ctx()->socket_node;
+  }
 
   void SetCallDestination(
       RefCountedPtr<UnstartedCallDestination> call_destination) override;
@@ -136,9 +140,11 @@ class ChaoticGoodServerTransport final : public ServerTransport {
                            BeginMessageFrame frame);
     auto PushFrameIntoCall(RefCountedPtr<Stream> stream,
                            MessageChunkFrame frame);
-    auto SendCallInitialMetadataAndBody(uint32_t stream_id,
-                                        CallInitiator call_initiator);
-    auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator);
+    auto SendCallInitialMetadataAndBody(
+        uint32_t stream_id, CallInitiator call_initiator,
+        std::shared_ptr<TcpCallTracer> call_tracer);
+    auto SendCallBody(uint32_t stream_id, CallInitiator call_initiator,
+                      std::shared_ptr<TcpCallTracer> call_tracer);
     auto CallOutboundLoop(uint32_t stream_id, CallInitiator call_initiator);
     auto ProcessNextFrame(IncomingFrame frame);
 
@@ -147,13 +153,12 @@ class ChaoticGoodServerTransport final : public ServerTransport {
     uint32_t last_seen_new_stream_id_ ABSL_GUARDED_BY(mu_) = 0;
     ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(mu_){
         "chaotic_good_server", GRPC_CHANNEL_READY};
-    const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine_;
+    const TransportContextPtr ctx_;
     const RefCountedPtr<CallArenaAllocator> call_arena_allocator_;
     const RefCountedPtr<UnstartedCallDestination> call_destination_;
     Party::SpawnSerializer* incoming_frame_spawner_;
     MessageChunker message_chunker_;
-    MpscSender<Frame> outgoing_frames_;
+    MpscSender<OutgoingFrame> outgoing_frames_;
     RefCountedPtr<Party> party_;
   };
 

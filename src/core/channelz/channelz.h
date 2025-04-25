@@ -27,6 +27,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <initializer_list>
 #include <map>
 #include <optional>
 #include <set>
@@ -34,9 +35,11 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
@@ -48,7 +51,12 @@
 #include "src/core/util/useful.h"
 
 // Channel arg key for channelz node.
-#define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.internal.channelz_channel_node"
+#define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
+  "grpc.internal.no_subchannel.channelz_channel_node"
+
+// Channel arg key for the containing base node
+#define GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE \
+  "grpc.internal.no_subchannel.channelz_containing_base_node"
 
 // Channel arg key for indicating an internal channel.
 #define GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL \
@@ -91,13 +99,56 @@ class BaseNode : public RefCounted<BaseNode> {
     kServer,
     kListenSocket,
     kSocket,
+    kCall,
   };
+
+  static absl::string_view EntityTypeString(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "top_level_channel";
+      case EntityType::kInternalChannel:
+        return "internal_channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+    return "unknown";
+  }
 
  protected:
   BaseNode(EntityType type, std::string name);
 
  public:
   ~BaseNode() override;
+
+  bool HasParent(const BaseNode* parent) const {
+    MutexLock lock(&parent_mu_);
+    return parents_.find(parent) != parents_.end();
+  }
+
+  void AddParent(BaseNode* parent) {
+    MutexLock lock(&parent_mu_);
+    parents_.insert(parent->Ref());
+  }
+
+  void RemoveParent(BaseNode* parent) {
+    MutexLock lock(&parent_mu_);
+    parents_.erase(parent);
+  }
+
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE;
+  }
+  static int ChannelArgsCompare(const BaseNode* a, const BaseNode* b) {
+    return QsortCompare(a, b);
+  }
 
   // All children must implement this function.
   virtual Json RenderJson() = 0;
@@ -107,7 +158,11 @@ class BaseNode : public RefCounted<BaseNode> {
   std::string RenderJsonString();
 
   EntityType type() const { return type_; }
-  intptr_t uuid() const { return uuid_; }
+  intptr_t uuid() {
+    const intptr_t id = uuid_.load(std::memory_order_relaxed);
+    if (id > 0) return id;
+    return UuidSlow();
+  }
   const std::string& name() const { return name_; }
 
   void RunZTrace(absl::string_view name, Timestamp deadline,
@@ -115,6 +170,7 @@ class BaseNode : public RefCounted<BaseNode> {
                  std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                      event_engine,
                  absl::AnyInvocable<void(Json output)> callback);
+  Json::Object AdditionalInfo();
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -124,12 +180,22 @@ class BaseNode : public RefCounted<BaseNode> {
   friend class ChannelzRegistry;
   // allow data source to register/unregister itself
   friend class DataSource;
+  using ParentSet =
+      absl::flat_hash_set<RefCountedPtr<BaseNode>, RefCountedPtrHash<BaseNode>,
+                          RefCountedPtrEq<BaseNode>>;
+
+  intptr_t UuidSlow();
+
   const EntityType type_;
-  intptr_t uuid_;
+  std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;
   absl::InlinedVector<DataSource*, 3> data_sources_
       ABSL_GUARDED_BY(data_sources_mu_);
+  BaseNode* prev_;
+  BaseNode* next_;
+  mutable Mutex parent_mu_;
+  ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
 };
 
 class ZTrace {
@@ -141,6 +207,17 @@ class ZTrace {
                    absl::AnyInvocable<void(Json)>) = 0;
 };
 
+class DataSink {
+ public:
+  virtual void AddAdditionalInfo(absl::string_view name,
+                                 Json::Object additional_info) = 0;
+  virtual void AddChildObjects(
+      std::vector<RefCountedPtr<BaseNode>> children) = 0;
+
+ protected:
+  ~DataSink() = default;
+};
+
 class DataSource {
  public:
   explicit DataSource(RefCountedPtr<BaseNode> node);
@@ -148,7 +225,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddJson(Json::Object& output) = 0;
+  virtual void AddData(DataSink&) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
@@ -262,30 +339,22 @@ class ChannelNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
   void SetConnectivityState(grpc_connectivity_state state);
 
-  // TODO(roth): take in a RefCountedPtr to the child channel so we can retrieve
-  // the human-readable name.
-  void AddChildChannel(intptr_t child_uuid);
-  void RemoveChildChannel(intptr_t child_uuid);
-
-  // TODO(roth): take in a RefCountedPtr to the child subchannel so we can
-  // retrieve the human-readable name.
-  void AddChildSubchannel(intptr_t child_uuid);
-  void RemoveChildSubchannel(intptr_t child_uuid);
-
   const std::string& target() const { return target_; }
   std::optional<std::string> connectivity_state();
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  const std::set<intptr_t>& child_channels() const { return child_channels_; }
-  const std::set<intptr_t>& child_subchannels() const {
-    return child_subchannels_;
-  }
+  std::set<intptr_t> child_channels() const;
+  std::set<intptr_t> child_subchannels() const;
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   void PopulateChildRefs(Json::Object* json);
@@ -293,14 +362,11 @@ class ChannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
   std::atomic<int> connectivity_state_{0};
-
-  Mutex child_mu_;  // Guards sets below.
-  std::set<intptr_t> child_channels_;
-  std::set<intptr_t> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for subchannels
@@ -323,6 +389,9 @@ class SubchannelNode final : public BaseNode {
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void AddTraceEventWithReference(ChannelTrace::Severity severity,
                                   const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_channel) {
@@ -341,6 +410,7 @@ class SubchannelNode final : public BaseNode {
     return child_socket_;
   }
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   // Allows the channel trace test to access trace_.
@@ -352,6 +422,7 @@ class SubchannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  ChannelArgs channel_args_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -366,14 +437,6 @@ class ServerNode final : public BaseNode {
   std::string RenderServerSockets(intptr_t start_socket_id,
                                   intptr_t max_results);
 
-  void AddChildSocket(RefCountedPtr<SocketNode> node);
-
-  void RemoveChildSocket(intptr_t child_uuid);
-
-  void AddChildListenSocket(RefCountedPtr<ListenSocketNode> node);
-
-  void RemoveChildListenSocket(intptr_t child_uuid);
-
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
@@ -384,28 +447,26 @@ class ServerNode final : public BaseNode {
     trace_.AddTraceEventWithReference(severity, data,
                                       std::move(referenced_channel));
   }
+  void SetChannelArgs(const ChannelArgs& channel_args) {
+    channel_args_ = channel_args;
+  }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
 
-  const std::map<intptr_t, RefCountedPtr<ListenSocketNode>>&
-  child_listen_sockets() const {
-    return child_listen_sockets_;
-  }
-  const std::map<intptr_t, RefCountedPtr<SocketNode>>& child_sockets() const {
-    return child_sockets_;
-  }
+  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets()
+      const;
+  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets() const;
 
   const ChannelTrace& trace() const { return trace_; }
+  const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
-  Mutex child_mu_;  // Guards child maps below.
-  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
+  ChannelArgs channel_args_;
 };
 
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
@@ -538,6 +599,14 @@ class ListenSocketNode final : public BaseNode {
 
  private:
   std::string local_addr_;
+};
+
+class CallNode final : public BaseNode {
+ public:
+  explicit CallNode(std::string name)
+      : BaseNode(EntityType::kCall, std::move(name)) {}
+
+  Json RenderJson() override;
 };
 
 }  // namespace channelz
