@@ -50,11 +50,13 @@
 #include <openssl/x509v3.h>
 
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
@@ -66,13 +68,14 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/env.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/useful.h"
 
 // Name of the environment variable controlling OpenSSL cleanup timeout.
 // This variable allows users to specify the timeout (in seconds) for OpenSSL
 // resource cleanup during gRPC shutdown. If not set, a default timeout is used.
-#define GRPC_OPENSSL_CLEANUP_TIMEOUT_ENV "GRPC_OPENSSL_CLEANUP_TIMEOUT"
+#define GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV "grpc.openssl_cleanup_timeout"
 
 // --- Constants. ---
 
@@ -205,10 +208,14 @@ static void init_openssl(void) {
     // Retrieve the OpenSSL cleanup timeout from the environment variable.
     // This allows users to override the default cleanup timeout for OpenSSL
     // resource deallocation during gRPC shutdown.
-    const char* env = std::getenv(GRPC_OPENSSL_CLEANUP_TIMEOUT_ENV);
+    std::optional<std::string> env =
+        grpc_core::GetEnv(GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV);
     int timeout_sec = 2;
-    if (env != nullptr) {
-      timeout_sec = std::stoi(env);
+    if (env.has_value()) {
+      int parsed_timeout_sec = 0;
+      if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
+        timeout_sec = parsed_timeout_sec;
+      }
     }
 
     grpc_wait_for_shutdown_with_timeout(absl::Seconds(timeout_sec));
