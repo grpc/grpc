@@ -23,7 +23,7 @@ tools/bazel query --noimplicit_deps --output=xml 'deps(//:all)' > tools/artifact
 tools/bazel query --noimplicit_deps --output=xml 'deps(//src/compiler/...)' > tools/artifact_gen/compiler_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'kind(alias, "//third_party:*")' > tools/artifact_gen/third_party_alias_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'deps(kind("^proto_library", @envoy_api//envoy/...))' > tools/artifact_gen/envoy_api_proto_deps.xml
-tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")' > tools/artifact_gen/upb_deps.xml
+tools/bazel query --noimplicit_deps --output=xml 'deps("@com_google_protobuf//upb:generated_code_support")' > tools/artifact_gen/upb_deps.xml
 tools/bazel query --noimplicit_deps --output=xml 'kind(http_archive, //external:*)' > tools/artifact_gen/external_http_archive_deps.xml
 
 # PHASE 1: generate artifacts
