@@ -36,20 +36,18 @@
 namespace {
 
 bool IsPeerAuthenticatedWithPeerProperty(
-    const grpc_auth_context* ctx, const std::string expected_property_name,
-    const std::string expected_value) {
-  grpc_auth_property_iterator it;
-  const grpc_auth_property* prop;
+    const grpc_auth_context* ctx, const std::string& expected_property_name,
+    const std::string& expected_value) {
   EXPECT_TRUE(grpc_auth_context_peer_is_authenticated(ctx));
-  it = grpc_auth_context_peer_identity(ctx);
-  prop = grpc_auth_property_iterator_next(&it);
+  grpc_auth_property_iterator it = grpc_auth_context_peer_identity(ctx);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   EXPECT_NE(prop, nullptr);
-  if (expected_property_name.compare(std::string(prop->name)) != 0) {
+  if (expected_property_name != std::string(prop->name)) {
     LOG(ERROR) << "Expected property name " << expected_property_name
                << " and got " << prop->name;
     return false;
   }
-  if (expected_value.compare(0, prop->value_length, prop->value) != 0) {
+  if (expected_value != std::string(prop->value, prop->value_length)) {
     LOG(ERROR) << "Expected value " << expected_value << " and got "
                << prop->value;
     return false;

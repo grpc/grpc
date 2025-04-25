@@ -66,7 +66,8 @@ struct alts_tsi_handshaker {
   bool shutdown = false;
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
-  // The list of preferred transport protocols.
+  // A comma-separated list of preferred transport protocols, sorted by
+  // preference.
   std::optional<std::string> preferred_transport_protocols;
 };
 

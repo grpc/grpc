@@ -63,30 +63,6 @@ using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 
 namespace {
 
-void VerifyTransportProtocolPreferences(
-    const grpc_gcp_TransportProtocolPreferences* protocol_preferences,
-    bool is_server) {
-  ASSERT_NE(protocol_preferences, nullptr);
-  size_t transport_protocol_count;
-  const upb_StringView* transport_protocols =
-      grpc_gcp_TransportProtocolPreferences_transport_protocol(
-          protocol_preferences, &transport_protocol_count);
-
-  ASSERT_EQ(transport_protocol_count, 2);
-
-  if (is_server) {
-    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
-                                       upb_StringView_FromString("bar")));
-  } else {
-    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
-                                       upb_StringView_FromString("baz")));
-  }
-  ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
-                                     upb_StringView_FromString("foo")));
-}
-
-}  // namespace
-
 typedef struct alts_handshaker_client_test_config {
   grpc_channel* channel;
   grpc_completion_queue* cq;
@@ -95,8 +71,7 @@ typedef struct alts_handshaker_client_test_config {
   grpc_slice out_frame;
 } alts_handshaker_client_test_config;
 
-static void validate_rpc_protocol_versions(
-    const grpc_gcp_RpcProtocolVersions* versions) {
+void ValidateRpcProtocolVersions(const grpc_gcp_RpcProtocolVersions* versions) {
   ASSERT_NE(versions, nullptr);
   const grpc_gcp_RpcProtocolVersions_Version* max_version =
       grpc_gcp_RpcProtocolVersions_max_rpc_version(versions);
@@ -112,9 +87,8 @@ static void validate_rpc_protocol_versions(
             kMinRpcVersionMinor);
 }
 
-static void validate_target_identities(
-    const grpc_gcp_Identity* const* target_identities,
-    size_t target_identities_count) {
+void ValidateTargetIdentities(const grpc_gcp_Identity* const* target_identities,
+                              size_t target_identities_count) {
   ASSERT_EQ(target_identities_count, 2);
   const grpc_gcp_Identity* identity1 = target_identities[1];
   const grpc_gcp_Identity* identity2 = target_identities[0];
@@ -132,8 +106,8 @@ static void validate_target_identities(
 /// Validate if grpc operation data is correctly populated with the fields of
 /// ALTS handshaker client.
 ///
-static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
-                        size_t nops, bool is_start) {
+bool ValidateOp(alts_handshaker_client* c, const grpc_op* op, size_t nops,
+                bool is_start) {
   EXPECT_TRUE(c != nullptr && op != nullptr && nops != 0);
   bool ok = true;
   grpc_op* start_op = const_cast<grpc_op*>(op);
@@ -161,8 +135,8 @@ static bool validate_op(alts_handshaker_client* c, const grpc_op* op,
   return ok;
 }
 
-static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
-    grpc_byte_buffer* buffer, upb_Arena* arena) {
+grpc_gcp_HandshakerReq* DeserializeHandshakerReq(grpc_byte_buffer* buffer,
+                                                 upb_Arena* arena) {
   EXPECT_NE(buffer, nullptr);
   grpc_byte_buffer_reader bbr;
   EXPECT_TRUE(grpc_byte_buffer_reader_init(&bbr, buffer));
@@ -174,7 +148,7 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
   return req;
 }
 
-static bool is_recv_status_op(const grpc_op* op, size_t nops) {
+bool IsRecvStatusOp(const grpc_op* op, size_t nops) {
   return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
@@ -182,10 +156,9 @@ static bool is_recv_status_op(const grpc_op* op, size_t nops) {
 /// A mock grpc_caller used to check if client_start, server_start, and next
 /// operations correctly handle invalid arguments. It should not be called.
 ///
-static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
-                                                const grpc_op* /*ops*/,
-                                                size_t /*nops*/,
-                                                grpc_closure* /*tag*/) {
+grpc_call_error CheckMustNotBeCalled(grpc_call* /*call*/,
+                                     const grpc_op* /*ops*/, size_t /*nops*/,
+                                     grpc_closure* /*tag*/) {
   abort();
 }
 
@@ -195,19 +168,17 @@ static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
 /// with correct handshake_security_protocol, application_protocol,
 /// record_protocol and max_frame_size, and op is correctly populated.
 ///
-static grpc_call_error check_client_start_success(grpc_call* /*call*/,
-                                                  const grpc_op* op,
-                                                  size_t nops,
-                                                  grpc_closure* closure) {
+grpc_call_error CheckClientStartSuccess(grpc_call* /*call*/, const grpc_op* op,
+                                        size_t nops, grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed
-  if (is_recv_status_op(op, nops)) {
+  if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartClientHandshakeReq* client_start =
       grpc_gcp_HandshakerReq_client_start(req);
@@ -226,33 +197,55 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
       record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
   const grpc_gcp_RpcProtocolVersions* rpc_protocol_versions =
       grpc_gcp_StartClientHandshakeReq_rpc_versions(client_start);
-  validate_rpc_protocol_versions(rpc_protocol_versions);
+  ValidateRpcProtocolVersions(rpc_protocol_versions);
   size_t target_identities_count;
   const grpc_gcp_Identity* const* target_identities =
       grpc_gcp_StartClientHandshakeReq_target_identities(
           client_start, &target_identities_count);
-  validate_target_identities(target_identities, target_identities_count);
+  ValidateTargetIdentities(target_identities, target_identities_count);
   EXPECT_TRUE(upb_StringView_IsEqual(
       grpc_gcp_StartClientHandshakeReq_target_name(client_start),
       upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME)));
   EXPECT_EQ(grpc_gcp_StartClientHandshakeReq_max_frame_size(client_start),
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
-  EXPECT_TRUE(validate_op(client, op, nops, true /* is_start */));
+  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
+}
+
+void VerifyTransportProtocolPreferences(
+    const grpc_gcp_TransportProtocolPreferences* protocol_preferences,
+    bool is_server) {
+  ASSERT_NE(protocol_preferences, nullptr);
+  size_t transport_protocol_count;
+  const upb_StringView* transport_protocols =
+      grpc_gcp_TransportProtocolPreferences_transport_protocol(
+          protocol_preferences, &transport_protocol_count);
+
+  ASSERT_EQ(transport_protocol_count, 2);
+
+  if (is_server) {
+    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+                                       upb_StringView_FromString("bar")));
+  } else {
+    ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[0],
+                                       upb_StringView_FromString("baz")));
+  }
+  ASSERT_TRUE(upb_StringView_IsEqual(transport_protocols[1],
+                                     upb_StringView_FromString("foo")));
 }
 
 grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
     grpc_call* /*call*/, const grpc_op* op, size_t nops,
     grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed
-  if (is_recv_status_op(op, nops)) {
+  if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartClientHandshakeReq* client_start =
       grpc_gcp_HandshakerReq_client_start(req);
@@ -260,7 +253,7 @@ grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
       grpc_gcp_StartClientHandshakeReq_transport_protocol_preferences(
           client_start),
       /*is_server=*/false);
-  return check_client_start_success(nullptr, op, nops, closure);
+  return CheckClientStartSuccess(nullptr, op, nops, closure);
 }
 
 ///
@@ -269,19 +262,17 @@ grpc_call_error VerifyClientSuccessWithProtocolNegotiation(
 /// with correct handshake_security_protocol, application_protocol,
 /// record_protocol and max_frame_size, and op is correctly populated.
 ///
-static grpc_call_error check_server_start_success(grpc_call* /*call*/,
-                                                  const grpc_op* op,
-                                                  size_t nops,
-                                                  grpc_closure* closure) {
+grpc_call_error CheckServerStartSuccess(grpc_call* /*call*/, const grpc_op* op,
+                                        size_t nops, grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed
-  if (is_recv_status_op(op, nops)) {
+  if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartServerHandshakeReq* server_start =
       grpc_gcp_HandshakerReq_server_start(req);
@@ -301,26 +292,27 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
       grpc_gcp_ServerHandshakeParameters_record_protocols(value, nullptr);
   EXPECT_TRUE(upb_StringView_IsEqual(
       record_protocols[0], upb_StringView_FromString(ALTS_RECORD_PROTOCOL)));
-  validate_rpc_protocol_versions(
+  ValidateRpcProtocolVersions(
       grpc_gcp_StartServerHandshakeReq_rpc_versions(server_start));
   EXPECT_EQ(grpc_gcp_StartServerHandshakeReq_max_frame_size(server_start),
             ALTS_HANDSHAKER_CLIENT_TEST_MAX_FRAME_SIZE);
-  EXPECT_TRUE(validate_op(client, op, nops, true /* is_start */));
+  EXPECT_TRUE(ValidateOp(client, op, nops, true /* is_start */));
   return GRPC_CALL_OK;
 }
 
-static grpc_call_error check_server_start_success_with_negotiation(
-    grpc_call* /*call*/, const grpc_op* op, size_t nops,
-    grpc_closure* closure) {
+grpc_call_error CheckServerStartSuccessWithNegotiation(grpc_call* /*call*/,
+                                                       const grpc_op* op,
+                                                       size_t nops,
+                                                       grpc_closure* closure) {
   // RECV_STATUS ops are asserted to always succeed
-  if (is_recv_status_op(op, nops)) {
+  if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
   }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_StartServerHandshakeReq* server_start =
       grpc_gcp_HandshakerReq_server_start(req);
@@ -328,7 +320,7 @@ static grpc_call_error check_server_start_success_with_negotiation(
       grpc_gcp_StartServerHandshakeReq_transport_protocol_preferences(
           server_start),
       /*is_server=*/true);
-  return check_server_start_success(nullptr, op, nops, closure);
+  return CheckServerStartSuccess(nullptr, op, nops, closure);
 }
 
 ///
@@ -336,21 +328,20 @@ static grpc_call_error check_server_start_success_with_negotiation(
 /// checks if the next handshaker request is populated with correct information,
 /// and op is correctly populated.
 ///
-static grpc_call_error check_next_success(grpc_call* /*call*/,
-                                          const grpc_op* op, size_t nops,
-                                          grpc_closure* closure) {
+grpc_call_error CheckNextSuccess(grpc_call* /*call*/, const grpc_op* op,
+                                 size_t nops, grpc_closure* closure) {
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
   EXPECT_EQ(alts_handshaker_client_get_closure_for_testing(client), closure);
-  grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
+  grpc_gcp_HandshakerReq* req = DeserializeHandshakerReq(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
   const grpc_gcp_NextHandshakeMessageReq* next =
       grpc_gcp_HandshakerReq_next(req);
   EXPECT_TRUE(upb_StringView_IsEqual(
       grpc_gcp_NextHandshakeMessageReq_in_bytes(next),
       upb_StringView_FromString(ALTS_HANDSHAKER_CLIENT_TEST_OUT_FRAME)));
-  EXPECT_TRUE(validate_op(client, op, nops, false /* is_start */));
+  EXPECT_TRUE(ValidateOp(client, op, nops, false /* is_start */));
   return GRPC_CALL_OK;
 }
 
@@ -359,18 +350,16 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
 /// operations correctly handle the situation when the grpc call made to the
 /// handshaker service fails.
 ///
-static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
-                                               const grpc_op* op, size_t nops,
-                                               grpc_closure* /*tag*/) {
+grpc_call_error CheckGrpcCallFailure(grpc_call* /*call*/, const grpc_op* op,
+                                     size_t nops, grpc_closure* /*tag*/) {
   // RECV_STATUS ops are asserted to always succeed
-  if (is_recv_status_op(op, nops)) {
+  if (IsRecvStatusOp(op, nops)) {
     return GRPC_CALL_OK;
   }
   return GRPC_CALL_ERROR;
 }
 
-static grpc_alts_credentials_options* create_credentials_options(
-    bool is_client) {
+grpc_alts_credentials_options* CreateCredentialsOptions(bool is_client) {
   grpc_alts_credentials_options* options =
       is_client ? grpc_alts_credentials_client_options_create()
                 : grpc_alts_credentials_server_options_create();
@@ -388,7 +377,7 @@ static grpc_alts_credentials_options* create_credentials_options(
   return options;
 }
 
-static alts_handshaker_client_test_config* create_config() {
+alts_handshaker_client_test_config* CreateConfig() {
   alts_handshaker_client_test_config* config =
       static_cast<alts_handshaker_client_test_config*>(
           gpr_zalloc(sizeof(*config)));
@@ -398,9 +387,9 @@ static alts_handshaker_client_test_config* create_config() {
   grpc_channel_credentials_release(creds);
   config->cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_alts_credentials_options* client_options =
-      create_credentials_options(true /* is_client */);
+      CreateCredentialsOptions(true /* is_client */);
   grpc_alts_credentials_options* server_options =
-      create_credentials_options(false /*  is_client */);
+      CreateCredentialsOptions(false /*  is_client */);
   config->server = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
@@ -424,7 +413,7 @@ static alts_handshaker_client_test_config* create_config() {
   return config;
 }
 
-static void destroy_config(alts_handshaker_client_test_config* config) {
+void DestroyConfig(alts_handshaker_client_test_config* config) {
   if (config == nullptr) {
     return;
   }
@@ -436,12 +425,14 @@ static void destroy_config(alts_handshaker_client_test_config* config) {
   gpr_free(config);
 }
 
+}  // namespace
+
 TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
   // Initialization.
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = CreateConfig();
   // Tests.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     check_must_not_be_called);
+                                                     CheckMustNotBeCalled);
   // Check client_start.
   {
     grpc_core::ExecCtx exec_ctx;
@@ -473,15 +464,15 @@ TEST(AltsHandshakerClientTest, ScheduleRequestInvalidArgTest) {
   // Check shutdown.
   alts_handshaker_client_shutdown(nullptr);
   // Cleanup.
-  destroy_config(config);
+  DestroyConfig(config);
 }
 
 TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   // Initialization.
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
-  alts_handshaker_client_set_grpc_caller_for_testing(
-      config->client, check_client_start_success);
+  alts_handshaker_client_set_grpc_caller_for_testing(config->client,
+                                                     CheckClientStartSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_start_client(config->client), TSI_OK);
@@ -492,8 +483,8 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
               TSI_INVALID_ARGUMENT);
   }
   // Check server_start success.
-  alts_handshaker_client_set_grpc_caller_for_testing(
-      config->server, check_server_start_success);
+  alts_handshaker_client_set_grpc_caller_for_testing(config->server,
+                                                     CheckServerStartSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(
@@ -502,7 +493,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   }
   // Check client next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     check_next_success);
+                                                     CheckNextSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
@@ -510,7 +501,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
   }
   // Check server next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
-                                                     check_next_success);
+                                                     CheckNextSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
@@ -524,13 +515,13 @@ TEST(AltsHandshakerClientTest, ScheduleRequestSuccessTest) {
     alts_handshaker_client_on_status_received_for_testing(
         config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
-  destroy_config(config);
+  DestroyConfig(config);
 }
 
 TEST(AltsHandshakerClientTest,
      ScheduleRequestSuccessWithProtocolNegotiationTest) {
   // Initialization.
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
       config->client, VerifyClientSuccessWithProtocolNegotiation);
@@ -545,7 +536,7 @@ TEST(AltsHandshakerClientTest,
   }
   // Check server_start success.
   alts_handshaker_client_set_grpc_caller_for_testing(
-      config->server, check_server_start_success_with_negotiation);
+      config->server, CheckServerStartSuccessWithNegotiation);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(
@@ -554,7 +545,7 @@ TEST(AltsHandshakerClientTest,
   }
   // Check client next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     check_next_success);
+                                                     CheckNextSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_next(config->client, &config->out_frame),
@@ -562,7 +553,7 @@ TEST(AltsHandshakerClientTest,
   }
   // Check server next success.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
-                                                     check_next_success);
+                                                     CheckNextSuccess);
   {
     grpc_core::ExecCtx exec_ctx;
     ASSERT_EQ(alts_handshaker_client_next(config->server, &config->out_frame),
@@ -576,7 +567,7 @@ TEST(AltsHandshakerClientTest,
     alts_handshaker_client_on_status_received_for_testing(
         config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
-  destroy_config(config);
+  DestroyConfig(config);
 }
 
 static void tsi_cb_assert_tsi_internal_error(
@@ -588,10 +579,10 @@ static void tsi_cb_assert_tsi_internal_error(
 
 TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
   // Initialization.
-  alts_handshaker_client_test_config* config = create_config();
+  alts_handshaker_client_test_config* config = CreateConfig();
   // Check client_start failure.
   alts_handshaker_client_set_grpc_caller_for_testing(config->client,
-                                                     check_grpc_call_failure);
+                                                     CheckGrpcCallFailure);
   {
     grpc_core::ExecCtx exec_ctx;
     // TODO(apolcyn): go back to asserting TSI_INTERNAL_ERROR as return
@@ -603,7 +594,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
   }
   // Check server_start failure.
   alts_handshaker_client_set_grpc_caller_for_testing(config->server,
-                                                     check_grpc_call_failure);
+                                                     CheckGrpcCallFailure);
   {
     grpc_core::ExecCtx exec_ctx;
     // TODO(apolcyn): go back to asserting TSI_INTERNAL_ERROR as return
@@ -633,7 +624,7 @@ TEST(AltsHandshakerClientTest, ScheduleRequestGrpcCallFailureTest) {
     alts_handshaker_client_on_status_received_for_testing(
         config->server, GRPC_STATUS_OK, absl::OkStatus());
   }
-  destroy_config(config);
+  DestroyConfig(config);
 }
 
 TEST(MaxNumberOfConcurrentHandshakesTest, Default) {
