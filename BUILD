@@ -1261,6 +1261,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
     ],
     deps = [
+        "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
@@ -1269,7 +1270,6 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
-        "config_vars",
         "//src/core:connectivity_state",
         "//src/core:json",
         "//src/core:json_reader",
