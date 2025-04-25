@@ -41,6 +41,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -218,11 +219,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
           size_t unprotected_buffer_size_written =
               static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          protector_mu_.Lock();
-          result = tsi_frame_protector_unprotect(
-              protector_, message_bytes, &processed_message_size, cur,
-              &unprotected_buffer_size_written);
-          protector_mu_.Unlock();
+          if (IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_unprotect(
+                protector_, message_bytes, &processed_message_size, cur,
+                &unprotected_buffer_size_written);
+          } else {
+            protector_mu_.Lock();
+            result = tsi_frame_protector_unprotect(
+                protector_, message_bytes, &processed_message_size, cur,
+                &unprotected_buffer_size_written);
+            protector_mu_.Unlock();
+          }
           if (result != TSI_OK) {
             LOG(ERROR) << "Decryption error: " << tsi_result_to_string(result);
             break;
@@ -343,11 +350,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
         while (message_size > 0) {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
           size_t processed_message_size = message_size;
-          protector_mu_.Lock();
-          result = tsi_frame_protector_protect(protector_, message_bytes,
-                                               &processed_message_size, cur,
-                                               &protected_buffer_size_to_send);
-          protector_mu_.Unlock();
+          if (IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_protect(
+                protector_, message_bytes, &processed_message_size, cur,
+                &protected_buffer_size_to_send);
+          } else {
+            protector_mu_.Lock();
+            result = tsi_frame_protector_protect(
+                protector_, message_bytes, &processed_message_size, cur,
+                &protected_buffer_size_to_send);
+            protector_mu_.Unlock();
+          }
           if (result != TSI_OK) {
             LOG(ERROR) << "Encryption error: " << tsi_result_to_string(result);
             break;
@@ -366,11 +379,17 @@ class FrameProtector : public RefCounted<FrameProtector> {
         size_t still_pending_size;
         do {
           size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
-          protector_mu_.Lock();
-          result = tsi_frame_protector_protect_flush(
-              protector_, cur, &protected_buffer_size_to_send,
-              &still_pending_size);
-          protector_mu_.Unlock();
+          if (IsTsiFrameProtectorWithoutLocksEnabled()) {
+            result = tsi_frame_protector_protect_flush(
+                protector_, cur, &protected_buffer_size_to_send,
+                &still_pending_size);
+          } else {
+            protector_mu_.Lock();
+            result = tsi_frame_protector_protect_flush(
+                protector_, cur, &protected_buffer_size_to_send,
+                &still_pending_size);
+            protector_mu_.Unlock();
+          }
           if (result != TSI_OK) break;
           cur += protected_buffer_size_to_send;
           if (cur == end) {
