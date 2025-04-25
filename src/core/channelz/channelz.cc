@@ -187,10 +187,11 @@ void BaseNode::Orphaned() {
     kept_alive_nodes.fetch_sub(1, std::memory_order_relaxed);
     return;
   }
-  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-      Duration::Seconds(config.ChannelzKeepaliveTime()), [node = WeakRef()]() {
-        kept_alive_nodes.fetch_sub(1, std::memory_order_relaxed);
-      });
+  auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  ee->RunAfter(Duration::Seconds(config.ChannelzKeepaliveTime()),
+               [ee, node = WeakRef()]() {
+                 kept_alive_nodes.fetch_sub(1, std::memory_order_relaxed);
+               });
 }
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
