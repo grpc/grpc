@@ -106,9 +106,10 @@ class GPR_DLL ConfigVars {
   bool CppExperimentalDisableReflection() const {
     return cpp_experimental_disable_reflection_;
   }
-  // How long in seconds to wait before destroying orphaned channelz nodes.
+  // EXPERIMENTAL. How long in seconds to wait before destroying orphaned
+  // channelz nodes.
   int32_t ChannelzKeepaliveTime() const { return channelz_keepalive_time_; }
-  // Maximum number of orphaned channelz nodes to keep alive.
+  // EXPERIMENTAL. Maximum number of orphaned channelz nodes to keep alive.
   int32_t ChannelzMaxKeepaliveNodes() const {
     return channelz_max_keepalive_nodes_;
   }

@@ -76,11 +76,12 @@ ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");
+ABSL_FLAG(absl::optional<int32_t>, grpc_channelz_keepalive_time, {},
+          "EXPERIMENTAL. How long in seconds to wait before destroying "
+          "orphaned channelz nodes.");
 ABSL_FLAG(
-    absl::optional<int32_t>, grpc_channelz_keepalive_time, {},
-    "How long in seconds to wait before destroying orphaned channelz nodes.");
-ABSL_FLAG(absl::optional<int32_t>, grpc_channelz_max_keepalive_nodes, {},
-          "Maximum number of orphaned channelz nodes to keep alive.");
+    absl::optional<int32_t>, grpc_channelz_max_keepalive_nodes, {},
+    "EXPERIMENTAL. Maximum number of orphaned channelz nodes to keep alive.");
 
 namespace grpc_core {
 
