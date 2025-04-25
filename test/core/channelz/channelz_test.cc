@@ -38,6 +38,7 @@
 #include "absl/status/statusor.h"
 #include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -282,6 +283,23 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
   ValidateChannel(channelz_channel, {0, 0, 0});
+}
+
+TEST_P(ChannelzChannelTest, KeepaliveChannel) {
+  ConfigVars::Reset();
+  ConfigVars::Overrides overrides;
+  overrides.channelz_keepalive_time = 10;
+  overrides.channelz_max_keepalive_nodes = 100;
+  ConfigVars::SetOverrides(overrides);
+  ExecCtx exec_ctx;
+  intptr_t uuid;
+  {
+    ChannelFixture channel(GetParam());
+    uuid = grpc_channel_get_channelz_node(channel.channel())->uuid();
+  }
+  absl::SleepFor(absl::Seconds(3));
+  ValidateChannel(ChannelzRegistry::GetChannel(uuid).get(), {0, 0, 0});
+  ConfigVars::Reset();
 }
 
 class TestZTrace final : public ZTrace {

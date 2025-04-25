@@ -130,6 +130,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
 
   void Orphaned() override;
 
+  bool WasOrphaned() { return RefIfNonZero() != nullptr; }
+
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);
     return parents_.find(parent) != parents_.end();

@@ -1269,6 +1269,7 @@ grpc_cc_library(
         "sockaddr_utils",
         "uri",
         "//src/core:channel_args",
+        "config_vars",
         "//src/core:connectivity_state",
         "//src/core:json",
         "//src/core:json_reader",

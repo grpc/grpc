@@ -35,6 +35,8 @@ class GPR_DLL ConfigVars {
  public:
   struct Overrides {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;
+    absl::optional<int32_t> channelz_keepalive_time;
+    absl::optional<int32_t> channelz_max_keepalive_nodes;
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
@@ -104,12 +106,20 @@ class GPR_DLL ConfigVars {
   bool CppExperimentalDisableReflection() const {
     return cpp_experimental_disable_reflection_;
   }
+  // How long in seconds to wait before destroying orphaned channelz nodes.
+  int32_t ChannelzKeepaliveTime() const { return channelz_keepalive_time_; }
+  // Maximum number of orphaned channelz nodes to keep alive.
+  int32_t ChannelzMaxKeepaliveNodes() const {
+    return channelz_max_keepalive_nodes_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
+  int32_t channelz_keepalive_time_;
+  int32_t channelz_max_keepalive_nodes_;
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool not_use_system_ssl_roots_;
