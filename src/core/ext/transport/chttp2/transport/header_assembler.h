@@ -16,87 +16,116 @@
 //
 //
 
-#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
-#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
+#include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
 namespace grpc_core {
 namespace http2 {
 
+// Conventions : If the HeaderAssembler or Client Transport code is doing
+// something wrong, we fail with a DCHECK. If the peer sent some bad data, we
+// fail with the appropriate Http2Status.
+
 class HeaderAssembler {
  public:
-  HeaderAssembler() : in_progress_(false), can_extract_(false), stream_id_(0) {}
+  Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
+    // Validate current state of Assembler
+    if (header_in_progress_) {
+      // TODO Get rfc quote
+      return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
+    }
+    DCHECK_FALSE(is_ready_);
+    DCHECK_EQ(stream_id_, 0);
+    DCHECK_EQ(buffer.Length(), 0);
 
-  Http2ErrorCode AppendHeaderFrame(Http2HeaderFrame& frame) {
     // Validate input frame
     DCHECK_GT(frame.stream_id, 0);
+    DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
 
-    // Validate current state
-    if (in_progress_) {
-      return Http2ErrorCode::kProtocolError;
+    // Manage size constraints
+    if constexpr (sizeof(size_t) == 4) {
+      if (buffer_.Length() >= UINT32_MAX - frame.payload.Length()) {
+        // STREAM_ERROR
+        return Http2Status::Status(
+            absl::StatusCode::kInternal,
+            "Stream Error: SliceBuffer overflow for 32 bit platforms.");
+      }
     }
-    DCHECK_EQ(stream_id_, 0);
 
     // Start header workflow
-    in_progress_ = true;
+    header_in_progress_ = true;
     stream_id_ = frame.stream_id;
 
     // Manage payload
+    frame.payload.MoveFirstNBytesIntoSliceBuffer(frame.payload.Length(),
+                                                 buffer_);
 
     // Manage if last frame
     if (frame.end_headers) {
-      EndHeadersFlagSet();
+      is_ready_ = true;
     }
-    return Http2ErrorCode::kNoError;
+
+    return Http2Status::Ok();
   }
 
-  Http2ErrorCode AppendContinuationFrame(Http2ContinuationFrame& frame) {
-    // Validate input frame
-    DCHECK_EQ(frame.stream_id, stream_id_);
-
+  Http2Status AppendContinuationFrame(Http2ContinuationFrame& frame) {
     // Validate current state
-    if (!in_progress_) {
-      return Http2ErrorCode::kProtocolError;
+    if (!header_in_progress_) {
+      // TODO Get rfc quote
+      return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
     }
+    DCHECK_FALSE(is_ready_);
     DCHECK_GT(stream_id_, 0);
 
+    // Validate input frame
+    DCHECK_EQ(frame.stream_id, stream_id_);
+    DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
+
     // Manage payload
+    frame.payload.MoveFirstNBytesIntoSliceBuffer(frame.payload.Length(),
+                                                 buffer_);
 
     // Manage if last frame
     if (frame.end_headers) {
-      EndHeadersFlagSet();
+      is_ready_ = true;
     }
-    return Http2ErrorCode::kNoError;
+    return Http2Status::Ok();
   }
 
   void ReadMetadata(HPackParser& parser, bool is_initial_metadata,
                     bool is_client) {
     // Validate
-    DCHECK_EQ(in_progress_, false);
-    DCHECK_EQ(can_extract_, true);
+    DCHECK_EQ(header_in_progress_, false);
+    DCHECK_EQ(is_ready_, true);
 
-    // Pass the payload to the Hpack parser.
-    // And then return it.
+    // Generate the gRPC Metadata from buffer_
+
+    Cleanup();
   }
+
+  HeaderAssembler()
+      : header_in_progress_(false), is_ready_(false), stream_id_(0) {}
 
  private:
-  void EndHeadersFlagSet() {
-    DCHECK_EQ(in_progress_, true);
-    DCHECK_GT(stream_id_, 0);
-    in_progress_ = false;
-    can_extract_ = true;
+  void Cleanup() {
+    header_in_progress_ = false;
+    is_ready_ = false;
     stream_id_ = 0;
+    buffer_.Clear();
   }
 
-  bool in_progress_;
-  bool can_extract_;
+  bool header_in_progress_;
+  bool is_ready_;
   uint32_t stream_id_;
+  SliceBuffer buffer_;
 };
 
 }  // namespace http2
