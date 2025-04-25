@@ -9548,6 +9548,37 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "ping_promise",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_promise.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_promise.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "1999",
+        "if",
+        "inter_activity_latch",
+        "latch",
+        "map",
+        "match",
+        "ping_abuse_policy",
+        "ping_callbacks",
+        "ping_rate_policy",
+        "race",
+        "shared_bit_gen",
+        "sleep",
+        "time",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "spiffe_utils",
     srcs = [
         "//src/core:credentials/transport/tls/spiffe_utils.cc",
