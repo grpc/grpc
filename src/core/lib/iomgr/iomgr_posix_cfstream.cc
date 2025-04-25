@@ -63,7 +63,10 @@ static void apple_iomgr_platform_flush(void) {}
 
 static void apple_iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
-  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
+  if (!grpc_core::IsEventEngineDnsEnabled() ||
+      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
+  }
 }
 
 static void apple_iomgr_platform_shutdown_background_closure(void) {}
@@ -180,7 +183,11 @@ void grpc_set_default_iomgr_platform() {
   }
   grpc_tcp_client_global_init();
   grpc_set_timer_impl(&grpc_generic_timer_vtable);
-  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
+  if (!grpc_core::IsEventEngineDnsEnabled() ||
+      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+    grpc_core::ResetDNSResolver(
+        std::make_unique<grpc_core::NativeDNSResolver>());
+  }
 }
 
 bool grpc_iomgr_run_in_background() {
