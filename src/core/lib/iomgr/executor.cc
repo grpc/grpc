@@ -93,7 +93,7 @@ void Executor::Init() { SetThreading(true); }
 size_t Executor::RunClosures(const char* executor_name,
                              grpc_closure_list list) {
   if (should_disable_executor()) {
-    grpc_core::Crash("Executor should not be in use");
+    Crash("Executor should not be in use");
   }
   size_t n = 0;
 
@@ -214,7 +214,7 @@ void Executor::Shutdown() { SetThreading(false); }
 
 void Executor::ThreadMain(void* arg) {
   if (should_disable_executor()) {
-    grpc_core::Crash("Executor should not be in use");
+    Crash("Executor should not be in use");
   }
   ThreadState* ts = static_cast<ThreadState*>(arg);
   g_this_thread_state = ts;
@@ -259,7 +259,7 @@ void Executor::ThreadMain(void* arg) {
 void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
                        bool is_short) {
   if (should_disable_executor()) {
-    grpc_core::Crash("Executor should not be in use");
+    Crash("Executor should not be in use");
   }
   bool retry_push;
 
@@ -409,7 +409,7 @@ void Executor::InitAll() {
 void Executor::Run(grpc_closure* closure, grpc_error_handle error,
                    ExecutorType executor_type, ExecutorJobType job_type) {
   if (should_disable_executor()) {
-    grpc_core::Crash("Executor should not be in use");
+    Crash("Executor should not be in use");
   }
   executor_enqueue_fns_[static_cast<size_t>(executor_type)]
                        [static_cast<size_t>(job_type)](closure, error);
