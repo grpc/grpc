@@ -236,12 +236,12 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
         << subchannel_wrapper_.get() << " subchannel "
         << subchannel_wrapper_->subchannel_.get()
         << "; hopping into work_serializer";
+    auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [self = RefAsSubclass<WatcherWrapper>(), state, status]()
-            ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                *self->subchannel_wrapper_->client_channel_->work_serializer_) {
-              self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
-            });
+        [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+        });
   }
 
   grpc_pollset_set* interested_parties() override { return nullptr; }
