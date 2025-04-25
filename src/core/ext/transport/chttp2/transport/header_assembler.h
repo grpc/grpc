@@ -38,10 +38,19 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-// The peer can either send one HEADER frame which has all the headers. Such a
-// header MUST end with END_HEADERS flag set. Or the peer can send one HEADER
-// frame followed by multiple CONTINUATION frames. In this case, the last
-// CONTINUATION frame  MUST end with END_HEADERS flag set.
+// RFC9113
+// https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
+// A complete field section (which is our gRPC Metadata) consists of either:
+// a single HEADERS or PUSH_PROMISE frame, with the END_HEADERS flag set, or
+// a HEADERS or PUSH_PROMISE frame with the END_HEADERS flag unset and one or
+// more CONTINUATION frames, where the last CONTINUATION frame has the
+// END_HEADERS flag set.
+//
+//	Each field block is processed as a discrete unit. Field blocks MUST be
+// transmitted as a contiguous sequence of frames, with no interleaved frames of
+// any other type or from any other stream. The last frame in a sequence of
+// HEADERS or CONTINUATION frames has the END_HEADERS flag set.
+//
 // This class will first assemble all the header data into one SliceBuffer from
 // each frame. And when END_HEADERS is received, we generate the gRPC Metadata
 // from the SlicerBuffer.
@@ -123,6 +132,10 @@ class HeaderAssembler {
 
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
     // Generate the gRPC Metadata from buffer_
+    // RFC9113 :  A receiver MUST terminate the connection with a connection
+    // error (Section 5.4.1) of type COMPRESSION_ERROR if it does not decompress
+    // a field block. A decoding error in a field block MUST be treated as a
+    // connection error (Section 5.4.1) of type COMPRESSION_ERROR.
 
     Cleanup();
   }
