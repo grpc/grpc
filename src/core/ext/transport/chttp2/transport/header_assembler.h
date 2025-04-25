@@ -34,6 +34,10 @@ namespace http2 {
 // something wrong, we fail with a DCHECK. If the peer sent some bad data, we
 // fail with the appropriate Http2Status.
 
+// TODO(tjagtap) : Validate these conventions in the doc
+
+#define ASSEMBLER_LOG DVLOG(3)
+
 class HeaderAssembler {
  public:
   Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
@@ -51,8 +55,9 @@ class HeaderAssembler {
     DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
 
     // Manage size constraints
+    const size_t current_len = frame.payload.Length();
     if constexpr (sizeof(size_t) == 4) {
-      if (buffer_.Length() >= UINT32_MAX - frame.payload.Length()) {
+      if (buffer_.Length() >= UINT32_MAX - current_len) {
         // STREAM_ERROR
         return Http2Status::Status(
             absl::StatusCode::kInternal,
@@ -65,11 +70,12 @@ class HeaderAssembler {
     stream_id_ = frame.stream_id;
 
     // Manage payload
-    frame.payload.MoveFirstNBytesIntoSliceBuffer(frame.payload.Length(),
-                                                 buffer_);
+    frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
+    ASSEMBLER_LOG << "AppendHeaderFrame " << current_len << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
+      ASSEMBLER_LOG << "AppendHeaderFrame end_headers";
       is_ready_ = true;
     }
 
@@ -90,11 +96,13 @@ class HeaderAssembler {
     DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
 
     // Manage payload
-    frame.payload.MoveFirstNBytesIntoSliceBuffer(frame.payload.Length(),
-                                                 buffer_);
+    const size_t current_len = frame.payload.Length();
+    frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
+    ASSEMBLER_LOG << "AppendContinuationFrame " << current_len << " Bytes.";
 
     // Manage if last frame
     if (frame.end_headers) {
+      ASSEMBLER_LOG << "AppendHeaderFrame end_headers";
       is_ready_ = true;
     }
     return Http2Status::Ok();
@@ -106,6 +114,7 @@ class HeaderAssembler {
     DCHECK_EQ(header_in_progress_, false);
     DCHECK_EQ(is_ready_, true);
 
+    ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
     // Generate the gRPC Metadata from buffer_
 
     Cleanup();
