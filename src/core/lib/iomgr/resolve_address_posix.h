@@ -31,7 +31,6 @@ namespace grpc_core {
 class NativeDNSResolver : public DNSResolver {
  public:
   NativeDNSResolver() = default;
-  ;
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
