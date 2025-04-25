@@ -16,6 +16,9 @@
 //
 //
 
+#ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
+#define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HEADER_ASSEMBLER_H
+
 #include <grpc/support/port_platform.h>
 
 #include "absl/log/check.h"
