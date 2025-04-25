@@ -215,6 +215,10 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_health_checker_oneofcases envoy_conf
   return (envoy_config_core_v3_HealthCheck_health_checker_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_HealthCheck_clear_health_checker(envoy_config_core_v3_HealthCheck* msg) {
+  const upb_MiniTableField field = {8, UPB_SIZE(88, 176), UPB_SIZE(-85, -17), 7, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__HealthCheck_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_HealthCheck_clear_timeout(envoy_config_core_v3_HealthCheck* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 40), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -993,6 +997,10 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_Payload_payload_oneofcases envoy_con
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_HealthCheck_Payload_payload_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_core_v3_HealthCheck_Payload_clear_payload(envoy_config_core_v3_HealthCheck_Payload* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__HealthCheck__Payload_msg_init, &field);
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_Payload_clear_text(envoy_config_core_v3_HealthCheck_Payload* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -1956,6 +1964,10 @@ UPB_INLINE envoy_config_core_v3_HealthCheck_CustomHealthCheck_config_type_oneofc
   const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_HealthCheck_CustomHealthCheck_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_core_v3_HealthCheck_CustomHealthCheck_clear_config_type(envoy_config_core_v3_HealthCheck_CustomHealthCheck* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__HealthCheck__CustomHealthCheck_msg_init, &field);
 }
 UPB_INLINE void envoy_config_core_v3_HealthCheck_CustomHealthCheck_clear_name(envoy_config_core_v3_HealthCheck_CustomHealthCheck* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

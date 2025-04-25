@@ -367,6 +367,10 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_config_t
   return (envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_clear_config_type(envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(16, 32), -13, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__PrivateKeyProvider_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider_clear_provider_name(envoy_extensions_transport_sockets_tls_v3_PrivateKeyProvider* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

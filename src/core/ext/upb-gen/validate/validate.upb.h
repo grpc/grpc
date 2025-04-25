@@ -126,6 +126,10 @@ UPB_INLINE validate_FieldRules_type_oneofcases validate_FieldRules_type_case(con
   return (validate_FieldRules_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void validate_FieldRules_clear_type(validate_FieldRules* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &validate__FieldRules_msg_init, &field);
+}
 UPB_INLINE void validate_FieldRules_clear_float(validate_FieldRules* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -4236,6 +4240,10 @@ UPB_INLINE validate_StringRules_well_known_oneofcases validate_StringRules_well_
   return (validate_StringRules_well_known_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void validate_StringRules_clear_well_known(validate_StringRules* msg) {
+  const upb_MiniTableField field = {12, UPB_SIZE(24, 16), UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &validate__StringRules_msg_init, &field);
+}
 UPB_INLINE void validate_StringRules_clear_const(validate_StringRules* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 24), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -4884,6 +4892,10 @@ UPB_INLINE validate_BytesRules_well_known_oneofcases validate_BytesRules_well_kn
   const upb_MiniTableField field = {10, 11, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   return (validate_BytesRules_well_known_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void validate_BytesRules_clear_well_known(validate_BytesRules* msg) {
+  const upb_MiniTableField field = {10, 11, UPB_SIZE(-21, -13), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &validate__BytesRules_msg_init, &field);
 }
 UPB_INLINE void validate_BytesRules_clear_const(validate_BytesRules* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(24, 16), 64, kUpb_NoSub, 12, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

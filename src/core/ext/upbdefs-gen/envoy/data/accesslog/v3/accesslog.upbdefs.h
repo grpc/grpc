@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_DATA_ACCESSLOG_V3_ACCESSLOG_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -98,6 +101,7 @@ UPB_INLINE const upb_MessageDef *envoy_data_accesslog_v3_HTTPResponseProperties_
   _upb_DefPool_LoadDefInit(s, &envoy_data_accesslog_v3_accesslog_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.data.accesslog.v3.HTTPResponseProperties.ResponseTrailersEntry");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

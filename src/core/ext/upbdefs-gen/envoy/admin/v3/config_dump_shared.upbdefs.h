@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_ADMIN_V3_CONFIG_DUMP_SHARED_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -113,6 +116,7 @@ UPB_INLINE const upb_MessageDef *envoy_admin_v3_EcdsConfigDump_EcdsFilterConfig_
   _upb_DefPool_LoadDefInit(s, &envoy_admin_v3_config_dump_shared_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.admin.v3.EcdsConfigDump.EcdsFilterConfig");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

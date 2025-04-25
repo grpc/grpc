@@ -52,7 +52,6 @@ typedef struct envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig { upb_Me
 typedef struct envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat;
 typedef struct envoy_config_bootstrap_v3_Bootstrap_DeferredStatOptions { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_Bootstrap_DeferredStatOptions;
 typedef struct envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig;
-typedef struct envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry;
 typedef struct envoy_config_bootstrap_v3_Admin { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_Admin;
 typedef struct envoy_config_bootstrap_v3_ClusterManager { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_ClusterManager;
 typedef struct envoy_config_bootstrap_v3_ClusterManager_OutlierDetection { upb_Message UPB_PRIVATE(base); } envoy_config_bootstrap_v3_ClusterManager_OutlierDetection;
@@ -151,6 +150,10 @@ UPB_INLINE envoy_config_bootstrap_v3_Bootstrap_stats_flush_oneofcases envoy_conf
   const upb_MiniTableField field = {29, 14, UPB_SIZE(-145, -17), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   return (envoy_config_bootstrap_v3_Bootstrap_stats_flush_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_stats_flush(envoy_config_bootstrap_v3_Bootstrap* msg) {
+  const upb_MiniTableField field = {29, 14, UPB_SIZE(-145, -17), kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__bootstrap__v3__Bootstrap_msg_init, &field);
 }
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_clear_node(envoy_config_bootstrap_v3_Bootstrap* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(16, 88), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1992,6 +1995,10 @@ UPB_INLINE envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_lo
   return (envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_log_format_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_clear_log_format(envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__bootstrap__v3__Bootstrap__ApplicationLogConfig__LogFormat_msg_init, &field);
+}
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat_clear_json_format(envoy_config_bootstrap_v3_Bootstrap_ApplicationLogConfig_LogFormat* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -2164,27 +2171,6 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_bootstrap_v3_Bootstrap_
     if (sub) envoy_config_bootstrap_v3_Bootstrap_GrpcAsyncClientManagerConfig_set_max_cached_entry_idle_duration(msg, sub);
   }
   return sub;
-}
-
-/* envoy.config.bootstrap.v3.Bootstrap.CertificateProviderInstancesEntry */
-
-UPB_INLINE upb_StringView envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_key(const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_value(const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry* msg) {
-  struct envoy_config_core_v3_TypedExtensionConfig* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_has_value(const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_set_value(envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(struct envoy_config_core_v3_TypedExtensionConfig*));
 }
 
 /* envoy.config.bootstrap.v3.Admin */
@@ -3379,6 +3365,10 @@ UPB_INLINE envoy_config_bootstrap_v3_RuntimeLayer_layer_specifier_oneofcases env
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_bootstrap_v3_RuntimeLayer_layer_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_bootstrap_v3_RuntimeLayer_clear_layer_specifier(envoy_config_bootstrap_v3_RuntimeLayer* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__bootstrap__v3__RuntimeLayer_msg_init, &field);
 }
 UPB_INLINE void envoy_config_bootstrap_v3_RuntimeLayer_clear_name(envoy_config_bootstrap_v3_RuntimeLayer* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_CONFIG_CLUSTER_V3_OUTLIER_DETECTION_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,6 +26,7 @@ UPB_INLINE const upb_MessageDef *envoy_config_cluster_v3_OutlierDetection_getmsg
   _upb_DefPool_LoadDefInit(s, &envoy_config_cluster_v3_outlier_detection_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.config.cluster.v3.OutlierDetection");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

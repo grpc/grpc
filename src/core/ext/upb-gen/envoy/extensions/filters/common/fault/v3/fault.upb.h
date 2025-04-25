@@ -86,6 +86,10 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultDelay_fault_delay_secif
   return (envoy_extensions_filters_common_fault_v3_FaultDelay_fault_delay_secifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultDelay_clear_fault_delay_secifier(envoy_extensions_filters_common_fault_v3_FaultDelay* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultDelay_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultDelay_clear_fixed_delay(envoy_extensions_filters_common_fault_v3_FaultDelay* msg) {
   const upb_MiniTableField field = {3, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -261,6 +265,10 @@ UPB_INLINE envoy_extensions_filters_common_fault_v3_FaultRateLimit_limit_type_on
   const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_filters_common_fault_v3_FaultRateLimit_limit_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_clear_limit_type(envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__common__fault__v3__FaultRateLimit_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_filters_common_fault_v3_FaultRateLimit_clear_fixed_limit(envoy_extensions_filters_common_fault_v3_FaultRateLimit* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 24), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

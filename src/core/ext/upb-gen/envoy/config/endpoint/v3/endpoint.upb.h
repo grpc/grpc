@@ -31,8 +31,6 @@ extern "C" {
 typedef struct envoy_config_endpoint_v3_ClusterLoadAssignment { upb_Message UPB_PRIVATE(base); } envoy_config_endpoint_v3_ClusterLoadAssignment;
 typedef struct envoy_config_endpoint_v3_ClusterLoadAssignment_Policy { upb_Message UPB_PRIVATE(base); } envoy_config_endpoint_v3_ClusterLoadAssignment_Policy;
 typedef struct envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload { upb_Message UPB_PRIVATE(base); } envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload;
-typedef struct envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry { upb_Message UPB_PRIVATE(base); } envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry;
-struct envoy_config_endpoint_v3_Endpoint;
 struct envoy_config_endpoint_v3_LocalityLbEndpoints;
 struct envoy_type_v3_FractionalPercent;
 struct google_protobuf_Duration;
@@ -518,27 +516,6 @@ UPB_INLINE struct envoy_type_v3_FractionalPercent* envoy_config_endpoint_v3_Clus
     if (sub) envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload_set_drop_percentage(msg, sub);
   }
   return sub;
-}
-
-/* envoy.config.endpoint.v3.ClusterLoadAssignment.NamedEndpointsEntry */
-
-UPB_INLINE upb_StringView envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_key(const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const struct envoy_config_endpoint_v3_Endpoint* envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_value(const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry* msg) {
-  struct envoy_config_endpoint_v3_Endpoint* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_has_value(const envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry_set_value(envoy_config_endpoint_v3_ClusterLoadAssignment_NamedEndpointsEntry *msg, struct envoy_config_endpoint_v3_Endpoint* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(struct envoy_config_endpoint_v3_Endpoint*));
 }
 
 #ifdef __cplusplus

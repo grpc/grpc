@@ -181,6 +181,10 @@ UPB_INLINE envoy_type_http_v3_PathTransformation_Operation_operation_specifier_o
   return (envoy_type_http_v3_PathTransformation_Operation_operation_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_operation_specifier(envoy_type_http_v3_PathTransformation_Operation* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__http__v3__PathTransformation__Operation_msg_init, &field);
+}
 UPB_INLINE void envoy_type_http_v3_PathTransformation_Operation_clear_normalize_path_rfc_3986(envoy_type_http_v3_PathTransformation_Operation* msg) {
   const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

@@ -35,21 +35,15 @@ typedef struct envoy_data_accesslog_v3_TCPAccessLogEntry { upb_Message UPB_PRIVA
 typedef struct envoy_data_accesslog_v3_HTTPAccessLogEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPAccessLogEntry;
 typedef struct envoy_data_accesslog_v3_ConnectionProperties { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_ConnectionProperties;
 typedef struct envoy_data_accesslog_v3_AccessLogCommon { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_AccessLogCommon;
-typedef struct envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry;
-typedef struct envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry;
 typedef struct envoy_data_accesslog_v3_ResponseFlags { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_ResponseFlags;
 typedef struct envoy_data_accesslog_v3_ResponseFlags_Unauthorized { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_ResponseFlags_Unauthorized;
 typedef struct envoy_data_accesslog_v3_TLSProperties { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_TLSProperties;
 typedef struct envoy_data_accesslog_v3_TLSProperties_CertificateProperties { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_TLSProperties_CertificateProperties;
 typedef struct envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName;
 typedef struct envoy_data_accesslog_v3_HTTPRequestProperties { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPRequestProperties;
-typedef struct envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry;
 typedef struct envoy_data_accesslog_v3_HTTPResponseProperties { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPResponseProperties;
-typedef struct envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry;
-typedef struct envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry { upb_Message UPB_PRIVATE(base); } envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry;
 struct envoy_config_core_v3_Address;
 struct envoy_config_core_v3_Metadata;
-struct google_protobuf_Any;
 struct google_protobuf_Duration;
 struct google_protobuf_Timestamp;
 struct google_protobuf_UInt32Value;
@@ -1301,44 +1295,6 @@ UPB_INLINE void envoy_data_accesslog_v3_AccessLogCommon_set_access_log_type(envo
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
-/* envoy.data.accesslog.v3.AccessLogCommon.FilterStateObjectsEntry */
-
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry_key(const envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const struct google_protobuf_Any* envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry_value(const envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry* msg) {
-  struct google_protobuf_Any* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry_has_value(const envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry_set_value(envoy_data_accesslog_v3_AccessLogCommon_FilterStateObjectsEntry *msg, struct google_protobuf_Any* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(struct google_protobuf_Any*));
-}
-
-/* envoy.data.accesslog.v3.AccessLogCommon.CustomTagsEntry */
-
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry_key(const envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry_value(const envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry_set_value(envoy_data_accesslog_v3_AccessLogCommon_CustomTagsEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
-}
-
 /* envoy.data.accesslog.v3.ResponseFlags */
 
 UPB_INLINE envoy_data_accesslog_v3_ResponseFlags* envoy_data_accesslog_v3_ResponseFlags_new(upb_Arena* arena) {
@@ -2268,6 +2224,10 @@ UPB_INLINE envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAl
   return (envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName_san_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName_clear_san(envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__data__accesslog__v3__TLSProperties__CertificateProperties__SubjectAltName_msg_init, &field);
+}
 UPB_INLINE void envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName_clear_uri(envoy_data_accesslog_v3_TLSProperties_CertificateProperties_SubjectAltName* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -2645,23 +2605,6 @@ UPB_INLINE void envoy_data_accesslog_v3_HTTPRequestProperties_set_downstream_hea
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
-/* envoy.data.accesslog.v3.HTTPRequestProperties.RequestHeadersEntry */
-
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry_key(const envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry_value(const envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry_set_value(envoy_data_accesslog_v3_HTTPRequestProperties_RequestHeadersEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
-}
-
 /* envoy.data.accesslog.v3.HTTPResponseProperties */
 
 UPB_INLINE envoy_data_accesslog_v3_HTTPResponseProperties* envoy_data_accesslog_v3_HTTPResponseProperties_new(upb_Arena* arena) {
@@ -2926,40 +2869,6 @@ UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_set_upstream_head
 UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_set_downstream_header_bytes_sent(envoy_data_accesslog_v3_HTTPResponseProperties *msg, uint64_t value) {
   const upb_MiniTableField field = {8, UPB_SIZE(56, 80), 0, kUpb_NoSub, 4, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-
-/* envoy.data.accesslog.v3.HTTPResponseProperties.ResponseHeadersEntry */
-
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry_key(const envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry_value(const envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry_set_value(envoy_data_accesslog_v3_HTTPResponseProperties_ResponseHeadersEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
-}
-
-/* envoy.data.accesslog.v3.HTTPResponseProperties.ResponseTrailersEntry */
-
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry_key(const envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry_value(const envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry_set_value(envoy_data_accesslog_v3_HTTPResponseProperties_ResponseTrailersEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 #ifdef __cplusplus
