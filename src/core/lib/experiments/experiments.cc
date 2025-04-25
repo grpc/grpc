@@ -38,6 +38,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -202,6 +205,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -320,6 +325,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -484,6 +492,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -602,6 +612,9 @@ const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -766,6 +779,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
