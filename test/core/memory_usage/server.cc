@@ -46,8 +46,9 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "src/core/ext/transport/chaotic_good/server/chaotic_good_server.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/host_port.h"
 #include "src/core/xds/grpc/xds_enabled_server.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -89,7 +90,7 @@ typedef struct {
   grpc_metadata_array initial_metadata_send;
 } fling_call;
 
-// hold up to 100000 calls and 6 snaphost calls
+// hold up to 100000 calls and 6 snapshot calls
 static fling_call calls[1000006];
 
 static void request_call_unary(int call_idx) {
@@ -220,10 +221,16 @@ int main(int argc, char** argv) {
     }
   }
 
-  MemStats before_server_create = MemStats::Snapshot();
+  std::string kChaoticGoodWireFormatPreferences(
+      grpc_core::chaotic_good::WireFormatPreferences());
   if (absl::GetFlag(FLAGS_chaotic_good)) {
-    grpc_server_add_chaotic_good_port(server, addr.c_str());
-  } else if (absl::GetFlag(FLAGS_secure)) {
+    args_vec.push_back(grpc_channel_arg_string_create(
+        const_cast<char*>(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
+        const_cast<char*>(kChaoticGoodWireFormatPreferences.c_str())));
+  }
+
+  MemStats before_server_create = MemStats::Snapshot();
+  if (absl::GetFlag(FLAGS_secure)) {
     grpc_ssl_pem_key_cert_pair pem_key_cert_pair = {test_server1_key,
                                                     test_server1_cert};
     grpc_server_credentials* ssl_creds = grpc_ssl_server_credentials_create(

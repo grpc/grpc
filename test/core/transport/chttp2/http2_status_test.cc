@@ -22,6 +22,7 @@
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 
 namespace grpc_core {
 namespace http2 {

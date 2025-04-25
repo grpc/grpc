@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -76,7 +77,9 @@ void AssemblerFuzzer(
       // To avoid this test DCHECK, we are always passing is_end_stream as
       // false. Consider computing the index of the last index payload in each
       // step and setting is_end_stream to true for the last payload.
-      assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
+      absl::Status result =
+          assembler.AppendNewDataFrame(payload, /*is_end_stream=*/false);
+      VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
       EXPECT_EQ(payload.Length(), 0);
     } else {
       CHECK(std::holds_alternative<uint8_t>(step));
@@ -140,8 +143,3 @@ FUZZ_TEST(GrpcMessageAssemblerTest, AssemblerFuzzer);
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

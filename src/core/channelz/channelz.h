@@ -27,6 +27,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <initializer_list>
 #include <map>
 #include <optional>
 #include <set>
@@ -34,6 +35,7 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
@@ -126,6 +128,21 @@ class BaseNode : public RefCounted<BaseNode> {
  public:
   ~BaseNode() override;
 
+  bool HasParent(const BaseNode* parent) const {
+    MutexLock lock(&parent_mu_);
+    return parents_.find(parent) != parents_.end();
+  }
+
+  void AddParent(BaseNode* parent) {
+    MutexLock lock(&parent_mu_);
+    parents_.insert(parent->Ref());
+  }
+
+  void RemoveParent(BaseNode* parent) {
+    MutexLock lock(&parent_mu_);
+    parents_.erase(parent);
+  }
+
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_CHANNELZ_CONTAINING_BASE_NODE;
   }
@@ -141,7 +158,11 @@ class BaseNode : public RefCounted<BaseNode> {
   std::string RenderJsonString();
 
   EntityType type() const { return type_; }
-  intptr_t uuid() const { return uuid_; }
+  intptr_t uuid() {
+    const intptr_t id = uuid_.load(std::memory_order_relaxed);
+    if (id > 0) return id;
+    return UuidSlow();
+  }
   const std::string& name() const { return name_; }
 
   void RunZTrace(absl::string_view name, Timestamp deadline,
@@ -159,12 +180,22 @@ class BaseNode : public RefCounted<BaseNode> {
   friend class ChannelzRegistry;
   // allow data source to register/unregister itself
   friend class DataSource;
+  using ParentSet =
+      absl::flat_hash_set<RefCountedPtr<BaseNode>, RefCountedPtrHash<BaseNode>,
+                          RefCountedPtrEq<BaseNode>>;
+
+  intptr_t UuidSlow();
+
   const EntityType type_;
-  intptr_t uuid_;
+  std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;
   absl::InlinedVector<DataSource*, 3> data_sources_
       ABSL_GUARDED_BY(data_sources_mu_);
+  BaseNode* prev_;
+  BaseNode* next_;
+  mutable Mutex parent_mu_;
+  ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
 };
 
 class ZTrace {
@@ -317,23 +348,11 @@ class ChannelNode final : public BaseNode {
 
   void SetConnectivityState(grpc_connectivity_state state);
 
-  // TODO(roth): take in a RefCountedPtr to the child channel so we can retrieve
-  // the human-readable name.
-  void AddChildChannel(intptr_t child_uuid);
-  void RemoveChildChannel(intptr_t child_uuid);
-
-  // TODO(roth): take in a RefCountedPtr to the child subchannel so we can
-  // retrieve the human-readable name.
-  void AddChildSubchannel(intptr_t child_uuid);
-  void RemoveChildSubchannel(intptr_t child_uuid);
-
   const std::string& target() const { return target_; }
   std::optional<std::string> connectivity_state();
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  const std::set<intptr_t>& child_channels() const { return child_channels_; }
-  const std::set<intptr_t>& child_subchannels() const {
-    return child_subchannels_;
-  }
+  std::set<intptr_t> child_channels() const;
+  std::set<intptr_t> child_subchannels() const;
   const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
 
@@ -348,10 +367,6 @@ class ChannelNode final : public BaseNode {
   // Least significant bit indicates whether the value is set.  Remaining
   // bits are a grpc_connectivity_state value.
   std::atomic<int> connectivity_state_{0};
-
-  Mutex child_mu_;  // Guards sets below.
-  std::set<intptr_t> child_channels_;
-  std::set<intptr_t> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for subchannels
@@ -422,14 +437,6 @@ class ServerNode final : public BaseNode {
   std::string RenderServerSockets(intptr_t start_socket_id,
                                   intptr_t max_results);
 
-  void AddChildSocket(RefCountedPtr<SocketNode> node);
-
-  void RemoveChildSocket(intptr_t child_uuid);
-
-  void AddChildListenSocket(RefCountedPtr<ListenSocketNode> node);
-
-  void RemoveChildListenSocket(intptr_t child_uuid);
-
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
@@ -449,13 +456,9 @@ class ServerNode final : public BaseNode {
 
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
 
-  const std::map<intptr_t, RefCountedPtr<ListenSocketNode>>&
-  child_listen_sockets() const {
-    return child_listen_sockets_;
-  }
-  const std::map<intptr_t, RefCountedPtr<SocketNode>>& child_sockets() const {
-    return child_sockets_;
-  }
+  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets()
+      const;
+  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets() const;
 
   const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
@@ -464,9 +467,6 @@ class ServerNode final : public BaseNode {
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
   ChannelArgs channel_args_;
-  Mutex child_mu_;  // Guards child maps below.
-  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
 #define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
