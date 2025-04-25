@@ -152,11 +152,13 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
-  if (is_last && s->received_last_frame) {
+  if (is_last) {
     t->http2_ztrace_collector.Append(grpc_core::H2DataTrace<true>{
         t->incoming_stream_id,
         (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
         t->incoming_frame_size});
+  }
+  if (is_last && s->received_last_frame) {
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,
         t->is_client
