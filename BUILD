@@ -1256,7 +1256,9 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
+        "absl/functional:function_ref",
     ],
     deps = [
         "exec_ctx",

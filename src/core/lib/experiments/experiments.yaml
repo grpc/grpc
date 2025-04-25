@@ -66,6 +66,11 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+- name: chttp2_bound_write_size
+  description: Fix a bug where chttp2 can generate very large writes
+  expiry: 2025/09/01
+  owner: ctiller@google.com
+  test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
   expiry: 2025/06/01
@@ -236,6 +241,18 @@
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: secure_endpoint_offload_large_reads
+  description: If a large read needs to be decrypted, use a separate thread.
+  expiry: 2025/10/10
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
+  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+- name: secure_endpoint_offload_large_writes
+  description: If a large read write to be encrypted, use a separate thread.
+  expiry: 2025/10/10
+  owner: ctiller@google.com
+  test_tags: ["core_end2end_test"]
+  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
 - name: server_global_callbacks_ownership
   description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
   expiry: 2025/06/30

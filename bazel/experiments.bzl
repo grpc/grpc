@@ -22,6 +22,7 @@ EXPERIMENT_ENABLES = {
     "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
+    "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
     "event_engine_client": "event_engine_client",
     "event_engine_dns": "event_engine_dns",
@@ -47,6 +48,8 @@ EXPERIMENT_ENABLES = {
     "rq_fast_reject": "rq_fast_reject",
     "rst_stream_fix": "rst_stream_fix",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
+    "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
+    "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
     "shard_channelz_index": "shard_channelz_index",
     "shard_global_connection_pool": "shard_global_connection_pool",
@@ -73,6 +76,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -80,6 +84,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -148,6 +154,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -155,6 +162,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",
@@ -223,6 +232,7 @@ EXPERIMENTS = {
         "off": {
             "core_end2end_test": [
                 "callv3_client_auth_filter",
+                "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
@@ -230,6 +240,8 @@ EXPERIMENTS = {
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
+                "secure_endpoint_offload_large_reads",
+                "secure_endpoint_offload_large_writes",
             ],
             "cpp_end2end_test": [
                 "error_flatten",

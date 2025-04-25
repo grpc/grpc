@@ -66,6 +66,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -101,6 +102,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -121,6 +124,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -156,6 +160,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -176,6 +182,7 @@ inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
+inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
 inline bool IsErrorFlattenEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_CLIENT
 inline bool IsEventEngineClientEnabled() { return true; }
@@ -211,6 +218,8 @@ inline bool IsRqFastRejectEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
 inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
 inline bool IsShardChannelzIndexEnabled() { return true; }
@@ -229,6 +238,7 @@ enum ExperimentIds {
   kExperimentIdCallTracerTransportFix,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
+  kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
   kExperimentIdEventEngineClient,
   kExperimentIdEventEngineDns,
@@ -254,6 +264,8 @@ enum ExperimentIds {
   kExperimentIdRqFastReject,
   kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
+  kExperimentIdSecureEndpointOffloadLargeReads,
+  kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdServerGlobalCallbacksOwnership,
   kExperimentIdShardChannelzIndex,
   kExperimentIdShardGlobalConnectionPool,
@@ -282,6 +294,10 @@ inline bool IsCallv3ClientAuthFilterEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {
   return IsExperimentEnabled<kExperimentIdChaoticGoodFramingLayer>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_CHTTP2_BOUND_WRITE_SIZE
+inline bool IsChttp2BoundWriteSizeEnabled() {
+  return IsExperimentEnabled<kExperimentIdChttp2BoundWriteSize>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_ERROR_FLATTEN
 inline bool IsErrorFlattenEnabled() {
@@ -382,6 +398,14 @@ inline bool IsRstStreamFixEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
   return IsExperimentEnabled<kExperimentIdScheduleCancellationOverWrite>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_OFFLOAD_LARGE_READS
+inline bool IsSecureEndpointOffloadLargeReadsEnabled() {
+  return IsExperimentEnabled<kExperimentIdSecureEndpointOffloadLargeReads>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_SECURE_ENDPOINT_OFFLOAD_LARGE_WRITES
+inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
+  return IsExperimentEnabled<kExperimentIdSecureEndpointOffloadLargeWrites>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
