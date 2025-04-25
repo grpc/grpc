@@ -89,7 +89,7 @@ ChannelzRegistry* ChannelzRegistry::Default() {
   return singleton;
 }
 
-std::vector<RefCountedPtr<BaseNode>>
+std::vector<WeakRefCountedPtr<BaseNode>>
 ChannelzRegistry::InternalGetAllEntities() {
   return std::get<0>(node_map_->QueryNodes(
       0, [](const BaseNode*) { return true; },
@@ -138,18 +138,18 @@ void ChannelzRegistry::LegacyNodeMap::Unregister(BaseNode* node) {
   node_map_.erase(uuid);
 }
 
-std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
 ChannelzRegistry::LegacyNodeMap::QueryNodes(
     intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
     size_t max_results) {
-  RefCountedPtr<BaseNode> node_after_end;
-  std::vector<RefCountedPtr<BaseNode>> result;
+  WeakRefCountedPtr<BaseNode> node_after_end;
+  std::vector<WeakRefCountedPtr<BaseNode>> result;
   MutexLock lock(&mu_);
   for (auto it = node_map_.lower_bound(start_node); it != node_map_.end();
        ++it) {
     BaseNode* node = it->second;
     if (!filter(node)) continue;
-    auto node_ref = node->RefIfNonZero();
+    auto node_ref = node->WeakRefIfNonZero();
     if (node_ref == nullptr) continue;
     if (result.size() == max_results) {
       node_after_end = node_ref;
@@ -160,7 +160,7 @@ ChannelzRegistry::LegacyNodeMap::QueryNodes(
   return std::tuple(std::move(result), node_after_end == nullptr);
 }
 
-RefCountedPtr<BaseNode> ChannelzRegistry::LegacyNodeMap::GetNode(
+WeakRefCountedPtr<BaseNode> ChannelzRegistry::LegacyNodeMap::GetNode(
     intptr_t uuid) {
   MutexLock lock(&mu_);
   if (uuid < 1 || uuid > uuid_generator_) return nullptr;
@@ -169,7 +169,7 @@ RefCountedPtr<BaseNode> ChannelzRegistry::LegacyNodeMap::GetNode(
   // Found node.  Return only if its refcount is not zero (i.e., when we
   // know that there is no other thread about to destroy it).
   BaseNode* node = it->second;
-  return node->RefIfNonZero();
+  return node->WeakRefIfNonZero();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -196,7 +196,7 @@ void ChannelzRegistry::ShardedNodeMap::Unregister(BaseNode* node) {
   index_.erase(node->uuid_);
 }
 
-std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
 ChannelzRegistry::ShardedNodeMap::QueryNodes(
     intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
     size_t max_results) {
@@ -206,13 +206,13 @@ ChannelzRegistry::ShardedNodeMap::QueryNodes(
     nursery_visitation_order.push_back(i);
   }
   absl::c_shuffle(nursery_visitation_order, SharedBitGen());
-  RefCountedPtr<BaseNode> node_after_end;
-  std::vector<RefCountedPtr<BaseNode>> result;
+  WeakRefCountedPtr<BaseNode> node_after_end;
+  std::vector<WeakRefCountedPtr<BaseNode>> result;
   MutexLock index_lock(&index_mu_);
   for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
     BaseNode* node = it->second;
     if (!filter(node)) continue;
-    auto node_ref = node->RefIfNonZero();
+    auto node_ref = node->WeakRefIfNonZero();
     if (node_ref == nullptr) continue;
     if (result.size() == max_results) {
       node_after_end = std::move(node_ref);
@@ -230,7 +230,7 @@ ChannelzRegistry::ShardedNodeMap::QueryNodes(
         n = n->next_;
         continue;
       }
-      auto node_ref = n->RefIfNonZero();
+      auto node_ref = n->WeakRefIfNonZero();
       if (node_ref == nullptr) {
         n = n->next_;
         continue;
@@ -281,13 +281,13 @@ void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
   if (node->next_ != nullptr) node->next_->prev_ = node->prev_;
 }
 
-RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
+WeakRefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
     intptr_t uuid) {
   MutexLock index_lock(&index_mu_);
   auto it = index_.find(uuid);
   if (it == index_.end()) return nullptr;
   BaseNode* node = it->second;
-  return node->RefIfNonZero();
+  return node->WeakRefIfNonZero();
 }
 
 intptr_t ChannelzRegistry::ShardedNodeMap::NumberNode(BaseNode* node) {
@@ -330,7 +330,7 @@ char* grpc_channelz_get_servers(intptr_t start_server_id) {
 
 char* grpc_channelz_get_server(intptr_t server_id) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> server_node =
+  grpc_core::WeakRefCountedPtr<grpc_core::channelz::BaseNode> server_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (server_node == nullptr ||
       server_node->type() !=
@@ -348,7 +348,7 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t max_results) {
   grpc_core::ExecCtx exec_ctx;
   // Validate inputs before handing them of to the renderer.
-  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> base_node =
+  grpc_core::WeakRefCountedPtr<grpc_core::channelz::BaseNode> base_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (base_node == nullptr ||
       base_node->type() != grpc_core::channelz::BaseNode::EntityType::kServer ||
@@ -365,7 +365,7 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
+  grpc_core::WeakRefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
   if (channel_node == nullptr ||
       (channel_node->type() !=
@@ -382,7 +382,7 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
+  grpc_core::WeakRefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
       grpc_core::channelz::ChannelzRegistry::Get(subchannel_id);
   if (subchannel_node == nullptr ||
       subchannel_node->type() !=
@@ -397,7 +397,7 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> socket_node =
+  grpc_core::WeakRefCountedPtr<grpc_core::channelz::BaseNode> socket_node =
       grpc_core::channelz::ChannelzRegistry::Get(socket_id);
   if (socket_node == nullptr ||
       (socket_node->type() !=

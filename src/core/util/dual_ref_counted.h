@@ -199,6 +199,18 @@ class DualRefCounted : public Impl {
     return WeakRefCountedPtr<Subclass>(
         DownCast<Subclass*>(static_cast<Child*>(this)));
   }
+  GRPC_MUST_USE_RESULT WeakRefCountedPtr<Child> WeakRefIfNonZero() {
+    uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
+    do {
+      if (GetStrongRefs(prev_ref_pair) == 0 &&
+          GetWeakRefs(prev_ref_pair) == 0) {
+        return nullptr;
+      }
+    } while (!refs_.compare_exchange_weak(
+        prev_ref_pair, prev_ref_pair + MakeRefPair(0, 1),
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
+  }
 
   void WeakUnref() {
 #ifndef NDEBUG

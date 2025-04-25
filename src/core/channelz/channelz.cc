@@ -172,6 +172,8 @@ BaseNode::BaseNode(EntityType type, std::string name)
 
 BaseNode::~BaseNode() { ChannelzRegistry::Unregister(this); }
 
+void BaseNode::Orphaned() {}
+
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
 std::string BaseNode::RenderJsonString() {
