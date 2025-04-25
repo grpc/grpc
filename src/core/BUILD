@@ -7644,10 +7644,13 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "http2_status",
         "message",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
@@ -9544,6 +9547,37 @@ grpc_cc_library(
     deps = [
         "time",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "ping_promise",
+    srcs = [
+        "ext/transport/chttp2/transport/ping_promise.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/ping_promise.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "1999",
+        "if",
+        "inter_activity_latch",
+        "latch",
+        "map",
+        "match",
+        "ping_abuse_policy",
+        "ping_callbacks",
+        "ping_rate_policy",
+        "race",
+        "shared_bit_gen",
+        "sleep",
+        "time",
+        "try_seq",
+        "//:promise",
     ],
 )
 
