@@ -47,8 +47,19 @@
 
 namespace grpc_core {
 
-NativeDNSResolver::NativeDNSResolver()
-    : engine_(grpc_event_engine::experimental::GetDefaultEventEngine()) {}
+grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
+  auto engine_ptr = engine_ptr_.load(std::memory_order_relaxed);
+  if (engine_ptr == nullptr) {
+    auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+    grpc_event_engine::experimental::EventEngine* expected = nullptr;
+    if (engine_ptr_.compare_exchange_strong(expected, engine.get(),
+                                            std::memory_order_acq_rel,
+                                            std::memory_order_acq_rel)) {
+      engine_ = std::move(engine);
+    }
+  }
+  return engine_ptr;
+}
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -56,7 +67,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved = std::move(on_resolved), name, default_port]() {
+  engine()->Run([on_resolved = std::move(on_resolved), name, default_port]() {
     ExecCtx exec_ctx;
     auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
     on_resolved(std::move(result));
@@ -130,7 +141,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupSRV(
     absl::string_view /* name */, Duration /* deadline */,
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine_->Run([on_resolved] {
+  engine()->Run([on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up SRV records"));
@@ -144,7 +155,7 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupTXT(
     grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
   // Not supported
-  engine_->Run([on_resolved] {
+  engine()->Run([on_resolved] {
     ExecCtx exec_ctx;
     on_resolved(absl::UnimplementedError(
         "The Native resolver does not support looking up TXT records"));

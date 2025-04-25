@@ -30,7 +30,8 @@ namespace grpc_core {
 // A DNS resolver which uses the native platform's getaddrinfo API.
 class NativeDNSResolver : public DNSResolver {
  public:
-  NativeDNSResolver();
+  NativeDNSResolver() = default;
+  ;
 
   TaskHandle LookupHostname(
       std::function<void(absl::StatusOr<std::vector<grpc_resolved_address>>)>
@@ -59,7 +60,15 @@ class NativeDNSResolver : public DNSResolver {
   bool Cancel(TaskHandle handle) override;
 
  private:
+  // Lazily instantiate and return a pointer to the owned EventEngine.
+  // The engine needs to be lazily instantiated to avoid a mutex reacquisition,
+  // because the NativeDNSResolver is created in grpc_init, and creating an
+  // EventEngine calls grpc_init.
+  grpc_event_engine::experimental::EventEngine* engine();
+
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  std::atomic<grpc_event_engine::experimental::EventEngine*> engine_ptr_{
+      nullptr};
 };
 
 }  // namespace grpc_core

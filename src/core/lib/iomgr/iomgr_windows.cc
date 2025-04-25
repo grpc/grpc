@@ -63,11 +63,7 @@ static void iomgr_platform_init(void) {
   grpc_iocp_init();
   grpc_pollset_global_init();
   grpc_wsa_socket_flags_init();
-  if (!grpc_core::IsEventEngineDnsEnabled() ||
-      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-    grpc_core::ResetDNSResolver(
-        std::make_unique<grpc_core::NativeDNSResolver>());
-  }
+  grpc_core::ResetDNSResolver(std::make_unique<grpc_core::NativeDNSResolver>());
 }
 
 static void iomgr_platform_flush(void) { grpc_iocp_flush(); }
@@ -76,10 +72,7 @@ static void iomgr_platform_shutdown(void) {
   grpc_pollset_global_shutdown();
   grpc_iocp_shutdown();
   winsock_shutdown();
-  if (!grpc_core::IsEventEngineDnsEnabled() ||
-      !grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
-    grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
-  }
+  grpc_core::ResetDNSResolver(nullptr);  // delete the resolver
 }
 
 static void iomgr_platform_shutdown_background_closure(void) {}
