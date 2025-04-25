@@ -201,12 +201,6 @@ class GRPC_DLL CoreConfiguration {
     RegisterBuilder(BuilderScope::kEphemeral, std::move(builder), whence);
   }
 
-  // TODO(ctiller): Remove once all usage is cleaned up
-  static void RegisterBuilder(absl::AnyInvocable<void(Builder*)> builder,
-                              SourceLocation whence = {}) {
-    RegisterBuilder(BuilderScope::kEphemeral, std::move(builder), whence);
-  }
-
   // Drop the core configuration. Users must ensure no other threads are
   // accessing the configuration.
   // Clears any dynamically registered ephemeral builders.
