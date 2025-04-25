@@ -48,7 +48,7 @@ TEST(Http2StatusTest, ReturnTest) {
     Http2Status status1 = Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError, std::string(kMessage));
     EXPECT_GT(status1.DebugString().size(), 1);
-    return std::move(status1);
+    return status1;
   };
   Http2Status status2 = test_lambda();
   EXPECT_GT(status2.DebugString().size(), 1);
