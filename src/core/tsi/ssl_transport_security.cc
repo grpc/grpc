@@ -215,6 +215,11 @@ static void init_openssl(void) {
       int parsed_timeout_sec = 0;
       if (absl::SimpleAtoi(*env, &parsed_timeout_sec)) {
         timeout_sec = parsed_timeout_sec;
+      } else {
+        GRPC_TRACE_LOG(tsi, ERROR)
+            << "Invalid value [" << (*env) << "] for "
+            << GRPC_ARG_OPENSSL_CLEANUP_TIMEOUT_ENV
+            << " environment variable. Using default value of 2 seconds.";
       }
     }
 
