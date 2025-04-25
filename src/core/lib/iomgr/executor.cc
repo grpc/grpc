@@ -39,14 +39,7 @@
 namespace grpc_core {
 namespace {
 
-bool should_disable_executor() {
-#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
-  return false;
-#else
-  return IsEventEngineClientEnabled() && IsEventEngineListenerEnabled() &&
-         IsEventEngineForAllOtherEndpointsEnabled();
-#endif
-}
+bool should_disable_executor() { return true; }
 
 thread_local ThreadState* g_this_thread_state;
 
