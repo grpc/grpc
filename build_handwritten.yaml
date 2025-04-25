@@ -15,7 +15,7 @@ settings:
   core_version: 47.0.0
   csharp_major_version: 2
   g_stands_for: gradient
-  protobuf_version: 4.30.0
+  protobuf_version: 4.31.0
   supported_python_versions:
   - '3.9'
   - '3.10'
