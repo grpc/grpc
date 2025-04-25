@@ -125,9 +125,7 @@
   type: int
   description: EXPERIMENTAL. How long in seconds to wait before destroying orphaned channelz nodes.
   default: 0
-  fuzz: true
 - name: channelz_max_keepalive_nodes
   type: int
   description: EXPERIMENTAL. Maximum number of orphaned channelz nodes to keep alive.
   default: 0
-  fuzz: true

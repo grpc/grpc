@@ -23,13 +23,6 @@ namespace grpc_core {
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
     const grpc::testing::FuzzConfigVars& vars) {
   ConfigVars::Overrides overrides;
-  if (vars.has_channelz_keepalive_time()) {
-    overrides.channelz_keepalive_time = vars.channelz_keepalive_time();
-  }
-  if (vars.has_channelz_max_keepalive_nodes()) {
-    overrides.channelz_max_keepalive_nodes =
-        vars.channelz_max_keepalive_nodes();
-  }
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
