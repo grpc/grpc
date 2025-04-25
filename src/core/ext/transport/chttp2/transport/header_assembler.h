@@ -38,6 +38,13 @@ namespace http2 {
 
 #define ASSEMBLER_LOG DVLOG(3)
 
+// The peer can either send one HEADER frame which has all the headers. Such a
+// header MUST end with END_HEADERS flag set. Or the peer can send one HEADER
+// frame followed by multiple CONTINUATION frames. In this case, the last
+// CONTINUATION frame  MUST end with END_HEADERS flag set.
+// This class will first assemble all the header data into one SliceBuffer from
+// each frame. And when END_HEADERS is received, we generate the gRPC Metadata
+// from the SlicerBuffer.
 class HeaderAssembler {
  public:
   Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
