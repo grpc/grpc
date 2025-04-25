@@ -26,6 +26,7 @@
 #include <string>
 
 #include "absl/container/btree_map.h"
+#include "absl/functional/function_ref.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -99,6 +100,13 @@ class ChannelzRegistry final {
             start_server_id);
   }
 
+  static std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+  GetChildrenOfType(intptr_t start_node, const BaseNode* parent,
+                    BaseNode::EntityType type, size_t max_results) {
+    return Default()->InternalGetChildrenOfType(start_node, parent, type,
+                                                max_results);
+  }
+
   // Test only helper function to dump the JSON representation to std out.
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
@@ -116,6 +124,18 @@ class ChannelzRegistry final {
  private:
   ChannelzRegistry() : node_map_(MakeNodeMap()) {}
 
+  // Takes a callable F: (RefCountedPtr<BaseNode>) -> bool, and returns
+  // a (BaseNode*) -> bool that filters unreffed objects and returns true.
+  // The ref must be unreffed outside the NodeMapInterface iteration.
+  template <typename F>
+  static auto CollectReferences(F fn) {
+    return [fn = std::move(fn)](BaseNode* n) {
+      auto node = n->RefIfNonZero();
+      if (node == nullptr) return true;
+      return fn(std::move(node));
+    };
+  }
+
   class NodeMapInterface {
    public:
     virtual ~NodeMapInterface() = default;
@@ -123,9 +143,9 @@ class ChannelzRegistry final {
     virtual void Register(BaseNode* node) = 0;
     virtual void Unregister(BaseNode* node) = 0;
 
-    virtual void IterateNodes(
-        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
-        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) = 0;
+    virtual std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
+        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
+        size_t max_results) = 0;
     virtual RefCountedPtr<BaseNode> GetNode(intptr_t uuid) = 0;
 
     virtual intptr_t NumberNode(BaseNode* node) = 0;
@@ -136,9 +156,9 @@ class ChannelzRegistry final {
     void Register(BaseNode* node) override;
     void Unregister(BaseNode* node) override;
 
-    void IterateNodes(
-        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
-        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) override;
+    std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
+        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
+        size_t max_results) override;
     RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
 
     intptr_t NumberNode(BaseNode* node) override { return node->uuid_; }
@@ -154,9 +174,9 @@ class ChannelzRegistry final {
     void Register(BaseNode* node) override;
     void Unregister(BaseNode* node) override;
 
-    void IterateNodes(
-        intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
-        absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)>) override;
+    std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
+        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
+        size_t max_results) override;
     RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
 
     intptr_t NumberNode(BaseNode* node) override;
@@ -171,10 +191,6 @@ class ChannelzRegistry final {
     static size_t NodeShardIndex(BaseNode* node);
     static void AddNodeToHead(BaseNode* node, BaseNode*& head);
     static void RemoveNodeFromHead(BaseNode* node, BaseNode*& head);
-    // Number a batch of nodes in the nursery. Returns true if there are no more
-    // nodes to number.
-    bool NumberNurseryNodes(size_t nursery_index)
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(index_mu_);
 
     static constexpr size_t kNodeShards = 63;
     int64_t uuid_generator_{1};
@@ -205,6 +221,17 @@ class ChannelzRegistry final {
     return node_map_->GetNode(uuid);
   }
 
+  std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+  InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
+                            BaseNode::EntityType type, size_t max_results) {
+    return node_map_->QueryNodes(
+        start_node,
+        [type, parent](const BaseNode* n) {
+          return n->type() == type && n->HasParent(parent);
+        },
+        max_results);
+  }
+
   template <typename T, BaseNode::EntityType entity_type>
   RefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
     RefCountedPtr<BaseNode> node = InternalGet(uuid);
@@ -219,24 +246,14 @@ class ChannelzRegistry final {
       intptr_t start_id) {
     const int kPaginationLimit = 100;
     std::vector<RefCountedPtr<T>> top_level_channels;
-    RefCountedPtr<BaseNode> node_after_pagination_limit;
-    node_map_->IterateNodes(
-        start_id, entity_type, [&](RefCountedPtr<BaseNode> node) {
-          // Check if we are over pagination limit to determine if we need to
-          // set the "end" element. If we don't go through this block, we know
-          // that when the loop terminates, we have <= to kPaginationLimit.
-          // Note that because we have already increased this node's
-          // refcount, we need to decrease it, but we can't unref while
-          // holding the lock, because this may lead to a deadlock.
-          if (top_level_channels.size() == kPaginationLimit) {
-            node_after_pagination_limit = std::move(node);
-            return false;
-          }
-          top_level_channels.emplace_back(node->RefAsSubclass<T>());
-          return true;
-        });
-    return std::tuple(std::move(top_level_channels),
-                      node_after_pagination_limit == nullptr);
+    const auto [nodes, end] = node_map_->QueryNodes(
+        start_id,
+        [](const BaseNode* node) { return node->type() == entity_type; },
+        kPaginationLimit);
+    for (const auto& p : nodes) {
+      top_level_channels.emplace_back(p->template RefAsSubclass<T>());
+    }
+    return std::tuple(std::move(top_level_channels), end);
   }
 
   void InternalLogAllEntities();
@@ -244,6 +261,10 @@ class ChannelzRegistry final {
 
   std::unique_ptr<NodeMapInterface> node_map_;
 };
+
+// `additionalInfo` section is not yet in the protobuf format, so we
+// provide a utility to strip it for compatibility.
+std::string StripAdditionalInfoFromJson(absl::string_view json);
 
 }  // namespace channelz
 }  // namespace grpc_core

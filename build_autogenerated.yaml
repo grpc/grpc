@@ -10008,6 +10008,20 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: errqueue_support_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/errqueue_support_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  uses_polling: false
 - name: evaluate_args_test
   gtest: true
   build: test
