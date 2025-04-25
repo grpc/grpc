@@ -1475,7 +1475,7 @@ void GrpcLb::ShutdownLocked() {
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
       CHECK_NE(child_channelz_node, nullptr);
-      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+      child_channelz_node->RemoveParent(parent_channelz_node_.get());
     }
     lb_channel_.reset();
   }
@@ -1602,7 +1602,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
     auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
-      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      child_channelz_node->AddParent(parent_channelz_node.get());
       parent_channelz_node_ = std::move(parent_channelz_node);
     }
   }
