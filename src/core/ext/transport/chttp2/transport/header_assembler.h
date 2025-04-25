@@ -29,7 +29,75 @@
 namespace grpc_core {
 namespace http2 {
 
-class HeaderAssembler {};
+class HeaderAssembler {
+ public:
+  HeaderAssembler() : in_progress_(false), can_extract_(false), stream_id_(0) {}
+
+  Http2ErrorCode AppendHeaderFrame(Http2HeaderFrame& frame) {
+    // Validate input frame
+    DCHECK_GT(frame.stream_id, 0);
+
+    // Validate current state
+    if (in_progress_) {
+      return Http2ErrorCode::kProtocolError;
+    }
+    DCHECK_EQ(stream_id_, 0);
+
+    // Start header workflow
+    in_progress_ = true;
+    stream_id_ = frame.stream_id;
+
+    // Manage payload
+
+    // Manage if last frame
+    if (frame.end_headers) {
+      EndHeadersFlagSet();
+    }
+    return Http2ErrorCode::kNoError;
+  }
+
+  Http2ErrorCode AppendContinuationFrame(Http2ContinuationFrame& frame) {
+    // Validate input frame
+    DCHECK_EQ(frame.stream_id, stream_id_);
+
+    // Validate current state
+    if (!in_progress_) {
+      return Http2ErrorCode::kProtocolError;
+    }
+    DCHECK_GT(stream_id_, 0);
+
+    // Manage payload
+
+    // Manage if last frame
+    if (frame.end_headers) {
+      EndHeadersFlagSet();
+    }
+    return Http2ErrorCode::kNoError;
+  }
+
+  void ReadMetadata(HPackParser& parser, bool is_initial_metadata,
+                    bool is_client) {
+    // Validate
+    DCHECK_EQ(in_progress_, false);
+    DCHECK_EQ(can_extract_, true);
+
+    // Pass the payload to the Hpack parser.
+    // And then return it.
+  }
+
+ private:
+  void EndHeadersFlagSet() {
+    DCHECK_EQ(in_progress_, true);
+    DCHECK_GT(stream_id_, 0);
+    in_progress_ = false;
+    can_extract_ = true;
+    stream_id_ = 0;
+  }
+
+  bool in_progress_;
+  bool can_extract_;
+  uint32_t stream_id_;
+};
 
 }  // namespace http2
 }  // namespace grpc_core
