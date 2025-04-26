@@ -184,7 +184,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
  * */
 static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                                       VALUE last_state,
-                                                      VALUE deadline) {
+                                                      VALUE rb_deadline) {
   grpc_rb_channel* wrapper = NULL;
   watch_state_stack stack;
   void* op_success = 0;
@@ -200,8 +200,26 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
         "bad type for last_state. want a GRPC::Core::ChannelState constant");
     return Qnil;
   }
-  // TODO(apolcyn): poll with cq
-  return op_success ? Qtrue : Qfalse;
+  const void *tag = &wrapper;
+  gpr_timespec deadline = grpc_rb_time_timeval(rb_deadline, 0);
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
+  grpc_channel_watch_connectivity_state(wrapper->channel,
+                                        NUM2LONG(last_state),
+                                        deadline,
+                                        cq, tag);
+  grpc_event event = rb_completion_queue_pluck(cq, tag, deadline, NULL, NULL);
+  grpc_completion_queue_shutdown(cq);
+  grpc_rb_completion_queue_destroy(cq);
+  if (event.type == GRPC_OP_COMPLETE) {
+    return Qtrue;
+  } else if (event.type == GRPC_QUEUE_TIMEOUT) {
+    return Qfalse;
+  } else  {
+    grpc_absl_log_int(
+          GPR_ERROR,
+          "GRPC_RUBY: unexpected grpc_channel_watch_connectivity_state result:", event.type);
+    return Qfalse;
+  }
 }
 
 /* Create a call given a grpc_channel, in order to call method. The request
