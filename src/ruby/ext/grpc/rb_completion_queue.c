@@ -40,7 +40,7 @@ typedef struct next_call_stack {
 /* Calls grpc_completion_queue_pluck without holding the ruby GIL */
 static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
+  gpr_timespec increment = gpr_time_from_millis(200, GPR_TIMESPAN);
   gpr_timespec deadline;
   do {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
