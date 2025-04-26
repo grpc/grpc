@@ -90,7 +90,6 @@ static VALUE grpc_rb_channel_alloc(VALUE cls) {
   grpc_ruby_init();
   grpc_rb_channel* wrapper = ALLOC(grpc_rb_channel);
   wrapper->channel = NULL;
-  MEMZERO(&wrapper->args, grpc_channel_args, 1);
   return TypedData_Wrap_Struct(cls, &grpc_channel_data_type, wrapper);
 }
 
@@ -107,8 +106,6 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   VALUE rb_credentials = Qnil;
   VALUE target = Qnil;
   grpc_rb_channel* wrapper = NULL;
-  grpc_channel* ch = NULL;
-  grpc_channel_credentials* creds = NULL;
   char* target_chars = NULL;
   grpc_ruby_fork_guard();
   /* "3" == 3 mandatory args */
@@ -116,31 +113,32 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_channel_args channel_args;
-  grpc_rb_hash_convert_to_channel_args(channel_args, &channel_args);
-  if (TYPE(credentials) == T_SYMBOL) {
-    if (id_insecure_channel != SYM2ID(credentials)) {
+  grpc_rb_hash_convert_to_channel_args(rb_channel_args, &channel_args);
+  if (TYPE(rb_credentials) == T_SYMBOL) {
+    if (id_insecure_channel != SYM2ID(rb_credentials)) {
       rb_raise(rb_eTypeError,
                "bad creds symbol, want :this_channel_is_insecure");
       return Qnil;
     }
     grpc_channel_credentials* insecure_creds =
         grpc_insecure_credentials_create();
-    ch = grpc_channel_create(target_chars, insecure_creds, &channel_args);
+    wrapper->channel = grpc_channel_create(target_chars, insecure_creds, &channel_args);
     grpc_channel_credentials_release(insecure_creds);
   } else {
-    if (grpc_rb_is_channel_credentials(credentials)) {
-      creds = grpc_rb_get_wrapped_channel_credentials(credentials);
-    } else if (grpc_rb_is_xds_channel_credentials(credentials)) {
-      creds = grpc_rb_get_wrapped_xds_channel_credentials(credentials);
+    grpc_channel_credentials* creds;
+    if (grpc_rb_is_channel_credentials(rb_credentials)) {
+      creds = grpc_rb_get_wrapped_channel_credentials(rb_credentials);
+    } else if (grpc_rb_is_xds_channel_credentials(rb_credentials)) {
+      creds = grpc_rb_get_wrapped_xds_channel_credentials(rb_credentials);
     } else {
       rb_raise(rb_eTypeError,
                "bad creds, want ChannelCredentials or XdsChannelCredentials");
       return Qnil;
     }
-    channel = grpc_channel_create(target_chars, creds, &channel_args);
+    wrapper->channel = grpc_channel_create(target_chars, creds, &channel_args);
   }
-  grpc_channel_args_destroy(&channel_args);
-  if (channel == NULL) {
+  grpc_rb_channel_args_destroy(&channel_args);
+  if (wrapper->channel == NULL) {
     rb_raise(rb_eRuntimeError, "could not create an rpc channel to target:%s",
              target_chars);
     return Qnil;
@@ -172,7 +170,7 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
   }
   bool try_to_connect = RTEST(try_to_connect_param) ? true : false;
   int state = grpc_channel_check_connectivity_state(wrapper->channel, try_to_connect);
-  return LONG2NUM(stack.out);
+  return LONG2NUM(state);
 }
 
 /* Wait until the channel's connectivity state becomes different from
@@ -186,8 +184,6 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                                       VALUE last_state,
                                                       VALUE rb_deadline) {
   grpc_rb_channel* wrapper = NULL;
-  watch_state_stack stack;
-  void* op_success = 0;
   grpc_ruby_fork_guard();
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   if (wrapper->channel == NULL) {
@@ -208,7 +204,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                         deadline,
                                         cq, tag);
   grpc_event event = rb_completion_queue_pluck(
-      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
+      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
   // TODO(apolcyn): this CQ would leak if the thread were killed
   // while polling queue_pluck, e.g. with Thread#kill. One fix may be
   // to make this CQ owned by the channel object. Another fix could be to
@@ -304,7 +300,7 @@ static VALUE grpc_rb_channel_get_target(VALUE self) {
   VALUE res = Qnil;
   char* target = NULL;
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
-  target = grpc_channel_get_target(wrapper->bg_wrapped->channel);
+  target = grpc_channel_get_target(wrapper->channel);
   res = rb_str_new2(target);
   gpr_free(target);
   return res;
