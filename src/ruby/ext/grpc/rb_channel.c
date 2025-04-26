@@ -202,9 +202,6 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
   const void *tag = &wrapper;
   gpr_timespec deadline = grpc_rb_time_timeval(rb_deadline, 0);
-  // TODO(apolcyn): this CQ would leak if the thread were killed
-  // while polling queue_pluck, but the process kept running. Perhaps
-  // this CQ should be owned by the channel object.
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_channel_watch_connectivity_state(wrapper->channel,
                                         NUM2LONG(last_state),
@@ -212,6 +209,12 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                         cq, tag);
   grpc_event event = rb_completion_queue_pluck(
       cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL, NULL);
+  // TODO(apolcyn): this CQ would leak if the thread were killed
+  // while polling queue_pluck, e.g. with Thread#kill. One fix may be
+  // to make this CQ owned by the channel object. Another fix could be to
+  // busy-poll watch_connectivity_state with a short deadline, without
+  // the GIL, rather than just polling CQ pluck, and destroy the CQ
+  // before exitting the no-GIL block.
   grpc_completion_queue_shutdown(cq);
   grpc_rb_completion_queue_destroy(cq);
   if (event.type == GRPC_OP_COMPLETE) {
@@ -340,7 +343,6 @@ static void Init_grpc_connectivity_states() {
 }
 
 void Init_grpc_channel() {
-  rb_global_variable(&g_channel_polling_thread);
   grpc_rb_cChannelArgs = rb_define_class("TmpChannelArgs", rb_cObject);
   rb_undef_alloc_func(grpc_rb_cChannelArgs);
   grpc_rb_cChannel =
