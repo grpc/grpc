@@ -71,14 +71,13 @@ static void unblock_func(void* param) {
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, void* reserved) {
+                                     gpr_timespec deadline) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
   next_call.timeout = deadline;
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
-  (void)reserved;
   /* Loop until we finish a pluck without an interruption. The internal
      pluck function runs either until it is interrupted or it gets an
      event, or time runs out.
