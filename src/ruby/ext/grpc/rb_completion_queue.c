@@ -42,15 +42,14 @@ static void* grpc_rb_completion_queue_pluck_no_gil(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
   gpr_timespec increment = gpr_time_from_millis(20, GPR_TIMESPAN);
   gpr_timespec deadline;
-  do {
+  for (;;) {
     deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME), increment);
     next_call->event = grpc_completion_queue_pluck(
         next_call->cq, next_call->tag, deadline, NULL);
-    if (next_call->event.type != GRPC_QUEUE_TIMEOUT ||
-        gpr_time_cmp(deadline, next_call->timeout) > 0) {
-      break;
-    }
-  } while (!next_call->interrupted);
+    if (next_call->event.type != GRPC_QUEUE_TIMEOUT) break;
+    if (gpr_time_cmp(deadline, next_call->timeout) > 0) break;
+    if (next_call->interrupted) break;
+  }
   return NULL;
 }
 
@@ -93,8 +92,7 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                                (void*)&next_call, unblock_func,
                                (void*)&next_call);
-    /* If an interrupt prevented pluck from returning useful information, then
-       any plucks that did complete must have timed out */
-  } while (next_call.interrupted && next_call.event.type == GRPC_QUEUE_TIMEOUT);
+    if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
+  } while (next_call.interrupted);
   return next_call.event;
 }

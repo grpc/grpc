@@ -202,12 +202,16 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
   }
   const void *tag = &wrapper;
   gpr_timespec deadline = grpc_rb_time_timeval(rb_deadline, 0);
+  // TODO(apolcyn): this CQ would leak if the thread were killed
+  // while polling queue_pluck, but the process kept running. Perhaps
+  // this CQ should be owned by the channel object.
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
   grpc_channel_watch_connectivity_state(wrapper->channel,
                                         NUM2LONG(last_state),
                                         deadline,
                                         cq, tag);
-  grpc_event event = rb_completion_queue_pluck(cq, tag, deadline, NULL, NULL);
+  grpc_event event = rb_completion_queue_pluck(
+      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME), NULL, NULL);
   grpc_completion_queue_shutdown(cq);
   grpc_rb_completion_queue_destroy(cq);
   if (event.type == GRPC_OP_COMPLETE) {
