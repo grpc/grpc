@@ -29,14 +29,8 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq);
  * Makes the implementation of CompletionQueue#pluck available in other files
  *
  * This avoids having code that holds the GIL repeated at multiple sites.
- *
- * unblock_func is invoked with the provided argument to unblock the CQ
- * operation in the event of process termination (e.g. a signal), but
- * unblock_func may be NULL in which case it's unused.
  */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline,
-                                     void (*unblock_func)(void* param),
-                                     void* unblock_func_arg);
+                                     gpr_timespec deadline, void* reserved);
 
 #endif /* GRPC_RB_COMPLETION_QUEUE_H_ */
