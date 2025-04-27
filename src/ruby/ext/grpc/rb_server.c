@@ -61,11 +61,11 @@ static void grpc_rb_server_maybe_shutdown_and_notify(grpc_rb_server* server,
     server->shutdown_and_notify_done = 1;
     if (server->wrapped != NULL) {
       grpc_server_shutdown_and_notify(server->wrapped, server->queue, tag);
-      ev = rb_completion_queue_pluck(server->queue, tag, deadline);
+      ev = rb_completion_queue_pluck(server->queue, tag, deadline, "grpc_server_shutdown_and_notify first try");
       if (ev.type == GRPC_QUEUE_TIMEOUT) {
         grpc_server_cancel_all_calls(server->wrapped);
         ev = rb_completion_queue_pluck(
-            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+            server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), "grpc_server_shutdown_and_notify second try");
       }
       if (ev.type != GRPC_OP_COMPLETE) {
         grpc_absl_log_int(
@@ -216,7 +216,7 @@ static VALUE grpc_rb_server_request_call_try(VALUE value_args) {
   }
 
   grpc_event ev = rb_completion_queue_pluck(
-      args->server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+      args->server->queue, tag, gpr_inf_future(GPR_CLOCK_REALTIME), "server request call");
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "request_call completion failed");
   }

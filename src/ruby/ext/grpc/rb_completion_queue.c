@@ -34,6 +34,7 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void* tag;
+  const char* reason;
   volatile int interrupted;
 } next_call_stack;
 
@@ -65,19 +66,21 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
 
 static void unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
+  grpc_absl_log_str(GPR_DEBUG, "CQ pluck unblock func, pluck reason: %s", next_call->reason);
   next_call->interrupted = 1;
 }
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline) {
+                                     gpr_timespec deadline, const char* reason) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
   next_call.timeout = deadline;
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
+  next_call.reason = reason;
   /* Loop until we finish a pluck without an interruption. The internal
      pluck function runs either until it is interrupted or it gets an
      event, or time runs out.
@@ -91,6 +94,9 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                                (void*)&next_call, unblock_func,
                                (void*)&next_call);
+    grpc_absl_log_str(GPR_DEBUG, "CQ pluck %s complete", reason);
+    grpc_absl_log_int(GPR_DEBUG, "CQ pluck event.type: %d", next_call.event.type);
+    grpc_absl_log_int(GPR_DEBUG, "CQ pluck interrupted: %d", next_call.interrupted);
     if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
   } while (next_call.interrupted);
   return next_call.event;

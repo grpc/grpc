@@ -204,7 +204,7 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
                                         deadline,
                                         cq, tag);
   grpc_event event = rb_completion_queue_pluck(
-      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME), "grpc_channel_watch_connectivity_state");
   // TODO(apolcyn): this CQ would leak if the thread were killed
   // while polling queue_pluck, e.g. with Thread#kill. One fix may be
   // to make this CQ owned by the channel object. Another fix could be to

@@ -830,7 +830,7 @@ static VALUE grpc_rb_call_run_batch_try(VALUE value_args) {
              grpc_call_error_detail_of(err), err);
   }
   ev = rb_completion_queue_pluck(args->call->queue, tag,
-                                 gpr_inf_future(GPR_CLOCK_REALTIME));
+                                 gpr_inf_future(GPR_CLOCK_REALTIME), "call op");
   if (!ev.success) {
     rb_raise(grpc_rb_eCallError, "call#run_batch failed somehow");
   }
