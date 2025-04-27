@@ -66,7 +66,8 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
 
 static void unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
-  grpc_absl_log_str(GPR_DEBUG, "CQ pluck unblock func, pluck reason: %s", next_call->reason);
+  fprintf(stderr, "unblock_func called for %s\n", next_call->reason);
+  grpc_absl_log_str(GPR_INFO, "CQ pluck unblock func, pluck reason: %s", next_call->reason);
   next_call->interrupted = 1;
 }
 
@@ -91,12 +92,13 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
      to get back to plucking when the interrupt has been handled. */
   do {
     next_call.interrupted = 0;
+    grpc_absl_log_str(GPR_INFO, "CQ pluck begin, ", reason);
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
                                (void*)&next_call, unblock_func,
                                (void*)&next_call);
-    grpc_absl_log_str(GPR_DEBUG, "CQ pluck %s complete", reason);
-    grpc_absl_log_int(GPR_DEBUG, "CQ pluck event.type: %d", next_call.event.type);
-    grpc_absl_log_int(GPR_DEBUG, "CQ pluck interrupted: %d", next_call.interrupted);
+    grpc_absl_log_str(GPR_INFO, "CQ pluck complete, ", reason);
+    grpc_absl_log_int(GPR_INFO, "CQ pluck event.type: ", next_call.event.type);
+    grpc_absl_log_int(GPR_INFO, "CQ pluck interrupted: ", next_call.interrupted);
     if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
   } while (next_call.interrupted);
   return next_call.event;

@@ -28,6 +28,7 @@ def main
   # sleep to allow time for the client to get into
   # the middle of a "watch connectivity state" call
   sleep 3
+  STDERR.puts 'kill child'
   Process.kill('SIGTERM', client_controller.client_pid)
 
   begin
