@@ -29,10 +29,10 @@ class KeepAliveInterface {
  public:
   // Returns a promise that sends a ping frame and resolves when the ack is
   // received.
-  virtual Promise<absl::Status> SendPing() = 0;
+  virtual Promise<absl::Status> SendPingAndWaitForAck() = 0;
 
   // Returns a promise that processes the keepalive timeout.
-  virtual Promise<absl::Status> KeepAliveTimeout() = 0;
+  virtual Promise<absl::Status> OnKeepAliveTimeout() = 0;
 
   // Returns true if a keepalive ping needs to be sent.
   virtual bool NeedToSendKeepAlivePing() = 0;
@@ -45,7 +45,7 @@ class KeepaliveManager {
                    Duration keepalive_timeout, Duration keepalive_interval);
   void Spawn(Party* party);
 
-  // Needs to be called when any data is read from the peer.
+  // Needs to be called when any data is read from the endpoint.
   void GotData() {
     if (keep_alive_timeout_triggered_) {
       VLOG(2)
@@ -76,7 +76,7 @@ class KeepaliveManager {
   // 2. Ping ack is received after keepalive timeout (but before the ping
   //     timeout). In this case, if there is some data received while
   //     waiting for ping ack, the keepalive timeout is not triggered and the
-  //     promise resolves when SendPing() resolves.
+  //     promise resolves when SendPingAndWaitForAck() resolves.
   // 3. No data is received within the keepalive timeout and the keepalive
   //    timeout is triggered.
   auto TimeoutAndSendPing();
@@ -98,9 +98,9 @@ class KeepaliveManager {
       }
     };
   }
-  auto SendPing() {
+  auto SendPingAndWaitForAck() {
     DCHECK_EQ(data_received_in_last_cycle_, false);
-    return keep_alive_interface_->SendPing();
+    return keep_alive_interface_->SendPingAndWaitForAck();
   }
 
   // If no data is received in the last keepalive_interval, we should send a

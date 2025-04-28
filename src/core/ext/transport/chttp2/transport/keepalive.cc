@@ -50,7 +50,7 @@ auto KeepaliveManager::WaitForKeepAliveTimeout() {
           // WaitForData() is never resolved. This is needed as the keepalive
           // loop should break once the timeout is triggered.
           keep_alive_timeout_triggered_ = true;
-          return TrySeq(keep_alive_interface_->KeepAliveTimeout(), [] {
+          return TrySeq(keep_alive_interface_->OnKeepAliveTimeout(), [] {
             return absl::CancelledError("keepalive timeout");
           });
         });
@@ -60,14 +60,15 @@ auto KeepaliveManager::TimeoutAndSendPing() {
   DCHECK(!data_received_in_last_cycle_);
   DCHECK(keepalive_timeout_ != Duration::Infinity());
 
-  return Map(TryJoin<absl::StatusOr>(
-                 Race(WaitForData(), WaitForKeepAliveTimeout()), SendPing()),
-             [](auto result) {
-               if (!result.ok()) {
-                 return result.status();
-               }
-               return absl::OkStatus();
-             });
+  return Map(
+      TryJoin<absl::StatusOr>(Race(WaitForData(), WaitForKeepAliveTimeout()),
+                              SendPingAndWaitForAck()),
+      [](auto result) {
+        if (!result.ok()) {
+          return result.status();
+        }
+        return absl::OkStatus();
+      });
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
   LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
@@ -77,7 +78,7 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
                       return If(
                           keepalive_timeout_ != Duration::Infinity(),
                           [this] { return TimeoutAndSendPing(); },
-                          [this] { return SendPing(); });
+                          [this] { return SendPingAndWaitForAck(); });
                     },
                     []() { return Immediate(absl::OkStatus()); }),
                 [this] {

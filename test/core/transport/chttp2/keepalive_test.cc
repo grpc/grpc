@@ -39,13 +39,13 @@ using ::testing::StrictMock;
 
 class MockKeepAliveInterface : public KeepAliveInterface {
  public:
-  MOCK_METHOD(Promise<absl::Status>, SendPing, (), (override));
-  MOCK_METHOD(Promise<absl::Status>, KeepAliveTimeout, (), (override));
+  MOCK_METHOD(Promise<absl::Status>, SendPingAndWaitForAck, (), (override));
+  MOCK_METHOD(Promise<absl::Status>, OnKeepAliveTimeout, (), (override));
   MOCK_METHOD(bool, NeedToSendKeepAlivePing, (), (override));
 
   void ExpectSendPing(int& end_after) {
     DCHECK_GT(end_after, 0);
-    EXPECT_CALL(*this, SendPing())
+    EXPECT_CALL(*this, SendPingAndWaitForAck())
         .Times(end_after)
         .WillRepeatedly([&end_after] {
           LOG(INFO) << "ExpectSendPing Called. Remaining times: "
@@ -59,7 +59,7 @@ class MockKeepAliveInterface : public KeepAliveInterface {
 
   void ExpectSendPingWithSleep(Duration duration, int& end_after) {
     DCHECK_GT(end_after, 0);
-    EXPECT_CALL(*this, SendPing())
+    EXPECT_CALL(*this, SendPingAndWaitForAck())
         .Times(end_after)
         .WillRepeatedly([duration, &end_after] {
           LOG(INFO) << "ExpectSendPingWithSleep Called. Remaining times: "
@@ -73,7 +73,7 @@ class MockKeepAliveInterface : public KeepAliveInterface {
   }
 
   void ExpectKeepAliveTimeout() {
-    EXPECT_CALL(*this, KeepAliveTimeout()).WillOnce([] {
+    EXPECT_CALL(*this, OnKeepAliveTimeout()).WillOnce([] {
       return (Immediate(absl::OkStatus()));
     });
   }
