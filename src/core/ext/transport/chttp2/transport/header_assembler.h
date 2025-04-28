@@ -123,6 +123,8 @@ class HeaderAssembler {
     DCHECK_GT(stream_id_, 0);
 
     // Validate input frame
+    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
+    // this.
     DCHECK_EQ(frame.stream_id, stream_id_);
 
     // Manage payload
@@ -135,16 +137,17 @@ class HeaderAssembler {
       ASSEMBLER_LOG << "AppendHeaderFrame end_headers";
       is_ready_ = true;
     }
+
     return Http2Status::Ok();
   }
 
   void ReadMetadata(HPackParser& parser, bool is_initial_metadata,
                     bool is_client) {
+    ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
+
     // Validate
-    DCHECK_EQ(header_in_progress_, false);
     DCHECK_EQ(is_ready_, true);
 
-    ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
     // Generate the gRPC Metadata from buffer_
     // RFC9113 :  A receiver MUST terminate the connection with a connection
     // error (Section 5.4.1) of type COMPRESSION_ERROR if it does not decompress
