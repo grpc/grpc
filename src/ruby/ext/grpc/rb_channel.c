@@ -76,15 +76,13 @@ static void grpc_rb_channel_free(void* p) {
   xfree(p);
 }
 
-static rb_data_type_t grpc_channel_data_type = {"grpc_channel",
-                                                {NULL,
-                                                 grpc_rb_channel_free,
-                                                 GRPC_RB_MEMSIZE_UNAVAILABLE,
-                                                 {NULL, NULL}},
-                                                NULL,
-                                                NULL,
+static rb_data_type_t grpc_channel_data_type = {
+    "grpc_channel",
+    {NULL, grpc_rb_channel_free, GRPC_RB_MEMSIZE_UNAVAILABLE, {NULL, NULL}},
+    NULL,
+    NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
-                                                RUBY_TYPED_FREE_IMMEDIATELY
+    RUBY_TYPED_FREE_IMMEDIATELY
 #endif
 };
 
@@ -126,7 +124,8 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
     }
     grpc_channel_credentials* insecure_creds =
         grpc_insecure_credentials_create();
-    wrapper->channel = grpc_channel_create(target_chars, insecure_creds, &channel_args);
+    wrapper->channel =
+        grpc_channel_create(target_chars, insecure_creds, &channel_args);
     grpc_channel_credentials_release(insecure_creds);
   } else {
     grpc_channel_credentials* creds;
@@ -173,7 +172,8 @@ static VALUE grpc_rb_channel_get_connectivity_state(int argc, VALUE* argv,
     return Qnil;
   }
   bool try_to_connect = RTEST(try_to_connect_param) ? true : false;
-  int state = grpc_channel_check_connectivity_state(wrapper->channel, try_to_connect);
+  int state =
+      grpc_channel_check_connectivity_state(wrapper->channel, try_to_connect);
   return LONG2NUM(state);
 }
 
@@ -200,15 +200,14 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
         "bad type for last_state. want a GRPC::Core::ChannelState constant");
     return Qnil;
   }
-  const void *tag = &wrapper;
+  const void* tag = &wrapper;
   gpr_timespec deadline = grpc_rb_time_timeval(rb_deadline, 0);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(NULL);
-  grpc_channel_watch_connectivity_state(wrapper->channel,
-                                        NUM2LONG(last_state),
-                                        deadline,
-                                        cq, tag);
-  grpc_event event = rb_completion_queue_pluck(
-      cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME), "grpc_channel_watch_connectivity_state");
+  grpc_channel_watch_connectivity_state(wrapper->channel, NUM2LONG(last_state),
+                                        deadline, cq, tag);
+  grpc_event event =
+      rb_completion_queue_pluck(cq, tag, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                "grpc_channel_watch_connectivity_state");
   // TODO(apolcyn): this CQ would leak if the thread were killed
   // while polling queue_pluck, e.g. with Thread#kill. One fix may be
   // to make this CQ owned by the channel object. Another fix could be to
@@ -221,10 +220,11 @@ static VALUE grpc_rb_channel_watch_connectivity_state(VALUE self,
     return Qtrue;
   } else if (event.type == GRPC_QUEUE_TIMEOUT) {
     return Qfalse;
-  } else  {
+  } else {
     grpc_absl_log_int(
-          GPR_ERROR,
-          "GRPC_RUBY: unexpected grpc_channel_watch_connectivity_state result:", event.type);
+        GPR_ERROR,
+        "GRPC_RUBY: unexpected grpc_channel_watch_connectivity_state result:",
+        event.type);
     return Qfalse;
   }
 }
@@ -264,8 +264,8 @@ static VALUE grpc_rb_channel_create_call(VALUE self, VALUE parent, VALUE mask,
   cq = grpc_completion_queue_create_for_pluck(NULL);
   method_slice =
       grpc_slice_from_copied_buffer(RSTRING_PTR(method), RSTRING_LEN(method));
-  call = grpc_channel_create_call(wrapper->channel, parent_call,
-                                  flags, cq, method_slice, host_slice_ptr,
+  call = grpc_channel_create_call(wrapper->channel, parent_call, flags, cq,
+                                  method_slice, host_slice_ptr,
                                   grpc_rb_time_timeval(deadline,
                                                        /* absolute time */ 0),
                                   NULL);

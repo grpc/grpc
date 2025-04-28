@@ -72,7 +72,8 @@ static void unblock_func(void* param) {
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
    the GVL and handling interrupts */
 grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
-                                     gpr_timespec deadline, const char* reason) {
+                                     gpr_timespec deadline,
+                                     const char* reason) {
   next_call_stack next_call;
   MEMZERO(&next_call, next_call_stack, 1);
   next_call.cq = queue;
