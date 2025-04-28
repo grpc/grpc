@@ -73,7 +73,9 @@ CC_INCLUDES = [
     os.path.join("third_party", "abseil-cpp"),
     os.path.join("third_party", "protobuf"),
     os.path.join("third_party", "protobuf", "src"),
+    os.path.join("third_party", "protobuf", "upb_generator", "cmake"),
     os.path.join("third_party", "protobuf", "upb"),
+    os.path.join("third_party", "protobuf", "upb", "reflection", "cmake"),
     os.path.join("third_party", "protobuf", "third_party", "utf8_range"),
 ]
 
@@ -177,7 +179,31 @@ def _bazel_name_to_file_path(name):
             # end up being reported by bazel as having an extra 'wkt/google/protobuf'
             # in path. Removing it makes the compilation pass.
             # TODO(jtattermusch) Get dir of this hack.
-            return filepath.replace("wkt/google/protobuf/", "")
+            filepath = filepath.replace("wkt/google/protobuf/", "")
+
+            # The some files which Bazel generates during the build process,
+            # are not accessible for Python build. Therefore, they need to be redirected
+            # to use a pre-generated file for Cmake instead.
+            filepath = filepath.replace(
+                "/upb/reflection/stage1/", "/upb/reflection/cmake/"
+            )
+            filepath = filepath.replace(
+                "/upb_generator/stage1/", "/upb_generator/cmake/"
+            )
+            if (
+                "/upb/reflection/stage0/" in filepath
+                or "/upb_generator/stage0/" in filepath
+            ):
+                return None
+
+            # Unnecessary files that has main function need to be excluded.
+            if (
+                "/upb_generator/minitable/main.cc" in filepath
+                or "/upb_generator/c/generator.cc" in filepath
+            ):
+                return None
+
+            return filepath
     return None
 
 
