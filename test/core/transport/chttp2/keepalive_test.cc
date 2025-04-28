@@ -108,6 +108,7 @@ class KeepaliveManagerTest : public YodelTest {
 YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
   // Simple test to trigger two keepalive pings. The first one resolves
   // successfully and the second one returns a failure.
+  CHECK(false);
   InitParty();
   int end_after = 2;
   Duration keepalive_timeout = Duration::Infinity();
