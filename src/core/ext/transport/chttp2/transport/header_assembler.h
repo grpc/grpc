@@ -33,51 +33,62 @@
 namespace grpc_core {
 namespace http2 {
 
-// Conventions : If the HeaderAssembler or Client Transport code is doing
-// something wrong, we fail with a DCHECK. If the peer sent some bad data, we
-// fail with the appropriate Http2Status.
-
-// TODO(tjagtap) : Validate these conventions in the doc
+// Conventions : If the Client Transport code is doing something wrong, we fail
+// with a DCHECK. If the peer sent some bad data, we fail with the appropriate
+// Http2Status.
 
 #define ASSEMBLER_LOG DVLOG(3)
 
+constexpr absl::string_view contiguous_sequence_error =
+    "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
+    "of frames, with no interleaved frames of any other type or from any "
+    "other stream.";
+
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
-// A complete field section (which is our gRPC Metadata) consists of either:
-// a single HEADERS or PUSH_PROMISE frame, with the END_HEADERS flag set, or
-// a HEADERS or PUSH_PROMISE frame with the END_HEADERS flag unset and one or
-// more CONTINUATION frames, where the last CONTINUATION frame has the
-// END_HEADERS flag set.
+// A complete field section (which contains our gRPC Metadata) consists of
+// either: a single HEADERS or PUSH_PROMISE frame, with the END_HEADERS flag
+// set, or a HEADERS or PUSH_PROMISE frame with the END_HEADERS flag unset
+// and one or more CONTINUATION frames, where the last CONTINUATION frame
+// has the END_HEADERS flag set.
 //
-//	Each field block is processed as a discrete unit. Field blocks MUST be
-// transmitted as a contiguous sequence of frames, with no interleaved frames of
-// any other type or from any other stream. The last frame in a sequence of
-// HEADERS or CONTINUATION frames has the END_HEADERS flag set.
+// Each field block is processed as a discrete unit. Field blocks MUST be
+// transmitted as a contiguous sequence of frames, with no interleaved
+// frames of any other type or from any other stream. The last frame in a
+// sequence of HEADERS or CONTINUATION frames has the END_HEADERS flag set.
 //
-// This class will first assemble all the header data into one SliceBuffer from
-// each frame. And when END_HEADERS is received, we generate the gRPC Metadata
-// from the SlicerBuffer.
+// This class will first assemble all the header data into one SliceBuffer
+// from each frame. And when END_HEADERS is received, we generate the gRPC
+// Metadata from the SlicerBuffer.
 class HeaderAssembler {
  public:
+  // Call this for each incoming HTTP2 Header frame.
+  // The payload of the Http2HeaderFrame will be cleared in this function.
   Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
     // Validate current state of Assembler
     if (header_in_progress_) {
-      // TODO Get rfc quote
-      return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
+      LOG(ERROR) << "Connection Error: " << contiguous_sequence_error;
+      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                               contiguous_sequence_error);
     }
-    DCHECK(is_ready_==false);
+    DCHECK(is_ready_ == false);
     DCHECK_EQ(stream_id_, 0);
     DCHECK_EQ(buffer_.Length(), 0);
 
     // Validate input frame
+    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
+    // this.
     DCHECK_GT(frame.stream_id, 0);
+    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
+    // this.
     DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
 
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
     if constexpr (sizeof(size_t) == 4) {
       if (buffer_.Length() >= UINT32_MAX - current_len) {
-        // STREAM_ERROR
+        LOG(ERROR)
+            << "Stream Error: SliceBuffer overflow for 32 bit platforms.";
         return Http2Status::Http2StreamError(
             Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
@@ -104,10 +115,11 @@ class HeaderAssembler {
   Http2Status AppendContinuationFrame(Http2ContinuationFrame& frame) {
     // Validate current state
     if (!header_in_progress_) {
-      // TODO Get rfc quote
-      return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
+      LOG(ERROR) << "Connection Error: " << contiguous_sequence_error;
+      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                               contiguous_sequence_error);
     }
-    DCHECK(is_ready_==false);
+    DCHECK(is_ready_ == false);
     DCHECK_GT(stream_id_, 0);
 
     // Validate input frame
