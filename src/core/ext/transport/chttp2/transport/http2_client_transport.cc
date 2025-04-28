@@ -89,7 +89,7 @@ void Http2ClientTransport::CloseTransport() {
 
 void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args) {
   ping_timeout_ = std::max(
-      grpc_core::Duration::Zero(),
+      Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
           .value_or(keepalive_interval_ == grpc_core::Duration::Infinity()
                         ? Duration::Infinity()
