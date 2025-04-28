@@ -231,7 +231,7 @@ g_stands_for = "gesundheit"  # @unused
 
 core_version = "44.0.0"  # @unused
 
-version = "1.67.1"  # @unused
+version = "1.67.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
