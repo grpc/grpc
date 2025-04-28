@@ -80,14 +80,9 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   next_call.reason = reason;
-  /* Loop until we finish a pluck without an interruption. The internal
-     pluck function runs either until it is interrupted or it gets an
-     event, or time runs out.
-
-     The basic reason we need this relatively complicated construction is that
-     we need to re-acquire the GVL when an interrupt comes in, so that the ruby
-     interpreter can do what it needs to do with the interrupt. But we also need
-     to get back to plucking when the interrupt has been handled. */
+  /* Loop until we finish a pluck without an interruption. See
+   * https://github.com/grpc/grpc/issues/38210 for an example of why
+   * this is necessary. */
   do {
     next_call.interrupted = 0;
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
