@@ -7693,6 +7693,9 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
     ],
+    deps = [
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
