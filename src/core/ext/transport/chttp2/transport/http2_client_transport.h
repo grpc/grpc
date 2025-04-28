@@ -218,13 +218,13 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
   void CloseTransport();
-  bool bytes_sent_in_last_write_ = 0;
+  bool bytes_sent_in_last_write_ = false;
   void ReadChannelArgs(const ChannelArgs& channel_args);
 
   // Ping related members
   PingManager ping_system_;
   Duration ping_timeout_;
-  Duration keepalive_interval_ = grpc_core::Duration::Seconds(20);
+  Duration keepalive_interval_ = Duration::Seconds(20);
 
   // Flags
   bool keepalive_permit_without_calls_ = false;
@@ -243,9 +243,9 @@ class Http2ClientTransport final : public ClientTransport {
 
   Duration NextAllowedPingInterval() {
     MutexLock lock(&transport_mutex_);
-    return ((keepalive_permit_without_calls_ == false) && stream_list_.empty())
-               ? grpc_core::Duration::Hours(2)
-               : grpc_core::Duration::Seconds(1);
+    return (!keepalive_permit_without_calls_ && stream_list_.empty())
+               ? Duration::Hours(2)
+               : Duration::Seconds(1);
   }
 
   auto MaybeSendPing() {

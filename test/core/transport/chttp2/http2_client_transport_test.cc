@@ -247,12 +247,12 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   // 1. A ping request is written to the endpoint. The opaque id is not verified
   // while endpoint write as it is an internally generated random number.
   // 2. The ping request promise is resolved once ping ack is received.
-  // 3. Dummy acks are ignored.
+  // 3. Redundant acks are ignored.
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
 
-  // Dummy ping ack
+  // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
@@ -367,7 +367,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
 
-  // Dummy ping ack
+  // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
       {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,

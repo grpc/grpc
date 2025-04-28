@@ -92,8 +92,8 @@ void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args) {
       grpc_core::Duration::Zero(),
       channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
           .value_or(keepalive_interval_ == grpc_core::Duration::Infinity()
-                        ? grpc_core::Duration::Infinity()
-                        : grpc_core::Duration::Minutes(1)));
+                        ? Duration::Infinity()
+                        : Duration::Minutes(1)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
