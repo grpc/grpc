@@ -1256,7 +1256,6 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
-    // TODO(ctiller): add channelz node
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(&mu_global_);
     if (ShutdownCalled()) {
@@ -1264,6 +1263,9 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
+      socket_node->AddParent(channelz_node_.get());
+    }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
