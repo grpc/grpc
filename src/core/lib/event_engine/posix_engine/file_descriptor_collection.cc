@@ -86,7 +86,8 @@ FileDescriptorCollection::ClearAndReturnRawDescriptors() {
 
 #else  // GRPC_ENABLE_FORK_SUPPORT
 
-FileDescriptorCollection::FileDescriptorCollection(int generation) noexcept {}
+FileDescriptorCollection::FileDescriptorCollection(
+    int /* generation */) noexcept {}
 
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept = default;
