@@ -33,16 +33,19 @@
 namespace grpc_core {
 namespace http2 {
 
-// Conventions : If the Client Transport code is doing something wrong, we fail
-// with a DCHECK. If the peer sent some bad data, we fail with the appropriate
-// Http2Status.
+// If the Client Transport code is doing something wrong, we fail with a DCHECK.
+// If the peer sent some bad data, we fail with the appropriate Http2Status.
 
 #define ASSEMBLER_LOG DVLOG(3)
 
-constexpr absl::string_view contiguous_sequence_error =
+constexpr absl::string_view kAssemblerContiguousSequenceError =
     "RFC9113 : Field blocks MUST be transmitted as a contiguous sequence "
     "of frames, with no interleaved frames of any other type or from any "
     "other stream.";
+
+constexpr absl::string_view kAssemblerMismatchedStreamId =
+    "CONTINUATION frame has a different  Stream Identifier than the preceeding "
+    "HEADERS frame.";
 
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
@@ -67,9 +70,10 @@ class HeaderAssembler {
   Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
     // Validate current state of Assembler
     if (header_in_progress_) {
-      LOG(ERROR) << "Connection Error: " << contiguous_sequence_error;
-      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                               contiguous_sequence_error);
+      Cleanup();
+      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError, kAssemblerContiguousSequenceError);
     }
     DCHECK(is_ready_ == false);
     DCHECK_EQ(stream_id_, 0);
@@ -78,15 +82,14 @@ class HeaderAssembler {
     // Validate input frame
     // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
     // this.
-    DCHECK_GT(frame.stream_id, 0);
-    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
-    // this.
-    DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
+    DCHECK_GT(frame.stream_id, 0)
+        << "RFC9113 : HEADERS frames MUST be associated with a stream.";
 
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
     if constexpr (sizeof(size_t) == 4) {
       if (buffer_.Length() >= UINT32_MAX - current_len) {
+        Cleanup();
         LOG(ERROR)
             << "Stream Error: SliceBuffer overflow for 32 bit platforms.";
         return Http2Status::Http2StreamError(
@@ -115,17 +118,21 @@ class HeaderAssembler {
   Http2Status AppendContinuationFrame(Http2ContinuationFrame& frame) {
     // Validate current state
     if (!header_in_progress_) {
-      LOG(ERROR) << "Connection Error: " << contiguous_sequence_error;
-      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                               contiguous_sequence_error);
+      Cleanup();
+      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError, kAssemblerContiguousSequenceError);
     }
     DCHECK(is_ready_ == false);
     DCHECK_GT(stream_id_, 0);
 
     // Validate input frame
-    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
-    // this.
-    DCHECK_EQ(frame.stream_id, stream_id_);
+    if (frame.stream_id != stream_id_) {
+      Cleanup();
+      LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
+      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                               kAssemblerMismatchedStreamId);
+    }
 
     // Manage payload
     const size_t current_len = frame.payload.Length();
@@ -141,8 +148,10 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
-  void ReadMetadata(HPackParser& parser, bool is_initial_metadata,
-                    bool is_client) {
+  // TODO return correct type
+  Http2StatusOr<Metadata> ReadMetadata(HPackParser& parser,
+                                       bool is_initial_metadata,
+                                       bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
@@ -159,6 +168,10 @@ class HeaderAssembler {
 
   HeaderAssembler()
       : header_in_progress_(false), is_ready_(false), stream_id_(0) {}
+
+  size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
+
+  bool IsReady() const { return is_ready_; }
 
  private:
   void Cleanup() {
