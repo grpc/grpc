@@ -31,6 +31,7 @@ namespace grpc_core {
 namespace http2 {
 using SendPingArgs = ::grpc_core::http2::PingInterface::SendPingArgs;
 using Callback = absl::AnyInvocable<void()>;
+using grpc_event_engine::experimental::EventEngine;
 
 #define PING_LOG                                           \
   LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
@@ -54,10 +55,9 @@ Promise<absl::Status> PingManager::PingPromiseCallbacks::WaitForPingAck() {
 }
 
 // Ping System implementation
-PingManager::PingManager(
-    const ChannelArgs& channel_args,
-    std::unique_ptr<PingInterface> ping_interface,
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine)
+PingManager::PingManager(const ChannelArgs& channel_args,
+                         std::unique_ptr<PingInterface> ping_interface,
+                         std::shared_ptr<EventEngine> event_engine)
     : ping_callbacks_(event_engine),
       ping_abuse_policy_(channel_args),
       ping_rate_policy_(channel_args, /*is_client=*/true),
