@@ -65,9 +65,9 @@ class HeaderAssembler {
       // TODO Get rfc quote
       return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
     }
-    DCHECK_FALSE(is_ready_);
+    DCHECK(is_ready_==false);
     DCHECK_EQ(stream_id_, 0);
-    DCHECK_EQ(buffer.Length(), 0);
+    DCHECK_EQ(buffer_.Length(), 0);
 
     // Validate input frame
     DCHECK_GT(frame.stream_id, 0);
@@ -78,8 +78,8 @@ class HeaderAssembler {
     if constexpr (sizeof(size_t) == 4) {
       if (buffer_.Length() >= UINT32_MAX - current_len) {
         // STREAM_ERROR
-        return Http2Status::Status(
-            absl::StatusCode::kInternal,
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
@@ -107,12 +107,11 @@ class HeaderAssembler {
       // TODO Get rfc quote
       return Http2Status::Http2StreamError(Http2ErrorCode::kProtocolError, "");
     }
-    DCHECK_FALSE(is_ready_);
+    DCHECK(is_ready_==false);
     DCHECK_GT(stream_id_, 0);
 
     // Validate input frame
     DCHECK_EQ(frame.stream_id, stream_id_);
-    DCHECK(!frame.end_stream || (frame.end_stream && frame.end_headers));
 
     // Manage payload
     const size_t current_len = frame.payload.Length();
