@@ -474,8 +474,8 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       EventEngineWakeupScheduler(connection_->listener_->event_engine_),
       [self = Ref()](absl::Status status) {
         if (!status.ok()) {
-          GRPC_TRACE_LOG(chaotic_good, ERROR)
-              << "Server setting frame handling failed: " << status;
+          self->connection_->listener_->LogConnectionFailure(
+              "Chaotic Good handshake failed", status);
         }
         self->connection_->Done();
       },
