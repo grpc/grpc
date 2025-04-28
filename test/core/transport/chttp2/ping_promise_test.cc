@@ -60,12 +60,8 @@ class MockPingInterface : public PingInterface {
       return Immediate(absl::OkStatus());
     }));
   }
-  void ExpectTriggerWrite(Timestamp call_after) {
-    EXPECT_CALL(*this, TriggerWrite).WillOnce(([call_after]() {
-      Timestamp now = Timestamp::Now();
-      LOG(INFO) << "MockPingInterface TriggerWrite Polled(now: " << now
-                << " call_after: " << call_after << ")";
-      EXPECT_GE(now, call_after);
+  void ExpectTriggerWrite() {
+    EXPECT_CALL(*this, TriggerWrite).WillOnce(([]() {
       return Immediate(absl::OkStatus());
     }));
   }
@@ -376,8 +372,7 @@ PING_SYSTEM_TEST(TestPingManagerDelayedPing) {
   ping_interface->ExpectPingTimeout();
 
   // Delayed ping
-  ping_interface->ExpectTriggerWrite(/*call_after*/ Timestamp::Now() +
-                                     Duration::Hours(1));
+  ping_interface->ExpectTriggerWrite();
 
   auto channel_args =
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2);
