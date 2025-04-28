@@ -14,6 +14,7 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_ARES_RESOLVER_H
 
+#include <absl/strings/string_view.h>
 #include <grpc/support/port_platform.h>
 
 #include <utility>
@@ -79,11 +80,10 @@ class AresResolver : public RefCountedDNSResolverInterface {
                  absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
   void LookupTXT(EventEngine::DNSResolver::LookupTXTCallback callback,
                  absl::string_view name) ABSL_LOCKS_EXCLUDED(mutex_) override;
-
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   std::weak_ptr<ReinitHandle> GetReinitHandle();
-  void Reinitialize();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+
  private:
   // A FdNode saves (not owns) a live socket/fd which c-ares creates, and owns a
   // GrpcPolledFd object which has a platform-agnostic interface to interact
@@ -132,6 +132,12 @@ class AresResolver : public RefCountedDNSResolverInterface {
   static void OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
                               unsigned char* buf,
                               int len) ABSL_NO_THREAD_SAFETY_ANALYSIS;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  void Reinitialize();
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  void ShutdownLocked(const absl::Status& shutdown_status,
+                      absl::string_view reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   grpc_core::Mutex mutex_;
   bool shutting_down_ ABSL_GUARDED_BY(mutex_) = false;
@@ -143,8 +149,8 @@ class AresResolver : public RefCountedDNSResolverInterface {
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
   std::shared_ptr<EventEngine> event_engine_;
-  std::string dns_server_;
 #ifdef GRPC_ENABLE_FORK_SUPPORT
+  std::string dns_server_;
   grpc_core::Mutex reinit_handle_mu_;
   std::shared_ptr<ReinitHandle> reinit_handle_
       ABSL_GUARDED_BY(reinit_handle_mu_);

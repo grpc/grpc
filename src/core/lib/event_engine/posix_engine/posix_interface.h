@@ -20,7 +20,6 @@
 #include <cerrno>
 #include <cstdint>
 #include <functional>
-#include <optional>
 #include <string>
 #include <utility>
 
@@ -69,8 +68,7 @@ class EventEnginePosixInterface {
   void Close(const FileDescriptor& fd);
   // Retrieves the raw POSIX file descriptor, if valid for the current
   // generation.
-  PosixErrorOr<int> GetFd(
-      const FileDescriptor& fd);  // Corrected: Added parameter
+  PosixErrorOr<int> GetFd(const FileDescriptor& fd);
 
   // ---- Socket/FD Creation Factories ----
   struct PosixSocketCreateResult {
@@ -101,7 +99,7 @@ class EventEnginePosixInterface {
   // If addr is AF_INET, AF_UNIX, or anything else, then this is similar to
   // calling socket() directly.
   //
-  // Returns an FileDescriptor on success, otherwise returns a not-OK
+  // Returns a FileDescriptor on success, otherwise returns a not-OK
   // absl::Status
   //
   // The dsmode output indicates which address family was actually created.
@@ -142,7 +140,8 @@ class EventEnginePosixInterface {
   // (static).
   static void ConfigureDefaultTcpUserTimeout(bool enable, int timeout,
                                              bool is_client);
-  // Applies standard configuration to a socket based on its type.
+  // Applies standard configuration to a socket based on its type. Returns zero
+  // to indicate a success or a negative value to indicate an error
   int ConfigureSocket(const FileDescriptor& fd, int type);
   // Gets a socket option value (getsockopt wrapper).
   PosixError GetSockOpt(const FileDescriptor& fd, int level, int optname,

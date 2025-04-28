@@ -52,12 +52,8 @@ namespace grpc_event_engine::experimental {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
-namespace {
-
 using ReadArgs = EventEngine::Endpoint::ReadArgs;
 using WriteArgs = EventEngine::Endpoint::WriteArgs;
-
-}  // namespace
 
 MATCHER(IsOk, "is ok") { return arg.ok(); }
 

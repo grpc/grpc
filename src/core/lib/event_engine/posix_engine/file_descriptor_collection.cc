@@ -29,6 +29,9 @@ bool IsForkEnabled() { return grpc_core::IsEventEngineForkEnabled(); }
 
 }  // namespace
 
+FileDescriptorCollection::FileDescriptorCollection(int generation) noexcept
+    : generation_(generation) {}
+
 FileDescriptorCollection::FileDescriptorCollection(
     FileDescriptorCollection&& other) noexcept
     : generation_(other.generation_) {
@@ -63,7 +66,7 @@ bool FileDescriptorCollection::Remove(const FileDescriptor& fd) {
   }
   if (fd.generation() == generation_) {
     grpc_core::MutexLock lock(&mu_);
-    return file_descriptors_.erase(fd.fd_) == 1;
+    return file_descriptors_.erase(fd.fd()) == 1;
   }
   return false;
 }
@@ -83,15 +86,13 @@ FileDescriptorCollection::ClearAndReturnRawDescriptors() {
 
 #else  // GRPC_ENABLE_FORK_SUPPORT
 
+FileDescriptorCollection::FileDescriptorCollection(int generation) noexcept {}
+
 FileDescriptorCollection::FileDescriptorCollection(
-    FileDescriptorCollection&& other) noexcept
-    : generation_(other.generation_) {}
+    FileDescriptorCollection&& other) noexcept = default;
 
 FileDescriptorCollection& FileDescriptorCollection::operator=(
-    FileDescriptorCollection&& other) noexcept {
-  generation_ = other.generation_;
-  return *this;
-}
+    FileDescriptorCollection&& other) noexcept = default;
 
 FileDescriptor FileDescriptorCollection::Add(int fd) {
   return FileDescriptor(fd, 0);

@@ -365,9 +365,9 @@ void PollEventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
       // NotifyOnLocked immediately scheduled some closure. It would have set
       // the closure state to NOT_READY. We need to wakeup the Work(...) thread
       // to start polling on this fd. If this call is not made, it is possible
-      // that the poller will reach a state where all the posix_interface()
-      // under the poller's control are not polled for POLLIN/POLLOUT events
-      // thus leading to an indefinitely blocked Work(..) method.
+      // that the poller will reach a state where all the fds under the
+      // poller's control are not polled for POLLIN/POLLOUT events thus leading
+      // to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
   }
@@ -387,9 +387,9 @@ void PollEventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
       // NotifyOnLocked immediately scheduled some closure. It would have set
       // the closure state to NOT_READY. We need to wakeup the Work(...) thread
       // to start polling on this fd. If this call is not made, it is possible
-      // that the poller will reach a state where all the posix_interface()
-      // under the poller's control are not polled for POLLIN/POLLOUT events
-      // thus leading to an indefinitely blocked Work(..) method.
+      // that the poller will reach a state where all the fds under the
+      // poller's control are not polled for POLLIN/POLLOUT events thus leading
+      // to an indefinitely blocked Work(..) method.
       poller_->KickExternal(false);
     }
   }
@@ -626,8 +626,8 @@ Poller::WorkResult PollPoller::Work(
           // This fd was Watched with a watch mask > 0.
           if (watch_mask > 0 && r < 0) {
             // This case implies the fd was polled (since watch_mask > 0 and
-            // the poll returned an error. Mark the posix_interface() as both
-            // readable and writable.
+            // the poll returned an error. Mark the fds as both readable and
+            // writable.
             if (head->EndPollLocked(true, true)) {
               // Its safe to add to list of pending events because
               // EndPollLocked returns true only when the handle is

@@ -30,52 +30,43 @@ namespace grpc_event_engine::experimental {
 
 class PosixError {
  public:
-  static PosixError WrongGeneration() {
-    return PosixError(WrongGenerationError());
+  static constexpr PosixError Ok() { return PosixError(kOk); }
+
+  static constexpr PosixError Error(int errno_value) {
+    CHECK_GT(errno_value, 0);
+    return PosixError(errno_value);
   }
 
-  static PosixError Error(int errno_value) {
-    return PosixError(PosixErrorValue{errno_value});
+  static constexpr PosixError WrongGeneration() {
+    return PosixError(kWrongGenerationError);
   }
 
-  PosixError() : PosixError(std::monostate()) {}
+  constexpr bool ok() const { return payload_ == kOk; }
 
-  bool ok() const { return std::holds_alternative<std::monostate>(payload_); }
-
-  bool IsPosixError() const {
-    return std::holds_alternative<PosixErrorValue>(payload_);
-  }
+  bool IsPosixError() const { return payload_ > 0; }
 
   bool IsPosixError(int errno_value) const {
-    const PosixErrorValue* error_value =
-        std::get_if<PosixErrorValue>(&payload_);
-    return error_value != nullptr && error_value->errno_value == errno_value;
+    return errno_value >= 0 && payload_ == errno_value;
   }
 
   bool IsWrongGenerationError() const {
-    return std::holds_alternative<WrongGenerationError>(payload_);
+    return payload_ == kWrongGenerationError;
   }
 
   std::optional<int> errno_value() const {
-    if (std::holds_alternative<PosixErrorValue>(payload_)) {
-      return std::get<PosixErrorValue>(payload_).errno_value;
-    }
+    if (payload_ > 0) return payload_;
     return std::nullopt;
   }
 
   std::string StrError() const;
 
  private:
-  struct PosixErrorValue {
-    int errno_value;
-  };
-  struct WrongGenerationError {};
-  using Payload =
-      std::variant<std::monostate, PosixErrorValue, WrongGenerationError>;
+  static constexpr int kWrongGenerationError = -1;
+  static constexpr int kOk = 0;
 
-  explicit PosixError(Payload error) : payload_(error) {}
+  explicit constexpr PosixError(int error) : payload_(error) {}
 
-  Payload payload_;
+  int payload_;
 };
 
 template <typename T>
@@ -86,7 +77,13 @@ class PosixErrorOr {
   constexpr PosixErrorOr() = default;
   constexpr PosixErrorOr(const PosixErrorOr& other) = default;
   constexpr PosixErrorOr(PosixErrorOr&& other) = default;
-  explicit constexpr PosixErrorOr(Payload error) : value_(std::move(error)) {}
+  constexpr PosixErrorOr(  // NOLINT(google-explicit-constructor)
+      const PosixError& error)
+      : value_(error) {
+    CHECK(!error.ok());
+  }
+  constexpr PosixErrorOr(T&& value)  // NOLINT(google-explicit-constructor)
+      : value_(std::forward<T>(value)) {}
   PosixErrorOr& operator=(const PosixErrorOr& other) = default;
   PosixErrorOr& operator=(PosixErrorOr&& other) = default;
 
@@ -144,12 +141,12 @@ class PosixErrorOr {
 // forks. Otherwise, it only stores the fd.
 class FileDescriptor {
  public:
-  constexpr FileDescriptor() = default;
+  constexpr FileDescriptor() noexcept = default;
 #if GRPC_ENABLE_FORK_SUPPORT
-  constexpr FileDescriptor(int fd, int generation)
+  constexpr FileDescriptor(int fd, int generation) noexcept
       : fd_(fd), generation_(generation) {};
 #else   // GRPC_ENABLE_FORK_SUPPORT
-  constexpr FileDescriptor(int fd, int /* generation */) : fd_(fd) {};
+  constexpr FileDescriptor(int fd, int /* generation */) noexcept : fd_(fd) {};
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
   bool ready() const { return fd_ >= 0; }
@@ -185,10 +182,6 @@ class FileDescriptor {
   }
 
  private:
-  // Can get raw fd!
-  friend class FileDescriptorCollection;
-  friend class EventEnginePosixInterface;
-
   int fd_ = -1;
 #if GRPC_ENABLE_FORK_SUPPORT
   int generation_ = 0;
@@ -200,7 +193,7 @@ class FileDescriptor {
 // to ensure FDs created before a fork are not used after the fork.
 class FileDescriptorCollection {
  public:
-  explicit FileDescriptorCollection(int generation) : generation_(generation) {}
+  explicit FileDescriptorCollection(int generation) noexcept;
   FileDescriptorCollection(FileDescriptorCollection&& other) noexcept;
   FileDescriptorCollection& operator=(
       FileDescriptorCollection&& other) noexcept;
@@ -217,15 +210,19 @@ class FileDescriptorCollection {
   absl::flat_hash_set<int> ClearAndReturnRawDescriptors();
 
   // Returns the current generation number of the collection.
+#if GRPC_ENABLE_FORK_SUPPORT
   int generation() const { return generation_; }
+#else   // GRPC_ENABLE_FORK_SUPPORT
+  int generation() const { return 0; }
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
 #if GRPC_ENABLE_FORK_SUPPORT
   grpc_core::Mutex mu_;
   absl::flat_hash_set<int> file_descriptors_ ABSL_GUARDED_BY(mu_);
-#endif  // GRPC_ENABLE_FORK_SUPPORT
   // Never changed outside of ctor, no need to synchronize
   int generation_;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental

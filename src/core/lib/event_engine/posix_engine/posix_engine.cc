@@ -314,7 +314,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 
   int so_error = 0;
-  PosixError err;
+  PosixError err = PosixError::Ok();
   do {
     so_error_size = sizeof(so_error);
     err = fd->Poller()->posix_interface().GetSockOpt(
@@ -378,7 +378,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  PosixError err;
+  PosixError err = PosixError::Ok();
   int connect_errno;
   do {
     err = poller_manager_.Poller()->posix_interface().Connect(
@@ -676,9 +676,11 @@ PosixEventEngine::GetDNSResolver(
       return ares_resolver.status();
     }
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
-    grpc_core::MutexLock lock(&mu_);
-    RegisterResolver(&resolver_handles_,
-                     ares_resolver->get()->GetReinitHandle());
+    {
+      grpc_core::MutexLock lock(&mu_);
+      RegisterResolver(&resolver_handles_,
+                       ares_resolver->get()->GetReinitHandle());
+    }
 #endif  // GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     return std::make_unique<PosixEventEngine::PosixDNSResolver>(
         std::move(*ares_resolver));
