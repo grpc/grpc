@@ -218,7 +218,7 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
   void CloseTransport();
-  uint64_t bytes_sent_in_last_write_ = 0;
+  bool bytes_sent_in_last_write_ = 0;
   void ReadChannelArgs(const ChannelArgs& channel_args);
 
   // Ping related members
