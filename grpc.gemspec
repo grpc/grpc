@@ -101,6 +101,7 @@ Gem::Specification.new do |s|
   s.files += %w( include/grpc/impl/slice_type.h )
   s.files += %w( include/grpc/load_reporting.h )
   s.files += %w( include/grpc/passive_listener.h )
+  s.files += %w( include/grpc/secure_posix.h )
   s.files += %w( include/grpc/slice.h )
   s.files += %w( include/grpc/slice_buffer.h )
   s.files += %w( include/grpc/status.h )

@@ -30,6 +30,12 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
+// Step 2: rishesh@
+/** This arg is intended for internal use only, primarily
+ *  for passing endpoint information during subchannel creation or connection.
+ */
+#define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
+
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 // TODO(hork): remove all references to the factory methods.
 namespace grpc_event_engine {
@@ -174,7 +180,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint : public Extensible {
+  class Endpoint :  public std::enable_shared_from_this<Endpoint>, public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -370,6 +376,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// Returns the key of the write metric with the given name.
     /// If the name is not found, returns std::nullopt.
     virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
+
+    static std::string_view ChannelArgName() { return GRPC_ARG_SUBCHANNEL_ENDPOINT; }
   };
 
   /// Called when a new connection is established.

@@ -4647,6 +4647,7 @@ add_library(grpc++
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/secure_posix.cc
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
@@ -4819,6 +4820,7 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/secure_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
@@ -5396,6 +5398,7 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/secure_posix.cc
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/alarm.cc
@@ -5559,6 +5562,7 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
+  include/grpcpp/secure_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h

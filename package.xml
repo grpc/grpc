@@ -83,6 +83,7 @@
     <file baseinstalldir="/" name="include/grpc/impl/slice_type.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/load_reporting.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/passive_listener.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/secure_posix.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/slice_buffer.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/status.h" role="src" />

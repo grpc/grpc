@@ -3082,6 +3082,7 @@ src/cpp/client/create_channel_posix.cc \
 src/cpp/client/global_callback_hook.cc \
 src/cpp/client/insecure_credentials.cc \
 src/cpp/client/secure_credentials.cc \
+src/cpp/client/secure_posix.cc \
 src/cpp/client/secure_credentials.h \
 src/cpp/client/xds_credentials.cc \
 src/cpp/common/alarm.cc \

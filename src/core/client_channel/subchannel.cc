@@ -16,6 +16,7 @@
 
 #include "src/core/client_channel/subchannel.h"
 
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -426,7 +427,7 @@ class Subchannel::ConnectedSubchannelStateWatcher final
         // pass along the status from the transport, since it may have
         // keepalive info attached to it that the channel needs.
         // TODO(roth): Consider whether there's a cleaner way to do this.
-        c->SetConnectivityStateLocked(GRPC_CHANNEL_IDLE, status);
+        c->SetConnectivityStateLocked(c->created_from_endpoint_ ? GRPC_CHANNEL_TRANSIENT_FAILURE : GRPC_CHANNEL_IDLE, status);
         c->backoff_.Reset();
       }
     }
@@ -580,6 +581,15 @@ RefCountedPtr<Subchannel> Subchannel::Create(
     return c;
   }
   c = MakeRefCounted<Subchannel>(std::move(key), std::move(connector), args);
+  bool has_subchannel_endpoint = args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  if (has_subchannel_endpoint) {
+    {
+      MutexLock lock(&c->mu_);
+      c->created_from_endpoint_ = true;
+    }
+    c->RequestConnection();
+    return c;
+  }
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -745,6 +755,7 @@ void Subchannel::StartConnectingLocked() {
   args.channel_args = args_;
   WeakRef(DEBUG_LOCATION, "Connect").release();  // Ref held by callback.
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
+  args_ = args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
 }
 
 void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
@@ -775,6 +786,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
         << "), backing off for " << time_until_next_attempt.millis() << " ms";
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
+    if (created_from_endpoint_) return;
     retry_timer_handle_ = event_engine_->RunAfter(
         time_until_next_attempt,
         [self = WeakRef(DEBUG_LOCATION, "RetryTimer")]() mutable {
@@ -897,3 +909,38 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
 }
 
 }  // namespace grpc_core
+
+// VTable for a non-owning EventEngine::Endpoint pointer.
+// Assumes the EventEngine::Endpoint's lifetime is managed externally
+static void* subchannel_endpoint_arg_copy(void* p) {
+  // For a non-owning pointer, "copy" returns the same pointer.
+  // The argument system is not taking separate ownership of the pointed-to
+  // object.
+  return p;
+}
+
+static void subchannel_endpoint_arg_destroy(void* p) {
+  // Do nothing, as ownership and lifetime are managed externally.
+  (void)p;  // Avoid unused parameter warning
+}
+
+static int subchannel_endpoint_arg_compare(void* p1, void* p2) {
+  // Simple pointer comparison.
+  if (p1 == p2) return 0;
+  if (reinterpret_cast<uintptr_t>(p1) < reinterpret_cast<uintptr_t>(p2)) {
+    return -1;
+  }
+  return 1;
+}
+
+const grpc_arg_pointer_vtable grpc_subchannel_endpoint_arg_vtable = {
+    subchannel_endpoint_arg_copy, subchannel_endpoint_arg_destroy,
+    subchannel_endpoint_arg_compare};
+
+grpc_arg make_subchannel_endpoint_grpc_arg(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint) {
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_SUBCHANNEL_ENDPOINT), &endpoint,
+      &grpc_subchannel_endpoint_arg_vtable);
+}
