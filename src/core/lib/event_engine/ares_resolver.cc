@@ -13,7 +13,6 @@
 // limitations under the License.
 #include "src/core/lib/event_engine/ares_resolver.h"
 
-#include <absl/strings/string_view.h>
 #include <grpc/support/port_platform.h>
 
 #include <cstddef>
@@ -61,6 +60,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/strings/substitute.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
