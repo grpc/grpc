@@ -69,7 +69,10 @@ static void grpc_rb_channel_free(void* p) {
     return;
   };
   grpc_rb_channel* wrapper = (grpc_rb_channel*)p;
-  grpc_channel_destroy(wrapper->channel);
+  if (wrapper->channel != NULL) {
+    grpc_channel_destroy(wrapper->channel);
+    wrapper->channel = NULL;
+  }
   xfree(p);
 }
 
