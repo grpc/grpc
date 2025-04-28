@@ -31,6 +31,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -107,6 +108,10 @@ class Http2ClientTransport final : public ClientTransport {
           return (status.ok()) ? absl::OkStatus()
                                : absl::InternalError("Failed to enqueue frame");
         }));
+  }
+  auto TestOnlyGetParty() { return general_party_.get(); }
+  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
+    return ping_system_.RequestPing(std::move(on_initiate));
   }
 
  private:
@@ -211,6 +216,81 @@ class Http2ClientTransport final : public ClientTransport {
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
+
+  void CloseTransport();
+  uint64_t bytes_sent_in_last_write_ = 0;
+  void ReadChannelArgs(const ChannelArgs& channel_args);
+
+  // Ping related members
+  PingManager ping_system_;
+  Duration ping_timeout_;
+  Duration keepalive_interval_ = grpc_core::Duration::Seconds(20);
+
+  // Flags
+  bool keepalive_permit_without_calls_ = false;
+
+  auto SendPing(absl::AnyInvocable<void()> on_initiate) {
+    return ping_system_.RequestPing(std::move(on_initiate));
+  }
+
+  // Ping Helper functions
+  auto CreateAndSendPing(bool ack, uint64_t opaque_data) {
+    Http2Frame frame = Http2PingFrame{ack, opaque_data};
+    SliceBuffer output_buf;
+    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
+    return endpoint_.Write(std::move(output_buf), {});
+  }
+
+  Duration NextAllowedPingInterval() {
+    MutexLock lock(&transport_mutex_);
+    return ((keepalive_permit_without_calls_ == false) && stream_list_.empty())
+               ? grpc_core::Duration::Hours(2)
+               : grpc_core::Duration::Seconds(1);
+  }
+
+  auto MaybeSendPing() {
+    return ping_system_.MaybeSendPing(NextAllowedPingInterval(), ping_timeout_);
+  }
+
+  class PingSystemInterfaceImpl : public PingInterface {
+   public:
+    static std::unique_ptr<PingInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<PingSystemInterfaceImpl>(
+          PingSystemInterfaceImpl(transport));
+    }
+
+    // Returns a promise that resolves once a ping frame is written to the
+    // endpoint.
+    Promise<absl::Status> SendPing(SendPingArgs args) override {
+      return transport_->CreateAndSendPing(args.ack, args.opaque_data);
+    }
+
+    Promise<absl::Status> TriggerWrite() override {
+      return Map(transport_->EnqueueOutgoingFrame(Http2EmptyFrame{}),
+                 [](absl::Status status) {
+                   if (!status.ok()) {
+                     VLOG(2) << "Failed to trigger write";
+                   }
+                   return status;
+                 });
+    }
+
+    Promise<absl::Status> PingTimeout() override {
+      // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
+      // Returns a promise that resolves once goaway is sent.
+      LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
+
+      transport_->CloseTransport();
+      return Immediate(absl::OkStatus());
+    }
+
+   private:
+    // TODO(akshitpatel) : [PH2][P0] : Will a ref counted ptr be better here?
+    Http2ClientTransport* transport_;
+    explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+  };
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
