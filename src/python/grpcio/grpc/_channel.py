@@ -1209,6 +1209,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, operations, deadline, rendezvous = self._prepare(
             request, timeout, metadata, wait_for_ready, compression
         )
+        deadline = _determine_deadline(deadline)
         if state is None:
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         else:
