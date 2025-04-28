@@ -113,6 +113,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
   TypedData_Get_Struct(self, grpc_rb_channel, &grpc_channel_data_type, wrapper);
   target_chars = StringValueCStr(target);
   grpc_channel_args channel_args;
+  memset(&channel_args, 0, sizeof(channel_args));
   grpc_rb_hash_convert_to_channel_args(rb_channel_args, &channel_args);
   if (TYPE(rb_credentials) == T_SYMBOL) {
     if (id_insecure_channel != SYM2ID(rb_credentials)) {
