@@ -287,6 +287,11 @@
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
+- name: tsi_frame_protector_without_locks
+  description: Do not hold locks while using the tsi_frame_protector.
+  expiry: 2025/09/03
+  owner: mattstev@google.com
+  test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
   expiry: 2025/09/03

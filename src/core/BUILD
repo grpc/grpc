@@ -7632,6 +7632,9 @@ grpc_cc_library(
         "absl/status",
         "absl/strings",
     ],
+    deps = [
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -7644,10 +7647,13 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "http2_status",
         "message",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
+        "//:gpr_platform",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
 )
