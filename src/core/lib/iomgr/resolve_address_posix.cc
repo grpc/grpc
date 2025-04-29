@@ -50,6 +50,7 @@ grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
                                             std::memory_order_acq_rel,
                                             std::memory_order_acq_rel)) {
       engine_ = std::move(engine);
+      return engine_.get();
     }
   }
   return engine_ptr;
