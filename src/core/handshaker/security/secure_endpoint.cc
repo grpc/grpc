@@ -769,14 +769,14 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         // OR if we're not already writing but this write is large, we push it
         // onto the event engine to encrypt later.
         if (*writing_ || data->Length() > large_write_threshold_) {
-          frame_protector_.TraceOp("Pending",
-                                   pending_writes_->c_slice_buffer());
           // Since we don't call on_write until we've collected pending_writes
           // in the FinishAsyncWrites path, and EventEngine insists that one
           // write finishes before a second begins, we should never see a Write
           // call here with a non-null pending_writes_.
           CHECK(pending_writes_ == nullptr);
           pending_writes_ = std::make_unique<SliceBuffer>(std::move(*data));
+          frame_protector_.TraceOp("Pending",
+                                   pending_writes_->c_slice_buffer());
           // Wait for the previous write to finish before considering this one.
           // Note that since EventEngine::Endpoint allows only one outstanding
           // write, this will pause sending until the callback is invoked.
