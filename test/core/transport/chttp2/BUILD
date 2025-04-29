@@ -535,6 +535,7 @@ grpc_cc_test(
         "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 

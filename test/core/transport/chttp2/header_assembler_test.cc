@@ -31,16 +31,30 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "test/core/transport/chttp2/http2_common_test_inputs.h"
 
 namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+///////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
+                                bool end_headers = false,
+                                bool end_stream = false) {
+  SliceBuffer buffer;
+  return Http2HeaderFrame{stream_id, end_headers, end_stream,
+                          buffer.Append(Slice::FromCopiedString(str))};
+}
+
 // TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
 // removed.
 
 TEST(HeaderAssemblerTest, Constructor) {
-  GRPC_UNUSED HeaderAssembler assembler;
+  HeaderAssembler assembler;
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0);
+  EXPECT_EQ(assembler.IsReady(), false);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
