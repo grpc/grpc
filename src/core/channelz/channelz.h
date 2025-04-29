@@ -87,7 +87,7 @@ class SubchannelNodePeer;
 }  // namespace testing
 
 // base class for all channelz entities
-class BaseNode : public RefCounted<BaseNode> {
+class BaseNode : public DualRefCounted<BaseNode> {
  public:
   // There are only four high level channelz entities. However, to support
   // GetTopChannelsRequest, we split the Channel entity into two different
@@ -127,6 +127,10 @@ class BaseNode : public RefCounted<BaseNode> {
 
  public:
   ~BaseNode() override;
+
+  void Orphaned() override;
+
+  bool WasOrphaned() { return RefIfNonZero() != nullptr; }
 
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);

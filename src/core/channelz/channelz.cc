@@ -18,6 +18,7 @@
 
 #include "src/core/channelz/channelz.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
@@ -36,6 +37,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/strip.h"
 #include "src/core/channelz/channelz_registry.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -164,6 +166,10 @@ class ExplicitJsonDataSink final : public DataSink {
 // BaseNode
 //
 
+namespace {
+std::atomic<int32_t> kept_alive_nodes{0};
+}
+
 BaseNode::BaseNode(EntityType type, std::string name)
     : type_(type), uuid_(-1), name_(std::move(name)) {
   // The registry will set uuid_ under its lock.
@@ -171,6 +177,22 @@ BaseNode::BaseNode(EntityType type, std::string name)
 }
 
 BaseNode::~BaseNode() { ChannelzRegistry::Unregister(this); }
+
+void BaseNode::Orphaned() {
+  const auto& config = ConfigVars::Get();
+  if (config.ChannelzMaxKeepaliveNodes() <= 0) return;
+  if (config.ChannelzKeepaliveTime() <= 0) return;
+  if (kept_alive_nodes.fetch_add(1, std::memory_order_relaxed) >
+      config.ChannelzMaxKeepaliveNodes()) {
+    kept_alive_nodes.fetch_sub(1, std::memory_order_relaxed);
+    return;
+  }
+  auto ee = grpc_event_engine::experimental::GetDefaultEventEngine();
+  ee->RunAfter(Duration::Seconds(config.ChannelzKeepaliveTime()),
+               [ee, node = WeakRef()]() {
+                 kept_alive_nodes.fetch_sub(1, std::memory_order_relaxed);
+               });
+}
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 

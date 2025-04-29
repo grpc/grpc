@@ -76,6 +76,12 @@ ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");
+ABSL_FLAG(absl::optional<int32_t>, grpc_channelz_keepalive_time, {},
+          "EXPERIMENTAL. How long in seconds to wait before destroying "
+          "orphaned channelz nodes.");
+ABSL_FLAG(
+    absl::optional<int32_t>, grpc_channelz_max_keepalive_nodes, {},
+    "EXPERIMENTAL. Maximum number of orphaned channelz nodes to keep alive.");
 
 namespace grpc_core {
 
@@ -84,6 +90,13 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
                      "GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS",
                      overrides.client_channel_backup_poll_interval_ms, 5000)),
+      channelz_keepalive_time_(LoadConfig(
+          FLAGS_grpc_channelz_keepalive_time, "GRPC_CHANNELZ_KEEPALIVE_TIME",
+          overrides.channelz_keepalive_time, 0)),
+      channelz_max_keepalive_nodes_(
+          LoadConfig(FLAGS_grpc_channelz_max_keepalive_nodes,
+                     "GRPC_CHANNELZ_MAX_KEEPALIVE_NODES",
+                     overrides.channelz_max_keepalive_nodes, 0)),
       enable_fork_support_(LoadConfig(
           FLAGS_grpc_enable_fork_support, "GRPC_ENABLE_FORK_SUPPORT",
           overrides.enable_fork_support, GRPC_ENABLE_FORK_SUPPORT_DEFAULT)),
@@ -146,7 +159,9 @@ std::string ConfigVars::ToString() const {
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
       ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
       ", cpp_experimental_disable_reflection: ",
-      CppExperimentalDisableReflection() ? "true" : "false");
+      CppExperimentalDisableReflection() ? "true" : "false",
+      ", channelz_keepalive_time: ", ChannelzKeepaliveTime(),
+      ", channelz_max_keepalive_nodes: ", ChannelzMaxKeepaliveNodes());
 }
 
 }  // namespace grpc_core
