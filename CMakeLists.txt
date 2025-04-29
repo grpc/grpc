@@ -16195,6 +16195,7 @@ add_executable(frame_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/glob.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/frame_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19132,6 +19133,7 @@ add_executable(http2_status_test
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
   src/core/util/glob.cc
+  src/core/util/time.cc
   test/core/transport/chttp2/http2_status_test.cc
 )
 if(WIN32 AND MSVC)

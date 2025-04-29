@@ -29,6 +29,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -212,37 +213,31 @@ class Http2Status {
     DCHECK((IsOk() && message_.empty()) || (!IsOk() && !message_.empty()));
   }
 
-  absl::StatusCode ErrorCodeToStatusCode() const {
+  absl::StatusCode ErrorCodeToStatusCode(
+      Timestamp deadline = Timestamp::InfFuture()) const {
     switch (http2_code_) {
       case Http2ErrorCode::kNoError:
         return absl::StatusCode::kOk;
-
-      // Majority return kInternal
-      case Http2ErrorCode::kProtocolError:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kInternalError:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kFlowControlError:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kSettingsTimeout:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kStreamClosed:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kFrameSizeError:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kRefusedStream:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kCompressionError:
-        return absl::StatusCode::kInternal;
-      case Http2ErrorCode::kConnectError:
-        return absl::StatusCode::kInternal;
-
-      case Http2ErrorCode::kCancel:
-        return absl::StatusCode::kCancelled;
       case Http2ErrorCode::kEnhanceYourCalm:
-        return absl::StatusCode::kAborted;
+        return absl::StatusCode::kResourceExhausted;
       case Http2ErrorCode::kInadequateSecurity:
         return absl::StatusCode::kPermissionDenied;
+      case Http2ErrorCode::kRefusedStream:
+        return absl::StatusCode::kUnavailable;
+      case Http2ErrorCode::kCancel:
+        return (Timestamp::Now() > deadline)
+                   ? absl::StatusCode::kDeadlineExceeded
+                   : absl::StatusCode::kCancelled;
+
+      case Http2ErrorCode::kProtocolError:
+      case Http2ErrorCode::kInternalError:
+      case Http2ErrorCode::kFlowControlError:
+      case Http2ErrorCode::kSettingsTimeout:
+      case Http2ErrorCode::kStreamClosed:
+      case Http2ErrorCode::kFrameSizeError:
+      case Http2ErrorCode::kCompressionError:
+      case Http2ErrorCode::kConnectError:
+        return absl::StatusCode::kInternal;
 
       case Http2ErrorCode::kDoNotUse:
         DCHECK(false) << "This error code should never be used";

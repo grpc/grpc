@@ -7633,6 +7633,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "time",
         "//:gpr_platform",
     ],
 )
