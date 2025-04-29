@@ -58,7 +58,6 @@ brew config
 if $is_sonoma; then
   brew install cmake
   brew install gnupg
-  echo ${PATH}
   export PATH="/opt/homebrew/bin::${PATH}"
   cmake --version
 fi
@@ -141,9 +140,9 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
+  # add /usr/local/bin to path to override built in Python version
   export PATH="/usr/local/bin::${PATH}"
-  echo "${PATH}"
-  
+
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
