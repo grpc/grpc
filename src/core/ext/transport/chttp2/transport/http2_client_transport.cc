@@ -363,7 +363,6 @@ auto Http2ClientTransport::WriteFromQueue() {
 auto Http2ClientTransport::WriteLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
   return AssertResultType<absl::Status>(Loop([this]() {
-    // TODO(akshitpatel) : [PH2][P0] : Add call to ResetPingClock.
     bytes_sent_in_last_write_ = false;
     return TrySeq(
         WriteFromQueue(),
