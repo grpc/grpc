@@ -88,12 +88,12 @@ void Http2ClientTransport::CloseTransport() {
 }
 
 void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args) {
-  ping_timeout_ = std::max(
-      Duration::Zero(),
-      channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
-          .value_or(keepalive_interval_ == grpc_core::Duration::Infinity()
-                        ? Duration::Infinity()
-                        : Duration::Minutes(1)));
+  ping_timeout_ =
+      std::max(Duration::Zero(),
+               channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+                   .value_or(keepalive_interval_ == Duration::Infinity()
+                                 ? Duration::Infinity()
+                                 : Duration::Minutes(1)));
 }
 
 ///////////////////////////////////////////////////////////////////////////////
