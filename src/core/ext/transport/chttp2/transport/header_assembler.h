@@ -73,7 +73,8 @@ class HeaderAssembler {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError, kAssemblerContiguousSequenceError);
+          Http2ErrorCode::kProtocolError,
+          std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
     DCHECK_EQ(stream_id_, 0);
@@ -121,7 +122,8 @@ class HeaderAssembler {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError, kAssemblerContiguousSequenceError);
+          Http2ErrorCode::kProtocolError,
+          std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
     DCHECK_GT(stream_id_, 0);
@@ -130,8 +132,9 @@ class HeaderAssembler {
     if (frame.stream_id != stream_id_) {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
-      return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                               kAssemblerMismatchedStreamId);
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(kAssemblerMismatchedStreamId));
     }
 
     // Manage payload
@@ -149,9 +152,9 @@ class HeaderAssembler {
   }
 
   // TODO return correct type
-  Http2StatusOr<Metadata> ReadMetadata(HPackParser& parser,
-                                       bool is_initial_metadata,
-                                       bool is_client) {
+  ValueOrHttp2Status<Metadata> ReadMetadata(HPackParser& parser,
+                                            bool is_initial_metadata,
+                                            bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate

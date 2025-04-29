@@ -53,11 +53,10 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   GRPC_UNUSED HeaderAssembler assembler;
 }
 
-TEST(HeaderAssemblerTest, InvalidAssemblerNotReady) {
+TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // Crash on invalid API usage.
   // If we try to read the Header before END_HEADERS is received.
   GRPC_UNUSED HeaderAssembler assembler;
-  ASSERT_DEATH();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -70,11 +69,10 @@ TEST(HeaderAssemblerTest, ValidOneHeaderTwoContinuationFrame) {
   GRPC_UNUSED HeaderAssembler assembler;
 }
 
-TEST(HeaderAssemblerTest, InvalidAssemblerNotReady) {
+TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
   // Crash on invalid API usage.
   // If we try to read the Header before END_HEADERS is received.
   GRPC_UNUSED HeaderAssembler assembler;
-  ASSERT_DEATH();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
