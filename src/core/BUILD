@@ -9625,6 +9625,7 @@ grpc_cc_library(
         "time",
         "//:channelz",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 
