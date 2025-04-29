@@ -38,7 +38,7 @@ tasks:
     build_flags:
     - '--cxxopt=-std=c++17'
     - '--host_cxxopt=-std=c++17'
-    - '--//third_party:use_openssl=true'
+    - '--define=@grpc//third_party:use_openssl=true'
     build_targets:
       - "@grpc//:grpc"
       - "@grpc//:grpc_unsecure"
