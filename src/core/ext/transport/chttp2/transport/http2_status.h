@@ -228,23 +228,11 @@ class Http2Status {
         return (Timestamp::Now() > deadline)
                    ? absl::StatusCode::kDeadlineExceeded
                    : absl::StatusCode::kCancelled;
-
-      case Http2ErrorCode::kProtocolError:
-      case Http2ErrorCode::kInternalError:
-      case Http2ErrorCode::kFlowControlError:
-      case Http2ErrorCode::kSettingsTimeout:
-      case Http2ErrorCode::kStreamClosed:
-      case Http2ErrorCode::kFrameSizeError:
-      case Http2ErrorCode::kCompressionError:
-      case Http2ErrorCode::kConnectError:
-        return absl::StatusCode::kInternal;
-
       case Http2ErrorCode::kDoNotUse:
         DCHECK(false) << "This error code should never be used";
         return absl::StatusCode::kUnknown;
       default:
-        DCHECK(false) << "This error code should never be used";
-        GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
+        return absl::StatusCode::Internal;
     }
     GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
   }
