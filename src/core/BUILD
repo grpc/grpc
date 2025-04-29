@@ -9619,6 +9619,7 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
     ],
     deps = [
+        "json_writer",
         "single_set_ptr",
         "sync",
         "time",
