@@ -1054,6 +1054,7 @@ PosixError EventEnginePosixInterface::PosixResultWrap(
 
 bool EventEnginePosixInterface::IsCorrectGeneration(
     const FileDescriptor& fd) const {
+  (void)fd;  // Always used now
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   if (IsEventEngineForkEnabled()) {
     return descriptors_.generation() == fd.generation();
