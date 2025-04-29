@@ -268,6 +268,7 @@ AresResolver::AresResolver(
       event_engine_(std::move(event_engine)),
       dns_server_(dns_server) {
 #else   // GRPC_ENABLE_FORK_SUPPORT
+      (void)dns_server;  // Used
       event_engine_(std::move(event_engine)) {
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
@@ -889,8 +890,7 @@ void AresResolver::ShutdownLocked(const absl::Status& shutdown_status,
       GRPC_TRACE_LOG(cares_resolver, INFO) << absl::Substitute(
           "(EventEngine c-ares resolver) resolver: $0 shutdown fd: $1 ($2)",
           this, fd_node->polled_fd->GetName(), reason);
-      CHECK(fd_node->polled_fd->ShutdownLocked(
-          absl::CancelledError("AresResolver::Orphan")));
+      CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
       fd_node->already_shutdown = true;
     }
   }
