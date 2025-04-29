@@ -70,6 +70,7 @@ EXCLUDED_TARGETS=(
 
   # Exclude the codegen tooling `experiments_compiler`, which contains some bazel hackery
   "-//tools/codegen/core:experiments_compiler"
+  "-//tools/codegen/core:experiments_compiler_test"
 )
 
 FAILED_TESTS=""
