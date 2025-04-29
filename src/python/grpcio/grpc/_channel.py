@@ -1216,6 +1216,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             state.rpc_start_time = time.perf_counter()
             state.method = _common.decode(self._method)
             state.target = _common.decode(self._target)
+            deadline = _determine_deadline(deadline)
             call = self._managed_call(
                 cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
                 self._method,
