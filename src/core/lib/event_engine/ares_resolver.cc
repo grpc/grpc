@@ -268,8 +268,8 @@ AresResolver::AresResolver(
       event_engine_(std::move(event_engine)),
       dns_server_(dns_server) {
 #else   // GRPC_ENABLE_FORK_SUPPORT
-      (void)dns_server;  // Used
       event_engine_(std::move(event_engine)) {
+  (void)dns_server;  // Used
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
