@@ -104,5 +104,7 @@
   default: false
 - name: tcp_rcv_lowat
   default: false
+- name: tsi_frame_protector_without_locks
+  default: false
 - name: unconstrained_max_quota_buffer_size
   default: false

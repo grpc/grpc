@@ -324,8 +324,7 @@ ClientChannel::SubchannelWrapper::SubchannelWrapper(
       auto it =
           client_channel_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == client_channel_->subchannel_refcount_map_.end()) {
-        client_channel_->channelz_node_->AddChildSubchannel(
-            subchannel_node->uuid());
+        subchannel_node->AddParent(client_channel_->channelz_node_);
         it = client_channel_->subchannel_refcount_map_
                  .emplace(subchannel_.get(), 0)
                  .first;
@@ -360,8 +359,8 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
             CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
             --it->second;
             if (it->second == 0) {
-              self->client_channel_->channelz_node_->RemoveChildSubchannel(
-                  subchannel_node->uuid());
+              subchannel_node->RemoveParent(
+                  self->client_channel_->channelz_node_);
               self->client_channel_->subchannel_refcount_map_.erase(it);
             }
           }
@@ -1324,11 +1323,13 @@ void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
+    std::string trace =
+        channelz::ChannelNode::GetChannelConnectivityStateChangeString(state);
+    if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      absl::StrAppend(&trace, " status:", status.ToString());
+    }
+    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                                  grpc_slice_from_cpp_string(std::move(trace)));
   }
 }
 

@@ -114,7 +114,6 @@ _gen_py_aspect = aspect(
     attrs = {
         "_protoc": attr.label(
             default = Label("@com_google_protobuf//:protoc"),
-            providers = ["files_to_run"],
             executable = True,
             cfg = "exec",
         ),
@@ -170,7 +169,6 @@ _py_proto_library = rule(
         ),
         "_protoc": attr.label(
             default = Label("@com_google_protobuf//:protoc"),
-            providers = ["files_to_run"],
             executable = True,
             cfg = "exec",
         ),
@@ -287,13 +285,11 @@ _generate_pb2_grpc_src = rule(
         "strip_prefixes": attr.string_list(),
         "_grpc_plugin": attr.label(
             executable = True,
-            providers = ["files_to_run"],
             cfg = "exec",
             default = Label("//src/compiler:grpc_python_plugin"),
         ),
         "_protoc": attr.label(
             executable = True,
-            providers = ["files_to_run"],
             cfg = "exec",
             default = Label("@com_google_protobuf//:protoc"),
         ),

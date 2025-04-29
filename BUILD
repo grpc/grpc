@@ -1256,7 +1256,9 @@ grpc_cc_library(
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
+        "absl/functional:function_ref",
     ],
     deps = [
         "exec_ctx",
@@ -2236,6 +2238,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",

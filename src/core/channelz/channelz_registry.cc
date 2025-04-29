@@ -45,6 +45,7 @@
 
 namespace grpc_core {
 namespace channelz {
+
 namespace {
 template <typename T>
 std::string RenderArray(std::tuple<T, bool> values_and_end,
@@ -66,23 +67,39 @@ std::string RenderArray(std::tuple<T, bool> values_and_end,
 }
 
 Json RemoveAdditionalInfo(const Json& json) {
-  if (json.type() != Json::Type::kObject) return json;
-  Json::Object out;
-  for (const auto& [key, value] : json.object()) {
-    if (key == "additionalInfo") continue;
-    out[key] = RemoveAdditionalInfo(value);
+  switch (json.type()) {
+    case Json::Type::kArray: {
+      Json::Array out;
+      for (const auto& node : json.array()) {
+        out.emplace_back(RemoveAdditionalInfo(node));
+      }
+      return Json::FromArray(std::move(out));
+    } break;
+    case Json::Type::kObject: {
+      Json::Object out;
+      for (const auto& [key, value] : json.object()) {
+        if (key == "additionalInfo") continue;
+        out[key] = RemoveAdditionalInfo(value);
+      }
+      return Json::FromObject(std::move(out));
+    } break;
+    default:
+      return json;
   }
-  return Json::FromObject(std::move(out));
 }
 
 // TODO(ctiller): Temporary hack to remove fields that are objectionable to the
 // protobuf parser (because we've not published them in protobuf yet).
 char* ApplyHacks(const std::string& json_str) {
-  auto json = JsonParse(json_str);
-  if (!json.ok()) return gpr_strdup(json_str.c_str());
-  return gpr_strdup(JsonDump(RemoveAdditionalInfo(*json)).c_str());
+  return gpr_strdup(StripAdditionalInfoFromJson(json_str).c_str());
 }
 }  // namespace
+
+std::string StripAdditionalInfoFromJson(absl::string_view json_str) {
+  auto json = JsonParse(json_str);
+  if (!json.ok()) return gpr_strdup(std::string(json_str).c_str());
+  return JsonDump(RemoveAdditionalInfo(*json));
+}
 
 ChannelzRegistry* ChannelzRegistry::Default() {
   static ChannelzRegistry* singleton = new ChannelzRegistry();
@@ -91,13 +108,9 @@ ChannelzRegistry* ChannelzRegistry::Default() {
 
 std::vector<RefCountedPtr<BaseNode>>
 ChannelzRegistry::InternalGetAllEntities() {
-  std::vector<RefCountedPtr<BaseNode>> nodes;
-  node_map_->IterateNodes(0, std::nullopt,
-                          [&nodes](RefCountedPtr<BaseNode> node) {
-                            nodes.push_back(node);
-                            return true;
-                          });
-  return nodes;
+  return std::get<0>(node_map_->QueryNodes(
+      0, [](const BaseNode*) { return true; },
+      std::numeric_limits<size_t>::max()));
 }
 
 void ChannelzRegistry::InternalLogAllEntities() {
@@ -142,18 +155,26 @@ void ChannelzRegistry::LegacyNodeMap::Unregister(BaseNode* node) {
   node_map_.erase(uuid);
 }
 
-void ChannelzRegistry::LegacyNodeMap::IterateNodes(
-    intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
-    absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+ChannelzRegistry::LegacyNodeMap::QueryNodes(
+    intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
+    size_t max_results) {
+  RefCountedPtr<BaseNode> node_after_end;
+  std::vector<RefCountedPtr<BaseNode>> result;
   MutexLock lock(&mu_);
   for (auto it = node_map_.lower_bound(start_node); it != node_map_.end();
        ++it) {
     BaseNode* node = it->second;
-    if (entity_type.has_value() && node->type() != entity_type) continue;
+    if (!filter(node)) continue;
     auto node_ref = node->RefIfNonZero();
     if (node_ref == nullptr) continue;
-    if (!callback(std::move(node_ref))) break;
+    if (result.size() == max_results) {
+      node_after_end = node_ref;
+      break;
+    }
+    result.emplace_back(node_ref);
   }
+  return std::tuple(std::move(result), node_after_end == nullptr);
 }
 
 RefCountedPtr<BaseNode> ChannelzRegistry::LegacyNodeMap::GetNode(
@@ -192,75 +213,89 @@ void ChannelzRegistry::ShardedNodeMap::Unregister(BaseNode* node) {
   index_.erase(node->uuid_);
 }
 
-void ChannelzRegistry::ShardedNodeMap::IterateNodes(
-    intptr_t start_node, std::optional<BaseNode::EntityType> entity_type,
-    absl::FunctionRef<bool(RefCountedPtr<BaseNode> node)> callback) {
+std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+ChannelzRegistry::ShardedNodeMap::QueryNodes(
+    intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
+    size_t max_results) {
   // Mitigate drain hotspotting by randomizing the drain order each query.
   std::vector<size_t> nursery_visitation_order;
   for (size_t i = 0; i < kNodeShards; ++i) {
     nursery_visitation_order.push_back(i);
   }
   absl::c_shuffle(nursery_visitation_order, SharedBitGen());
+  RefCountedPtr<BaseNode> node_after_end;
+  std::vector<RefCountedPtr<BaseNode>> result;
   MutexLock index_lock(&index_mu_);
-  size_t next_nursery_to_number = 0;
-  while (true) {
-    for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
-      BaseNode* node = it->second;
-      start_node = node->uuid_ + 1;
-      if (entity_type.has_value() && node->type() != entity_type) continue;
-      auto node_ref = node->RefIfNonZero();
-      if (node_ref == nullptr) continue;
-      if (!callback(std::move(node_ref))) return;
+  for (auto it = index_.lower_bound(start_node); it != index_.end(); ++it) {
+    BaseNode* node = it->second;
+    if (!filter(node)) continue;
+    auto node_ref = node->RefIfNonZero();
+    if (node_ref == nullptr) continue;
+    if (result.size() == max_results) {
+      node_after_end = std::move(node_ref);
+      return std::tuple(std::move(result), false);
     }
-    if (next_nursery_to_number == kNodeShards) return;
-    if (NumberNurseryNodes(nursery_visitation_order[next_nursery_to_number])) {
-      ++next_nursery_to_number;
+    result.emplace_back(std::move(node_ref));
+  }
+  for (auto nursery_index : nursery_visitation_order) {
+    BaseNodeList& node_shard = node_list_[nursery_index];
+    MutexLock shard_lock(&node_shard.mu);
+    if (node_shard.nursery == nullptr) continue;
+    BaseNode* n = node_shard.nursery;
+    while (n != nullptr) {
+      if (!filter(n)) {
+        n = n->next_;
+        continue;
+      }
+      auto node_ref = n->RefIfNonZero();
+      if (node_ref == nullptr) {
+        n = n->next_;
+        continue;
+      }
+      BaseNode* next = n->next_;
+      RemoveNodeFromHead(n, node_shard.nursery);
+      AddNodeToHead(n, node_shard.numbered);
+      n->uuid_ = uuid_generator_;
+      ++uuid_generator_;
+      index_.emplace(n->uuid_, n);
+      if (n->uuid_ >= start_node) {
+        if (result.size() == max_results) {
+          node_after_end = std::move(node_ref);
+          return std::tuple(std::move(result), false);
+        }
+        result.emplace_back(std::move(node_ref));
+      }
+      n = next;
     }
   }
+  CHECK(node_after_end == nullptr);
+  return std::tuple(std::move(result), true);
 }
 
 void ChannelzRegistry::ShardedNodeMap::AddNodeToHead(BaseNode* node,
                                                      BaseNode*& head) {
   if (head == nullptr) {
     head = node;
-    node->prev_ = node->next_ = node;
-  } else {
-    node->prev_ = head->prev_;
-    node->next_ = head;
-    node->next_->prev_ = node;
-    node->prev_->next_ = node;
+    node->prev_ = node->next_ = nullptr;
+    return;
   }
+  DCHECK_EQ(head->prev_, nullptr);
+  node->next_ = head;
+  node->prev_ = nullptr;
+  head->prev_ = node;
+  head = node;
 }
 
 void ChannelzRegistry::ShardedNodeMap::RemoveNodeFromHead(BaseNode* node,
                                                           BaseNode*& head) {
-  if (node->next_ == node) {
-    CHECK_EQ(head, node);
-    head = nullptr;
-  } else {
-    node->prev_->next_ = node->next_;
-    node->next_->prev_ = node->prev_;
-    if (head == node) head = node->next_;
+  if (node == head) {
+    DCHECK_EQ(node->prev_, nullptr);
+    head = node->next_;
+    if (head != nullptr) head->prev_ = nullptr;
+    return;
   }
-}
-
-bool ChannelzRegistry::ShardedNodeMap::NumberNurseryNodes(
-    size_t nursery_index) {
-  static constexpr size_t kBatchSize = 64;
-  BaseNodeList& node_shard = node_list_[nursery_index];
-  MutexLock lock(&node_shard.mu);
-  BaseNode*& nursery = node_shard.nursery;
-  size_t count = 0;
-  while (nursery != nullptr && count < kBatchSize) {
-    BaseNode* n = nursery->next_;
-    RemoveNodeFromHead(n, nursery);
-    AddNodeToHead(n, node_shard.numbered);
-    n->uuid_ = uuid_generator_;
-    ++uuid_generator_;
-    index_.emplace(n->uuid_, n);
-    ++count;
-  }
-  return nursery == nullptr;
+  node->prev_->next_ = node->next_;
+  if (node->next_ != nullptr) node->next_->prev_ = node->prev_;
 }
 
 RefCountedPtr<BaseNode> ChannelzRegistry::ShardedNodeMap::GetNode(
