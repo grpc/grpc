@@ -91,11 +91,10 @@ class KeepaliveManagerTest : public YodelTest {
 
   Party* GetParty() { return party_.get(); }
   void InitParty() {
-    auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();
-    general_party_arena
-        ->SetContext<grpc_event_engine::experimental::EventEngine>(
-            event_engine().get());
-    party_ = Party::Make(std::move(general_party_arena));
+    auto party_arena = SimpleArenaAllocator(0)->MakeArena();
+    party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
+        event_engine().get());
+    party_ = Party::Make(std::move(party_arena));
   }
 
  private:

@@ -64,9 +64,8 @@ class KeepaliveManager {
   }
 
  private:
-  // Returns a promise that sleeps for the keepalive timeout and triggers the
-  // keepalive timeout based on whether some data is read within the keepalive
-  // timeout.
+  // Returns a promise that sleeps for the keepalive_timeout_ and triggers the
+  // keepalive timeout unless data is read within the keepalive timeout.
   auto WaitForKeepAliveTimeout();
 
   // Returns a promise that sends a keepalive ping and spawns the keepalive

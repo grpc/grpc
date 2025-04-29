@@ -35,32 +35,33 @@ KeepaliveManager::KeepaliveManager(
       keepalive_interval_(keepalive_interval) {}
 
 auto KeepaliveManager::WaitForKeepAliveTimeout() {
-  return TrySeq(Sleep(keepalive_timeout_), [this] {
-    return If(
-        data_received_in_last_cycle_,
-        [] {
-          VLOG(2) << "Keepalive timeout triggered but "
-                  << "received data. Resolving with ok status";
-          return Immediate(absl::OkStatus());
-        },
-        [this] {
-          VLOG(2) << "Keepalive timeout triggered and no "
-                     "data received. Triggering keepalive timeout.";
-          // Once the keepalive timeout is triggered, ensure that
-          // WaitForData() is never resolved. This is needed as the keepalive
-          // loop should break once the timeout is triggered.
-          keep_alive_timeout_triggered_ = true;
-          return TrySeq(keep_alive_interface_->OnKeepAliveTimeout(), [] {
-            return absl::CancelledError("keepalive timeout");
-          });
-        });
-  });
+  return AssertResultType<absl::Status>(
+      TrySeq(Sleep(keepalive_timeout_), [this] {
+        return If(
+            data_received_in_last_cycle_,
+            [] {
+              VLOG(2) << "Keepalive timeout triggered but "
+                      << "received data. Resolving with ok status";
+              return Immediate(absl::OkStatus());
+            },
+            [this] {
+              VLOG(2) << "Keepalive timeout triggered and no "
+                         "data received. Triggering keepalive timeout.";
+              // Once the keepalive timeout is triggered, ensure that
+              // WaitForData() is never resolved. This is needed as the
+              // keepalive loop should break once the timeout is triggered.
+              keep_alive_timeout_triggered_ = true;
+              return TrySeq(keep_alive_interface_->OnKeepAliveTimeout(), [] {
+                return absl::CancelledError("keepalive timeout");
+              });
+            });
+      }));
 }
 auto KeepaliveManager::TimeoutAndSendPing() {
   DCHECK(!data_received_in_last_cycle_);
   DCHECK(keepalive_timeout_ != Duration::Infinity());
 
-  return Map(
+  return AssertResultType<absl::Status>(Map(
       TryJoin<absl::StatusOr>(Race(WaitForData(), WaitForKeepAliveTimeout()),
                               SendPingAndWaitForAck()),
       [](auto result) {
@@ -68,27 +69,28 @@ auto KeepaliveManager::TimeoutAndSendPing() {
           return result.status();
         }
         return absl::OkStatus();
-      });
+      }));
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
   LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
-  return TrySeq(If(
-                    NeedToSendKeepAlivePing(),
-                    [this]() {
-                      return If(
-                          keepalive_timeout_ != Duration::Infinity(),
-                          [this] { return TimeoutAndSendPing(); },
-                          [this] { return SendPingAndWaitForAck(); });
-                    },
-                    []() { return Immediate(absl::OkStatus()); }),
-                [this] {
-                  data_received_in_last_cycle_ = false;
-                  return Immediate(absl::OkStatus());
-                });
+  return AssertResultType<absl::Status>(
+      TrySeq(If(
+                 NeedToSendKeepAlivePing(),
+                 [this]() {
+                   return If(
+                       keepalive_timeout_ != Duration::Infinity(),
+                       [this] { return TimeoutAndSendPing(); },
+                       [this] { return SendPingAndWaitForAck(); });
+                 },
+                 []() { return Immediate(absl::OkStatus()); }),
+             [this] {
+               data_received_in_last_cycle_ = false;
+               return Immediate(absl::OkStatus());
+             }));
 }
 
 void KeepaliveManager::Spawn(Party* party) {
-  party->Spawn("KeepAlive", Loop([this]() {
+  party->Spawn("KeepAliveLoop", Loop([this]() {
                  return TrySeq(
                      Sleep(keepalive_interval_),
                      [this]() { return MaybeSendKeepAlivePing(); },
