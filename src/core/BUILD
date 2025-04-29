@@ -7648,7 +7648,7 @@ grpc_cc_library(
     ],
     deps = [
         "http2_status",
-        "message",
+        "metadata_batch",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
