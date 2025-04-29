@@ -87,15 +87,6 @@ void Http2ClientTransport::CloseTransport() {
   ping_system_.CancelCallbacks();
 }
 
-void Http2ClientTransport::ReadChannelArgs(const ChannelArgs& channel_args) {
-  ping_timeout_ =
-      std::max(Duration::Zero(),
-               channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
-                   .value_or(keepalive_interval_ == Duration::Infinity()
-                                 ? Duration::Infinity()
-                                 : Duration::Minutes(1)));
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Promise factory for processing each type of frame
 
@@ -407,14 +398,18 @@ Http2ClientTransport::Http2ClientTransport(
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
+      ping_timeout_(std::max(
+          Duration::Zero(),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+              .value_or(keepalive_interval_ == Duration::Infinity()
+                            ? Duration::Infinity()
+                            : Duration::Minutes(1)))),
       ping_system_(channel_args, PingSystemInterfaceImpl::Make(this),
                    event_engine) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
-
-  ReadChannelArgs(channel_args);
 
   // Initialize the general party and write party.
   auto general_party_arena = SimpleArenaAllocator(0)->MakeArena();

@@ -109,9 +109,13 @@ class Http2ClientTransport final : public ClientTransport {
                                : absl::InternalError("Failed to enqueue frame");
         }));
   }
-  auto TestOnlyGetParty() { return general_party_.get(); }
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_system_.RequestPing(std::move(on_initiate));
+  }
+  template <typename Factory>
+  auto TestOnlyRunPromise(Factory factory) {
+    return general_party_->Spawn("TestPromise", std::move(factory),
+                                 [](auto) {});
   }
 
  private:
@@ -219,12 +223,11 @@ class Http2ClientTransport final : public ClientTransport {
 
   void CloseTransport();
   bool bytes_sent_in_last_write_ = false;
-  void ReadChannelArgs(const ChannelArgs& channel_args);
 
   // Ping related members
-  PingManager ping_system_;
-  Duration ping_timeout_;
   Duration keepalive_interval_ = Duration::Seconds(20);
+  Duration ping_timeout_;
+  PingManager ping_system_;
 
   // Flags
   bool keepalive_permit_without_calls_ = false;

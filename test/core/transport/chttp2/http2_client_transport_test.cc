@@ -294,18 +294,17 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine());
-  auto* party = client_transport->TestOnlyGetParty();
-
-  party->Spawn(
-      "PingRequest",
-      TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(Http2EmptyFrame{}),
-             [&client_transport] {
-               return client_transport->TestOnlySendPing([] {});
-             }),
-      [&ping_ack_received](auto) {
-        ping_ack_received.Call();
-        LOG(INFO) << "PingAck Received. Ping Test done.";
-      });
+  client_transport->TestOnlyRunPromise([&client_transport, &ping_ack_received] {
+    return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
+                          Http2EmptyFrame{}),
+                      [&client_transport] {
+                        return client_transport->TestOnlySendPing([] {});
+                      }),
+               [&ping_ack_received](auto) {
+                 ping_ack_received.Call();
+                 LOG(INFO) << "PingAck Received. Ping Test done.";
+               });
+  });
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -342,15 +341,15 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine());
-  auto* party = client_transport->TestOnlyGetParty();
+  client_transport->TestOnlyRunPromise([&client_transport] {
+    return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
+                          Http2EmptyFrame{}),
+                      [&client_transport] {
+                        return client_transport->TestOnlySendPing([] {});
+                      }),
+               [](auto) { Crash("Unreachable"); });
+  });
 
-  party->Spawn(
-      "PingRequest",
-      TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(Http2EmptyFrame{}),
-             [&client_transport] {
-               return client_transport->TestOnlySendPing([] {});
-             }),
-      [](auto) { Crash("Unreachable"); });
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
@@ -425,25 +424,26 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       std::move(mock_endpoint.promise_endpoint),
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2),
       event_engine());
-  auto* party = client_transport->TestOnlyGetParty();
+  client_transport->TestOnlyRunPromise([&client_transport, &ping_ack_received] {
+    return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
+                          Http2EmptyFrame{}),
+                      [&client_transport] {
+                        return client_transport->TestOnlySendPing([] {});
+                      }),
+               [&ping_ack_received](auto) {
+                 ping_ack_received.Call();
+                 LOG(INFO) << "PingAck Received. Ping Test done.";
+               });
+  });
+  client_transport->TestOnlyRunPromise([&client_transport] {
+    return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
+                          Http2EmptyFrame{}),
+                      [&client_transport] {
+                        return client_transport->TestOnlySendPing([] {});
+                      }),
+               [](auto) { Crash("Unreachable"); });
+  });
 
-  party->Spawn(
-      "PingRequest",
-      TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(Http2EmptyFrame{}),
-             [&client_transport] {
-               return client_transport->TestOnlySendPing([] {});
-             }),
-      [&ping_ack_received](auto) {
-        ping_ack_received.Call();
-        LOG(INFO) << "PingAck Received. Ping Test done.";
-      });
-  party->Spawn(
-      "PingRequest2",
-      TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(Http2EmptyFrame{}),
-             [&client_transport] {
-               return client_transport->TestOnlySendPing([] {});
-             }),
-      [](auto) { Crash("Unreachable"); });
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
