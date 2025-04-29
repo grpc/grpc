@@ -152,9 +152,8 @@ class HeaderAssembler {
   }
 
   // TODO return correct type
-  ValueOrHttp2Status<Arena::PoolPtr<Metadata>> ReadMetadata(HPackParser& parser,
-                                            bool is_initial_metadata,
-                                            bool is_client) {
+  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
+      HPackParser& parser, bool is_initial_metadata, bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
@@ -165,8 +164,34 @@ class HeaderAssembler {
     // error (Section 5.4.1) of type COMPRESSION_ERROR if it does not decompress
     // a field block. A decoding error in a field block MUST be treated as a
     // connection error (Section 5.4.1) of type COMPRESSION_ERROR.
-
+    Arena::PoolPtr<grpc_metadata_batch> metadata =
+        Arena::MakePooledForOverwrite<grpc_metadata_batch>();
+    parser->BeginFrame(
+        metadata.get(), std::numeric_limits<uint32_t>::max(),
+        std::numeric_limits<uint32_t>::max(),
+        is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
+                            : HPackParser::Boundary::EndOfStream,
+        HPackParser::Priority::None,
+        HPackParser::LogInfo{stream_id_,
+                             is_initial_metadata
+                                 ? HPackParser::LogInfo::Type::kHeaders
+                                 : HPackParser::LogInfo::Type::kTrailers,
+                             is_client});
+    for (size_t i = 0; i < buffer_.Count(); i++) {
+      absl::Status result =
+          parser->Parse(buffer_.c_slice_at(i), i == slices.Count() - 1, bitsrc,
+                        /*call_tracer=*/nullptr);
+      if (!result.ok()) {
+        return Http2Status::Http2ConnectionError(
+            Http2ErrorCode::kCompressionErrors,
+            "RFC9113 : A decoding error in a field block MUST be treated as a "
+            "connection error of type COMPRESSION_ERROR.");
+      }
+    }
+    parser->FinishFrame();
     Cleanup();
+    return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>(
+        std::move(metadata));
   }
 
   HeaderAssembler()
