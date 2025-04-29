@@ -37,6 +37,21 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+#define USUAL_HDR                                                     \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from   \
+                                            simple_request.headers */ \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
+  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
@@ -48,8 +63,8 @@ Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
                           buffer.Append(Slice::FromCopiedString(str))};
 }
 
-// TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
-// removed.
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - Constructor
 
 TEST(HeaderAssemblerTest, Constructor) {
   HeaderAssembler assembler;
@@ -64,8 +79,14 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
   // 2. Validate output of GetBufferedHeadersLength
   // 3. Validate the contents of the Metadata.
-  GRPC_UNUSED HeaderAssembler assembler;
+  HeaderAssembler assembler;
+  Http2HeaderFrame header = GenerateHeader();
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0);
+  EXPECT_EQ(assembler.IsReady(), false);
 }
+
+// TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
+// removed.
 
 TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // Crash on invalid API usage.
