@@ -47,6 +47,9 @@ constexpr absl::string_view kAssemblerMismatchedStreamId =
     "CONTINUATION frame has a different  Stream Identifier than the preceeding "
     "HEADERS frame.";
 
+constexpr absl::string_view kAssemblerHpackError =
+    "RFC9113 : A decoding error in a field block MUST be treated as a "
+    "connection error of type COMPRESSION_ERROR.";
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
@@ -151,9 +154,9 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
-  // TODO return correct type
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
-      HPackParser& parser, bool is_initial_metadata, bool is_client) {
+      HPackParser& parser, bool is_initial_metadata, bool is_client,
+      absl::BitGenRef bitsrc) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
@@ -166,7 +169,7 @@ class HeaderAssembler {
     // connection error (Section 5.4.1) of type COMPRESSION_ERROR.
     Arena::PoolPtr<grpc_metadata_batch> metadata =
         Arena::MakePooledForOverwrite<grpc_metadata_batch>();
-    parser->BeginFrame(
+    parser.BeginFrame(
         metadata.get(), std::numeric_limits<uint32_t>::max(),
         std::numeric_limits<uint32_t>::max(),
         is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
@@ -179,17 +182,20 @@ class HeaderAssembler {
                              is_client});
     for (size_t i = 0; i < buffer_.Count(); i++) {
       absl::Status result =
-          parser->Parse(buffer_.c_slice_at(i), i == slices.Count() - 1, bitsrc,
-                        /*call_tracer=*/nullptr);
+          parser.Parse(buffer_.c_slice_at(i), i == buffer_.Count() - 1, bitsrc,
+                       /*call_tracer=*/nullptr);
       if (!result.ok()) {
+        Cleanup();
+        LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
         return Http2Status::Http2ConnectionError(
-            Http2ErrorCode::kCompressionErrors,
-            "RFC9113 : A decoding error in a field block MUST be treated as a "
-            "connection error of type COMPRESSION_ERROR.");
+            Http2ErrorCode::kCompressionError,
+            std::string(kAssemblerHpackError));
       }
     }
-    parser->FinishFrame();
+    parser.FinishFrame();
+
     Cleanup();
+
     return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>(
         std::move(metadata));
   }
