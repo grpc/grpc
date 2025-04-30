@@ -19,12 +19,16 @@ namespace grpc_event_engine {
 namespace experimental {
 namespace {
 
-#ifdef GPR_LINUX
-// Expect all our linux testing environments to support errqueue.
+#ifdef GRPC_POSIX_SOCKET_TCP
 TEST(KernelSupportsErrqueueTest, Basic) {
-  EXPECT_EQ(KernelSupportsErrqueue(), true);
-}
+#ifdef GRPC_LINUX_ERRQUEUE
+  int expected_value = true;
+#else
+  int expected_value = false;
 #endif
+  EXPECT_EQ(KernelSupportsErrqueue(), expected_value);
+}
+#endif /* GRPC_POSIX_SOCKET_TCP */
 
 }  // namespace
 }  // namespace experimental
