@@ -234,7 +234,7 @@ class DataSource {
 
  protected:
   ~DataSource();
-  BaseNode* referenced_channelz_node() { return node_.get(); }
+  RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
   void ResetDataSource();
 

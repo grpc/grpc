@@ -510,19 +510,6 @@ Subchannel::Subchannel(SubchannelKey key,
     : DualRefCounted<Subchannel>(GRPC_TRACE_FLAG_ENABLED(subchannel_refcount)
                                      ? "Subchannel"
                                      : nullptr),
-      channelz::DataSource(
-          args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-                  .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)
-              ? MakeRefCounted<channelz::SubchannelNode>(
-                    grpc_sockaddr_to_uri(&key.address())
-                        .value_or("<unknown address type>"),
-                    Clamp(
-                        args.GetInt(
-                                GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
-                            .value_or(
-                                GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT),
-                        0, INT_MAX))
-              : nullptr),
       key_(std::move(key)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
@@ -550,21 +537,31 @@ Subchannel::Subchannel(SubchannelKey key,
                              .MapAddress(key_.address(), &args_)
                              .value_or(key_.address());
   // Initialize channelz.
-  if (channelz_node() != nullptr) {
-    channelz_node()->AddTraceEvent(
+  const bool channelz_enabled = args_.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+                                    .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT);
+  if (channelz_enabled) {
+    const size_t channel_tracer_max_memory = Clamp(
+        args_.GetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE)
+            .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT),
+        0, INT_MAX);
+    channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
+        grpc_sockaddr_to_uri(&key_.address())
+            .value_or("<unknown address type>"),
+        channel_tracer_max_memory);
+    channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
-    channelz_node()->SetChannelArgs(args_);
-    args_ = args_.SetObject<channelz::BaseNode>(channelz_node()->Ref());
+    channelz_node_->SetChannelArgs(args_);
+    args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
 }
 
 Subchannel::~Subchannel() {
-  if (channelz_node() != nullptr) {
-    channelz_node()->AddTraceEvent(
+  if (channelz_node_ != nullptr) {
+    channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
-    channelz_node()->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
+    channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
@@ -606,7 +603,7 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
 }
 
 channelz::SubchannelNode* Subchannel::channelz_node() {
-  return DownCast<channelz::SubchannelNode*>(referenced_channelz_node());
+  return channelz_node_.get();
 }
 
 void Subchannel::WatchConnectivityState(
@@ -707,9 +704,9 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
         // annotation through absl::Status::ForEachPayload().
         ABSL_NO_THREAD_SAFETY_ANALYSIS { status_.SetPayload(key, value); });
   }
-  if (channelz_node() != nullptr) {
-    channelz_node()->UpdateConnectivityState(state);
-    channelz_node()->AddTraceEvent(
+  if (channelz_node_ != nullptr) {
+    channelz_node_->UpdateConnectivityState(state);
+    channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_cpp_string(absl::StrCat(
             "Subchannel connectivity state changed to ",
@@ -718,16 +715,6 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   }
   // Notify watchers.
   watcher_list_.NotifyLocked(state, status_);
-}
-
-void Subchannel::AddData(channelz::DataSink& sink) {
-  Json::Object subchannel_state;
-  MutexLock lock(&mu_);
-  subchannel_state["backoff"] =
-      Json::FromString(backoff_.NextAttemptDelay().ToJsonString());
-  subchannel_state["next_attempt_time"] = Json::FromString(
-      gpr_format_timespec(next_attempt_time_.as_timespec(GPR_CLOCK_REALTIME)));
-  sink.AddAdditionalInfo("subchannelState", std::move(subchannel_state));
 }
 
 void Subchannel::OnRetryTimer() {
@@ -826,25 +813,24 @@ bool Subchannel::PublishTransportLocked() {
       return false;
     }
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
-        std::move(*stack), args_,
-        channelz_node()->RefAsSubclass<channelz::SubchannelNode>());
+        std::move(*stack), args_, channelz_node_);
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
             ->client_transport());
     InterceptionChainBuilder builder(
         connecting_result_.channel_args.SetObject(transport.get()));
-    if (channelz_node() != nullptr) {
+    if (channelz_node_ != nullptr) {
       // TODO(ctiller): If/when we have a good way to access the subchannel
       // from a filter (maybe GetContext<Subchannel>?), consider replacing
       // these two hooks with a filter so that we can avoid storing two
       // separate refs to the channelz node in each connection.
       builder.AddOnClientInitialMetadata(
-          [channelz_node = channelz_node()](ClientMetadata&) {
+          [channelz_node = channelz_node_](ClientMetadata&) {
             channelz_node->RecordCallStarted();
           });
       builder.AddOnServerTrailingMetadata(
-          [channelz_node = channelz_node()](ServerMetadata& metadata) {
+          [channelz_node = channelz_node_](ServerMetadata& metadata) {
             if (IsStatusOk(metadata)) {
               channelz_node->RecordCallSucceeded();
             } else {
@@ -873,8 +859,8 @@ bool Subchannel::PublishTransportLocked() {
   GRPC_TRACE_LOG(subchannel, INFO)
       << "subchannel " << this << " " << key_.ToString()
       << ": new connected subchannel at " << connected_subchannel_.get();
-  if (channelz_node() != nullptr) {
-    channelz_node()->SetChildSocket(std::move(socket_node));
+  if (channelz_node_ != nullptr) {
+    channelz_node_->SetChildSocket(std::move(socket_node));
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
