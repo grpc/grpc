@@ -566,6 +566,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
         "//test/core/test_util:test_lb_policies",
         "//test/cpp/util:test_util",
         "@com_github_cncf_xds//xds/data/orca/v3:pkg_cc_proto",
