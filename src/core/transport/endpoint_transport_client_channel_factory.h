@@ -27,17 +27,7 @@ namespace endpoint_transport_client_channel_factory_detail {
 class GenericClientChannelFactory : public ClientChannelFactory {
  public:
   RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& args) override {
-    absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
-    if (!new_args.ok()) {
-      LOG(ERROR) << "Failed to create channel args during subchannel creation: "
-                 << new_args.status() << "; Got args: " << args.ToString();
-      return nullptr;
-    }
-    RefCountedPtr<Subchannel> s =
-        Subchannel::Create(MakeConnector(), address, *new_args);
-    return s;
-  }
+      const grpc_resolved_address& address, const ChannelArgs& args) override;
 
  private:
   virtual OrphanablePtr<SubchannelConnector> MakeConnector() = 0;

@@ -19,6 +19,17 @@
 
 namespace grpc_core::endpoint_transport_client_channel_factory_detail {
 
+RefCountedPtr<Subchannel> GenericClientChannelFactory::CreateSubchannel(
+    const grpc_resolved_address& address, const ChannelArgs& args) {
+  absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
+  if (!new_args.ok()) {
+    LOG(ERROR) << "Failed to create channel args during subchannel creation: "
+               << new_args.status() << "; Got args: " << args.ToString();
+    return nullptr;
+  }
+  return Subchannel::Create(MakeConnector(), address, *new_args);
+}
+
 absl::StatusOr<ChannelArgs>
 GenericClientChannelFactory::GetSecureNamingChannelArgs(ChannelArgs args) {
   auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
