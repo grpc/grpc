@@ -22,7 +22,7 @@
 
 namespace grpc_core {
 
-namespace secure_endpoint_transport_detail {
+namespace endpoint_transport_client_channel_factory_detail {
 
 class GenericClientChannelFactory : public ClientChannelFactory {
  public:
@@ -54,11 +54,11 @@ class TypedClientChannelFactory final : public GenericClientChannelFactory {
   };
 };
 
-}  // namespace secure_endpoint_transport_detail
+}  // namespace endpoint_transport_client_channel_factory_detail
 
 template <typename Connector>
-auto SecureEndpointTransportClientChannelFactory() {
-  return NoDestructSingleton<secure_endpoint_transport_detail::
+auto EndpointTransportClientChannelFactory() {
+  return NoDestructSingleton<endpoint_transport_client_channel_factory_detail::
                                  TypedClientChannelFactory<Connector>>::Get();
 }
 

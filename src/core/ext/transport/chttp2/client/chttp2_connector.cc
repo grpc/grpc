@@ -64,7 +64,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/resolver_registry.h"
-#include "src/core/transport/secure_endpoint_transport.h"
+#include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/status_helper.h"
@@ -228,8 +228,7 @@ absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
                                                  const ChannelArgs& args) {
   auto r = ChannelCreate(
       target,
-      args.SetObject(
-          SecureEndpointTransportClientChannelFactory<Chttp2Connector>()),
+      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>()),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();

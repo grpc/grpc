@@ -64,7 +64,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/telemetry/metrics.h"
-#include "src/core/transport/secure_endpoint_transport.h"
+#include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -292,12 +292,12 @@ absl::StatusOr<grpc_channel*> CreateChaoticGoodChannel(
   }
 
   // Create channel.
-  auto r =
-      ChannelCreate(target,
-                    args.SetObject(SecureEndpointTransportClientChannelFactory<
-                                       ChaoticGoodConnector>())
-                        .Set(GRPC_ARG_USE_V3_STACK, true),
-                    GRPC_CLIENT_CHANNEL, nullptr);
+  auto r = ChannelCreate(
+      target,
+      args.SetObject(
+              EndpointTransportClientChannelFactory<ChaoticGoodConnector>())
+          .Set(GRPC_ARG_USE_V3_STACK, true),
+      GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
   } else {

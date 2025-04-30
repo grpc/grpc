@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/transport/secure_endpoint_transport.h"
+#include "src/core/transport/endpoint_transport_client_channel_factory.h"
 
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 
-namespace grpc_core::secure_endpoint_transport_detail {
+namespace grpc_core::endpoint_transport_client_channel_factory_detail {
 
 absl::StatusOr<ChannelArgs>
 GenericClientChannelFactory::GetSecureNamingChannelArgs(ChannelArgs args) {
@@ -47,4 +47,4 @@ GenericClientChannelFactory::GetSecureNamingChannelArgs(ChannelArgs args) {
   return args.SetObject(std::move(subchannel_security_connector));
 }
 
-}  // namespace grpc_core::secure_endpoint_transport_detail
+}  // namespace grpc_core::endpoint_transport_client_channel_factory_detail
