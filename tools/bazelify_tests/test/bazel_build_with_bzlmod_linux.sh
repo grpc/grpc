@@ -53,7 +53,7 @@ tools/bazel \
     --enable_bzlmod=true \
     --enable_workspace=false \
     --ignore_dev_dependency \
-    --//third_party:grpc_use_openssl=true \
+    --define=//third_party:grpc_use_openssl=true \
     -- \
     :all \
     -:grpcpp_csm_observability  # Needs google_cloud_cpp to be added to BCR
