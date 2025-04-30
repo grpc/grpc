@@ -28,7 +28,6 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
@@ -54,6 +53,44 @@ enum class Http2ErrorCode : uint8_t {
   kInadequateSecurity = 0xc,
   kDoNotUse = 0xffu  // Force use of a default clause
 };
+
+inline absl::StatusCode ErrorCodeToStatusCode(
+    Http2ErrorCode http2_code, Timestamp deadline = Timestamp::InfFuture()) {
+  switch (http2_code) {
+    case Http2ErrorCode::kNoError:
+      return absl::StatusCode::kOk;
+    case Http2ErrorCode::kEnhanceYourCalm:
+      return absl::StatusCode::kResourceExhausted;
+    case Http2ErrorCode::kInadequateSecurity:
+      return absl::StatusCode::kPermissionDenied;
+    case Http2ErrorCode::kRefusedStream:
+      return absl::StatusCode::kUnavailable;
+    case Http2ErrorCode::kCancel:
+      return (Timestamp::Now() > deadline) ? absl::StatusCode::kDeadlineExceeded
+                                           : absl::StatusCode::kCancelled;
+    default:
+      return absl::StatusCode::kInternal;
+  }
+  GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
+}
+inline Http2ErrorCode AbslCodeToErrorCode(absl::StatusCode status) {
+  switch (status) {
+    case absl::StatusCode::kOk:
+      return Http2ErrorCode::kNoError;
+    case absl::StatusCode::kCancelled:
+      return Http2ErrorCode::kCancel;
+    case absl::StatusCode::kDeadlineExceeded:
+      return Http2ErrorCode::kCancel;
+    case absl::StatusCode::kResourceExhausted:
+      return Http2ErrorCode::kEnhanceYourCalm;
+    case absl::StatusCode::kPermissionDenied:
+      return Http2ErrorCode::kInadequateSecurity;
+    case absl::StatusCode::kUnavailable:
+      return Http2ErrorCode::kRefusedStream;
+    default:
+      return Http2ErrorCode::kInternalError;
+  };
+}
 
 class Http2Status {
  public:
@@ -193,7 +230,7 @@ class Http2Status {
                        std::string& message)
       : http2_code_(code),
         error_type_(type),
-        absl_code_(ErrorCodeToStatusCode()),
+        absl_code_(ErrorCodeToStatusCode(http2_code_)),
         message_(std::move(message)) {
     Validate();
   }
@@ -211,30 +248,6 @@ class Http2Status {
             error_type_ > Http2ErrorType::kOk &&
             absl_code_ != absl::StatusCode::kOk));
     DCHECK((IsOk() && message_.empty()) || (!IsOk() && !message_.empty()));
-  }
-
-  absl::StatusCode ErrorCodeToStatusCode(
-      Timestamp deadline = Timestamp::InfFuture()) const {
-    switch (http2_code_) {
-      case Http2ErrorCode::kNoError:
-        return absl::StatusCode::kOk;
-      case Http2ErrorCode::kEnhanceYourCalm:
-        return absl::StatusCode::kResourceExhausted;
-      case Http2ErrorCode::kInadequateSecurity:
-        return absl::StatusCode::kPermissionDenied;
-      case Http2ErrorCode::kRefusedStream:
-        return absl::StatusCode::kUnavailable;
-      case Http2ErrorCode::kCancel:
-        return (Timestamp::Now() > deadline)
-                   ? absl::StatusCode::kDeadlineExceeded
-                   : absl::StatusCode::kCancelled;
-      case Http2ErrorCode::kDoNotUse:
-        DCHECK(false) << "This error code should never be used";
-        return absl::StatusCode::kUnknown;
-      default:
-        return absl::StatusCode::Internal;
-    }
-    GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
   }
 
   std::string DebugGetType() const {
