@@ -1789,8 +1789,8 @@
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/endpoint_transport.h" role="src" />
-    <file baseinstalldir="/" name="src/core/transport/secure_endpoint_transport.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/transport/secure_endpoint_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/transport/endpoint_transport_client_channel_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/aes_gcm.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/crypt/gsec.h" role="src" />
