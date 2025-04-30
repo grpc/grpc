@@ -56,9 +56,7 @@ grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
   if (engine_ptr == nullptr) {
     auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     grpc_event_engine::experimental::EventEngine* expected = nullptr;
-    if (engine_ptr_.compare_exchange_strong(expected, engine.get(),
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acq_rel)) {
+    if (engine_ptr_.compare_exchange_strong(expected, engine.get())) {
       engine_ = std::move(engine);
       return engine_.get();
     }
