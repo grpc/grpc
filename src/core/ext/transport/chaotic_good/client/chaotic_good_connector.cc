@@ -70,7 +70,6 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 
-using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
