@@ -52,7 +52,7 @@ class KeepaliveManager {
           << "KeepAlive timeout triggered. Not setting data_received_ to true";
       return;
     }
-    VLOG(2) << "Data received. Setting data_received_ to true";
+    VLOG(4) << "Data received. Setting data_received_ to true";
     data_received_in_last_cycle_ = true;
     auto waker = std::move(waker_);
     // This will only trigger a wakeup if WaitForData() is pending on this
@@ -88,10 +88,10 @@ class KeepaliveManager {
   auto WaitForData() {
     return [this]() -> Poll<absl::Status> {
       if (data_received_in_last_cycle_) {
-        VLOG(2) << "WaitForData: Data received. Poll resolved";
+        VLOG(4) << "WaitForData: Data received. Poll resolved";
         return absl::OkStatus();
       } else {
-        VLOG(2) << "WaitForData: Data not received. Poll pending";
+        VLOG(4) << "WaitForData: Data not received. Poll pending";
         waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }

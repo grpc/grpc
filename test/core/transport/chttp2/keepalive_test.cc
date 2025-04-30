@@ -43,12 +43,12 @@ class MockKeepAliveInterface : public KeepAliveInterface {
   MOCK_METHOD(Promise<absl::Status>, OnKeepAliveTimeout, (), (override));
   MOCK_METHOD(bool, NeedToSendKeepAlivePing, (), (override));
 
-  void ExpectSendPing(int& end_after) {
-    DCHECK_GT(end_after, 0);
+  void ExpectSendPingAndWaitForAck(int& end_after) {
+    CHECK_GT(end_after, 0);
     EXPECT_CALL(*this, SendPingAndWaitForAck())
         .Times(end_after)
         .WillRepeatedly([&end_after] {
-          LOG(INFO) << "ExpectSendPing Called. Remaining times: "
+          LOG(INFO) << "ExpectSendPingAndWaitForAck Called. Remaining times: "
                     << end_after - 1;
           if (--end_after == 0) {
             return Immediate(absl::CancelledError());
@@ -58,7 +58,7 @@ class MockKeepAliveInterface : public KeepAliveInterface {
   }
 
   void ExpectSendPingWithSleep(Duration duration, int& end_after) {
-    DCHECK_GT(end_after, 0);
+    CHECK_GT(end_after, 0);
     EXPECT_CALL(*this, SendPingAndWaitForAck())
         .Times(end_after)
         .WillRepeatedly([duration, &end_after] {
@@ -72,7 +72,7 @@ class MockKeepAliveInterface : public KeepAliveInterface {
         });
   }
 
-  void ExpectKeepAliveTimeout() {
+  void ExpectOnKeepAliveTimeout() {
     EXPECT_CALL(*this, OnKeepAliveTimeout()).WillOnce([] {
       return (Immediate(absl::OkStatus()));
     });
@@ -114,7 +114,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAlive) {
 
   std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
       std::make_unique<StrictMock<MockKeepAliveInterface>>();
-  keep_alive_interface->ExpectSendPing(end_after);
+  keep_alive_interface->ExpectSendPingAndWaitForAck(end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/2,
                                                       /*return_value=*/true);
 
@@ -140,7 +140,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeout) {
 
   std::unique_ptr<StrictMock<MockKeepAliveInterface>> keep_alive_interface =
       std::make_unique<StrictMock<MockKeepAliveInterface>>();
-  keep_alive_interface->ExpectKeepAliveTimeout();
+  keep_alive_interface->ExpectOnKeepAliveTimeout();
   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
@@ -169,7 +169,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveWithData) {
       std::make_unique<StrictMock<MockKeepAliveInterface>>();
 
   // Break keepalive loop
-  keep_alive_interface->ExpectSendPing(end_after);
+  keep_alive_interface->ExpectSendPingAndWaitForAck(end_after);
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
 
@@ -213,7 +213,7 @@ YODEL_TEST(KeepaliveManagerTest, TestKeepAliveTimeoutWithData) {
 
   // Break keepalive loop
   keep_alive_interface->ExpectSendPingWithSleep(Duration::Hours(1), end_after);
-  keep_alive_interface->ExpectKeepAliveTimeout();
+  keep_alive_interface->ExpectOnKeepAliveTimeout();
   keep_alive_interface->ExpectNeedToSendKeepAlivePing(/*times=*/1,
                                                       /*return_value=*/true);
 

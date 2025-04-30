@@ -17,12 +17,11 @@
 //
 #include "src/core/ext/transport/chttp2/transport/keepalive.h"
 
+#include "src/core/lib/promise/all_ok.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/sleep.h"
-#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 
 namespace grpc_core {
@@ -61,15 +60,8 @@ auto KeepaliveManager::TimeoutAndSendPing() {
   DCHECK(!data_received_in_last_cycle_);
   DCHECK(keepalive_timeout_ != Duration::Infinity());
 
-  return AssertResultType<absl::Status>(Map(
-      TryJoin<absl::StatusOr>(Race(WaitForData(), WaitForKeepAliveTimeout()),
-                              SendPingAndWaitForAck()),
-      [](auto result) {
-        if (!result.ok()) {
-          return result.status();
-        }
-        return absl::OkStatus();
-      }));
+  return AllOk<absl::Status>(Race(WaitForData(), WaitForKeepAliveTimeout()),
+                             SendPingAndWaitForAck());
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
   LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
