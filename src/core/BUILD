@@ -7872,6 +7872,7 @@ grpc_cc_library(
         "grpc_insecure_credentials",
         "handshaker_registry",
         "resolved_address",
+        "secure_endpoint_transport",
         "status_helper",
         "subchannel_connector",
         "sync",
@@ -8560,11 +8561,13 @@ grpc_cc_library(
         "notification",
         "race",
         "resource_quota",
+        "secure_endpoint_transport",
         "sleep",
         "slice",
         "slice_buffer",
         "subchannel_connector",
         "sync",
+        "tcp_connect_handshaker",
         "time",
         "try_seq",
         "wait_for_callback",
@@ -9451,6 +9454,22 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "secure_endpoint_transport",
+    srcs = [
+        "transport/secure_endpoint_transport.cc",
+    ],
+    hdrs = [
+        "transport/secure_endpoint_transport.h",
+    ],
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:grpc_client_channel",
+        "//:grpc_security_base",
     ],
 )
 

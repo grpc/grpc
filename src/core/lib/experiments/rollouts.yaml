@@ -64,6 +64,8 @@
   default: false
 - name: event_engine_listener
   default: true
+- name: event_engine_secure_endpoint
+  default: true
 - name: free_large_allocator
   default: false
 - name: keep_alive_ping_timer_batch
