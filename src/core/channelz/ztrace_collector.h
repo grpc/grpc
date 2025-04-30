@@ -23,6 +23,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -124,6 +126,15 @@ class ZTraceCollector {
  public:
   template <typename X>
   void Append(X producer_or_value) {
+    GRPC_TRACE_LOG(ztrace, INFO) << "ZTRACE[" << this << "]: " << [&]() {
+      Json::Object obj;
+      if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
+        producer_or_value.RenderJson(obj);
+      } else {
+        producer_or_value().RenderJson(obj);
+      }
+      return JsonDump(Json::FromObject(std::move(obj)));
+    }();
     if (!impl_.is_set()) return;
     if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
       AppendValue(std::move(producer_or_value));
