@@ -29365,6 +29365,7 @@ add_executable(test_cpp_end2end_ssl_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
+  test/core/test_util/postmortem.cc
   test/cpp/end2end/ssl_credentials_test.cc
   test/cpp/end2end/test_service_impl.cc
 )

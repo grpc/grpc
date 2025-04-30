@@ -16645,6 +16645,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/postmortem.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -16655,6 +16656,7 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/core/test_util/postmortem.cc
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
