@@ -18,17 +18,19 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include <errno.h>
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
+
+#include <memory>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
@@ -39,6 +41,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"

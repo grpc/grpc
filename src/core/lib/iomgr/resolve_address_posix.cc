@@ -18,27 +18,37 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <atomic>
-
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
 #include <string.h>
 #include <sys/types.h>
 
+#include <atomic>
+#include <functional>
 #include <memory>
+#include <string>
+#include <utility>
+#include <vector>
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/lib/iomgr/block_annotate.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolve_address_posix.h"
+#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/time.h"
 #include "src/core/util/useful.h"
-
 namespace grpc_core {
 
 grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
