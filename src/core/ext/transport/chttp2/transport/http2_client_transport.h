@@ -110,10 +110,10 @@ class Http2ClientTransport final : public ClientTransport {
         }));
   }
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_system_.RequestPing(std::move(on_initiate));
+    return ping_manager_.RequestPing(std::move(on_initiate));
   }
   template <typename Factory>
-  auto TestOnlyRunPromise(Factory factory) {
+  auto TestOnlySpawnPromise(Factory factory) {
     return general_party_->Spawn("TestPromise", std::move(factory),
                                  [](auto) {});
   }
@@ -222,18 +222,18 @@ class Http2ClientTransport final : public ClientTransport {
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
   void CloseTransport();
-  bool bytes_sent_in_last_write_ = false;
+  bool bytes_sent_in_last_write_;
 
   // Ping related members
   Duration keepalive_interval_ = Duration::Seconds(20);
   Duration ping_timeout_;
-  PingManager ping_system_;
+  PingManager ping_manager_;
 
   // Flags
-  bool keepalive_permit_without_calls_ = false;
+  bool keepalive_permit_without_calls_;
 
   auto SendPing(absl::AnyInvocable<void()> on_initiate) {
-    return ping_system_.RequestPing(std::move(on_initiate));
+    return ping_manager_.RequestPing(std::move(on_initiate));
   }
 
   // Ping Helper functions
@@ -252,7 +252,8 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   auto MaybeSendPing() {
-    return ping_system_.MaybeSendPing(NextAllowedPingInterval(), ping_timeout_);
+    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
+                                       ping_timeout_);
   }
 
   class PingSystemInterfaceImpl : public PingInterface {
@@ -270,13 +271,7 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
     Promise<absl::Status> TriggerWrite() override {
-      return Map(transport_->EnqueueOutgoingFrame(Http2EmptyFrame{}),
-                 [](absl::Status status) {
-                   if (!status.ok()) {
-                     VLOG(2) << "Failed to trigger write";
-                   }
-                   return status;
-                 });
+      return transport_->EnqueueOutgoingFrame(Http2EmptyFrame{});
     }
 
     Promise<absl::Status> PingTimeout() override {
@@ -289,7 +284,10 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
    private:
-    // TODO(akshitpatel) : [PH2][P0] : Will a ref counted ptr be better here?
+    // TODO(akshitpatel) : [PH2][P1] : Eventually there should be a separate ref
+    // counted struct/class passed to all the transport promises/members. This
+    // will help removing back references from the transport members to
+    // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
     explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}

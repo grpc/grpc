@@ -84,7 +84,7 @@ void Http2ClientTransport::AbortWithError() {
 
 void Http2ClientTransport::CloseTransport() {
   // TODO(akshitpatel) : [PH2][P1] : Implement this.
-  ping_system_.CancelCallbacks();
+  ping_manager_.CancelCallbacks();
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -94,12 +94,14 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       frame1 = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
             << frame1.stream_id << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << "}";
+        self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
 }
@@ -108,13 +110,15 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       frame1 = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
             << frame1.stream_id << ", end_headers=" << frame1.end_headers
             << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << " }";
+        self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
 }
@@ -157,7 +161,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
       frame.ack,
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // Received a ping ack.
-        if (!self->ping_system_.AckPing(opaque)) {
+        if (!self->ping_manager_.AckPing(opaque)) {
           HTTP2_TRANSPORT_DLOG << "Unknown ping resoponse received for ping id="
                                << opaque;
         }
@@ -238,18 +242,10 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   return AssertResultType<absl::Status>(MatchPromise(
       std::move(frame),
       [this](Http2DataFrame frame) {
-        return Map(ProcessHttp2DataFrame(std::move(frame)),
-                   [self = RefAsSubclass<Http2ClientTransport>()](auto status) {
-                     self->ping_system_.ReceivedDataFrame();
-                     return status;
-                   });
+        return ProcessHttp2DataFrame(std::move(frame));
       },
       [this](Http2HeaderFrame frame) {
-        return Map(ProcessHttp2HeaderFrame(std::move(frame)),
-                   [self = RefAsSubclass<Http2ClientTransport>()](auto status) {
-                     self->ping_system_.ReceivedDataFrame();
-                     return status;
-                   });
+        return ProcessHttp2HeaderFrame(std::move(frame));
       },
       [this](Http2RstStreamFrame frame) {
         return ProcessHttp2RstStreamFrame(frame);
@@ -371,7 +367,7 @@ auto Http2ClientTransport::WriteLoop() {
         },
         [this]() -> LoopCtl<absl::Status> {
           if (bytes_sent_in_last_write_) {
-            ping_system_.ResetPingClock(/*is_client=*/true);
+            ping_manager_.ResetPingClock(/*is_client=*/true);
           }
           HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
           return Continue();
@@ -397,14 +393,20 @@ Http2ClientTransport::Http2ClientTransport(
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
+      bytes_sent_in_last_write_(false),
+      keepalive_interval_(std::max(
+          Duration::Milliseconds(1),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+              .value_or(Duration::Infinity()))),
       ping_timeout_(std::max(
           Duration::Zero(),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
               .value_or(keepalive_interval_ == Duration::Infinity()
                             ? Duration::Infinity()
                             : Duration::Minutes(1)))),
-      ping_system_(channel_args, PingSystemInterfaceImpl::Make(this),
-                   event_engine) {
+      ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
+                    event_engine),
+      keepalive_permit_without_calls_(false) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
