@@ -270,6 +270,7 @@ finish:
     error =
         grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
+  auto engine = ac->engine;
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
@@ -280,7 +281,7 @@ finish:
   // during the shutdown process, in which case a deadlock could form between
   // the core shutdown mu and the connector mu (b/188239051)
   if (!connect_cancelled) {
-    ac->engine->Run([closure, error]() {
+    engine->Run([closure, error]() {
       grpc_core::ExecCtx exec_ctx;
       closure->cb(closure->cb_arg, error);
     });
