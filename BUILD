@@ -4220,7 +4220,6 @@ grpc_cc_library(
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
         "//src/core:tsi/ssl_transport_security_utils.h",
-        "//src/core:env",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4247,6 +4246,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
