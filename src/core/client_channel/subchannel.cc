@@ -827,7 +827,9 @@ bool Subchannel::PublishTransportLocked() {
     }
     connected_subchannel_ = MakeRefCounted<LegacyConnectedSubchannel>(
         std::move(*stack), args_,
-        channelz_node()->RefAsSubclass<channelz::SubchannelNode>());
+        channelz_node() == nullptr
+            ? nullptr
+            : channelz_node()->RefAsSubclass<channelz::SubchannelNode>());
   } else {
     OrphanablePtr<ClientTransport> transport(
         std::exchange(connecting_result_.transport, nullptr)
