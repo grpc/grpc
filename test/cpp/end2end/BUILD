@@ -1121,6 +1121,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_cc_grpc",
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
         "//test/cpp/util:test_util",
     ],
 )
