@@ -751,7 +751,7 @@ CORE_SOURCE_FILES = [
     'src/core/telemetry/stats.cc',
     'src/core/telemetry/stats_data.cc',
     'src/core/transport/auth_context.cc',
-    'src/core/transport/secure_endpoint_transport.cc',
+    'src/core/transport/endpoint_transport_client_channel_factory.cc',
     'src/core/tsi/alts/crypt/aes_gcm.cc',
     'src/core/tsi/alts/crypt/gsec.cc',
     'src/core/tsi/alts/frame_protector/alts_counter.cc',
