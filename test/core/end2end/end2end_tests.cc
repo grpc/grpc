@@ -89,10 +89,7 @@ CoreEnd2endTest::CoreEnd2endTest(
           engine->Tick(max_step);
           grpc_timer_manager_tick();
         });
-    SetPostGrpcInitFunc([]() {
-      grpc_timer_manager_set_threading(false);
-      ExecCtx exec_ctx;
-    });
+    SetPostGrpcInitFunc([]() { grpc_timer_manager_set_threading(false); });
   } else {
     ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
