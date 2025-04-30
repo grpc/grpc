@@ -1020,6 +1020,7 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
   DoHandshake();
 }
 
+// TODO(matthewstevenson88): Make tests below compatible with OpenSSL.
 #if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest, Protect) {
   LOG(INFO) << "ssl_tsi_test_protect";
