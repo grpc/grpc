@@ -704,6 +704,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
                        grpc_connectivity_state last_observed_state,
                        Timestamp deadline)
       : channel_(std::move(channel)), cq_(cq), tag_(tag) {
+    grpc_cq_begin_op(cq, tag);
     MutexLock lock(&mu_);
     // Start watch.  This inherits the ref from creation.
     auto watcher =
@@ -783,17 +784,14 @@ void ClientChannel::WatchConnectivityState(grpc_connectivity_state state,
 }
 
 void ClientChannel::AddConnectivityWatcher(
-    grpc_connectivity_state,
-    OrphanablePtr<AsyncConnectivityStateWatcherInterface>) {
-  Crash("not implemented");
-  // TODO(ctiller): to make this work, need to change WorkSerializer to use
-  // absl::AnyInvocable<> instead of std::function<>
-  //  work_serializer_->Run(
-  //      [self = RefAsSubclass<ClientChannel>(), initial_state,
-  //       watcher = std::move(watcher)]()
-  //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-  //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
-  //      });
+    grpc_connectivity_state initial_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+  work_serializer_->Run(
+      [self = RefAsSubclass<ClientChannel>(), initial_state,
+       watcher = std::move(watcher)]()
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) mutable {
+            self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
+          });
 }
 
 void ClientChannel::RemoveConnectivityWatcher(

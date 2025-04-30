@@ -147,6 +147,7 @@ class Server {
         builder->AddChannelArgument(
             GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
             std::string(grpc_core::chaotic_good::WireFormatPreferences()));
+        break;
       default:
         LOG(FATAL) << "Unknown protocol: " << config.protocol();
     }
