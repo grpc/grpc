@@ -786,12 +786,13 @@ void ClientChannel::WatchConnectivityState(grpc_connectivity_state state,
 void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
-  work_serializer_->Run(
-      [self = RefAsSubclass<ClientChannel>(), initial_state,
-       watcher = std::move(watcher)]()
-          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) mutable {
-            self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
-          });
+  auto self = RefAsSubclass<ClientChannel>();
+      work_serializer_->Run(
+          [self, initial_state, watcher = std::move(watcher)]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) mutable {
+                self->state_tracker_.AddWatcher(initial_state,
+                                                std::move(watcher));
+              });
 }
 
 void ClientChannel::RemoveConnectivityWatcher(
