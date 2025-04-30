@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CORE_TRANSPORT_SECURE_ENDPOINT_TRANSPORT_H
-#define GRPC_SRC_CORE_TRANSPORT_SECURE_ENDPOINT_TRANSPORT_H
+#ifndef GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_CLIENT_CHANNEL_FACTORY_H
+#define GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_CLIENT_CHANNEL_FACTORY_H
 
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/subchannel.h"
@@ -64,4 +64,4 @@ auto EndpointTransportClientChannelFactory() {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_TRANSPORT_ENDPOINT_TRANSPORT_CLIENT_CHANNEL_FACTORY_H
