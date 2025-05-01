@@ -38,6 +38,8 @@
 
 namespace grpc_event_engine::experimental {
 
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+
 constexpr absl::string_view kHost = "fork_test";
 
 MATCHER_P2(ResolvedTo, ipv4, ipv6, "") {
@@ -83,8 +85,6 @@ class LookupCallback {
   absl::StatusOr<std::vector<std::string>> result_;
   grpc_core::Notification notification_;
 };
-
-#ifdef GRPC_ENABLE_FORK_SUPPORT
 
 // In a parent process, request made before fork can be resolved post-fork
 TEST(DnsForkTest, DnsLookupAcrossForkInParent) {

@@ -14,9 +14,16 @@
 
 #include "test/core/event_engine/posix/dns_server.h"
 
+#include "src/core/lib/iomgr/port.h"
+
+#ifdef GRPC_POSIX_SOCKET
+
+#include <fcntl.h>
+
 #include <algorithm>
 #include <array>
 #include <cstdint>
+#include <memory>
 #include <thread>
 
 #include "absl/cleanup/cleanup.h"
@@ -256,9 +263,8 @@ void DnsServer::ServerLoop(int sockfd) {
   };
 
   while (!done_.HasBeenNotified()) {
-    auto received_bytes =
-        recvfrom(sockfd, buffer.data(), buffer.size(), MSG_DONTWAIT,
-                 (struct sockaddr*)&client_addr, &client_len);
+    auto received_bytes = recvfrom(sockfd, buffer.data(), buffer.size(), 0,
+                                   (struct sockaddr*)&client_addr, &client_len);
     if (received_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
       // Don't wait
       absl::SleepFor(absl::Milliseconds(5));
@@ -290,8 +296,15 @@ void DnsServer::ServerLoop(int sockfd) {
 }
 
 absl::StatusOr<DnsServer> DnsServer::Start(int port) {
+  bool success = false;
   int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-  if (sockfd < 0) {
+  if (sockfd > 0) {
+    int flags = fcntl(sockfd, F_GETFL, 0);
+    if (flags >= 0) {
+      success = fcntl(sockfd, F_SETFL, flags | O_NONBLOCK) == 0;
+    }
+  }
+  if (!success) {
     return absl::ErrnoToStatus(errno, "Error creating socket");
   }
   sockaddr_in server_addr;
@@ -308,3 +321,31 @@ absl::StatusOr<DnsServer> DnsServer::Start(int port) {
 }
 
 }  // namespace grpc_event_engine::experimental
+
+#else  // GRPC_POSIX_SOCKET
+
+#include "src/core/util/crash.h"
+
+namespace grpc_event_engine::experimental {
+
+absl::StatusOr<DnsServer> DnsServer::Start(int port) {
+  return absl::UnimplementedError("Unsupported platform");
+}
+
+DnsServer::~DnsServer() = default;
+
+std::string DnsServer::address() const {
+  grpc_core::Crash("Unsupported platform");
+}
+
+DnsQuestion DnsServer::WaitForQuestion() const {
+  grpc_core::Crash("Unsupported platform");
+}
+
+void DnsServer::SetIPv4Response(absl::Span<const uint8_t> /* ipv4_address */) {
+  grpc_core::Crash("Unsupported platform");
+}
+
+}  // namespace grpc_event_engine::experimental
+
+#endif  // GRPC_POSIX_SOCKET
