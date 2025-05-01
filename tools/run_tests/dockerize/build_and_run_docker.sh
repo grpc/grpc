@@ -225,6 +225,8 @@ then
   echo "Printing git root contents"
   ls -R ${git_root}
   cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
+
+  echo "Artifacts copy EXIT_CODE: ${DOCKER_EXIT_CODE}"
 fi
 
 exit $DOCKER_EXIT_CODE
