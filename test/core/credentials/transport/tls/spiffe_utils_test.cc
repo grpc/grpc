@@ -456,6 +456,8 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
         "spiffe_cert.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
   }
   {
     // check the test.example.com bundle
@@ -469,6 +471,8 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
         "server1_spiffe.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
   }
 }
 
@@ -496,6 +500,8 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
         "spiffe_cert.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
   }
   {
     // Check the second root
@@ -506,6 +512,8 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
         "server1_spiffe.pem");
     ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
     EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
   }
 }
 
