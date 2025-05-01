@@ -97,8 +97,8 @@ class GracefulShutdownTest : public ::testing::Test {
         false);
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     CHECK(core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args(),
-                                      nullptr) == absl::OkStatus());
+                                      core_server->channel_args()) ==
+          absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                         nullptr);
     // Start polling on the client
@@ -226,7 +226,8 @@ class GracefulShutdownTest : public ::testing::Test {
                      grpc_slice message) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, error_code, message, &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, error_code, message, &buffer,
+                              &http2_ztrace_collector_);
     std::string expected_bytes;
     for (size_t i = 0; i < buffer.count; ++i) {
       absl::StrAppend(&expected_bytes, StringViewFromSlice(buffer.slices[i]));
@@ -306,6 +307,7 @@ class GracefulShutdownTest : public ::testing::Test {
   grpc_slice_buffer read_buffer_;
   std::string read_bytes_ ABSL_GUARDED_BY(mu_);
   grpc_closure on_write_done_;
+  Http2ZTraceCollector http2_ztrace_collector_;
 };
 
 TEST_F(GracefulShutdownTest, GracefulGoaway) {

@@ -36,17 +36,20 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 
 using grpc_core::http2::Http2ErrorCode;
 
 grpc_slice grpc_chttp2_rst_stream_create(
-    uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer) {
+    uint32_t id, uint32_t code, grpc_core::CallTracerInterface* call_tracer,
+    grpc_core::Http2ZTraceCollector* ztrace_collector) {
   static const size_t frame_size = 13;
   grpc_slice slice = GRPC_SLICE_MALLOC(frame_size);
   if (call_tracer != nullptr) {
     call_tracer->RecordOutgoingBytes({frame_size, 0, 0});
   }
+  ztrace_collector->Append(grpc_core::H2RstStreamTrace<false>{id, code});
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
   // Frame size.
@@ -75,8 +78,9 @@ void grpc_chttp2_add_rst_stream_to_next_write(
     grpc_chttp2_transport* t, uint32_t id, uint32_t code,
     grpc_core::CallTracerInterface* call_tracer) {
   t->num_pending_induced_frames++;
-  grpc_slice_buffer_add(&t->qbuf,
-                        grpc_chttp2_rst_stream_create(id, code, call_tracer));
+  grpc_slice_buffer_add(
+      &t->qbuf, grpc_chttp2_rst_stream_create(id, code, call_tracer,
+                                              &t->http2_ztrace_collector));
 }
 
 grpc_error_handle grpc_chttp2_rst_stream_parser_begin_frame(
@@ -114,6 +118,8 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |
                       ((static_cast<uint32_t>(p->reason_bytes[3])));
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2RstStreamTrace<true>{t->incoming_stream_id, reason});
     GRPC_TRACE_LOG(http, INFO)
         << "[chttp2 transport=" << t << " stream=" << s
         << "] received RST_STREAM(reason=" << reason << ")";
@@ -128,8 +134,9 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
           grpc_core::StatusIntProperty::kHttp2Error,
           static_cast<intptr_t>(reason));
     }
+    grpc_core::SharedBitGen g;
     if (!t->is_client &&
-        absl::Bernoulli(t->bitgen, t->ping_on_rst_stream_percent / 100.0)) {
+        absl::Bernoulli(g, t->ping_on_rst_stream_percent / 100.0)) {
       ++t->num_pending_induced_frames;
       t->ping_callbacks.RequestPing();
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_KEEPALIVE_PING);

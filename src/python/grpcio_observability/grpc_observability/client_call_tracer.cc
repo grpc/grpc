@@ -317,8 +317,8 @@ void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
 void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
     RecordCancel(absl::Status /*cancel_error*/) {}
 
-void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void PythonOpenCensusCallTracer::PythonOpenCensusCallAttemptTracer::
+    RecordEnd() {
   if (PythonCensusStatsEnabled()) {
     context_.Labels().emplace_back(kClientMethod, parent_->method_);
     context_.Labels().emplace_back(kClientStatus,

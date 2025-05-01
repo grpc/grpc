@@ -314,7 +314,8 @@ LANG_RELEASE_MATRIX = {
             ("v1.68.2", ReleaseInfo()),
             ("v1.69.4", ReleaseInfo()),
             ("v1.70.0", ReleaseInfo()),
-            ("v1.71.0", ReleaseInfo()),
+            ("v1.71.1", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
         ]
     ),
     "java": OrderedDict(
@@ -464,6 +465,8 @@ LANG_RELEASE_MATRIX = {
             ("v1.68.3", ReleaseInfo()),
             ("v1.69.1", ReleaseInfo()),
             ("v1.70.0", ReleaseInfo()),
+            ("v1.71.0", ReleaseInfo()),
+            ("v1.72.0", ReleaseInfo()),
         ]
     ),
     "python": OrderedDict(

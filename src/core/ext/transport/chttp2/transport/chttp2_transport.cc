@@ -59,7 +59,6 @@
 #include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h"
-#include "src/core/ext/transport/chttp2/transport/context_list_entry.h"
 #include "src/core/ext/transport/chttp2/transport/flow_control.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -77,6 +76,7 @@
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -102,6 +102,7 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
@@ -109,11 +110,15 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/http_client/parser.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/ref_counted.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+
+using grpc_core::Json;
 
 #define DEFAULT_CONNECTION_WINDOW_TARGET (1024 * 1024)
 #define MAX_WINDOW 0x7fffffffu
@@ -399,6 +404,10 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   }
 }
 
+using grpc_event_engine::experimental::ChannelzExtension;
+using grpc_event_engine::experimental::QueryExtension;
+using grpc_event_engine::experimental::TcpTraceExtension;
+
 static void read_channel_args(grpc_chttp2_transport* t,
                               const grpc_core::ChannelArgs& channel_args,
                               const bool is_client) {
@@ -483,6 +492,15 @@ static void read_channel_args(grpc_chttp2_transport* t,
                          t->peer_string.as_string_view()),
             channel_args
                 .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+    // Checks channelz_socket, so must be initialized after.
+    t->channelz_data_source =
+        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
+    auto epte = QueryExtension<ChannelzExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            t->ep.get()));
+    if (epte != nullptr) {
+      epte->SetSocketNode(t->channelz_socket);
+    }
   }
 
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
@@ -572,6 +590,95 @@ static void init_keepalive_pings_if_enabled_locked(
   }
 }
 
+void grpc_chttp2_transport::ChannelzDataSource::AddData(
+    grpc_core::channelz::DataSink& sink) {
+  grpc_core::Notification n;
+  transport_->event_engine->Run([t = transport_->Ref(), &n, &sink]() {
+    grpc_core::ExecCtx exec_ctx;
+    t->combiner->Run(
+        grpc_core::NewClosure([t, &n, &sink](grpc_error_handle) {
+          Json::Object http2_info;
+          http2_info["flowControl"] =
+              Json::FromObject(t->flow_control.stats().ToJsonObject());
+          Json::Object misc;
+          misc["maxRequestsPerRead"] =
+              Json::FromNumber(static_cast<int64_t>(t->max_requests_per_read));
+          misc["nextStreamId"] = Json::FromNumber(t->next_stream_id);
+          misc["lastNewStreamId"] = Json::FromNumber(t->last_new_stream_id);
+          misc["numIncomingStreamsBeforeSettingsAck"] =
+              Json::FromNumber(t->num_incoming_streams_before_settings_ack);
+          misc["pingAckCount"] =
+              Json::FromNumber(static_cast<int64_t>(t->ping_ack_count));
+          misc["allowTarpit"] = Json::FromBool(t->allow_tarpit);
+          if (t->allow_tarpit) {
+            misc["minTarpitDurationMs"] =
+                Json::FromNumber(t->min_tarpit_duration_ms);
+            misc["maxTarpitDurationMs"] =
+                Json::FromNumber(t->max_tarpit_duration_ms);
+          }
+          misc["keepaliveTime"] =
+              Json::FromString(t->keepalive_time.ToJsonString());
+          misc["nextAdjustedKeepaliveTimestamp"] =
+              Json::FromString((t->next_adjusted_keepalive_timestamp -
+                                grpc_core::Timestamp::Now())
+                                   .ToJsonString());
+          misc["numMessagesInNextWrite"] =
+              Json::FromNumber(t->num_messages_in_next_write);
+          misc["numPendingInducedFrames"] =
+              Json::FromNumber(t->num_pending_induced_frames);
+          misc["writeBufferSize"] = Json::FromNumber(t->write_buffer_size);
+          misc["readingPausedOnPendingInducedFrames"] =
+              Json::FromBool(t->reading_paused_on_pending_induced_frames);
+          misc["enablePreferredRxCryptoFrameAdvertisement"] =
+              Json::FromBool(t->enable_preferred_rx_crypto_frame_advertisement);
+          misc["keepalivePermitWithoutCalls"] =
+              Json::FromBool(t->keepalive_permit_without_calls);
+          misc["bdpPingBlocked"] = Json::FromBool(t->bdp_ping_blocked);
+          misc["bdpPingStarted"] = Json::FromBool(t->bdp_ping_started);
+          misc["ackPings"] = Json::FromBool(t->ack_pings);
+          misc["keepaliveIncomingDataWanted"] =
+              Json::FromBool(t->keepalive_incoming_data_wanted);
+          misc["maxConcurrentStreamsOverloadProtection"] =
+              Json::FromBool(t->max_concurrent_streams_overload_protection);
+          misc["maxConcurrentStreamsRejectOnClient"] =
+              Json::FromBool(t->max_concurrent_streams_reject_on_client);
+          misc["pingOnRstStreamPercent"] =
+              Json::FromNumber(t->ping_on_rst_stream_percent);
+          misc["lastWindowUpdateAge"] = Json::FromString(
+              (grpc_core::Timestamp::Now() - t->last_window_update_time)
+                  .ToJsonString());
+          http2_info["misc"] = Json::FromObject(std::move(misc));
+          http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
+          sink.AddAdditionalInfo("http2", std::move(http2_info));
+          std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
+              children;
+          children.reserve(t->stream_map.size());
+          for (auto [id, stream] : t->stream_map) {
+            if (stream->channelz_call_node == nullptr) {
+              stream->channelz_call_node =
+                  grpc_core::MakeRefCounted<grpc_core::channelz::CallNode>(
+                      absl::StrCat("chttp2 ",
+                                   t->is_client ? "client" : "server",
+                                   " stream ", stream->id));
+            }
+            children.push_back(stream->channelz_call_node);
+          }
+          sink.AddChildObjects(std::move(children));
+          n.Notify();
+        }),
+        absl::OkStatus());
+  });
+  n.WaitForNotification();
+}
+
+std::unique_ptr<grpc_core::channelz::ZTrace>
+grpc_chttp2_transport::ChannelzDataSource::GetZTrace(absl::string_view name) {
+  if (name == "transport_frames") {
+    return transport_->http2_ztrace_collector.MakeZTrace();
+  }
+  return grpc_core::channelz::DataSource::GetZTrace(name);
+}
+
 // TODO(alishananda): add unit testing as part of chttp2 promise conversion work
 void grpc_chttp2_transport::WriteSecurityFrame(grpc_core::SliceBuffer* data) {
   grpc_core::ExecCtx exec_ctx;
@@ -601,9 +708,6 @@ void grpc_chttp2_transport::WriteSecurityFrameLocked(
   grpc_slice_buffer_move_into(security_frame.c_slice_buffer(), &qbuf);
   grpc_chttp2_initiate_write(this, GRPC_CHTTP2_INITIATE_WRITE_SEND_MESSAGE);
 }
-
-using grpc_event_engine::experimental::QueryExtension;
-using grpc_event_engine::experimental::TcpTraceExtension;
 
 grpc_chttp2_transport::grpc_chttp2_transport(
     const grpc_core::ChannelArgs& channel_args,
@@ -1091,6 +1195,8 @@ static void write_action(grpc_chttp2_transport* t) {
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
   t->write_size_policy.BeginWrite(t->outbuf.Length());
+  t->http2_ztrace_collector.Append(grpc_core::H2BeginEndpointWrite{
+      static_cast<uint32_t>(t->outbuf.Length())});
   grpc_endpoint_write(t->ep.get(), t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
@@ -1922,7 +2028,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     // Graceful GOAWAYs require a NO_ERROR error code
     grpc_chttp2_goaway_append(
         (1u << 31) - 1, 0 /*NO_ERROR*/,
-        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t->qbuf);
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t->qbuf,
+        &t->http2_ztrace_collector);
     t->keepalive_timeout =
         std::min(t->keepalive_timeout, grpc_core::Duration::Seconds(20));
     t->ping_timeout =
@@ -1956,7 +2063,8 @@ class GracefulGoaway : public grpc_core::RefCounted<GracefulGoaway> {
     t_->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
     grpc_chttp2_goaway_append(
         t_->last_new_stream_id, 0 /*NO_ERROR*/,
-        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t_->qbuf);
+        grpc_core::Slice::FromCopiedString(message_).TakeCSlice(), &t_->qbuf,
+        &t_->http2_ztrace_collector);
     grpc_chttp2_initiate_write(t_.get(),
                                GRPC_CHTTP2_INITIATE_WRITE_GOAWAY_SENT);
   }
@@ -2002,9 +2110,10 @@ static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error,
             << ": Sending goaway last_new_stream_id=" << t->last_new_stream_id
             << " err=" << grpc_core::StatusToString(error);
     t->sent_goaway_state = GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED;
-    grpc_chttp2_goaway_append(
-        t->last_new_stream_id, static_cast<uint32_t>(http_error),
-        grpc_slice_from_cpp_string(std::move(message)), &t->qbuf);
+    grpc_chttp2_goaway_append(t->last_new_stream_id,
+                              static_cast<uint32_t>(http_error),
+                              grpc_slice_from_cpp_string(std::move(message)),
+                              &t->qbuf, &t->http2_ztrace_collector);
   } else {
     // Final GOAWAY has already been sent.
   }
@@ -2258,7 +2367,7 @@ namespace {
 
 Duration TarpitDuration(grpc_chttp2_transport* t) {
   return Duration::Milliseconds(absl::LogUniform<int>(
-      absl::BitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
+      SharedBitGen(), t->min_tarpit_duration_ms, t->max_tarpit_duration_ms));
 }
 
 template <typename F>
@@ -3333,13 +3442,6 @@ bool grpc_chttp2_transport::
 
 absl::string_view grpc_chttp2_transport::GetTransportName() const {
   return "chttp2";
-}
-
-grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>
-grpc_chttp2_transport_get_socket_node(grpc_core::Transport* transport) {
-  grpc_chttp2_transport* t =
-      reinterpret_cast<grpc_chttp2_transport*>(transport);
-  return t->channelz_socket;
 }
 
 grpc_core::Transport* grpc_create_chttp2_transport(

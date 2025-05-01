@@ -301,8 +301,10 @@ class TestZTrace final : public ZTrace {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
-  void AddJson(Json::Object& object) override {
+  void AddData(DataSink& sink) override {
+    Json::Object object;
     object["test"] = Json::FromString("yes");
+    sink.AddAdditionalInfo("testData", std::move(object));
   }
   std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "test_ztrace") return std::make_unique<TestZTrace>();
@@ -320,8 +322,16 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     Json json = channelz_channel->RenderJson();
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
-    auto it = object.find("test");
-    ASSERT_NE(it, object.end());
+    auto it_additional_info = object.find("additionalInfo");
+    ASSERT_NE(it_additional_info, object.end());
+    ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
+    const Json::Object& additional_info = it_additional_info->second.object();
+    auto it_test_data = additional_info.find("testData");
+    ASSERT_NE(it_test_data, additional_info.end());
+    ASSERT_EQ(it_test_data->second.type(), Json::Type::kObject);
+    const Json::Object& test_data = it_test_data->second.object();
+    auto it = test_data.find("test");
+    ASSERT_NE(it, test_data.end());
     ASSERT_EQ(it->second.type(), Json::Type::kString);
     EXPECT_EQ(it->second.string(), "yes");
   }
@@ -330,8 +340,13 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     Json json = channelz_channel->RenderJson();
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
-    auto it = object.find("test");
-    EXPECT_EQ(it, object.end());
+    auto it = object.find("additionalInfo");
+    if (it != object.end()) {
+      ASSERT_EQ(it->second.type(), Json::Type::kObject);
+      const Json::Object& additional_info = it->second.object();
+      auto it_test_data = additional_info.find("testData");
+      EXPECT_EQ(it_test_data, additional_info.end());
+    }
   }
 }
 
@@ -351,6 +366,44 @@ TEST_P(ChannelzChannelTest, ZTrace) {
       });
   done.WaitForNotification();
   EXPECT_EQ(json_text, "{\"test\":\"yes\"}");
+}
+
+class TestSubObjectDataSource final : public DataSource {
+ public:
+  using DataSource::DataSource;
+  void AddData(DataSink& sink) override { sink.AddChildObjects({child_}); }
+
+  int64_t child_id() const { return child_->uuid(); }
+
+ private:
+  RefCountedPtr<SocketNode> child_ =
+      MakeRefCounted<SocketNode>("foo", "bar", "baz", nullptr);
+};
+
+TEST_P(ChannelzChannelTest, SubObjectDataSource) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  TestSubObjectDataSource data_source(channelz_channel->Ref());
+  auto json = channelz_channel->RenderJson();
+  ASSERT_EQ(json.type(), Json::Type::kObject);
+  const Json::Object& object = json.object();
+  auto it_additional_info = object.find("additionalInfo");
+  ASSERT_NE(it_additional_info, object.end());
+  ASSERT_EQ(it_additional_info->second.type(), Json::Type::kObject);
+  const Json::Object& additional_info = it_additional_info->second.object();
+  auto it_child_objects = additional_info.find("childObjects");
+  ASSERT_NE(it_child_objects, additional_info.end());
+  ASSERT_EQ(it_child_objects->second.type(), Json::Type::kObject);
+  const Json::Object& child_objects = it_child_objects->second.object();
+  auto it = child_objects.find("subSockets");
+  ASSERT_NE(it, child_objects.end());
+  ASSERT_EQ(it->second.type(), Json::Type::kArray);
+  const Json::Array& sub_sockets = it->second.array();
+  ASSERT_EQ(sub_sockets.size(), 1);
+  ASSERT_EQ(sub_sockets[0].type(), Json::Type::kNumber);
+  EXPECT_EQ(sub_sockets[0].string(), std::to_string(data_source.child_id()));
 }
 
 TEST(ChannelzChannelTest, ChannelzDisabled) {
@@ -500,7 +553,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   const intptr_t kMidQuery = 40;
   ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
-  (void)channels;  // suppress unused variable error
+  ChannelzRegistry::GetAllEntities();  // Force uuids to be fresh
+  (void)channels;                      // suppress unused variable error
   // Only query for the end of the channels.
   std::string json_str = ChannelzRegistry::GetTopChannelsJson(kMidQuery);
   auto parsed_json = JsonParse(json_str);
@@ -517,6 +571,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture pre_channels[40];  // will take uuid[1, 40]
   (void)pre_channels;               // suppress unused variable error
@@ -540,6 +598,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
   {
@@ -575,6 +637,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   const intptr_t kLoopIterations = 50;
   ExecCtx exec_ctx;
   std::vector<std::unique_ptr<ChannelFixture>> even_channels;

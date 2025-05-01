@@ -501,7 +501,7 @@ class ClientChannelFilter::SubchannelWrapper final
       if (subchannel_node != nullptr) {
         auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
         if (it == chand_->subchannel_refcount_map_.end()) {
-          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+          subchannel_node->AddParent(chand_->channelz_node_);
           it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
                    .first;
         }
@@ -533,8 +533,7 @@ class ClientChannelFilter::SubchannelWrapper final
           CHECK(it != chand_->subchannel_refcount_map_.end());
           --it->second;
           if (it->second == 0) {
-            chand_->channelz_node_->RemoveChildSubchannel(
-                subchannel_node->uuid());
+            subchannel_node->RemoveParent(chand_->channelz_node_);
             chand_->subchannel_refcount_map_.erase(it);
           }
         }
@@ -1029,7 +1028,11 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  return GlobalSubchannelPool::instance();
+  if (IsShardGlobalConnectionPoolEnabled()) {
+    return GlobalSubchannelPool::instance();
+  } else {
+    return LegacyGlobalSubchannelPool::instance();
+  }
 }
 
 }  // namespace
@@ -1551,11 +1554,13 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
+    std::string trace =
+        channelz::ChannelNode::GetChannelConnectivityStateChangeString(state);
+    if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      absl::StrAppend(&trace, " status:", status.ToString());
+    }
+    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                                  grpc_slice_from_cpp_string(std::move(trace)));
   }
 }
 
@@ -2428,9 +2433,7 @@ void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
 void ClientChannelFilter::LoadBalancedCall::RecordLatency() {
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer() != nullptr) {
-    gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
-    call_attempt_tracer()->RecordEnd(latency);
+    call_attempt_tracer()->RecordEnd();
   }
 }
 
