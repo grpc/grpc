@@ -5608,16 +5608,6 @@ targets:
   - gtest
   - grpc_test_util_unsecure
   uses_polling: false
-- name: ares_resolver_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/event_engine/posix/ares_resolver_test.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: async_end2end_test
   gtest: true
   build: test
@@ -8100,6 +8090,18 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: dns_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/posix/dns_server.h
+  src:
+  - test/core/event_engine/posix/dns_fork_test.cc
+  - test/core/event_engine/posix/dns_server.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test

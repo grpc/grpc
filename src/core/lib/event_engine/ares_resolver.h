@@ -53,7 +53,8 @@ class AresResolver : public RefCountedDNSResolverInterface {
     ReinitHandle(ReinitHandle&& other) = delete;
     ReinitHandle(const ReinitHandle& other) = delete;
     void OnResolverGone();
-    void Reinit();
+    void Reset();
+    void Restart();
 
    private:
     grpc_core::Mutex mutex_;
@@ -132,7 +133,12 @@ class AresResolver : public RefCountedDNSResolverInterface {
                               unsigned char* buf,
                               int len) ABSL_NO_THREAD_SAFETY_ANALYSIS;
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-  void Reinitialize();
+  // Is executed on fork before the poller is restarted. Cleans up the resources
+  // from the previous generation.
+  void Reset();
+  // Is executed on fork after the poller is restarted. Makes the resolver
+  // usable once more.
+  void Restart();
 #endif  // GRPC_ENABLE_FORK_SUPPORT
   void ShutdownLocked(const absl::Status& shutdown_status,
                       absl::string_view reason)

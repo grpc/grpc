@@ -308,15 +308,34 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "dns_server",
+    testonly = True,
+    srcs = ["dns_server.cc"],
+    hdrs = ["dns_server.h"],
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:gpr_platform",
+        "//src/core:notification",
+    ],
+)
+
 grpc_cc_test(
-    name = "ares_resolver_test",
-    srcs = ["ares_resolver_test.cc"],
+    name = "dns_fork_test",
+    srcs = ["dns_fork_test.cc"],
     external_deps = [
         "gtest",
     ],
     uses_event_engine = True,
     uses_polling = True,
     deps = [
+        ":dns_server",
         "//:gpr_platform",
         "//test/core/test_util:grpc_test_util",
     ],

@@ -677,7 +677,7 @@ PosixEventEngine::GetDNSResolver(
     }
 #if GRPC_ENABLE_FORK_SUPPORT && GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&resolver_handles_mu_);
       RegisterResolver(&resolver_handles_,
                        ares_resolver->get()->GetReinitHandle());
     }
@@ -874,24 +874,9 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  PosixEventPoller* poller = poller_manager_.Poller();
   if (on_fork_role == OnForkRole::kChild) {
-    poller->HandleForkInChild();
+    AfterForkInChild();
   }
-  poller->ResetKickState();
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
-  if (on_fork_role == OnForkRole::kChild) {
-    grpc_core::MutexLock lock(&mu_);
-    for (const auto& cb : resolver_handles_) {
-      auto locked = cb.lock();
-      if (locked != nullptr) {
-        locked->Reinit();
-      }
-    }
-  }
-#endif
   executor_->PostFork();
   timer_manager_.PostFork();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -905,6 +890,31 @@ void PosixEventEngine::BeforeFork() {
   ResetPollCycle();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->PrepareFork();
+}
+
+void PosixEventEngine::AfterForkInChild() {
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  grpc_core::MutexLock lock(&resolver_handles_mu_);
+  for (const auto& cb : resolver_handles_) {
+    auto locked = cb.lock();
+    if (locked != nullptr) {
+      locked->Reset();
+    }
+  }
+#endif
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  PosixEventPoller* poller = poller_manager_.Poller();
+  poller->HandleForkInChild();
+  poller->ResetKickState();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+#if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
+  for (const auto& cb : resolver_handles_) {
+    auto locked = cb.lock();
+    if (locked != nullptr) {
+      locked->Restart();
+    }
+  }
+#endif
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP && GRPC_ENABLE_FORK_SUPPORT &&
