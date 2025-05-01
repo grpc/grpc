@@ -14,7 +14,7 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_POSIX_DNS_SERVER_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_POSIX_DNS_SERVER_H
 
-#include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
 #include <grpc/support/port_platform.h>
 
 #include <array>

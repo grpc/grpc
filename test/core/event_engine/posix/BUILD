@@ -321,7 +321,10 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
+        "//:event_engine_base_hdrs",
         "//:gpr_platform",
+        "//:grpc++",
+        "//src/core/"
         "//src/core:notification",
     ],
 )
