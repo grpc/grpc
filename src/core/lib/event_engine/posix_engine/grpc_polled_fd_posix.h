@@ -77,8 +77,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return ioctl(as_, FIONREAD, &bytes_available) == 0 &&
-           bytes_available > 0;
+    return ioctl(as_, FIONREAD, &bytes_available) == 0 && bytes_available > 0;
   }
 
   bool ShutdownLocked(absl::Status error) override {
