@@ -429,14 +429,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: " << result.status();
+    connection_->listener_->LogConnectionFailure("Handshake failed",
+                                                 result.status());
     connection_->Done();
     return;
   }
   CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
-    LOG_EVERY_N_SEC(ERROR, 5)
-        << "Server handshake done but has empty endpoint.";
+    connection_->listener_->LogConnectionFailure(
+        "Server handshake done but has empty endpoint", std::nullopt);
     connection_->Done();
     return;
   }

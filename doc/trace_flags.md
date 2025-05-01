@@ -111,6 +111,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - stream_refcount - Stream refcounting.
   - subchannel_refcount - Subchannel refcounting.
   - work_serializer - A synchronization mechanism used to ensure that only one thread is executing at a given time.
+  - ztrace - Trace ztrace appends globally (for debugging the ztrace system itself).
 
 Glob patterns and special cases:
   - `*` can be used to turn all traces on.
