@@ -204,9 +204,15 @@ docker run \
   "${DOCKER_IMAGE_NAME}" \
   "${DOCKER_CMD_AND_ARGS[@]}" || DOCKER_EXIT_CODE=$?
 
+echo "Docker run EXIT_CODE: ${DOCKER_EXIT_CODE}"
+
 # Copy reports stored by the container (if any)
 if [ "${GRPC_TEST_REPORT_BASE_DIR}" != "" ]
 then
+  if [ -d "$GRPC_TEST_REPORT_BASE_DIR" ]; then
+    echo "$GRPC_TEST_REPORT_BASE_DIR exists."
+    ls -R ${GRPC_TEST_REPORT_BASE_DIR}
+  fi
   mkdir -p "${GRPC_TEST_REPORT_BASE_DIR}"
   cp -r "${TEMP_REPORT_DIR}"/* "${GRPC_TEST_REPORT_BASE_DIR}" || true
 else
@@ -216,6 +222,8 @@ fi
 # Copy contents of OUTPUT_DIR back under the git repo root
 if [ "${OUTPUT_DIR}" != "" ]
 then
+  echo "Printing git root contents"
+  ls -R ${git_root}
   cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
 fi
 
