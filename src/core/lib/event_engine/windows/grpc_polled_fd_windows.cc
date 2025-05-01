@@ -267,6 +267,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     }
   }
 
+  bool IsCurrent() const override { return true; }
+
  private:
   enum WriteState {
     WRITE_IDLE,
