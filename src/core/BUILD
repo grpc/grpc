@@ -8148,6 +8148,7 @@ grpc_cc_library(
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
         "ztrace_collector",
+        "//:gpr",
     ],
 )
 
@@ -8190,6 +8191,7 @@ grpc_cc_library(
     external_deps = ["absl/cleanup"],
     deps = [
         "1999",
+        "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "event_engine_context",
         "event_engine_extensions",
@@ -8242,6 +8244,7 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "map",
         "metrics",
         "seq",
         "seq_bit_set",

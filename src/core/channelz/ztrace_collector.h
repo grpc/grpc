@@ -163,7 +163,8 @@ class ZTraceCollector {
     using Collections = std::tuple<Collection<Data>...>;
     struct RemoveMostRecentState {
       void (*enact)(Instance*) = nullptr;
-      gpr_cycle_counter most_recent;
+      gpr_cycle_counter most_recent =
+          std::numeric_limits<gpr_cycle_counter>::max();
     };
     template <typename T>
     void Append(std::pair<gpr_cycle_counter, T> value) {
@@ -176,13 +177,14 @@ class ZTraceCollector {
       (UpdateRemoveMostRecentState<Data>(&state), ...);
       CHECK(state.enact != nullptr);
       state.enact(this);
+      ++items_removed_;
     }
     template <typename T>
     void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
       auto& collection = std::get<Collection<T> >(data);
       if (collection.empty()) return;
       if (state->enact == nullptr ||
-          collection.front().first > state->most_recent) {
+          collection.front().first < state->most_recent) {
         state->enact = +[](Instance* instance) {
           auto& collection = std::get<Collection<T> >(instance->data);
           const size_t ent_usage = collection.front().second.MemoryUsage();
@@ -195,8 +197,8 @@ class ZTraceCollector {
     }
     void Finish(absl::Status status) {
       event_engine->Run([data = std::move(data), done = std::move(done),
-                         status = std::move(status),
-                         memory_used = memory_used_]() mutable {
+                         status = std::move(status), memory_used = memory_used_,
+                         items_removed = items_removed_]() mutable {
         Json::Array entries;
         (ztrace_collector_detail::AppendResults(
              std::get<Collection<Data> >(data), entries),
@@ -206,11 +208,13 @@ class ZTraceCollector {
         result["status"] = Json::FromString(status.ToString());
         result["memory_used"] =
             Json::FromNumber(static_cast<uint64_t>(memory_used));
+        result["items_removed"] = Json::FromNumber(items_removed);
         done(Json::FromObject(std::move(result)));
       });
     }
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
+    uint64_t items_removed_ = 0;
     Config config;
     const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;

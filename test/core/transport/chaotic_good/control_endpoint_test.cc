@@ -33,7 +33,8 @@ CONTROL_ENDPOINT_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
   chaotic_good::ControlEndpoint control_endpoint(
       std::move(ep.promise_endpoint),
-      MakeRefCounted<chaotic_good::TransportContext>(event_engine(), nullptr));
+      MakeRefCounted<chaotic_good::TransportContext>(event_engine(), nullptr),
+      std::make_shared<chaotic_good::TcpZTraceCollector>());
   ep.ExpectWrite(
       {grpc_event_engine::experimental::Slice::FromCopiedString("hello")},
       nullptr);

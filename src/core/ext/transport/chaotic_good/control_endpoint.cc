@@ -38,10 +38,12 @@ auto ControlEndpoint::Buffer::Pull() {
   };
 }
 
-ControlEndpoint::ControlEndpoint(PromiseEndpoint endpoint,
-                                 RefCountedPtr<TransportContext> ctx)
+ControlEndpoint::ControlEndpoint(
+    PromiseEndpoint endpoint, RefCountedPtr<TransportContext> ctx,
+    std::shared_ptr<TcpZTraceCollector> ztrace_collector)
     : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))),
-      ctx_(std::move(ctx)) {
+      ctx_(std::move(ctx)),
+      ztrace_collector_(std::move(ztrace_collector)) {
   if (ctx_->socket_node != nullptr) {
     auto* channelz_endpoint = grpc_event_engine::experimental::QueryExtension<
         grpc_event_engine::experimental::ChannelzExtension>(
@@ -58,21 +60,33 @@ ControlEndpoint::ControlEndpoint(PromiseEndpoint endpoint,
   write_party_->Spawn(
       "flush-control",
       GRPC_LATENT_SEE_PROMISE(
-          "FlushLoop", Loop([endpoint = endpoint_, buffer = buffer_]() {
+          "FlushLoop", Loop([ztrace_collector = ztrace_collector_,
+                             endpoint = endpoint_, buffer = buffer_]() {
             return AddErrorPrefix(
                 "CONTROL_CHANNEL: ",
                 TrySeq(
                     // Pull one set of buffered writes
                     buffer->Pull(),
                     // And write them
-                    [endpoint, buffer = buffer.get()](SliceBuffer flushing) {
+                    [endpoint, ztrace_collector,
+                     buffer = buffer.get()](SliceBuffer flushing) {
                       GRPC_TRACE_LOG(chaotic_good, INFO)
                           << "CHAOTIC_GOOD: Flush " << flushing.Length()
                           << " bytes from " << buffer << " to "
                           << ResolvedAddressToString(endpoint->GetPeerAddress())
                                  .value_or("<<unknown peer address>>");
-                      return endpoint->Write(std::move(flushing),
-                                             PromiseEndpoint::WriteArgs{});
+                      ztrace_collector->Append(
+                          WriteBytesToControlChannelTrace{flushing.Length()});
+                      return Map(
+                          endpoint->Write(std::move(flushing),
+                                          PromiseEndpoint::WriteArgs{}),
+                          [ztrace_collector](absl::Status status) {
+                            ztrace_collector->Append([&status]() {
+                              return FinishWriteBytesToControlChannelTrace{
+                                  status};
+                            });
+                            return status;
+                          });
                     },
                     // Then repeat
                     []() -> LoopCtl<absl::Status> { return Continue{}; }));

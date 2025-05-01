@@ -16,6 +16,7 @@
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_CONTROL_ENDPOINT_H
 
 #include "absl/cleanup/cleanup.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/transport/promise_endpoint.h"
@@ -75,8 +76,8 @@ class ControlEndpoint {
   };
 
  public:
-  ControlEndpoint(PromiseEndpoint endpoint,
-                  RefCountedPtr<TransportContext> ctx);
+  ControlEndpoint(PromiseEndpoint endpoint, RefCountedPtr<TransportContext> ctx,
+                  std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
@@ -97,6 +98,7 @@ class ControlEndpoint {
   RefCountedPtr<Party> write_party_;
   RefCountedPtr<Buffer> buffer_ = MakeRefCounted<Buffer>();
   RefCountedPtr<TransportContext> ctx_;
+  std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
 };
 
 }  // namespace chaotic_good
