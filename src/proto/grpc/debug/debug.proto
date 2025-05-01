@@ -1,0 +1,90 @@
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+message Entity {
+    // The identifier for this entity. This should be set.
+    int64 id = 1;
+    // The kind of this entity.
+    string kind = 2;
+    // Parents for this entity.
+    repeated int64 parents = 3;
+    // Instantaneous data for this entity.
+    repeated google.protobuf.Any data = 4;
+    // Historical trace information for the entity.
+    repeated TraceEvent trace = 5;
+}
+
+message TraceEvent {
+    // High level description of the event.
+    string description = 1;
+    // When this event occurred.
+    google.protobuf.Timestamp timestamp = 2;
+    // Any additional supporting data.
+    repeated google.protobuf.Any data = 3;
+    // Any referenced entities.
+    repeated int64 referenced_entities = 4;
+}
+
+service Debug {
+    // Gets all entities of a given kind, optionally with a given parent.
+    rpc QueryEntities(QueryEntitiesRequest) returns (QueryEntitiesResponse);
+    // Gets information for a specific entity.
+    rpc GetEntity(GetEntityRequest) returns (GetEntityResponse);
+    // Query a named trace from an entity.
+    // These query live information from the system, and run for as long
+    // as the query time is made for.
+    rpc QueryTrace(QueryTraceRequest) returns (QueryTraceResponse);
+}
+
+message QueryEntitiesRequest {
+    // The kind of entities to query.
+    // If this is set to empty then all kinds will be queried.
+    string kind = 1;
+    // Filter the entities so that only children of this parent are returned.
+    // If this is 0 then no parent filter is applied.
+    int64 parent = 2;
+}
+
+message QueryEntitiesResponse {
+    // List of entities that match the query.
+    repeated Entity entities = 1;
+}
+
+message GetEntityRequest {
+    // The identifier of the entity to get.
+    int64 id = 1;
+}
+
+message GetEntityResponse {
+    // The Entity that corresponds to the requested id.  This field
+    // should be set.
+    Entity entity = 1;
+}
+
+message QueryTraceRequest {
+    // The identifier of the entity to query.
+    int64 id = 1;
+    // The name of the trace to query.
+    string name = 2;
+    // The amount of time to query. Implementations may arbitrarily cap this.
+    google.protobuf.Duration duration = 3;
+}
+
+message QueryTraceResponse {
+    // The events in the trace.
+    repeated TraceEvent events = 1;
+    // Number of events matched by the trace.
+    // This may be higher than the number returned if memory limits were exceeded.
+    int64 num_events_matched = 2;
+}
