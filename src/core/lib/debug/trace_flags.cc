@@ -48,6 +48,7 @@ DebugOnlyTraceFlag slice_refcount_trace(false, "slice_refcount");
 DebugOnlyTraceFlag stream_refcount_trace(false, "stream_refcount");
 DebugOnlyTraceFlag subchannel_refcount_trace(false, "subchannel_refcount");
 DebugOnlyTraceFlag work_serializer_trace(false, "work_serializer");
+DebugOnlyTraceFlag ztrace_trace(false, "ztrace");
 TraceFlag api_trace(false, "api");
 TraceFlag apple_polling_trace(false, "apple_polling");
 TraceFlag backend_metric_trace(false, "backend_metric");
@@ -233,6 +234,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"stream_refcount", &stream_refcount_trace},
           {"subchannel_refcount", &subchannel_refcount_trace},
           {"work_serializer", &work_serializer_trace},
+          {"ztrace", &ztrace_trace},
 #endif
       }));
   return *all;
