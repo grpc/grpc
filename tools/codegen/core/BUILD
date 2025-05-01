@@ -45,13 +45,3 @@ grpc_cc_binary(
     srcs = ["gen_switch.cc"],
 )
 
-# TODO(ladynana): Replace this dummy target with the actual experiments compiler target.
-grpc_cc_library(
-    name = "experiments_compiler",
-)
-
-# TODO(ladynana): Replace this dummy test with the actual experiments compiler test.
-grpc_cc_test(
-    name = "experiments_compiler_test",
-    srcs = ["experiments_compiler_test.cc"],
-)
