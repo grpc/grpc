@@ -8189,12 +8189,16 @@ grpc_cc_library(
     external_deps = ["absl/cleanup"],
     deps = [
         "1999",
+        "chaotic_good_transport_context",
         "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
         "sync",
         "try_seq",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -8242,7 +8246,10 @@ grpc_cc_library(
         "seq_bit_set",
         "slice_buffer",
         "status_flag",
+        "time",
         "try_seq",
+        "//:channelz",
+        "//:gpr",
         "//:promise",
     ],
 )

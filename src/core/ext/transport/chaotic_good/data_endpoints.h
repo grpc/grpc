@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -55,6 +56,7 @@ class SendRate {
   bool IsRateMeasurementStale() const;
   // Returns double nanoseconds from now.
   double DeliveryTime(uint64_t current_time, size_t bytes);
+  void AddData(Json::Object& obj) const;
 
  private:
   uint64_t send_start_time_ = 0;
@@ -85,6 +87,8 @@ class OutputBuffer {
     send_rate_.SetCurrentRate(bytes_per_nanosecond);
   }
 
+  void AddData(Json::Object& obj) const;
+
  private:
   Waker flush_waker_;
   SliceBuffer pending_;
@@ -93,11 +97,17 @@ class OutputBuffer {
 };
 
 // The set of output buffers for all connected data endpoints
-class OutputBuffers : public RefCounted<OutputBuffers> {
+class OutputBuffers final : public RefCounted<OutputBuffers>,
+                            public channelz::DataSource {
  public:
   OutputBuffers(Clock* clock,
-                std::shared_ptr<TcpZTraceCollector> ztrace_collector)
-      : ztrace_collector_(std::move(ztrace_collector)), clock_(clock) {}
+                std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+                TransportContextPtr ctx)
+      : channelz::DataSource(ctx->socket_node),
+        ztrace_collector_(std::move(ztrace_collector)),
+        clock_(clock) {}
+
+  void AddData(channelz::DataSink& sink) override;
 
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer,
              std::shared_ptr<TcpCallTracer> call_tracer) {
@@ -135,7 +145,7 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   Clock* const clock_;
 };
 
-class InputQueue : public RefCounted<InputQueue> {
+class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
  public:
   // One outstanding read.
   // ReadTickets get filed by read requests, and all tickets are fullfilled
@@ -188,7 +198,8 @@ class InputQueue : public RefCounted<InputQueue> {
     RefCountedPtr<InputQueue> input_queues_;
   };
 
-  InputQueue() {
+  explicit InputQueue(TransportContextPtr ctx)
+      : channelz::DataSource(ctx->socket_node) {
     read_requested_.Set(0);
     read_completed_.Set(0);
   }
@@ -196,6 +207,8 @@ class InputQueue : public RefCounted<InputQueue> {
   ReadTicket Read(uint64_t payload_tag);
   void CompleteRead(uint64_t payload_tag, absl::StatusOr<SliceBuffer> buffer);
   void Cancel(uint64_t payload_tag);
+
+  void AddData(channelz::DataSink& sink) override;
 
  private:
   struct Cancelled {};

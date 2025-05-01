@@ -265,6 +265,9 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   auto send_message = [this, stream_id, call_tracer,
                        message_chunker =
                            message_chunker_](MessageHandle message) mutable {
+    if (ctx_->socket_node != nullptr) {
+      ctx_->socket_node->RecordMessagesSent(1);
+    }
     return message_chunker.Send(std::move(message), stream_id, call_tracer,
                                 outgoing_frames_);
   };

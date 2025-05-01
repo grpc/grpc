@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_ZTRACE_COLLECTOR_H
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
@@ -125,11 +126,23 @@ struct WriteLargeFrameHeaderTrace {
   }
 };
 
-using TcpZTraceCollector =
-    channelz::ZTraceCollector<tcp_ztrace_collector_detail::Config,
-                              ReadFrameHeaderTrace, ReadDataHeaderTrace,
-                              WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
-                              EndpointWriteMetricsTrace>;
+struct NoEndpointForWriteTrace {
+  size_t bytes;
+  uint64_t payload_tag;
+
+  size_t MemoryUsage() const { return sizeof(*this); }
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("NO_ENDPOINT_FOR_WRITE");
+    object["payload_tag"] = Json::FromNumber(payload_tag);
+    object["bytes"] = Json::FromNumber(bytes);
+  }
+};
+
+using TcpZTraceCollector = channelz::ZTraceCollector<
+    tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
+    ReadDataHeaderTrace, WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
+    EndpointWriteMetricsTrace, NoEndpointForWriteTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

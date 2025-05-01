@@ -43,7 +43,7 @@ TcpFrameTransport::TcpFrameTransport(
     TransportContextPtr ctx)
     : DataSource(ctx->socket_node),
       ctx_(ctx),
-      control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
+      control_endpoint_(std::move(control_endpoint), ctx),
       data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
                       options.enable_tracing),
       options_(options) {}

@@ -15,6 +15,8 @@
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 
 #include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -36,15 +38,23 @@ auto ControlEndpoint::Buffer::Pull() {
   };
 }
 
-ControlEndpoint::ControlEndpoint(
-    PromiseEndpoint endpoint,
-    grpc_event_engine::experimental::EventEngine* event_engine)
-    : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))) {
+ControlEndpoint::ControlEndpoint(PromiseEndpoint endpoint,
+                                 RefCountedPtr<TransportContext> ctx)
+    : endpoint_(std::make_shared<PromiseEndpoint>(std::move(endpoint))),
+      ctx_(std::move(ctx)) {
+  if (ctx_->socket_node != nullptr) {
+    auto* channelz_endpoint = grpc_event_engine::experimental::QueryExtension<
+        grpc_event_engine::experimental::ChannelzExtension>(
+        endpoint_->GetEventEngineEndpoint().get());
+    if (channelz_endpoint != nullptr) {
+      channelz_endpoint->SetSocketNode(ctx_->socket_node);
+    }
+  }
   auto arena = SimpleArenaAllocator(0)->MakeArena();
-  arena->SetContext(event_engine);
+  arena->SetContext(ctx_->event_engine.get());
   write_party_ = Party::Make(arena);
-  CHECK(event_engine != nullptr);
-  write_party_->arena()->SetContext(event_engine);
+  CHECK(ctx_->event_engine != nullptr);
+  write_party_->arena()->SetContext(ctx_->event_engine.get());
   write_party_->Spawn(
       "flush-control",
       GRPC_LATENT_SEE_PROMISE(
