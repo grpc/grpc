@@ -24,6 +24,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -65,7 +66,9 @@ class NativeDNSResolver : public DNSResolver {
   // EventEngine calls grpc_init.
   grpc_event_engine::experimental::EventEngine* engine();
 
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_;
+  grpc_core::Mutex mu_;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_
+      ABSL_GUARDED_BY(mu_);
   std::atomic<grpc_event_engine::experimental::EventEngine*> engine_ptr_{
       nullptr};
 };

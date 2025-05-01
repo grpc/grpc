@@ -47,16 +47,16 @@
 namespace grpc_core {
 
 grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
+  // Optimistically, if the engine is already created, return it.
   auto engine_ptr = engine_ptr_.load(std::memory_order_relaxed);
-  if (engine_ptr == nullptr) {
-    auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-    grpc_event_engine::experimental::EventEngine* expected = nullptr;
-    if (engine_ptr_.compare_exchange_strong(expected, engine.get())) {
-      engine_ = std::move(engine);
-      return engine_.get();
-    }
-  }
-  return engine_ptr;
+  if (engine_ptr != nullptr) return engine_ptr;
+  // Otherwise, create the engine under the lock.
+  // This is only if some other thread did not already create it.
+  grpc_core::MutexLock lock(&mu_);
+  if (engine_ != nullptr) return engine_.get();
+  engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
+  engine_ptr_.store(engine_.get(), std::memory_order_relaxed);
+  return engine_.get();
 }
 
 DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
