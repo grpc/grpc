@@ -134,14 +134,14 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
         channel, &GrpcPolledFdFactoryPosix::ConfigureSocket, this);
   }
 
-  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() override {
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
     return std::make_unique<GrpcPolledFdFactoryPosix>(poller_);
   }
 
  private:
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol,
-                              void* polled_fd_factory) {
+                              void* /* polled_fd_factory */) {
     ares_socket_t s = socket(af, type, protocol);
     return s;
   }

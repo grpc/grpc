@@ -16,13 +16,12 @@
 
 #include <netinet/in.h>
 
+#include <array>
 #include <cstdint>
-#include <queue>
 #include <string>
 #include <thread>
-#include <vector>
 
-#include "absl/functional/any_invocable.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
 #include "src/core/util/notification.h"
 
@@ -38,21 +37,19 @@ struct DnsQuestion {
 
 class DnsServer {
  public:
-  using Autoresponder =
-      absl::AnyInvocable<std::vector<uint8_t>(const DnsQuestion&) const>;
-
   static absl::StatusOr<DnsServer> Start(int port);
 
   DnsServer(int port, int sockfd);
   ~DnsServer();
   std::string address() const;
-  absl::Status Respond(const DnsQuestion& query,
-                       absl::Span<const uint8_t> answer);
   DnsQuestion WaitForQuestion() const;
-  void SetResponder(DnsServer::Autoresponder autoresponder);
+  // IPv4 address as 4 bytes. This address will be returned x4 for IPv6.
+  void SetIPv4Response(absl::Span<const uint8_t> ipv4_address);
 
  private:
   void ServerLoop(int sockfd);
+  absl::Status Respond(const DnsQuestion& query,
+                       absl::Span<const uint8_t> ipv4_address);
 
   int port_;
   int sockfd_;
@@ -60,8 +57,8 @@ class DnsServer {
   grpc_core::Notification running_;
   mutable grpc_core::Mutex mu_;
   mutable grpc_core::CondVar cond_;
-  DnsServer::Autoresponder autoresponder_ ABSL_GUARDED_BY(mu_);
-  std::queue<DnsQuestion> questions_ ABSL_GUARDED_BY(mu_);
+  std::optional<std::array<uint8_t, 4>> ipv4_address_ ABSL_GUARDED_BY(mu_);
+  absl::InlinedVector<DnsQuestion, 16> questions_ ABSL_GUARDED_BY(mu_);
   std::thread background_thread_;
 };
 

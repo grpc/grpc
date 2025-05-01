@@ -21,18 +21,14 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <array>
 #include <cerrno>
-#include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "absl/strings/match.h"
 #include "gmock/gmock.h"
-#include "src/core/lib/event_engine/grpc_polled_fd.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/notification.h"
@@ -43,9 +39,6 @@
 namespace grpc_event_engine::experimental {
 
 constexpr absl::string_view kHost = "fork_test";
-constexpr std::array<uint8_t, 4> kIPv4 = {1, 1, 1, 1};
-constexpr std::array<uint8_t, 16> kIPv6 = {1, 1, 1, 1, 2, 2, 2, 2,
-                                           3, 3, 3, 3, 4, 4, 4, 4};
 
 MATCHER_P2(ResolvedTo, ipv4, ipv6, "") {
   if (IsIpv6LoopbackAvailable()) {
@@ -54,17 +47,6 @@ MATCHER_P2(ResolvedTo, ipv4, ipv6, "") {
   }
   return ::testing::ExplainMatchResult(::testing::ElementsAre(ipv4), arg,
                                        result_listener);
-}
-
-std::vector<uint8_t> GetAddressForQuestion(const DnsQuestion& q) {
-  if (absl::StartsWith(q.qname, kHost)) {
-    if (q.qtype == 1) {
-      return {kIPv4.begin(), kIPv4.end()};
-    } else if (q.qtype == 28) {
-      return {kIPv6.begin(), kIPv6.end()};
-    }
-  }
-  return {};
 }
 
 class LookupCallback {
@@ -104,54 +86,41 @@ class LookupCallback {
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
-class DnsForkTest : public testing::Test {
- protected:
-  void SetUp() override {
-    event_engine_ =
-        std::static_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
-    ASSERT_NE(event_engine_, nullptr);
-  }
-
-  void TearDown() override { factory_.reset(); }
-
-  std::shared_ptr<PosixEventEngine> event_engine_;
-  std::unique_ptr<GrpcPolledFdFactory> factory_;
-};
-
-// AresResolver should work across fork
-TEST_F(DnsForkTest, DnsLookupAcrossForkInParent) {
+// In a parent process, request made before fork can be resolved post-fork
+TEST(DnsForkTest, DnsLookupAcrossForkInParent) {
   auto dns_server = DnsServer::Start(grpc_pick_unused_port_or_die());
-  auto resolver =
-      event_engine_->GetDNSResolver({.dns_server = dns_server->address()});
+  auto ee = std::static_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
+  auto resolver = ee->GetDNSResolver({.dns_server = dns_server->address()});
   ASSERT_TRUE(resolver.ok()) << resolver.status();
   LookupCallback callback("DnsLookupAcrossForkInParent");
   resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
                                   "443");
   DnsQuestion question = dns_server->WaitForQuestion();
+  // This will be fully qualified domain name, so we only check the prefix
   ASSERT_THAT(question.qname, ::testing::StartsWith(kHost));
   // A or AAAA
   ASSERT_THAT(question.qtype, ::testing::AnyOf(1, 28));
   ASSERT_EQ(question.qclass, 1);
   // Do the fork
-  event_engine_->BeforeFork();
+  ee->BeforeFork();
   LOG(INFO) << "------------------------";
   LOG(INFO) << "         Forking        ";
   LOG(INFO) << "------------------------";
-  event_engine_->AfterFork(PosixEventEngine::OnForkRole::kParent);
-  dns_server->SetResponder(GetAddressForQuestion);
+  ee->AfterFork(PosixEventEngine::OnForkRole::kParent);
+  dns_server->SetIPv4Response({1, 1, 1, 1});
   auto result = callback.result();
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(
       result.value(),
-      ResolvedTo("1.1.1.1:443", "[101:101:202:202:303:303:404:404]:443"));
+      ResolvedTo("1.1.1.1:443", "[101:101:101:101:101:101:101:101]:443"));
 }
 
-// Request sent before fork will fail because of Ares shutdown. Afterwards
-// it should still be possible to make new requests.
-TEST_F(DnsForkTest, DnsLookupAcrossForkInChild) {
+// In a child process, a request made before fork will fail because of the Ares
+// shutdown. Requests made post fork will succeed.
+TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   auto dns_server = DnsServer::Start(grpc_pick_unused_port_or_die());
-  auto resolver =
-      event_engine_->GetDNSResolver({.dns_server = dns_server->address()});
+  auto ee = std::static_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
+  auto resolver = ee->GetDNSResolver({.dns_server = dns_server->address()});
   ASSERT_TRUE(resolver.ok()) << resolver.status();
   LookupCallback callback("DnsLookupAcrossForkInChild pre-fork");
   resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
@@ -163,15 +132,15 @@ TEST_F(DnsForkTest, DnsLookupAcrossForkInChild) {
   ASSERT_THAT(question.qtype, ::testing::AnyOf(1, 28));
   ASSERT_EQ(question.qclass, 1);
   // Do the fork
-  event_engine_->BeforeFork();
+  ee->BeforeFork();
   LOG(INFO) << "------------------------";
   LOG(INFO) << "         Forking        ";
   LOG(INFO) << "------------------------";
-  event_engine_->AfterFork(PosixEventEngine::OnForkRole::kChild);
+  ee->AfterFork(PosixEventEngine::OnForkRole::kChild);
   auto result = callback.result();
   // Request is cancelled on fork
   ASSERT_TRUE(absl::IsUnknown(result.status())) << result.status();
-  dns_server->SetResponder(GetAddressForQuestion);
+  dns_server->SetIPv4Response({2, 2, 2, 2});
   LookupCallback cb2("DnsLookupAcrossForkInChild post-fork");
   resolver->get()->LookupHostname(cb2.lookup_hostname_callback(), kHost, "443");
   result = cb2.result();
@@ -179,7 +148,7 @@ TEST_F(DnsForkTest, DnsLookupAcrossForkInChild) {
   ASSERT_TRUE(result.ok()) << result.status();
   EXPECT_THAT(
       result.value(),
-      ResolvedTo("1.1.1.1:443", "[101:101:202:202:303:303:404:404]:443"));
+      ResolvedTo("2.2.2.2:443", "[202:202:202:202:202:202:202:202]:443"));
 }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT

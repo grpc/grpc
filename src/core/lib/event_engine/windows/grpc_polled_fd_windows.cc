@@ -809,6 +809,8 @@ class GrpcPolledFdWrapper : public GrpcPolledFd {
 
   const char* GetName() const override { return polled_fd_->GetName(); }
 
+  bool IsCurrent() const override { return true; }
+
  private:
   GrpcPolledFdWindows* polled_fd_;
 };

@@ -14,7 +14,9 @@
 
 #include "test/core/event_engine/posix/dns_server.h"
 
-#include <queue>
+#include <algorithm>
+#include <array>
+#include <cstdint>
 #include <thread>
 
 #include "absl/cleanup/cleanup.h"
@@ -25,7 +27,6 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/substitute.h"
-#include "absl/synchronization/mutex.h"
 #include "src/core/util/notification.h"
 
 namespace grpc_event_engine::experimental {
@@ -181,6 +182,16 @@ std::vector<unsigned char> FormatAnswer(const DnsQuestion& query,
       .data();
 }
 
+std::array<uint8_t, 16> ToIPv6Address(absl::Span<const uint8_t> ipv4_address) {
+  std::array<uint8_t, 16> ipv6_address;
+  std::copy(ipv4_address.begin(), ipv4_address.end(), ipv6_address.begin());
+  std::copy(ipv4_address.begin(), ipv4_address.end(), ipv6_address.begin() + 4);
+  std::copy(ipv4_address.begin(), ipv4_address.end(), ipv6_address.begin() + 8);
+  std::copy(ipv4_address.begin(), ipv4_address.end(),
+            ipv6_address.begin() + 12);
+  return ipv6_address;
+}
+
 }  // namespace
 
 DnsServer::DnsServer(int port, int sockfd)
@@ -208,10 +219,11 @@ DnsQuestion DnsServer::WaitForQuestion() const {
 }
 
 absl::Status DnsServer::Respond(const DnsQuestion& query,
-                                absl::Span<const uint8_t> answer) {
+                                absl::Span<const uint8_t> ipv4_address) {
   LOG(INFO) << "Answering question " << query.id << " for domain "
-            << query.qname;
-  auto packet = FormatAnswer(query, answer);
+            << query.qname << " type: " << query.qtype;
+  auto packet = FormatAnswer(
+      query, query.qtype == 1 ? ipv4_address : ToIPv6Address(ipv4_address));
   ssize_t sent = sendto(sockfd_, packet.data(), packet.size(), 0,
                         reinterpret_cast<const sockaddr*>(&query.client_addr),
                         sizeof(query.client_addr));
@@ -221,21 +233,16 @@ absl::Status DnsServer::Respond(const DnsQuestion& query,
   return absl::OkStatus();
 }
 
-void DnsServer::SetResponder(DnsServer::Autoresponder autoresponder) {
-  absl::MutexLock lock(&mu_);
-  std::queue<DnsQuestion> filtered;
-  while (!questions_.empty()) {
-    auto address = autoresponder(questions_.front());
-    if (address.empty()) {
-      filtered.push(std::move(questions_.front()));
-    } else {
-      auto status = Respond(questions_.front(), address);
-      LOG_IF(FATAL, !status.ok()) << status;
-    }
-    questions_.pop();
+void DnsServer::SetIPv4Response(absl::Span<const uint8_t> ipv4_address) {
+  CHECK_EQ(ipv4_address.size(), 4);
+  grpc_core::MutexLock lock(&mu_);
+  for (const auto& question : questions_) {
+    auto status = Respond(question, ipv4_address);
+    LOG_IF(FATAL, !status.ok()) << status;
   }
-  questions_ = std::move(filtered);
-  autoresponder_ = std::move(autoresponder);
+  questions_.clear();
+  ipv4_address_.emplace();
+  std::copy(ipv4_address.begin(), ipv4_address.end(), ipv4_address_->begin());
 }
 
 void DnsServer::ServerLoop(int sockfd) {
@@ -271,14 +278,11 @@ void DnsServer::ServerLoop(int sockfd) {
     query->client_addr = client_addr;
     {
       grpc_core::MutexLock lock(&mu_);
-      if (autoresponder_) {
-        auto result = autoresponder_(*query);
-        if (!result.empty()) {
-          auto response = Respond(*query, result);
-          LOG_IF(FATAL, !response.ok()) << response;
-        }
+      if (ipv4_address_.has_value()) {
+        auto response = Respond(*query, *ipv4_address_);
+        LOG_IF(FATAL, !response.ok()) << response;
       } else {
-        questions_.push(std::move(query).value());
+        questions_.emplace_back(std::move(query).value());
         cond_.SignalAll();
       }
     }
