@@ -334,6 +334,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_windows",
+    ],
     uses_event_engine = True,
     uses_polling = True,
     deps = [
