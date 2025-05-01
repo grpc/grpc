@@ -12605,6 +12605,7 @@ if(WIN32 AND MSVC)
     PRIVATE
       "GPR_DLL_IMPORTS"
       "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -12631,6 +12632,7 @@ target_include_directories(dns_fork_test
 target_link_libraries(dns_fork_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  grpc++
   grpc_test_util
 )
 

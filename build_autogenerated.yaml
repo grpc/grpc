@@ -8101,6 +8101,7 @@ targets:
   - test/core/event_engine/posix/dns_server.cc
   deps:
   - gtest
+  - grpc++
   - grpc_test_util
 - name: dns_resolver_cooldown_test
   gtest: true
