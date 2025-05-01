@@ -16,7 +16,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 #include <gtest/gtest.h>
-#include <netinet/in.h>
 #include <stdint.h>
 #include <sys/socket.h>
 #include <unistd.h>
