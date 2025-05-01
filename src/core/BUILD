@@ -7867,6 +7867,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
+        "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
         "grpc_insecure_credentials",
@@ -8551,6 +8552,7 @@ grpc_cc_library(
         "chaotic_good_tcp_frame_transport",
         "closure",
         "context",
+        "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
         "event_engine_context",
@@ -8572,6 +8574,7 @@ grpc_cc_library(
         "slice_buffer",
         "subchannel_connector",
         "sync",
+        "tcp_connect_handshaker",
         "time",
         "try_seq",
         "wait_for_callback",
@@ -9458,6 +9461,22 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "endpoint_transport_client_channel_factory",
+    srcs = [
+        "transport/endpoint_transport_client_channel_factory.cc",
+    ],
+    hdrs = [
+        "transport/endpoint_transport_client_channel_factory.h",
+    ],
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:grpc_client_channel",
+        "//:grpc_security_base",
     ],
 )
 

@@ -1129,6 +1129,7 @@ libs:
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
   - src/core/transport/endpoint_transport.h
+  - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
   - src/core/tsi/alts/frame_protector/alts_crypter.h
@@ -1997,6 +1998,7 @@ libs:
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/transport/auth_context.cc
+  - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
   - src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2707,6 +2709,7 @@ libs:
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
   - src/core/transport/endpoint_transport.h
+  - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
@@ -3146,6 +3149,7 @@ libs:
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
   - src/core/transport/auth_context.cc
+  - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
