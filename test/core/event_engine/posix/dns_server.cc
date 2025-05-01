@@ -124,8 +124,7 @@ class ByteUnpacker {
     return *this;
   }
 
-  ByteUnpacker& Unpack(std::string DnsQuestion::* field,
-                       absl::string_view name) {
+  ByteUnpacker& Unpack(std::string DnsQuestion::* field) {
     if (!status_.ok()) return *this;
     query_.*field = ParseQName(data_, pos_);
     return *this;
@@ -162,7 +161,7 @@ absl::StatusOr<DnsQuestion> ParseQuestion(absl::Span<const uint8_t> buffer) {
       .Expect16(0, "ANCOUNT")
       .Expect16(0, "NSCOUNT")
       .Expect16(0, "ARCOUNT")
-      .Unpack(&DnsQuestion::qname, "QNAME")
+      .Unpack(&DnsQuestion::qname)
       .Unpack(&DnsQuestion::qtype, "QTYPE")
       .Unpack(&DnsQuestion::qclass, "QCLASS")
       .query();
@@ -240,7 +239,7 @@ absl::Status DnsServer::Respond(const DnsQuestion& query,
 }
 
 void DnsServer::SetIPv4Response(absl::Span<const uint8_t> ipv4_address) {
-  CHECK_EQ(ipv4_address.size(), 4);
+  CHECK_EQ(ipv4_address.size(), 4u);
   grpc_core::MutexLock lock(&mu_);
   for (const auto& question : questions_) {
     auto status = Respond(question, ipv4_address);
