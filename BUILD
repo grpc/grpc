@@ -4680,11 +4680,15 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_tracer",
+    srcs = [
+        "//src/core:telemetry/tcp_tracer.cc",
+    ],
     hdrs = [
         "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
         "absl/time",
+        "absl/strings",
     ],
     visibility = ["//bazel:tcp_tracer"],
     deps = ["gpr"],

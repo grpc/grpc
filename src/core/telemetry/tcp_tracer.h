@@ -108,6 +108,8 @@ struct TcpConnectionMetrics {
   std::optional<uint32_t> rcvq_drops;
   // The NIC Rx delay reported by the remote host.
   std::optional<uint32_t> nic_rx_delay_usec;
+
+  std::string ToString();
 };
 
 class TcpCallTracer {
@@ -134,6 +136,8 @@ class TcpCallTracer {
   // metrics.
   virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
                            std::optional<TcpConnectionMetrics> metrics) = 0;
+
+  absl::string_view TypeToString(Type type);
 };
 
 class TcpConnectionTracer {
