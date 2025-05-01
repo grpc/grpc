@@ -18,16 +18,30 @@
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 
+#include <openssl/pem.h>
+#include <openssl/x509.h>
+#include <openssl/x509v3.h>
+
 #include <string>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace {
+constexpr absl::string_view kAllowedUse = "x509-svid";
+constexpr absl::string_view kAllowedKty = "RSA";
+constexpr int kx5cSize = 1;
+constexpr absl::string_view kCertificatePrefix =
+    "-----BEGIN CERTIFICATE-----\n";
+constexpr absl::string_view kCertificateSuffix =
+    "\n-----END CERTIFICATE-----\n";
 
 constexpr absl::string_view kSpiffePrefix = "spiffe://";
 constexpr int kMaxTrustDomainLength = 255;
@@ -117,6 +131,25 @@ absl::Status ValidatePath(absl::string_view path) {
   return absl::OkStatus();
 }
 
+absl::Status ValidateCertificateIsValidX509(absl::string_view raw_cert) {
+  std::string pem_cert =
+      absl::StrCat(kCertificatePrefix, raw_cert.data(), kCertificateSuffix);
+
+  BIO* cert_bio = BIO_new_mem_buf(pem_cert.c_str(), pem_cert.size());
+  if (cert_bio == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from raw certificate to BIO failed.");
+  }
+  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
+  BIO_free(cert_bio);
+  if (x509 == nullptr) {
+    return absl::InvalidArgumentError(
+        "Conversion from PEM string to X509 failed.");
+  }
+  X509_free(x509);
+  return absl::OkStatus();
+}
+
 }  // namespace
 
 absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
@@ -154,6 +187,102 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
     return SpiffeId(trust_domain, "");
   }
   return SpiffeId(trust_domain, absl::StrCat("/", path));
+}
+
+void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
+                                   ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".use");
+    if (use_ != kAllowedUse) {
+      errors->AddError(
+          absl::StrFormat("got %s. Only supported value for use field is %s.",
+                          use_, kAllowedUse));
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".kty");
+    if (kty_ != kAllowedKty) {
+      errors->AddError(
+          absl::StrFormat("got %s. Only supported value for kty field is %s",
+                          kty_, kAllowedKty));
+    }
+  }
+  {
+    ValidationErrors::ScopedField field(errors, ".x5c");
+    if (x5c_.size() != kx5cSize) {
+      errors->AddError(absl::StrFormat(
+          "got vector length %i. Expected length of exactly %i.", x5c_.size(),
+          kx5cSize));
+    }
+    absl::Status status = ValidateCertificateIsValidX509(x5c_[0]);
+    if (!status.ok()) {
+      errors->AddError(status.message());
+    }
+  }
+}
+
+void SpiffeBundleMap::JsonPostLoad(const Json& json, const JsonArgs&,
+                                   ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".trust_domains");
+    for (auto const& kv : temp_bundles_) {
+      absl::Status status = ValidateTrustDomain(kv.first);
+      if (!status.ok()) {
+        errors->AddError(
+            absl::StrFormat("map key '%s' is not a valid trust domain. %s",
+                            kv.first, status.ToString()));
+      }
+    }
+  }
+
+  // JsonObjectLoader cannot parse into a map with a custom comparator, so parse
+  // into a map without one, then insert those elements into the map with the
+  // custom comparator after parsing. This is a one-time conversion to not have
+  // to create strings every look-up.
+  bundles_.insert(temp_bundles_.begin(), temp_bundles_.end());
+}
+
+absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
+    absl::string_view file_path) {
+  auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
+  if (!slice.ok()) {
+    return slice.status();
+  }
+  auto json = grpc_core::JsonParse(slice->as_string_view());
+  if (!json.ok()) {
+    return json.status();
+  }
+  return LoadFromJson<SpiffeBundleMap>(*json);
+}
+
+absl::StatusOr<std::vector<absl::string_view>> SpiffeBundleMap::GetRoots(
+    const absl::string_view trust_domain) {
+  if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
+    return it->second.GetRoots();
+  }
+  return absl::NotFoundError(absl::StrFormat(
+      "No spiffe bundle found for trust domain %s", trust_domain));
+}
+
+absl::StatusOr<std::vector<absl::string_view>> SpiffeBundle::GetRoots() {
+  std::vector<absl::string_view> root_keys(keys_.size());
+  for (size_t i = 0; i < keys_.size(); i++) {
+    auto root = keys_[i].GetRoot();
+    if (!root.ok()) {
+      return root.status();
+    }
+    root_keys[i] = *keys_[i].GetRoot();
+  }
+  return root_keys;
+}
+
+absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
+  if (x5c_.size() != 1) {
+    return absl::InvalidArgumentError(
+        "SPIFFE Bundle key entry has x5c field with length != 1. Key entry x5c "
+        "field MUST have length of exactly 1.");
+  }
+  return x5c_[0];
 }
 
 }  // namespace grpc_core

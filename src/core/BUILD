@@ -9604,6 +9604,11 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "load_file",
         "status_helper",
     ],
 )

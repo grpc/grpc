@@ -23,6 +23,8 @@
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/json/json_object_loader.h"
 
 namespace grpc_core {
 
@@ -43,6 +45,107 @@ class SpiffeId final {
       : trust_domain_(trust_domain), path_(path) {}
   const std::string trust_domain_;
   const std::string path_;
+};
+
+// An entry in the Key vector of a Spiffe Bundle Map following these documents:
+// https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+class SpiffeBundleKey {
+ public:
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<SpiffeBundleKey>()
+            .Field("kty", &SpiffeBundleKey::kty_)
+            .OptionalField("kid", &SpiffeBundleKey::kid_)
+            .Field("use", &SpiffeBundleKey::use_)
+            .Field("x5c", &SpiffeBundleKey::x5c_)
+            .Field("n", &SpiffeBundleKey::n_)
+            .Field("e", &SpiffeBundleKey::e_)
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
+  // Returns the PEM x509 string for this SpiffeBundle entry which is the only
+  // entry in the x5c_ vector.
+  absl::StatusOr<absl::string_view> GetRoot();
+
+ private:
+  std::string kty_;
+  std::string kid_;
+  std::string use_;
+  std::vector<std::string> x5c_;
+  std::string n_;
+  std::string e_;
+};
+
+// A Spiffe bundle following these documents:
+// https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+class SpiffeBundle {
+ public:
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<SpiffeBundle>()
+            .Field("spiffe_sequence", &SpiffeBundle::spiffe_sequence_)
+            .Field("keys", &SpiffeBundle::keys_)
+            .Finish();
+    return loader;
+  }
+
+  // Returns a vector of the roots in this SpiffeBundle.
+  absl::StatusOr<std::vector<absl::string_view>> GetRoots();
+
+ private:
+  uint64_t spiffe_sequence_;
+  std::vector<SpiffeBundleKey> keys_;
+};
+
+// A SpiffeBundleMap following these documents:
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+// https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
+// Only configuring X509 roots is supported.
+class SpiffeBundleMap {
+ public:
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+    static const auto* loader =
+        JsonObjectLoader<SpiffeBundleMap>()
+            .Field("trust_domains", &SpiffeBundleMap::temp_bundles_)
+            .Finish();
+    return loader;
+  }
+
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
+  // Loads a SPIFFE Bundle Map from a json file representation. Returns a bad
+  // status if there is a problem while loading the file and parsing the JSON. A
+  // returned value represents a valid and SPIFFE Bundle Map.
+  // The only supported use is configuring X509 roots for a given trust domain -
+  // no other SPIFFE Bundle configurations are supported.
+  static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
+
+  // Returns the roots for a given trust domain in the SpiffeBundleMap.
+  absl::StatusOr<std::vector<absl::string_view>> GetRoots(
+      absl::string_view trust_domain);
+  size_t size() { return bundles_.size(); }
+
+ private:
+  struct StringCmp {
+    using is_transparent = void;
+    bool operator()(absl::string_view a, absl::string_view b) const {
+      return a < b;
+    }
+  };
+
+  // JsonObjectLoader cannot parse into a map with a custom comparator, so parse
+  // into a map without one, then insert those elements into the map with the
+  // custom comparator after parsing. This is a one-time conversion to not have
+  // to create strings every look-up.
+  std::map<std::string, SpiffeBundle> temp_bundles_;
+  std::map<std::string, SpiffeBundle, StringCmp> bundles_;
 };
 
 }  // namespace grpc_core
