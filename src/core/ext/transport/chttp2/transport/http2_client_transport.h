@@ -26,7 +26,9 @@
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
@@ -55,6 +57,16 @@ namespace http2 {
 // [PH2][P5] This MUST be a separate standalone project.
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
+
+// Http2 Client Transport Spawns Overview
+
+// | Promise Spawn       | Max Duration | Promise Resolution    | Max Spawns |
+// |                     | for Spawn    |                       |            |
+// |---------------------|--------------|-----------------------|------------|
+// | Endpoint Read Loop  | Infinite     | On transport close    | One        |
+// | Endpoint Write Loop | Infinite     | On transport close    | One        |
+
+// Max Party Slots (Always): 2
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -181,6 +193,7 @@ class Http2ClientTransport final : public ClientTransport {
     HttpStreamState stream_state;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
+    HeaderAssembler header_assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
   uint32_t NextStreamId(
@@ -204,6 +217,7 @@ class Http2ClientTransport final : public ClientTransport {
   // This also tracks the stream_id for creating new streams.
   InterActivityMutex<uint32_t> stream_id_mutex_;
   HPackCompressor encoder_;
+  HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);

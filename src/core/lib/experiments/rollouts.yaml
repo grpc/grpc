@@ -64,6 +64,8 @@
   default: false
 - name: event_engine_listener
   default: true
+- name: event_engine_secure_endpoint
+  default: true
 - name: free_large_allocator
   default: false
 - name: keep_alive_ping_timer_batch
@@ -103,6 +105,8 @@
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
+  default: false
+- name: tsi_frame_protector_without_locks
   default: false
 - name: unconstrained_max_quota_buffer_size
   default: false

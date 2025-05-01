@@ -87,7 +87,8 @@ void SendRateIsRobust(double initial_rate, std::vector<SendRateOp> ops) {
         break;
       case SendRateOpType::kDeliveryTime: {
         const double delivery_time =
-            send_rate.DeliveryTime(op.current_time, op.arg);
+            send_rate.GetLbDecision(op.current_time, op.arg)
+                .delivery_time.value();
         EXPECT_FALSE(std::isnan(delivery_time));
         EXPECT_GE(delivery_time, 0.0);
         break;

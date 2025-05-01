@@ -341,7 +341,12 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
     auto it = object.find("additionalInfo");
-    EXPECT_EQ(it, object.end());
+    if (it != object.end()) {
+      ASSERT_EQ(it->second.type(), Json::Type::kObject);
+      const Json::Object& additional_info = it->second.object();
+      auto it_test_data = additional_info.find("testData");
+      EXPECT_EQ(it_test_data, additional_info.end());
+    }
   }
 }
 

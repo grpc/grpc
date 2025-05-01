@@ -43,7 +43,7 @@ TcpFrameTransport::TcpFrameTransport(
     TransportContextPtr ctx)
     : DataSource(ctx->socket_node),
       ctx_(ctx),
-      control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
+      control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
       data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
                       options.enable_tracing),
       options_(options) {}
@@ -96,9 +96,9 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
         }
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
         return DiscardResult(
-            Join(control_endpoint_.Write(std::move(control_bytes)),
-                 data_endpoints_.Write(tag, std::move(data_bytes),
-                                       std::move(call_tracer))));
+            Join(data_endpoints_.Write(tag, std::move(data_bytes),
+                                       std::move(call_tracer)),
+                 control_endpoint_.Write(std::move(control_bytes))));
       });
 }
 
@@ -196,7 +196,7 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
                   [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
                     return absl::UnavailableError("Frame transport closed");
                   }),
-              std::move(promise));
+              data_endpoints_.AwaitClosed(), std::move(promise));
 }
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
@@ -207,7 +207,8 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
        frames = std::move(frames)]() mutable {
         return self->UntilClosed(self->WriteLoop(std::move(frames)));
       },
-      [sink](absl::Status status) {
+      [sink, ztrace_collector = ztrace_collector_](absl::Status status) {
+        ztrace_collector->Append(TransportError</*read=*/false>{status});
         sink->OnFrameTransportClosed(std::move(status));
       });
   party->Spawn(
@@ -222,12 +223,14 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
               });
         }));
       },
-      [sink](absl::Status status) {
+      [sink, ztrace_collector = ztrace_collector_](absl::Status status) {
+        ztrace_collector->Append(TransportError</*read=*/true>{status});
         sink->OnFrameTransportClosed(std::move(status));
       });
 }
 
 void TcpFrameTransport::Orphan() {
+  ztrace_collector_->Append(OrphanTrace{});
   closed_.Set();
   Unref();
 }
