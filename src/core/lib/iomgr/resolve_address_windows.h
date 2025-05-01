@@ -64,7 +64,7 @@ class NativeDNSResolver : public DNSResolver {
   // EventEngine calls grpc_init.
   grpc_event_engine::experimental::EventEngine* engine();
 
-  grpc_core::Mutex mu_;
+  Mutex mu_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine_
       ABSL_GUARDED_BY(mu_);
   std::atomic<grpc_event_engine::experimental::EventEngine*> engine_ptr_{

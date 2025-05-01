@@ -57,7 +57,7 @@ grpc_event_engine::experimental::EventEngine* NativeDNSResolver::engine() {
   if (engine_ptr != nullptr) return engine_ptr;
   // Otherwise, create the engine under the lock.
   // This is only if some other thread did not already create it.
-  grpc_core::MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   if (engine_ != nullptr) return engine_.get();
   engine_ = grpc_event_engine::experimental::GetDefaultEventEngine();
   engine_ptr_.store(engine_.get(), std::memory_order_relaxed);
