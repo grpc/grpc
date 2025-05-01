@@ -224,9 +224,9 @@ absl::Status DnsServer::Respond(const DnsQuestion& query,
             << query.qname << " type: " << query.qtype;
   auto packet = FormatAnswer(
       query, query.qtype == 1 ? ipv4_address : ToIPv6Address(ipv4_address));
-  ssize_t sent = sendto(sockfd_, packet.data(), packet.size(), 0,
-                        reinterpret_cast<const sockaddr*>(&query.client_addr),
-                        sizeof(query.client_addr));
+  auto sent = sendto(sockfd_, packet.data(), packet.size(), 0,
+                     reinterpret_cast<const sockaddr*>(&query.client_addr),
+                     sizeof(query.client_addr));
   if (sent < 0) {
     return absl::ErrnoToStatus(errno, "Sending response");
   }
@@ -256,7 +256,7 @@ void DnsServer::ServerLoop(int sockfd) {
   };
 
   while (!done_.HasBeenNotified()) {
-    ssize_t received_bytes =
+    auto received_bytes =
         recvfrom(sockfd, buffer.data(), buffer.size(), MSG_DONTWAIT,
                  (struct sockaddr*)&client_addr, &client_len);
     if (received_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
