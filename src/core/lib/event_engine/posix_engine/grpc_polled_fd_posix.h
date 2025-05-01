@@ -77,10 +77,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override {
     size_t bytes_available = 0;
-    return handle_->Poller()
-               ->posix_interface()
-               .Ioctl(handle_->WrappedFd(), FIONREAD, &bytes_available)
-               .ok() &&
+    return ioctl(as_, FIONREAD, &bytes_available) == 0 &&
            bytes_available > 0;
   }
 
@@ -141,38 +138,37 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
  private:
   /// Overridden socket API for c-ares
   static ares_socket_t Socket(int af, int type, int protocol,
-                              void* /* polled_fd_factory */) {
-    ares_socket_t s = socket(af, type, protocol);
-    return s;
+                              void* /*user_data*/) {
+    return socket(af, type, protocol);
   }
 
   /// Overridden connect API for c-ares
   static int Connect(ares_socket_t as, const struct sockaddr* target,
-                     ares_socklen_t target_len, void* /* unused */) {
+                     ares_socklen_t target_len, void* /*user_data*/) {
     return connect(as, target, target_len);
   }
 
   /// Overridden writev API for c-ares
   static ares_ssize_t WriteV(ares_socket_t as, const struct iovec* iov,
-                             int iovec_count, void* /* unused */) {
+                             int iovec_count, void* /*user_data*/) {
     return writev(as, iov, iovec_count);
   }
 
   /// Overridden recvfrom API for c-ares
   static ares_ssize_t RecvFrom(ares_socket_t as, void* data, size_t data_len,
                                int flags, struct sockaddr* from,
-                               ares_socklen_t* from_len, void* /* unused */) {
+                               ares_socklen_t* from_len, void* /*user_data*/) {
     return recvfrom(as, data, data_len, flags, from, from_len);
   }
 
   /// Overridden close API for c-ares
-  static int Close(ares_socket_t as, void* polled_fd_factory) {
+  static int Close(ares_socket_t as, void* user_data) {
     GrpcPolledFdFactoryPosix* self =
-        static_cast<GrpcPolledFdFactoryPosix*>(polled_fd_factory);
+        static_cast<GrpcPolledFdFactoryPosix*>(user_data);
     grpc_core::MutexLock lock(&self->mu_);
     if (self->owned_fds_.find(as) == self->owned_fds_.end()) {
       // c-ares owns this fd, grpc has never seen it
-      close(as);
+      return close(as);
     }
     return 0;
   }
@@ -204,8 +200,8 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 
   PosixEventPoller* poller_;
   grpc_core::Mutex mu_;
-  // sockets that are used/owned by grpc - we (grpc) will close them
-  // rather than c-ares
+  // fds that are used/owned by grpc - we (grpc) will close them rather than
+  // c-ares
   std::unordered_set<ares_socket_t> owned_fds_ ABSL_GUARDED_BY(mu_);
 };
 
