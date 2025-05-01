@@ -8103,6 +8103,10 @@ targets:
   - gtest
   - grpc++
   - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test
