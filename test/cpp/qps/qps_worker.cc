@@ -107,6 +107,8 @@ class ScopedProfile final {
 #ifdef GRPC_ENABLE_LATENT_SEE
 class ScopedLatentSee final {
  public:
+  explicit ScopedLatentSee(std::string role) : role_(role) {}
+
   ~ScopedLatentSee() {
     CollectManager();
     for (auto& thread : collector_threads_) {
@@ -129,32 +131,19 @@ class ScopedLatentSee final {
     manager_thread_.emplace("latent_see_manager", [this, done = done_,
                                                    name = std::move(name)]() {
       int step = 0;
-      while (!done->WaitForNotificationWithTimeout(absl::Seconds(5))) {
+      // Once per second: kick off a thread to collate the latent-see data.
+      // Each one of these may fail under contention (that's ok, we just get a
+      // subset of the data).
+      while (!done->WaitForNotificationWithTimeout(absl::Seconds(1))) {
+        // Bound the number of collector threads outstanding.
         while (collector_threads_.size() > 32) {
           collector_threads_.front().Join();
           collector_threads_.pop_front();
         }
+        // Kick off a new thread
         collector_threads_
-            .emplace_back(
-                "latent_see_collector",
-                [step, name]() {
-                  auto json =
-                      grpc_core::latent_see::Log::Get().TryGenerateJson();
-                  if (!json.has_value()) {
-                    LOG(INFO) << "Failed to generate "
-                                 "latent_see.json (contention with "
-                                 "another writer)";
-                    return;
-                  }
-                  const std::string filename = absl::StrCat(
-                      "latent_see_", name, "_", getpid(), "_", step, ".json");
-                  LOG(INFO) << "Writing " << filename << " in "
-                            << get_current_dir_name();
-                  FILE* f = fopen(filename.c_str(), "w");
-                  if (f == nullptr) return;
-                  fprintf(f, "%s", json->c_str());
-                  fclose(f);
-                })
+            .emplace_back("latent_see_collector",
+                          [step, name, this]() { Collect(step, name); })
             .Start();
         ++step;
       }
@@ -170,13 +159,31 @@ class ScopedLatentSee final {
     }
   }
 
+  void Collect(int step, std::string name) {
+    auto json = grpc_core::latent_see::Log::Get().TryGenerateJson();
+    if (!json.has_value()) {
+      LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                   "another writer)";
+      return;
+    }
+    const std::string filename = absl::StrCat(
+        "latent_see_", role_, "_", name, "_", getpid(), "_", step, ".json");
+    LOG(INFO) << "Writing " << filename << " in " << get_current_dir_name();
+    FILE* f = fopen(filename.c_str(), "w");
+    if (f == nullptr) return;
+    fprintf(f, "%s", json->c_str());
+    fclose(f);
+  }
+
   std::shared_ptr<grpc_core::Notification> done_;
   std::optional<grpc_core::Thread> manager_thread_;
   std::deque<grpc_core::Thread> collector_threads_;
+  const std::string role_;
 };
 #else
 class ScopedLatentSee final {
  public:
+  explicit ScopedLatentSee(const std::string&) {}
   void Mark(const std::string&) {}
 };
 #endif
@@ -266,7 +273,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   Status RunClientBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
-    ScopedLatentSee latent_see;
+    ScopedLatentSee latent_see("client");
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read args");
@@ -308,7 +315,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   Status RunServerBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
-    ScopedLatentSee latent_see;
+    ScopedLatentSee latent_see("server");
     ServerArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read server args");
