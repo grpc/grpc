@@ -28,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/util/json/json_object_loader.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/load_file.h"
@@ -40,8 +41,7 @@ constexpr absl::string_view kAllowedKty = "RSA";
 constexpr int kx5cSize = 1;
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
-constexpr absl::string_view kCertificateSuffix =
-    "\n-----END CERTIFICATE-----\n";
+constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
 
 constexpr absl::string_view kSpiffePrefix = "spiffe://";
 constexpr int kMaxTrustDomainLength = 255;
@@ -197,6 +197,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
       errors->AddError(
           absl::StrFormat("got %s. Only supported value for use field is %s.",
                           use_, kAllowedUse));
+      return;
     }
   }
   {
@@ -205,6 +206,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
       errors->AddError(
           absl::StrFormat("got %s. Only supported value for kty field is %s",
                           kty_, kAllowedKty));
+      return;
     }
   }
   {
@@ -213,10 +215,15 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
       errors->AddError(absl::StrFormat(
           "got vector length %i. Expected length of exactly %i.", x5c_.size(),
           kx5cSize));
+      return;
     }
-    absl::Status status = ValidateCertificateIsValidX509(x5c_[0]);
-    if (!status.ok()) {
-      errors->AddError(status.message());
+    // absl::Status status = ValidateCertificateIsValidX509(x5c_[0]);
+
+    std::string pem_cert =
+        absl::StrCat(kCertificatePrefix, x5c_[0].data(), kCertificateSuffix);
+    auto certs = ParsePemCertificateChain(pem_cert);
+    if (!certs.ok()) {
+      errors->AddError(certs.status().message());
     }
   }
 }

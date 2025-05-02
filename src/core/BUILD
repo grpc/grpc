@@ -9639,6 +9639,7 @@ grpc_cc_library(
         "json_reader",
         "load_file",
         "status_helper",
+        "//:tsi_ssl_credentials",
     ],
 )
 

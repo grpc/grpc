@@ -321,10 +321,9 @@ TEST(SpiffeBundle, CorruptedCertFails) {
           "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
           "spiffebundle_corrupted_cert.json")
           .status(),
-      absl::InvalidArgumentError(
-          "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].keys[0].x5c error:Conversion "
-          "from PEM string to X509 failed.]"));
+      absl::InvalidArgumentError("errors validating JSON: "
+                                 "[field:trust_domains[\"example.com\"].keys[0]"
+                                 ".x5c error:Invalid PEM.]"));
 }
 
 TEST(SpiffeBundle, EmptyStringKeyFails) {
