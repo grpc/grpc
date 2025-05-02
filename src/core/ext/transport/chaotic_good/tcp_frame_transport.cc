@@ -201,6 +201,7 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
+  party_ = party->Ref();
   party->Spawn(
       "watch-data-endpoints",
       [self = RefAsSubclass<TcpFrameTransport>()]() {
@@ -239,7 +240,16 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
 
 void TcpFrameTransport::Orphan() {
   ztrace_collector_->Append(OrphanTrace{});
-  closed_.Set();
+  if (party_ != nullptr) {
+    party_->Spawn(
+        "close",
+        [self = RefAsSubclass<TcpFrameTransport>()]() {
+          self->closed_.Set();
+          return ImmediateOkStatus();
+        },
+        [](absl::Status) {});
+    party_.reset();
+  }
   Unref();
 }
 

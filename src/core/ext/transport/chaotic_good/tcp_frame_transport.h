@@ -24,7 +24,7 @@
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
-#include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/lib/promise/latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -80,8 +80,9 @@ class TcpFrameTransport final : public FrameTransport,
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
-  InterActivityLatch<void> closed_;
+  Latch<void> closed_;
   uint64_t next_payload_tag_ = 1;
+  RefCountedPtr<Party> party_;
 };
 
 }  // namespace chaotic_good
