@@ -202,6 +202,14 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
   party->Spawn(
+      "watch-data-endpoints",
+      [self = RefAsSubclass<TcpFrameTransport>()]() {
+        return self->data_endpoints_.AwaitClosed();
+      },
+      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status) {
+        if (!self->closed_.IsSet()) self->closed_.Set();
+      });
+  party->Spawn(
       "tcp-write",
       [self = RefAsSubclass<TcpFrameTransport>(),
        frames = std::move(frames)]() mutable {
