@@ -113,9 +113,8 @@ class Http2ClientTransport final : public ClientTransport {
     return ping_manager_.RequestPing(std::move(on_initiate));
   }
   template <typename Factory>
-  auto TestOnlySpawnPromise(Factory factory) {
-    return general_party_->Spawn("TestPromise", std::move(factory),
-                                 [](auto) {});
+  auto TestOnlySpawnPromise(std::string_view name, Factory factory) {
+    return general_party_->Spawn(name, std::move(factory), [](auto) {});
   }
 
  private:
@@ -237,7 +236,9 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // Ping Helper functions
-  auto CreateAndSendPing(bool ack, uint64_t opaque_data) {
+  // Returns a promise that resolves once a ping frame is written to the
+  // endpoint.
+  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
     Http2Frame frame = Http2PingFrame{ack, opaque_data};
     SliceBuffer output_buf;
     Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
@@ -267,7 +268,7 @@ class Http2ClientTransport final : public ClientTransport {
     // Returns a promise that resolves once a ping frame is written to the
     // endpoint.
     Promise<absl::Status> SendPing(SendPingArgs args) override {
-      return transport_->CreateAndSendPing(args.ack, args.opaque_data);
+      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
     }
 
     Promise<absl::Status> TriggerWrite() override {

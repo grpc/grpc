@@ -266,8 +266,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       },
       event_engine().get(),
       [&mock_endpoint, &read_cb, this](SliceBuffer& out, SliceBuffer& expect) {
-        char out_buffer[kFrameHeaderSize];
-        char expect_buffer[kFrameHeaderSize];
+        char out_buffer[kFrameHeaderSize + 1] = {};
+        char expect_buffer[kFrameHeaderSize + 1] = {};
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
         expect.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, expect_buffer);
         EXPECT_STREQ(out_buffer, expect_buffer);
@@ -295,7 +295,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine());
   client_transport->TestOnlySpawnPromise(
-      [&client_transport, &ping_ack_received] {
+      "PingRequest", [&client_transport, &ping_ack_received] {
         return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
                               Http2EmptyFrame{}),
                           [&client_transport] {
@@ -342,7 +342,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine());
-  client_transport->TestOnlySpawnPromise([&client_transport] {
+  client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
                           Http2EmptyFrame{}),
                       [&client_transport] {
@@ -382,9 +382,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       },
       event_engine().get(),
       [&mock_endpoint, &read_cb, this](SliceBuffer& out, SliceBuffer& expect) {
-        char out_buffer[kFrameHeaderSize];
+        char out_buffer[kFrameHeaderSize + 1] = {};
+        char expect_buffer[kFrameHeaderSize + 1] = {};
         out.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, out_buffer);
-        char expect_buffer[kFrameHeaderSize];
         expect.CopyFirstNBytesIntoBuffer(kFrameHeaderSize, expect_buffer);
         EXPECT_STREQ(out_buffer, expect_buffer);
 
@@ -426,7 +426,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2),
       event_engine());
   client_transport->TestOnlySpawnPromise(
-      [&client_transport, &ping_ack_received] {
+      "PingRequest", [&client_transport, &ping_ack_received] {
         return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
                               Http2EmptyFrame{}),
                           [&client_transport] {
@@ -437,7 +437,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
                      LOG(INFO) << "PingAck Received. Ping Test done.";
                    });
       });
-  client_transport->TestOnlySpawnPromise([&client_transport] {
+  client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
     return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
                           Http2EmptyFrame{}),
                       [&client_transport] {

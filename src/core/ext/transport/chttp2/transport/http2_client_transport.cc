@@ -168,11 +168,11 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         return Immediate(absl::OkStatus());
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // TODO(akshitpatel) : [PH2][P0] : Decide whether we need to batch
-        // Ping response.
         // TODO(akshitpatel) : [PH2][P0] : This can result into undefined
         // behaviour as there will be concurrent calls to endpoint_.write
-        return self->CreateAndSendPing(true, opaque);
+        // RFC9113: PING responses SHOULD be given higher priority than any
+        // other frame.
+        return self->EnqueueOutgoingFrame(Http2PingFrame{true, opaque});
       });
 }
 
@@ -341,19 +341,22 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
-  return TrySeq(outgoing_frames_.NextBatch(),
-                [self = RefAsSubclass<Http2ClientTransport>(),
-                 &endpoint = endpoint_](std::vector<Http2Frame> frames) {
-                  SliceBuffer output_buf;
-                  Serialize(absl::Span<Http2Frame>(frames), output_buf);
-                  if (output_buf.Length() > 0) {
-                    self->bytes_sent_in_last_write_ = true;
-                  }
-                  HTTP2_CLIENT_DLOG
-                      << "Http2ClientTransport WriteFromQueue Promise";
-                  return endpoint.Write(std::move(output_buf),
-                                        PromiseEndpoint::WriteArgs{});
-                });
+  return TrySeq(
+      outgoing_frames_.NextBatch(),
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          std::vector<Http2Frame> frames) {
+        SliceBuffer output_buf;
+        Serialize(absl::Span<Http2Frame>(frames), output_buf);
+        HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
+        return If(
+            output_buf.Length() > 0,
+            [self, output_buf = std::move(output_buf)]() mutable {
+              self->bytes_sent_in_last_write_ = true;
+              return self->endpoint_.Write(std::move(output_buf),
+                                           PromiseEndpoint::WriteArgs{});
+            },
+            [] { return absl::OkStatus(); });
+      });
 }
 
 auto Http2ClientTransport::WriteLoop() {
