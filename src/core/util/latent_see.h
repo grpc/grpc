@@ -120,23 +120,25 @@ class Log {
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
     static Log* log = []() {
-      atexit([] {
-        auto json = log->TryGenerateJson();
-        if (!json.has_value()) {
-          LOG(INFO) << "Failed to generate latent_see.json (contention with "
-                       "another writer)";
-          return;
-        }
-        if (log->stats_flusher_ != nullptr) {
-          log->stats_flusher_(*json);
-          return;
-        }
-        LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
-        FILE* f = fopen("latent_see.json", "w");
-        if (f == nullptr) return;
-        fprintf(f, "%s", json->c_str());
-        fclose(f);
-      });
+      if (false) {
+        atexit([] {
+          auto json = log->TryGenerateJson();
+          if (!json.has_value()) {
+            LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                         "another writer)";
+            return;
+          }
+          if (log->stats_flusher_ != nullptr) {
+            log->stats_flusher_(*json);
+            return;
+          }
+          LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
+          FILE* f = fopen("latent_see.json", "w");
+          if (f == nullptr) return;
+          fprintf(f, "%s", json->c_str());
+          fclose(f);
+        });
+      }
       return new Log();
     }();
     return *log;
