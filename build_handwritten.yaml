@@ -23,7 +23,7 @@ settings:
   - '3.11'
   - '3.12'
   - '3.13'
-  version: 1.70.1
+  version: 1.70.2
 configs:
   asan:
     CC: clang
