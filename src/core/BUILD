@@ -8147,6 +8147,7 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
+        "event_engine_utils",
         "ztrace_collector",
         "//:gpr",
     ],
