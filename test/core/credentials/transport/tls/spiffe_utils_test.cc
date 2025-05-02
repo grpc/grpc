@@ -312,9 +312,10 @@ TEST(SpiffeBundle, CorruptedCertFails) {
           "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
           "spiffebundle_corrupted_cert.json")
           .status(),
-      absl::InvalidArgumentError("errors validating JSON: "
-                                 "[field:trust_domains[\"example.com\"].keys[0]"
-                                 ".x5c error:Invalid PEM.]"));
+      absl::InvalidArgumentError(
+          "errors validating JSON: "
+          "[field:trust_domains[\"example.com\"].keys[0]"
+          ".x5c error:FAILED_PRECONDITION: Invalid PEM.]"));
 }
 
 TEST(SpiffeBundle, EmptyStringKeyFails) {
@@ -396,18 +397,6 @@ TEST(SpiffeBundle, WrongRootFails) {
           .status(),
       absl::InvalidArgumentError("errors validating JSON: [field:trust_domains "
                                  "error:field not present]"));
-}
-
-TEST(SpiffeBundle, WrongSeqTypeFails) {
-  EXPECT_EQ(
-      SpiffeBundleMap::FromFile(
-          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
-          "spiffebundle_wrong_seq_type.json")
-          .status(),
-      absl::InvalidArgumentError(
-          "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].spiffe_sequence "
-          "error:failed to parse non-negative number]"));
 }
 
 TEST(SpiffeBundle, WrongUseFails) {

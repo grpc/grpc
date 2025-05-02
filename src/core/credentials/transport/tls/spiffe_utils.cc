@@ -131,25 +131,6 @@ absl::Status ValidatePath(absl::string_view path) {
   return absl::OkStatus();
 }
 
-absl::Status ValidateCertificateIsValidX509(absl::string_view raw_cert) {
-  std::string pem_cert =
-      absl::StrCat(kCertificatePrefix, raw_cert.data(), kCertificateSuffix);
-
-  BIO* cert_bio = BIO_new_mem_buf(pem_cert.c_str(), pem_cert.size());
-  if (cert_bio == nullptr) {
-    return absl::InvalidArgumentError(
-        "Conversion from raw certificate to BIO failed.");
-  }
-  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
-  BIO_free(cert_bio);
-  if (x509 == nullptr) {
-    return absl::InvalidArgumentError(
-        "Conversion from PEM string to X509 failed.");
-  }
-  X509_free(x509);
-  return absl::OkStatus();
-}
-
 }  // namespace
 
 absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
@@ -217,13 +198,12 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
           kx5cSize));
       return;
     }
-    // absl::Status status = ValidateCertificateIsValidX509(x5c_[0]);
 
     std::string pem_cert =
         absl::StrCat(kCertificatePrefix, x5c_[0].data(), kCertificateSuffix);
     auto certs = ParsePemCertificateChain(pem_cert);
     if (!certs.ok()) {
-      errors->AddError(certs.status().message());
+      errors->AddError(certs.status().ToString());
     }
   }
 }
@@ -235,6 +215,8 @@ void SpiffeBundleMap::JsonPostLoad(const Json& json, const JsonArgs&,
     for (auto const& kv : temp_bundles_) {
       absl::Status status = ValidateTrustDomain(kv.first);
       if (!status.ok()) {
+        // Don't error out early, validate as much as we can to give the user as
+        // much info as possible.
         errors->AddError(
             absl::StrFormat("map key '%s' is not a valid trust domain. %s",
                             kv.first, status.ToString()));

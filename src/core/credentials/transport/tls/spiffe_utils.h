@@ -73,6 +73,8 @@ class SpiffeBundleKey final {
   absl::StatusOr<absl::string_view> GetRoot();
 
  private:
+  // The following are all fields of the the JWK key in the SPIFFE bundle per
+  // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
   std::string kty_;
   std::string kid_;
   std::string use_;
@@ -87,11 +89,9 @@ class SpiffeBundleKey final {
 class SpiffeBundle final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader =
-        JsonObjectLoader<SpiffeBundle>()
-            .Field("spiffe_sequence", &SpiffeBundle::spiffe_sequence_)
-            .Field("keys", &SpiffeBundle::keys_)
-            .Finish();
+    static const auto* kLoader = JsonObjectLoader<SpiffeBundle>()
+                                     .Field("keys", &SpiffeBundle::keys_)
+                                     .Finish();
     return kLoader;
   }
 
@@ -99,7 +99,6 @@ class SpiffeBundle final {
   absl::StatusOr<std::vector<absl::string_view>> GetRoots();
 
  private:
-  uint64_t spiffe_sequence_;
   std::vector<SpiffeBundleKey> keys_;
 };
 
