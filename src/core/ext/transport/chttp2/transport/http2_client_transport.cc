@@ -155,7 +155,7 @@ auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
 
 auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Promise { ack="
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame { ack="
                        << frame.ack << ", opaque=" << frame.opaque << " }";
   return If(
       frame.ack,
