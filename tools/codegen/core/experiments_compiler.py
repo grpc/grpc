@@ -355,10 +355,10 @@ class ExperimentsCompiler(object):
             return False
         if rollout_attributes["name"] not in self._experiment_definitions:
             print(
-                "WARNING: rollout for an undefined experiment: %s ignored"
+                "ERROR: rollout for an undefined experiment: %s ignored"
                 % rollout_attributes["name"]
             )
-            return True
+            return False
         return self._experiment_definitions[
             rollout_attributes["name"]
         ].AddRolloutSpecification(

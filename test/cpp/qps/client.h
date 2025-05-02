@@ -38,6 +38,8 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
+#include "src/core/ext/transport/chaotic_good/chaotic_good.h"
+#include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
@@ -516,6 +518,17 @@ class ClientImpl : public Client {
       ChannelArguments args;
       args.SetInt("shard_to_ensure_no_subchannel_merges", shard);
       set_channel_args(config, &args);
+      switch (config.protocol()) {
+        case Protocol::HTTP2:
+          break;
+        case Protocol::CHAOTIC_GOOD:
+          args.SetString(
+              GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
+              std::string(grpc_core::chaotic_good::WireFormatPreferences()));
+          break;
+        default:
+          LOG(FATAL) << "Unknown protocol: " << config.protocol();
+      }
 
       std::string type;
       if (config.has_security_params() &&
