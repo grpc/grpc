@@ -39,13 +39,13 @@ auto KeepaliveManager::WaitForKeepAliveTimeout() {
         return If(
             data_received_in_last_cycle_,
             [] {
-              VLOG(2) << "Keepalive timeout triggered but "
-                      << "received data. Resolving with ok status";
+              KEEPALIVE_LOG << "Keepalive timeout triggered but "
+                            << "received data. Resolving with ok status";
               return Immediate(absl::OkStatus());
             },
             [this] {
-              VLOG(2) << "Keepalive timeout triggered and no "
-                         "data received. Triggering keepalive timeout.";
+              KEEPALIVE_LOG << "Keepalive timeout triggered and no "
+                               "data received. Triggering keepalive timeout.";
               // Once the keepalive timeout is triggered, ensure that
               // WaitForData() is never resolved. This is needed as the
               // keepalive loop should break once the timeout is triggered.

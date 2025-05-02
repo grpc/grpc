@@ -25,6 +25,8 @@
 namespace grpc_core {
 namespace http2 {
 
+#define KEEPALIVE_LOG VLOG(2)
+
 class KeepAliveInterface {
  public:
   // Returns a promise that sends a ping frame and resolves when the ack is
@@ -48,11 +50,11 @@ class KeepaliveManager {
   // Needs to be called when any data is read from the endpoint.
   void GotData() {
     if (keep_alive_timeout_triggered_) {
-      VLOG(2)
+      KEEPALIVE_LOG
           << "KeepAlive timeout triggered. Not setting data_received_ to true";
       return;
     }
-    VLOG(4) << "Data received. Setting data_received_ to true";
+    KEEPALIVE_LOG << "Data received. Setting data_received_ to true";
     data_received_in_last_cycle_ = true;
     auto waker = std::move(waker_);
     // This will only trigger a wakeup if WaitForData() is pending on this
@@ -88,10 +90,10 @@ class KeepaliveManager {
   auto WaitForData() {
     return [this]() -> Poll<absl::Status> {
       if (data_received_in_last_cycle_) {
-        VLOG(4) << "WaitForData: Data received. Poll resolved";
+        KEEPALIVE_LOG << "WaitForData: Data received. Poll resolved";
         return absl::OkStatus();
       } else {
-        VLOG(4) << "WaitForData: Data not received. Poll pending";
+        KEEPALIVE_LOG << "WaitForData: Data not received. Poll pending";
         waker_ = GetContext<Activity>()->MakeNonOwningWaker();
         return Pending{};
       }
