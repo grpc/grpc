@@ -50,18 +50,9 @@ absl::StatusOr<X509*> ReadCertificate(absl::string_view raw_cert) {
   std::string pem_cert =
       absl::StrCat(kCertificatePrefix, raw_cert.data(), kCertificateSuffix);
 
-  BIO* cert_bio = BIO_new_mem_buf(pem_cert.c_str(), pem_cert.size());
-  if (cert_bio == nullptr) {
-    return absl::InvalidArgumentError(
-        "Conversion from raw certificate to BIO failed.");
-  }
-  X509* x509 = PEM_read_bio_X509(cert_bio, nullptr, nullptr, nullptr);
-  BIO_free(cert_bio);
-  if (x509 == nullptr) {
-    return absl::InvalidArgumentError(
-        "Conversion from PEM string to X509 failed.");
-  }
-  return x509;
+  auto chain = ParsePemCertificateChain(pem_cert);
+  GRPC_RETURN_IF_ERROR(chain.status());
+  return (*chain)[0];
 }
 
 absl::StatusOr<X509*> ReadCertificateFromFile(absl::string_view filepath) {

@@ -47,13 +47,13 @@ class SpiffeId final {
   const std::string path_;
 };
 
-// An entry in the Key vector of a Spiffe Bundle Map following these documents:
+// An entry in the Key vector of a SPIFFE Bundle following these documents:
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
-class SpiffeBundleKey {
+class SpiffeBundleKey final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
+    static const auto* kLoader =
         JsonObjectLoader<SpiffeBundleKey>()
             .Field("kty", &SpiffeBundleKey::kty_)
             .OptionalField("kid", &SpiffeBundleKey::kid_)
@@ -62,13 +62,13 @@ class SpiffeBundleKey {
             .Field("n", &SpiffeBundleKey::n_)
             .Field("e", &SpiffeBundleKey::e_)
             .Finish();
-    return loader;
+    return kLoader;
   }
 
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
-  // Returns the PEM x509 string for this SpiffeBundle entry which is the only
+  // Returns the PEM x509 string for this SPIFFE Bundle entry which is the only
   // entry in the x5c_ vector.
   absl::StatusOr<absl::string_view> GetRoot();
 
@@ -81,21 +81,21 @@ class SpiffeBundleKey {
   std::string e_;
 };
 
-// A Spiffe bundle following these documents:
+// A SPIFFE bundle following these documents:
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
-class SpiffeBundle {
+class SpiffeBundle final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
+    static const auto* kLoader =
         JsonObjectLoader<SpiffeBundle>()
             .Field("spiffe_sequence", &SpiffeBundle::spiffe_sequence_)
             .Field("keys", &SpiffeBundle::keys_)
             .Finish();
-    return loader;
+    return kLoader;
   }
 
-  // Returns a vector of the roots in this SpiffeBundle.
+  // Returns a vector of the roots in this SPIFFE Bundle.
   absl::StatusOr<std::vector<absl::string_view>> GetRoots();
 
  private:
@@ -103,18 +103,18 @@ class SpiffeBundle {
   std::vector<SpiffeBundleKey> keys_;
 };
 
-// A SpiffeBundleMap following these documents:
+// A SPIFFE Bundle Map following these documents:
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 // Only configuring X509 roots is supported.
-class SpiffeBundleMap {
+class SpiffeBundleMap final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* loader =
+    static const auto* kLoader =
         JsonObjectLoader<SpiffeBundleMap>()
             .Field("trust_domains", &SpiffeBundleMap::temp_bundles_)
             .Finish();
-    return loader;
+    return kLoader;
   }
 
   void JsonPostLoad(const Json& json, const JsonArgs&,
@@ -127,7 +127,7 @@ class SpiffeBundleMap {
   // no other SPIFFE Bundle configurations are supported.
   static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
 
-  // Returns the roots for a given trust domain in the SpiffeBundleMap.
+  // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
   absl::StatusOr<std::vector<absl::string_view>> GetRoots(
       absl::string_view trust_domain);
   size_t size() { return bundles_.size(); }

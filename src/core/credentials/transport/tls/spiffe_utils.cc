@@ -252,13 +252,9 @@ void SpiffeBundleMap::JsonPostLoad(const Json& json, const JsonArgs&,
 absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
     absl::string_view file_path) {
   auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
-  if (!slice.ok()) {
-    return slice.status();
-  }
+  GRPC_RETURN_IF_ERROR(slice.status());
   auto json = grpc_core::JsonParse(slice->as_string_view());
-  if (!json.ok()) {
-    return json.status();
-  }
+  GRPC_RETURN_IF_ERROR(json.status());
   return LoadFromJson<SpiffeBundleMap>(*json);
 }
 
@@ -275,9 +271,7 @@ absl::StatusOr<std::vector<absl::string_view>> SpiffeBundle::GetRoots() {
   std::vector<absl::string_view> root_keys(keys_.size());
   for (size_t i = 0; i < keys_.size(); i++) {
     auto root = keys_[i].GetRoot();
-    if (!root.ok()) {
-      return root.status();
-    }
+    GRPC_RETURN_IF_ERROR(root.status());
     root_keys[i] = *keys_[i].GetRoot();
   }
   return root_keys;
