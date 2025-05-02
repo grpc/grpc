@@ -427,8 +427,8 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
   std::string path =
       "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
       "spiffebundle.json";
-  std::string json_str = grpc_core::testing::GetFileContents(path);
-  auto json = grpc_core::JsonParse(json_str);
+  std::string json_str = testing::GetFileContents(path);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
 
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
@@ -470,8 +470,8 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
   std::string path =
       "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
       "spiffebundle2.json";
-  std::string json_str = grpc_core::testing::GetFileContents(path);
-  auto json = grpc_core::JsonParse(json_str);
+  std::string json_str = testing::GetFileContents(path);
+  auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
 
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
