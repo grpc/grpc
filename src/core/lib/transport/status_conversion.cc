@@ -29,14 +29,11 @@ Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status) {
 
 grpc_status_code grpc_http2_error_to_grpc_status(
     Http2ErrorCode error, grpc_core::Timestamp deadline) {
-  switch (error) {
-    case Http2ErrorCode::kNoError:
-      // should never be received
-      return GRPC_STATUS_INTERNAL;
-    default:
-      return static_cast<grpc_status_code>(
-          ErrorCodeToStatusCode(error, deadline));
+  if (error == Http2ErrorCode::kNoError) {
+    // should never be received
+    return GRPC_STATUS_INTERNAL;
   }
+  return static_cast<grpc_status_code>(ErrorCodeToStatusCode(error, deadline));
 }
 
 grpc_status_code grpc_http2_status_to_grpc_status(int status) {
