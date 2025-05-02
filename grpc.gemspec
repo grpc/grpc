@@ -1807,6 +1807,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/transport/auth_context.cc )
   s.files += %w( src/core/transport/auth_context.h )
   s.files += %w( src/core/transport/endpoint_transport.h )
+  s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.cc )
+  s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.h )
   s.files += %w( src/core/tsi/alts/crypt/aes_gcm.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.cc )
   s.files += %w( src/core/tsi/alts/crypt/gsec.h )

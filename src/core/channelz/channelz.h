@@ -568,6 +568,8 @@ class SocketNode final : public BaseNode {
   const std::string& local() const { return local_; }
   const std::string& remote() const { return remote_; }
 
+  RefCountedPtr<Security> security() const { return security_; }
+
  private:
   std::optional<std::string> CycleCounterToTimestamp(
       gpr_cycle_counter cycle_counter) const {
