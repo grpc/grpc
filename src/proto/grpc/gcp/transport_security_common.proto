@@ -19,8 +19,6 @@ syntax = "proto3";
 
 package grpc.gcp;
 
-option go_api_flag = "OPEN_TO_OPAQUE_HYBRID";  // http://go/go-api-flag
-
 option go_package = "google.golang.org/grpc/credentials/alts/internal/proto/grpc_gcp";
 option java_multiple_files = true;
 option java_outer_classname = "TransportSecurityCommonProto";
