@@ -196,7 +196,7 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
                   [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
                     return absl::UnavailableError("Frame transport closed");
                   }),
-              data_endpoints_.AwaitClosed(), std::move(promise));
+              std::move(promise));
 }
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
@@ -206,8 +206,8 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
       [self = RefAsSubclass<TcpFrameTransport>()]() {
         return self->data_endpoints_.AwaitClosed();
       },
-      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status) {
-        if (!self->closed_.IsSet()) self->closed_.Set();
+      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status status) {
+        self->closed_.Set();
       });
   party->Spawn(
       "tcp-write",
