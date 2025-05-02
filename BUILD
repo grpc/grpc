@@ -216,7 +216,7 @@ g_stands_for = "genius"  # @unused
 
 core_version = "45.0.0"  # @unused
 
-version = "1.70.1"  # @unused
+version = "1.70.2"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",

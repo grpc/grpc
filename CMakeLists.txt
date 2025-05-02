@@ -25,10 +25,10 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.70.1")
+set(PACKAGE_VERSION       "1.70.2")
 set(gRPC_CORE_VERSION     "45.0.0")
 set(gRPC_CORE_SOVERSION   "45")
-set(gRPC_CPP_VERSION      "1.70.1")
+set(gRPC_CPP_VERSION      "1.70.2")
 set(gRPC_CPP_SOVERSION    "1.70")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
