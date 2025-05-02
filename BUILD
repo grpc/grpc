@@ -4686,10 +4686,12 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/time",
-        "absl/strings",
     ],
     visibility = ["//bazel:tcp_tracer"],
-    deps = ["gpr"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+    ],
 )
 
 grpc_cc_library(
