@@ -83,7 +83,8 @@ class SpiffeBundleKey final {
   std::string e_;
 };
 
-// A SPIFFE bundle following these documents:
+// A SPIFFE bundle consists of a trust domain and a set of roots for that trust
+// domain.
 // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 class SpiffeBundle final {
@@ -102,7 +103,9 @@ class SpiffeBundle final {
   std::vector<SpiffeBundleKey> keys_;
 };
 
-// A SPIFFE Bundle Map following these documents:
+// A map of SPIFFE bundles keyed to trust domains. This functions as a map of a
+// given trust domain to the root certificates that should be used when
+// validating certificates in this trust domain.
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 // Only configuring X509 roots is supported.
