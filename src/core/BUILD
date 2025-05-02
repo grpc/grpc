@@ -8310,7 +8310,7 @@ grpc_cc_library(
         "chaotic_good_transport_context",
         "event_engine_tcp_socket_utils",
         "if",
-        "inter_activity_latch",
+        "latch",
         "join",
         "loop",
         "race",
