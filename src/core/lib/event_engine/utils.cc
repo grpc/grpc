@@ -61,4 +61,22 @@ LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
   return results;
 }
 
+absl::string_view WriteEventToString(
+    grpc_event_engine::experimental::internal::WriteEvent event) {
+  switch (event) {
+    case grpc_event_engine::experimental::internal::WriteEvent::kSendMsg:
+      return "SENDMSG";
+    case grpc_event_engine::experimental::internal::WriteEvent::kScheduled:
+      return "SCHEDULED";
+    case grpc_event_engine::experimental::internal::WriteEvent::kSent:
+      return "SENT";
+    case grpc_event_engine::experimental::internal::WriteEvent::kAcked:
+      return "ACKED";
+    case grpc_event_engine::experimental::internal::WriteEvent::kClosed:
+      return "CLOSED";
+    default:
+      return "UNKNOWN";
+  }
+}
+
 }  // namespace grpc_event_engine::experimental

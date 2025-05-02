@@ -1801,7 +1801,6 @@ let package = Package(
         "src/core/telemetry/stats.h",
         "src/core/telemetry/stats_data.cc",
         "src/core/telemetry/stats_data.h",
-        "src/core/telemetry/tcp_tracer.cc",
         "src/core/telemetry/tcp_tracer.h",
         "src/core/transport/auth_context.cc",
         "src/core/transport/auth_context.h",

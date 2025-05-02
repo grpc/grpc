@@ -4681,9 +4681,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_tracer",
-    srcs = [
-        "//src/core:telemetry/tcp_tracer.cc",
-    ],
     hdrs = [
         "//src/core:telemetry/tcp_tracer.h",
     ],

@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 #define GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 
+#include <grpc/event_engine/internal/write_event.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -108,36 +109,23 @@ struct TcpConnectionMetrics {
   std::optional<uint32_t> rcvq_drops;
   // The NIC Rx delay reported by the remote host.
   std::optional<uint32_t> nic_rx_delay_usec;
-
-  std::string ToString();
 };
 
 class TcpCallTracer {
  public:
-  enum class Type {
-    kUnknown = 0,
-    // When the sendmsg system call or its variants returned for the traced byte
-    // offset.
-    kSendMsg,
-    // When the traced byte offset is enqueued in kernel schedulers (aka,
-    // qdiscs). There can be multiple schedulers.
-    kScheduled,
-    // When the traced byte offset is handed over to the NIC.
-    kSent,
-    // When the acknowledgement for the traced byte offset was received.
-    kAcked,
-    // When the connection is closed. This is not associated with a byte offset.
-    kClosed,
+  struct TcpEventMetric {
+    absl::string_view key;
+    int64_t value;
   };
 
   virtual ~TcpCallTracer() = default;
 
   // Records a per-message event with an optional snapshot of connection
   // metrics.
-  virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
-                           std::optional<TcpConnectionMetrics> metrics) = 0;
-
-  absl::string_view TypeToString(Type type);
+  virtual void RecordEvent(
+      grpc_event_engine::experimental::internal::WriteEvent event,
+      absl::Time time, size_t byte_offset,
+      std::vector<TcpEventMetric> metrics) = 0;
 };
 
 class TcpConnectionTracer {
