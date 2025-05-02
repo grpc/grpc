@@ -128,26 +128,26 @@ class ScopedLatentSee final {
   void StartManager(std::string name) {
     CollectManager();
     done_ = std::make_shared<grpc_core::Notification>();
-    manager_thread_.emplace("latent_see_manager", [this, done = done_,
-                                                   name = std::move(name)]() {
-      int step = 0;
-      // Once per second: kick off a thread to collate the latent-see data.
-      // Each one of these may fail under contention (that's ok, we just get a
-      // subset of the data).
-      while (!done->WaitForNotificationWithTimeout(absl::Seconds(1))) {
-        // Bound the number of collector threads outstanding.
-        while (collector_threads_.size() > 32) {
-          collector_threads_.front().Join();
-          collector_threads_.pop_front();
-        }
-        // Kick off a new thread
-        collector_threads_
-            .emplace_back("latent_see_collector",
-                          [step, name, this]() { Collect(step, name); })
-            .Start();
-        ++step;
-      }
-    });
+    manager_thread_.emplace(
+        "latent_see_manager", [this, done = done_, name = std::move(name)]() {
+          int step = 0;
+          // Once per second: kick off a thread to collate the latent-see data.
+          // Each one of these may fail under contention (that's ok, we just get
+          // a subset of the data).
+          while (!done->WaitForNotificationWithTimeout(absl::Seconds(1))) {
+            // Bound the number of collector threads outstanding.
+            while (collector_threads_.size() > 32) {
+              collector_threads_.front().Join();
+              collector_threads_.pop_front();
+            }
+            // Kick off a new thread
+            collector_threads_
+                .emplace_back("latent_see_collector",
+                              [step, name, this]() { Collect(step, name); })
+                .Start();
+            ++step;
+          }
+        });
     manager_thread_->Start();
   }
 
