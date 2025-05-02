@@ -1137,12 +1137,14 @@ grpc_error_handle HPackParser::ParseInput(
                                                input.bitsrc())) {
       HandleMetadataSoftSizeLimitExceeded(&input);
     }
+    LOG(ERROR) << "here " << call_tracer;
     global_stats().IncrementHttp2MetadataSize(state_.frame_length);
     if (call_tracer != nullptr && call_tracer->IsSampled() &&
         metadata_buffer_ != nullptr) {
       MetadataSizesAnnotation metadata_sizes_annotation(
           metadata_buffer_, state_.metadata_early_detection.soft_limit(),
           state_.metadata_early_detection.hard_limit());
+      LOG(ERROR) << "here";
       call_tracer->RecordAnnotation(metadata_sizes_annotation);
     }
     if (!state_.frame_error.connection_error() &&
