@@ -81,6 +81,7 @@ config_setting(
 
 config_setting(
     name = "android",
+    constraint_values = ["//third_party/bazel_platforms/os:android"],
     values = {"crosstool_top": "//external:android/crosstool"},
     # TODO: Use constraint_values to detect android after Bazel 7.0 platforms migration is finished
     # constraint_values = [ "@platforms//os:android" ],
@@ -88,7 +89,7 @@ config_setting(
 
 config_setting(
     name = "macos",
-    values = {"apple_platform_type": "macos"},
+    constraint_values = ["//third_party/bazel_platforms/os:macos"],
 )
 
 config_setting(
@@ -98,7 +99,7 @@ config_setting(
 
 config_setting(
     name = "tvos",
-    values = {"apple_platform_type": "tvos"},
+    constraint_values = ["//third_party/bazel_platforms/os:tvos"],
 )
 
 config_setting(
@@ -108,7 +109,7 @@ config_setting(
 
 config_setting(
     name = "watchos",
-    values = {"apple_platform_type": "watchos"},
+    constraint_values = ["//third_party/bazel_platforms/os:watchos"],
 )
 
 config_setting(
