@@ -97,12 +97,14 @@ class OutputBuffer {
 class OutputBuffers final : public RefCounted<OutputBuffers>,
                             public channelz::DataSource {
  public:
-  OutputBuffers(Clock* clock,
+  OutputBuffers(Clock* clock, uint32_t encode_alignment,
                 std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                 TransportContextPtr ctx)
       : channelz::DataSource(ctx->socket_node),
         ztrace_collector_(std::move(ztrace_collector)),
+        encode_alignment_(encode_alignment),
         clock_(clock) {}
+  ~OutputBuffers() override { ResetDataSource(); }
 
   void AddData(channelz::DataSink& sink) override;
 
@@ -139,6 +141,7 @@ class OutputBuffers final : public RefCounted<OutputBuffers>,
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
+  const uint32_t encode_alignment_;
   Clock* const clock_;
 };
 
@@ -200,6 +203,7 @@ class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
     read_requested_.Set(0);
     read_completed_.Set(0);
   }
+  ~InputQueue() override { ResetDataSource(); }
 
   ReadTicket Read(uint64_t payload_tag);
   void CompleteRead(uint64_t payload_tag, SliceBuffer buffer);
@@ -235,7 +239,8 @@ class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
 
 class Endpoint final {
  public:
-  Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+  Endpoint(uint32_t id, uint32_t decode_alignment,
+           RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
@@ -251,7 +256,8 @@ class Endpoint final {
                         RefCountedPtr<OutputBuffers> output_buffers,
                         std::shared_ptr<PromiseEndpoint> endpoint,
                         std::shared_ptr<TcpZTraceCollector> ztrace_collector);
-  static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
+  static auto ReadLoop(uint32_t id, uint32_t decode_alignment,
+                       RefCountedPtr<InputQueue> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint,
                        std::shared_ptr<TcpZTraceCollector> ztrace_collector);
 
@@ -268,7 +274,8 @@ class DataEndpoints {
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
   explicit DataEndpoints(std::vector<PendingConnection> endpoints,
-                         TransportContextPtr ctx,
+                         TransportContextPtr ctx, uint32_t encode_alignment,
+                         uint32_t decode_alignment,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing,
                          data_endpoints_detail::Clock* clock = DefaultClock());

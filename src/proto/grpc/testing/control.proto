@@ -137,6 +137,8 @@ message ClientStatus { ClientStats stats = 1; }
 message Mark {
   // if true, the stats will be reset after taking their snapshot.
   bool reset = 1;
+  // if set, the name of this mark
+  string name = 2;
 }
 
 message ClientArgs {
