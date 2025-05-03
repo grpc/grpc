@@ -228,21 +228,19 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     subchannel_wrapper_.reset(DEBUG_LOCATION, "WatcherWrapper");
   }
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status& status) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status) override {
     GRPC_TRACE_LOG(client_channel, INFO)
         << "client_channel=" << subchannel_wrapper_->client_channel_.get()
         << ": connectivity change for subchannel wrapper "
         << subchannel_wrapper_.get() << " subchannel "
         << subchannel_wrapper_->subchannel_.get()
         << "; hopping into work_serializer";
-    self.release();  // Held by callback.
+    auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [this, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-            *subchannel_wrapper_->client_channel_->work_serializer_) {
-          ApplyUpdateInControlPlaneWorkSerializer(state, status);
-          Unref();
+        [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
         });
   }
 
