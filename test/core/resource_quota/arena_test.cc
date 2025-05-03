@@ -323,6 +323,8 @@ struct Foo {
 
 template <>
 struct ArenaContextType<Foo> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(Foo* p) { p->~Foo(); }
 };
 
