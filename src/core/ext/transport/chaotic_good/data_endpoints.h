@@ -104,6 +104,7 @@ class OutputBuffers final : public RefCounted<OutputBuffers>,
         ztrace_collector_(std::move(ztrace_collector)),
         encode_alignment_(encode_alignment),
         clock_(clock) {}
+  ~OutputBuffers() override { ResetDataSource(); }
 
   void AddData(channelz::DataSink& sink) override;
 
@@ -202,6 +203,7 @@ class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
     read_requested_.Set(0);
     read_completed_.Set(0);
   }
+  ~InputQueue() override { ResetDataSource(); }
 
   ReadTicket Read(uint64_t payload_tag);
   void CompleteRead(uint64_t payload_tag, SliceBuffer buffer);
