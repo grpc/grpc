@@ -2327,4 +2327,4 @@ class HuffDecoder : public HuffDecoderCommon {
   bool done_ = false;
 };
 }  // namespace grpc_core
-#endif
+#endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_DECODE_HUFF_H
