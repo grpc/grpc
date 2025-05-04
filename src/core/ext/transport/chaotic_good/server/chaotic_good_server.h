@@ -199,15 +199,18 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   };
 
  private:
-  void LogConnectionFailure(absl::string_view what, absl::Status status) {
+  void LogConnectionFailure(absl::string_view what,
+                            std::optional<absl::Status> status) {
     GRPC_TRACE_LOG(chaotic_good, ERROR)
         << "ChaoticGoodServerListener::LogConnectionFailure: " << what << ": "
-        << status;
+        << (status.has_value() ? status->ToString() : "no status");
     auto* server_node = server_->channelz_node();
     if (server_node != nullptr) {
-      server_node->AddTraceEvent(channelz::ChannelTrace::Severity::Error,
-                                 grpc_slice_from_cpp_string(absl::StrCat(
-                                     what, ": ", status.ToString())));
+      server_node->AddTraceEvent(
+          channelz::ChannelTrace::Severity::Error,
+          grpc_slice_from_cpp_string(absl::StrCat(
+              what, ": ",
+              status.has_value() ? status->ToString() : "no status")));
     }
   }
   Server* const server_;

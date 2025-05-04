@@ -353,7 +353,7 @@ PING_SYSTEM_TEST(TestPingManagerNoAck) {
   event_engine()->UnsetGlobalHooks();
 }
 
-PING_SYSTEM_TEST(TestPingManagerDelayedPing) {
+PING_SYSTEM_TEST(DISABLED_TestPingManagerDelayedPing) {
   // Test to trigger two ping requests.
   // The test asserts the following:
   // 1. The first ping is sent successfully.

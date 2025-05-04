@@ -23,18 +23,19 @@
 #include "absl/cleanup/cleanup.h"
 #include "absl/strings/escaping.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
-#include "src/core/ext/transport/chaotic_good/serialize_little_endian.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
+#include "src/core/lib/event_engine/extensions/channelz.h"
 #include "src/core/lib/event_engine/extensions/tcp_trace.h"
 #include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/util/dump_args.h"
+#include "src/core/util/string.h"
 
 namespace grpc_core {
 namespace chaotic_good {
@@ -75,8 +76,20 @@ bool SendRate::IsRateMeasurementStale() const {
   return Timestamp::Now() - last_rate_measurement_ > Duration::Seconds(1);
 }
 
-double SendRate::DeliveryTime(uint64_t current_time, size_t bytes) {
-  if (current_rate_ <= 0) return 0.0;
+LbDecision SendRate::GetLbDecision(uint64_t current_time, size_t bytes) {
+  LbDecision decision;
+  decision.bytes = bytes;
+  if (send_start_time_ != 0) {
+    decision.current_send = {
+        send_size_,
+        static_cast<double>(current_time - send_start_time_) * 1e-9,
+    };
+  }
+  decision.current_rate = current_rate_;
+  if (current_rate_ <= 0 || IsRateMeasurementStale()) {
+    decision.delivery_time = 0.0;
+    return decision;
+  }
   // start time relative to the current time for this send
   double start_time = 0.0;
   if (send_start_time_ != 0) {
@@ -92,22 +105,35 @@ double SendRate::DeliveryTime(uint64_t current_time, size_t bytes) {
         send_start_time_relative_to_now + current_rate_ * send_size_;
     if (predicted_end_time > start_time) start_time = predicted_end_time;
   }
-  return start_time + bytes / current_rate_;
+  decision.delivery_time = (start_time + bytes / current_rate_) * 1e-9;
+  return decision;
+}
+
+void SendRate::AddData(Json::Object& obj) const {
+  if (send_start_time_ != 0) {
+    obj["send_start_time"] = Json::FromNumber(send_start_time_);
+    obj["send_size"] = Json::FromNumber(send_size_);
+  }
+  obj["current_rate"] = Json::FromNumber(current_rate_);
+  obj["rate_measurement_age"] =
+      Json::FromNumber((Timestamp::Now() - last_rate_measurement_).millis());
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffer
 
-std::optional<double> OutputBuffer::DeliveryTime(uint64_t current_time,
-                                                 size_t bytes) {
-  double delivery_time = send_rate_.DeliveryTime(current_time, bytes);
+LbDecision OutputBuffer::GetLbDecision(uint64_t current_time, size_t bytes) {
+  LbDecision decision =
+      send_rate_.GetLbDecision(current_time, pending_.Length() + bytes);
+  CHECK(decision.delivery_time.has_value());
   // If there's already data queued and we claim immediate sending (eg new
-  // connection) OR if the send would take >100ms... wait for a bit.
-  if (pending_.Length() != 0 &&
-      (delivery_time <= 0 || delivery_time > 0.1 * 1e9)) {
-    return std::nullopt;
+  // connection) OR if the send would take >300ms... wait for a bit.
+  if (pending_.Length() != 0) {
+    if (*decision.delivery_time <= 0.0 || *decision.delivery_time > 0.3) {
+      decision.delivery_time = std::nullopt;
+    }
   }
-  return delivery_time;
+  return decision;
 }
 
 void OutputBuffer::MaybeCompleteSend(uint64_t current_time) {
@@ -117,11 +143,21 @@ void OutputBuffer::MaybeCompleteSend(uint64_t current_time) {
 NextWrite OutputBuffer::TakePendingAndStartWrite(uint64_t current_time) {
   send_rate_.StartSend(current_time, pending_.Length());
   bool trace = false;
-  if (!rate_probe_outstanding_ && send_rate_.IsRateMeasurementStale()) {
-    rate_probe_outstanding_ = true;
+  if (send_rate_.IsRateMeasurementStale()) {
+    send_rate_.PerformRateProbe();
     trace = true;
   }
-  return {std::move(pending_), trace};
+  NextWrite next_write;
+  next_write.bytes = std::move(pending_);
+  next_write.trace = trace;
+  pending_.Clear();
+  return next_write;
+}
+
+void OutputBuffer::AddData(Json::Object& obj) const {
+  obj["have_flush_waker"] = Json::FromBool(!flush_waker_.is_unwakeable());
+  obj["pending_bytes"] = Json::FromNumber(pending_.Length());
+  send_rate_.AddData(obj);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -133,48 +169,79 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const uint32_t length = output_buffer.Length();
-  const size_t write_size = TcpDataFrameHeader::kFrameHeaderSize + length;
+  const size_t write_size =
+      TcpDataFrameHeader::kFrameHeaderSize +
+      DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
+                            encode_alignment_) +
+      length + DataConnectionPadding(length, encode_alignment_);
+  CHECK_EQ(write_size % encode_alignment_, 0u)
+      << GRPC_DUMP_ARGS(write_size, length, encode_alignment_);
   MutexLock lock(&mu_);
   size_t best_endpoint = std::numeric_limits<size_t>::max();
   double earliest_delivery = std::numeric_limits<double>::max();
   for (size_t i = 0; i < buffers_.size(); ++i) {
     if (!buffers_[i].has_value()) continue;
-    auto delivery_time = buffers_[i]->DeliveryTime(send_time, write_size);
-    if (!delivery_time.has_value()) continue;
-    if (*delivery_time < earliest_delivery) {
-      earliest_delivery = *delivery_time;
+    auto decision = buffers_[i]->GetLbDecision(send_time, write_size);
+    if (!decision.delivery_time.has_value()) continue;
+    if (*decision.delivery_time < earliest_delivery) {
+      earliest_delivery = *decision.delivery_time;
       best_endpoint = i;
     }
   }
   if (best_endpoint == std::numeric_limits<size_t>::max()) {
-    GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: No data endpoint "
-                                          "ready "
-                                          "for "
-                                       << length << " bytes on queue " << this;
+    GRPC_TRACE_LOG(chaotic_good, INFO)
+        << "CHAOTIC_GOOD: No data endpoint ready for " << length
+        << " bytes on queue " << this;
+    ztrace_collector_->Append(NoEndpointForWriteTrace{length, payload_tag});
     write_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
     return Pending{};
   }
   TcpDataFrameHeader hdr{payload_tag, send_time, length};
-  ztrace_collector_->Append([this, &hdr, send_time, write_size]() {
-    std::vector<double> lb_decisions;
-    mu_.AssertHeld();
-    for (size_t i = 0; i < buffers_.size(); ++i) {
-      lb_decisions.push_back(
-          buffers_[i].has_value()
-              ? buffers_[i]->DeliveryTime(send_time, write_size).value_or(-1.0)
-              : -1.0);
-    }
-    return WriteLargeFrameHeaderTrace{hdr, std::move(lb_decisions)};
-  });
+  ztrace_collector_->Append(
+      [this, &hdr, send_time, best_endpoint, write_size]() {
+        std::vector<std::optional<LbDecision>> lb_decisions;
+        mu_.AssertHeld();
+        for (size_t i = 0; i < buffers_.size(); ++i) {
+          if (!buffers_[i].has_value()) {
+            lb_decisions.emplace_back(std::nullopt);
+            continue;
+          }
+          lb_decisions.emplace_back(
+              buffers_[i]->GetLbDecision(send_time, write_size));
+        }
+        return WriteLargeFrameHeaderTrace{hdr, best_endpoint,
+                                          std::move(lb_decisions)};
+      });
   GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint "
-      << best_endpoint << " queue " << this;
+      << "CHAOTIC_GOOD: Queue " << length << " data in " << write_size
+      << "b wire bytes onto endpoint " << best_endpoint << " queue " << this;
   auto& buffer = buffers_[best_endpoint];
   waker = buffer->TakeWaker();
   SliceBuffer& output = buffer->pending();
+  CHECK_EQ(output.Length() % encode_alignment_, 0u)
+      << GRPC_DUMP_ARGS(output.Length(), encode_alignment_);
+  const auto header_padding = DataConnectionPadding(
+      TcpDataFrameHeader::kFrameHeaderSize, encode_alignment_);
+  MutableSlice header_slice = MutableSlice::CreateUninitialized(
+      TcpDataFrameHeader::kFrameHeaderSize + header_padding);
   TcpDataFrameHeader{payload_tag, send_time, length}.Serialize(
-      output.AddTiny(TcpDataFrameHeader::kFrameHeaderSize));
+      header_slice.data());
+  if (header_padding > 0) {
+    memset(header_slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
+           header_padding);
+  }
+  output.AppendIndexed(Slice(std::move(header_slice)));
+  const auto payload_padding =
+      DataConnectionPadding(output_buffer.Length(), encode_alignment_);
   output.TakeAndAppend(output_buffer);
+  // Add padding for output buffer
+  if (payload_padding > 0) {
+    auto slice = MutableSlice::CreateUninitialized(payload_padding);
+    memset(slice.data(), 0, payload_padding);
+    output.AppendIndexed(Slice(std::move(slice)));
+  }
+  CHECK_EQ(output.Length() % encode_alignment_, 0u) << GRPC_DUMP_ARGS(
+      output.Length(), encode_alignment_, header_padding, payload_padding);
   return Empty{};
 }
 
@@ -215,6 +282,27 @@ void OutputBuffers::UpdateSendRate(uint32_t connection_id,
   buffer->UpdateSendRate(bytes_per_nanosecond);
 }
 
+void OutputBuffers::AddData(channelz::DataSink& sink) {
+  Json::Object data;
+  MutexLock lock(&mu_);
+  data["ready_endpoints"] =
+      Json::FromNumber(ready_endpoints_.load(std::memory_order_relaxed));
+  data["have_write_waker"] = Json::FromBool(!write_waker_.is_unwakeable());
+  Json::Array buffers;
+  for (const auto& buffer : buffers_) {
+    Json::Object obj;
+    if (!buffer.has_value()) {
+      obj["write_state"] = Json::FromString("closed");
+    } else {
+      obj["write_state"] = Json::FromString("open");
+      buffer->AddData(obj);
+    }
+    buffers.emplace_back(Json::FromObject(std::move(obj)));
+  }
+  data["buffers"] = Json::FromArray(std::move(buffers));
+  sink.AddAdditionalInfo("outputBuffers", std::move(data));
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // InputQueues
 
@@ -231,6 +319,7 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
 Poll<absl::StatusOr<SliceBuffer>> InputQueue::PollRead(uint64_t payload_tag) {
   MutexLock lock(&mu_);
   if (!read_completed_.IsSet(payload_tag)) {
+    if (!closed_error_.ok()) return closed_error_;
     read_wakers_.emplace(payload_tag,
                          GetContext<Activity>()->MakeNonOwningWaker());
     return Pending{};
@@ -246,14 +335,14 @@ Poll<absl::StatusOr<SliceBuffer>> InputQueue::PollRead(uint64_t payload_tag) {
   return std::move(buffer);
 }
 
-void InputQueue::CompleteRead(uint64_t payload_tag,
-                              absl::StatusOr<SliceBuffer> buffer) {
+void InputQueue::CompleteRead(uint64_t payload_tag, SliceBuffer buffer) {
   if (payload_tag == 0) return;
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   MutexLock lock(&mu_);
-  GRPC_TRACE_LOG(chaotic_good, INFO) << "CHAOTIC_GOOD: Complete payload_tag #"
-                                     << payload_tag << ": " << buffer.status();
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: Complete payload_tag #" << payload_tag;
+  if (!closed_error_.ok()) return;
   if (read_completed_.Set(payload_tag)) return;
   read_buffers_.emplace(payload_tag, std::move(buffer));
   auto it = read_wakers_.find(payload_tag);
@@ -276,6 +365,50 @@ void InputQueue::Cancel(uint64_t payload_tag) {
   }
   read_buffers_.erase(payload_tag);
   read_completed_.Set(payload_tag);
+}
+
+void InputQueue::AddData(channelz::DataSink& sink) {
+  Json::Object data;
+  MutexLock lock(&mu_);
+  data["read_requested"] = Json::FromString(absl::StrCat(read_requested_));
+  data["read_completed"] = Json::FromString(absl::StrCat(read_completed_));
+  if (!read_wakers_.empty()) {
+    Json::Array read_wakers;
+    for (const auto& [payload_tag, waker] : read_wakers_) {
+      read_wakers.emplace_back(Json::FromNumber(payload_tag));
+    }
+    data["read_wakers"] = Json::FromArray(std::move(read_wakers));
+  }
+  if (!read_buffers_.empty()) {
+    Json::Array read_buffers;
+    for (const auto& [payload_tag, buffer] : read_buffers_) {
+      Json::Object buffer_data;
+      buffer_data["payload_tag"] = Json::FromNumber(payload_tag);
+      buffer_data["bytes"] = Json::FromNumber(buffer.Length());
+      read_buffers.emplace_back(Json::FromObject(std::move(buffer_data)));
+    }
+    data["read_buffers"] = Json::FromArray(std::move(read_buffers));
+  }
+  if (!closed_error_.ok()) {
+    data["closed_error"] = Json::FromString(closed_error_.ToString());
+  }
+  sink.AddAdditionalInfo("inputQueue", std::move(data));
+}
+
+void InputQueue::SetClosed(absl::Status status) {
+  absl::flat_hash_map<uint64_t, Waker> read_wakers;
+  Waker closed_waker;
+  auto wake_up = absl::MakeCleanup([&]() {
+    for (auto& [_, waker] : read_wakers) waker.Wakeup();
+    closed_waker.Wakeup();
+  });
+  MutexLock lock(&mu_);
+  if (!closed_error_.ok()) return;
+  if (status.ok()) status = absl::UnavailableError("transport closed");
+  closed_error_ = std::move(status);
+  read_wakers = std::move(read_wakers_);
+  read_wakers_.clear();
+  closed_waker = std::move(await_closed_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -303,14 +436,19 @@ auto Endpoint::WriteLoop(uint32_t id,
          data_rate_metric, output_buffers,
          ztrace_collector](data_endpoints_detail::NextWrite next_write) {
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Write " << next_write.bytes.Length()
+              << "CHAOTIC_GOOD: " << output_buffers.get() << " "
+              << ResolvedAddressToString(endpoint->GetPeerAddress())
+                     .value_or("peer-unknown")
+              << " Write " << next_write.bytes.Length()
               << "b to data endpoint #" << id;
           using grpc_event_engine::experimental::EventEngine;
           PromiseEndpoint::WriteArgs write_args;
           if (next_write.trace && data_rate_metric.has_value()) {
             write_args.set_metrics_sink(EventEngine::Endpoint::WriteEventSink(
                 requested_metrics,
-                {EventEngine::Endpoint::WriteEvent::kSendMsg},
+                {EventEngine::Endpoint::WriteEvent::kSendMsg,
+                 EventEngine::Endpoint::WriteEvent::kScheduled,
+                 EventEngine::Endpoint::WriteEvent::kAcked},
                 [data_rate_metric, id, output_buffers, ztrace_collector,
                  endpoint](
                     EventEngine::Endpoint::WriteEvent event,
@@ -330,9 +468,6 @@ auto Endpoint::WriteLoop(uint32_t id,
                     }
                     return trace;
                   });
-                  if (event != EventEngine::Endpoint::WriteEvent::kSendMsg) {
-                    return;
-                  }
                   for (const auto& metric : metrics) {
                     if (metric.key == *data_rate_metric) {
                       output_buffers->UpdateSendRate(id, metric.value * 1e-9);
@@ -340,35 +475,84 @@ auto Endpoint::WriteLoop(uint32_t id,
                   }
                 }));
           }
-          return endpoint->Write(std::move(next_write.bytes),
-                                 std::move(write_args));
+          ztrace_collector->Append(WriteBytesToEndpointTrace{
+              next_write.bytes.Length(), id, next_write.trace});
+          return Map(
+              AddGeneratedErrorPrefix(
+                  [id, endpoint]() {
+                    return absl::StrCat(
+                        "DATA_CHANNEL: ",
+                        ResolvedAddressToString(endpoint->GetPeerAddress())
+                            .value_or("peer-unknown"),
+                        "#", id);
+                  },
+                  endpoint->Write(std::move(next_write.bytes),
+                                  std::move(write_args))),
+              [id, output_buffers, ztrace_collector](absl::Status status) {
+                ztrace_collector->Append([id, &status]() {
+                  return FinishWriteBytesToEndpointTrace{id, status};
+                });
+                GRPC_TRACE_LOG(chaotic_good, INFO)
+                    << "CHAOTIC_GOOD: " << output_buffers.get() << " "
+                    << "Write done to data endpoint #" << id
+                    << " status: " << status;
+                return status;
+              });
         },
-        []() -> LoopCtl<absl::Status> { return Continue{}; });
+        [id, output_buffers]() -> LoopCtl<absl::Status> {
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: " << output_buffers.get() << " "
+              << "Write done to data endpoint #" << id;
+          return Continue{};
+        });
   });
 }
 
-auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
+auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
+                        RefCountedPtr<InputQueue> input_queues,
                         std::shared_ptr<PromiseEndpoint> endpoint,
                         std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
-  return Loop([id, endpoint = std::move(endpoint),
+  return Loop([id, decode_alignment, endpoint = std::move(endpoint),
                input_queues = std::move(input_queues),
                ztrace_collector = std::move(ztrace_collector)]() {
     return TrySeq(
-        endpoint->ReadSlice(TcpDataFrameHeader::kFrameHeaderSize),
-        [](Slice frame_header) {
-          return TcpDataFrameHeader::Parse(frame_header.data());
-        },
-        [id, endpoint, ztrace_collector](TcpDataFrameHeader frame_header) {
+        endpoint->ReadSlice(
+            TcpDataFrameHeader::kFrameHeaderSize +
+            DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
+                                  decode_alignment)),
+        [id](Slice frame_header) {
+          auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
           GRPC_TRACE_LOG(chaotic_good, INFO)
-              << "CHAOTIC_GOOD: Read " << frame_header
+              << "CHAOTIC_GOOD: Read "
+              << (hdr.ok() ? absl::StrCat(*hdr) : hdr.status().ToString())
               << " on data connection #" << id;
-          ztrace_collector->Append(ReadDataHeaderTrace{frame_header});
-          return TryStaple(endpoint->Read(frame_header.payload_length),
-                           frame_header);
+          return hdr;
         },
-        [input_queues](std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
+        [endpoint, ztrace_collector, id,
+         decode_alignment](TcpDataFrameHeader frame_header) {
+          ztrace_collector->Append(ReadDataHeaderTrace{frame_header});
+          return Map(TryStaple(endpoint->Read(frame_header.payload_length +
+                                              DataConnectionPadding(
+                                                  frame_header.payload_length,
+                                                  decode_alignment)),
+                               frame_header),
+                     [id, frame_header](auto x) {
+                       GRPC_TRACE_LOG(chaotic_good, INFO)
+                           << "CHAOTIC_GOOD: Complete read " << frame_header
+                           << " on data connection #" << id
+                           << " status: " << x.status();
+                       return x;
+                     });
+        },
+        [input_queues, id, decode_alignment](
+            std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
             -> LoopCtl<absl::Status> {
           auto& [buffer, frame_header] = buffer_frame;
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: Complete read " << frame_header
+              << " on data connection #" << id;
+          buffer.RemoveLastNBytesNoInline(DataConnectionPadding(
+              frame_header.payload_length, decode_alignment));
           input_queues->CompleteRead(frame_header.payload_tag,
                                      std::move(buffer));
           return Continue{};
@@ -376,24 +560,43 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
   });
 }
 
-Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+namespace {
+RefCountedPtr<channelz::SocketNode> MakeSocketNode(
+    const TransportContextPtr& ctx, const PromiseEndpoint& endpoint) {
+  std::string peer_string =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetPeerAddress())
+          .value_or("unknown");
+  return MakeRefCounted<channelz::SocketNode>(
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetLocalAddress())
+          .value_or("unknown"),
+      peer_string, absl::StrCat("chaotic-good ", peer_string),
+      ctx->socket_node->security());
+}
+}  // namespace
+
+Endpoint::Endpoint(uint32_t id, uint32_t decode_alignment,
+                   RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
                    TransportContextPtr ctx,
-                   std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
+                   std::shared_ptr<TcpZTraceCollector> ztrace_collector)
+    : ztrace_collector_(ztrace_collector), id_(id) {
   auto arena = SimpleArenaAllocator(0)->MakeArena();
   arena->SetContext(ctx->event_engine.get());
   party_ = Party::Make(arena);
   party_->Spawn(
       "write",
-      [id, enable_tracing, output_buffers = std::move(output_buffers),
-       input_queues = std::move(input_queues),
+      [id, decode_alignment, enable_tracing,
+       output_buffers = std::move(output_buffers), input_queues,
        pending_connection = std::move(pending_connection),
        arena = std::move(arena), ctx = std::move(ctx),
        ztrace_collector = std::move(ztrace_collector)]() mutable {
         return TrySeq(
             pending_connection.Await(),
-            [id, enable_tracing, output_buffers = std::move(output_buffers),
+            [id, decode_alignment, enable_tracing,
+             output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues), arena = std::move(arena),
              ctx = std::move(ctx),
              ztrace_collector =
@@ -404,6 +607,18 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
                          ep.GetPeerAddress())
                          .value_or("<<unknown peer address>>")
                   << " ready";
+              RefCountedPtr<channelz::SocketNode> socket_node;
+              if (ctx->socket_node != nullptr) {
+                auto* channelz_endpoint =
+                    grpc_event_engine::experimental::QueryExtension<
+                        grpc_event_engine::experimental::ChannelzExtension>(
+                        ep.GetEventEngineEndpoint().get());
+                socket_node = MakeSocketNode(ctx, ep);
+                socket_node->AddParent(ctx->socket_node.get());
+                if (channelz_endpoint != nullptr) {
+                  channelz_endpoint->SetSocketNode(socket_node);
+                }
+              }
               auto endpoint = std::make_shared<PromiseEndpoint>(std::move(ep));
               // Enable RxMemoryAlignment and RPC receive coalescing after the
               // transport setup is complete. At this point all the settings
@@ -421,19 +636,29 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(
                   "read",
-                  [id, input_queues = std::move(input_queues), endpoint,
+                  [id, decode_alignment, input_queues, endpoint,
                    ztrace_collector]() {
-                    return ReadLoop(id, input_queues, endpoint,
-                                    ztrace_collector);
+                    return ReadLoop(id, decode_alignment, input_queues,
+                                    endpoint, ztrace_collector);
                   },
-                  [](absl::Status) {});
+                  [input_queues](absl::Status status) {
+                    GRPC_TRACE_LOG(chaotic_good, INFO)
+                        << "CHAOTIC_GOOD: read party done: " << status;
+                    input_queues->SetClosed(std::move(status));
+                  });
               return Map(
                   WriteLoop(id, std::move(output_buffers), std::move(endpoint),
                             std::move(ztrace_collector)),
-                  [read_party](auto x) { return x; });
+                  [read_party, socket_node = std::move(socket_node)](auto x) {
+                    return x;
+                  });
             });
       },
-      [](absl::Status) {});
+      [input_queues](absl::Status status) {
+        GRPC_TRACE_LOG(chaotic_good, INFO)
+            << "CHAOTIC_GOOD: write party done: " << status;
+        input_queues->SetClosed(std::move(status));
+      });
 }
 
 }  // namespace data_endpoints_detail
@@ -443,15 +668,16 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
+    uint32_t encode_alignment, uint32_t decode_alignment,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
     data_endpoints_detail::Clock* clock)
     : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
-          clock, ztrace_collector)),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
+          clock, encode_alignment, ztrace_collector, ctx)),
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>(ctx)) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
-    endpoints_.emplace_back(i, output_buffers_, input_queues_,
-                            std::move(endpoints_vec[i]), enable_tracing, ctx,
-                            ztrace_collector);
+    endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
+        i, decode_alignment, output_buffers_, input_queues_,
+        std::move(endpoints_vec[i]), enable_tracing, ctx, ztrace_collector));
   }
 }
 

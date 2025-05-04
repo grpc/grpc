@@ -353,3 +353,9 @@ xds_server_config_fetcher:
 xds_wrr_locality_lb:
   default: false
   description: XDS WRR locality LB policy.
+ztrace:
+  # we may want to toggle this to false for detailed opt debugging, but best not to
+  # check that in.
+  debug_only: true
+  default: false
+  description: Trace ztrace appends globally (for debugging the ztrace system itself).

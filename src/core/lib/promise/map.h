@@ -277,6 +277,18 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
+template <typename Gen, typename Promise>
+auto AddGeneratedErrorPrefix(Gen prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix(), status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
+
 // Input : A promise that resolves to Type T
 // Returns : A Map promise which contains the input promise and then discards
 // the return value of the input promise. the main use case for DiscardResult is
