@@ -38,6 +38,27 @@ std::atomic<uintptr_t> Log::free_bins_{0};
 const std::chrono::steady_clock::time_point start_time =
     std::chrono::steady_clock::now();
 
+void Log::InstallAtExitHandler() {
+  atexit([] {
+    auto& log = Log::Get();
+    auto json = log.TryGenerateJson();
+    if (!json.has_value()) {
+      LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                   "another writer)";
+      return;
+    }
+    if (log.stats_flusher_ != nullptr) {
+      log.stats_flusher_(*json);
+      return;
+    }
+    LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
+    FILE* f = fopen("latent_see.json", "w");
+    if (f == nullptr) return;
+    fprintf(f, "%s", json->c_str());
+    fclose(f);
+  });
+}
+
 void Log::TryPullEventsAndFlush(
     absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback) {
   // Try to lock... if we fail then clear the active events.

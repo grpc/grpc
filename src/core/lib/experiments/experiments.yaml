@@ -66,6 +66,7 @@
   expiry: 2025/06/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
+  allow_in_fuzzing_config: false
 - name: chttp2_bound_write_size
   description: Fix a bug where chttp2 can generate very large writes
   expiry: 2025/09/01
@@ -139,6 +140,7 @@
   owner: ctiller@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test"]
   uses_polling: true
+  allow_in_fuzzing_config: false
 - name: free_large_allocator
   description: If set, return all free bytes from a "big" allocator
   expiry: 2025/09/30
@@ -294,6 +296,11 @@
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
+- name: tsi_frame_protector_without_locks
+  description: Do not hold locks while using the tsi_frame_protector.
+  expiry: 2025/09/03
+  owner: mattstev@google.com
+  test_tags: []
 - name: unconstrained_max_quota_buffer_size
   description: Discard the cap on the max free pool size for one memory allocator
   expiry: 2025/09/03

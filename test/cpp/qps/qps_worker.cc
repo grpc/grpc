@@ -38,6 +38,9 @@
 #include "absl/memory/memory.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/latent_see.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/grpc_profiler.h"
 #include "test/core/test_util/histogram.h"
@@ -100,6 +103,90 @@ class ScopedProfile final {
  private:
   const bool enable_;
 };
+
+#ifdef GRPC_ENABLE_LATENT_SEE
+class ScopedLatentSee final {
+ public:
+  explicit ScopedLatentSee(std::string role) : role_(role) {}
+
+  ~ScopedLatentSee() {
+    CollectManager();
+    for (auto& thread : collector_threads_) {
+      thread.Join();
+    }
+  }
+
+  void Mark(std::string name) {
+    if (name == "benchmark") {
+      StartManager(std::move(name));
+    } else {
+      CollectManager();
+    }
+  }
+
+ private:
+  void StartManager(std::string name) {
+    CollectManager();
+    done_ = std::make_shared<grpc_core::Notification>();
+    manager_thread_.emplace(
+        "latent_see_manager", [this, done = done_, name = std::move(name)]() {
+          int step = 0;
+          // Once per second: kick off a thread to collate the latent-see data.
+          // Each one of these may fail under contention (that's ok, we just get
+          // a subset of the data).
+          while (!done->WaitForNotificationWithTimeout(absl::Seconds(1))) {
+            // Bound the number of collector threads outstanding.
+            while (collector_threads_.size() > 32) {
+              collector_threads_.front().Join();
+              collector_threads_.pop_front();
+            }
+            // Kick off a new thread
+            collector_threads_
+                .emplace_back("latent_see_collector",
+                              [step, name, this]() { Collect(step, name); })
+                .Start();
+            ++step;
+          }
+        });
+    manager_thread_->Start();
+  }
+
+  void CollectManager() {
+    if (manager_thread_.has_value()) {
+      done_->Notify();
+      manager_thread_->Join();
+      manager_thread_.reset();
+    }
+  }
+
+  void Collect(int step, std::string name) {
+    auto json = grpc_core::latent_see::Log::Get().TryGenerateJson();
+    if (!json.has_value()) {
+      LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                   "another writer)";
+      return;
+    }
+    const std::string filename = absl::StrCat(
+        "latent_see_", role_, "_", name, "_", getpid(), "_", step, ".json");
+    LOG(INFO) << "Writing " << filename << " in " << get_current_dir_name();
+    FILE* f = fopen(filename.c_str(), "w");
+    if (f == nullptr) return;
+    fprintf(f, "%s", json->c_str());
+    fclose(f);
+  }
+
+  std::shared_ptr<grpc_core::Notification> done_;
+  std::optional<grpc_core::Thread> manager_thread_;
+  std::deque<grpc_core::Thread> collector_threads_;
+  const std::string role_;
+};
+#else
+class ScopedLatentSee final {
+ public:
+  explicit ScopedLatentSee(const std::string&) {}
+  void Mark(const std::string&) {}
+};
+#endif
 
 class WorkerServiceImpl final : public WorkerService::Service {
  public:
@@ -186,6 +273,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   Status RunClientBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
+    ScopedLatentSee latent_see("client");
     ClientArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read args");
@@ -205,12 +293,13 @@ class WorkerServiceImpl final : public WorkerService::Service {
     }
     LOG(INFO) << "RunClientBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunClientBody: Message read";
+      LOG(INFO) << "RunClientBody: Message read: " << args.DebugString();
       if (!args.has_mark()) {
         LOG(INFO) << "RunClientBody: Message is not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
       }
       *status.mutable_stats() = client->Mark(args.mark().reset());
+      latent_see.Mark(args.mark().name());
       if (!stream->Write(status)) {
         return Status(StatusCode::UNKNOWN, "Client couldn't respond to mark");
       }
@@ -226,6 +315,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   Status RunServerBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
+    ScopedLatentSee latent_see("server");
     ServerArgs args;
     if (!stream->Read(&args)) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't read server args");
@@ -253,12 +343,13 @@ class WorkerServiceImpl final : public WorkerService::Service {
     }
     LOG(INFO) << "RunServerBody: creation status reported";
     while (stream->Read(&args)) {
-      LOG(INFO) << "RunServerBody: Message read";
+      LOG(INFO) << "RunServerBody: Message read: " << args.DebugString();
       if (!args.has_mark()) {
         LOG(INFO) << "RunServerBody: Message not a mark!";
         return Status(StatusCode::INVALID_ARGUMENT, "Invalid mark");
       }
       *status.mutable_stats() = server->Mark(args.mark().reset());
+      latent_see.Mark(args.mark().name());
       if (!stream->Write(status)) {
         return Status(StatusCode::UNKNOWN, "Server couldn't respond to mark");
       }

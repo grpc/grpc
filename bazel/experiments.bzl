@@ -57,6 +57,7 @@ EXPERIMENT_ENABLES = {
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
     "tcp_rcv_lowat": "tcp_rcv_lowat",
+    "tsi_frame_protector_without_locks": "tsi_frame_protector_without_locks",
     "unconstrained_max_quota_buffer_size": "unconstrained_max_quota_buffer_size",
 }
 
@@ -81,7 +82,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
-                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -113,9 +113,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "secure_endpoint_test": [
-                "event_engine_secure_endpoint",
-            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -132,6 +129,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
+                "event_engine_secure_endpoint",
                 "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
             ],
@@ -146,6 +144,9 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
         },
     },
@@ -159,7 +160,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
-                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -191,9 +191,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "secure_endpoint_test": [
-                "event_engine_secure_endpoint",
-            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -210,6 +207,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
+                "event_engine_secure_endpoint",
                 "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
             ],
@@ -224,6 +222,9 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
         },
     },
@@ -237,7 +238,6 @@ EXPERIMENTS = {
                 "error_flatten",
                 "event_engine_dns_non_client_channel",
                 "event_engine_fork",
-                "event_engine_secure_endpoint",
                 "local_connector_secure",
                 "pollset_alternative",
                 "retry_in_callv3",
@@ -269,9 +269,6 @@ EXPERIMENTS = {
                 "free_large_allocator",
                 "unconstrained_max_quota_buffer_size",
             ],
-            "secure_endpoint_test": [
-                "event_engine_secure_endpoint",
-            ],
             "xds_end2end_test": [
                 "error_flatten",
             ],
@@ -288,6 +285,7 @@ EXPERIMENTS = {
                 "event_engine_client",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
+                "event_engine_secure_endpoint",
                 "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
             ],
@@ -302,6 +300,9 @@ EXPERIMENTS = {
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
+            ],
+            "secure_endpoint_test": [
+                "event_engine_secure_endpoint",
             ],
         },
     },
