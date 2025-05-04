@@ -301,6 +301,7 @@ class TestZTrace final : public ZTrace {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override {
     Json::Object object;
     object["test"] = Json::FromString("yes");
@@ -371,6 +372,7 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 class TestSubObjectDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestSubObjectDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override { sink.AddChildObjects({child_}); }
 
   int64_t child_id() const { return child_->uuid(); }

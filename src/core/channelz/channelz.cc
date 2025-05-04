@@ -246,12 +246,13 @@ DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
 }
 
 DataSource::~DataSource() {
-  if (node_ != nullptr) ResetDataSource();
+  DCHECK(node_ == nullptr) << "DataSource must be ResetDataSource()'d in the "
+                              "most derived class before destruction";
 }
 
 void DataSource::ResetDataSource() {
-  auto node = std::move(node_);
-  DCHECK(node != nullptr);
+  RefCountedPtr<BaseNode> node = std::move(node_);
+  if (node == nullptr) return;
   MutexLock lock(&node->data_sources_mu_);
   node->data_sources_.erase(
       std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),

@@ -223,6 +223,15 @@ ChannelzRegistry::ShardedNodeMap::QueryNodes(
     nursery_visitation_order.push_back(i);
   }
   absl::c_shuffle(nursery_visitation_order, SharedBitGen());
+  // In the iteration below, even once we have max_results nodes, we need
+  // to find the next node in order to know if we've hit the end.  If we get
+  // through the loop without returning, then we return end=true.  But if we
+  // find a node to add after we already have max_results nodes, then we
+  // return with end=false before exiting the loop.  However, in the latter
+  // case, we will have already increased the ref count of the next node,
+  // so we need to unref it, but we can't do that while holding the lock.
+  // So instead, we store it in node_after_end, which will be unreffed
+  // after releasing the lock.
   RefCountedPtr<BaseNode> node_after_end;
   std::vector<RefCountedPtr<BaseNode>> result;
   MutexLock index_lock(&index_mu_);

@@ -46,8 +46,6 @@
   default: true
 - name: call_tracer_transport_fix
   default: true
-- name: call_v3
-  default: false
 - name: chaotic_good_framing_layer
   default: true
 - name: error_flatten
@@ -63,6 +61,8 @@
 - name: event_engine_fork
   default: false
 - name: event_engine_listener
+  default: true
+- name: event_engine_secure_endpoint
   default: true
 - name: free_large_allocator
   default: false
@@ -86,13 +86,9 @@
   default: false
 - name: rst_stream_fix
   default: true
-- name: rstpit
-  default: false
 - name: schedule_cancellation_over_write
   default: false
 - name: server_global_callbacks_ownership
-  default: false
-- name: server_privacy
   default: false
 - name: shard_channelz_index
   default: true

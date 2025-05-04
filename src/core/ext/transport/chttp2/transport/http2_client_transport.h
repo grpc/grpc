@@ -59,6 +59,16 @@ namespace http2 {
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 
+// Http2 Client Transport Spawns Overview
+
+// | Promise Spawn       | Max Duration | Promise Resolution    | Max Spawns |
+// |                     | for Spawn    |                       |            |
+// |---------------------|--------------|-----------------------|------------|
+// | Endpoint Read Loop  | Infinite     | On transport close    | One        |
+// | Endpoint Write Loop | Infinite     | On transport close    | One        |
+
+// Max Party Slots (Always): 2
+
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are

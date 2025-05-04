@@ -766,48 +766,29 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         }
         // If we're already writing (== encrypting on another thread) we need to
         // queue the writes up to do after that completes.
-        if (*writing_) {
-          last_write_args_ = std::move(args);
-          for (size_t i = 0; i < data->Count(); i++) {
-            pending_writes_.AppendIndexed(data->RefSlice(i));
-          }
-          frame_protector_.TraceOp("PendingQ",
-                                   pending_writes_.c_slice_buffer());
-          // If we're under our max buffer cap then return immediately: we can
-          // queue up some more bytes and get more efficient encryption for
-          // them.
-          if (pending_writes_.Length() <= max_buffered_writes_) {
-            return true;
-          }
-          // Otherwise we'll wait until the buffer is drained.
+        // OR if we're not already writing but this write is large, we push it
+        // onto the event engine to encrypt later.
+        if (*writing_ || data->Length() > large_write_threshold_) {
+          // Since we don't call on_write until we've collected pending_writes
+          // in the FinishAsyncWrites path, and EventEngine insists that one
+          // write finishes before a second begins, we should never see a Write
+          // call here with a non-null pending_writes_.
+          CHECK(pending_writes_ == nullptr);
+          pending_writes_ = std::make_unique<SliceBuffer>(std::move(*data));
+          frame_protector_.TraceOp("Pending",
+                                   pending_writes_->c_slice_buffer());
+          // Wait for the previous write to finish before considering this one.
           // Note that since EventEngine::Endpoint allows only one outstanding
           // write, this will pause sending until the callback is invoked.
-          on_write_ = std::move(on_writable);
-          return false;
-        }
-        // We're not already writing. If this write is large then we push the
-        // write onto the event engine. This allows concurrency with whatever is
-        // calling us (often under some mutual exclusion device).
-        if (data->Length() > large_write_threshold_) {
-          CHECK(pending_writes_.Count() == 0);
-          writing_ = true;
           last_write_args_ = std::move(args);
-          pending_writes_ = std::move(*data);
-          frame_protector_.TraceOp("Pending", pending_writes_.c_slice_buffer());
-          // If we're below our max buffer level, claim to have completed
-          // immediately in the event that there's more data coming. If we're
-          // above it, then hold onto the write callback to call later.
-          const bool finish_immediately =
-              pending_writes_.Length() <= max_buffered_writes_;
-          if (!finish_immediately) {
-            on_write_ = std::move(on_writable);
-          } else {
-            on_write_ = nullptr;
+          on_write_ = std::move(on_writable);
+          if (!*writing_) {
+            writing_ = true;
+            event_engine_->Run([impl = Ref()]() mutable {
+              FinishAsyncWrite(std::move(impl));
+            });
           }
-          // Queue the encryption work.
-          event_engine_->Run(
-              [impl = Ref()]() mutable { impl->FinishAsyncWrite(); });
-          return finish_immediately;
+          return false;
         }
       }
       // A small write: encrypt inline and write to the socket.
@@ -924,93 +905,81 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       return *writing_ ? "true" : "false";
     }
 
-    void FinishAsyncWrite() {
+    static void FailWrites(grpc_core::RefCountedPtr<Impl> impl,
+                           absl::Status status)
+        ABSL_LOCKS_EXCLUDED(frame_protector_.write_mu(), write_queue_mu_) {
+      impl->write_queue_mu_.Lock();
+      impl->writing_ = status;
+      auto on_write = std::move(impl->on_write_);
+      impl->write_queue_mu_.Unlock();
+      impl.reset();
+      if (on_write != nullptr) on_write(status);
+    };
+
+    static void FinishAsyncWrite(grpc_core::RefCountedPtr<Impl> impl) {
       GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint finish async write");
       tsi_result result;
-      SliceBuffer data;
+      std::unique_ptr<SliceBuffer> data;
       WriteArgs args;
       // If writes complete immediately we'll loop back to here.
       while (true) {
-        GRPC_LATENT_SEE_INNER_SCOPE("finish one write");
         {
           // Check to see if we've written all the bytes.
-          grpc_core::ReleasableMutexLock lock(&write_queue_mu_);
-          if (pending_writes_.Count() == 0) {
-            writing_ = false;
+          grpc_core::ReleasableMutexLock lock(&impl->write_queue_mu_);
+          if (impl->pending_writes_ == nullptr) {
+            impl->writing_ = false;
+            DCHECK(impl->on_write_ == nullptr);
             lock.Release();
-            // If we have, callback if we have one.
-            // (we may not have an on_write_ callback if we claimed to have
-            // finished the write immediately in Write()).
-            auto on_write = std::move(on_write_);
-            if (on_write != nullptr) on_write(absl::OkStatus());
             return;
           }
           // There's more data - grab it under the queue lock.
-          data = std::move(pending_writes_);
-          frame_protector_.TraceOp("data", data.c_slice_buffer());
-          args = std::move(last_write_args_);
-          pending_writes_.Clear();
+          data = std::move(impl->pending_writes_);
+          impl->frame_protector_.TraceOp("data", data->c_slice_buffer());
+          args = std::move(impl->last_write_args_);
+          DCHECK(impl->on_write_ != nullptr);
         }
+        impl->event_engine_->Run(
+            [on_write = std::move(impl->on_write_)]() mutable {
+              on_write(absl::OkStatus());
+            });
         // Now grab the frame protector write mutex - this is held for some
         // time (we do the encryption inside of it) - so it's a different
         // mutex to the queue mutex above.
-        grpc_core::ReleasableMutexLock lock(frame_protector_.write_mu());
+        grpc_core::ReleasableMutexLock lock(impl->frame_protector_.write_mu());
         // If the endpoint closed whilst waiting for this callback, then fail
         // out the write and we're done.
-        if (wrapped_ep_ == nullptr) {
+        if (impl->wrapped_ep_ == nullptr) {
           lock.Release();
-          auto status = absl::CancelledError("secure endpoint shutdown");
-          {
-            // Need to grab the queue mutex again, it's a bit inefficient, but
-            // a super rare path...
-            grpc_core::MutexLock lock(&write_queue_mu_);
-            writing_ = status;
-          }
-          auto on_write = std::move(on_write_);
-          if (on_write != nullptr) on_write(status);
+          FailWrites(std::move(impl),
+                     absl::CancelledError("secure endpoint shutdown"));
           return;
         }
-        result = frame_protector_.Protect(data.c_slice_buffer(),
-                                          args.max_frame_size());
+        result = impl->frame_protector_.Protect(data->c_slice_buffer(),
+                                                args.max_frame_size());
         if (result != TSI_OK) {
           lock.Release();
           // Protection failed... fail the write and we're done.
-          auto status = GRPC_ERROR_CREATE(
-              absl::StrCat("Wrap failed (", tsi_result_to_string(result), ")"));
-          {
-            grpc_core::MutexLock lock(&write_queue_mu_);
-            writing_ = status;
-          }
-          // If we completed the write immediately earlier, then we won't be
-          // able to signal failure here: on_write will be nullptr. We've
-          // saved the failure status above for the next write, which will
-          // consequently fail and deliver this status to the caller.
-          auto on_write = std::move(on_write_);
-          if (on_write != nullptr) on_write(status);
+          FailWrites(std::move(impl),
+                     GRPC_ERROR_CREATE(absl::StrCat(
+                         "Wrap failed (", tsi_result_to_string(result), ")")));
           return;
         }
         // Write out the protected bytes - returns true if it finishes
         // immediately, in which case we'll loop.
-        const bool write_finished_immediately = wrapped_ep_->Write(
-            [impl = Ref()](absl::Status status) mutable {
+        const bool write_finished_immediately = impl->wrapped_ep_->Write(
+            [impl](absl::Status status) mutable {
               // Async completion path: if we completed successfully then loop
               // back into FinishAsyncWrite to see if there's more writing to
               // do.
               if (status.ok()) {
-                impl->FinishAsyncWrite();
+                FinishAsyncWrite(std::move(impl));
                 return;
               }
               // Write failed: push the failure up via the callback if it's
               // there.
-              {
-                grpc_core::MutexLock lock(&impl->write_queue_mu_);
-                impl->writing_ = status;
-              }
-              auto on_write = std::move(impl->on_write_);
-              impl.reset();
-              if (on_write != nullptr) on_write(status);
+              FailWrites(std::move(impl), status);
             },
-            frame_protector_.output_buffer(), std::move(args));
+            impl->frame_protector_.output_buffer(), std::move(args));
         if (!write_finished_immediately) break;
       }
     }
@@ -1018,7 +987,8 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     grpc_core::Mutex write_queue_mu_;
     absl::StatusOr<bool> writing_ ABSL_GUARDED_BY(write_queue_mu_) = false;
     WriteArgs last_write_args_ ABSL_GUARDED_BY(write_queue_mu_);
-    SliceBuffer pending_writes_ ABSL_GUARDED_BY(write_queue_mu_);
+    std::unique_ptr<SliceBuffer> pending_writes_
+        ABSL_GUARDED_BY(write_queue_mu_);
     grpc_core::FrameProtector frame_protector_;
     absl::AnyInvocable<void(absl::Status)> on_read_;
     absl::AnyInvocable<void(absl::Status)> on_write_;

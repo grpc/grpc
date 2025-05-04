@@ -7868,6 +7868,7 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
+        "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
         "grpc_insecure_credentials",
@@ -8148,6 +8149,7 @@ grpc_cc_library(
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
         "ztrace_collector",
+        "//:gpr",
     ],
 )
 
@@ -8190,12 +8192,17 @@ grpc_cc_library(
     external_deps = ["absl/cleanup"],
     deps = [
         "1999",
+        "chaotic_good_tcp_ztrace_collector",
+        "chaotic_good_transport_context",
         "event_engine_context",
+        "event_engine_extensions",
+        "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
         "sync",
         "try_seq",
+        "//:ref_counted_ptr",
     ],
 )
 
@@ -8232,18 +8239,23 @@ grpc_cc_library(
         "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "default_tcp_tracer",
+        "dump_args",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
         "loop",
+        "map",
         "metrics",
         "seq",
         "seq_bit_set",
         "slice_buffer",
         "status_flag",
+        "time",
         "try_seq",
+        "//:channelz",
+        "//:gpr",
         "//:promise",
     ],
 )
@@ -8545,6 +8557,7 @@ grpc_cc_library(
         "chaotic_good_tcp_frame_transport",
         "closure",
         "context",
+        "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
         "event_engine_context",
@@ -8566,6 +8579,7 @@ grpc_cc_library(
         "slice_buffer",
         "subchannel_connector",
         "sync",
+        "tcp_connect_handshaker",
         "time",
         "try_seq",
         "wait_for_callback",
@@ -9456,6 +9470,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "endpoint_transport_client_channel_factory",
+    srcs = [
+        "transport/endpoint_transport_client_channel_factory.cc",
+    ],
+    hdrs = [
+        "transport/endpoint_transport_client_channel_factory.h",
+    ],
+    deps = [
+        "channel_args",
+        "no_destruct",
+        "//:grpc_client_channel",
+        "//:grpc_security_base",
+    ],
+)
+
+grpc_cc_library(
     name = "timeout_encoding",
     srcs = [
         "lib/transport/timeout_encoding.cc",
@@ -9620,11 +9650,13 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
     ],
     deps = [
+        "json_writer",
         "single_set_ptr",
         "sync",
         "time",
         "//:channelz",
         "//:gpr",
+        "//:grpc_trace",
     ],
 )
 

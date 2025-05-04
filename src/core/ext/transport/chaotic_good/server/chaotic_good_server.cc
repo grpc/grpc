@@ -429,14 +429,15 @@ auto ChaoticGoodServerListener::ActiveConnection::HandshakingState::
 void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   if (!result.ok()) {
-    LOG_EVERY_N_SEC(ERROR, 5) << "Handshake failed: " << result.status();
+    connection_->listener_->LogConnectionFailure("Handshake failed",
+                                                 result.status());
     connection_->Done();
     return;
   }
   CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
-    LOG_EVERY_N_SEC(ERROR, 5)
-        << "Server handshake done but has empty endpoint.";
+    connection_->listener_->LogConnectionFailure(
+        "Server handshake done but has empty endpoint", std::nullopt);
     connection_->Done();
     return;
   }
@@ -474,8 +475,8 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
       EventEngineWakeupScheduler(connection_->listener_->event_engine_),
       [self = Ref()](absl::Status status) {
         if (!status.ok()) {
-          GRPC_TRACE_LOG(chaotic_good, ERROR)
-              << "Server setting frame handling failed: " << status;
+          self->connection_->listener_->LogConnectionFailure(
+              "Chaotic Good handshake failed", status);
         }
         self->connection_->Done();
       },
