@@ -369,6 +369,8 @@ auto Http2ClientTransport::WriteLoop() {
           return self->MaybeSendPing();
         },
         [this]() -> LoopCtl<absl::Status> {
+          // If any Header/Data/WindowUpdate frame was sent in the last write,
+          // reset the ping clock.
           if (bytes_sent_in_last_write_) {
             ping_manager_.ResetPingClock(/*is_client=*/true);
           }
