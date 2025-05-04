@@ -236,6 +236,10 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's destructor.
+  // It removes this data source from the node's list of data sources.
+  // If it is not called, then the AddData() function pointer may be invalid
+  // when the node is queried.
   void ResetDataSource();
 
  private:
@@ -567,6 +571,8 @@ class SocketNode final : public BaseNode {
   }
   const std::string& local() const { return local_; }
   const std::string& remote() const { return remote_; }
+
+  RefCountedPtr<Security> security() const { return security_; }
 
  private:
   std::optional<std::string> CycleCounterToTimestamp(

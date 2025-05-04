@@ -45,6 +45,11 @@ enum RpcType {
   STREAMING_BOTH_WAYS = 4;
 }
 
+enum Protocol {
+  HTTP2 = 0;
+  CHAOTIC_GOOD = 1;
+}
+
 // Parameters of poisson process distribution, which is a good representation
 // of activity coming in from independent identical stationary sources.
 message PoissonParams {
@@ -121,6 +126,9 @@ message ClientConfig {
 
   // Number of client processes. 0 indicates no restriction.
   int32 client_processes = 21;
+
+  // Protocol.
+  Protocol protocol = 22;
 }
 
 message ClientStatus { ClientStats stats = 1; }
@@ -129,6 +137,8 @@ message ClientStatus { ClientStats stats = 1; }
 message Mark {
   // if true, the stats will be reset after taking their snapshot.
   bool reset = 1;
+  // if set, the name of this mark
+  string name = 2;
 }
 
 message ClientArgs {
@@ -170,6 +180,9 @@ message ServerConfig {
 
   // Number of server processes. 0 indicates no restriction.
   int32 server_processes = 21;
+
+  // Protocol.
+  Protocol protocol = 22;
 }
 
 message ServerArgs {

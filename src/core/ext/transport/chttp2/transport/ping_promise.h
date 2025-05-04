@@ -31,6 +31,28 @@
 
 namespace grpc_core {
 namespace http2 {
+
+// Ping Promise Spawns Overview
+
+// | Promise Spawn   | Max Duration | Promise      | Max Spawns              |
+// |                 | for Spawn    | Resolution   |                         |
+// |-----------------|--------------|--------------|-------------------------|
+// | Ping Timeout    | 1 minute     | On Ping ack  | One per inflight ping   |
+// |                 |              | or timeout   |                         |
+// | Delayed Ping    | 2 Hours      | On scheduled | One                     |
+// |                 |              | time         |                         |
+// | Ping Waiter     | 1 minute     | On Ping ack  | One per ping request    |
+// |                 |              | or timeout   |                         |
+// Max Party Slots:
+// - Without multi ping:
+//   - 1 per ping request + 1 (for delayed ping) + 1 (for ping timeout)
+//   - Worst case(3 ping requests): 5
+
+// - With multi ping:
+//   - 1 per ping request + 1 (for delayed ping) + 1 per inflight ping
+//                                                (for ping timeout)
+//   - Worst case(3 ping requests): 7
+
 class PingInterface {
  public:
   struct SendPingArgs {

@@ -191,6 +191,7 @@ struct grpc_channel_stack {
   class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
    public:
     using grpc_core::channelz::DataSource::DataSource;
+    ~ChannelStackDataSource() { ResetDataSource(); }
     void AddData(grpc_core::channelz::DataSink& sink) override;
   };
 
