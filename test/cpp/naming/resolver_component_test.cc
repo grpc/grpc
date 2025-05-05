@@ -45,7 +45,6 @@
 #include "src/core/lib/event_engine/ares_resolver.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils.h"
