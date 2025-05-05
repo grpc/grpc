@@ -133,6 +133,7 @@ class SpiffeBundleMap final {
   // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
   absl::StatusOr<absl::Span<const absl::string_view>> GetRoots(
       absl::string_view trust_domain);
+
   size_t size() { return bundles_.size(); }
 
  private:

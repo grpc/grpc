@@ -18,9 +18,7 @@
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 
-#include <openssl/pem.h>
 #include <openssl/x509.h>
-#include <openssl/x509v3.h>
 
 #include <string>
 
