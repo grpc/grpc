@@ -522,12 +522,10 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
           /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
-      timer_manager_(executor_)
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      ,
-      poller_manager_(poller)
+      poller_manager_(poller),
 #endif
-{
+      timer_manager_(executor_) {
 }
 
 PosixEventEngine::PosixEventEngine()
@@ -535,13 +533,12 @@ PosixEventEngine::PosixEventEngine()
           /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
       connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
-      timer_manager_(executor_)
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-      ,
-      poller_manager_(executor_) {
+      poller_manager_(executor_),
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+      timer_manager_(executor_) {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   SchedulePoller();
-#else
-{
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 

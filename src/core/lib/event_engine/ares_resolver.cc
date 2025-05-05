@@ -272,12 +272,10 @@ AresResolver::AresResolver(
       channel_(channel),
       polled_fd_factory_(std::move(polled_fd_factory)),
 #ifdef GRPC_ENABLE_FORK_SUPPORT
-      event_engine_(std::move(event_engine)),
-      dns_server_(dns_server) {
-#else   // GRPC_ENABLE_FORK_SUPPORT
-      event_engine_(std::move(event_engine)) {
-  (void)dns_server;  // Used
+      dns_server_(dns_server),
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+      event_engine_(std::move(event_engine)) {
+  (void)dns_server;  // Used whether or not compiled with fork support
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
 }
 
@@ -865,7 +863,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
 std::weak_ptr<AresResolver::ReinitHandle> AresResolver::GetReinitHandle() {
   grpc_core::MutexLock lock(&reinit_handle_mu_);
   if (reinit_handle_ == nullptr) {
-    reinit_handle_ = std::make_shared<ReinitHandle>(this);
+    reinit_handle_ = ReinitHandle::New(this);
   }
   return reinit_handle_;
 }

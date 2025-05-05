@@ -41,22 +41,26 @@ namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
-  // A handle allowing  to trigger the reinitialization of a specific
-  // AresResolver instance after a fork. This approach avoids maintaining a
-  // global collection of resolvers and allows them to come and go. It also
-  // prevents the AresResolver class itself from depending on POSIX-specific
-  // fork APIs.
+  // Handle to trigger reinitialization of this AresResolver instance after a
+  // fork(). Avoids global resolver management and POSIX-specific dependencies
+  // within AresResolver.
   class ReinitHandle {
    public:
-    explicit ReinitHandle(AresResolver* resolver);
-    // Only pass around as a pointer
+    static std::shared_ptr<ReinitHandle> New(AresResolver* resolver) {
+      return std::shared_ptr<ReinitHandle>(new ReinitHandle(resolver));
+    }
+
     ReinitHandle(ReinitHandle&& other) = delete;
     ReinitHandle(const ReinitHandle& other) = delete;
     void OnResolverGone();
+    // Clears resources (such as CARES handles) held by the associated resolver.
     void Reset();
+    // Reinitializes the associated resolver after Reset.
     void Restart();
 
    private:
+    explicit ReinitHandle(AresResolver* resolver);
+
     grpc_core::Mutex mutex_;
     AresResolver* resolver_ ABSL_GUARDED_BY(&mutex_);
   };
@@ -153,13 +157,13 @@ class AresResolver : public RefCountedDNSResolverInterface {
   std::optional<EventEngine::TaskHandle> ares_backup_poll_alarm_handle_
       ABSL_GUARDED_BY(mutex_);
   std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory_;
-  std::shared_ptr<EventEngine> event_engine_;
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   std::string dns_server_;
   grpc_core::Mutex reinit_handle_mu_;
   std::shared_ptr<ReinitHandle> reinit_handle_
       ABSL_GUARDED_BY(reinit_handle_mu_);
 #endif  // GRPC_ENABLE_FORK_SUPPORT
+  std::shared_ptr<EventEngine> event_engine_;
 };
 
 }  // namespace grpc_event_engine::experimental

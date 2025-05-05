@@ -268,7 +268,6 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 #endif  // defined(GRPC_ENABLE_FORK_SUPPORT) && GRPC_ARES == 1 &&
         // defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   std::shared_ptr<ThreadPool> executor_;
-  TimerManager timer_manager_;
 
 #if defined(GRPC_POSIX_SOCKET_TCP) && \
     !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
@@ -300,6 +299,8 @@ class PosixEventEngine final : public PosixEventEngineWithFdSupport,
 
 #endif  // defined(GRPC_POSIX_SOCKET_TCP) &&
         // !defined(GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER)
+
+  TimerManager timer_manager_;
 };
 
 }  // namespace grpc_event_engine::experimental
