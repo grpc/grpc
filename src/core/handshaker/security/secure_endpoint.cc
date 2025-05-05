@@ -922,7 +922,6 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       std::unique_ptr<SliceBuffer> data;
       WriteArgs args;
       // If writes complete immediately we'll loop back to here.
-      GRPC_LATENT_SEE_INNER_SCOPE("finish one write");
       while (true) {
         {
           // Check to see if we've written all the bytes.

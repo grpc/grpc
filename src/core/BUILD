@@ -8238,6 +8238,7 @@ grpc_cc_library(
         "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "default_tcp_tracer",
+        "dump_args",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -9608,6 +9609,31 @@ grpc_cc_library(
         "shared_bit_gen",
         "sleep",
         "time",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
+    name = "keepalive",
+    srcs = [
+        "ext/transport/chttp2/transport/keepalive.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/keepalive.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "1999",
+        "all_ok",
+        "if",
+        "latch",
+        "loop",
+        "race",
+        "sleep",
         "try_seq",
         "//:promise",
     ],

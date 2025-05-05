@@ -140,6 +140,9 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
+  # add /usr/local/bin to path to override built in Python version
+  export PATH="/usr/local/bin::${PATH}"
+
   # python
   time pip install --user -r $DIR/requirements.macos.txt
   time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted

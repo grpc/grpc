@@ -119,26 +119,7 @@ class Log {
   static Bin* CurrentThreadBin() { return bin_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
-    static Log* log = []() {
-      atexit([] {
-        auto json = log->TryGenerateJson();
-        if (!json.has_value()) {
-          LOG(INFO) << "Failed to generate latent_see.json (contention with "
-                       "another writer)";
-          return;
-        }
-        if (log->stats_flusher_ != nullptr) {
-          log->stats_flusher_(*json);
-          return;
-        }
-        LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
-        FILE* f = fopen("latent_see.json", "w");
-        if (f == nullptr) return;
-        fprintf(f, "%s", json->c_str());
-        fclose(f);
-      });
-      return new Log();
-    }();
+    static Log* log = new Log();
     return *log;
   }
 
@@ -150,6 +131,10 @@ class Log {
       absl::AnyInvocable<void(absl::string_view)> stats_exporter) {
     stats_flusher_ = std::move(stats_exporter);
   }
+
+  // Install an atexit callback that will log to latent_see.json in the working
+  // directory
+  static void InstallAtExitHandler();
 
  private:
   Log() = default;
