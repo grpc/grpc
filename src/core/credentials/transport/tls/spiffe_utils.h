@@ -97,10 +97,11 @@ class SpiffeBundle final {
   }
 
   // Returns a vector of the roots in this SPIFFE Bundle.
-  absl::StatusOr<std::vector<absl::string_view>> GetRoots();
+  absl::StatusOr<absl::Span<const absl::string_view>> GetRoots();
 
  private:
   std::vector<SpiffeBundleKey> keys_;
+  std::vector<absl::string_view> roots_;
 };
 
 // A map of SPIFFE bundles keyed to trust domains. This functions as a map of a
@@ -130,7 +131,7 @@ class SpiffeBundleMap final {
   static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
 
   // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
-  absl::StatusOr<std::vector<absl::string_view>> GetRoots(
+  absl::StatusOr<absl::Span<const absl::string_view>> GetRoots(
       absl::string_view trust_domain);
   size_t size() { return bundles_.size(); }
 

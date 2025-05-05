@@ -204,10 +204,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
     auto certs = ParsePemCertificateChain(pem_cert);
     if (!certs.ok()) {
       errors->AddError(certs.status().ToString());
-    } else {
-      for (X509* cert : *certs) {
-        X509_free(cert);
-      }
+      return;
+    }
+    for (X509* cert : *certs) {
+      X509_free(cert);
     }
   }
 }
@@ -244,7 +244,7 @@ absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
   return LoadFromJson<SpiffeBundleMap>(*json);
 }
 
-absl::StatusOr<std::vector<absl::string_view>> SpiffeBundleMap::GetRoots(
+absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundleMap::GetRoots(
     const absl::string_view trust_domain) {
   if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
     return it->second.GetRoots();
@@ -253,14 +253,16 @@ absl::StatusOr<std::vector<absl::string_view>> SpiffeBundleMap::GetRoots(
       "No spiffe bundle found for trust domain %s", trust_domain));
 }
 
-absl::StatusOr<std::vector<absl::string_view>> SpiffeBundle::GetRoots() {
-  std::vector<absl::string_view> root_keys(keys_.size());
+absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundle::GetRoots() {
+  if (!roots_.empty()) {
+    return roots_;
+  }
   for (size_t i = 0; i < keys_.size(); i++) {
     auto root = keys_[i].GetRoot();
     GRPC_RETURN_IF_ERROR(root.status());
-    root_keys[i] = *keys_[i].GetRoot();
+    roots_.push_back(*root);
   }
-  return root_keys;
+  return roots_;
 }
 
 absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
