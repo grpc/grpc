@@ -129,8 +129,8 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 //   to make sure that there are no more protected bytes buffered in the
 //   protector.
 //
-// Can be called concurrently with tsi_frame_protector_protect_flush or
-// tsi_frame_protector_unprotect.
+// Can be called concurrently with tsi_frame_protector_unprotect. Cannot be
+// called concurrently with tsi_frame_protector_protect_flush.
 
 // A typical way to call this method would be:
 
@@ -179,8 +179,8 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
 // - still_pending_bytes is an output parameter indicating the number of bytes
 //   that still need to be flushed from the protector.
 //
-// Can be called concurrently with tsi_frame_protector_protect or
-// tsi_frame_protector_unprotect.
+// Can be called concurrently with tsi_frame_protector_unprotect. Cannot be
+// called concurrently with tsi_frame_protector_protect.
 tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size);

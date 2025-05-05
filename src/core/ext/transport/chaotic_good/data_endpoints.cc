@@ -34,6 +34,7 @@
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/string.h"
 
 namespace grpc_core {
@@ -168,7 +169,13 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
   Waker waker;
   auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
   const uint32_t length = output_buffer.Length();
-  const size_t write_size = TcpDataFrameHeader::kFrameHeaderSize + length;
+  const size_t write_size =
+      TcpDataFrameHeader::kFrameHeaderSize +
+      DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
+                            encode_alignment_) +
+      length + DataConnectionPadding(length, encode_alignment_);
+  CHECK_EQ(write_size % encode_alignment_, 0u)
+      << GRPC_DUMP_ARGS(write_size, length, encode_alignment_);
   MutexLock lock(&mu_);
   size_t best_endpoint = std::numeric_limits<size_t>::max();
   double earliest_delivery = std::numeric_limits<double>::max();
@@ -206,14 +213,35 @@ Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
                                           std::move(lb_decisions)};
       });
   GRPC_TRACE_LOG(chaotic_good, INFO)
-      << "CHAOTIC_GOOD: Queue " << length << " data onto endpoint "
-      << best_endpoint << " queue " << this;
+      << "CHAOTIC_GOOD: Queue " << length << " data in " << write_size
+      << "b wire bytes onto endpoint " << best_endpoint << " queue " << this;
   auto& buffer = buffers_[best_endpoint];
   waker = buffer->TakeWaker();
   SliceBuffer& output = buffer->pending();
+  CHECK_EQ(output.Length() % encode_alignment_, 0u)
+      << GRPC_DUMP_ARGS(output.Length(), encode_alignment_);
+  const auto header_padding = DataConnectionPadding(
+      TcpDataFrameHeader::kFrameHeaderSize, encode_alignment_);
+  MutableSlice header_slice = MutableSlice::CreateUninitialized(
+      TcpDataFrameHeader::kFrameHeaderSize + header_padding);
   TcpDataFrameHeader{payload_tag, send_time, length}.Serialize(
-      output.AddTiny(TcpDataFrameHeader::kFrameHeaderSize));
+      header_slice.data());
+  if (header_padding > 0) {
+    memset(header_slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
+           header_padding);
+  }
+  output.AppendIndexed(Slice(std::move(header_slice)));
+  const auto payload_padding =
+      DataConnectionPadding(output_buffer.Length(), encode_alignment_);
   output.TakeAndAppend(output_buffer);
+  // Add padding for output buffer
+  if (payload_padding > 0) {
+    auto slice = MutableSlice::CreateUninitialized(payload_padding);
+    memset(slice.data(), 0, payload_padding);
+    output.AppendIndexed(Slice(std::move(slice)));
+  }
+  CHECK_EQ(output.Length() % encode_alignment_, 0u) << GRPC_DUMP_ARGS(
+      output.Length(), encode_alignment_, header_padding, payload_padding);
   return Empty{};
 }
 
@@ -480,14 +508,18 @@ auto Endpoint::WriteLoop(uint32_t id,
   });
 }
 
-auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
+auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
+                        RefCountedPtr<InputQueue> input_queues,
                         std::shared_ptr<PromiseEndpoint> endpoint,
                         std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
-  return Loop([id, endpoint = std::move(endpoint),
+  return Loop([id, decode_alignment, endpoint = std::move(endpoint),
                input_queues = std::move(input_queues),
                ztrace_collector = std::move(ztrace_collector)]() {
     return TrySeq(
-        endpoint->ReadSlice(TcpDataFrameHeader::kFrameHeaderSize),
+        endpoint->ReadSlice(
+            TcpDataFrameHeader::kFrameHeaderSize +
+            DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
+                                  decode_alignment)),
         [id](Slice frame_header) {
           auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -496,9 +528,13 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
               << " on data connection #" << id;
           return hdr;
         },
-        [endpoint, ztrace_collector, id](TcpDataFrameHeader frame_header) {
+        [endpoint, ztrace_collector, id,
+         decode_alignment](TcpDataFrameHeader frame_header) {
           ztrace_collector->Append(ReadDataHeaderTrace{frame_header});
-          return Map(TryStaple(endpoint->Read(frame_header.payload_length),
+          return Map(TryStaple(endpoint->Read(frame_header.payload_length +
+                                              DataConnectionPadding(
+                                                  frame_header.payload_length,
+                                                  decode_alignment)),
                                frame_header),
                      [id, frame_header](auto x) {
                        GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -508,13 +544,15 @@ auto Endpoint::ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
                        return x;
                      });
         },
-        [input_queues,
-         id](std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
+        [input_queues, id, decode_alignment](
+            std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
             -> LoopCtl<absl::Status> {
           auto& [buffer, frame_header] = buffer_frame;
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Complete read " << frame_header
               << " on data connection #" << id;
+          buffer.RemoveLastNBytesNoInline(DataConnectionPadding(
+              frame_header.payload_length, decode_alignment));
           input_queues->CompleteRead(frame_header.payload_tag,
                                      std::move(buffer));
           return Continue{};
@@ -538,7 +576,8 @@ RefCountedPtr<channelz::SocketNode> MakeSocketNode(
 }
 }  // namespace
 
-Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+Endpoint::Endpoint(uint32_t id, uint32_t decode_alignment,
+                   RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
                    TransportContextPtr ctx,
@@ -549,13 +588,15 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
   party_ = Party::Make(arena);
   party_->Spawn(
       "write",
-      [id, enable_tracing, output_buffers = std::move(output_buffers),
-       input_queues, pending_connection = std::move(pending_connection),
+      [id, decode_alignment, enable_tracing,
+       output_buffers = std::move(output_buffers), input_queues,
+       pending_connection = std::move(pending_connection),
        arena = std::move(arena), ctx = std::move(ctx),
        ztrace_collector = std::move(ztrace_collector)]() mutable {
         return TrySeq(
             pending_connection.Await(),
-            [id, enable_tracing, output_buffers = std::move(output_buffers),
+            [id, decode_alignment, enable_tracing,
+             output_buffers = std::move(output_buffers),
              input_queues = std::move(input_queues), arena = std::move(arena),
              ctx = std::move(ctx),
              ztrace_collector =
@@ -595,9 +636,10 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(
                   "read",
-                  [id, input_queues, endpoint, ztrace_collector]() {
-                    return ReadLoop(id, input_queues, endpoint,
-                                    ztrace_collector);
+                  [id, decode_alignment, input_queues, endpoint,
+                   ztrace_collector]() {
+                    return ReadLoop(id, decode_alignment, input_queues,
+                                    endpoint, ztrace_collector);
                   },
                   [input_queues](absl::Status status) {
                     GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -626,15 +668,16 @@ Endpoint::Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
 
 DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
+    uint32_t encode_alignment, uint32_t decode_alignment,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
     data_endpoints_detail::Clock* clock)
     : output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
-          clock, ztrace_collector, ctx)),
+          clock, encode_alignment, ztrace_collector, ctx)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>(ctx)) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
-        i, output_buffers_, input_queues_, std::move(endpoints_vec[i]),
-        enable_tracing, ctx, ztrace_collector));
+        i, decode_alignment, output_buffers_, input_queues_,
+        std::move(endpoints_vec[i]), enable_tracing, ctx, ztrace_collector));
   }
 }
 
