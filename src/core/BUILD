@@ -9615,6 +9615,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "keepalive",
+    srcs = [
+        "ext/transport/chttp2/transport/keepalive.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/keepalive.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "1999",
+        "all_ok",
+        "if",
+        "latch",
+        "loop",
+        "race",
+        "sleep",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "spiffe_utils",
     srcs = [
         "//src/core:credentials/transport/tls/spiffe_utils.cc",
