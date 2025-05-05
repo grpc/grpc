@@ -33,7 +33,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(
     // should never be received
     return GRPC_STATUS_INTERNAL;
   }
-  return static_cast<grpc_status_code>(ErrorCodeToStatusCode(error, deadline));
+  return static_cast<grpc_status_code>(ErrorCodeToAbslCode(error, deadline));
 }
 
 grpc_status_code grpc_http2_status_to_grpc_status(int status) {

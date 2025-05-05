@@ -54,7 +54,7 @@ enum class Http2ErrorCode : uint8_t {
   kDoNotUse = 0xffu  // Force use of a default clause
 };
 
-inline absl::StatusCode ErrorCodeToStatusCode(
+inline absl::StatusCode ErrorCodeToAbslCode(
     Http2ErrorCode http2_code, Timestamp deadline = Timestamp::InfFuture()) {
   switch (http2_code) {
     case Http2ErrorCode::kNoError:
@@ -230,7 +230,7 @@ class Http2Status {
                        std::string& message)
       : http2_code_(code),
         error_type_(type),
-        absl_code_(ErrorCodeToStatusCode(http2_code_)),
+        absl_code_(ErrorCodeToAbslCode(http2_code_)),
         message_(std::move(message)) {
     Validate();
   }
