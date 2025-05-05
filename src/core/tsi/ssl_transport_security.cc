@@ -2702,3 +2702,10 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
   factory->vtable = new_vtable;
   return orig_vtable;
 }
+
+const unsigned char* get_handshaker_client_protocols_list(
+    const tsi_ssl_client_handshaker_factory* factory,
+    size_t* protocol_name_list_length) {
+  *protocol_name_list_length = factory->alpn_protocol_list_length;
+  return factory->alpn_protocol_list;
+}

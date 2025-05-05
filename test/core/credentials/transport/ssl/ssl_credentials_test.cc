@@ -25,9 +25,27 @@
 
 #include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/crash.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
+
+namespace {
+std::vector<std::string> ParseFromByte(const unsigned char* protocol_list_raw,
+                                       size_t protocol_list_length) {
+  size_t current = 0;
+  std::vector<std::string> parsed_protocol_list = std::vector<std::string>();
+  while (current < protocol_list_length) {
+    size_t str_length = protocol_list_raw[current];
+    parsed_protocol_list.emplace_back(std::string(
+        reinterpret_cast<const char*>(&protocol_list_raw[current + 1]),
+        str_length));
+    current += str_length + 1;
+  }
+  return parsed_protocol_list;
+}
+}  // namespace
 
 TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
   grpc_ssl_pem_key_cert_pair grpc_pairs[] = {{"private_key1", "cert_chain1"},
@@ -57,6 +75,32 @@ TEST(SslCredentialsTest, ConvertGrpcToTsiCertPairs) {
 
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_pairs, num_pairs);
   }
+}
+
+// Attempting to inject ALPN protocols from ChannelArgs.
+TEST(SslCredentialsTest, TestClientHandshakerFactoryWithALPNArgs) {
+  std::string alpn_protocols_raw = "foo,bar,baz";
+  grpc_channel_credentials* ssl_creds =
+      grpc_ssl_credentials_create(nullptr, nullptr, nullptr, nullptr);
+
+  grpc_core::ChannelArgs args = grpc_core::ChannelArgs().Set(
+      GRPC_ARG_TRANSPORT_PROTOCOLS, alpn_protocols_raw);
+  grpc_ssl_session_cache* cache = grpc_ssl_session_cache_create_lru(16);
+  args = args.Set(grpc_ssl_session_cache_create_channel_arg(cache));
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
+      ssl_creds->create_security_connector(nullptr, "target", &args);
+
+  size_t alpn_protocol_name_list_built_length = 0;
+  const unsigned char* alpn_protocol_name_list_built_raw =
+      grpc_ssl_channel_security_connector_get_handshaker_protocols_for_testing(
+          sc.get(), &alpn_protocol_name_list_built_length);
+  std::vector<std::string> protocol_list_final = ParseFromByte(
+      alpn_protocol_name_list_built_raw, alpn_protocol_name_list_built_length);
+
+  ASSERT_EQ("foo", protocol_list_final[0]);
+  ASSERT_EQ("bar", protocol_list_final[1]);
+  ASSERT_EQ("baz", protocol_list_final[2]);
+  grpc_ssl_session_cache_destroy(cache);
 }
 
 int main(int argc, char** argv) {
