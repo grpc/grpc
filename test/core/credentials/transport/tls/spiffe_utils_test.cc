@@ -384,9 +384,14 @@ TEST(SpiffeBundle, MultiCertsFails) {
           "spiffebundle_wrong_multi_certs.json")
           .status(),
       absl::InvalidArgumentError(
-          "errors validating JSON: "
-          "[field:trust_domains[\"google.com\"].keys[0].x5c "
-          "error:got vector length 2. Expected length of exactly 1.]"));
+          "errors validating JSON: [field:trust_domains[\"google.com\"].keys "
+          "error:Cannot get root certificate: INVALID_ARGUMENT: SPIFFE Bundle "
+          "key entry "
+          "has x5c field with length != 1. Key entry x5c field MUST have "
+          "length of "
+          "exactly 1.; field:trust_domains[\"google.com\"].keys[0].x5c "
+          "error:got vector "
+          "length 2. Expected length of exactly 1.]"));
 }
 
 TEST(SpiffeBundle, WrongRootFails) {

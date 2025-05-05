@@ -96,6 +96,9 @@ class SpiffeBundle final {
     return kLoader;
   }
 
+  void JsonPostLoad(const Json& json, const JsonArgs&,
+                    ValidationErrors* errors);
+
   // Returns a vector of the roots in this SPIFFE Bundle.
   absl::StatusOr<absl::Span<const absl::string_view>> GetRoots();
 

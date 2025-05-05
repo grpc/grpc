@@ -167,6 +167,22 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
   return SpiffeId(trust_domain, absl::StrCat("/", path));
 }
 
+void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs&,
+                                ValidationErrors* errors) {
+  {
+    ValidationErrors::ScopedField field(errors, ".keys");
+    for (size_t i = 0; i < keys_.size(); i++) {
+      auto root = keys_[i].GetRoot();
+      if (!root.ok()) {
+        errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
+                                         root.status().ToString()));
+      } else {
+        roots_.push_back(*root);
+      }
+    }
+  }
+}
+
 void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
@@ -189,10 +205,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
   }
   {
     ValidationErrors::ScopedField field(errors, ".x5c");
-    if (x5c_.size() != kx5cSize) {
+    if (x5c_.size() != kX5cSize) {
       errors->AddError(absl::StrFormat(
           "got vector length %i. Expected length of exactly %i.", x5c_.size(),
-          kx5cSize));
+          kX5cSize));
       return;
     }
 
@@ -251,14 +267,6 @@ absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundleMap::GetRoots(
 }
 
 absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundle::GetRoots() {
-  if (!roots_.empty()) {
-    return roots_;
-  }
-  for (size_t i = 0; i < keys_.size(); i++) {
-    auto root = keys_[i].GetRoot();
-    GRPC_RETURN_IF_ERROR(root.status());
-    roots_.push_back(*root);
-  }
   return roots_;
 }
 
