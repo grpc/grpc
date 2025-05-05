@@ -44,8 +44,9 @@ TcpFrameTransport::TcpFrameTransport(
     : DataSource(ctx->socket_node),
       ctx_(ctx),
       control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
-      data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
-                      options.enable_tracing),
+      data_endpoints_(std::move(pending_data_endpoints), ctx,
+                      options.encode_alignment, options.decode_alignment,
+                      ztrace_collector_, options.enable_tracing),
       options_(options) {}
 
 auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
@@ -81,19 +82,7 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
         hdr.Serialize(control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
-        const size_t padding = DataConnectionPadding(
-            TcpFrameHeader::kFrameHeaderSize + header.payload_length,
-            options_.encode_alignment);
         frame.SerializePayload(data_bytes);
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Send " << data_bytes.Length()
-            << "b payload on data channel; add " << padding << " bytes for "
-            << options_.encode_alignment << " alignment";
-        if (padding != 0) {
-          auto slice = MutableSlice::CreateUninitialized(padding);
-          memset(slice.data(), 0, padding);
-          data_bytes.AppendIndexed(Slice(std::move(slice)));
-        }
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
         return DiscardResult(
             Join(data_endpoints_.Write(tag, std::move(data_bytes),
@@ -164,28 +153,9 @@ auto TcpFrameTransport::ReadFrameBytes() {
             //     in the call promise to asynchronously wait for those bytes
             //     to be available.
             [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
-              const auto padding =
-                  frame_header.Padding(options_.decode_alignment);
               return IncomingFrame(
                   frame_header.header,
-                  Map(data_endpoints_.Read(frame_header.payload_tag).Await(),
-                      [padding,
-                       frame_header](absl::StatusOr<SliceBuffer> payload)
-                          -> absl::StatusOr<SliceBuffer> {
-                        if (payload.ok()) {
-                          if (payload->Length() !=
-                              frame_header.header.payload_length + padding) {
-                            return absl::UnavailableError(absl::StrCat(
-                                "Length mismatch on tagged payload: data "
-                                "channel received ",
-                                payload->Length(), " bytes, with padding ",
-                                padding, ", but got control channel header ",
-                                frame_header.ToString()));
-                          }
-                          payload->RemoveLastNBytesNoInline(padding);
-                        }
-                        return payload;
-                      }));
+                  data_endpoints_.Read(frame_header.payload_tag).Await());
             });
       });
 }
