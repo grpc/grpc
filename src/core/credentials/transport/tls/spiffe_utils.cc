@@ -204,6 +204,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
     auto certs = ParsePemCertificateChain(pem_cert);
     if (!certs.ok()) {
       errors->AddError(certs.status().ToString());
+    } else {
+      for (X509* cert : *certs) {
+        X509_free(cert);
+      }
     }
   }
 }
