@@ -167,7 +167,7 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
   return SpiffeId(trust_domain, absl::StrCat("/", path));
 }
 
-void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs&,
+void SpiffeBundle::JsonPostLoad(const Json&, const JsonArgs&,
                                 ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".keys");
@@ -183,7 +183,7 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
-void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
+void SpiffeBundleKey::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".use");
@@ -225,7 +225,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs&,
   }
 }
 
-void SpiffeBundleMap::JsonPostLoad(const Json& json, const JsonArgs&,
+void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".trust_domains");
