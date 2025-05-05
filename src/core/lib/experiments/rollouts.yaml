@@ -66,8 +66,6 @@
   default: true
 - name: free_large_allocator
   default: false
-- name: keep_alive_ping_timeout
-  default: true
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure

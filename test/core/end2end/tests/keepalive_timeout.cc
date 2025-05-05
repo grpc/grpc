@@ -37,15 +37,12 @@ namespace {
 // Client sends a request, then waits for the keepalive watchdog timeouts before
 // returning status.
 CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
-  if (!IsKeepAlivePingTimeoutEnabled()) {
-    GTEST_SKIP() << "Keepalive timeout is not enabled";
-  }
   // Disable ping ack to trigger the keepalive timeout
   InitServer(ChannelArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10)
-                 .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 5)
-                 .Set(GRPC_ARG_PING_TIMEOUT_MS, INT_MAX)
+                 .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)
+                 .Set(GRPC_ARG_PING_TIMEOUT_MS, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, false));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
@@ -58,8 +55,7 @@ CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_THAT(server_status.message(),
-              ::testing::HasSubstr("keepalive timeout"));
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("ping timeout"));
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings
