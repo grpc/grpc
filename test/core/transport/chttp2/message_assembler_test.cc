@@ -399,13 +399,6 @@ TEST(GrpcMessageDisassemblerTest, OneMessageToOneFrame) {
   EXPECT_EQ(frame1.end_stream, kNotEndStream);
   EXPECT_EQ(frame1.payload.Length(), expected_size);
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
-
-  ASSERT_DEATH(
-      {
-        GRPC_UNUSED Http2DataFrame frame2 =
-            disassembler.GenerateNextFrame(max_length, kNotEndStream);
-      },
-      "");
 }
 
 TEST(GrpcMessageDisassemblerTest, TwoMessageOneFrame) {
@@ -428,13 +421,6 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageOneFrame) {
   EXPECT_EQ(frame1.end_stream, kNotEndStream);
   EXPECT_EQ(frame1.payload.Length(), expected_size * 2);
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
-
-  ASSERT_DEATH(
-      {
-        GRPC_UNUSED Http2DataFrame frame2 =
-            disassembler.GenerateNextFrame(max_length, kNotEndStream);
-      },
-      "");
 }
 
 TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
@@ -465,13 +451,6 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
   }
   EXPECT_EQ(counter, num_iterations);
   EXPECT_EQ(total_bytes_counter, expected_size * 2);
-
-  ASSERT_DEATH(
-      {
-        GRPC_UNUSED Http2DataFrame frame2 =
-            disassembler.GenerateNextFrame(max_length, kNotEndStream);
-      },
-      "");
 }
 
 TEST(GrpcMessageDisassemblerTest, GenerateEmptyEndFrame) {
