@@ -123,7 +123,7 @@ class Http2ClientTransport final : public ClientTransport {
     return ping_manager_.RequestPing(std::move(on_initiate));
   }
   template <typename Factory>
-  auto TestOnlySpawnPromise(std::string_view name, Factory factory) {
+  auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
     return general_party_->Spawn(name, std::move(factory), [](auto) {});
   }
 

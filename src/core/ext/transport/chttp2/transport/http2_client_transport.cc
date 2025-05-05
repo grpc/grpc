@@ -350,9 +350,9 @@ auto Http2ClientTransport::WriteFromQueue() {
         HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
         return If(
             output_buf.Length() > 0,
-            [self, output_buf = std::move(output_buf)]() mutable {
+            [self, output_buffer = std::move(output_buf)]() mutable {
               self->bytes_sent_in_last_write_ = true;
-              return self->endpoint_.Write(std::move(output_buf),
+              return self->endpoint_.Write(std::move(output_buffer),
                                            PromiseEndpoint::WriteArgs{});
             },
             [] { return absl::OkStatus(); });
