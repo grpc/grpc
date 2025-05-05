@@ -141,10 +141,7 @@ class GrpcMessageDisassembler {
         << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
   }
 
-  size_t GetBufferedLength() const {
-    LOG(INFO) << " message_.Length()=" << message_.Length();
-    return message_.Length();
-  }
+  size_t GetBufferedLength() const { return message_.Length(); }
 
   // Gets the next Http2DataFrame with a payload of size max_length or lesser.
   Http2DataFrame GenerateNextFrame(const uint32_t max_length,
