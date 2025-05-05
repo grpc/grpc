@@ -119,8 +119,8 @@ constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
 // This class is meant to convert gRPC Messages into Http2DataFrame ensuring
 // that the payload size of the data frame is configurable.
 // This class is not responsible for queueing or backpressure. That will be done
-// by other classes. Refer the example below.
-// TODO(tjagtap) : [PH2][P2] Edit comment and remove the example below once this
+// by other classes.
+// TODO(tjagtap) : [PH2][P2] Edit comment once this
 // class is integrated and exercised.
 class GrpcMessageDisassembler {
  public:
@@ -170,34 +170,9 @@ class GrpcMessageDisassembler {
     message_.Append(*(message->payload()));
   }
 
-  uint32_t stream_id_;
+  const uint32_t stream_id_;
   SliceBuffer message_;
 };
-
-// inline void CallerExample() {
-//   // Data member of class Stream
-//   GrpcMessageDisassembler disassembler(/*stream_id=*/1234);
-
-//   // Data members of the entire transport
-//   uint32_t kConnectionWindow = 100;
-//   uint32_t kStreamWindow = 1000;
-//   uint32_t kMaxFrameSize = (1024u * 16);
-
-//   // EfficientScheduler called from the transport.
-
-//   MessageHandle grpc_message = Arena::MakePooled<Message>();
-//   disassembler.PrepareSingleMessageForSending(std::move(grpc_message));
-//   while (disassembler.GetBufferedLength() > 0) {
-//     size_t permitted_size =
-//         EfficientScheduler(list_of_writable_streams, kConnectionWindow,
-//                        kStreamWindow, kMaxFrameSize, stream_id);
-//.    if (permitted_size==0) break;
-//     Http2DataFrame frame = disassembler.GenerateNextFrame(
-//         /*max_length=*/permitted_size, /*is_end_stream=*/false);
-//    EfficientSchedulersBookeeping(stream_id, permitted_size);
-//     // Queue frame in MPSC write queue
-//   }
-// }
 
 }  // namespace http2
 }  // namespace grpc_core

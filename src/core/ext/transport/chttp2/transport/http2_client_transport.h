@@ -186,7 +186,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call, uint32_t stream_id1)
+    explicit Stream(CallHandler call, const uint32_t stream_id1)
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
@@ -194,7 +194,7 @@ class Http2ClientTransport final : public ClientTransport {
 
     CallHandler call;
     HttpStreamState stream_state;
-    uint32_t stream_id;
+    const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     GrpcMessageDisassembler disassembler;
