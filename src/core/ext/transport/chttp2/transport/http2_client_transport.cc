@@ -347,9 +347,10 @@ auto Http2ClientTransport::WriteFromQueue() {
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
         Serialize(absl::Span<Http2Frame>(frames), output_buf);
+        uint64_t buffer_length = output_buf.Length();
         HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
         return If(
-            output_buf.Length() > 0,
+            buffer_length > 0,
             [self, output_buffer = std::move(output_buf)]() mutable {
               self->bytes_sent_in_last_write_ = true;
               return self->endpoint_.Write(std::move(output_buffer),
