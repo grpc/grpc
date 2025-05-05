@@ -54,8 +54,9 @@ enum class Http2ErrorCode : uint8_t {
   kDoNotUse = 0xffu  // Force use of a default clause
 };
 
-inline absl::StatusCode ErrorCodeToAbslCode(
-    Http2ErrorCode http2_code, Timestamp deadline = Timestamp::InfFuture()) {
+inline absl::StatusCode ErrorCodeToAbslStatusCode(
+    const Http2ErrorCode http2_code,
+    const Timestamp deadline = Timestamp::InfFuture()) {
   switch (http2_code) {
     case Http2ErrorCode::kNoError:
       return absl::StatusCode::kOk;
@@ -73,7 +74,8 @@ inline absl::StatusCode ErrorCodeToAbslCode(
   }
   GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
 }
-inline Http2ErrorCode AbslCodeToErrorCode(absl::StatusCode status) {
+
+inline Http2ErrorCode AbslStatusCodeToErrorCode(const absl::StatusCode status) {
   switch (status) {
     case absl::StatusCode::kOk:
       return Http2ErrorCode::kNoError;
@@ -230,7 +232,7 @@ class Http2Status {
                        std::string& message)
       : http2_code_(code),
         error_type_(type),
-        absl_code_(ErrorCodeToAbslCode(http2_code_)),
+        absl_code_(ErrorCodeToAbslStatusCode(http2_code_)),
         message_(std::move(message)) {
     Validate();
   }

@@ -20,11 +20,11 @@
 
 #include <grpc/support/port_platform.h>
 
-using grpc_core::http2::AbslCodeToErrorCode;
+using grpc_core::http2::AbslStatusCodeToErrorCode;
 using grpc_core::http2::Http2ErrorCode;
 
 Http2ErrorCode grpc_status_to_http2_error(grpc_status_code status) {
-  return AbslCodeToErrorCode(static_cast<absl::StatusCode>(status));
+  return AbslStatusCodeToErrorCode(static_cast<absl::StatusCode>(status));
 }
 
 grpc_status_code grpc_http2_error_to_grpc_status(
@@ -33,7 +33,8 @@ grpc_status_code grpc_http2_error_to_grpc_status(
     // should never be received
     return GRPC_STATUS_INTERNAL;
   }
-  return static_cast<grpc_status_code>(ErrorCodeToAbslCode(error, deadline));
+  return static_cast<grpc_status_code>(
+      ErrorCodeToAbslStatusCode(error, deadline));
 }
 
 grpc_status_code grpc_http2_status_to_grpc_status(int status) {
