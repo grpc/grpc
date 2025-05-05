@@ -535,10 +535,10 @@ PosixEventEngine::PosixEventEngine()
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_manager_(executor_),
-#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       timer_manager_(executor_) {
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   SchedulePoller();
+#else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+      timer_manager_(executor_) {
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 }
 
