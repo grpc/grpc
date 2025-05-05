@@ -100,7 +100,7 @@ class SpiffeBundle final {
                     ValidationErrors* errors);
 
   // Returns a vector of the roots in this SPIFFE Bundle.
-  absl::StatusOr<absl::Span<const absl::string_view>> GetRoots();
+  absl::Span<const absl::string_view> GetRoots();
 
  private:
   std::vector<SpiffeBundleKey> keys_;

@@ -266,9 +266,7 @@ absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundleMap::GetRoots(
       "No spiffe bundle found for trust domain %s", trust_domain));
 }
 
-absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundle::GetRoots() {
-  return roots_;
-}
+absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
 
 absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
   if (x5c_.size() != 1) {
