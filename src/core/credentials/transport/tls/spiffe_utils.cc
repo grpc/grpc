@@ -36,13 +36,12 @@ namespace grpc_core {
 namespace {
 constexpr absl::string_view kAllowedUse = "x509-svid";
 constexpr absl::string_view kAllowedKty = "RSA";
-constexpr int kx5cSize = 1;
 constexpr absl::string_view kCertificatePrefix =
     "-----BEGIN CERTIFICATE-----\n";
 constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
-
-constexpr absl::string_view kSpiffePrefix = "spiffe://";
 constexpr int kMaxTrustDomainLength = 255;
+constexpr absl::string_view kSpiffePrefix = "spiffe://";
+constexpr int kX5cSize = 1;
 
 // Checks broad conditions on the whole input before splitting into the
 // pieces of a SPIFFE ID
