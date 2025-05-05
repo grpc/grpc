@@ -53,7 +53,11 @@ RUN python3 -m pip install twisted
 
 #=================
 # C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
+RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
+    && echo "deb http://apt.llvm.org/buster/ llvm-toolchain-buster-11 main" >> /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y libc++-11-dev libc++abi-11-dev \
+    && apt-get clean
 
 #=================
 # Install cmake using the install script.
