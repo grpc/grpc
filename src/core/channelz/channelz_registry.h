@@ -45,20 +45,20 @@ class ChannelzRegistry final {
   static void Unregister(BaseNode* node) {
     Default()->InternalUnregister(node);
   }
-  static RefCountedPtr<BaseNode> Get(intptr_t uuid) {
+  static WeakRefCountedPtr<BaseNode> Get(intptr_t uuid) {
     return Default()->InternalGet(uuid);
   }
   static intptr_t NumberNode(BaseNode* node) {
     return Default()->InternalNumberNode(node);
   }
 
-  static RefCountedPtr<SubchannelNode> GetSubchannel(intptr_t uuid) {
+  static WeakRefCountedPtr<SubchannelNode> GetSubchannel(intptr_t uuid) {
     return Default()
         ->InternalGetTyped<SubchannelNode, BaseNode::EntityType::kSubchannel>(
             uuid);
   }
 
-  static RefCountedPtr<ChannelNode> GetChannel(intptr_t uuid) {
+  static WeakRefCountedPtr<ChannelNode> GetChannel(intptr_t uuid) {
     auto node = Default()->InternalGet(uuid);
     if (node == nullptr) return nullptr;
     if (node->type() == BaseNode::EntityType::kTopLevelChannel) {
@@ -70,12 +70,12 @@ class ChannelzRegistry final {
     return nullptr;
   }
 
-  static RefCountedPtr<ServerNode> GetServer(intptr_t uuid) {
+  static WeakRefCountedPtr<ServerNode> GetServer(intptr_t uuid) {
     return Default()
         ->InternalGetTyped<ServerNode, BaseNode::EntityType::kServer>(uuid);
   }
 
-  static RefCountedPtr<SocketNode> GetSocket(intptr_t uuid) {
+  static WeakRefCountedPtr<SocketNode> GetSocket(intptr_t uuid) {
     return Default()
         ->InternalGetTyped<SocketNode, BaseNode::EntityType::kSocket>(uuid);
   }
@@ -100,7 +100,7 @@ class ChannelzRegistry final {
             start_server_id);
   }
 
-  static std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+  static std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   GetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                     BaseNode::EntityType type, size_t max_results) {
     return Default()->InternalGetChildrenOfType(start_node, parent, type,
@@ -111,7 +111,7 @@ class ChannelzRegistry final {
   // This can aid in debugging channelz code.
   static void LogAllEntities() { Default()->InternalLogAllEntities(); }
 
-  static std::vector<RefCountedPtr<BaseNode>> GetAllEntities() {
+  static std::vector<WeakRefCountedPtr<BaseNode>> GetAllEntities() {
     return Default()->InternalGetAllEntities();
   }
 
@@ -124,7 +124,7 @@ class ChannelzRegistry final {
  private:
   ChannelzRegistry() : node_map_(MakeNodeMap()) {}
 
-  // Takes a callable F: (RefCountedPtr<BaseNode>) -> bool, and returns
+  // Takes a callable F: (WeakRefCountedPtr<BaseNode>) -> bool, and returns
   // a (BaseNode*) -> bool that filters unreffed objects and returns true.
   // The ref must be unreffed outside the NodeMapInterface iteration.
   template <typename F>
@@ -143,10 +143,11 @@ class ChannelzRegistry final {
     virtual void Register(BaseNode* node) = 0;
     virtual void Unregister(BaseNode* node) = 0;
 
-    virtual std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
-        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
-        size_t max_results) = 0;
-    virtual RefCountedPtr<BaseNode> GetNode(intptr_t uuid) = 0;
+    virtual std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
+    QueryNodes(intptr_t start_node,
+               absl::FunctionRef<bool(const BaseNode*)> filter,
+               size_t max_results) = 0;
+    virtual WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) = 0;
 
     virtual intptr_t NumberNode(BaseNode* node) = 0;
   };
@@ -156,10 +157,10 @@ class ChannelzRegistry final {
     void Register(BaseNode* node) override;
     void Unregister(BaseNode* node) override;
 
-    std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
+    std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
         intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
         size_t max_results) override;
-    RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
+    WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
 
     intptr_t NumberNode(BaseNode* node) override { return node->uuid_; }
 
@@ -174,10 +175,10 @@ class ChannelzRegistry final {
     void Register(BaseNode* node) override;
     void Unregister(BaseNode* node) override;
 
-    std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool> QueryNodes(
+    std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
         intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
         size_t max_results) override;
-    RefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
+    WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
 
     intptr_t NumberNode(BaseNode* node) override;
 
@@ -217,11 +218,11 @@ class ChannelzRegistry final {
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  RefCountedPtr<BaseNode> InternalGet(intptr_t uuid) {
+  WeakRefCountedPtr<BaseNode> InternalGet(intptr_t uuid) {
     return node_map_->GetNode(uuid);
   }
 
-  std::tuple<std::vector<RefCountedPtr<BaseNode>>, bool>
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                             BaseNode::EntityType type, size_t max_results) {
     return node_map_->QueryNodes(
@@ -233,31 +234,31 @@ class ChannelzRegistry final {
   }
 
   template <typename T, BaseNode::EntityType entity_type>
-  RefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
-    RefCountedPtr<BaseNode> node = InternalGet(uuid);
+  WeakRefCountedPtr<T> InternalGetTyped(intptr_t uuid) {
+    WeakRefCountedPtr<BaseNode> node = InternalGet(uuid);
     if (node == nullptr || node->type() != entity_type) {
       return nullptr;
     }
-    return node->RefAsSubclass<T>();
+    return node->WeakRefAsSubclass<T>();
   }
 
   template <typename T, BaseNode::EntityType entity_type>
-  std::tuple<std::vector<RefCountedPtr<T>>, bool> InternalGetObjects(
+  std::tuple<std::vector<WeakRefCountedPtr<T>>, bool> InternalGetObjects(
       intptr_t start_id) {
     const int kPaginationLimit = 100;
-    std::vector<RefCountedPtr<T>> top_level_channels;
+    std::vector<WeakRefCountedPtr<T>> top_level_channels;
     const auto [nodes, end] = node_map_->QueryNodes(
         start_id,
         [](const BaseNode* node) { return node->type() == entity_type; },
         kPaginationLimit);
     for (const auto& p : nodes) {
-      top_level_channels.emplace_back(p->template RefAsSubclass<T>());
+      top_level_channels.emplace_back(p->template WeakRefAsSubclass<T>());
     }
     return std::tuple(std::move(top_level_channels), end);
   }
 
   void InternalLogAllEntities();
-  std::vector<RefCountedPtr<BaseNode>> InternalGetAllEntities();
+  std::vector<WeakRefCountedPtr<BaseNode>> InternalGetAllEntities();
 
   std::unique_ptr<NodeMapInterface> node_map_;
 };
