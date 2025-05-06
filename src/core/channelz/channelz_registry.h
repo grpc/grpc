@@ -62,10 +62,10 @@ class ChannelzRegistry final {
     auto node = Default()->InternalGet(uuid);
     if (node == nullptr) return nullptr;
     if (node->type() == BaseNode::EntityType::kTopLevelChannel) {
-      return node->RefAsSubclass<ChannelNode>();
+      return node->WeakRefAsSubclass<ChannelNode>();
     }
     if (node->type() == BaseNode::EntityType::kInternalChannel) {
-      return node->RefAsSubclass<ChannelNode>();
+      return node->WeakRefAsSubclass<ChannelNode>();
     }
     return nullptr;
   }
