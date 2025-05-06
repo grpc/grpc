@@ -220,9 +220,6 @@ struct Http2FrameHeader {
   }
 };
 
-using grpc_core::http2::Http2Error;
-using Http2StatusOr = std::variant<Http2Frame, Http2Error>;
-
 ///////////////////////////////////////////////////////////////////////////////
 // Parsing & serialization
 
@@ -233,8 +230,8 @@ using Http2StatusOr = std::variant<Http2Frame, Http2Error>;
 // If a frame should simply be ignored, this function returns a
 // Http2UnknownFrame.
 // It is expected that hdr.length == payload.Length().
-Http2StatusOr ParseFramePayload(const Http2FrameHeader& hdr,
-                                SliceBuffer payload);
+ValueOrHttp2Status<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
+                                                 SliceBuffer payload);
 
 // Serialize frame and append to out, leaves frames in an unknown state (may
 // move things out of frames)
