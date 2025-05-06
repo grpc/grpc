@@ -759,6 +759,8 @@ TEST(JsonObjectLoader, MapFields) {
       "\"std_optional_value\": {\"c\":true}, "
       "\"unique_ptr_value\": {\"d\":4}}");
   ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
   EXPECT_THAT(test_struct->optional_value,
               ::testing::ElementsAre(::testing::Pair("b", "foo")));
   ASSERT_TRUE(test_struct->std_optional_value.has_value());
