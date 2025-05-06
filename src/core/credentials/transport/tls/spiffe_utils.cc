@@ -174,9 +174,8 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   {
     ValidationErrors::ScopedField field(errors, ".use");
     if (use.has_value() && *use != kAllowedUse) {
-      errors->AddError(
-          absl::StrFormat("got %s. Only supported value for use field is %s.",
-                          *use, kAllowedUse));
+      errors->AddError(absl::StrFormat("value must be \"%s\", got \"%s\"",
+                                       kAllowedUse, *use));
     }
   }
   auto kty =
@@ -184,9 +183,8 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   {
     ValidationErrors::ScopedField field(errors, ".kty");
     if (kty.has_value() && *kty != kAllowedKty) {
-      errors->AddError(
-          absl::StrFormat("got %s. Only supported value for kty field is %s.",
-                          *kty, kAllowedKty));
+      errors->AddError(absl::StrFormat("value must be \"%s\", got \"%s\"",
+                                       kAllowedKty, *kty));
     }
   }
   {

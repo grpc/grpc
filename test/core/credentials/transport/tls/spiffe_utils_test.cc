@@ -361,8 +361,8 @@ TEST(SpiffeBundle, WrongKtyFails) {
           .status(),
       absl::InvalidArgumentError(
           "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].keys[0].kty error:got EC. "
-          "Only supported value for kty field is RSA.]"));
+          "[field:trust_domains[\"example.com\"].keys[0].kty error:value must "
+          "be \"RSA\", got \"EC\"]"));
 }
 
 TEST(SpiffeBundle, WrongKidFails) {
@@ -413,9 +413,8 @@ TEST(SpiffeBundle, WrongUseFails) {
           .status(),
       absl::InvalidArgumentError(
           "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].keys[0].use "
-          "error:got NOT-x509-svid. Only supported value for use field is "
-          "x509-svid.]"));
+          "[field:trust_domains[\"example.com\"].keys[0].use error:value must "
+          "be \"x509-svid\", got \"NOT-x509-svid\"]"));
 }
 
 TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
