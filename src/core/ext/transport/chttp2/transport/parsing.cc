@@ -981,10 +981,7 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});
-    call_tracer =
-        grpc_core::IsCallTracerTransportFixEnabled()
-            ? s->call_tracer
-            : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+    call_tracer = s->call_tracer;
   }
   grpc_core::SharedBitGen g;
   grpc_error_handle error =
