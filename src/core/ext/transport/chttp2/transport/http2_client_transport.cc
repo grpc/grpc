@@ -51,6 +51,7 @@
 namespace grpc_core {
 namespace http2 {
 
+#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
 using grpc_event_engine::experimental::EventEngine;
 
 // Experimental : This is just the initial skeleton of class
@@ -69,6 +70,7 @@ void Http2ClientTransport::PerformOp(GRPC_UNUSED grpc_transport_op* op) {
 void Http2ClientTransport::Orphan() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan Begin";
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
+  general_party_.reset();
   Unref();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
 }
@@ -79,6 +81,11 @@ void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
+void Http2ClientTransport::CloseTransport() {
+  // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  ping_manager_.CancelCallbacks();
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Promise factory for processing each type of frame
 
@@ -86,12 +93,14 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       frame1 = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
             << frame1.stream_id << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << "}";
+        self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
 }
@@ -100,13 +109,15 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   return
-      [frame1 = std::move(frame)]() -> absl::Status {
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       frame1 = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
             << frame1.stream_id << ", end_headers=" << frame1.end_headers
             << ", end_stream=" << frame1.end_stream
             << ", payload=" << frame1.payload.JoinIntoString() << " }";
+        self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
 }
@@ -142,16 +153,25 @@ auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
 }
 
 auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
-  // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Factory";
-  return
-      [frame1 = frame]() -> absl::Status {
-        // TODO(tjagtap) : [PH2][P1] : Implement this.
-        HTTP2_TRANSPORT_DLOG
-            << "Http2Transport ProcessHttp2PingFrame Promise { ack="
-            << frame1.ack << ", opaque=" << frame1.opaque << " }";
-        return absl::OkStatus();
-      };
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame { ack="
+                       << frame.ack << ", opaque=" << frame.opaque << " }";
+  return If(
+      frame.ack,
+      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
+        // Received a ping ack.
+        if (!self->ping_manager_.AckPing(opaque)) {
+          HTTP2_TRANSPORT_DLOG << "Unknown ping resoponse received for ping id="
+                               << opaque;
+        }
+        return Immediate(absl::OkStatus());
+      },
+      [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
+        // TODO(akshitpatel) : [PH2][P0] : This can result into undefined
+        // behaviour as there will be concurrent calls to endpoint_.write
+        // RFC9113: PING responses SHOULD be given higher priority than any
+        // other frame.
+        return self->EnqueueOutgoingFrame(Http2PingFrame{true, opaque});
+      });
 }
 
 auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
@@ -319,24 +339,43 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
-  return TrySeq(outgoing_frames_.NextBatch(),
-                [&endpoint = endpoint_](std::vector<Http2Frame> frames) {
-                  SliceBuffer output_buf;
-                  Serialize(absl::Span<Http2Frame>(frames), output_buf);
-                  HTTP2_CLIENT_DLOG
-                      << "Http2ClientTransport WriteFromQueue Promise";
-                  return endpoint.Write(std::move(output_buf),
-                                        PromiseEndpoint::WriteArgs{});
-                });
+  return TrySeq(
+      outgoing_frames_.NextBatch(),
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          std::vector<Http2Frame> frames) {
+        SliceBuffer output_buf;
+        Serialize(absl::Span<Http2Frame>(frames), output_buf);
+        uint64_t buffer_length = output_buf.Length();
+        HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
+        return If(
+            buffer_length > 0,
+            [self, output_buffer = std::move(output_buf)]() mutable {
+              self->bytes_sent_in_last_write_ = true;
+              return self->endpoint_.Write(std::move(output_buffer),
+                                           PromiseEndpoint::WriteArgs{});
+            },
+            [] { return absl::OkStatus(); });
+      });
 }
 
 auto Http2ClientTransport::WriteLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
   return AssertResultType<absl::Status>(Loop([this]() {
-    return TrySeq(WriteFromQueue(), []() -> LoopCtl<absl::Status> {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
-      return Continue();
-    });
+    bytes_sent_in_last_write_ = false;
+    return TrySeq(
+        WriteFromQueue(),
+        [self = RefAsSubclass<Http2ClientTransport>()] {
+          return self->MaybeSendPing();
+        },
+        [this]() -> LoopCtl<absl::Status> {
+          // If any Header/Data/WindowUpdate frame was sent in the last write,
+          // reset the ping clock.
+          if (bytes_sent_in_last_write_) {
+            ping_manager_.ResetPingClock(/*is_client=*/true);
+          }
+          HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
+          return Continue();
+        });
   }));
 }
 
@@ -357,7 +396,29 @@ Http2ClientTransport::Http2ClientTransport(
     std::shared_ptr<EventEngine> event_engine)
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
-      stream_id_mutex_(/*Initial Stream Id*/ 1) {
+      stream_id_mutex_(/*Initial Stream Id*/ 1),
+      bytes_sent_in_last_write_(false),
+      keepalive_interval_(std::max(
+          Duration::Milliseconds(1),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
+              .value_or(Duration::Infinity()))),
+      keepalive_timeout_(std::max(
+          Duration::Zero(),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+              .value_or(keepalive_interval_ == Duration::Infinity()
+                            ? Duration::Infinity()
+                            : (Duration::Seconds(20))))),
+      ping_timeout_(std::max(
+          Duration::Zero(),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
+              .value_or(keepalive_interval_ == Duration::Infinity()
+                            ? Duration::Infinity()
+                            : Duration::Minutes(1)))),
+      ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
+                    event_engine),
+      keepalive_manager_(KeepAliveInterfaceImpl::Make(this), keepalive_timeout_,
+                         keepalive_interval_),
+      keepalive_permit_without_calls_(false) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
 
@@ -371,13 +432,17 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
+
+  if (keepalive_interval_ != Duration::Infinity()) {
+    keepalive_manager_.Spawn(general_party_.get());
+  }
+
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
-  general_party_.reset();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
