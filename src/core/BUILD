@@ -2448,6 +2448,7 @@ grpc_cc_library(
     srcs = ["lib/event_engine/utils.cc"],
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
+        "absl/log",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -8147,6 +8148,7 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
+        "event_engine_utils",
         "ztrace_collector",
         "//:gpr",
     ],

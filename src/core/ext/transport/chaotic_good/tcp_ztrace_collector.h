@@ -22,6 +22,7 @@
 
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/lib/event_engine/utils.h"
 
 namespace grpc_core::chaotic_good {
 namespace tcp_ztrace_collector_detail {
@@ -88,17 +89,9 @@ struct EndpointWriteMetricsTrace {
   }
 
   void RenderJson(Json::Object& object) const {
-    std::string name;
-    switch (write_event) {
-      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
-          kSendMsg:
-        name = "SEND_MSG_METRICS";
-        break;
-      default:
-        name = absl::StrCat("ENDPOINT_WRITE_METRICS_TYPE_",
-                            static_cast<int>(write_event));
-    }
-    object["metadata_type"] = Json::FromString(name);
+    object["metadata_type"] = Json::FromString(absl::StrCat(
+        "Endpoint Write: ",
+        grpc_event_engine::experimental::WriteEventToString(write_event)));
     object["fathom_timestamp"] = Json::FromString(absl::StrCat(timestamp));
     for (const auto& [name, value] : metrics) {
       object.emplace(name, Json::FromNumber(value));
