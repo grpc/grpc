@@ -48,8 +48,7 @@ constexpr absl::string_view kCertificateSuffix =
 
 absl::StatusOr<X509*> ReadCertificate(absl::string_view raw_cert) {
   std::string pem_cert =
-      absl::StrCat(kCertificatePrefix, raw_cert.data(), kCertificateSuffix);
-
+      absl::StrCat(kCertificatePrefix, raw_cert, kCertificateSuffix);
   auto chain = ParsePemCertificateChain(pem_cert);
   GRPC_RETURN_IF_ERROR(chain.status());
   return (*chain)[0];
@@ -57,15 +56,13 @@ absl::StatusOr<X509*> ReadCertificate(absl::string_view raw_cert) {
 
 absl::StatusOr<X509*> ReadCertificateFromFile(absl::string_view filepath) {
   FILE* file = fopen(filepath.data(), "r");
-  if (!file) {
+  if (file == nullptr) {
     return absl::InvalidArgumentError(
         absl::StrFormat("Failed to read file %s", filepath));
   }
-
   X509* cert = PEM_read_X509(file, nullptr, nullptr, nullptr);
   fclose(file);
-
-  if (!cert) {
+  if (cert == nullptr) {
     return absl::InvalidArgumentError(
         absl::StrFormat("Failed to load certificate from file %s", filepath));
   }
@@ -413,13 +410,12 @@ TEST(SpiffeBundle, WrongUseFails) {
 }
 
 TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
-  std::string path =
+  constexpr absl::string_view path =
       "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
       "spiffebundle.json";
-  std::string json_str = testing::GetFileContents(path);
+  std::string json_str = testing::GetFileContents(path.data());
   auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
-
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
   ASSERT_TRUE(bundle_map.ok()) << bundle_map.status();
   ASSERT_EQ(bundle_map->size(), 2);
@@ -462,7 +458,6 @@ TEST(SpiffeBundle, MultipleRootsSuccess) {
   std::string json_str = testing::GetFileContents(path);
   auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
-
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
   ASSERT_TRUE(bundle_map.ok()) << bundle_map.status();
   ASSERT_EQ(bundle_map->size(), 1);
