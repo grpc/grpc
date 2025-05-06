@@ -40,6 +40,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
@@ -87,7 +88,7 @@ class SubchannelNodePeer;
 }  // namespace testing
 
 // base class for all channelz entities
-class BaseNode : public RefCounted<BaseNode> {
+class BaseNode : public DualRefCounted<BaseNode> {
  public:
   // There are only four high level channelz entities. However, to support
   // GetTopChannelsRequest, we split the Channel entity into two different
@@ -127,6 +128,8 @@ class BaseNode : public RefCounted<BaseNode> {
 
  public:
   ~BaseNode() override;
+
+  void Orphaned() final {}
 
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);
