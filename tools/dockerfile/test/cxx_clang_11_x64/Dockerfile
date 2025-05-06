@@ -52,14 +52,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 RUN python3 -m pip install twisted
 
 #=================
-# C++ dependencies
-RUN wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add - \
-    && echo "deb http://apt.llvm.org/buster/ llvm-toolchain-buster-11 main" >> /etc/apt/sources.list \
-    && apt-get update \
-    && apt-get install -y libc++-11-dev libc++abi-11-dev \
-    && apt-get clean
-
-#=================
 # Install cmake using the install script.
 RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
     && sh cmake-linux.sh -- --skip-license --prefix=/usr \
