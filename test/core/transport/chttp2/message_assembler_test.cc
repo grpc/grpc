@@ -378,10 +378,6 @@ MessageHandle MakeMessage() {
   return Arena::MakePooled<Message>(std::move(payload), kFlags0);
 }
 
-TEST(GrpcMessageDisassemblerTest, Constructor) {
-  GRPC_UNUSED GrpcMessageDisassembler disassembler(/*stream_id=*/1111);
-}
-
 TEST(GrpcMessageDisassemblerTest, OneMessageToOneFrame) {
   const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
   auto message = MakeMessage();
@@ -458,7 +454,7 @@ TEST(GrpcMessageDisassemblerTest, GenerateEmptyEndFrame) {
   GrpcMessageDisassembler disassembler;
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
 
-  Http2DataFrame frame = disassembler.GenerateEmptyEndFrame();
+  Http2DataFrame frame = disassembler.GenerateEmptyEndFrame(stream_id);
   EXPECT_EQ(frame.stream_id, stream_id);
   EXPECT_EQ(frame.end_stream, kEndStream);
   EXPECT_EQ(frame.payload.Length(), 0);
