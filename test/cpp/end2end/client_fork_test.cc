@@ -292,7 +292,9 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   DoExchange(absl::StrCat("[", getpid(), "] In first-fork parent"), addr,
              nullptr);
   // Fork and do round trips in the post-fork parent and child.
+  VLOG(2).WithThreadID(getpid()) << "####################### Before fork";
   pid_t child_client_pid = fork();
+  VLOG(2).WithThreadID(getpid()) << "####################### After fork";
   // Spawns a thread. Not ok before fork!!!
   HangWatcher watcher(child_client_pid == 0 ? "child" : "original",
                       absl::Seconds(5));

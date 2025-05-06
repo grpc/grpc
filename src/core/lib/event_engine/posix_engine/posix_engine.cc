@@ -874,6 +874,9 @@ void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
   if (on_fork_role == OnForkRole::kChild) {
     AfterForkInChild();
   }
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  poller_manager_.Poller()->ResetKickState();
+#endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   executor_->PostFork();
   timer_manager_.PostFork();
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
@@ -902,7 +905,6 @@ void PosixEventEngine::AfterForkInChild() {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   PosixEventPoller* poller = poller_manager_.Poller();
   poller->HandleForkInChild();
-  poller->ResetKickState();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
 #if GRPC_ARES == 1 && defined(GRPC_POSIX_SOCKET_ARES_EV_DRIVER)
   for (const auto& cb : resolver_handles_) {
