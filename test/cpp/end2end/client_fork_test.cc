@@ -82,7 +82,7 @@ class HangWatcher {
   }
 
   std::string label() const {
-    absl::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return absl::StrCat(name_, "/", task_);
   }
 
