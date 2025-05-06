@@ -195,7 +195,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
       return;
     }
     std::string pem_cert =
-        absl::StrCat(kCertificatePrefix, x5c_[0].data(), kCertificateSuffix);
+        absl::StrCat(kCertificatePrefix, x5c_[0], kCertificateSuffix);
     auto certs = ParsePemCertificateChain(pem_cert);
     if (!certs.ok()) {
       errors->AddError(certs.status().ToString());
@@ -235,15 +235,13 @@ absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
-    ValidationErrors::ScopedField field(errors, ".trust_domains");
-    for (auto const& kv : temp_bundles_) {
-      absl::Status status = ValidateTrustDomain(kv.first);
+    for (auto const& [k, _] : temp_bundles_) {
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".trust_domains[\"", k, "\"]"));
+      absl::Status status = ValidateTrustDomain(k);
       if (!status.ok()) {
-        // Don't error out early, validate as much as we can to give the user
-        // as much info as possible.
         errors->AddError(
-            absl::StrFormat("map key '%s' is not a valid trust domain. %s",
-                            kv.first, status.ToString()));
+            absl::StrCat("invalid trust domain: ", status.ToString()));
       }
     }
   }

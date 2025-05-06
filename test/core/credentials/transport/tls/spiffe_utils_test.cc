@@ -301,9 +301,8 @@ TEST(SpiffeBundle, EmptyKeysFails) {
           "spiffebundle_empty_keys.json")
           .status(),
       absl::InvalidArgumentError(
-          "errors validating JSON: [field:trust_domains error:map key '' is "
-          "not a valid trust domain. INVALID_ARGUMENT: Trust domain cannot be "
-          "empty]"));
+          "errors validating JSON: [field:trust_domains[\"\"] error:invalid "
+          "trust domain: INVALID_ARGUMENT: Trust domain cannot be empty]"));
 }
 
 TEST(SpiffeBundle, CorruptedCertFails) {
@@ -325,9 +324,8 @@ TEST(SpiffeBundle, EmptyStringKeyFails) {
           "spiffebundle_empty_string_key.json")
           .status(),
       absl::InvalidArgumentError(
-          "errors validating JSON: [field:trust_domains error:map key '' is "
-          "not a valid trust domain. INVALID_ARGUMENT: Trust domain cannot be "
-          "empty]"));
+          "errors validating JSON: [field:trust_domains[\"\"] error:invalid "
+          "trust domain: INVALID_ARGUMENT: Trust domain cannot be empty]"));
 }
 
 TEST(SpiffeBundle, InvalidTrustDomainFails) {
@@ -337,10 +335,10 @@ TEST(SpiffeBundle, InvalidTrustDomainFails) {
           "spiffebundle_invalid_trustdomain.json")
           .status(),
       absl::InvalidArgumentError(
-          "errors validating JSON: [field:trust_domains error:map key "
-          "'invalid#character' is not a valid trust domain. INVALID_ARGUMENT: "
-          "Trust domain contains invalid character '#'. MUST contain only "
-          "lowercase letters, numbers, dots, dashes, and underscores]"));
+          "errors validating JSON: [field:trust_domains[\"invalid#character\"] "
+          "error:invalid trust domain: INVALID_ARGUMENT: Trust domain contains "
+          "invalid character '#'. MUST contain only lowercase letters, "
+          "numbers, dots, dashes, and underscores]"));
 }
 
 TEST(SpiffeBundle, MalformedJsonFails) {
