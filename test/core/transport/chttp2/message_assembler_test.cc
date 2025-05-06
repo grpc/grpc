@@ -387,14 +387,14 @@ TEST(GrpcMessageDisassemblerTest, OneMessageToOneFrame) {
   auto message = MakeMessage();
 
   const uint32_t stream_id = 1;
-  GrpcMessageDisassembler disassembler(stream_id);
+  GrpcMessageDisassembler disassembler;
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
   disassembler.PrepareSingleMessageForSending(std::move(message));
   EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
 
   const uint32_t max_length = 1024 * 2;
   Http2DataFrame frame1 =
-      disassembler.GenerateNextFrame(max_length, kNotEndStream);
+      disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
   EXPECT_EQ(frame1.stream_id, stream_id);
   EXPECT_EQ(frame1.end_stream, kNotEndStream);
   EXPECT_EQ(frame1.payload.Length(), expected_size);
@@ -407,7 +407,7 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageOneFrame) {
   const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
 
   const uint32_t stream_id = 1;
-  GrpcMessageDisassembler disassembler(stream_id);
+  GrpcMessageDisassembler disassembler;
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
   disassembler.PrepareBatchedMessageForSending(std::move(message1));
   EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
@@ -416,7 +416,7 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageOneFrame) {
 
   const uint32_t max_length = expected_size * 3;
   Http2DataFrame frame1 =
-      disassembler.GenerateNextFrame(max_length, kNotEndStream);
+      disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
   EXPECT_EQ(frame1.stream_id, stream_id);
   EXPECT_EQ(frame1.end_stream, kNotEndStream);
   EXPECT_EQ(frame1.payload.Length(), expected_size * 2);
@@ -429,7 +429,7 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
   const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
 
   const uint32_t stream_id = 1;
-  GrpcMessageDisassembler disassembler(stream_id);
+  GrpcMessageDisassembler disassembler;
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
   disassembler.PrepareBatchedMessageForSending(std::move(message1));
   EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
@@ -443,7 +443,7 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
   while (disassembler.GetBufferedLength() > 0) {
     ++counter;
     Http2DataFrame frame1 =
-        disassembler.GenerateNextFrame(max_length, kNotEndStream);
+        disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
     EXPECT_EQ(frame1.stream_id, stream_id);
     EXPECT_EQ(frame1.end_stream, kNotEndStream);
     EXPECT_LE(frame1.payload.Length(), max_length);
@@ -455,7 +455,7 @@ TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
 
 TEST(GrpcMessageDisassemblerTest, GenerateEmptyEndFrame) {
   const uint32_t stream_id = 1;
-  GrpcMessageDisassembler disassembler(stream_id);
+  GrpcMessageDisassembler disassembler;
   EXPECT_EQ(disassembler.GetBufferedLength(), 0);
 
   Http2DataFrame frame = disassembler.GenerateEmptyEndFrame();
