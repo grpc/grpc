@@ -104,7 +104,7 @@ class SpiffeBundleMap final {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* kLoader =
         JsonObjectLoader<SpiffeBundleMap>()
-            .Field("trust_domains", &SpiffeBundleMap::temp_bundles_)
+            .Field("trust_domains", &SpiffeBundleMap::bundles_)
             .Finish();
     return kLoader;
   }
@@ -137,7 +137,6 @@ class SpiffeBundleMap final {
   // into a map without one, then insert those elements into the map with the
   // custom comparator after parsing. This is a one-time conversion to not have
   // to create strings every look-up.
-  std::map<std::string, SpiffeBundle> temp_bundles_;
   std::map<std::string, SpiffeBundle, StringCmp> bundles_;
 };
 

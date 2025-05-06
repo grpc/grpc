@@ -245,7 +245,7 @@ absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
-    for (auto const& [k, _] : temp_bundles_) {
+    for (auto const& [k, _] : bundles_) {
       ValidationErrors::ScopedField field(
           errors, absl::StrCat(".trust_domains[\"", k, "\"]"));
       absl::Status status = ValidateTrustDomain(k);
@@ -259,7 +259,7 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
   // parse into a map without one, then insert those elements into the map
   // with the custom comparator after parsing. This is a one-time conversion
   // to not have to create strings every look-up.
-  bundles_.insert(temp_bundles_.begin(), temp_bundles_.end());
+  // bundles_.insert(temp_bundles_.begin(), temp_bundles_.end());
 }
 
 absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
