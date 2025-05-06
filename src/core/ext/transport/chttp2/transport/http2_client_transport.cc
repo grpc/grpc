@@ -126,7 +126,8 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
       };
 }
 
-auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
+auto Http2ClientTransport::ProcessHttp2SettingsFrame(
+    GRPC_UNUSED Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : HACK . FIX THIS when settings is done.
