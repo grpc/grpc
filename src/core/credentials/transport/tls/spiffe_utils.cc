@@ -169,10 +169,10 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
 
 void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
                                    ValidationErrors* errors) {
+  auto use =
+      LoadJsonObjectField<std::string>(json.object(), args, "use", errors);
   {
     ValidationErrors::ScopedField field(errors, ".use");
-    auto use =
-        LoadJsonObjectField<std::string>(json.object(), args, "use", errors);
     if (use.has_value() && *use != kAllowedUse) {
       errors->AddError(
           absl::StrFormat("got %s. Only supported value for use field is %s.",
