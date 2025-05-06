@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -128,17 +129,19 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
 auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  return
-      [frame1 = std::move(frame)]() -> absl::Status {
-        // TODO(tjagtap) : [PH2][P1] : Implement this.
-        // Load into this.settings_
-        // Take necessary actions as per settings that have changed.
-        HTTP2_TRANSPORT_DLOG
-            << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
-            << frame1.ack << ", settings length=" << frame1.settings.size()
-            << "}";
-        return absl::OkStatus();
-      };
+  // TODO(tjagtap) : [PH2][P1] : HACK . FIX THIS when settings is done.
+  return EnqueueOutgoingFrame(Http2SettingsFrame{true, {}});
+  // return
+  //     [frame1 = std::move(frame)]() -> absl::Status {
+  //       // TODO(tjagtap) : [PH2][P1] : Implement this.
+  //       // Load into this.settings_
+  //       // Take necessary actions as per settings that have changed.
+  //       HTTP2_TRANSPORT_DLOG
+  //           << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
+  //           << frame1.ack << ", settings length=" << frame1.settings.size()
+  //           << "}";
+  //       return absl::OkStatus();
+  //     };
 }
 
 auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
@@ -371,6 +374,20 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
+
+  // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  std::optional<Http2SettingsFrame> settings_frame =
+      settings_.MaybeSendUpdate();
+  if (settings_frame.has_value()) {
+    general_party_->Spawn(
+        "SendFirstSettingsFrame",
+        [self = RefAsSubclass<Http2ClientTransport>(),
+         frame = std::move(*settings_frame)]() mutable {
+          return self->EnqueueOutgoingFrame(std::move(frame));
+        },
+        [](GRPC_UNUSED absl::Status status) {});
+  }
+
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
