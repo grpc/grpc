@@ -167,40 +167,26 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
   return SpiffeId(trust_domain, absl::StrCat("/", path));
 }
 
-void SpiffeBundle::JsonPostLoad(const Json&, const JsonArgs&,
-                                ValidationErrors* errors) {
-  {
-    ValidationErrors::ScopedField field(errors, ".keys");
-    for (size_t i = 0; i < keys_.size(); i++) {
-      auto root = keys_[i].GetRoot();
-      if (!root.ok()) {
-        errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
-                                         root.status().ToString()));
-      } else {
-        roots_.push_back(*root);
-      }
-    }
-  }
-}
-
-void SpiffeBundleKey::JsonPostLoad(const Json&, const JsonArgs&,
+void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
                                    ValidationErrors* errors) {
   {
     ValidationErrors::ScopedField field(errors, ".use");
-    if (use_ != kAllowedUse) {
+    auto use =
+        LoadJsonObjectField<std::string>(json.object(), args, "use", errors);
+    if (use.has_value() && *use != kAllowedUse) {
       errors->AddError(
           absl::StrFormat("got %s. Only supported value for use field is %s.",
-                          use_, kAllowedUse));
-      return;
+                          *use, kAllowedUse));
     }
   }
+  auto kty =
+      LoadJsonObjectField<std::string>(json.object(), args, "kty", errors);
   {
     ValidationErrors::ScopedField field(errors, ".kty");
-    if (kty_ != kAllowedKty) {
+    if (kty.has_value() && *kty != kAllowedKty) {
       errors->AddError(
-          absl::StrFormat("got %s. Only supported value for kty field is %s",
-                          kty_, kAllowedKty));
-      return;
+          absl::StrFormat("got %s. Only supported value for kty field is %s.",
+                          *kty, kAllowedKty));
     }
   }
   {
@@ -225,6 +211,31 @@ void SpiffeBundleKey::JsonPostLoad(const Json&, const JsonArgs&,
   }
 }
 
+absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
+  if (x5c_.size() != 1) {
+    return absl::InvalidArgumentError(
+        "SPIFFE Bundle key entry has x5c field with length != 1. Key entry x5c "
+        "field MUST have length of exactly 1.");
+  }
+  return x5c_[0];
+}
+
+void SpiffeBundle::JsonPostLoad(const Json&, const JsonArgs&,
+                                ValidationErrors* errors) {
+  for (size_t i = 0; i < keys_.size(); ++i) {
+    ValidationErrors::ScopedField field(errors, absl::StrCat(".keys[", i, "]"));
+    auto root = keys_[i].GetRoot();
+    if (!root.ok()) {
+      errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
+                                       root.status().ToString()));
+    } else {
+      roots_.push_back(*root);
+    }
+  }
+}
+
+absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
+
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
   {
@@ -232,8 +243,8 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
     for (auto const& kv : temp_bundles_) {
       absl::Status status = ValidateTrustDomain(kv.first);
       if (!status.ok()) {
-        // Don't error out early, validate as much as we can to give the user as
-        // much info as possible.
+        // Don't error out early, validate as much as we can to give the user
+        // as much info as possible.
         errors->AddError(
             absl::StrFormat("map key '%s' is not a valid trust domain. %s",
                             kv.first, status.ToString()));
@@ -241,10 +252,10 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
     }
   }
 
-  // JsonObjectLoader cannot parse into a map with a custom comparator, so parse
-  // into a map without one, then insert those elements into the map with the
-  // custom comparator after parsing. This is a one-time conversion to not have
-  // to create strings every look-up.
+  // JsonObjectLoader cannot parse into a map with a custom comparator, so
+  // parse into a map without one, then insert those elements into the map
+  // with the custom comparator after parsing. This is a one-time conversion
+  // to not have to create strings every look-up.
   bundles_.insert(temp_bundles_.begin(), temp_bundles_.end());
 }
 
@@ -264,17 +275,6 @@ absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundleMap::GetRoots(
   }
   return absl::NotFoundError(absl::StrFormat(
       "No spiffe bundle found for trust domain %s", trust_domain));
-}
-
-absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
-
-absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
-  if (x5c_.size() != 1) {
-    return absl::InvalidArgumentError(
-        "SPIFFE Bundle key entry has x5c field with length != 1. Key entry x5c "
-        "field MUST have length of exactly 1.");
-  }
-  return x5c_[0];
 }
 
 }  // namespace grpc_core

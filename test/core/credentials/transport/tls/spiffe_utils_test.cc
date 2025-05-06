@@ -361,8 +361,8 @@ TEST(SpiffeBundle, WrongKtyFails) {
           .status(),
       absl::InvalidArgumentError(
           "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].keys[0].kty "
-          "error:got EC. Only supported value for kty field is RSA]"));
+          "[field:trust_domains[\"example.com\"].keys[0].kty error:got EC. "
+          "Only supported value for kty field is RSA.]"));
 }
 
 TEST(SpiffeBundle, WrongKidFails) {
@@ -373,8 +373,8 @@ TEST(SpiffeBundle, WrongKidFails) {
           .status(),
       absl::InvalidArgumentError(
           "errors validating JSON: "
-          "[field:trust_domains[\"example.com\"].keys[0].kty errors:[field not "
-          "present; got . Only supported value for kty field is RSA]]"));
+          "[field:trust_domains[\"example.com\"].keys[0].kty "
+          "error:field not present]"));
 }
 
 TEST(SpiffeBundle, MultiCertsFails) {
@@ -384,7 +384,8 @@ TEST(SpiffeBundle, MultiCertsFails) {
           "spiffebundle_wrong_multi_certs.json")
           .status(),
       absl::InvalidArgumentError(
-          "errors validating JSON: [field:trust_domains[\"google.com\"].keys "
+          "errors validating JSON: "
+          "[field:trust_domains[\"google.com\"].keys[0] "
           "error:Cannot get root certificate: INVALID_ARGUMENT: SPIFFE Bundle "
           "key entry "
           "has x5c field with length != 1. Key entry x5c field MUST have "

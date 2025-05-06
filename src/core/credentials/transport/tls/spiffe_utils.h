@@ -55,9 +55,7 @@ class SpiffeBundleKey final {
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
     static const auto* kLoader =
         JsonObjectLoader<SpiffeBundleKey>()
-            .Field("kty", &SpiffeBundleKey::kty_)
             .OptionalField("kid", &SpiffeBundleKey::kid_)
-            .Field("use", &SpiffeBundleKey::use_)
             .Field("x5c", &SpiffeBundleKey::x5c_)
             .Field("n", &SpiffeBundleKey::n_)
             .Field("e", &SpiffeBundleKey::e_)
@@ -75,9 +73,7 @@ class SpiffeBundleKey final {
  private:
   // The following are all fields of the the JWK key in the SPIFFE bundle per
   // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
-  std::string kty_;
   std::string kid_;
-  std::string use_;
   std::vector<std::string> x5c_;
   std::string n_;
   std::string e_;
