@@ -126,8 +126,7 @@ class GrpcMessageDisassembler {
  public:
   // One GrpcMessageDisassembler instance MUST be associated with one stream
   // for its lifetime.
-  explicit GrpcMessageDisassembler(const uint32_t stream_id)
-      : stream_id_(stream_id) {}
+  GrpcMessageDisassembler() = default;
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareSingleMessageForSending(MessageHandle message) {
@@ -145,7 +144,8 @@ class GrpcMessageDisassembler {
   size_t GetBufferedLength() const { return message_.Length(); }
 
   // Gets the next Http2DataFrame with a payload of size max_length or lesser.
-  Http2DataFrame GenerateNextFrame(const uint32_t max_length,
+  Http2DataFrame GenerateNextFrame(const uint32_t stream_id,
+                                   const uint32_t max_length,
                                    const bool is_end_stream = false) {
     DCHECK_GT(max_length, 0u);
     DCHECK_GT(GetBufferedLength(), 0u);
@@ -153,15 +153,15 @@ class GrpcMessageDisassembler {
     const uint32_t current_length =
         message_.Length() >= max_length ? max_length : message_.Length();
     message_.MoveFirstNBytesIntoSliceBuffer(current_length, temp);
-    return Http2DataFrame{stream_id_, is_end_stream, std::move(temp)};
+    return Http2DataFrame{stream_id, is_end_stream, std::move(temp)};
   }
 
-  Http2DataFrame GenerateEmptyEndFrame() {
+  Http2DataFrame GenerateEmptyEndFrame(const uint32_t stream_id) {
     // RFC9113 : Frames with zero length with the END_STREAM flag set (that is,
     // an empty DATA frame) MAY be sent if there is no available space in either
     // flow-control window.
     SliceBuffer temp;
-    return Http2DataFrame{stream_id_, /*end_stream=*/true, std::move(temp)};
+    return Http2DataFrame{stream_id, /*end_stream=*/true, std::move(temp)};
   }
 
  private:
@@ -171,7 +171,6 @@ class GrpcMessageDisassembler {
     message_.Append(*(message->payload()));
   }
 
-  const uint32_t stream_id_;
   SliceBuffer message_;
 };
 
