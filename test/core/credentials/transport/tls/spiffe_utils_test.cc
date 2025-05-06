@@ -378,13 +378,9 @@ TEST(SpiffeBundle, MultiCertsFails) {
           "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
           "spiffebundle_wrong_multi_certs.json")
           .status(),
-      absl::InvalidArgumentError(
-          "errors validating JSON: "
-          "[field:trust_domains[\"google.com\"].keys[0] error:Cannot get root "
-          "certificate: INVALID_ARGUMENT: SPIFFE Bundle key entry has x5c "
-          "field with length != 1. Key entry x5c field MUST have length of "
-          "exactly 1.; field:trust_domains[\"google.com\"].keys[0].x5c "
-          "error:array length must be 1, got 2]"));
+      absl::InvalidArgumentError("errors validating JSON: "
+                                 "[field:trust_domains[\"google.com\"].keys[0]."
+                                 "x5c error:array length must be 1, got 2]"));
 }
 
 TEST(SpiffeBundle, WrongRootFails) {
@@ -410,10 +406,9 @@ TEST(SpiffeBundle, WrongUseFails) {
 }
 
 TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
-  constexpr absl::string_view path =
+  std::string json_str = testing::GetFileContents(
       "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
-      "spiffebundle.json";
-  std::string json_str = testing::GetFileContents(path.data());
+      "spiffebundle.json");
   auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
@@ -452,10 +447,9 @@ TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
 }
 
 TEST(SpiffeBundle, MultipleRootsSuccess) {
-  std::string path =
+  std::string json_str = testing::GetFileContents(
       "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
-      "spiffebundle2.json";
-  std::string json_str = testing::GetFileContents(path);
+      "spiffebundle2.json");
   auto json = JsonParse(json_str);
   ASSERT_TRUE(json.ok());
   auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);

@@ -226,21 +226,27 @@ absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
   return x5c_[0];
 }
 
-void SpiffeBundle::JsonPostLoad(const Json&, const JsonArgs&,
+void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
                                 ValidationErrors* errors) {
-  for (size_t i = 0; i < keys_.size(); ++i) {
+  auto keys = LoadJsonObjectField<std::vector<SpiffeBundleKey>>(
+      json.object(), args, "keys", errors);
+  if (!keys.has_value()) {
+    std::cout << "GREG NO KEY VALUE\n" << std::endl;
+    return;
+  }
+  for (size_t i = 0; i < keys->size(); ++i) {
     ValidationErrors::ScopedField field(errors, absl::StrCat(".keys[", i, "]"));
-    auto root = keys_[i].GetRoot();
+    auto root = (*keys)[i].GetRoot();
     if (!root.ok()) {
       errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
                                        root.status().ToString()));
     } else {
-      roots_.push_back(*root);
+      roots_.push_back(std::string(*root));
     }
   }
 }
 
-absl::Span<const absl::string_view> SpiffeBundle::GetRoots() { return roots_; }
+absl::Span<const std::string> SpiffeBundle::GetRoots() { return roots_; }
 
 void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
                                    ValidationErrors* errors) {
@@ -271,7 +277,7 @@ absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
   return LoadFromJson<SpiffeBundleMap>(*json);
 }
 
-absl::StatusOr<absl::Span<const absl::string_view>> SpiffeBundleMap::GetRoots(
+absl::StatusOr<absl::Span<const std::string>> SpiffeBundleMap::GetRoots(
     const absl::string_view trust_domain) {
   if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
     return it->second.GetRoots();
