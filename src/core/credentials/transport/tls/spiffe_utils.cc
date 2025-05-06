@@ -167,6 +167,16 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
   return SpiffeId(trust_domain, absl::StrCat("/", path));
 }
 
+const JsonLoaderInterface* SpiffeBundleKey::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader = JsonObjectLoader<SpiffeBundleKey>()
+                                   .OptionalField("kid", &SpiffeBundleKey::kid_)
+                                   .Field("x5c", &SpiffeBundleKey::x5c_)
+                                   .Field("n", &SpiffeBundleKey::n_)
+                                   .Field("e", &SpiffeBundleKey::e_)
+                                   .Finish();
+  return kLoader;
+}
+
 void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
                                    ValidationErrors* errors) {
   auto use =
@@ -245,7 +255,6 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
       }
     }
   }
-
   // JsonObjectLoader cannot parse into a map with a custom comparator, so
   // parse into a map without one, then insert those elements into the map
   // with the custom comparator after parsing. This is a one-time conversion

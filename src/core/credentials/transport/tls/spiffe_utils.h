@@ -52,17 +52,7 @@ class SpiffeId final {
 // https://github.com/grpc/proposal/blob/master/A87-mtls-spiffe-support.md
 class SpiffeBundleKey final {
  public:
-  static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader =
-        JsonObjectLoader<SpiffeBundleKey>()
-            .OptionalField("kid", &SpiffeBundleKey::kid_)
-            .Field("x5c", &SpiffeBundleKey::x5c_)
-            .Field("n", &SpiffeBundleKey::n_)
-            .Field("e", &SpiffeBundleKey::e_)
-            .Finish();
-    return kLoader;
-  }
-
+  static const JsonLoaderInterface* JsonLoader(const JsonArgs&);
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
