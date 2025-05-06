@@ -388,6 +388,22 @@ class AutoLoader<std::map<std::string, T>> final : public LoadMap {
   ~AutoLoader() = default;
 };
 
+// Specializations of AutoLoader for maps with a custom comparator.
+template <typename T, typename C>
+class AutoLoader<std::map<std::string, T, C>> final : public LoadMap {
+ private:
+  void* Insert(const std::string& name, void* dst) const final {
+    return &static_cast<std::map<std::string, T, C>*>(dst)
+                ->emplace(name, T())
+                .first->second;
+  };
+  const LoaderInterface* ElementLoader() const final {
+    return LoaderForType<T>();
+  }
+
+  ~AutoLoader() = default;
+};
+
 // Specializations of AutoLoader for std::optional<>.
 template <typename T>
 class AutoLoader<std::optional<T>> final : public LoadWrapped {
