@@ -190,12 +190,10 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   {
     ValidationErrors::ScopedField field(errors, ".x5c");
     if (x5c_.size() != kX5cSize) {
-      errors->AddError(absl::StrFormat(
-          "got vector length %i. Expected length of exactly %i.", x5c_.size(),
-          kX5cSize));
+      errors->AddError(
+          absl::StrCat("array length must be 1, got ", x5c_.size()));
       return;
     }
-
     std::string pem_cert =
         absl::StrCat(kCertificatePrefix, x5c_[0].data(), kCertificateSuffix);
     auto certs = ParsePemCertificateChain(pem_cert);
