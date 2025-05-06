@@ -126,7 +126,8 @@ class GrpcMessageDisassembler {
  public:
   // One GrpcMessageDisassembler instance MUST be associated with one stream
   // for its lifetime.
-  GrpcMessageDisassembler(const uint32_t stream_id) : stream_id_(stream_id) {}
+  explicit GrpcMessageDisassembler(const uint32_t stream_id)
+      : stream_id_(stream_id) {}
 
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareSingleMessageForSending(MessageHandle message) {
