@@ -113,7 +113,8 @@ class Http2ClientTransport final : public ClientTransport {
         outgoing_frames_.MakeSender().Send(std::move(frame)),
         [](StatusFlag status) {
           HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
+              << status;
           return (status.ok()) ? absl::OkStatus()
                                : absl::InternalError("Failed to enqueue frame");
         }));
