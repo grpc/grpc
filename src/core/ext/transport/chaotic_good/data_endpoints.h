@@ -17,6 +17,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 
@@ -116,6 +117,8 @@ class OutputBuffers final : public RefCounted<OutputBuffers>,
       return PollWrite(payload_tag, send_time, output_buffer, call_tracer);
     };
   }
+
+  void WriteSecurityFrame(uint32_t connection_id, SliceBuffer output_buffer);
 
   auto Next(uint32_t connection_id) {
     return [this, connection_id]() { return PollNext(connection_id); };
@@ -260,6 +263,8 @@ class Endpoint final {
                        RefCountedPtr<InputQueue> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint,
                        std::shared_ptr<TcpZTraceCollector> ztrace_collector);
+  static void ReceiveSecurityFrame(PromiseEndpoint& endpoint,
+                                   SliceBuffer buffer);
 
   const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   const uint32_t id_;
