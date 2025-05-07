@@ -316,7 +316,7 @@ inline constexpr absl::string_view kGoAwayLength8 =
     "GOAWAY frame should have a Last-Stream-ID and Error Code making the "
     "minimum length 8 octets";
 
-Http2Status StripPadding(SliceBuffer& payload) {
+Http2Status StripPadding(const uint32_t length, SliceBuffer& payload) {
   if (payload.Length() < 1) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
@@ -324,11 +324,17 @@ Http2Status StripPadding(SliceBuffer& payload) {
   }
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
+
   if (payload.Length() <= padding_bytes) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kFrameParserIncorrectPadding));
+  } else if (length < padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         std::string(kPaddingLengthLargerThanFrameLength));
   }
+
   // We currently dont check for padding being zero.
   // TODO(tjagtap) : [PH2][P4]
   // RFC9113 : A receiver is not obligated to verify padding but MAY treat
@@ -349,7 +355,7 @@ ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
   }
 
   if (hdr.flags & kFlagPadded) {
-    Http2Status s = StripPadding(payload);
+    Http2Status s = StripPadding(hdr.length, payload);
     if (!s.IsOk()) return s;
   }
 
@@ -370,7 +376,7 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
   }
 
   if (hdr.flags & kFlagPadded) {
-    Http2Status s = StripPadding(payload);
+    Http2Status s = StripPadding(hdr.length, payload);
     if (!s.IsOk()) return s;
   }
 
