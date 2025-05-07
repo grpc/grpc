@@ -52,11 +52,39 @@ struct OrderedTopToBottom {
 
 struct OrderedBottomToTop {
   void RegisterNodes(ChannelInit::Builder& b, size_t nodes) {
-    for (size_t i = 1; i < nodes - 1; ++i) {
+    for (size_t i = 0; i < nodes - 1; ++i) {
       b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(i))
-          .Before({FilterIdx(i + 1)->name});
+          .After({FilterIdx(i + 1)->name});
     }
     b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(nodes - 1));
+  }
+};
+
+struct Unordered {
+  void RegisterNodes(ChannelInit::Builder& b, size_t nodes) {
+    for (size_t i = 0; i < nodes; ++i) {
+      b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(i));
+    }
+  }
+};
+
+struct AllBeforeFirst {
+  void RegisterNodes(ChannelInit::Builder& b, size_t nodes) {
+    b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(0));
+    for (size_t i = 1; i < nodes; ++i) {
+      b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(i))
+          .Before({FilterIdx(0)->name});
+    }
+  }
+};
+
+struct AllAfterFirst {
+  void RegisterNodes(ChannelInit::Builder& b, size_t nodes) {
+    b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(0));
+    for (size_t i = 1; i < nodes; ++i) {
+      b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterIdx(i))
+          .After({FilterIdx(0)->name});
+    }
   }
 };
 
@@ -74,6 +102,13 @@ BENCHMARK(BM_ChannelInitBuilder<OrderedTopToBottom>)
     ->RangeMultiplier(4)
     ->Range(1, 256);
 BENCHMARK(BM_ChannelInitBuilder<OrderedBottomToTop>)
+    ->RangeMultiplier(4)
+    ->Range(1, 256);
+BENCHMARK(BM_ChannelInitBuilder<Unordered>)->RangeMultiplier(4)->Range(1, 256);
+BENCHMARK(BM_ChannelInitBuilder<AllBeforeFirst>)
+    ->RangeMultiplier(4)
+    ->Range(1, 256);
+BENCHMARK(BM_ChannelInitBuilder<AllAfterFirst>)
     ->RangeMultiplier(4)
     ->Range(1, 256);
 
