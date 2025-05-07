@@ -272,10 +272,11 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         return AssertResultType<absl::Status>(Map(
             ProcessOneFrame(std::move(frame)),
             [self = RefAsSubclass<Http2ClientTransport>()](Http2Status status) {
-              if (status.IsOk()) {
-                return absl::OkStatus();
+              if (!status.IsOk()) {
+                return self->HandleError(std::move(status));
               }
-              return self->HandleError(std::move(status));
+
+              return absl::OkStatus();
             }));
       }));
 }
