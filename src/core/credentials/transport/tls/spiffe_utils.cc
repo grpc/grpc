@@ -194,27 +194,24 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
   auto x5c = LoadJsonObjectField<std::vector<std::string>>(json.object(), args,
                                                            "x5c", errors);
-  {
+  if (x5c.has_value()) {
     ValidationErrors::ScopedField field(errors, ".x5c");
-    if (!x5c.has_value()) {
-      errors->AddError("x5c field must be present");
-      return;
-    }
-    if (x5c->size() != kX5cSize) {
+    if (x5c->size() != 1) {
       errors->AddError(
           absl::StrCat("array length must be 1, got ", x5c->size()));
-      return;
-    }
-    root_ = (*x5c)[0];
-    std::string pem_cert =
-        absl::StrCat(kCertificatePrefix, root_, kCertificateSuffix);
-    auto certs = ParsePemCertificateChain(pem_cert);
-    if (!certs.ok()) {
-      errors->AddError(certs.status().ToString());
-      return;
-    }
-    for (X509* cert : *certs) {
-      X509_free(cert);
+    } else {
+      ValidationErrors::ScopedField field(errors, "[0]");
+      std::string pem_cert =
+          absl::StrCat(kCertificatePrefix, (*x5c)[0], kCertificateSuffix);
+      auto certs = ParsePemCertificateChain(pem_cert);
+      if (!certs.ok()) {
+        errors->AddError(certs.status().ToString());
+      } else {
+        root_ = std::move((*x5c)[0]);
+        for (X509* cert : *certs) {
+          X509_free(cert);
+        }
+      }
     }
   }
 }

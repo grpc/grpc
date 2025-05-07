@@ -311,7 +311,7 @@ TEST(SpiffeBundle, CorruptedCertFails) {
       absl::InvalidArgumentError(
           "errors validating JSON: "
           "[field:trust_domains[\"example.com\"].keys[0]"
-          ".x5c error:FAILED_PRECONDITION: Invalid PEM.]"));
+          ".x5c[0] error:FAILED_PRECONDITION: Invalid PEM.]"));
 }
 
 TEST(SpiffeBundle, EmptyStringKeyFails) {
