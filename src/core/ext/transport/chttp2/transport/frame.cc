@@ -28,6 +28,10 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
 
+using grpc_core::http2::Http2ErrorCode;
+using grpc_core::http2::Http2Status;
+using grpc_core::http2::ValueOrHttp2Status;
+
 namespace grpc_core {
 
 namespace {
@@ -314,14 +318,16 @@ inline constexpr absl::string_view kGoAwayLength8 =
 
 Http2Status StripPadding(SliceBuffer& payload) {
   if (payload.Length() < 1) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kFrameParserIncorrectPadding);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kFrameParserIncorrectPadding));
   }
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
   if (payload.Length() <= padding_bytes) {
     return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kProtocolError, kPaddingLengthLargerThanFrameLength);
+        Http2ErrorCode::kProtocolError,
+        std::string(kPaddingLengthLargerThanFrameLength));
   }
   // We currently dont check for padding being zero.
   // TODO(tjagtap) : [PH2][P4]
@@ -331,108 +337,115 @@ Http2Status StripPadding(SliceBuffer& payload) {
   return Http2Status::Ok();
 }
 
-Http2StatusOr ParseDataFrame(const Http2FrameHeader& hdr,
-                             SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
+                                              SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kDataStreamIdMustBeNonZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kDataStreamIdMustBeNonZero));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kStreamIdMustBeOdd);
+                                             std::string(kStreamIdMustBeOdd));
   }
 
   if (hdr.flags & kFlagPadded) {
-    auto s = StripPadding(payload);
-    if (!s.ok()) return s;
+    Http2Status s = StripPadding(payload);
+    if (!s.IsOk()) return s;
   }
 
-  return Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
-                        std::move(payload)};
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2DataFrame{hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndStream),
+                     std::move(payload)});
 }
 
-Http2StatusOr ParseHeaderFrame(const Http2FrameHeader& hdr,
-                               SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
+                                                SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kHeaderStreamIdMustBeNonZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kHeaderStreamIdMustBeNonZero));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kStreamIdMustBeOdd);
+                                             std::string(kStreamIdMustBeOdd));
   }
 
   if (hdr.flags & kFlagPadded) {
-    auto s = StripPadding(payload);
-    if (!s.ok()) return s;
+    Http2Status s = StripPadding(payload);
+    if (!s.IsOk()) return s;
   }
 
   if (hdr.flags & kFlagPriority) {
     if (payload.Length() < 5) {
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                               kIncorrectFrame);
+                                               std::string(kIncorrectFrame));
     }
     uint8_t trash[5];
     payload.MoveFirstNBytesIntoBuffer(5, trash);
   }
 
-  return Http2HeaderFrame{
+  return ValueOrHttp2Status<Http2Frame>(Http2HeaderFrame{
       hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndHeaders),
-      ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)};
+      ExtractFlag(hdr.flags, kFlagEndStream), std::move(payload)});
 }
 
-Http2StatusOr ParseContinuationFrame(const Http2FrameHeader& hdr,
-                                     SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseContinuationFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (hdr.stream_id == 0) {
     return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kProtocolError, kContinuationStreamIdMustBeNonZero);
+        Http2ErrorCode::kProtocolError,
+        std::string(kContinuationStreamIdMustBeNonZero));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kStreamIdMustBeOdd);
+                                             std::string(kStreamIdMustBeOdd));
   }
 
-  return Http2ContinuationFrame{hdr.stream_id,
-                                ExtractFlag(hdr.flags, kFlagEndHeaders),
-                                std::move(payload)};
+  return ValueOrHttp2Status<Http2Frame>(Http2ContinuationFrame{
+      hdr.stream_id, ExtractFlag(hdr.flags, kFlagEndHeaders),
+      std::move(payload)});
 }
 
-Http2StatusOr ParseRstStreamFrame(const Http2FrameHeader& hdr,
-                                  SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseRstStreamFrame(const Http2FrameHeader& hdr,
+                                                   SliceBuffer& payload) {
   if (payload.Length() != 4) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                             kRstStreamLength4);
+                                             std::string(kRstStreamLength4));
   }
 
   if (hdr.stream_id == 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kRstStreamStreamIdMustBeNonZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kRstStreamStreamIdMustBeNonZero));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kStreamIdMustBeOdd);
+                                             std::string(kStreamIdMustBeOdd));
   }
 
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
 
-  return Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)};
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2RstStreamFrame{hdr.stream_id, Read4b(buffer)});
 }
 
-Http2StatusOr ParseSettingsFrame(const Http2FrameHeader& hdr,
-                                 SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
+                                                  SliceBuffer& payload) {
   if (hdr.stream_id != 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kSettingsStreamIdMustBeZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kSettingsStreamIdMustBeZero));
   }
 
   if (hdr.flags == kFlagAck) {
     if (payload.Length() != 0) {
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                               kSettingsLength0);
+                                               std::string(kSettingsLength0));
     }
     return Http2SettingsFrame{true, {}};
   }
 
   if (payload.Length() % 6 != 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                             kSettingsLength6x);
+                                             std::string(kSettingsLength6x));
   }
 
   Http2SettingsFrame frame{false, {}};
@@ -444,19 +457,19 @@ Http2StatusOr ParseSettingsFrame(const Http2FrameHeader& hdr,
         Read4b(buffer + 2),
     });
   }
-  return std::move(frame);
+  return ValueOrHttp2Status<Http2Frame>(std::move(frame));
 }
 
-Http2StatusOr ParsePingFrame(const Http2FrameHeader& hdr,
-                             SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParsePingFrame(const Http2FrameHeader& hdr,
+                                              SliceBuffer& payload) {
   if (payload.Length() != 8) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                             kPingLength8);
+                                             std::string(kPingLength8));
   }
 
   if (hdr.stream_id != 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kPingStreamIdMustBeZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, std::string(kPingStreamIdMustBeZero));
   }
 
   // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
@@ -466,49 +479,50 @@ Http2StatusOr ParsePingFrame(const Http2FrameHeader& hdr,
   uint8_t buffer[8];
   payload.CopyToBuffer(buffer);
 
-  return Http2PingFrame{ack, Read8b(buffer)};
+  return ValueOrHttp2Status<Http2Frame>(Http2PingFrame{ack, Read8b(buffer)});
 }
 
-Http2StatusOr ParseGoawayFrame(const Http2FrameHeader& hdr,
-                               SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseGoawayFrame(const Http2FrameHeader& hdr,
+                                                SliceBuffer& payload) {
   if (payload.Length() < 8) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                             kGoAwayLength8);
+                                             std::string(kGoAwayLength8));
   }
 
   if (hdr.stream_id != 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kGoAwayStreamIdMustBeZero);
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, std::string(kGoAwayStreamIdMustBeZero));
   }
 
   uint8_t buffer[8];
   payload.MoveFirstNBytesIntoBuffer(8, buffer);
-  return Http2GoawayFrame{Read4b(buffer), Read4b(buffer + 4),
-                          payload.JoinIntoSlice()};
+  return ValueOrHttp2Status<Http2Frame>(Http2GoawayFrame{
+      Read4b(buffer), Read4b(buffer + 4), payload.JoinIntoSlice()});
 }
 
-Http2StatusOr ParseWindowUpdateFrame(const Http2FrameHeader& hdr,
-                                     SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
+    const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (payload.Length() != 4) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
-                                             kWindowUpdateLength4);
+                                             std::string(kWindowUpdateLength4));
   }
   if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kStreamIdMustBeOdd);
+                                             std::string(kStreamIdMustBeOdd));
   }
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
-  return Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)};
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)});
 }
 
-Http2StatusOr ParseSecurityFrame(const Http2FrameHeader& /*hdr*/,
-                                 SliceBuffer& payload) {
+ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
+    const Http2FrameHeader& /*hdr*/, SliceBuffer& payload) {
   if (payload.Length() == 0) {
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
                                              "Incorrect Security Frame");
   }
-  return Http2SecurityFrame{std::move(payload)};
+  return ValueOrHttp2Status<Http2Frame>(Http2SecurityFrame{std::move(payload)});
 }
 
 }  // namespace
@@ -573,8 +587,8 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   }
 }
 
-Http2StatusOr ParseFramePayload(const Http2FrameHeader& hdr,
-                                SliceBuffer payload) {
+ValueOrHttp2Status<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
+                                                 SliceBuffer payload) {
   CHECK(payload.Length() == hdr.length);
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
@@ -593,13 +607,13 @@ Http2StatusOr ParseFramePayload(const Http2FrameHeader& hdr,
       return ParseGoawayFrame(hdr, payload);
     case FrameType::kWindowUpdate:
       return ParseWindowUpdateFrame(hdr, payload);
-    case kFrameTypePushPromise:
+    case FrameType::kPushPromise:
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
                                                kNoPushPromise);
-    case kFrameTypeSecurity:
+    case FrameType::kCustomSecurity:
       return ParseSecurityFrame(hdr, payload);
     default:
-      return Http2UnknownFrame{};
+      return ValueOrHttp2Status<Http2Frame>(Http2UnknownFrame{});
   }
 }
 
