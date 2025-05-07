@@ -296,6 +296,9 @@ inline constexpr absl::string_view kPingLength8 =
 inline constexpr absl::string_view kWindowUpdateLength4 =
     "RFC9113 : A WINDOW_UPDATE frame with a length other than 4 octets MUST be "
     "treated as a connection error";
+inline constexpr absl::string_view kPaddingLengthLargerThanFrameLength =
+    "RFC9113 : If the length of the padding is the length of the frame payload "
+    "or greater, the recipient MUST treat this as a connection error";
 
 // Misc Errors
 inline constexpr absl::string_view kNoPushPromise =
@@ -316,10 +319,14 @@ Http2Status StripPadding(SliceBuffer& payload) {
   }
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
-  if (payload.Length() < padding_bytes) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             kFrameParserIncorrectPadding);
+  if (payload.Length() <= padding_bytes) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError, kPaddingLengthLargerThanFrameLength);
   }
+  // We currently dont check for padding being zero.
+  // TODO(tjagtap) : [PH2][P4]
+  // RFC9113 : A receiver is not obligated to verify padding but MAY treat
+  // non-zero padding as a connection error of type PROTOCOL_ERROR.
   payload.RemoveLastNBytes(padding_bytes);
   return Http2Status::Ok();
 }
