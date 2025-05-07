@@ -1270,6 +1270,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:connectivity_state",
+        "//src/core:dual_ref_counted",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
@@ -4246,6 +4247,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
@@ -4687,7 +4689,10 @@ grpc_cc_library(
         "absl/time",
     ],
     visibility = ["//bazel:tcp_tracer"],
-    deps = ["gpr"],
+    deps = [
+        "event_engine_base_hdrs",
+        "gpr",
+    ],
 )
 
 grpc_cc_library(

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
 
 exports_files(
     glob(
@@ -43,15 +43,4 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "gen_switch",
     srcs = ["gen_switch.cc"],
-)
-
-# TODO(ladynana): Replace this dummy target with the actual experiments compiler target.
-grpc_cc_library(
-    name = "experiments_compiler",
-)
-
-# TODO(ladynana): Replace this dummy test with the actual experiments compiler test.
-grpc_cc_test(
-    name = "experiments_compiler_test",
-    srcs = ["experiments_compiler_test.cc"],
 )
