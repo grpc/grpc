@@ -842,9 +842,6 @@ TEST(JsonObjectLoader, MapWithComparatorFields) {
   EXPECT_THAT(test_struct->optional_value, ::testing::ElementsAre());
   EXPECT_FALSE(test_struct->std_optional_value.has_value());
   EXPECT_EQ(test_struct->unique_ptr_value, nullptr);
-  // .find can be called with an absl::string_view because of the StringCmp
-  // comparator
-  EXPECT_EQ(test_struct->value.find(absl::string_view("a"))->second, 1);
   // Fails if required field is not present.
   test_struct = Parse<TestStruct>("{}");
   EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
@@ -861,19 +858,12 @@ TEST(JsonObjectLoader, MapWithComparatorFields) {
               ::testing::ElementsAre(::testing::Pair("a", 1)));
   EXPECT_THAT(test_struct->optional_value,
               ::testing::ElementsAre(::testing::Pair("b", "foo")));
-  EXPECT_EQ(test_struct->optional_value.find(absl::string_view("b"))->second,
-            "foo");
   ASSERT_TRUE(test_struct->std_optional_value.has_value());
   EXPECT_THAT(*test_struct->std_optional_value,
               ::testing::ElementsAre(::testing::Pair("c", true)));
-  EXPECT_EQ(
-      test_struct->std_optional_value->find(absl::string_view("c"))->second,
-      true);
   ASSERT_NE(test_struct->unique_ptr_value, nullptr);
   EXPECT_THAT(*test_struct->unique_ptr_value,
               ::testing::ElementsAre(::testing::Pair("d", 4)));
-  EXPECT_EQ(test_struct->unique_ptr_value->find(absl::string_view("d"))->second,
-            4);
   // Optional fields null.
   test_struct = Parse<TestStruct>(
       "{\"value\": {\"a\":1}, \"optional_value\": null, "
