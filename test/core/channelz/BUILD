@@ -72,6 +72,7 @@ grpc_cc_test(
     ],
     uses_event_engine = False,
     uses_polling = False,
+    shard_count = 6,
     deps = [
         "//:gpr",
         "//:grpc",

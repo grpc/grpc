@@ -157,6 +157,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
       uuid != -1 ? node_shard.orphaned_numbered : node_shard.orphaned;
   node->WeakRef().release();
   node->orphaned_index_ = node_shard.next_orphan_index;
+  CHECK_GT(node->orphaned_index_, 0);
   ++node_shard.next_orphan_index;
   add_list.AddToHead(node);
   if (node_shard.TotalOrphaned() <= max_orphaned_per_shard_) {

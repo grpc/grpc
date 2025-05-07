@@ -193,7 +193,7 @@ class ChannelzRegistry final {
     NodeList numbered ABSL_GUARDED_BY(mu);
     NodeList orphaned ABSL_GUARDED_BY(mu);
     NodeList orphaned_numbered ABSL_GUARDED_BY(mu);
-    uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 0;
+    uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 1;
     size_t TotalOrphaned() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
       return orphaned.count + orphaned_numbered.count;
     }
