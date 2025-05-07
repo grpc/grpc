@@ -622,7 +622,7 @@ absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
   auto result = ParseFramePayload1(hdr, std::move(payload));
   if (result.IsOk()) {
     return http2::TakeValue<Http2Frame>(std::move(result));
-  };
+  }
   Http2Status::Http2ErrorType type = result.GetErrorType();
   if (type == Http2Status::Http2ErrorType::kConnectionError) {
     return result.GetAbslConnectionError();
