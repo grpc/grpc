@@ -126,23 +126,20 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
       };
 }
 
-auto Http2ClientTransport::ProcessHttp2SettingsFrame(
-    GRPC_UNUSED Http2SettingsFrame frame) {
+auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : HACK . FIX THIS when settings is done.
-  return EnqueueOutgoingFrame(Http2SettingsFrame{true, {}});
-  // return
-  //     [frame1 = std::move(frame)]() -> absl::Status {
-  //       // TODO(tjagtap) : [PH2][P1] : Implement this.
-  //       // Load into this.settings_
-  //       // Take necessary actions as per settings that have changed.
-  //       HTTP2_TRANSPORT_DLOG
-  //           << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
-  //           << frame1.ack << ", settings length=" << frame1.settings.size()
-  //           << "}";
-  //       return absl::OkStatus();
-  //     };
+  return
+      [frame1 = std::move(frame)]() -> absl::Status {
+        // TODO(tjagtap) : [PH2][P1] : Implement this.
+        // Load into this.settings_
+        // Take necessary actions as per settings that have changed.
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessHttp2SettingsFrame Promise { ack="
+            << frame1.ack << ", settings length=" << frame1.settings.size()
+            << "}";
+        return absl::OkStatus();
+      };
 }
 
 auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
