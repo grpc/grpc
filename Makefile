@@ -1857,6 +1857,7 @@ endif
 # deps: []
 # transitive_deps: []
 LIBBORINGSSL_SRC = \
+    third_party/boringssl-with-bazel/src/crypto/aes/aes.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.cc \
@@ -1899,6 +1900,9 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
     third_party/boringssl-with-bazel/src/crypto/bn/bn_asn1.cc \
     third_party/boringssl-with-bazel/src/crypto/bn/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/div.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/exponentiation.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/sqrt.cc \
     third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
@@ -1908,6 +1912,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/derive_key.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aeseax.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_aesgcmsiv.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_chacha20poly1305.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_des.cc \
@@ -1917,6 +1922,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_tls.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/get_cipher.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/cms/cms.cc \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
@@ -1966,6 +1972,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ex_data.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
+    third_party/boringssl-with-bazel/src/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \

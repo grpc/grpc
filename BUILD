@@ -1270,6 +1270,7 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:connectivity_state",
+        "//src/core:dual_ref_counted",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",

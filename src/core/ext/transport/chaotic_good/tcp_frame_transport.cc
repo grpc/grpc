@@ -30,9 +30,18 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace {
+TransportFramingEndpointExtension* GetTransportFramingEndpointExtension(
+    grpc_event_engine::experimental::EventEngine::Endpoint& endpoint) {
+  return grpc_event_engine::experimental::QueryExtension<
+      TransportFramingEndpointExtension>(&endpoint);
+}
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // TcpFrameTransport
@@ -47,7 +56,15 @@ TcpFrameTransport::TcpFrameTransport(
       data_endpoints_(std::move(pending_data_endpoints), ctx,
                       options.encode_alignment, options.decode_alignment,
                       ztrace_collector_, options.enable_tracing),
-      options_(options) {}
+      options_(options) {
+  auto* transport_framing_endpoint_extension =
+      GetTransportFramingEndpointExtension(
+          *control_endpoint_.GetEventEngineEndpoint());
+  if (transport_framing_endpoint_extension != nullptr) {
+    transport_framing_endpoint_extension->SetSendFrameCallback(
+        control_endpoint_.SecureFrameWriterCallback());
+  }
+}
 
 auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
                                    std::shared_ptr<TcpCallTracer> call_tracer) {
@@ -113,51 +130,70 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
 }
 
 auto TcpFrameTransport::ReadFrameBytes() {
-  return TrySeq(
-      control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
-      [this](Slice read_buffer) {
-        auto frame_header =
-            TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: ReadHeader from:"
-            << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                   .value_or("<<unknown peer address>>")
-            << " "
-            << (frame_header.ok() ? frame_header->ToString()
-                                  : frame_header.status().ToString());
-        return frame_header;
-      },
-      [this](TcpFrameHeader frame_header) {
-        ztrace_collector_->Append(ReadFrameHeaderTrace{frame_header});
-        return If(
-            // If the payload is on the connection frame
-            frame_header.payload_tag == 0,
-            // ... then read the data immediately and return an IncomingFrame
-            //     that contains the payload.
-            // We need to do this here so that we do not create head of line
-            // blocking issues reading later control frames (but waiting for a
-            // call to get scheduled time to read the payload).
-            [this, frame_header]() {
-              return Map(
-                  control_endpoint_.Read(frame_header.header.payload_length),
-                  [frame_header](absl::StatusOr<SliceBuffer> payload)
-                      -> absl::StatusOr<IncomingFrame> {
-                    if (!payload.ok()) return payload.status();
-                    return IncomingFrame(frame_header.header,
-                                         std::move(payload));
-                  });
-            },
-            // ... otherwise issue a read to the appropriate data endpoint,
-            //     which will return a read ticket - which can be used later
-            //     in the call promise to asynchronously wait for those bytes
-            //     to be available.
-            [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
-              return IncomingFrame(
-                  frame_header.header,
-                  data_endpoints_.Read(frame_header.payload_tag).Await());
-            });
-      });
+  return Loop([this]() {
+    return TrySeq(
+        control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
+        [this](Slice read_buffer) {
+          auto frame_header =
+              TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
+                  GRPC_SLICE_START_PTR(read_buffer.c_slice())));
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: ReadHeader from:"
+              << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+                     .value_or("<<unknown peer address>>")
+              << " "
+              << (frame_header.ok() ? frame_header->ToString()
+                                    : frame_header.status().ToString());
+          return frame_header;
+        },
+        [this](TcpFrameHeader frame_header) {
+          ztrace_collector_->Append(ReadFrameHeaderTrace{frame_header});
+          return If(
+              // If the payload is on the connection frame
+              frame_header.payload_tag == 0,
+              // ... then read the data immediately and return an IncomingFrame
+              //     that contains the payload.
+              // We need to do this here so that we do not create head of line
+              // blocking issues reading later control frames (but waiting for a
+              // call to get scheduled time to read the payload).
+              [this, frame_header]() {
+                return Map(
+                    control_endpoint_.Read(frame_header.header.payload_length),
+                    [frame_header, this](absl::StatusOr<SliceBuffer> payload)
+                        -> absl::StatusOr<LoopCtl<IncomingFrame>> {
+                      if (!payload.ok()) return payload.status();
+                      if (frame_header.header.type ==
+                          FrameType::kTcpSecurityFrame) {
+                        auto* transport_framing_endpoint_extension =
+                            GetTransportFramingEndpointExtension(
+                                *control_endpoint_.GetEventEngineEndpoint());
+                        if (transport_framing_endpoint_extension != nullptr) {
+                          transport_framing_endpoint_extension->ReceiveFrame(
+                              std::move(*payload));
+                        }
+                        // Loop around and read the next frame, since we're not
+                        // reporting the security frame to the upper layer.
+                        return Continue{};
+                      }
+                      return IncomingFrame(frame_header.header,
+                                           std::move(payload));
+                    });
+              },
+              // ... otherwise issue a read to the appropriate data endpoint,
+              //     which will return a read ticket - which can be used later
+              //     in the call promise to asynchronously wait for those bytes
+              //     to be available.
+              [this, frame_header]() -> absl::StatusOr<LoopCtl<IncomingFrame>> {
+                if (frame_header.header.type == FrameType::kTcpSecurityFrame) {
+                  return absl::UnavailableError(
+                      "Security frame sent with a payload tag");
+                }
+                return IncomingFrame(
+                    frame_header.header,
+                    data_endpoints_.Read(frame_header.payload_tag).Await());
+              });
+        });
+  });
 }
 
 template <typename Promise>

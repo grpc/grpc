@@ -600,7 +600,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Parenthetical wrappers
         "( ?\\(*("
         "Secure read failed|"
-        "Handshake read failed|"
+        "Handshake (read|write) failed|"
         "Delayed close due to in-progress write|"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
