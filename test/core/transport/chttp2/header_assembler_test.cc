@@ -79,9 +79,12 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
   // 2. Validate output of GetBufferedHeadersLength
   // 3. Validate the contents of the Metadata.
+  const uint32_t stream_id = 1111;
   HeaderAssembler assembler;
-  Http2HeaderFrame header = GenerateHeader();
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0);
+  Http2HeaderFrame header =
+      GenerateHeader("PUT REAL HEADER HERE", stream_id, /*end_headers=*/true,
+                     /*end_stream=*/false);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength());
   EXPECT_EQ(assembler.IsReady(), false);
 }
 

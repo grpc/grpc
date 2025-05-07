@@ -80,13 +80,13 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
-    DCHECK_EQ(stream_id_, 0);
-    DCHECK_EQ(buffer_.Length(), 0);
+    DCHECK_EQ(stream_id_, 0u);
+    DCHECK_EQ(buffer_.Length(), 0u);
 
     // Validate input frame
     // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
     // this.
-    DCHECK_GT(frame.stream_id, 0)
+    DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
 
     // Manage size constraints
@@ -129,7 +129,7 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
-    DCHECK_GT(stream_id_, 0);
+    DCHECK_GT(stream_id_, 0u);
 
     // Validate input frame
     if (frame.stream_id != stream_id_) {
