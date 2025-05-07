@@ -168,9 +168,7 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
 }
 
 const JsonLoaderInterface* SpiffeBundleKey::JsonLoader(const JsonArgs&) {
-  static const auto* kLoader = JsonObjectLoader<SpiffeBundleKey>()
-                                   .Field("x5c", &SpiffeBundleKey::x5c_)
-                                   .Finish();
+  static const auto* kLoader = JsonObjectLoader<SpiffeBundleKey>().Finish();
   return kLoader;
 }
 
@@ -194,15 +192,22 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
                                        kAllowedKty, *kty));
     }
   }
+  auto x5c = LoadJsonObjectField<std::vector<std::string>>(json.object(), args,
+                                                           "x5c", errors);
   {
     ValidationErrors::ScopedField field(errors, ".x5c");
-    if (x5c_.size() != kX5cSize) {
-      errors->AddError(
-          absl::StrCat("array length must be 1, got ", x5c_.size()));
+    if (!x5c.has_value()) {
+      errors->AddError("x5c field must be present");
       return;
     }
+    if (x5c->size() != kX5cSize) {
+      errors->AddError(
+          absl::StrCat("array length must be 1, got ", x5c->size()));
+      return;
+    }
+    root_ = (*x5c)[0];
     std::string pem_cert =
-        absl::StrCat(kCertificatePrefix, x5c_[0], kCertificateSuffix);
+        absl::StrCat(kCertificatePrefix, root_, kCertificateSuffix);
     auto certs = ParsePemCertificateChain(pem_cert);
     if (!certs.ok()) {
       errors->AddError(certs.status().ToString());
@@ -214,14 +219,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
   }
 }
 
-absl::StatusOr<absl::string_view> SpiffeBundleKey::GetRoot() {
-  if (x5c_.size() != 1) {
-    return absl::InvalidArgumentError(
-        "SPIFFE Bundle key entry has x5c field with length != 1. Key entry x5c "
-        "field MUST have length of exactly 1.");
-  }
-  return x5c_[0];
-}
+absl::string_view SpiffeBundleKey::GetRoot() { return root_; }
 
 void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
                                 ValidationErrors* errors) {
@@ -231,14 +229,7 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
     return;
   }
   for (size_t i = 0; i < keys->size(); ++i) {
-    ValidationErrors::ScopedField field(errors, absl::StrCat(".keys[", i, "]"));
-    auto root = (*keys)[i].GetRoot();
-    if (!root.ok()) {
-      errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
-                                       root.status().ToString()));
-    } else {
-      roots_.emplace_back(*root);
-    }
+    roots_.emplace_back((*keys)[i].GetRoot());
   }
 }
 

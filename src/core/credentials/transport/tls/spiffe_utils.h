@@ -56,14 +56,16 @@ class SpiffeBundleKey final {
   void JsonPostLoad(const Json& json, const JsonArgs&,
                     ValidationErrors* errors);
 
-  // Returns the PEM x509 string for this SPIFFE Bundle entry which is the only
-  // entry in the x5c_ vector.
-  absl::StatusOr<absl::string_view> GetRoot();
+  // Returns the PEM x509 string for the root of trust for this SPIFFE Bundle
+  // entry.
+  absl::string_view GetRoot();
 
  private:
-  // The following are all fields of the the JWK key in the SPIFFE bundle per
+  // root_ is the X509 cert that is the root of trust. It is parsed from the x5c
+  // field per the SPIFFE Bundle Spec. In our use case, the x5c field must of of
+  // length 1 and represent a root of trust.
   // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
-  std::vector<std::string> x5c_;
+  std::string root_;
 };
 
 // A SPIFFE bundle consists of a trust domain and a set of roots for that trust
