@@ -59,8 +59,9 @@ Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
                                 bool end_headers = false,
                                 bool end_stream = false) {
   SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
   return Http2HeaderFrame{stream_id, end_headers, end_stream,
-                          buffer.Append(Slice::FromCopiedString(str))};
+                          std::move(buffer)};
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -68,7 +69,7 @@ Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
 
 TEST(HeaderAssemblerTest, Constructor) {
   HeaderAssembler assembler;
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 }
 
@@ -84,7 +85,7 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   Http2HeaderFrame header =
       GenerateHeader("PUT REAL HEADER HERE", stream_id, /*end_headers=*/true,
                      /*end_stream=*/false);
-  EXPECT_EQ(assembler.GetBufferedHeadersLength());
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 }
 
