@@ -199,7 +199,8 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
     if (x5c->size() != 1) {
       errors->AddError(
           absl::StrCat("array length must be 1, got ", x5c->size()));
-    } else {
+    }
+    if (x5c->size() > 0) {
       ValidationErrors::ScopedField field(errors, "[0]");
       std::string pem_cert =
           absl::StrCat(kCertificatePrefix, (*x5c)[0], kCertificateSuffix);
