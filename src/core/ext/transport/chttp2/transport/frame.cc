@@ -493,7 +493,10 @@ Http2StatusOr ParseWindowUpdateFrame(const Http2FrameHeader& hdr,
     return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
                                              kWindowUpdateLength4);
   }
-
+  if ((hdr.stream_id % 2) == 0) {
+    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                             kStreamIdMustBeOdd);
+  }
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
   return Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)};
@@ -501,6 +504,10 @@ Http2StatusOr ParseWindowUpdateFrame(const Http2FrameHeader& hdr,
 
 Http2StatusOr ParseSecurityFrame(const Http2FrameHeader& /*hdr*/,
                                  SliceBuffer& payload) {
+  if (payload.Length() == 0) {
+    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+                                             "Incorrect Security Frame");
+  }
   return Http2SecurityFrame{std::move(payload)};
 }
 
