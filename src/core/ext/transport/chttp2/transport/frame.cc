@@ -397,7 +397,7 @@ Http2StatusOr ParseContinuationFrame(const Http2FrameHeader& hdr,
 Http2StatusOr ParseRstStreamFrame(const Http2FrameHeader& hdr,
                                   SliceBuffer& payload) {
   if (payload.Length() != 4) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
+    return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
                                              kRstStreamLength4);
   }
 
