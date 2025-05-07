@@ -228,6 +228,11 @@ cc_library(
     hdrs = [
         "ares_build.h",
         "ares_config.h",
+        "include/ares_nameser.h",
+"include/ares_dns_record.h",
+"include/ares.h",
+"include/ares_version.h",
+"include/ares_dns.h",
         "src/lib/event/ares_event_win32.h",
 "src/lib/event/ares_event.h",
 "src/lib/include/ares_htable_asvp.h",
