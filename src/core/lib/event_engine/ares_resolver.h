@@ -41,6 +41,7 @@ namespace grpc_event_engine::experimental {
 
 class AresResolver : public RefCountedDNSResolverInterface {
  public:
+#ifdef GRPC_ENABLE_FORK_SUPPORT
   // Handle to trigger reinitialization of this AresResolver instance after a
   // fork(). Avoids global resolver management and POSIX-specific dependencies
   // within AresResolver.
@@ -64,8 +65,9 @@ class AresResolver : public RefCountedDNSResolverInterface {
     grpc_core::Mutex mutex_;
     AresResolver* resolver_ ABSL_GUARDED_BY(&mutex_);
   };
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
-  static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver>>
+  static absl::StatusOr<grpc_core::OrphanablePtr<AresResolver> >
   CreateAresResolver(absl::string_view dns_server,
                      std::unique_ptr<GrpcPolledFdFactory> polled_fd_factory,
                      std::shared_ptr<EventEngine> event_engine);
@@ -110,7 +112,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
     bool writable_registered = false;
     bool already_shutdown = false;
   };
-  using FdNodeList = std::list<std::unique_ptr<FdNode>>;
+  using FdNodeList = std::list<std::unique_ptr<FdNode> >;
 
   using CallbackType =
       std::variant<EventEngine::DNSResolver::LookupHostnameCallback,

@@ -874,8 +874,7 @@ void AresResolver::Reset() {
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
-  ShutdownLocked(absl::CancelledError("AresResolver::Reinitialize"),
-                 "resolver reinitialization");
+  ShutdownLocked(absl::CancelledError("AresResolver::Reset"), "resolver reset");
   CheckSocketsLocked();
   ares_destroy(channel_);
   callback_map_.clear();

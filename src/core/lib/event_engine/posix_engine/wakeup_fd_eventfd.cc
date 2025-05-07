@@ -48,7 +48,7 @@ absl::Status EventFdWakeupFd::Init() {
 }
 
 absl::Status EventFdWakeupFd::ConsumeWakeup() {
-  PosixError err = PosixError::Ok();
+  PosixError err;
   do {
     err = posix_interface_->EventFdRead(ReadFd());
   } while (err.IsPosixError(EINTR));
@@ -60,7 +60,7 @@ absl::Status EventFdWakeupFd::ConsumeWakeup() {
 }
 
 absl::Status EventFdWakeupFd::Wakeup() {
-  PosixError err = PosixError::Ok();
+  PosixError err;
   do {
     err = posix_interface_->EventFdWrite(ReadFd());
   } while (err.IsPosixError(EINTR));

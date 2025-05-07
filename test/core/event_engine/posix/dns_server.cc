@@ -149,7 +149,7 @@ class ByteUnpacker {
   absl::Span<const uint8_t> data_;
   DnsQuestion query_;
   size_t pos_ = 0;
-  absl::Status status_ = absl::OkStatus();
+  absl::Status status_;
 };
 
 absl::StatusOr<DnsQuestion> ParseQuestion(absl::Span<const uint8_t> buffer) {
@@ -259,12 +259,10 @@ void DnsServer::ServerLoop(int sockfd) {
     LOG(INFO) << "DNS server shutdown: " << done_.HasBeenNotified();
     close(sockfd);
   };
-
   while (!done_.HasBeenNotified()) {
     auto received_bytes = recvfrom(sockfd, buffer.data(), buffer.size(), 0,
                                    (struct sockaddr*)&client_addr, &client_len);
     if (received_bytes < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
-      // Don't wait
       absl::SleepFor(absl::Milliseconds(5));
       continue;
     }

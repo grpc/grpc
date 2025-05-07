@@ -314,7 +314,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   }
 
   int so_error = 0;
-  PosixError err = PosixError::Ok();
+  PosixError err;
   do {
     so_error_size = sizeof(so_error);
     err = fd->Poller()->posix_interface().GetSockOpt(
@@ -378,7 +378,7 @@ PosixEventEngine::CreateEndpointFromUnconnectedFdInternal(
     const PosixTcpOptions& tcp_options, MemoryAllocator memory_allocator,
     EventEngine::Duration timeout) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  PosixError err = PosixError::Ok();
+  PosixError err;
   int connect_errno;
   do {
     err = poller_manager_.Poller()->posix_interface().Connect(

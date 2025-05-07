@@ -632,7 +632,7 @@ PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
   int raw_fd = fd->fd();
   auto fail = [&]() {
     auto error = PosixError::Error(errno);
-    Close(fd.value());
+    Close(*fd);
     return error;
   };
   if (nonblock || cloexec) {

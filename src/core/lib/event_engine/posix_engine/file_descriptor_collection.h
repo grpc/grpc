@@ -41,6 +41,8 @@ class PosixError {
     return PosixError(kWrongGenerationError);
   }
 
+  constexpr PosixError() : payload_(kOk) {}
+
   constexpr bool ok() const { return payload_ == kOk; }
 
   bool IsPosixError() const { return payload_ > 0; }

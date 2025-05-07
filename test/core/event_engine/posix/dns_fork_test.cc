@@ -51,22 +51,21 @@ class LookupCallback {
   explicit LookupCallback(absl::string_view label) : label_(label) {}
 
   EventEngine::DNSResolver::LookupHostnameCallback lookup_hostname_callback() {
-    return [self = this](const auto& addresses) {
+    return [this](const auto& addresses) {
       if (addresses.ok()) {
-        self->result_.emplace();
+        result_.emplace();
         for (const auto& address : addresses.value()) {
           auto resolved = ResolvedAddressToString(address);
-          self->result_->emplace_back(
-              resolved.ok() ? resolved.value() : resolved.status().ToString());
+          result_->emplace_back(resolved.ok() ? *resolved
+                                              : resolved.status().ToString());
         }
-        LOG(INFO) << "[" << self->label_ << "] Hostname resolved to "
-                  << absl::StrJoin(self->result_.value(), ", ");
+        LOG(INFO) << "[" << label_ << "] Hostname resolved to "
+                  << absl::StrJoin(*result_, ", ");
       } else {
-        self->result_ = addresses.status();
-        LOG(INFO) << "[" << self->label_ << "] Failed with "
-                  << self->result_.status();
+        result_ = addresses.status();
+        LOG(INFO) << "[" << label_ << "] Failed with " << result_.status();
       }
-      self->notification_.Notify();
+      notification_.Notify();
     };
   }
 

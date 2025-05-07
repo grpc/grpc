@@ -50,11 +50,12 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 namespace grpc::testing {
 namespace {
 
-class HangWatcher {
+class HeartbeatThread {
  public:
-  HangWatcher(absl::string_view name, absl::Duration period)
-      : name_(name), sleep_duration_(period) {
-    thread_ = std::thread(&HangWatcher::Loop, this);
+  HeartbeatThread(absl::string_view name, absl::Duration period)
+      : name_(name),
+        sleep_duration_(period),
+        thread_(&HeartbeatThread::Loop, this) {
     grpc_core::MutexLock lock(&mu_);
     while (state_ == 0) {
       cond_.Wait(&mu_);
@@ -63,7 +64,7 @@ class HangWatcher {
         << "####################### " << name_ << " started";
   }
 
-  ~HangWatcher() {
+  ~HeartbeatThread() {
     {
       grpc_core::MutexLock lock(&mu_);
       state_ = 2;
@@ -191,7 +192,7 @@ std::shared_ptr<Channel> CreateChannel(const std::string& addr) {
 
 std::pair<std::string, std::string> DoExchangeAsync(absl::string_view label,
                                                     const std::string& addr,
-                                                    HangWatcher* watcher) {
+                                                    HeartbeatThread* watcher) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -227,7 +228,7 @@ std::pair<std::string, std::string> DoExchangeAsync(absl::string_view label,
 
 std::pair<std::string, std::string> DoExchangeSync(absl::string_view label,
                                                    const std::string& addr,
-                                                   HangWatcher* watcher) {
+                                                   HeartbeatThread* watcher) {
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -254,7 +255,7 @@ std::pair<std::string, std::string> DoExchangeSync(absl::string_view label,
 }
 
 void DoExchange(
-    absl::string_view label, const std::string& addr, HangWatcher* watcher,
+    absl::string_view label, const std::string& addr, HeartbeatThread* watcher,
     grpc_core::SourceLocation location = grpc_core::SourceLocation()) {
   if (watcher != nullptr) {
     watcher->SetTask("sync exchange");
@@ -296,8 +297,8 @@ TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
   pid_t child_client_pid = fork();
   VLOG(2).WithThreadID(getpid()) << "####################### After fork";
   // Spawns a thread. Not ok before fork!!!
-  HangWatcher watcher(child_client_pid == 0 ? "child" : "original",
-                      absl::Seconds(5));
+  HeartbeatThread watcher(child_client_pid == 0 ? "child" : "original",
+                          absl::Seconds(5));
   ASSERT_GE(child_client_pid, 0) << "fork failed";
   watcher.SetTask("message exchange");
   DoExchange(absl::StrCat("[", getpid(), "] ", watcher.label()), addr,
