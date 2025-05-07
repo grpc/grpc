@@ -127,9 +127,9 @@ class BaseNode : public DualRefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  ~BaseNode() override;
+  ~BaseNode() override = default;
 
-  void Orphaned() final {}
+  void Orphaned() final;
 
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);
@@ -190,13 +190,14 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
+  bool orphaned_ = false;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;
   absl::InlinedVector<DataSource*, 3> data_sources_
       ABSL_GUARDED_BY(data_sources_mu_);
-  BaseNode* prev_;
-  BaseNode* next_;
+  BaseNode* prev_;  // updated by registry
+  BaseNode* next_;  // updated by registry
   mutable Mutex parent_mu_;
   ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
 };

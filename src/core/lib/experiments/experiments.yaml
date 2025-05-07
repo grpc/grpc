@@ -154,8 +154,7 @@
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
-  description:
-    If set, the max inflight pings limit is strictly enforced.
+  description: If set, the max inflight pings limit is strictly enforced.
   expiry: 2025/06/30
   owner: akshitpatel@google.com
   test_tags: []
@@ -243,23 +242,28 @@
   expiry: 2025/10/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+      "event_engine_secure_endpoint",
+    ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
   expiry: 2025/10/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+      "event_engine_secure_endpoint",
+    ]
 - name: server_global_callbacks_ownership
   description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
   expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
-- name: shard_channelz_index
-  description: If set, shard the channelz index for better concurrency
-  expiry: 2025/06/01
-  owner: ctiller@google.com
-  test_tags: [channelz_test]
 - name: shard_global_connection_pool
   description: If set, shard the global connection pool to improve parallelism.
   expiry: 2025/09/09
