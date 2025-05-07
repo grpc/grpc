@@ -63,10 +63,7 @@ class SpiffeBundleKey final {
  private:
   // The following are all fields of the the JWK key in the SPIFFE bundle per
   // https://github.com/spiffe/spiffe/blob/main/standards/SPIFFE_Trust_Domain_and_Bundle.md#3-spiffe-bundles
-  std::string kid_;
   std::vector<std::string> x5c_;
-  std::string n_;
-  std::string e_;
 };
 
 // A SPIFFE bundle consists of a trust domain and a set of roots for that trust
@@ -76,9 +73,7 @@ class SpiffeBundleKey final {
 class SpiffeBundle final {
  public:
   static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
-    static const auto* kLoader = JsonObjectLoader<SpiffeBundle>()
-                                     //  .Field("keys", &SpiffeBundle::keys_)
-                                     .Finish();
+    static const auto* kLoader = JsonObjectLoader<SpiffeBundle>().Finish();
     return kLoader;
   }
 
@@ -89,7 +84,6 @@ class SpiffeBundle final {
   absl::Span<const std::string> GetRoots();
 
  private:
-  // std::vector<SpiffeBundleKey> keys_;
   std::vector<std::string> roots_;
 };
 
@@ -133,10 +127,6 @@ class SpiffeBundleMap final {
     }
   };
 
-  // JsonObjectLoader cannot parse into a map with a custom comparator, so parse
-  // into a map without one, then insert those elements into the map with the
-  // custom comparator after parsing. This is a one-time conversion to not have
-  // to create strings every look-up.
   std::map<std::string, SpiffeBundle, StringCmp> bundles_;
 };
 

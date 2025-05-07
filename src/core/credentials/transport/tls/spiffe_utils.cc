@@ -169,10 +169,7 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
 
 const JsonLoaderInterface* SpiffeBundleKey::JsonLoader(const JsonArgs&) {
   static const auto* kLoader = JsonObjectLoader<SpiffeBundleKey>()
-                                   .OptionalField("kid", &SpiffeBundleKey::kid_)
                                    .Field("x5c", &SpiffeBundleKey::x5c_)
-                                   .Field("n", &SpiffeBundleKey::n_)
-                                   .Field("e", &SpiffeBundleKey::e_)
                                    .Finish();
   return kLoader;
 }
@@ -231,7 +228,6 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
   auto keys = LoadJsonObjectField<std::vector<SpiffeBundleKey>>(
       json.object(), args, "keys", errors);
   if (!keys.has_value()) {
-    std::cout << "GREG NO KEY VALUE\n" << std::endl;
     return;
   }
   for (size_t i = 0; i < keys->size(); ++i) {
@@ -241,7 +237,7 @@ void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
       errors->AddError(absl::StrFormat("Cannot get root certificate: %s",
                                        root.status().ToString()));
     } else {
-      roots_.push_back(std::string(*root));
+      roots_.emplace_back(*root);
     }
   }
 }
@@ -261,11 +257,6 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
       }
     }
   }
-  // JsonObjectLoader cannot parse into a map with a custom comparator, so
-  // parse into a map without one, then insert those elements into the map
-  // with the custom comparator after parsing. This is a one-time conversion
-  // to not have to create strings every look-up.
-  // bundles_.insert(temp_bundles_.begin(), temp_bundles_.end());
 }
 
 absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
