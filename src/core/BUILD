@@ -8254,6 +8254,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_flag",
         "time",
+        "transport_framing_endpoint_extension",
         "try_seq",
         "//:channelz",
         "//:gpr",
@@ -8318,6 +8319,7 @@ grpc_cc_library(
         "loop",
         "race",
         "seq",
+        "transport_framing_endpoint_extension",
         "try_seq",
     ],
 )
