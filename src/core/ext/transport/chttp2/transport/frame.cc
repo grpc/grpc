@@ -440,7 +440,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kFrameSizeError,
                                                std::string(kSettingsLength0));
     }
-    return Http2SettingsFrame{true, {}};
+    return ValueOrHttp2Status<Http2Frame>(Http2SettingsFrame{true, {}});
   }
 
   if (payload.Length() % 6 != 0) {
@@ -587,8 +587,8 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   }
 }
 
-ValueOrHttp2Status<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                                 SliceBuffer payload) {
+ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
+                                                  SliceBuffer payload) {
   CHECK(payload.Length() == hdr.length);
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
@@ -609,12 +609,25 @@ ValueOrHttp2Status<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
       return ParseWindowUpdateFrame(hdr, payload);
     case FrameType::kPushPromise:
       return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                               kNoPushPromise);
+                                               std::string(kNoPushPromise));
     case FrameType::kCustomSecurity:
       return ParseSecurityFrame(hdr, payload);
     default:
       return ValueOrHttp2Status<Http2Frame>(Http2UnknownFrame{});
   }
+}
+
+absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
+                                             SliceBuffer payload) {
+  auto result = ParseFramePayload1(hdr, std::move(payload));
+  if (result.IsOk()) {
+    return http2::TakeValue<Http2Frame>(std::move(result));
+  };
+  Http2Status::Http2ErrorType type = result.GetErrorType();
+  if (type == Http2Status::Http2ErrorType::kConnectionError) {
+    return result.GetAbslConnectionError();
+  }
+  return result.GetAbslStreamError();
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
