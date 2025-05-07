@@ -59,7 +59,7 @@ class Http2FrameTestHelper {
 
   EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
       std::vector<Http2SettingsFrame::Setting> settings) const {
-    if (settings.size()) {
+    if (settings.size() == 0u) {
       return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
     }
     return EventEngineSliceFromHttp2Frame(
