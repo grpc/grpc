@@ -78,7 +78,6 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
@@ -125,6 +124,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
@@ -156,7 +156,6 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
@@ -203,6 +202,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
@@ -234,7 +234,6 @@ EXPERIMENTS = {
                 "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
-                "event_engine_dns_non_client_channel",
                 "event_engine_fork",
                 "local_connector_secure",
                 "pollset_alternative",
@@ -281,6 +280,7 @@ EXPERIMENTS = {
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
+                "event_engine_dns_non_client_channel",
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
