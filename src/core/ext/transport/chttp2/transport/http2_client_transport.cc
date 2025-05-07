@@ -416,8 +416,11 @@ Http2ClientTransport::Http2ClientTransport(
                             : Duration::Minutes(1)))),
       ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
                     event_engine),
-      keepalive_manager_(KeepAliveInterfaceImpl::Make(this), keepalive_timeout_,
-                         keepalive_interval_),
+      keepalive_manager_(
+          KeepAliveInterfaceImpl::Make(this),
+          ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
+                                                : Duration::Infinity()),
+          keepalive_interval_),
       keepalive_permit_without_calls_(false) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
