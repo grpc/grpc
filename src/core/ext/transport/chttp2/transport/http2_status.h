@@ -167,6 +167,11 @@ class Http2Status {
                         ", Message:", message_, "}");
   }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Http2Status& frame) {
+    sink.Append(frame.DebugString());
+  }
+
   Http2Status(Http2Status&& move_status) = default;
 
  private:
@@ -342,6 +347,16 @@ class ValueOrHttp2Status {
     return std::get<T>(value_);
   }
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const Http2Status& status() const {
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status& status() {
+    DCHECK(std::holds_alternative<Http2Status>(value_));
+    return std::get<Http2Status>(value_);
+  }
+
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {
     return std::holds_alternative<T>(value_);
   }
@@ -384,6 +399,12 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
     ValueOrHttp2Status<T>&& value) {
   return std::move(value.value());
+}
+
+template <typename T>
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Http2Status TakeStatus(
+    ValueOrHttp2Status<T>&& value) {
+  return std::move(value.status());
 }
 
 }  // namespace http2
