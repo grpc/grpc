@@ -50,7 +50,6 @@ EXPERIMENT_ENABLES = {
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
     "server_global_callbacks_ownership": "server_global_callbacks_ownership",
-    "shard_channelz_index": "shard_channelz_index",
     "shard_global_connection_pool": "shard_global_connection_pool",
     "sleep_promise_exec_ctx_removal": "sleep_promise_exec_ctx_removal",
     "tcp_frame_size_tuning": "tcp_frame_size_tuning",
@@ -118,9 +117,6 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
-            ],
-            "channelz_test": [
-                "shard_channelz_index",
             ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
@@ -197,9 +193,6 @@ EXPERIMENTS = {
             "cancel_ares_query_test": [
                 "event_engine_dns",
             ],
-            "channelz_test": [
-                "shard_channelz_index",
-            ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",
                 "event_engine_client",
@@ -274,9 +267,6 @@ EXPERIMENTS = {
         "on": {
             "cancel_ares_query_test": [
                 "event_engine_dns",
-            ],
-            "channelz_test": [
-                "shard_channelz_index",
             ],
             "core_end2end_test": [
                 "chaotic_good_framing_layer",

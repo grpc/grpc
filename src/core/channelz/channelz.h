@@ -190,7 +190,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
-  bool orphaned_ = false;  // updated by registry
+  uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;

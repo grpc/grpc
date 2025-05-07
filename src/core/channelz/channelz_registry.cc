@@ -36,6 +36,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -140,46 +141,70 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
   node_shard.mu.Lock();
-  const bool id_allocated = node->uuid_.load(std::memory_order_relaxed) != -1;
-  NodeList& remove_list =
-      id_allocated ? node_shard.numbered : node_shard.nursery;
-  NodeList& add_list =
-      id_allocated ? node_shard.orphaned_numbered : node_shard.orphaned;
-  node->WeakRef().release();
+  CHECK_EQ(node->orphaned_index_, 0);
+  intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
+  NodeList& remove_list = uuid == -1 ? node_shard.nursery : node_shard.numbered;
   remove_list.Remove(node);
+  if (max_orphaned_per_shard_ == 0) {
+    node_shard.mu.Unlock();
+    if (uuid != -1) {
+      MutexLock lock(&index_mu_);
+      index_.erase(uuid);
+    }
+    return;
+  }
+  NodeList& add_list =
+      uuid != -1 ? node_shard.orphaned_numbered : node_shard.orphaned;
+  node->WeakRef().release();
+  node->orphaned_index_ = node_shard.next_orphan_index;
+  ++node_shard.next_orphan_index;
   add_list.AddToHead(node);
   if (node_shard.TotalOrphaned() <= max_orphaned_per_shard_) {
     // Below recycling thresholds: just exit out
     node_shard.mu.Unlock();
     return;
   }
-  bool locked_index = false;
-  NodeList* gc_list = &node_shard.orphaned;
+  absl::InlinedVector<WeakRefCountedPtr<BaseNode>, 2> gcd_nodes;
+  bool any_numbered = false;
   while (node_shard.TotalOrphaned() > max_orphaned_per_shard_) {
-    if (gc_list->count == 0) {
-      // shouldn't still be in gc in this case
-      CHECK_NE(gc_list, &node_shard.orphaned_numbered);
-      if (!locked_index) {
-        // drop the shard mutex, lock the index, reacquire the shard index
-        // -- we might get back in and be done (some other thread did gc)
-        node_shard.mu.Unlock();
-        index_mu_.Lock();
-        node_shard.mu.Lock();
-        locked_index = true;
-        continue;
-      }
-      // We have both the index & the shard lock
-      // which means we can transition cleanup to the numbered orphans
+    NodeList* gc_list;
+    // choose the oldest node to evict, regardless of numbered or not
+    if (node_shard.orphaned.tail == nullptr) {
+      CHECK_NE(node_shard.orphaned_numbered.tail, nullptr);
       gc_list = &node_shard.orphaned_numbered;
-      CHECK_GT(gc_list->count, 0);
+      any_numbered = true;
+    } else if (node_shard.orphaned_numbered.tail == nullptr) {
+      gc_list = &node_shard.orphaned;
+    } else if (node_shard.orphaned.tail->orphaned_index_ <
+               node_shard.orphaned_numbered.tail->orphaned_index_) {
+      gc_list = &node_shard.orphaned;
+    } else {
+      gc_list = &node_shard.orphaned_numbered;
+      any_numbered = true;
     }
     auto* n = gc_list->tail;
-    CHECK(n->orphaned_);
+    CHECK_GT(n->orphaned_index_, 0);
     gc_list->Remove(n);
-    n->WeakUnref();
+    gcd_nodes.emplace_back(n);
   }
-  if (locked_index) index_mu_.Unlock();
   node_shard.mu.Unlock();
+  if (any_numbered) {
+    MutexLock lock(&index_mu_);
+    for (const auto& n : gcd_nodes) {
+      intptr_t uuid = n->uuid_.load(std::memory_order_relaxed);
+      if (uuid == -1) continue;
+      index_.erase(uuid);
+    }
+  }
+}
+
+void ChannelzRegistry::LoadConfig() {
+  const auto max_orphaned = ConfigVars::Get().ChannelzMaxOrphanedNodes();
+  if (max_orphaned == 0) {
+    max_orphaned_per_shard_ = 0;
+  } else {
+    max_orphaned_per_shard_ = std::max<int>(max_orphaned / kNodeShards, 1);
+  }
 }
 
 std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
@@ -263,6 +288,8 @@ WeakRefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
 }
 
 intptr_t ChannelzRegistry::InternalNumberNode(BaseNode* node) {
+  // node must be strongly owned still
+  node->AssertStronglyOwned();
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
   MutexLock index_lock(&index_mu_);
@@ -272,7 +299,7 @@ intptr_t ChannelzRegistry::InternalNumberNode(BaseNode* node) {
   uuid = uuid_generator_;
   ++uuid_generator_;
   node->uuid_ = uuid;
-  if (node->orphaned_) {
+  if (node->orphaned_index_ > 0) {
     node_shard.orphaned.Remove(node);
     node_shard.orphaned_numbered.AddToHead(node);
   } else {

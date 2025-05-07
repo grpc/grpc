@@ -120,11 +120,15 @@ class ChannelzRegistry final {
     auto* p = Default();
     p->uuid_generator_ = 1;
     p->node_shards_.clear();
+    p->LoadConfig();
+    MutexLock lock(&p->index_mu_);
     p->index_.clear();
   }
 
  private:
-  ChannelzRegistry() {}
+  ChannelzRegistry() { LoadConfig(); }
+
+  void LoadConfig();
 
   // Takes a callable F: (WeakRefCountedPtr<BaseNode>) -> bool, and returns
   // a (BaseNode*) -> bool that filters unreffed objects and returns true.
@@ -142,20 +146,34 @@ class ChannelzRegistry final {
     BaseNode* head = nullptr;
     BaseNode* tail = nullptr;
     size_t count = 0;
+    bool Holds(BaseNode* node) const {
+      BaseNode* n = head;
+      while (n != nullptr) {
+        if (n == node) return true;
+        n = n->next_;
+      }
+      return false;
+    }
     void AddToHead(BaseNode* node) {
+      DCHECK(!Holds(node));
       ++count;
+      if (head != nullptr) head->prev_ = node;
       node->next_ = head;
       node->prev_ = nullptr;
       head = node;
       if (tail == nullptr) tail = node;
+      DCHECK(Holds(node));
     }
     void Remove(BaseNode* node) {
+      DCHECK(Holds(node));
+      DCHECK_GT(count, 0);
       --count;
       if (node->prev_ == nullptr) {
         head = node->next_;
         if (head == nullptr) {
           DCHECK_EQ(count, 0);
           tail = nullptr;
+          DCHECK(!Holds(node));
           return;
         }
       } else {
@@ -166,6 +184,7 @@ class ChannelzRegistry final {
       } else {
         node->next_->prev_ = node->prev_;
       }
+      DCHECK(!Holds(node));
     }
   };
   struct alignas(GPR_CACHELINE_SIZE) NodeShard {
@@ -174,6 +193,7 @@ class ChannelzRegistry final {
     NodeList numbered ABSL_GUARDED_BY(mu);
     NodeList orphaned ABSL_GUARDED_BY(mu);
     NodeList orphaned_numbered ABSL_GUARDED_BY(mu);
+    uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 0;
     size_t TotalOrphaned() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
       return orphaned.count + orphaned_numbered.count;
     }
@@ -247,7 +267,7 @@ class ChannelzRegistry final {
   std::vector<NodeShard> node_shards_{kNodeShards};
   Mutex index_mu_;
   absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
-  const size_t max_orphaned_per_shard_;
+  size_t max_orphaned_per_shard_;
 };
 
 // `additionalInfo` section is not yet in the protobuf format, so we

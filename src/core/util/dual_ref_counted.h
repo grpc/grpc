@@ -316,6 +316,11 @@ class DualRefCounted : public Impl {
   // Note: Depending on the Impl used, this dtor can be implicitly virtual.
   ~DualRefCounted() = default;
 
+  // Debug check to validate that this object is still strongly owned
+  void AssertStronglyOwned() const {
+    DCHECK_NE(GetStrongRefs(refs_.load(std::memory_order_relaxed)), 0);
+  }
+
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
