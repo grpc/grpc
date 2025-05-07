@@ -435,8 +435,8 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
         self->stream_list_.erase(stream_id);
       });
   if (!on_done_added) return false;
-  stream_list_.emplace(stream_id,
-                       MakeRefCounted<Stream>(std::move(call_handler)));
+  stream_list_.emplace(
+      stream_id, MakeRefCounted<Stream>(std::move(call_handler), stream_id));
   return true;
 }
 
