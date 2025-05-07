@@ -175,6 +175,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
