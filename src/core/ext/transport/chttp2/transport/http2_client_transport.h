@@ -113,7 +113,8 @@ class Http2ClientTransport final : public ClientTransport {
         outgoing_frames_.MakeSender().Send(std::move(frame)),
         [](StatusFlag status) {
           HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
+              << status;
           return (status.ok()) ? absl::OkStatus()
                                : absl::InternalError("Failed to enqueue frame");
         }));
@@ -186,16 +187,21 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call)
-        : call(std::move(call)), stream_state(HttpStreamState::kIdle) {}
+    explicit Stream(CallHandler call, const uint32_t stream_id1)
+        : call(std::move(call)),
+          stream_state(HttpStreamState::kIdle),
+          stream_id(stream_id1) {}
 
     CallHandler call;
     HttpStreamState stream_state;
+    const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
+    GrpcMessageDisassembler disassembler;
     HeaderAssembler header_assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
+
   uint32_t NextStreamId(
       InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
     const uint32_t stream_id = *next_stream_id_lock;

@@ -23,6 +23,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/log/check.h"
@@ -371,6 +372,20 @@ Http2ClientTransport::Http2ClientTransport(
   general_party_->Spawn("ReadLoop", ReadLoop(), OnReadLoopEnded());
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
+
+  // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  std::optional<Http2SettingsFrame> settings_frame =
+      settings_.MaybeSendUpdate();
+  if (settings_frame.has_value()) {
+    general_party_->Spawn(
+        "SendFirstSettingsFrame",
+        [self = RefAsSubclass<Http2ClientTransport>(),
+         frame = std::move(*settings_frame)]() mutable {
+          return self->EnqueueOutgoingFrame(std::move(frame));
+        },
+        [](GRPC_UNUSED absl::Status status) {});
+  }
+
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -420,8 +435,8 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
         self->stream_list_.erase(stream_id);
       });
   if (!on_done_added) return false;
-  stream_list_.emplace(stream_id,
-                       MakeRefCounted<Stream>(std::move(call_handler)));
+  stream_list_.emplace(
+      stream_id, MakeRefCounted<Stream>(std::move(call_handler), stream_id));
   return true;
 }
 

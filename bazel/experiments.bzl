@@ -17,9 +17,7 @@
 """Dictionary of tags to experiments so we know when to test different experiments."""
 
 EXPERIMENT_ENABLES = {
-    "backoff_cap_initial_at_max": "backoff_cap_initial_at_max",
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "call_tracer_transport_fix": "call_tracer_transport_fix",
     "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",

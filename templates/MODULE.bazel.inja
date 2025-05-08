@@ -22,7 +22,7 @@ module(
 # Regular dependencies
 # ====================
 
-bazel_dep(name = "abseil-cpp", version = "20240722.0", repo_name = "com_google_absl")
+bazel_dep(name = "abseil-cpp", version = "20250127.1", repo_name = "com_google_absl")
 bazel_dep(name = "apple_support", version = "1.17.1", repo_name = "build_bazel_apple_support")
 bazel_dep(name = "bazel_skylib", version = "1.7.1")
 bazel_dep(name = "boringssl", version = "0.20241024.0")  # mistmatched 20241211

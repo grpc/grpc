@@ -48,6 +48,7 @@ class TcpFrameTransport final : public FrameTransport,
   TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
                     std::vector<PendingConnection> pending_data_endpoints,
                     TransportContextPtr ctx);
+  ~TcpFrameTransport() override { ResetDataSource(); }
 
   static RefCountedPtr<channelz::SocketNode> MakeSocketNode(
       const ChannelArgs& args, const PromiseEndpoint& endpoint);

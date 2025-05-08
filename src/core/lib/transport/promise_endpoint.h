@@ -44,7 +44,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
-#include "src/core/telemetry/context_list_entry.h"
+#include "src/core/util/dump_args.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -239,7 +239,11 @@ class PromiseEndpoint {
       // Copy everything from read_state_->buffer into a single slice and
       // replace the contents of read_state_->buffer with that slice.
       grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0);
+      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0)
+          << "Slice start address is not aligned to 64 bytes: "
+          << GRPC_DUMP_ARGS(
+                 read_state_->buffer.Length(),
+                 reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)));
       size_t ofs = 0;
       for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
         memcpy(
