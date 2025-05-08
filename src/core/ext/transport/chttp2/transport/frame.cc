@@ -512,10 +512,10 @@ void Http2FrameHeader::Serialize(uint8_t* output) const {
 
 Http2FrameHeader Http2FrameHeader::Parse(const uint8_t* input) {
   return Http2FrameHeader{
-      /*Length(24)=*/Read3b(input),
-      /*Type(8)*/ input[3],
-      /*Flags(8)*/ input[4],
-      /*Reserved (1), Stream Identifier*/ Read31bits(input + 5)};
+      /* Length(24) */ Read3b(input),
+      /* Type(8) */ input[3],
+      /* Flags(8) */ input[4],
+      /* Reserved(1), Stream Identifier(31) */ Read31bits(input + 5)};
 }
 
 namespace {
