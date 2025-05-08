@@ -242,6 +242,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
 
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
                                                      /*opaque=*/1234),
       },
@@ -271,6 +276,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/true,
                                                      /*opaque=*/1234),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -339,6 +349,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   // Break the read loop
   mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
                                 event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/false,
@@ -380,6 +395,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> ping_ack_received;
   EXPECT_CALL(ping_ack_received, Call());
+  auto ping_complete = std::make_shared<Latch<void>>();
 
   // Redundant ping ack
   auto read_cb = mock_endpoint.ExpectDelayedRead(
@@ -389,6 +405,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       },
       event_engine().get());
 
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
       {
           helper_.EventEngineSliceFromHttp2PingFrame(/*ack=*/false,
@@ -439,27 +460,34 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       std::move(mock_endpoint.promise_endpoint),
       GetChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, 2),
       event_engine());
+
   client_transport->TestOnlySpawnPromise(
-      "PingRequest", [&client_transport, &ping_ack_received] {
-        return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
-                              Http2EmptyFrame{}),
-                          [&client_transport] {
-                            return client_transport->TestOnlySendPing([] {});
-                          }),
+      "PingRequest", [&client_transport, &ping_ack_received, ping_complete] {
+        return Map(TrySeq(
+                       client_transport->TestOnlyEnqueueOutgoingFrame(
+                           Http2EmptyFrame{}),
+                       [&client_transport] {
+                         return client_transport->TestOnlySendPing([] {});
+                       },
+                       [ping_complete]() { ping_complete->Set(); }),
                    [&ping_ack_received](auto) {
                      ping_ack_received.Call();
                      LOG(INFO) << "PingAck Received. Ping Test done.";
                    });
       });
-  client_transport->TestOnlySpawnPromise("PingRequest", [&client_transport] {
-    return Map(TrySeq(client_transport->TestOnlyEnqueueOutgoingFrame(
-                          Http2EmptyFrame{}),
-                      [&client_transport] {
-                        return client_transport->TestOnlySendPing([] {});
-                      }),
-               [](auto) { Crash("Unreachable"); });
-  });
-
+  client_transport->TestOnlySpawnPromise(
+      "PingRequest", [&client_transport, ping_complete] {
+        return Map(TrySeq(
+                       ping_complete->Wait(),
+                       [&client_transport] {
+                         return client_transport->TestOnlyEnqueueOutgoingFrame(
+                             Http2EmptyFrame{});
+                       },
+                       [&client_transport] {
+                         return client_transport->TestOnlySendPing([] {});
+                       }),
+                   [](auto) { Crash("Unreachable"); });
+      });
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
