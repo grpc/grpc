@@ -465,7 +465,7 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
         Http2ErrorCode::kFrameSizeError,
         absl::StrCat(RFC9113::kWindowUpdateLength4, hdr.ToString()));
   }
-  if ((hdr.stream_id % 2) == 0) {
+  if (hdr.stream_id > 0u && (hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
