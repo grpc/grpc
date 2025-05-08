@@ -25,6 +25,8 @@
 #include "absl/log/check.h"
 #include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -110,6 +112,66 @@ class GrpcMessageAssembler {
   }
   bool is_end_stream_ = false;
   SliceBuffer message_buffer_;
+};
+
+constexpr uint32_t kMaxMessageBatchSize = (16 * 1024u);
+
+// This class is meant to convert gRPC Messages into Http2DataFrame ensuring
+// that the payload size of the data frame is configurable.
+// This class is not responsible for queueing or backpressure. That will be done
+// by other classes.
+// TODO(tjagtap) : [PH2][P2] Edit comment once this
+// class is integrated and exercised.
+class GrpcMessageDisassembler {
+ public:
+  // One GrpcMessageDisassembler instance MUST be associated with one stream
+  // for its lifetime.
+  GrpcMessageDisassembler() = default;
+
+  // GrpcMessageDisassembler object will take ownership of the message.
+  void PrepareSingleMessageForSending(MessageHandle message) {
+    DCHECK_EQ(GetBufferedLength(), 0u);
+    PrepareMessageForSending(std::move(message));
+  }
+
+  // GrpcMessageDisassembler object will take ownership of the message.
+  void PrepareBatchedMessageForSending(MessageHandle message) {
+    PrepareMessageForSending(std::move(message));
+    DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
+        << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
+  }
+
+  size_t GetBufferedLength() const { return message_.Length(); }
+
+  // Gets the next Http2DataFrame with a payload of size max_length or lesser.
+  Http2DataFrame GenerateNextFrame(const uint32_t stream_id,
+                                   const uint32_t max_length,
+                                   const bool is_end_stream = false) {
+    DCHECK_GT(max_length, 0u);
+    DCHECK_GT(GetBufferedLength(), 0u);
+    SliceBuffer temp;
+    const uint32_t current_length =
+        message_.Length() >= max_length ? max_length : message_.Length();
+    message_.MoveFirstNBytesIntoSliceBuffer(current_length, temp);
+    return Http2DataFrame{stream_id, is_end_stream, std::move(temp)};
+  }
+
+  Http2DataFrame GenerateEmptyEndFrame(const uint32_t stream_id) {
+    // RFC9113 : Frames with zero length with the END_STREAM flag set (that is,
+    // an empty DATA frame) MAY be sent if there is no available space in either
+    // flow-control window.
+    SliceBuffer temp;
+    return Http2DataFrame{stream_id, /*end_stream=*/true, std::move(temp)};
+  }
+
+ private:
+  void PrepareMessageForSending(MessageHandle message) {
+    AppendGrpcHeaderToSliceBuffer(message_, message->flags(),
+                                  message->payload()->Length());
+    message_.Append(*(message->payload()));
+  }
+
+  SliceBuffer message_;
 };
 
 }  // namespace http2

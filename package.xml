@@ -2145,6 +2145,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/thread_identity.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/throw_delegate.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/throw_delegate.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/tracing.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/tracing.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/tsan_mutex_interface.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/unaligned_access.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc" role="src" />
@@ -2234,6 +2236,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/internal/vdso_support.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/leak_check.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/leak_check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/stacktrace.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/stacktrace.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/debugging/symbolize.cc" role="src" />
@@ -2306,6 +2310,8 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/proto.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/proto.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/strip.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/structured_proto.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/structured_proto.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/vlog_config.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/voidify.h" role="src" />
