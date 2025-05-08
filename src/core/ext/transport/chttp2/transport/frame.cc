@@ -405,7 +405,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
         absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero, hdr.ToString()));
   }
 
-  if ((hdr.flags & kFlagAck) == kFlagAck) {
+  if (hdr.flags & kFlagAck) {
     if (payload.Length() != 0) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kFrameSizeError,

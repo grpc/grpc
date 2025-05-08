@@ -444,6 +444,20 @@ TEST(Frame, ParseHttp2GoawayFrame) {
       Http2Frame(Http2GoawayFrame{
           0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
           Slice::FromCopiedString("hello")}));
+
+  // Check if Reserved Bit is ignored and unused flags are ignored
+  EXPECT_EQ(
+      ParseFrame(/* Length (3 octets) */ 0, 0, 13,
+                 /* Type (1 octet) */ 7,
+                 /* Unused Flags (1 octet) */ 0xff,
+                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Reserved (1 bit) Last-Stream-ID (31 bits) */
+                 0xff, 0xff, 0xff, 0xff,
+                 /* Error Code (4 octets) */ 0, 0, 0, 0x0b,
+                 /* Additional Debug Data */ 'h', 'e', 'l', 'l', 'o'),
+      Http2Frame(Http2GoawayFrame{
+          0x7fffffff, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
+          Slice::FromCopiedString("hello")}));
 }
 
 TEST(Frame, ParseHttp2WindowUpdateFrame) {
@@ -454,6 +468,15 @@ TEST(Frame, ParseHttp2WindowUpdateFrame) {
                        /* Reserved (1 bit) Window Size Increment (31 bits) */
                        0x12, 0x34, 0x56, 0x78),
             Http2Frame(Http2WindowUpdateFrame{1, 0x12345678}));
+
+  // Check if Reserved Bit is ignored and unused flags are ignored
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 4,
+                       /* Type (1 octet) */ 8,
+                       /* Unused Flags (1 octet) */ 0xff,
+                       /* Stream Identifier (31 bits) */ 0xff, 0xff, 0xff, 0xff,
+                       /* Reserved (1 bit) Window Size Increment (31 bits) */
+                       0xff, 0xff, 0xff, 0xff),
+            Http2Frame(Http2WindowUpdateFrame{0x7fffffff, 0x7fffffff}));
 }
 
 TEST(Frame, ParseHttp2SecurityFrame) {
@@ -504,7 +527,8 @@ TEST(Frame, ParseHttp2HeaderFramePadded) {
              (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
           32,
           /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-          /* */ 1, 2, 3, 4, 5, 'h', 'e', 'l', 'l', 'o'),
+          /* Not sure what this is but we discard */ 1, 2, 3, 4, 5,
+          /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o'),
       Http2Frame(
           Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
   EXPECT_EQ(
@@ -515,7 +539,9 @@ TEST(Frame, ParseHttp2HeaderFramePadded) {
              (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
           40,
           /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-          /* */ 2, 1, 2, 3, 4, 5, 'h', 'e', 'l', 'l', 'o', 1, 2),
+          /* Not sure what this is but we discard */ 2, 1, 2, 3, 4, 5,
+          /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o',
+          /* Padding*/ 1, 2),
       Http2Frame(
           Http2HeaderFrame{1, false, false, SliceBufferFromString("hello")}));
 }
@@ -528,10 +554,11 @@ TEST(Frame, UnknownIgnored) {
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                        /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
             Http2Frame(Http2UnknownFrame{}));
+
   // 2 = PRIORITY, we just ignore it
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 10,
                        /* Type (1 octet) */ 2,
-                       /* Unused Flags (1 octet) */ 0,
+                       /* Unused Flags (1 octet) */ 0xff,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                        /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
             Http2Frame(Http2UnknownFrame{}));
@@ -548,6 +575,8 @@ TEST(Frame, ParseRejectsPushPromise) {
                            RFC9113::kNoPushPromise,
                            "{PUSH_PROMISE: flags=0, stream_id=1, length=10}")));
 }
+
+////////////////////////////////////////////////////////
 
 TEST(Frame, ParseRejectsDataFrame) {
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
