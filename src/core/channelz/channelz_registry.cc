@@ -355,6 +355,7 @@ void ChannelzRegistry::TestOnlyReset() {
   auto* p = Default();
   p->uuid_generator_ = 1;
   p->node_shards_.clear();
+  p->node_shards_.resize(kNodeShards);
   p->LoadConfig();
   std::vector<WeakRefCountedPtr<BaseNode>> free_nodes;
   for (size_t i = 0; i < kNodeShards; i++) {
