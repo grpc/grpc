@@ -47,6 +47,13 @@ class ChannelzRegistryTest : public ::testing::TestWithParam<int> {
   }
 };
 
+INSTANTIATE_TEST_SUITE_P(ChannelRegistrySuite, ChannelzRegistryTest,
+                         ::testing::Values(0, 1, 32, 1024, 1000000),
+                         [](const ::testing::TestParamInfo<int>& info) {
+                           return absl::StrCat("max_orphaned_nodes_",
+                                               info.param);
+                         });
+
 static RefCountedPtr<BaseNode> CreateTestNode() {
   return MakeRefCounted<ListenSocketNode>("test", "test");
 }
@@ -181,13 +188,6 @@ TEST_P(ChannelzRegistryTest, ThreadStressTest) {
     thread.join();
   }
 }
-
-INSTANTIATE_TEST_SUITE_P(ChannelRegistrySuite, ChannelzRegistryTest,
-                         ::testing::Values(0, 1, 32, 1024, 1000000),
-                         [](const ::testing::TestParamInfo<int>& info) {
-                           return absl::StrCat("max_orphaned_nodes_",
-                                               info.param);
-                         });
 
 }  // namespace testing
 }  // namespace channelz
