@@ -1327,6 +1327,7 @@ CORE_SOURCE_FILES = [
     'third_party/cares/cares/src/lib/ares_gethostbyname.c',
     'third_party/cares/cares/src/lib/ares_hosts_file.c',
     'third_party/cares/cares/src/lib/ares_init.c',
+    'third_party/cares/cares/src/lib/ares_library_init.c',
     'third_party/cares/cares/src/lib/ares_options.c',
     'third_party/cares/cares/src/lib/ares_parse_into_addrinfo.c',
     'third_party/cares/cares/src/lib/ares_qcache.c',

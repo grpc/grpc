@@ -3101,6 +3101,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/cares/cares/src/lib/ares_inet_net_pton.h )
   s.files += %w( third_party/cares/cares/src/lib/ares_init.c )
   s.files += %w( third_party/cares/cares/src/lib/ares_ipv6.h )
+  s.files += %w( third_party/cares/cares/src/lib/ares_library_init.c )
   s.files += %w( third_party/cares/cares/src/lib/ares_options.c )
   s.files += %w( third_party/cares/cares/src/lib/ares_parse_into_addrinfo.c )
   s.files += %w( third_party/cares/cares/src/lib/ares_private.h )
