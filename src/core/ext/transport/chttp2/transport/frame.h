@@ -317,6 +317,10 @@ inline constexpr absl::string_view kGoAwayLength8 =
     "GOAWAY frame should have a Last-Stream-ID and Error Code making the "
     "minimum length 8 octets";
 
+// TODO(tjagtap) : [PH2][P2] : Take care that our transport class does not make
+// stream id larger than this.
+inline constexpr uint32_t kMaxStreamId31Bit = 0x7fffffffu;
+
 }  // namespace RFC9113
 }  // namespace grpc_core
 

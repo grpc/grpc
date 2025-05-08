@@ -78,6 +78,21 @@ uint32_t Read3b(const uint8_t* input) {
          static_cast<uint32_t>(input[1]) << 8 | static_cast<uint32_t>(input[2]);
 }
 
+constexpr uint32_t k8BitMask = 0x7f;
+
+void Write31bits(uint32_t x, uint8_t* output) {
+  output[0] = static_cast<uint8_t>(x >> 24);
+  output[1] = static_cast<uint8_t>(x >> 16);
+  output[2] = static_cast<uint8_t>(x >> 8);
+  output[3] = static_cast<uint8_t>(k8BitMask & x);
+}
+
+uint32_t Read31bits(const uint8_t* input) {
+  return (k8BitMask & static_cast<uint32_t>(input[0])) << 24 |
+         static_cast<uint32_t>(input[1]) << 16 |
+         static_cast<uint32_t>(input[2]) << 8 | static_cast<uint32_t>(input[3]);
+}
+
 void Write4b(uint32_t x, uint8_t* output) {
   output[0] = static_cast<uint8_t>(x >> 24);
   output[1] = static_cast<uint8_t>(x >> 16);
@@ -145,6 +160,7 @@ class SerializeHeaderAndPayload {
 
   void operator()(Http2DataFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
+    DCHECK_LE(frame.stream_id, RFC9113::kMaxStreamId31Bit);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kData),
                      MaybeFlag(frame.end_stream, kFlagEndStream),
@@ -220,8 +236,9 @@ class SerializeHeaderAndPayload {
     Http2FrameHeader{static_cast<uint32_t>(8 + frame.debug_data.length()),
                      static_cast<uint8_t>(FrameType::kGoaway), 0, 0}
         .Serialize(hdr_and_fixed_payload.begin());
-    Write4b(frame.last_stream_id,
-            hdr_and_fixed_payload.begin() + kFrameHeaderSize);
+    DCHECK_LE(frame.last_stream_id, RFC9113::kMaxStreamId31Bit);
+    Write31bits(frame.last_stream_id,
+                hdr_and_fixed_payload.begin() + kFrameHeaderSize);
     Write4b(frame.error_code,
             hdr_and_fixed_payload.begin() + kFrameHeaderSize + 4);
     out_.AppendIndexed(Slice(std::move(hdr_and_fixed_payload)));
@@ -233,7 +250,8 @@ class SerializeHeaderAndPayload {
     Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kWindowUpdate), 0,
                      frame.stream_id}
         .Serialize(hdr_and_payload.begin());
-    Write4b(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
+    DCHECK_LE(frame.increment, RFC9113::kMaxStreamId31Bit);
+    Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
 
@@ -455,7 +473,9 @@ ValueOrHttp2Status<Http2Frame> ParseGoawayFrame(const Http2FrameHeader& hdr,
   uint8_t buffer[8];
   payload.MoveFirstNBytesIntoBuffer(8, buffer);
   return ValueOrHttp2Status<Http2Frame>(Http2GoawayFrame{
-      Read4b(buffer), Read4b(buffer + 4), payload.JoinIntoSlice()});
+      /*Last-Stream-ID (31)*/ Read31bits(buffer),
+      /*Error Code (32)*/ Read4b(buffer + 4),
+      /*Additional Debug Data(variable)*/ payload.JoinIntoSlice()});
 }
 
 ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
@@ -472,8 +492,8 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
   }
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
-  return ValueOrHttp2Status<Http2Frame>(
-      Http2WindowUpdateFrame{hdr.stream_id, Read4b(buffer)});
+  return ValueOrHttp2Status<Http2Frame>(Http2WindowUpdateFrame{
+      hdr.stream_id, /*Window Size Increment (31)*/ Read31bits(buffer)});
 }
 
 ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
@@ -491,7 +511,11 @@ void Http2FrameHeader::Serialize(uint8_t* output) const {
 }
 
 Http2FrameHeader Http2FrameHeader::Parse(const uint8_t* input) {
-  return Http2FrameHeader{Read3b(input), input[3], input[4], Read4b(input + 5)};
+  return Http2FrameHeader{
+      /*Length(24)=*/Read3b(input),
+      /*Type(8)*/ input[3],
+      /*Flags(8)*/ input[4],
+      /*Reserved (1), Stream Identifier*/ Read31bits(input + 5)};
 }
 
 namespace {
