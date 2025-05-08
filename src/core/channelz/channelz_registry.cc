@@ -146,6 +146,8 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   NodeList& remove_list = uuid == -1 ? node_shard.nursery : node_shard.numbered;
   remove_list.Remove(node);
   if (max_orphaned_per_shard_ == 0) {
+    // We are not tracking orphaned nodes... remove from the index
+    // if necessary, then exit out.
     node_shard.mu.Unlock();
     if (uuid != -1) {
       MutexLock lock(&index_mu_);
@@ -155,6 +157,8 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   }
   NodeList& add_list =
       uuid != -1 ? node_shard.orphaned_numbered : node_shard.orphaned;
+  // Ref counting: once a node becomes orphaned we add a single weak ref to it.
+  // We hold that ref until it gets garbage collected later.
   node->WeakRef().release();
   node->orphaned_index_ = node_shard.next_orphan_index;
   CHECK_GT(node->orphaned_index_, 0);
@@ -165,37 +169,31 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
     node_shard.mu.Unlock();
     return;
   }
-  absl::InlinedVector<WeakRefCountedPtr<BaseNode>, 2> gcd_nodes;
-  bool any_numbered = false;
-  while (node_shard.TotalOrphaned() > max_orphaned_per_shard_) {
-    NodeList* gc_list;
-    // choose the oldest node to evict, regardless of numbered or not
-    if (node_shard.orphaned.tail == nullptr) {
-      CHECK_NE(node_shard.orphaned_numbered.tail, nullptr);
-      gc_list = &node_shard.orphaned_numbered;
-      any_numbered = true;
-    } else if (node_shard.orphaned_numbered.tail == nullptr) {
-      gc_list = &node_shard.orphaned;
-    } else if (node_shard.orphaned.tail->orphaned_index_ <
-               node_shard.orphaned_numbered.tail->orphaned_index_) {
-      gc_list = &node_shard.orphaned;
-    } else {
-      gc_list = &node_shard.orphaned_numbered;
-      any_numbered = true;
-    }
-    auto* n = gc_list->tail;
-    CHECK_GT(n->orphaned_index_, 0);
-    gc_list->Remove(n);
-    gcd_nodes.emplace_back(n);
+  CHECK_EQ(node_shard.TotalOrphaned(), max_orphaned_per_shard_ + 1);
+  NodeList* gc_list;
+  // choose the oldest node to evict, regardless of numbered or not
+  if (node_shard.orphaned.tail == nullptr) {
+    CHECK_NE(node_shard.orphaned_numbered.tail, nullptr);
+    gc_list = &node_shard.orphaned_numbered;
+  } else if (node_shard.orphaned_numbered.tail == nullptr) {
+    gc_list = &node_shard.orphaned;
+  } else if (node_shard.orphaned.tail->orphaned_index_ <
+             node_shard.orphaned_numbered.tail->orphaned_index_) {
+    gc_list = &node_shard.orphaned;
+  } else {
+    gc_list = &node_shard.orphaned_numbered;
   }
+  auto* n = gc_list->tail;
+  CHECK_GT(n->orphaned_index_, 0);
+  gc_list->Remove(n);
+  // Note: we capture the reference to n previously added here, and release
+  // it when this smart pointer is destroyed, outside of any locks.
+  WeakRefCountedPtr<BaseNode> gcd_node(n);
   node_shard.mu.Unlock();
-  if (any_numbered) {
+  if (gc_list == &node_shard.orphaned_numbered) {
     MutexLock lock(&index_mu_);
-    for (const auto& n : gcd_nodes) {
-      intptr_t uuid = n->uuid_.load(std::memory_order_relaxed);
-      if (uuid == -1) continue;
-      index_.erase(uuid);
-    }
+    intptr_t uuid = n->uuid_.load(std::memory_order_relaxed);
+    index_.erase(uuid);
   }
 }
 
@@ -311,6 +309,48 @@ intptr_t ChannelzRegistry::InternalNumberNode(BaseNode* node) {
   return uuid;
 }
 
+bool ChannelzRegistry::NodeList::Holds(BaseNode* node) const {
+  BaseNode* n = head;
+  while (n != nullptr) {
+    if (n == node) return true;
+    n = n->next_;
+  }
+  return false;
+}
+
+void ChannelzRegistry::NodeList::AddToHead(BaseNode* node) {
+  DCHECK(!Holds(node));
+  ++count;
+  if (head != nullptr) head->prev_ = node;
+  node->next_ = head;
+  node->prev_ = nullptr;
+  head = node;
+  if (tail == nullptr) tail = node;
+  DCHECK(Holds(node));
+}
+
+void ChannelzRegistry::NodeList::Remove(BaseNode* node) {
+  DCHECK(Holds(node));
+  DCHECK_GT(count, 0);
+  --count;
+  if (node->prev_ == nullptr) {
+    head = node->next_;
+    if (head == nullptr) {
+      DCHECK_EQ(count, 0);
+      tail = nullptr;
+      DCHECK(!Holds(node));
+      return;
+    }
+  } else {
+    node->prev_->next_ = node->next_;
+  }
+  if (node->next_ == nullptr) {
+    tail = node->prev_;
+  } else {
+    node->next_->prev_ = node->prev_;
+  }
+  DCHECK(!Holds(node));
+}
 }  // namespace channelz
 }  // namespace grpc_core
 

@@ -146,52 +146,30 @@ class ChannelzRegistry final {
     BaseNode* head = nullptr;
     BaseNode* tail = nullptr;
     size_t count = 0;
-    bool Holds(BaseNode* node) const {
-      BaseNode* n = head;
-      while (n != nullptr) {
-        if (n == node) return true;
-        n = n->next_;
-      }
-      return false;
-    }
-    void AddToHead(BaseNode* node) {
-      DCHECK(!Holds(node));
-      ++count;
-      if (head != nullptr) head->prev_ = node;
-      node->next_ = head;
-      node->prev_ = nullptr;
-      head = node;
-      if (tail == nullptr) tail = node;
-      DCHECK(Holds(node));
-    }
-    void Remove(BaseNode* node) {
-      DCHECK(Holds(node));
-      DCHECK_GT(count, 0);
-      --count;
-      if (node->prev_ == nullptr) {
-        head = node->next_;
-        if (head == nullptr) {
-          DCHECK_EQ(count, 0);
-          tail = nullptr;
-          DCHECK(!Holds(node));
-          return;
-        }
-      } else {
-        node->prev_->next_ = node->next_;
-      }
-      if (node->next_ == nullptr) {
-        tail = node->prev_;
-      } else {
-        node->next_->prev_ = node->prev_;
-      }
-      DCHECK(!Holds(node));
-    }
+    bool Holds(BaseNode* node) const;
+    void AddToHead(BaseNode* node);
+    void Remove(BaseNode* node);
   };
+  // Nodes traverse through up to four lists, depending on
+  // whether they have a uuid (this is becoming numbered),
+  // and whether they have been orphaned or not.
+  // The lists help us find un-numbered nodes when needed for
+  // queries, and the oldest orphaned node when needed for
+  // garbage collection.
+  // Nodes are organized into shards based on their pointer
+  // address. A shard tracks the four lists of nodes
+  // independently - we strive to have no cross-talk between
+  // shards as these are very global objects.
   struct alignas(GPR_CACHELINE_SIZE) NodeShard {
     Mutex mu;
+    // Nursery nodes have no uuid and are not orphaned.
     NodeList nursery ABSL_GUARDED_BY(mu);
+    // Numbered nodes have been assigned a uuid, and are not orphaned.
     NodeList numbered ABSL_GUARDED_BY(mu);
+    // Orphaned nodes have no uuid, but have been orphaned.
     NodeList orphaned ABSL_GUARDED_BY(mu);
+    // Finally, orphaned numbered nodes are orphaned, and have been assigned a
+    // uuid.
     NodeList orphaned_numbered ABSL_GUARDED_BY(mu);
     uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 1;
     size_t TotalOrphaned() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
@@ -215,6 +193,14 @@ class ChannelzRegistry final {
   // returns the void* associated with that uuid. Else returns nullptr.
   WeakRefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
 
+  // Generic query over nodes.
+  // This function takes care of all the gnarly locking, and allows high level
+  // code to request a start node and maximum number of results (for pagination
+  // purposes).
+  // `discriminator` allows callers to choose which nodes will be returned - if
+  // it returns true, the node is included in the result.
+  // `discriminator` *MUST NOT* ref the node, nor call into ChannelzRegistry via
+  // any code path (locks are held during the call).
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
       intptr_t start_node,
       absl::FunctionRef<bool(const BaseNode*)> discriminator,

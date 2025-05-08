@@ -127,8 +127,6 @@ class BaseNode : public DualRefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  ~BaseNode() override = default;
-
   void Orphaned() final;
 
   bool HasParent(const BaseNode* parent) const {
