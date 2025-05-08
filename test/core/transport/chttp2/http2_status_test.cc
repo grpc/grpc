@@ -436,10 +436,11 @@ TEST(ValueOrHttp2StatusTest, TakeStatusStreamTest) {
       "");
 
   // 4. Absl status
-  absl::Status absl_status = TakeStatus(std::move(result)).GetAbslStreamError();
+  Http2Status status =
+      ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
+  absl::Status absl_status = status.GetAbslStreamError();
   EXPECT_FALSE(absl_status.ok());
   EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
-  ;
 }
 
 TEST(ValueOrHttp2StatusTest, TakeStatusConnectionTest) {
@@ -462,11 +463,11 @@ TEST(ValueOrHttp2StatusTest, TakeStatusConnectionTest) {
       { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
 
   // 4. Absl status
-  absl::Status absl_status =
-      TakeStatus(std::move(result)).GetAbslConnectionError();
+  Http2Status status =
+      ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
+  absl::Status absl_status = status.GetAbslConnectionError();
   EXPECT_FALSE(absl_status.ok());
   EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
-  ;
 }
 
 }  // namespace testing

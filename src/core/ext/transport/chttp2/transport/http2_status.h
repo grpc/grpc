@@ -347,14 +347,10 @@ class ValueOrHttp2Status {
     return std::get<T>(value_);
   }
 
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const Http2Status& status() const {
-    DCHECK(std::holds_alternative<Http2Status>(value_));
-    return std::get<Http2Status>(value_);
-  }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Http2Status& status() {
-    DCHECK(std::holds_alternative<Http2Status>(value_));
-    return std::get<Http2Status>(value_);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Http2Status TakeStatus(
+      ValueOrHttp2Status<T>&& status) {
+    DCHECK(std::holds_alternative<Http2Status>(status.value_));
+    return std::move(std::get<Http2Status>(status.value_));
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {
@@ -399,12 +395,6 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T TakeValue(
     ValueOrHttp2Status<T>&& value) {
   return std::move(value.value());
-}
-
-template <typename T>
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Http2Status TakeStatus(
-    ValueOrHttp2Status<T>&& value) {
-  return std::move(value.status());
 }
 
 }  // namespace http2

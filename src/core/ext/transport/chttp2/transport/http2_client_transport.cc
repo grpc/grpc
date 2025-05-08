@@ -262,7 +262,8 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         ValueOrHttp2Status<Http2Frame> frame =
             ParseFramePayload(current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
-          return HandleError(TakeStatus(std::move(frame)));
+          return HandleError(
+              ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
         }
 
         return TakeValue(std::move(frame));
