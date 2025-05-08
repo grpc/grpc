@@ -30,12 +30,7 @@
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
 #ifndef GPR_ABSEIL_SYNC
-#if defined(__APPLE__)
-// This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
-// fails with this. https://github.com/grpc/grpc/issues/23661
-#else
 #define GPR_ABSEIL_SYNC 1
-#endif
 #endif  // GPR_ABSEIL_SYNC
 
 /* Get windows.h included everywhere (we need it) */

@@ -1478,22 +1478,12 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
 }
 
 static void trace_annotations(grpc_chttp2_stream* s) {
-  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
-    if (s->parent_call_tracer != nullptr) {
-      s->parent_call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s->t->flow_control.stats())
-              .Add(s->flow_control.stats()));
-    }
-  } else {
-    if (s->call_tracer != nullptr && s->call_tracer->IsSampled()) {
-      s->call_tracer->RecordAnnotation(
-          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
-                                    gpr_now(GPR_CLOCK_REALTIME))
-              .Add(s->t->flow_control.stats())
-              .Add(s->flow_control.stats()));
-    }
+  if (s->call_tracer != nullptr && s->call_tracer->IsSampled()) {
+    s->call_tracer->RecordAnnotation(
+        grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kStart,
+                                  gpr_now(GPR_CLOCK_REALTIME))
+            .Add(s->t->flow_control.stats())
+            .Add(s->flow_control.stats()));
   }
 }
 
@@ -1742,9 +1732,6 @@ static void perform_stream_op_locked(void* stream_op,
   grpc_chttp2_transport* t = s->t.get();
 
   s->traced = op->is_traced;
-  if (!grpc_core::IsCallTracerTransportFixEnabled()) {
-    s->parent_call_tracer = ParentCallTracerIfSampled(s);
-  }
   // Some server filters populate CallTracerInterface in the context only after
   // reading initial metadata. (Client-side population is done by
   // client_channel filter.)

@@ -152,6 +152,15 @@ ReclamationSweep::~ReclamationSweep() {
   }
 }
 
+void ReclamationSweep::Finish() {
+  auto memory_quota = std::move(memory_quota_);
+  if (memory_quota != nullptr) {
+    auto sweep_token = sweep_token_;
+    auto waker = std::move(waker_);
+    memory_quota->FinishReclamation(sweep_token, std::move(waker));
+  }
+}
+
 //
 // ReclaimerQueue
 //

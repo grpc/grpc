@@ -40,22 +40,12 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: backoff_cap_initial_at_max
-  description: Backoff library applies max_backoff even on initial_backoff.
-  expiry: 2025/05/01
-  owner: roth@google.com
-  test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: call_tracer_transport_fix
-  description: Use the correct call tracer in transport
-  expiry: 2025/06/01
-  owner: yashkt@google.com
-  test_tags: []
 - name: callv3_client_auth_filter
   description: Use the CallV3 client auth filter.
   expiry: 2025/06/01
