@@ -125,4 +125,6 @@
   type: int
   default: 0
   fuzz: true
-  description: If non-zero, extend the lifetime of channelz nodes past the underlying object lifetime, up to this many nodes.
+  description: "EXPERIMENTAL: \
+    If non-zero, extend the lifetime of channelz nodes past the underlying object lifetime, up to this many nodes. \
+    The value may be adjusted slightly to account for implementation limits."

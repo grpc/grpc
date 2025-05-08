@@ -116,14 +116,7 @@ class ChannelzRegistry final {
   }
 
   // Test only helper function to reset to initial state.
-  static void TestOnlyReset() {
-    auto* p = Default();
-    p->uuid_generator_ = 1;
-    p->node_shards_.clear();
-    p->LoadConfig();
-    MutexLock lock(&p->index_mu_);
-    p->index_.clear();
-  }
+  static void TestOnlyReset();
 
  private:
   ChannelzRegistry() { LoadConfig(); }

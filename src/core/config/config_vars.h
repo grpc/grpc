@@ -105,8 +105,9 @@ class GPR_DLL ConfigVars {
   bool CppExperimentalDisableReflection() const {
     return cpp_experimental_disable_reflection_;
   }
-  // If non-zero, extend the lifetime of channelz nodes past the underlying
-  // object lifetime, up to this many nodes.
+  // EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the
+  // underlying object lifetime, up to this many nodes. The value may be
+  // adjusted slightly to account for implementation limits.
   int32_t ChannelzMaxOrphanedNodes() const {
     return channelz_max_orphaned_nodes_;
   }

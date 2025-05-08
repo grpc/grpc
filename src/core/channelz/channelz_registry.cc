@@ -351,6 +351,30 @@ void ChannelzRegistry::NodeList::Remove(BaseNode* node) {
   }
   DCHECK(!Holds(node));
 }
+void ChannelzRegistry::TestOnlyReset() {
+  auto* p = Default();
+  p->uuid_generator_ = 1;
+  p->node_shards_.clear();
+  p->LoadConfig();
+  std::vector<WeakRefCountedPtr<BaseNode>> free_nodes;
+  for (size_t i = 0; i < kNodeShards; i++) {
+    MutexLock lock(&p->node_shards_[i].mu);
+    CHECK(p->node_shards_[i].nursery.head == nullptr);
+    CHECK(p->node_shards_[i].numbered.head == nullptr);
+    while (p->node_shards_[i].orphaned.head != nullptr) {
+      free_nodes.emplace_back(p->node_shards_[i].orphaned.head);
+      p->node_shards_[i].orphaned.Remove(p->node_shards_[i].orphaned.head);
+    }
+    while (p->node_shards_[i].orphaned_numbered.head != nullptr) {
+      free_nodes.emplace_back(p->node_shards_[i].orphaned_numbered.head);
+      p->node_shards_[i].orphaned_numbered.Remove(
+          p->node_shards_[i].orphaned_numbered.head);
+    }
+  }
+  MutexLock lock(&p->index_mu_);
+  p->index_.clear();
+}
+
 }  // namespace channelz
 }  // namespace grpc_core
 

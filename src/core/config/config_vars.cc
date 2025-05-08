@@ -76,9 +76,11 @@ ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");
-ABSL_FLAG(absl::optional<int32_t>, grpc_channelz_max_orphaned_nodes, {},
-          "If non-zero, extend the lifetime of channelz nodes past the "
-          "underlying object lifetime, up to this many nodes.");
+ABSL_FLAG(
+    absl::optional<int32_t>, grpc_channelz_max_orphaned_nodes, {},
+    "EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the "
+    "underlying object lifetime, up to this many nodes. The value may be "
+    "adjusted slightly to account for implementation limits.");
 
 namespace grpc_core {
 
