@@ -183,15 +183,26 @@ if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
         try:
             return asyncio.get_running_loop()
         except RuntimeError:
-            with warnings.catch_warnings():
-                # Convert DeprecationWarning to errors so we can capture them with except
-                warnings.simplefilter("error", DeprecationWarning)
-                try:
+            try:
+                with warnings.catch_warnings():
+                    # For `asyncio.get_event_loop_policy().get_event_loop()`:
+                    #
+                    # - Since Python 3.12, `DeprecationWarning` is emitted if there
+                    #   is no current event loop.
+                    # - Since Python 3.14, `DeprecationWarning` for
+                    #   `asyncio.get_event_loop_policy()` also appears.
+                    #
+                    # In the interim, silence all `DeprecationWarning` for
+                    # `asyncio.get_event_loop_policy().get_event_loop()`
+                    warnings.simplefilter("ignore", category=DeprecationWarning)
                     return asyncio.get_event_loop_policy().get_event_loop()
-                # Since version 3.12, DeprecationWarning is emitted if there is no
-                # current event loop.
-                except DeprecationWarning:
-                    return asyncio.get_event_loop_policy().new_event_loop()
+            # Since version 3.14, `RuntimeError` is emitted if there is no
+            # current event loop.
+            except RuntimeError:
+                # TODO(https://github.com/grpc/grpc/issues/39518):
+                # Migrate off of `asyncio.get_event_loop_policy()`
+                # prior to official launch of Python 3.14.
+                return asyncio.get_event_loop_policy().new_event_loop()
 else:
     def get_working_loop():
         """Returns a running event loop."""
