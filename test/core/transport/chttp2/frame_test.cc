@@ -492,15 +492,15 @@ TEST(Frame, ParseRejectsRstStreamFrame) {
                        absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
                                     "{RST_STREAM: flags=0, "
                                     "stream_id=0, length=4}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                            /* Type (1 octet) */ 3,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 2,
-                            /* */ 100, 100, 100, 100),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                                    "{RST_STREAM: flags=0, "
-                                    "stream_id=2, length=4}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
+                    /* Type (1 octet) */ 3,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 2,
+                    /* */ 100, 100, 100, 100),
+      StatusIs(absl::StatusCode::kInternal,
+               absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                            "{RST_STREAM: flags=0, stream_id=2, length=4}")));
 }
 
 TEST(Frame, ParseRejectsSettingsFrame) {
@@ -510,25 +510,21 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* */ 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings ack length: {SETTINGS: flags=1, "
-                       "stream_id=0, length=1}"));
+                       "{SETTINGS: flags=1, stream_id=0, length=1}"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* */ 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=1} -- settings must be multiples "
-                       "of 6 bytes long"));
+                       "{SETTINGS: flags=0, stream_id=0, length=1}"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 2,
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* Setting */ 1, 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=2} -- settings must be multiples "
+                       "{SETTINGS: flags=0, stream_id=0, length=2}"
                        "of 6 bytes long"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
                             /* Type (1 octet) */ 4,
@@ -536,43 +532,37 @@ TEST(Frame, ParseRejectsSettingsFrame) {
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* Setting */ 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=3} -- settings must be multiples "
-                       "of 6 bytes long"));
+                       "{SETTINGS: flags=0, stream_id=0, length=3}"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* Setting */ 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=4} -- settings must be multiples "
-                       "of 6 bytes long"));
+                       "{SETTINGS: flags=0, stream_id=0, length=4}"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* Setting */ 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=5} -- settings must be multiples "
-                       "of 6 bytes long"));
+                       "{SETTINGS: flags=0, stream_id=0, length=5}"));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 7,
                             /* Type (1 octet) */ 4,
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                             /* Setting */ 1, 1, 1, 1, 1, 1, 1),
               StatusIs(absl::StatusCode::kInternal,
-                       "invalid settings payload: {SETTINGS: flags=0, "
-                       "stream_id=0, length=7} -- settings must be multiples "
-                       "of 6 bytes long"));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                            /* Type (1 octet) */ 4,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       "invalid stream id: {SETTINGS: flags=0, "
-                       "stream_id=1, length=0}"));
+                       "{SETTINGS: flags=0, "
+                       "stream_id=0, length=7}"));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 4,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1),
+      StatusIs(absl::StatusCode::kInternal,
+               absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero,
+                            "{SETTINGS: flags=0, stream_id=1, length=0}")));
 }
 
 TEST(Frame, ParseRejectsPingFrame) {
