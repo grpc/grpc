@@ -130,6 +130,11 @@ class ScopedLatentSee final {
     done_ = std::make_shared<grpc_core::Notification>();
     manager_thread_.emplace(
         "latent_see_manager", [this, done = done_, name = std::move(name)]() {
+          LOG(INFO) << "Starting latent-see";
+          grpc_core::latent_see::Log::Get().TryPullEventsAndFlush(
+              [](absl::Span<const grpc_core::latent_see::Log::RecordedEvent>) {
+              });
+          LOG(INFO) << "Started latent-see";
           int step = 0;
           // Once per second: kick off a thread to collate the latent-see data.
           // Each one of these may fail under contention (that's ok, we just get
