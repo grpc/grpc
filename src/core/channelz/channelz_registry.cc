@@ -354,8 +354,6 @@ void ChannelzRegistry::NodeList::Remove(BaseNode* node) {
 void ChannelzRegistry::TestOnlyReset() {
   auto* p = Default();
   p->uuid_generator_ = 1;
-  p->node_shards_.clear();
-  p->node_shards_.resize(kNodeShards);
   p->LoadConfig();
   std::vector<WeakRefCountedPtr<BaseNode>> free_nodes;
   for (size_t i = 0; i < kNodeShards; i++) {
@@ -372,6 +370,8 @@ void ChannelzRegistry::TestOnlyReset() {
           p->node_shards_[i].orphaned_numbered.head);
     }
   }
+  std::vector<NodeShard> replace_node_shards(kNodeShards);
+  replace_node_shards.swap(p->node_shards_);
   MutexLock lock(&p->index_mu_);
   p->index_.clear();
 }
