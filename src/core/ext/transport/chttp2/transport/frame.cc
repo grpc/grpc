@@ -570,7 +570,7 @@ ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
     case FrameType::kPushPromise:
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
-          absl::StrCat(RFC9113::kNoPushPromise));
+          absl::StrCat(RFC9113::kNoPushPromise, hdr.ToString()));
     case FrameType::kCustomSecurity:
       return ParseSecurityFrame(hdr, payload);
     default:

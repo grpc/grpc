@@ -415,7 +415,9 @@ TEST(Frame, ParseRejectsPushPromise) {
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                             /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
               StatusIs(absl::StatusCode::kInternal,
-                       std::string(RFC9113::kNoPushPromise)));
+                       absl::StrCat(
+                           RFC9113::kNoPushPromise,
+                           "{PUSH_PROMISE: flags=0, stream_id=1, length=10}")));
 }
 
 TEST(Frame, ParseRejectsDataFrame) {
