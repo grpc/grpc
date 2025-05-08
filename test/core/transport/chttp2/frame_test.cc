@@ -29,6 +29,8 @@ using grpc_core::http2::Http2ErrorCode;
 namespace grpc_core {
 namespace {
 
+using http2::RFC9113;
+
 MATCHER_P2(StatusIs, code, message, "") {
   return arg.code() == code && arg.message() == message;
 }
@@ -119,9 +121,9 @@ TEST(Header, ToString) {
 TEST(Frame, Serialization) {
   EXPECT_EQ(Serialize(Http2DataFrame{1, false, SliceBufferFromString("hello")}),
             ByteVec(0, 0, 5, 0, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'));
-  EXPECT_EQ(Serialize(Http2DataFrame{0x98381822, true,
+  EXPECT_EQ(Serialize(Http2DataFrame{0x78381821, true,
                                      SliceBufferFromString("kids")}),
-            ByteVec(0, 0, 4, 0, 1, 0x98, 0x38, 0x18, 0x22, 'k', 'i', 'd', 's'));
+            ByteVec(0, 0, 4, 0, 1, 0x78, 0x38, 0x18, 0x21, 'k', 'i', 'd', 's'));
   EXPECT_EQ(Serialize(Http2HeaderFrame{1, false, false,
                                        SliceBufferFromString("hello")}),
             ByteVec(0, 0, 5, 1, 0, 0, 0, 0, 1, 'h', 'e', 'l', 'l', 'o'));
@@ -183,9 +185,9 @@ TEST(Frame, ParseHttp2DataFrame) {
   EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
                        /* Type (1 octet) */ 0,
                        /* Unused Flags (1 octet) */ 1,
-                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       /* Stream Identifier (31 bits) */ 0x18, 0x38, 0x18, 0x21,
                        /* Data */ 'k', 'i', 'd', 's'),
-            Http2Frame(Http2DataFrame{0x98381822, true,
+            Http2Frame(Http2DataFrame{0x18381821, true,
                                       SliceBufferFromString("kids")}));
 }
 
@@ -200,16 +202,23 @@ TEST(Frame, ParseHttp2HeaderFrame) {
   EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 4,
-                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       /* Stream Identifier (31 bits) */ 0x78, 0x38, 0x18, 0x21,
                        /* Field Block Fragment */ 'k', 'i', 'd', 's'),
-            Http2Frame(Http2HeaderFrame{0x98381822, true, false,
+            Http2Frame(Http2HeaderFrame{0x78381821, true, false,
                                         SliceBufferFromString("kids")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 1,
-                       /* Stream Identifier (31 bits) */ 0x98, 0x38, 0x18, 0x22,
+                       /* Stream Identifier (31 bits) */ 0x78, 0x38, 0x18, 0x21,
                        /* Field Block Fragment */ 'k', 'i', 'd', 's'),
-            Http2Frame(Http2HeaderFrame{0x98381822, false, true,
+            Http2Frame(Http2HeaderFrame{0x78381821, false, true,
+                                        SliceBufferFromString("kids")}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) = */ 0, 0, 4,
+                       /* Type (1 octet) */ 1,
+                       /* Unused Flags (1 octet) */ 5,
+                       /* Stream Identifier (31 bits) */ 0x78, 0x38, 0x18, 0x21,
+                       /* Field Block Fragment */ 'k', 'i', 'd', 's'),
+            Http2Frame(Http2HeaderFrame{0x78381821, true, true,
                                         SliceBufferFromString("kids")}));
 }
 
@@ -224,9 +233,9 @@ TEST(Frame, ParseHttp2ContinuationFrame) {
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 5,
                        /* Type (1 octet) */ 9,
                        /* Unused Flags (1 octet) */ 4,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                       /* Stream Identifier (31 bits) */ 0x78, 0x38, 0x18, 0x21,
                        /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o'),
-            Http2Frame(Http2ContinuationFrame{1, true,
+            Http2Frame(Http2ContinuationFrame{0x78381821, true,
                                               SliceBufferFromString("hello")}));
 }
 
@@ -238,9 +247,18 @@ TEST(Frame, ParseHttp2RstStreamFrame) {
                        /* Error Code (4 octets) */ 0, 0, 0, 0x0a),
             Http2Frame(Http2RstStreamFrame{
                 1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 4,
+                       /* Type (1 octet) */ 3,
+                       /* Unused Flags (1 octet) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                       /* Error Code (4 octets) */ 0, 0, 0, 0x6),
+            Http2Frame(Http2RstStreamFrame{
+                1, static_cast<uint32_t>(Http2ErrorCode::kFrameSizeError)}));
 }
 
 TEST(Frame, ParseHttp2SettingsFrame) {
+  // This is a weird frame. Empty settings and no ack.
+  // But RFC9113 does not say anything so we allow it.
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 0,
                        /* Type (1 octet) */ 4,
                        /* Unused Flags (1 octet) */ 0,
@@ -288,6 +306,17 @@ TEST(Frame, ParseHttp2PingFrame) {
 }
 
 TEST(Frame, ParseHttp2GoawayFrame) {
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 8,
+                       /* Type (1 octet) */ 7,
+                       /* Unused Flags (1 octet) */ 0,
+                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Reserved (1 bit) Last-Stream-ID (31 bits) */
+                       0x12, 0x34, 0x56, 0x78,
+                       /* Error Code (4 octets) */ 0, 0, 0, 0x0b
+                       /* Additional Debug Data */),
+            Http2Frame(Http2GoawayFrame{
+                0x12345678,
+                static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm)}));
   EXPECT_EQ(
       ParseFrame(/* Length (3 octets) */ 0, 0, 13,
                  /* Type (1 octet) */ 7,
@@ -327,18 +356,23 @@ TEST(Frame, ParseHttp2DataFramePadded) {
                  /* Type (1 octet) */ 0,
                  /* Unused Flags (1 octet) */ 8,
                  /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                 /* */ 3, 'h', 'e', 'l', 'l', 'o', 1, 2, 3),
+                 /* Pad Length */ 3,
+                 /* Data */ 'h', 'e', 'l', 'l', 'o',
+                 /* Padding */ 0, 0, 0),
       Http2Frame(Http2DataFrame{1, false, SliceBufferFromString("hello")}));
 }
 
 TEST(Frame, ParseHttp2HeaderFramePadded) {
+  // TODO(tjagtap) : [PH2][P4] : Look at permutations of flags and types of
+  // frames we can have. HEADERS has multiple permutations that have not been
+  // tested.
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 8,
                        /* Type (1 octet) */ 1,
                        /* Unused Flags (1 octet) */ 8,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                        /* Pad Length (1 octet) */ 2,
                        /* Field Block Fragment */ 'h', 'e', 'l', 'l', 'o',
-                       /* Padding*/ 1, 2),
+                       /* Padding*/ 0, 0),
             Http2Frame(Http2HeaderFrame{1, false, false,
                                         SliceBufferFromString("hello")}));
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 10,
@@ -380,9 +414,7 @@ TEST(Frame, ParseRejectsPushPromise) {
                             /* Unused Flags (1 octet) */ 0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                             /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-              StatusIs(absl::StatusCode::kInternal,
-                       "push promise not supported (and SETTINGS_ENABLE_PUSH "
-                       "explicitly disabled)."));
+              StatusIs(absl::StatusCode::kInternal, RFC9113::kNoPushPromise));
 }
 
 TEST(Frame, ParseRejectsDataFrame) {
