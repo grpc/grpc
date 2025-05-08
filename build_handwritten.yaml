@@ -143,7 +143,7 @@ defaults:
   cares:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares/cares/include -Ithird_party/cares -Ithird_party/cares/cares
-      -Ithird_party/cares/cares/src/lib/inlcude -Ithird_party/cares/cares/src/lib
+      -Ithird_party/cares/cares/src/lib/include -Ithird_party/cares/cares/src/lib
       -fvisibility=hidden -D_GNU_SOURCE $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin)
       $(if $(subst FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst
       Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux) $(if $(subst OpenBSD,,$(SYSTEM)),,-Ithird_party/cares/config_openbsd)
