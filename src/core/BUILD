@@ -9192,7 +9192,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "cancel_callback",
-        "context_list_entry",
+        "dump_args",
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
