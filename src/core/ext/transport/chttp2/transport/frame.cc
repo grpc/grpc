@@ -268,14 +268,14 @@ Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kFrameParserIncorrectPadding));
-  } else if (hdr.length < padding_bytes) {
+  } else if (hdr.length <= padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength));
   }
 
-  // We currently dont check for padding being zero.
-  // TODO(tjagtap) : [PH2][P4]
+  // We dont check for padding being zero.
+  // No point checking bytes that will be discarded.
   // RFC9113 : A receiver is not obligated to verify padding but MAY treat
   // non-zero padding as a connection error of type PROTOCOL_ERROR.
   payload.RemoveLastNBytes(padding_bytes);
@@ -478,10 +478,6 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
 
 ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
     const Http2FrameHeader& /*hdr*/, SliceBuffer& payload) {
-  if (payload.Length() == 0) {
-    return Http2Status::Http2ConnectionError(Http2ErrorCode::kProtocolError,
-                                             "Incorrect Security Frame");
-  }
   return ValueOrHttp2Status<Http2Frame>(Http2SecurityFrame{std::move(payload)});
 }
 
