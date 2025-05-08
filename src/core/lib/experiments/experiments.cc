@@ -23,9 +23,6 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -196,8 +193,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
@@ -314,9 +309,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -487,8 +479,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
@@ -605,9 +595,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
@@ -778,8 +765,6 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,

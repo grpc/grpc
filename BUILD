@@ -1584,7 +1584,6 @@ grpc_cc_library(
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
         "gpr",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:call_final_info",
         "//src/core:channel_args",
@@ -1594,6 +1593,7 @@ grpc_cc_library(
         "//src/core:metadata_batch",
         "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -2821,7 +2821,6 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2836,6 +2835,7 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
         "//src/core:sync",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -4670,32 +4670,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "context_list_entry",
-    hdrs = [
-        "//src/core:telemetry/context_list_entry.h",
-    ],
-    deps = [
-        "gpr",
-        "tcp_tracer",
-    ],
-)
-
-grpc_cc_library(
-    name = "tcp_tracer",
-    hdrs = [
-        "//src/core:telemetry/tcp_tracer.h",
-    ],
-    external_deps = [
-        "absl/time",
-    ],
-    visibility = ["//bazel:tcp_tracer"],
-    deps = [
-        "event_engine_base_hdrs",
-        "gpr",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
@@ -4750,7 +4724,6 @@ grpc_cc_library(
         "chttp2_legacy_frame",
         "chttp2_varint",
         "config_vars",
-        "context_list_entry",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -4765,7 +4738,6 @@ grpc_cc_library(
         "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
-        "tcp_tracer",
         "transport_auth_context",
         "//src/core:arena",
         "//src/core:bdp_estimator",
@@ -4774,6 +4746,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:context_list_entry",
         "//src/core:default_tcp_tracer",
         "//src/core:error",
         "//src/core:error_utils",
@@ -4807,6 +4780,7 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_conversion",
         "//src/core:status_helper",
+        "//src/core:tcp_tracer",
         "//src/core:time",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
