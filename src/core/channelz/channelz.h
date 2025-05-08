@@ -127,7 +127,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  void Orphaned() final;
+  void Orphaned() override;
 
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);
@@ -322,6 +322,11 @@ class ChannelNode final : public BaseNode {
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
 
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
+
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
   }
@@ -368,6 +373,8 @@ class ChannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
@@ -380,6 +387,11 @@ class SubchannelNode final : public BaseNode {
  public:
   SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
+
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
 
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
@@ -428,6 +440,8 @@ class SubchannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 };
 
@@ -437,6 +451,11 @@ class ServerNode final : public BaseNode {
   explicit ServerNode(size_t channel_tracer_max_nodes);
 
   ~ServerNode() override;
+
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
 
   Json RenderJson() override;
 
@@ -472,6 +491,8 @@ class ServerNode final : public BaseNode {
  private:
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 };
 
