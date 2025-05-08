@@ -319,30 +319,6 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    class SubchannelConnectionRequester final {
-     public:
-      explicit SubchannelConnectionRequester(
-          RefCountedPtr<SubchannelWrapper> subchannel)
-          : subchannel_(std::move(subchannel)) {
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-        // Hop into ExecCtx, so that we don't get stuck running
-        // arbitrary WorkSerializer callbacks while doing a pick.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-     private:
-      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<SubchannelConnectionRequester*>(arg);
-        self->subchannel_->policy()->work_serializer()->Run([self]() {
-          self->subchannel_->RequestConnection();
-          delete self;
-        });
-      }
-
-      RefCountedPtr<SubchannelWrapper> subchannel_;
-      grpc_closure closure_;
-    };
-
     std::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
         XdsOverrideHostAttribute* override_host_attr) const;
 
@@ -493,7 +469,10 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found IDLE subchannel";
     // Deletes itself after the connection is requested.
-    new SubchannelConnectionRequester(std::move(idle_subchannel));
+    policy_->work_serializer()->Run(
+        [subchannel = std::move(idle_subchannel)]() {
+          subchannel->RequestConnection();
+        });
     return PickResult::Queue();
   }
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
