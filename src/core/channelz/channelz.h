@@ -136,7 +136,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
 
   void AddParent(BaseNode* parent) {
     MutexLock lock(&parent_mu_);
-    parents_.insert(parent->Ref());
+    parents_.insert(parent->WeakRef());
   }
 
   void RemoveParent(BaseNode* parent) {
@@ -181,9 +181,9 @@ class BaseNode : public DualRefCounted<BaseNode> {
   friend class ChannelzRegistry;
   // allow data source to register/unregister itself
   friend class DataSource;
-  using ParentSet =
-      absl::flat_hash_set<RefCountedPtr<BaseNode>, RefCountedPtrHash<BaseNode>,
-                          RefCountedPtrEq<BaseNode>>;
+  using ParentSet = absl::flat_hash_set<WeakRefCountedPtr<BaseNode>,
+                                        WeakRefCountedPtrHash<BaseNode>,
+                                        WeakRefCountedPtrEq<BaseNode>>;
 
   intptr_t UuidSlow();
 
