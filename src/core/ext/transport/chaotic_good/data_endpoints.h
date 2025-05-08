@@ -301,6 +301,8 @@ class DataEndpoints {
 
   auto AwaitClosed() { return input_queues_->AwaitClosed(); }
 
+  void Close();
+
   bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
 
  private:

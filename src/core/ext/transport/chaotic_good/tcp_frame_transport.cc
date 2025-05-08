@@ -246,15 +246,21 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
 
 void TcpFrameTransport::Orphan() {
   ztrace_collector_->Append(OrphanTrace{});
+  LOG(INFO) << "Orphaning transport: party=" << party_.get();
+  data_endpoints_.Close();
   if (party_ != nullptr) {
-    party_->Spawn(
+    auto party = std::move(party_);
+    party->Spawn(
         "close",
         [self = RefAsSubclass<TcpFrameTransport>()]() {
+          LOG(INFO) << "set closed: prior=" << self->closed_.is_set();
           if (!self->closed_.is_set()) self->closed_.Set();
           return ImmediateOkStatus();
         },
-        [](absl::Status) {});
-    party_.reset();
+        [party](absl::Status) mutable {
+          LOG(INFO) << "Drop party";
+          party.reset();
+        });
   }
   Unref();
 }
