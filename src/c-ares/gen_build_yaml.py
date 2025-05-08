@@ -80,6 +80,7 @@ try:
                 "third_party/cares/cares/src/lib/ares_data.c",
                 "third_party/cares/cares/src/lib/ares_parse_into_addrinfo.c",
                 "third_party/cares/cares/src/lib/ares_cancel.c",
+                "third_party/cares/cares/src/lib/ares_library_init.c",
                 "third_party/cares/cares/src/lib/ares_search.c",
                 "third_party/cares/cares/src/lib/ares_sysconfig_win.c",
                 "third_party/cares/cares/src/lib/ares_gethostbyname.c",
