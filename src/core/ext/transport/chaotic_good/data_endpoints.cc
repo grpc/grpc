@@ -546,8 +546,10 @@ auto Endpoint::WriteLoop(uint32_t id,
                             .value_or("peer-unknown"),
                         "#", id);
                   },
-                  endpoint->Write(std::move(next_write.bytes),
-                                  std::move(write_args))),
+                  GRPC_LATENT_SEE_PROMISE(
+                      "DataEndpointWrite",
+                      endpoint->Write(std::move(next_write.bytes),
+                                      std::move(write_args)))),
               [id, output_buffers, ztrace_collector](absl::Status status) {
                 ztrace_collector->Append([id, &status]() {
                   return FinishWriteBytesToEndpointTrace{id, status};
@@ -576,10 +578,12 @@ auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
                input_queues = std::move(input_queues),
                ztrace_collector = std::move(ztrace_collector)]() {
     return TrySeq(
-        endpoint->ReadSlice(
-            TcpDataFrameHeader::kFrameHeaderSize +
-            DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
-                                  decode_alignment)),
+        GRPC_LATENT_SEE_PROMISE(
+            "DataEndpointReadHdr",
+            endpoint->ReadSlice(
+                TcpDataFrameHeader::kFrameHeaderSize +
+                DataConnectionPadding(TcpDataFrameHeader::kFrameHeaderSize,
+                                      decode_alignment))),
         [id](Slice frame_header) {
           auto hdr = TcpDataFrameHeader::Parse(frame_header.data());
           GRPC_TRACE_LOG(chaotic_good, INFO)
@@ -591,18 +595,21 @@ auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
         [endpoint, ztrace_collector, id,
          decode_alignment](TcpDataFrameHeader frame_header) {
           ztrace_collector->Append(ReadDataHeaderTrace{frame_header});
-          return Map(TryStaple(endpoint->Read(frame_header.payload_length +
-                                              DataConnectionPadding(
-                                                  frame_header.payload_length,
-                                                  decode_alignment)),
-                               frame_header),
-                     [id, frame_header](auto x) {
-                       GRPC_TRACE_LOG(chaotic_good, INFO)
-                           << "CHAOTIC_GOOD: Complete read " << frame_header
-                           << " on data connection #" << id
-                           << " status: " << x.status();
-                       return x;
-                     });
+          return Map(
+              TryStaple(GRPC_LATENT_SEE_PROMISE(
+                            "DataEndpointRead",
+                            endpoint->Read(frame_header.payload_length +
+                                           DataConnectionPadding(
+                                               frame_header.payload_length,
+                                               decode_alignment))),
+                        frame_header),
+              [id, frame_header](auto x) {
+                GRPC_TRACE_LOG(chaotic_good, INFO)
+                    << "CHAOTIC_GOOD: Complete read " << frame_header
+                    << " on data connection #" << id
+                    << " status: " << x.status();
+                return x;
+              });
         },
         [endpoint, input_queues, id, decode_alignment](
             std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
