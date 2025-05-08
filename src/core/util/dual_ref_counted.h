@@ -250,6 +250,49 @@ class DualRefCounted : public Impl {
     }
   }
 
+  GRPC_MUST_USE_RESULT WeakRefCountedPtr<Child> WeakRefIfNonZero() {
+    uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
+    do {
+      const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
+      const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
+#ifndef NDEBUG
+      if (trace_ != nullptr) {
+        VLOG(2) << trace_ << ":" << this << " ref_if_non_zero " << strong_refs
+                << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
+                << ")";
+      }
+#endif
+      if (strong_refs == 0 && weak_refs == 0) return nullptr;
+    } while (!refs_.compare_exchange_weak(
+        prev_ref_pair, prev_ref_pair + MakeRefPair(0, 1),
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
+  }
+  GRPC_MUST_USE_RESULT WeakRefCountedPtr<Child> WeakRefIfNonZero(
+      const DebugLocation& location, const char* reason) {
+    uint64_t prev_ref_pair = refs_.load(std::memory_order_acquire);
+    do {
+      const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
+      const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
+#ifndef NDEBUG
+      if (trace_ != nullptr) {
+        VLOG(2) << trace_ << ":" << this << " " << location.file() << ":"
+                << location.line() << " ref_if_non_zero " << strong_refs
+                << " -> " << strong_refs + 1 << " (weak_refs=" << weak_refs
+                << ") " << reason;
+      }
+#else
+      // Avoid unused-parameter warnings for debug-only parameters
+      (void)location;
+      (void)reason;
+#endif
+      if (strong_refs == 0 && weak_refs == 0) return nullptr;
+    } while (!refs_.compare_exchange_weak(
+        prev_ref_pair, prev_ref_pair + MakeRefPair(0, 1),
+        std::memory_order_acq_rel, std::memory_order_acquire));
+    return WeakRefCountedPtr<Child>(static_cast<Child*>(this));
+  }
+
  protected:
   // Note: Tracing is a no-op in non-debug builds.
   explicit DualRefCounted(

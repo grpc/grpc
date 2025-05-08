@@ -21,8 +21,6 @@
 #include <memory>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/strings/escaping.h"
-#include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -33,6 +31,7 @@
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/string.h"
@@ -41,6 +40,10 @@ namespace grpc_core {
 namespace chaotic_good {
 
 namespace data_endpoints_detail {
+
+namespace {
+const uint64_t kSecurityFramePayloadTag = 0;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // SendRate
@@ -162,6 +165,40 @@ void OutputBuffer::AddData(Json::Object& obj) const {
 
 ///////////////////////////////////////////////////////////////////////////////
 // OutputBuffers
+
+void OutputBuffers::WriteSecurityFrame(uint32_t connection_id,
+                                       SliceBuffer output_buffer) {
+  Waker waker;
+  auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
+  MutexLock lock(&mu_);
+  auto& buffer = buffers_[connection_id];
+  if (!buffer.has_value()) return;
+  waker = buffer->TakeWaker();
+  SliceBuffer& output = buffer->pending();
+  CHECK_LT(output_buffer.Length(), std::numeric_limits<uint32_t>::max());
+  const uint32_t payload_length = static_cast<uint32_t>(output_buffer.Length());
+  TcpDataFrameHeader hdr{kSecurityFramePayloadTag, 0, payload_length};
+  auto header_padding = DataConnectionPadding(
+      TcpDataFrameHeader::kFrameHeaderSize, encode_alignment_);
+  MutableSlice header_slice = MutableSlice::CreateUninitialized(
+      TcpDataFrameHeader::kFrameHeaderSize + header_padding);
+  hdr.Serialize(header_slice.data());
+  if (header_padding > 0) {
+    memset(header_slice.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
+           header_padding);
+  }
+  output.AppendIndexed(Slice(std::move(header_slice)));
+  const auto payload_padding =
+      DataConnectionPadding(output_buffer.Length(), encode_alignment_);
+  output.TakeAndAppend(output_buffer);
+  if (payload_padding > 0) {
+    auto slice = MutableSlice::CreateUninitialized(payload_padding);
+    memset(slice.data(), 0, payload_padding);
+    output.AppendIndexed(Slice(std::move(slice)));
+  }
+  CHECK_EQ(output.Length() % encode_alignment_, 0u) << GRPC_DUMP_ARGS(
+      output.Length(), encode_alignment_, header_padding, payload_padding);
+}
 
 Poll<Empty> OutputBuffers::PollWrite(uint64_t payload_tag, uint64_t send_time,
                                      SliceBuffer& output_buffer,
@@ -414,6 +451,29 @@ void InputQueue::SetClosed(absl::Status status) {
 ///////////////////////////////////////////////////////////////////////////////
 // Endpoint
 
+namespace {
+RefCountedPtr<channelz::SocketNode> MakeSocketNode(
+    const TransportContextPtr& ctx, const PromiseEndpoint& endpoint) {
+  std::string peer_string =
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetPeerAddress())
+          .value_or("unknown");
+  return MakeRefCounted<channelz::SocketNode>(
+      grpc_event_engine::experimental::ResolvedAddressToString(
+          endpoint.GetLocalAddress())
+          .value_or("unknown"),
+      peer_string, absl::StrCat("chaotic-good ", peer_string),
+      ctx->socket_node->security());
+}
+
+TransportFramingEndpointExtension* GetTransportFramingEndpointExtension(
+    PromiseEndpoint& endpoint) {
+  return grpc_event_engine::experimental::QueryExtension<
+      TransportFramingEndpointExtension>(
+      endpoint.GetEventEngineEndpoint().get());
+}
+}  // namespace
+
 auto Endpoint::WriteLoop(uint32_t id,
                          RefCountedPtr<OutputBuffers> output_buffers,
                          std::shared_ptr<PromiseEndpoint> endpoint,
@@ -544,7 +604,7 @@ auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
                        return x;
                      });
         },
-        [input_queues, id, decode_alignment](
+        [endpoint, input_queues, id, decode_alignment](
             std::tuple<SliceBuffer, TcpDataFrameHeader> buffer_frame)
             -> LoopCtl<absl::Status> {
           auto& [buffer, frame_header] = buffer_frame;
@@ -553,28 +613,25 @@ auto Endpoint::ReadLoop(uint32_t id, uint32_t decode_alignment,
               << " on data connection #" << id;
           buffer.RemoveLastNBytesNoInline(DataConnectionPadding(
               frame_header.payload_length, decode_alignment));
-          input_queues->CompleteRead(frame_header.payload_tag,
-                                     std::move(buffer));
+          if (GPR_UNLIKELY(frame_header.payload_tag ==
+                           kSecurityFramePayloadTag)) {
+            ReceiveSecurityFrame(*endpoint, std::move(buffer));
+          } else {
+            input_queues->CompleteRead(frame_header.payload_tag,
+                                       std::move(buffer));
+          }
           return Continue{};
         });
   });
 }
 
-namespace {
-RefCountedPtr<channelz::SocketNode> MakeSocketNode(
-    const TransportContextPtr& ctx, const PromiseEndpoint& endpoint) {
-  std::string peer_string =
-      grpc_event_engine::experimental::ResolvedAddressToString(
-          endpoint.GetPeerAddress())
-          .value_or("unknown");
-  return MakeRefCounted<channelz::SocketNode>(
-      grpc_event_engine::experimental::ResolvedAddressToString(
-          endpoint.GetLocalAddress())
-          .value_or("unknown"),
-      peer_string, absl::StrCat("chaotic-good ", peer_string),
-      ctx->socket_node->security());
+void Endpoint::ReceiveSecurityFrame(PromiseEndpoint& endpoint,
+                                    SliceBuffer buffer) {
+  auto* transport_framing_endpoint_extension =
+      GetTransportFramingEndpointExtension(endpoint);
+  if (transport_framing_endpoint_extension == nullptr) return;
+  transport_framing_endpoint_extension->ReceiveFrame(std::move(buffer));
 }
-}  // namespace
 
 Endpoint::Endpoint(uint32_t id, uint32_t decode_alignment,
                    RefCountedPtr<OutputBuffers> output_buffers,
@@ -632,6 +689,14 @@ Endpoint::Endpoint(uint32_t id, uint32_t decode_alignment,
                   epte->SetTcpTracer(std::make_shared<DefaultTcpTracer>(
                       ctx->stats_plugin_group));
                 }
+              }
+              auto* transport_framing_endpoint_extension =
+                  GetTransportFramingEndpointExtension(*endpoint);
+              if (transport_framing_endpoint_extension != nullptr) {
+                transport_framing_endpoint_extension->SetSendFrameCallback(
+                    [id, output_buffers](SliceBuffer* data) {
+                      output_buffers->WriteSecurityFrame(id, std::move(*data));
+                    });
               }
               auto read_party = Party::Make(std::move(arena));
               read_party->Spawn(
