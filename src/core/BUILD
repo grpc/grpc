@@ -101,11 +101,11 @@ grpc_cc_library(
     ],
     deps = [
         "memory_quota",
+        "tcp_tracer",
         "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
-        "//:tcp_tracer",
     ],
 )
 
@@ -175,6 +175,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
@@ -7279,6 +7280,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "context_list_entry",
+    hdrs = [
+        "telemetry/context_list_entry.h",
+    ],
+    deps = [
+        "tcp_tracer",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_tracer",
+    hdrs = [
+        "//src/core:telemetry/tcp_tracer.h",
+    ],
+    external_deps = [
+        "absl/time",
+    ],
+    visibility = ["//bazel:tcp_tracer"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_tcp_tracer",
     srcs = [
         "telemetry/default_tcp_tracer.cc",
@@ -7297,8 +7324,8 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "metrics",
         "sync",
+        "tcp_tracer",
         "//:gpr",
-        "//:tcp_tracer",
     ],
 )
 
@@ -7634,6 +7661,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "time",
         "//:gpr_platform",
     ],
 )
@@ -7669,6 +7697,8 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "arena",
+        "http2_status",
         "message",
         ":slice",
         ":slice_buffer",
@@ -8282,8 +8312,8 @@ grpc_cc_library(
         "match_promise",
         "mpsc",
         "pipe",
+        "tcp_tracer",
         "//:promise",
-        "//:tcp_tracer",
     ],
 )
 
@@ -9163,6 +9193,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "cancel_callback",
+        "dump_args",
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -9172,7 +9203,6 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "sync",
-        "//:context_list_entry",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",

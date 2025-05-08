@@ -57,8 +57,6 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
@@ -113,8 +111,6 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
@@ -169,8 +165,6 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
@@ -227,7 +221,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
 enum ExperimentIds {
-  kExperimentIdBackoffCapInitialAtMax,
   kExperimentIdCallTracerInTransport,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
@@ -268,10 +261,6 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() {
-  return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();

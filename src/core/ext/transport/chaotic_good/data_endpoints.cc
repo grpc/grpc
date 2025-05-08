@@ -680,7 +680,9 @@ Endpoint::Endpoint(uint32_t id, uint32_t decode_alignment,
               // Enable RxMemoryAlignment and RPC receive coalescing after the
               // transport setup is complete. At this point all the settings
               // frames should have been read.
-              endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+              if (decode_alignment != 1) {
+                endpoint->EnforceRxMemoryAlignmentAndCoalescing();
+              }
               if (enable_tracing) {
                 auto* epte = grpc_event_engine::experimental::QueryExtension<
                     grpc_event_engine::experimental::TcpTraceExtension>(

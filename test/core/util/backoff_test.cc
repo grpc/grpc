@@ -52,9 +52,6 @@ TEST(BackOffTest, ConstantBackOff) {
 }
 
 TEST(BackOffTest, InitialBackoffCappedByMaxBackoff) {
-  if (!IsBackoffCapInitialAtMaxEnabled()) {
-    GTEST_SKIP() << "test requires backoff_cap_initial_at_max experiment";
-  }
   const auto kInitialBackoff = Duration::Seconds(2);
   const auto kMaxBackoff = Duration::Seconds(1);
   const double kMultiplier = 1.0;
