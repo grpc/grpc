@@ -255,11 +255,11 @@ class SerializeHeaderAndPayload {
   MutableSlice extra_bytes_;
 };
 
-Http2Status StripPadding(const uint32_t length, SliceBuffer& payload) {
+Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (payload.Length() < 1) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kFrameParserIncorrectPadding));
+        absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
   }
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
@@ -267,11 +267,11 @@ Http2Status StripPadding(const uint32_t length, SliceBuffer& payload) {
   if (payload.Length() <= padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kFrameParserIncorrectPadding));
-  } else if (length < padding_bytes) {
+        absl::StrCat(RFC9113::kFrameParserIncorrectPadding));
+  } else if (hdr.length < padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kPaddingLengthLargerThanFrameLength));
+        absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength));
   }
 
   // We currently dont check for padding being zero.
@@ -287,15 +287,15 @@ ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
   if (hdr.stream_id == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kDataStreamIdMustBeNonZero));
+        absl::StrCat(RFC9113::kDataStreamIdMustBeNonZero, hdr.ToString()));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kStreamIdMustBeOdd));
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
 
   if (hdr.flags & kFlagPadded) {
-    Http2Status s = StripPadding(hdr.length, payload);
+    Http2Status s = StripPadding(hdr, payload);
     if (!s.IsOk()) return s;
   }
 
@@ -309,15 +309,15 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
   if (hdr.stream_id == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kHeaderStreamIdMustBeNonZero));
+        absl::StrCat(RFC9113::kHeaderStreamIdMustBeNonZero, hdr.ToString()));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kStreamIdMustBeOdd));
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
 
   if (hdr.flags & kFlagPadded) {
-    Http2Status s = StripPadding(hdr.length, payload);
+    Http2Status s = StripPadding(hdr, payload);
     if (!s.IsOk()) return s;
   }
 
@@ -325,7 +325,7 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
     if (payload.Length() < 5) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
-          std::string(RFC9113::kIncorrectFrame));
+          absl::StrCat(RFC9113::kIncorrectFrame, hdr.ToString()));
     }
     uint8_t trash[5];
     payload.MoveFirstNBytesIntoBuffer(5, trash);
@@ -341,11 +341,12 @@ ValueOrHttp2Status<Http2Frame> ParseContinuationFrame(
   if (hdr.stream_id == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kContinuationStreamIdMustBeNonZero));
+        absl::StrCat(RFC9113::kContinuationStreamIdMustBeNonZero,
+                     hdr.ToString()));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kStreamIdMustBeOdd));
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
 
   return ValueOrHttp2Status<Http2Frame>(Http2ContinuationFrame{
@@ -358,17 +359,17 @@ ValueOrHttp2Status<Http2Frame> ParseRstStreamFrame(const Http2FrameHeader& hdr,
   if (payload.Length() != 4) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
-        std::string(RFC9113::kRstStreamLength4));
+        absl::StrCat(RFC9113::kRstStreamLength4, hdr.ToString()));
   }
 
   if (hdr.stream_id == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kRstStreamStreamIdMustBeNonZero));
+        absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero, hdr.ToString()));
   } else if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kStreamIdMustBeOdd));
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
 
   uint8_t buffer[4];
@@ -383,14 +384,14 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
   if (hdr.stream_id != 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kSettingsStreamIdMustBeZero));
+        absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero, hdr.ToString()));
   }
 
   if (hdr.flags == kFlagAck) {
     if (payload.Length() != 0) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kFrameSizeError,
-          std::string(RFC9113::kSettingsLength0));
+          absl::StrCat(RFC9113::kSettingsLength0, hdr.ToString()));
     }
     return ValueOrHttp2Status<Http2Frame>(Http2SettingsFrame{true, {}});
   }
@@ -398,7 +399,7 @@ ValueOrHttp2Status<Http2Frame> ParseSettingsFrame(const Http2FrameHeader& hdr,
   if (payload.Length() % 6 != 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
-        std::string(RFC9113::kSettingsLength6x));
+        absl::StrCat(RFC9113::kSettingsLength6x, hdr.ToString()));
   }
 
   Http2SettingsFrame frame{false, {}};
@@ -417,13 +418,14 @@ ValueOrHttp2Status<Http2Frame> ParsePingFrame(const Http2FrameHeader& hdr,
                                               SliceBuffer& payload) {
   if (payload.Length() != 8) {
     return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kFrameSizeError, std::string(RFC9113::kPingLength8));
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kPingLength8, hdr.ToString()));
   }
 
   if (hdr.stream_id != 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kPingStreamIdMustBeZero));
+        absl::StrCat(RFC9113::kPingStreamIdMustBeZero, hdr.ToString()));
   }
 
   // RFC9113 : Unused flags MUST be ignored on receipt and MUST be left unset
@@ -440,13 +442,14 @@ ValueOrHttp2Status<Http2Frame> ParseGoawayFrame(const Http2FrameHeader& hdr,
                                                 SliceBuffer& payload) {
   if (payload.Length() < 8) {
     return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kFrameSizeError, std::string(RFC9113::kGoAwayLength8));
+        Http2ErrorCode::kFrameSizeError,
+        absl::StrCat(RFC9113::kGoAwayLength8, hdr.ToString()));
   }
 
   if (hdr.stream_id != 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kGoAwayStreamIdMustBeZero));
+        absl::StrCat(RFC9113::kGoAwayStreamIdMustBeZero, hdr.ToString()));
   }
 
   uint8_t buffer[8];
@@ -460,12 +463,12 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
   if (payload.Length() != 4) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kFrameSizeError,
-        std::string(RFC9113::kWindowUpdateLength4));
+        absl::StrCat(RFC9113::kWindowUpdateLength4, hdr.ToString()));
   }
   if ((hdr.stream_id % 2) == 0) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        std::string(RFC9113::kStreamIdMustBeOdd));
+        absl::StrCat(RFC9113::kStreamIdMustBeOdd, hdr.ToString()));
   }
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
@@ -566,7 +569,8 @@ ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
       return ParseWindowUpdateFrame(hdr, payload);
     case FrameType::kPushPromise:
       return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError, std::string(RFC9113::kNoPushPromise));
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kNoPushPromise));
     case FrameType::kCustomSecurity:
       return ParseSecurityFrame(hdr, payload);
     default:
