@@ -196,9 +196,6 @@ TEST(Frame, Http2SecurityFrameSerialization) {
             ByteVec(0, 0, 5, 200, 0, 0, 0, 0, 0, 'h', 'e', 'l', 'l', 'o'));
 }
 
-// constexpr uint8_t kFlagEndStream = 1;
-// constexpr uint8_t kFlagAck = 1;
-// constexpr uint8_t kFlagEndHeaders = 4;
 constexpr uint8_t kFlagPadded = 8;
 constexpr uint8_t kFlagPriority = 0x20;
 constexpr uint8_t kAllOnes = 0xffu;
@@ -576,24 +573,41 @@ TEST(Frame, ParseRejectsPushPromise) {
                            "{PUSH_PROMISE: flags=0, stream_id=1, length=10}")));
 }
 
-////////////////////////////////////////////////////////
-
 TEST(Frame, ParseRejectsDataFrame) {
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
                             /* Type (1 octet) */ 0,
-                            /* Unused Flags (1 octet) */ 0,
+                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
+   (2), END_STREAM Flag (1)*/
+                            0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
+              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
                        absl::StrCat(RFC9113::kDataStreamIdMustBeNonZero,
                                     "{DATA: flags=0, stream_id=0, length=0}")));
   EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
                             /* Type (1 octet) */ 0,
-                            /* Unused Flags (1 octet) */ 0,
+                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
+   (2), END_STREAM Flag (1)*/
+                            0,
                             /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
-              StatusIs(absl::StatusCode::kInternal,
+              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
                        absl::StrCat(RFC9113::kStreamIdMustBeOdd,
                                     "{DATA: flags=0, stream_id=2, length=0}")));
+
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 9,
+                            /* Type (1 octet) */ 0,
+                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
+                               (2), END_STREAM Flag (1)*/
+                            9,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                            /* Pad Length */ 0xff,
+                            /* Data */ 'h', 'e', 'l', 'l', 'o',
+                            /* Padding */ 0, 0, 0),
+              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
+                       absl::StrCat(RFC9113::kFrameParserIncorrectPadding,
+                                    "{DATA: flags=9, stream_id=1, length=9}")));
 }
+
+////////////////////////////////////////////////////////
 
 TEST(Frame, ParseRejectsHeaderFrame) {
   EXPECT_THAT(

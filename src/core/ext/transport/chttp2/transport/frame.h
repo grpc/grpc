@@ -310,6 +310,7 @@ inline constexpr absl::string_view kNoPushPromise =
     "RFC9113: PUSH_PROMISE MUST NOT be sent if the SETTINGS_ENABLE_PUSH "
     "setting of the "
     "peer endpoint is set to 0";
+
 inline constexpr absl::string_view kFrameParserIncorrectPadding =
     "Incorrect length of padding in frame";
 inline constexpr absl::string_view kIncorrectFrame = "Incorrect Frame";

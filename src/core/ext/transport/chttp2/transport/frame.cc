@@ -285,11 +285,12 @@ Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
   if (payload.Length() <= padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        absl::StrCat(RFC9113::kFrameParserIncorrectPadding));
+        absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
   } else if (hdr.length <= padding_bytes) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
-        absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength));
+        absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
+                     hdr.ToString()));
   }
 
   // We dont check for padding being zero.
