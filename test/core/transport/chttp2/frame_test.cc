@@ -341,14 +341,12 @@ TEST(Frame, ParseHttp2RstStreamFrame) {
                 1, static_cast<uint32_t>(Http2ErrorCode::kConnectError)}));
 
   // Check if Reserved Bit is ignored and unused flags are ignored
-  EXPECT_EQ(
-      ParseFrame(/* Length (3 octets) */ 0, 0, 4,
-                 /* Type (1 octet) */ 3,
-                 /* Unused Flags (1 octet) */ 0xff,
-                 /* Stream Identifier (31 bits) */ 0xff, 0xff, 0xff, 0xff,
-                 /* Error Code (4 octets) */ 0, 0, 0, 0x6),
-      Http2Frame(Http2RstStreamFrame{
-          0x7fffffff, static_cast<uint32_t>(Http2ErrorCode::kFrameSizeError)}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 4,
+                       /* Type (1 octet) */ 3,
+                       /* Unused Flags (1 octet) */ 0xff,
+                       /* Stream Identifier (31 bits) */ 0xff, 0xff, 0xff, 0xff,
+                       /* Error Code (4 octets) */ 0xff, 0xff, 0xff, 0xff),
+            Http2Frame(Http2RstStreamFrame{0x7fffffff, 0xffffffff}));
 }
 
 TEST(Frame, ParseHttp2SettingsFrame) {
@@ -411,7 +409,7 @@ TEST(Frame, ParseHttp2PingFrame) {
   EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 8,
                        /* Type (1 octet) */ 6,
                        /* Unused Flags (7), ACK Flag (1) */ 0xff,
-                       /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Stream Identifier (31 bits) */ 0x80, 0, 0, 0,
                        /* Opaque Data (8 octets) */ 0xff, 0xff, 0xff, 0xff,
                        0xff, 0xff, 0xff, 0xff),
             Http2Frame(Http2PingFrame{true, 0xffffffffffffffff}));
@@ -447,7 +445,7 @@ TEST(Frame, ParseHttp2GoawayFrame) {
       ParseFrame(/* Length (3 octets) */ 0, 0, 13,
                  /* Type (1 octet) */ 7,
                  /* Unused Flags (1 octet) */ 0xff,
-                 /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                 /* Stream Identifier (31 bits) */ 0x80, 0, 0, 0,
                  /* Reserved (1 bit) Last-Stream-ID (31 bits) */
                  0xff, 0xff, 0xff, 0xff,
                  /* Error Code (4 octets) */ 0, 0, 0, 0x0b,
@@ -481,6 +479,12 @@ TEST(Frame, ParseHttp2SecurityFrame) {
                        /* Type (1 octet) */ 200,
                        /* Unused Flags (1 octet) */ 0,
                        /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                       /* Payload */ 'h', 'e', 'l', 'l', 'o'),
+            Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
+  EXPECT_EQ(ParseFrame(/* Length (3 octets) */ 0, 0, 5,
+                       /* Type (1 octet) */ 200,
+                       /* Unused Flags (1 octet) */ 0xff,
+                       /* Stream Identifier (31 bits) */ 0xff, 0xff, 0xff, 0xff,
                        /* Payload */ 'h', 'e', 'l', 'l', 'o'),
             Http2Frame(Http2SecurityFrame{SliceBufferFromString("hello")}));
 }
@@ -607,13 +611,13 @@ TEST(Frame, ParseRejectsDataFrame) {
                                     "{DATA: flags=9, stream_id=1, length=9}")));
 }
 
-////////////////////////////////////////////////////////
-
 TEST(Frame, ParseRejectsHeaderFrame) {
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
                     /* Type (1 octet) */ 1,
-                    /* Unused Flags (1 octet) */ 0,
+                    /* Unused Flags (2),PRIORITY Flag (1),Unused Flag (1),PADDED
+             Flag (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
+                    0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
       StatusIs(absl::StatusCode::kInternal,
                absl::StrCat(RFC9113::kHeaderStreamIdMustBeNonZero,
@@ -621,11 +625,16 @@ TEST(Frame, ParseRejectsHeaderFrame) {
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
                     /* Type (1 octet) */ 1,
-                    /* Unused Flags (1 octet) */ 0,
+                    /* Unused Flags (2),PRIORITY Flag (1),Unused Flag (1),PADDED
+             Flag (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
+                    0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
       StatusIs(absl::StatusCode::kInternal,
                absl::StrCat(RFC9113::kStreamIdMustBeOdd,
                             "{HEADER: flags=0, stream_id=2, length=0}")));
+
+  // TODO(tjagtap) : [PH2][P5] : Add more test cases. The parser has a lot of
+  // cases.
 }
 
 TEST(Frame, ParseRejectsContinuationFrame) {

@@ -499,6 +499,7 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
 
 ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
     const Http2FrameHeader& /*hdr*/, SliceBuffer& payload) {
+  // TODO(tjagtap) : [PH2][P3] : Add validations
   return ValueOrHttp2Status<Http2Frame>(Http2SecurityFrame{std::move(payload)});
 }
 
