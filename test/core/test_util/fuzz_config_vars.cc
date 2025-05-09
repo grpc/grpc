@@ -23,6 +23,9 @@ namespace grpc_core {
 ConfigVars::Overrides OverridesFromFuzzConfigVars(
     const grpc::testing::FuzzConfigVars& vars) {
   ConfigVars::Overrides overrides;
+  if (vars.has_channelz_max_orphaned_nodes()) {
+    overrides.channelz_max_orphaned_nodes = vars.channelz_max_orphaned_nodes();
+  }
   if (vars.has_enable_fork_support()) {
     overrides.enable_fork_support = vars.enable_fork_support();
   }
