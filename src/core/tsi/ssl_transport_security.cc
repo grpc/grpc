@@ -2002,8 +2002,8 @@ static tsi_result create_tsi_ssl_handshaker(
     return TSI_OUT_OF_RESOURCES;
   }
   SSL_set_bio(ssl, ssl_io, ssl_io);
-  unsigned char* preferred_alpn_protocol_name_list;
-  size_t preferred_alpn_protocol_name_list_length;
+  unsigned char* preferred_alpn_protocol_name_list = nullptr;
+  size_t preferred_alpn_protocol_name_list_length = 0;
 #if TSI_OPENSSL_ALPN_SUPPORT
   if (alpn_preferred_protocol_list.has_value()) {
     std::vector<std::string> transport_protocols;
