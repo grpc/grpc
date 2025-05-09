@@ -160,7 +160,6 @@ class SerializeHeaderAndPayload {
 
   void operator()(Http2DataFrame& frame) {
     auto hdr = extra_bytes_.TakeFirst(kFrameHeaderSize);
-    DCHECK_LE(frame.stream_id, RFC9113::kMaxStreamId31Bit);
     Http2FrameHeader{static_cast<uint32_t>(frame.payload.Length()),
                      static_cast<uint8_t>(FrameType::kData),
                      MaybeFlag(frame.end_stream, kFlagEndStream),
@@ -236,7 +235,10 @@ class SerializeHeaderAndPayload {
     Http2FrameHeader{static_cast<uint32_t>(8 + frame.debug_data.length()),
                      static_cast<uint8_t>(FrameType::kGoaway), 0, 0}
         .Serialize(hdr_and_fixed_payload.begin());
-    DCHECK_LE(frame.last_stream_id, RFC9113::kMaxStreamId31Bit);
+    if (frame.last_stream_id > RFC9113::kMaxStreamId31Bit) {
+      LOG(ERROR) << "Stream ID will be truncated. The MSB will be set to 0 "
+                 << frame.last_stream_id;
+    }
     Write31bits(frame.last_stream_id,
                 hdr_and_fixed_payload.begin() + kFrameHeaderSize);
     Write4b(frame.error_code,
@@ -250,7 +252,10 @@ class SerializeHeaderAndPayload {
     Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kWindowUpdate), 0,
                      frame.stream_id}
         .Serialize(hdr_and_payload.begin());
-    DCHECK_LE(frame.increment, RFC9113::kMaxStreamId31Bit);
+    if (frame.last_stream_id > RFC9113::kMaxStreamId31Bit) {
+      LOG(ERROR) << "Stream ID will be truncated. The MSB will be set to 0 "
+                 << frame.last_stream_id;
+    }
     Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
   }
