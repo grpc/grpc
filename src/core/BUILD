@@ -36,6 +36,11 @@ config_setting(
     values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
 )
 
+config_setting(
+    name = "force_unsecure_getenv",
+    values = {"define": "GRPC_FORCE_UNSECURE_GETENV=1"},
+)
+
 # This is needed as a transitionary mechanism to build the src/core targets in
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
@@ -475,7 +480,7 @@ grpc_cc_library(
         "//:gpr_platform",
     ],
     defines = select({
-        "//:use_unsecure_getenv": ["GRPC_FORCE_UNSECURE_GETENV"],
+        ":force_unsecure_getenv": ["GRPC_FORCE_UNSECURE_GETENV"],
         "//conditions:default": [],
     }),
 )
