@@ -80,7 +80,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
-  grpc_core::global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
+  grpc_core::http2_global_stats().IncrementHttp2WriteDataFrameSize(write_bytes);
   call_tracer->RecordOutgoingBytes({header_size, 0, 0});
 }
 

@@ -137,7 +137,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
         if (t->channelz_socket != nullptr) {
           t->channelz_socket->RecordKeepaliveSent();
         }
-        grpc_core::global_stats().IncrementHttp2PingsSent();
+        t->http2_stats->IncrementHttp2PingsSent();
         if (GRPC_TRACE_FLAG_ENABLED(http) ||
             GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||
             GRPC_TRACE_FLAG_ENABLED(http_keepalive) ||
@@ -258,8 +258,8 @@ namespace {
 class WriteContext {
  public:
   explicit WriteContext(grpc_chttp2_transport* t) : t_(t) {
-    t->http2_stats.IncrementHttp2WritesBegun();
-    t->http2_stats.IncrementHttp2WriteTargetSize(target_write_size_);
+    t->http2_stats->IncrementHttp2WritesBegun();
+    t->http2_stats->IncrementHttp2WriteTargetSize(target_write_size_);
   }
 
   void FlushSettings() {
@@ -283,7 +283,7 @@ class WriteContext {
             });
       }
       t_->flow_control.FlushedSettings();
-      grpc_core::global_stats().IncrementHttp2SettingsWrites();
+      t_->http2_stats->IncrementHttp2SettingsWrites();
     }
   }
 
@@ -535,14 +535,14 @@ class StreamWriteContext {
         t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
             data_send_context.stream_remote_window(), s_->id});
-        grpc_core::global_stats().IncrementHttp2TransportStalls();
+        t_->http2_stats->IncrementHttp2TransportStalls();
         report_stall(t_, s_, "transport");
         grpc_chttp2_list_add_stalled_by_transport(t_, s_);
       } else if (data_send_context.stream_remote_window() <= 0) {
         t_->http2_ztrace_collector.Append(grpc_core::H2FlowControlStall{
             t_->flow_control.remote_window(),
             data_send_context.stream_remote_window(), s_->id});
-        grpc_core::global_stats().IncrementHttp2StreamStalls();
+        t_->http2_stats->IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
       } else if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
