@@ -7742,6 +7742,7 @@ grpc_cc_library(
         "message_assembler",
         "metadata",
         "mpsc",
+        "ping_promise",
         "sync",
         ":match_promise",
         ":poll",
