@@ -168,6 +168,8 @@ class Http2Status {
   }
 
   Http2Status(Http2Status&& move_status) = default;
+  Http2Status(const Http2Status&) = delete;
+  Http2Status& operator=(const Http2Status&) = delete;
 
  private:
   explicit Http2Status()
