@@ -13,10 +13,17 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "grpc_cc_benchmark")
 
 licenses(["notice"])
 
 grpc_package(name = "test/core/surface")
+
+grpc_cc_benchmark(
+    name = "bm_channel_init",
+    srcs = ["bm_channel_init.cc"],
+    deps = ["//test/core/test_util:grpc_test_util"],
+)
 
 grpc_cc_test(
     name = "grpc_byte_buffer_reader_test",
