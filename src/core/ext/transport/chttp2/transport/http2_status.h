@@ -171,7 +171,7 @@ class Http2Status {
 
   Http2Status(Http2Status&& move_status) = default;
 
-  // Our error code is a const, which makes an assignment illegal.
+  // Our http2_code_ code is a const, which makes an assignment illegal.
   Http2Status& operator=(Http2Status&& rhs) = delete;
 
   Http2Status(const Http2Status&) = delete;
