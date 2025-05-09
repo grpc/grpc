@@ -174,6 +174,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_int128
   absl_kernel_timeout_internal
   absl_layout
+  absl_leak_check
   absl_log
   absl_log_entry
   absl_log_globals
@@ -192,6 +193,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_log_internal_nullstream
   absl_log_internal_proto
   absl_log_internal_strip
+  absl_log_internal_structured_proto
   absl_log_internal_voidify
   absl_log_severity
   absl_log_sink
@@ -250,6 +252,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_throw_delegate
   absl_time
   absl_time_zone
+  absl_tracing_internal
   absl_type_traits
   absl_utf8_for_code_point
   absl_utility

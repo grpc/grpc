@@ -106,7 +106,7 @@ class ExperimentsCompiler {
 
   class ExperimentsOutputGenerator {
    public:
-    ExperimentsOutputGenerator(ExperimentsCompiler& compiler)
+    ExperimentsOutputGenerator(const ExperimentsCompiler& compiler)
         : compiler_(compiler) {}
     virtual ~ExperimentsOutputGenerator() = default;
     virtual void GenerateHeader(std::string& output) = 0;
@@ -127,7 +127,7 @@ class ExperimentsCompiler {
                                            std::string& output);
 
    private:
-    ExperimentsCompiler& compiler_;
+    const ExperimentsCompiler& compiler_;
   };
 
   absl::Status GenerateExperimentsHdr(
@@ -228,7 +228,7 @@ class GrpcOssExperimentsOutputGenerator
     : public ExperimentsCompiler::ExperimentsOutputGenerator {
  public:
   explicit GrpcOssExperimentsOutputGenerator(
-      ExperimentsCompiler& compiler, const std::string& mode,
+      const ExperimentsCompiler& compiler, const std::string& mode,
       const std::string& header_file_path = "")
       : ExperimentsOutputGenerator(compiler),
         mode_(mode),
