@@ -12266,6 +12266,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
