@@ -165,7 +165,7 @@ static const char* kBuildExtraMetadata = R"json({
     "@com_google_protobuf//upb/lex:lex": {
         "language": "c",
         "build": "all",
-        "_RENAME": "upb_lex_lib",
+        "_RENAME": "upb_lex_lib"
     },
     "@com_google_protobuf//upb:message": {
         "language": "c",
