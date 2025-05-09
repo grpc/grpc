@@ -94,9 +94,7 @@ class OverrideHostTest : public XdsEnd2endTest {
     return values;
   }
 
-  // Builds a Listener with Fault Injection filter config. If the http_fault
-  // is nullptr, then assign an empty filter config. This filter config is
-  // required to enable the fault injection features.
+  // Builds a Listener with stateful_session filter config.
   Listener BuildListenerWithStatefulSessionFilter(
       absl::string_view cookie_name = kCookieName) {
     StatefulSession stateful_session;
@@ -786,6 +784,44 @@ TEST_P(OverrideHostTest, MultipleAddressesPerEndpoint) {
   CheckRpcSendOk(DEBUG_LOCATION, 5,
                  RpcOptions().set_metadata({cookies.front().Header()}));
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 5);
+}
+
+class OverrideHostLoadReportingTest : public OverrideHostTest {
+ protected:
+  std::string ConstructCookieValueForEndpoint(size_t idx) const {
+    return absl::Base64Escape(absl::StrCat("127.0.0.1:", backends_[idx]->port(),
+                                           ";", kDefaultClusterName));
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, OverrideHostLoadReportingTest,
+    ::testing::Values(XdsTestType().set_enable_load_reporting()),
+    &XdsTestType::Name);
+
+// This test covers a bug encountered in the wild that caused a crash
+// due to failing to pass along per-address channel args when creating a
+// new subchannel due to a pick with a cookie pointing to an address for
+// which no subchannel currently exists.
+TEST_P(OverrideHostLoadReportingTest, SubchannelNotYetCreated) {
+  CreateAndStartBackends(3);
+  SetListenerAndRouteConfiguration(balancer_.get(),
+                                   BuildListenerWithStatefulSessionFilter(),
+                                   default_route_config_);
+  // Priority 0: backends 0 and 1.
+  // Priority 1: backend 2.
+  balancer_->ads_service()->SetEdsResource(BuildEdsResource(
+      EdsResourceArgs({{"locality0", CreateEndpointsForBackends(0, 2)},
+                       {"locality1", CreateEndpointsForBackends(2, 3),
+                        kDefaultLocalityWeight, 1}})));
+  WaitForAllBackends(DEBUG_LOCATION, 0, 2);
+  // Send requests with a cookie for backend 2.
+  Cookie cookie{std::string(kCookieName), ConstructCookieValueForEndpoint(2)};
+  CheckRpcSendOk(DEBUG_LOCATION, 5,
+                 RpcOptions().set_metadata({cookie.Header()}));
+  EXPECT_EQ(backends_[2]->backend_service()->request_count(), 5);
+  // Wait for a load report to make sure we don't crash.
+  balancer_->lrs_service()->WaitForLoadReport();
 }
 
 }  // namespace
