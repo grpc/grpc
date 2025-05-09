@@ -141,7 +141,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   const size_t node_shard_index = NodeShardIndex(node);
   NodeShard& node_shard = node_shards_[node_shard_index];
   node_shard.mu.Lock();
-  CHECK_EQ(node->orphaned_index_, 0);
+  CHECK_EQ(node->orphaned_index_, 0u);
   intptr_t uuid = node->uuid_.load(std::memory_order_relaxed);
   NodeList& remove_list = uuid == -1 ? node_shard.nursery : node_shard.numbered;
   remove_list.Remove(node);
@@ -161,7 +161,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
   // We hold that ref until it gets garbage collected later.
   node->WeakRef().release();
   node->orphaned_index_ = node_shard.next_orphan_index;
-  CHECK_GT(node->orphaned_index_, 0);
+  CHECK_GT(node->orphaned_index_, 0u);
   ++node_shard.next_orphan_index;
   add_list.AddToHead(node);
   if (node_shard.TotalOrphaned() <= max_orphaned_per_shard_) {
@@ -184,7 +184,7 @@ void ChannelzRegistry::InternalUnregister(BaseNode* node) {
     gc_list = &node_shard.orphaned_numbered;
   }
   auto* n = gc_list->tail;
-  CHECK_GT(n->orphaned_index_, 0);
+  CHECK_GT(n->orphaned_index_, 0u);
   gc_list->Remove(n);
   // Note: we capture the reference to n previously added here, and release
   // it when this smart pointer is destroyed, outside of any locks.
@@ -331,12 +331,12 @@ void ChannelzRegistry::NodeList::AddToHead(BaseNode* node) {
 
 void ChannelzRegistry::NodeList::Remove(BaseNode* node) {
   DCHECK(Holds(node));
-  DCHECK_GT(count, 0);
+  DCHECK_GT(count, 0u);
   --count;
   if (node->prev_ == nullptr) {
     head = node->next_;
     if (head == nullptr) {
-      DCHECK_EQ(count, 0);
+      DCHECK_EQ(count, 0u);
       tail = nullptr;
       DCHECK(!Holds(node));
       return;

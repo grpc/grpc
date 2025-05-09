@@ -318,7 +318,7 @@ class DualRefCounted : public Impl {
 
   // Debug check to validate that this object is still strongly owned
   void AssertStronglyOwned() const {
-    DCHECK_NE(GetStrongRefs(refs_.load(std::memory_order_relaxed)), 0);
+    DCHECK_NE(GetStrongRefs(refs_.load(std::memory_order_relaxed)), 0u);
   }
 
  private:
