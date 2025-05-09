@@ -170,7 +170,9 @@ class Http2Status {
   ~Http2Status() = default;
 
   Http2Status(Http2Status&& move_status) = default;
-  Http2Status& operator=(Http2Status&& rhs) = default;
+
+  // Our error code is a const, which makes an assignment illegal.
+  Http2Status& operator=(Http2Status&& rhs) = delete;
 
   Http2Status(const Http2Status&) = delete;
   Http2Status& operator=(const Http2Status&) = delete;
