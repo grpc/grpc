@@ -209,6 +209,10 @@ class XdsClusterImplLb final : public LoadBalancingPolicy {
           [](RefCountedStringValue locality) { return locality; },
           [](const RefCountedPtr<LrsClient::ClusterLocalityStats>&
                  locality_stats) {
+            if (locality_stats == nullptr ||
+                locality_stats->locality_name() == nullptr) {
+              return RefCountedStringValue();
+            }
             return locality_stats->locality_name()->human_readable_string();
           });
     }
