@@ -326,7 +326,9 @@ class Http2ClientTransport final : public ClientTransport {
     explicit KeepAliveInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
     Promise<absl::Status> SendPingAndWaitForAck() override {
-      return transport_->WaitForPingAck();
+      return TrySeq(
+          transport_->EnqueueOutgoingFrame(Http2EmptyFrame{}),
+          [transport = transport_] { return transport->WaitForPingAck(); });
     }
     Promise<absl::Status> OnKeepAliveTimeout() override {
       // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
