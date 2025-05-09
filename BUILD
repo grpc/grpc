@@ -212,6 +212,11 @@ config_setting(
     values = {"define": "use_strict_warning_windows=true"},
 )
 
+config_setting(
+    name = "use_unsecure_getenv",
+    values = {"define": "GRPC_FORCE_UNSECURE_GETENV=true"},
+)
+
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml

@@ -474,6 +474,10 @@ grpc_cc_library(
         "tchar",
         "//:gpr_platform",
     ],
+    defines = select({
+        "//:use_unsecure_getenv": ["GRPC_FORCE_UNSECURE_GETENV"],
+        "//conditions:default": [],
+    }),
 )
 
 grpc_cc_library(
