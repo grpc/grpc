@@ -305,6 +305,13 @@ struct ChannelArgNameTraits<grpc_event_engine::experimental::EventEngine> {
     return GRPC_INTERNAL_ARG_EVENT_ENGINE;
   }
 };
+template <>
+struct ChannelArgNameTraits<
+    grpc_event_engine::experimental::EventEngine::Endpoint> {
+  static absl::string_view ChannelArgName() {
+    return GRPC_ARG_SUBCHANNEL_ENDPOINT;
+  }
+};
 
 class ChannelArgs {
  public:
