@@ -494,35 +494,55 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   }
 }
 
-absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer payload) {
+http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
+    const Http2FrameHeader& hdr, SliceBuffer payload) {
   CHECK(payload.Length() == hdr.length);
+  absl::StatusOr<Http2Frame> frame;
+
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
-      return ParseDataFrame(hdr, payload);
+      frame = ParseDataFrame(hdr, payload);
+      break;
     case FrameType::kHeader:
-      return ParseHeaderFrame(hdr, payload);
+      frame = ParseHeaderFrame(hdr, payload);
+      break;
     case FrameType::kContinuation:
-      return ParseContinuationFrame(hdr, payload);
+      frame = ParseContinuationFrame(hdr, payload);
+      break;
     case FrameType::kRstStream:
-      return ParseRstStreamFrame(hdr, payload);
+      frame = ParseRstStreamFrame(hdr, payload);
+      break;
     case FrameType::kSettings:
-      return ParseSettingsFrame(hdr, payload);
+      frame = ParseSettingsFrame(hdr, payload);
+      break;
     case FrameType::kPing:
-      return ParsePingFrame(hdr, payload);
+      frame = ParsePingFrame(hdr, payload);
+      break;
     case FrameType::kGoaway:
-      return ParseGoawayFrame(hdr, payload);
+      frame = ParseGoawayFrame(hdr, payload);
+      break;
     case FrameType::kWindowUpdate:
-      return ParseWindowUpdateFrame(hdr, payload);
+      frame = ParseWindowUpdateFrame(hdr, payload);
+      break;
     case FrameType::kPushPromise:
-      return absl::InternalError(
+      frame = absl::InternalError(
           "push promise not supported (and SETTINGS_ENABLE_PUSH explicitly "
           "disabled).");
+      break;
     case FrameType::kCustomSecurity:
-      return ParseSecurityFrame(hdr, payload);
+      frame = ParseSecurityFrame(hdr, payload);
+      break;
     default:
-      return Http2UnknownFrame{};
+      frame = Http2UnknownFrame{};
+      break;
   }
+
+  if (frame.ok()) {
+    return http2::ValueOrHttp2Status<Http2Frame>(std::move(frame.value()));
+  }
+  return http2::ValueOrHttp2Status<Http2Frame>(
+      http2::Http2Status::AbslStreamError(
+          frame.status().code(), std::string(frame.status().message())));
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {

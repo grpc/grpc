@@ -207,6 +207,11 @@ class Http2Status {
                         ", Message:", message_, "}");
   }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Http2Status& frame) {
+    sink.Append(frame.DebugString());
+  }
+
   Http2Status(Http2Status&& move_status) = default;
 
  private:
@@ -338,6 +343,12 @@ class ValueOrHttp2Status {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
     DCHECK(std::holds_alternative<T>(value_));
     return std::get<T>(value_);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Http2Status TakeStatus(
+      ValueOrHttp2Status<T>&& status) {
+    DCHECK(std::holds_alternative<Http2Status>(status.value_));
+    return std::move(std::get<Http2Status>(status.value_));
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {

@@ -169,11 +169,14 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),
-        [](StatusFlag status) {
+        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
+          return (status.ok())
+                     ? absl::OkStatus()
+                     : self->HandleError(Http2Status::AbslConnectionError(
+                           absl::StatusCode::kInternal,
+                           "Failed to enqueue frame"));
         }));
   }
 
@@ -226,7 +229,38 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream status=" << status
+                      << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
+
+  // This function MUST be idempotent.
+  void CloseTransport(Http2Status status, DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
+                      << status << " location=" << whence.file() << ":"
+                      << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  whence);
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(std::move(status), whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
