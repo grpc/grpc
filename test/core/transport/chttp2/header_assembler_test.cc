@@ -37,7 +37,133 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
+#define USUAL_HDR                                                     \
+  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from   \
+                                            simple_request.headers */ \
+  "\x10\x05:path\x08/foo/bar"                                         \
+  "\x10\x07:scheme\x04http"                                           \
+  "\x10\x07:method\x04POST"                                           \
+  "\x10\x0a:authority\x09localhost"                                   \
+  "\x10\x0c"                                                          \
+  "content-type\x10"                                                  \
+  "application/grpc"                                                  \
+  "\x10\x14grpc-accept-encoding\x15"                                  \
+  "deflate,identity,gzip"                                             \
+  "\x10\x02te\x08trailers"                                            \
+  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
+
+///////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
+                                bool end_headers = false,
+                                bool end_stream = false) {
+  SliceBuffer buffer;
+  buffer.Append(Slice::FromCopiedString(str));
+  return Http2HeaderFrame{stream_id, end_headers, end_stream,
+                          std::move(buffer)};
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - Constructor
+
 TEST(HeaderAssemblerTest, Constructor) {
+  HeaderAssembler assembler;
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
+  EXPECT_EQ(assembler.IsReady(), false);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - One Header Frame
+
+TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
+  // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
+  // 2. Validate output of GetBufferedHeadersLength
+  // 3. Validate the contents of the Metadata.
+  const uint32_t stream_id = 1111;
+  HeaderAssembler assembler;
+  Http2HeaderFrame header =
+      GenerateHeader("PUT REAL HEADER HERE", stream_id, /*end_headers=*/true,
+                     /*end_stream=*/false);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
+  EXPECT_EQ(assembler.IsReady(), false);
+}
+
+// TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
+// removed.
+
+TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
+  // Crash on invalid API usage.
+  // If we try to read the Header before END_HEADERS is received.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - One Header Two Continuation Frames
+
+TEST(HeaderAssemblerTest, ValidOneHeaderTwoContinuationFrame) {
+  // 1. Correctly read and parse one Header and two Continuation Frames.
+  // 2. Validate output of GetBufferedHeadersLength after each frame.
+  // 3. Validate the contents of the Metadata.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
+  // Crash on invalid API usage.
+  // If we try to read the Header before END_HEADERS is received.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Other Valid cases
+
+TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
+  // This scenario represents a case where the sender sends Initial Metadata and
+  // Trailing Metadata after that. Without any messages.
+  // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
+  // 2. Validate output of GetBufferedHeadersLength
+  // 3. Validate the contents of the Metadata.
+  // 4. Do all the above for the second HEADERS frame.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
+  // This scenario represents a case where the sender sends Initial Metadata and
+  // Trailing Metadata after that. Without any messages.
+  // 1. Correctly read all the Header and Continuation frames.
+  // 2. Validate output of GetBufferedHeadersLength at each step.
+  // 3. Validate the contents of the Metadata.
+  // 4. Do all the above for the second set of Header and Continuation frames.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Peer not honouring RFC9113
+
+TEST(HeaderAssemblerTest, InvalidOneHeaderFrameZeroStreamID) {
+  // Assembler receiving a HEADERS frame with zero stream id should crash.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, InvalidZeroStreamID) {
+  // Assembler receiving a CONTINUATION frame with zero stream id should crash.
+  // Second frame has zero stream id.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
+  // Connection Error if second HEADER frame is received before the first one is
+  // END_STREAM.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, InvalidHeaderAndContinuationHaveDifferentStreamID) {
+  // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
+  GRPC_UNUSED HeaderAssembler assembler;
+}
+
+TEST(HeaderAssemblerTest, InvalidContinuationBeforeHeaders) {
+  // Fail if the CONTINUATION frame is received before HEADERS.
   GRPC_UNUSED HeaderAssembler assembler;
 }
 
