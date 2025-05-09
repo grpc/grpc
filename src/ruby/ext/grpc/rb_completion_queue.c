@@ -76,8 +76,8 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
   next_call.unblock_func = unblock_func;
   next_call.unblock_func_arg = unblock_func_arg;
-  rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
-                             (void*)&next_call, outer_unblock_func,
-                             (void*)&next_call);
+  rb_nogvl(grpc_rb_completion_queue_pluck_no_gil,
+           (void*)&next_call, outer_unblock_func,
+           (void*)&next_call, RB_NOGVL_OFFLOAD_SAFE);
   return next_call.event;
 }
