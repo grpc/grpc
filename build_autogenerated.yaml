@@ -3370,19 +3370,31 @@ libs:
   headers:
   - third_party/upb/upb/json/decode.h
   - third_party/upb/upb/json/encode.h
+  src:
+  - third_party/upb/upb/json/decode.c
+  - third_party/upb/upb/json/encode.c
+  deps:
+  - upb_lex_lib
+  - upb_reflection_lib
+- name: upb_lex_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/port/atomic.h
+  - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/undef.inc
+  - third_party/upb/upb/port/vsnprintf_compat.h
   src:
-  - third_party/upb/upb/json/decode.c
-  - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  deps:
-  - upb_reflection_lib
+  deps: []
 - name: upb_mem_lib
   build: all
   language: c
@@ -3550,21 +3562,14 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text/internal/encode.h
   - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/text/internal/encode.c
   deps:
+  - upb_lex_lib
   - upb_reflection_lib
 - name: upb_wire_lib
   build: all
