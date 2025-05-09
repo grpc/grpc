@@ -229,7 +229,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+    size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    tsi_handshaker** handshaker);
 
 // Increments reference count of the client handshaker factory.
 tsi_ssl_client_handshaker_factory* tsi_ssl_client_handshaker_factory_ref(
@@ -392,7 +394,9 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 //  where a parameter is invalid.
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
+    size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    tsi_handshaker** handshaker);
 
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.
@@ -413,6 +417,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name);
 
 // Base type of client and server handshaker factories.
 typedef struct tsi_ssl_handshaker_factory tsi_ssl_handshaker_factory;
+typedef struct tsi_ssl_handshaker tsi_ssl_handshaker;
 
 // Function pointer to handshaker_factory destructor.
 typedef void (*tsi_ssl_handshaker_factory_destructor)(
