@@ -248,6 +248,7 @@ void InjectNonResponsiveDNSServer(ares_channel* channel) {
   // Configure a non-responsive DNS server at the front of c-ares's nameserver
   // list.
   struct ares_addr_port_node dns_server_addrs[1];
+  memset(dns_server_addrs, 0, sizeof(struct ares_addr_port_node));
   dns_server_addrs[0].family = AF_INET6;
   (reinterpret_cast<char*>(&dns_server_addrs[0].addr.addr6))[15] = 0x1;
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
