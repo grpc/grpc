@@ -1,4 +1,4 @@
-/bazel/** @veblush @gnossen
+/bazel/** @veblush @sergiitk
 /bazel/experiments.yaml
 /bazel/rollouts.yaml
 /cmake/** @veblush @apolcyn
@@ -9,5 +9,4 @@
 /src/core/server/xds* @markdroth
 /src/core/service_config/** @markdroth
 /src/core/xds/** @markdroth
-/tools/dockerfile/** @drfloob @apolcyn @gnossen
-/tools/run_tests/xds_k8s_test_driver/** @sergiitk @XuanWang-Amos @gnossen
+/tools/dockerfile/** @drfloob @apolcyn @sergiitk
