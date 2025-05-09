@@ -213,7 +213,7 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
       [self = RefAsSubclass<TcpFrameTransport>()]() {
         return self->data_endpoints_.AwaitClosed();
       },
-      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status status) {
+      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status) {
         if (!self->closed_.is_set()) self->closed_.Set();
       });
   party->Spawn(
