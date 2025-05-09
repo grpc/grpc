@@ -6,7 +6,6 @@ assignees:
   - gnossen
   - XuanWang-Amos
   - sreenithi
-  - sourabhsinghs
 
 ---
 
