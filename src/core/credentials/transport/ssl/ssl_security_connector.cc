@@ -118,6 +118,10 @@ class grpc_ssl_channel_security_connector final
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this, args));
   }
 
+  const tsi_ssl_client_handshaker_factory* client_handshaker_factory() const {
+    return client_handshaker_factory_;
+  }
+
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   const grpc_core::ChannelArgs& /*args*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
@@ -400,4 +404,14 @@ grpc_ssl_server_security_connector_create(
     return nullptr;
   }
   return c;
+}
+
+const unsigned char*
+grpc_ssl_channel_security_connector_get_handshaker_protocols_for_testing(
+    grpc_channel_security_connector* connector,
+    size_t* protocol_name_list_length) {
+  return get_handshaker_client_protocols_list(
+      static_cast<grpc_ssl_channel_security_connector*>(connector)
+          ->client_handshaker_factory(),
+      protocol_name_list_length);
 }

@@ -4317,6 +4317,7 @@ grpc_cc_library(
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//:tsi_ssl_session_cache",
+        "examine_stack",
     ],
 )
 
