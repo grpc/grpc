@@ -196,7 +196,7 @@ void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
                                                            "x5c", errors);
   if (x5c.has_value()) {
     ValidationErrors::ScopedField field(errors, ".x5c");
-    if (x5c->size() != 1) {
+    if (x5c->size() != kX5cSize) {
       errors->AddError(
           absl::StrCat("array length must be 1, got ", x5c->size()));
     }
