@@ -232,33 +232,6 @@ class PromiseEndpoint {
     if (chaotic_good_ext != nullptr) {
       chaotic_good_ext->EnforceRxMemoryAlignment();
       chaotic_good_ext->EnableRpcReceiveCoalescing();
-      if (read_state_->buffer.Length() == 0) {
-        return;
-      }
-
-      // Copy everything from read_state_->buffer into a single slice and
-      // replace the contents of read_state_->buffer with that slice.
-      grpc_slice slice = grpc_slice_malloc_large(read_state_->buffer.Length());
-      CHECK(reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)) % 64 == 0)
-          << "Slice start address is not aligned to 64 bytes: "
-          << GRPC_DUMP_ARGS(
-                 read_state_->buffer.Length(),
-                 reinterpret_cast<uintptr_t>(GRPC_SLICE_START_PTR(slice)));
-      size_t ofs = 0;
-      for (size_t i = 0; i < read_state_->buffer.Count(); i++) {
-        memcpy(
-            GRPC_SLICE_START_PTR(slice) + ofs,
-            GRPC_SLICE_START_PTR(
-                read_state_->buffer.c_slice_buffer()->slices[i]),
-            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]));
-        ofs +=
-            GRPC_SLICE_LENGTH(read_state_->buffer.c_slice_buffer()->slices[i]);
-      }
-
-      read_state_->buffer.Clear();
-      read_state_->buffer.AppendIndexed(
-          grpc_event_engine::experimental::Slice(slice));
-      DCHECK(read_state_->buffer.Length() == ofs);
     }
   }
 
