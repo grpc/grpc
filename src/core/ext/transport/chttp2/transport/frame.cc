@@ -252,9 +252,10 @@ class SerializeHeaderAndPayload {
     Http2FrameHeader{4, static_cast<uint8_t>(FrameType::kWindowUpdate), 0,
                      frame.stream_id}
         .Serialize(hdr_and_payload.begin());
-    if (frame.last_stream_id > RFC9113::kMaxStreamId31Bit) {
-      LOG(ERROR) << "Stream ID will be truncated. The MSB will be set to 0 "
-                 << frame.last_stream_id;
+    if (frame.increment > RFC9113::kMaxStreamId31Bit) {
+      LOG(ERROR) << "Http2WindowUpdateFrame increment will be truncated to 31 "
+                    "bits. The MSB will be set to 0 "
+                 << frame.increment;
     }
     Write31bits(frame.increment, hdr_and_payload.begin() + kFrameHeaderSize);
     out_.AppendIndexed(Slice(std::move(hdr_and_payload)));
