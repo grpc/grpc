@@ -55,4 +55,12 @@ grpc_core::OrphanablePtr<grpc_endpoint> grpc_legacy_secure_endpoint_create(
     grpc_slice* leftover_slices, const grpc_channel_args* channel_args,
     size_t leftover_nslices);
 
+grpc_core::OrphanablePtr<grpc_endpoint> grpc_pipelined_secure_endpoint_create(
+    struct tsi_frame_protector* protector,
+    struct tsi_zero_copy_grpc_protector* zero_copy_protector,
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        to_wrap,
+    grpc_slice* leftover_slices, const grpc_core::ChannelArgs& channel_args,
+    size_t leftover_nslices);
+
 #endif  // GRPC_SRC_CORE_HANDSHAKER_SECURITY_SECURE_ENDPOINT_H
