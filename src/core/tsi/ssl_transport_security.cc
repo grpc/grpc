@@ -58,6 +58,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
 #include "src/core/lib/surface/init.h"
@@ -138,6 +139,8 @@ struct tsi_ssl_handshaker {
   tsi_result result;
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
+  unsigned char* preferred_alpn_protocol_name_list;
+  size_t preferred_alpn_protocol_name_list_length;
   tsi_ssl_handshaker_factory* factory_ref;
 };
 struct tsi_ssl_handshaker_result {
@@ -159,6 +162,84 @@ struct tsi_ssl_frame_protector {
   gpr_mu mu;
 };
 // --- Library Initialization. ---
+
+namespace {
+// Builds the alpn protocol name list according to rfc 7301.
+tsi_result BuildAlpnProtocolNameList(const char** alpn_protocols,
+                                     uint16_t num_alpn_protocols,
+                                     unsigned char** protocol_name_list,
+                                     size_t* protocol_name_list_length) {
+  uint16_t i;
+  unsigned char* current;
+  *protocol_name_list = nullptr;
+  *protocol_name_list_length = 0;
+  if (num_alpn_protocols == 0) return TSI_INVALID_ARGUMENT;
+  for (i = 0; i < num_alpn_protocols; i++) {
+    size_t length =
+        alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
+    if (length == 0 || length > 255) {
+      LOG(ERROR) << "Invalid protocol name length: " << length;
+      return TSI_INVALID_ARGUMENT;
+    }
+    *protocol_name_list_length += length + 1;
+  }
+  *protocol_name_list =
+      static_cast<unsigned char*>(gpr_malloc(*protocol_name_list_length));
+  if (*protocol_name_list == nullptr) return TSI_OUT_OF_RESOURCES;
+  current = *protocol_name_list;
+  for (i = 0; i < num_alpn_protocols; i++) {
+    size_t length = strlen(alpn_protocols[i]);
+    *(current++) = static_cast<uint8_t>(length);  // max checked above.
+    memcpy(current, alpn_protocols[i], length);
+    current += length;
+  }
+  // Safety check.
+  if ((current < *protocol_name_list) ||
+      (static_cast<uintptr_t>(current - *protocol_name_list) !=
+       *protocol_name_list_length)) {
+    return TSI_INTERNAL_ERROR;
+  }
+  return TSI_OK;
+}
+
+int SelectProtocolList(const unsigned char** out, unsigned char* outlen,
+                       const unsigned char* client_list, size_t client_list_len,
+                       const unsigned char* server_list,
+                       size_t server_list_len) {
+  const unsigned char* client_current = client_list;
+  while (static_cast<unsigned int>(client_current - client_list) <
+         client_list_len) {
+    unsigned char client_current_len = *(client_current++);
+    const unsigned char* server_current = server_list;
+    while ((server_current >= server_list) &&
+           static_cast<uintptr_t>(server_current - server_list) <
+               server_list_len) {
+      unsigned char server_current_len = *(server_current++);
+      if ((client_current_len == server_current_len) &&
+          !memcmp(client_current, server_current, server_current_len)) {
+        *out = server_current;
+        *outlen = server_current_len;
+        return SSL_TLSEXT_ERR_OK;
+      }
+      server_current += server_current_len;
+    }
+    client_current += client_current_len;
+  }
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
+#if TSI_OPENSSL_ALPN_SUPPORT
+int ServerHandshakerAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
+                                 unsigned char* outlen, const unsigned char* in,
+                                 unsigned int inlen, void* arg) {
+  tsi_ssl_handshaker* handshaker = static_cast<tsi_ssl_handshaker*>(arg);
+  int result = SelectProtocolList(
+      out, outlen, in, inlen, handshaker->preferred_alpn_protocol_name_list,
+      handshaker->preferred_alpn_protocol_name_list_length);
+  return result;
+}
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
+}  // namespace
 
 static gpr_once g_init_openssl_once = GPR_ONCE_INIT;
 static int g_ssl_ctx_ex_factory_index = -1;
@@ -885,43 +966,6 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
   if (cert != nullptr) X509_free(cert);
   BIO_free(pem);
   return result;
-}
-
-// Builds the alpn protocol name list according to rfc 7301.
-static tsi_result build_alpn_protocol_name_list(
-    const char** alpn_protocols, uint16_t num_alpn_protocols,
-    unsigned char** protocol_name_list, size_t* protocol_name_list_length) {
-  uint16_t i;
-  unsigned char* current;
-  *protocol_name_list = nullptr;
-  *protocol_name_list_length = 0;
-  if (num_alpn_protocols == 0) return TSI_INVALID_ARGUMENT;
-  for (i = 0; i < num_alpn_protocols; i++) {
-    size_t length =
-        alpn_protocols[i] == nullptr ? 0 : strlen(alpn_protocols[i]);
-    if (length == 0 || length > 255) {
-      LOG(ERROR) << "Invalid protocol name length: " << length;
-      return TSI_INVALID_ARGUMENT;
-    }
-    *protocol_name_list_length += length + 1;
-  }
-  *protocol_name_list =
-      static_cast<unsigned char*>(gpr_malloc(*protocol_name_list_length));
-  if (*protocol_name_list == nullptr) return TSI_OUT_OF_RESOURCES;
-  current = *protocol_name_list;
-  for (i = 0; i < num_alpn_protocols; i++) {
-    size_t length = strlen(alpn_protocols[i]);
-    *(current++) = static_cast<uint8_t>(length);  // max checked above.
-    memcpy(current, alpn_protocols[i], length);
-    current += length;
-  }
-  // Safety check.
-  if ((current < *protocol_name_list) ||
-      (static_cast<uintptr_t>(current - *protocol_name_list) !=
-       *protocol_name_list_length)) {
-    return TSI_INTERNAL_ERROR;
-  }
-  return TSI_OK;
 }
 
 // This callback is invoked when the CRL has been verified and will soft-fail
@@ -1743,6 +1787,9 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->outgoing_bytes_buffer);
+  if (impl->preferred_alpn_protocol_name_list != nullptr) {
+    gpr_free(impl->preferred_alpn_protocol_name_list);
+  }
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
   gpr_free(impl);
 }
@@ -1929,12 +1976,11 @@ static void tsi_ssl_handshaker_resume_session(
   }
 }
 
-static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
-                                            const char* server_name_indication,
-                                            size_t network_bio_buf_size,
-                                            size_t ssl_bio_buf_size,
-                                            tsi_ssl_handshaker_factory* factory,
-                                            tsi_handshaker** handshaker) {
+static tsi_result create_tsi_ssl_handshaker(
+    SSL_CTX* ctx, int is_client, const char* server_name_indication,
+    size_t network_bio_buf_size, size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    tsi_ssl_handshaker_factory* factory, tsi_handshaker** handshaker) {
   SSL* ssl = SSL_new(ctx);
   BIO* network_io = nullptr;
   BIO* ssl_io = nullptr;
@@ -1956,6 +2002,48 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
     return TSI_OUT_OF_RESOURCES;
   }
   SSL_set_bio(ssl, ssl_io, ssl_io);
+  unsigned char* preferred_alpn_protocol_name_list;
+  size_t preferred_alpn_protocol_name_list_length;
+#if TSI_OPENSSL_ALPN_SUPPORT
+  if (alpn_preferred_protocol_list.has_value()) {
+    std::vector<std::string> transport_protocols;
+    transport_protocols = absl::StrSplit(alpn_preferred_protocol_list.value(),
+                                         ',', absl::SkipWhitespace());
+    size_t num_preferred_protocols = transport_protocols.size();
+    if (num_preferred_protocols != 0) {
+      const char** preferred_protocols = static_cast<const char**>(
+          gpr_malloc(sizeof(const char*) * (num_preferred_protocols)));
+      for (size_t i = 0; i < num_preferred_protocols; i++) {
+        preferred_protocols[i] = transport_protocols[i].c_str();
+      }
+      tsi_result result = BuildAlpnProtocolNameList(
+          preferred_protocols, num_preferred_protocols,
+          &preferred_alpn_protocol_name_list,
+          &preferred_alpn_protocol_name_list_length);
+      gpr_free(preferred_protocols);
+
+      if (result != TSI_OK) {
+        LOG(ERROR) << "Building alpn list failed with error "
+                   << tsi_result_to_string(result);
+        if (preferred_alpn_protocol_name_list != nullptr) {
+          gpr_free(preferred_alpn_protocol_name_list);
+        }
+        return TSI_INTERNAL_ERROR;
+      }
+      if (is_client) {
+        if (SSL_set_alpn_protos(
+                ssl, preferred_alpn_protocol_name_list,
+                static_cast<unsigned int>(
+                    preferred_alpn_protocol_name_list_length))) {
+          LOG(ERROR) << "Could not set alpn protocol list to session.";
+          gpr_free(preferred_alpn_protocol_name_list);
+          return TSI_INTERNAL_ERROR;
+        }
+        gpr_free(preferred_alpn_protocol_name_list);
+      }
+    }
+  }
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
   if (is_client) {
     int ssl_result;
     SSL_set_connect_state(ssl);
@@ -1968,6 +2056,9 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
                    << server_name_indication;
         SSL_free(ssl);
         BIO_free(network_io);
+        if (preferred_alpn_protocol_name_list != nullptr) {
+          gpr_free(preferred_alpn_protocol_name_list);
+        }
         return TSI_INTERNAL_ERROR;
       }
     }
@@ -1986,13 +2077,17 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
           << grpc_core::SslErrorString(ssl_result);
       SSL_free(ssl);
       BIO_free(network_io);
+      if (preferred_alpn_protocol_name_list != nullptr) {
+        gpr_free(preferred_alpn_protocol_name_list);
+      }
       return TSI_INTERNAL_ERROR;
     }
   } else {
     SSL_set_accept_state(ssl);
   }
 
-  impl = grpc_core::Zalloc<tsi_ssl_handshaker>();
+  impl =
+      static_cast<tsi_ssl_handshaker*>(gpr_zalloc(sizeof(tsi_ssl_handshaker)));
   impl->ssl = ssl;
   impl->network_io = network_io;
   impl->result = TSI_HANDSHAKE_IN_PROGRESS;
@@ -2002,36 +2097,17 @@ static tsi_result create_tsi_ssl_handshaker(SSL_CTX* ctx, int is_client,
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->base.vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
+#if TSI_OPENSSL_ALPN_SUPPORT
+  if (alpn_preferred_protocol_list.has_value() && !is_client) {
+    std::swap(impl->preferred_alpn_protocol_name_list,
+              preferred_alpn_protocol_name_list);
+    impl->preferred_alpn_protocol_name_list_length =
+        preferred_alpn_protocol_name_list_length;
+    SSL_CTX_set_alpn_select_cb(ctx, ServerHandshakerAlpnCallback, impl);
+  }
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
   *handshaker = &impl->base;
   return TSI_OK;
-}
-
-static int select_protocol_list(const unsigned char** out,
-                                unsigned char* outlen,
-                                const unsigned char* client_list,
-                                size_t client_list_len,
-                                const unsigned char* server_list,
-                                size_t server_list_len) {
-  const unsigned char* client_current = client_list;
-  while (static_cast<unsigned int>(client_current - client_list) <
-         client_list_len) {
-    unsigned char client_current_len = *(client_current++);
-    const unsigned char* server_current = server_list;
-    while ((server_current >= server_list) &&
-           static_cast<uintptr_t>(server_current - server_list) <
-               server_list_len) {
-      unsigned char server_current_len = *(server_current++);
-      if ((client_current_len == server_current_len) &&
-          !memcmp(client_current, server_current, server_current_len)) {
-        *out = server_current;
-        *outlen = server_current_len;
-        return SSL_TLSEXT_ERR_OK;
-      }
-      server_current += server_current_len;
-    }
-    client_current += client_current_len;
-  }
-  return SSL_TLSEXT_ERR_NOACK;
 }
 
 // --- tsi_ssl_client_handshaker_factory methods implementation. ---
@@ -2039,10 +2115,13 @@ static int select_protocol_list(const unsigned char** out,
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     tsi_ssl_client_handshaker_factory* factory,
     const char* server_name_indication, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
+    size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    tsi_handshaker** handshaker) {
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
-      ssl_bio_buf_size, &factory->base, handshaker);
+      ssl_bio_buf_size, alpn_preferred_protocol_list, &factory->base,
+      handshaker);
 }
 
 void tsi_ssl_client_handshaker_factory_unref(
@@ -2075,22 +2154,25 @@ static int client_handshaker_factory_npn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_client_handshaker_factory* factory =
       static_cast<tsi_ssl_client_handshaker_factory*>(arg);
-  return select_protocol_list(const_cast<const unsigned char**>(out), outlen,
-                              factory->alpn_protocol_list,
-                              factory->alpn_protocol_list_length, in, inlen);
+  return SelectProtocolList(const_cast<const unsigned char**>(out), outlen,
+                            factory->alpn_protocol_list,
+                            factory->alpn_protocol_list_length, in, inlen);
 }
 
 // --- tsi_ssl_server_handshaker_factory methods implementation. ---
 
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
+    size_t ssl_bio_buf_size,
+    std::optional<std::string> alpn_preferred_protocol_list,
+    tsi_handshaker** handshaker) {
   if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
   return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
                                    network_bio_buf_size, ssl_bio_buf_size,
-                                   &factory->base, handshaker);
+                                   alpn_preferred_protocol_list, &factory->base,
+                                   handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -2188,9 +2270,8 @@ static int server_handshaker_factory_alpn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_server_handshaker_factory* factory =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-  return select_protocol_list(out, outlen, in, inlen,
-                              factory->alpn_protocol_list,
-                              factory->alpn_protocol_list_length);
+  return SelectProtocolList(out, outlen, in, inlen, factory->alpn_protocol_list,
+                            factory->alpn_protocol_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 
@@ -2209,7 +2290,8 @@ static int server_handshaker_factory_npn_advertised_callback(
 /// servers at later point of time.
 /// It's intended to be used with SSL_CTX_sess_set_new_cb function.
 ///
-/// It returns 1 if callback takes ownership over \a session and 0 otherwise.
+/// It returns 1 if callback takes ownership over \a session and 0
+/// otherwise.
 static int server_handshaker_factory_new_session_callback(
     SSL* ssl, SSL_SESSION* session) {
   SSL_CTX* ssl_context = SSL_get_SSL_CTX(ssl);
@@ -2358,7 +2440,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     }
 
     if (options->num_alpn_protocols != 0) {
-      result = build_alpn_protocol_name_list(
+      result = BuildAlpnProtocolNameList(
           options->alpn_protocols, options->num_alpn_protocols,
           &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
       if (result != TSI_OK) {
@@ -2481,7 +2563,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   impl->ssl_context_count = options->num_key_cert_pairs;
 
   if (options->num_alpn_protocols > 0) {
-    result = build_alpn_protocol_name_list(
+    result = BuildAlpnProtocolNameList(
         options->alpn_protocols, options->num_alpn_protocols,
         &impl->alpn_protocol_list, &impl->alpn_protocol_list_length);
     if (result != TSI_OK) {

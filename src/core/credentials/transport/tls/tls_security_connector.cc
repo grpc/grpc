@@ -347,7 +347,8 @@ void TlsChannelSecurityConnector::add_handshakers(
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
         /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0, /*alpn_preferred_protocol_list=*/std::nullopt,
+        &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -621,7 +622,8 @@ void TlsServerSecurityConnector::add_handshakers(
     // Instantiate TSI handshaker.
     tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
         server_handshaker_factory_, /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0, /*alpn_preferred_protocol_list=*/std::nullopt,
+        &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

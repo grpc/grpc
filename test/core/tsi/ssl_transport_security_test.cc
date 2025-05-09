@@ -45,6 +45,7 @@
 #define SSL_TSI_TEST_ALPN1 "foo"
 #define SSL_TSI_TEST_ALPN2 "toto"
 #define SSL_TSI_TEST_ALPN3 "baz"
+#define SSL_TSI_TEST_ALPN4 "bar"
 #define SSL_TSI_TEST_ALPN_NUM 2
 #define SSL_TSI_TEST_SERVER_KEY_CERT_PAIRS_NUM 2
 #define SSL_TSI_TEST_BAD_SERVER_KEY_CERT_PAIRS_NUM 1
@@ -321,6 +322,16 @@ class SslTransportSecurityTest
       ssl_bio_buf_size_ = ssl_bio_buf_size;
     }
 
+    void SetAlpnClientProtocols(
+        std::optional<std::string> alpn_client_protocols) {
+      alpn_client_protocols_ = alpn_client_protocols;
+    }
+
+    void SetAlpnServerProtocols(
+        std::optional<std::string> alpn_server_protocols) {
+      alpn_server_protocols_ = alpn_server_protocols;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -408,12 +419,14 @@ class SslTransportSecurityTest
                     ssl_fixture->server_name_indication_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
+                    ssl_fixture->alpn_client_protocols_,
                     &ssl_fixture->base_.client_handshaker),
                 TSI_OK);
       ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
+                    ssl_fixture->alpn_server_protocols_,
                     &ssl_fixture->base_.server_handshaker),
                 TSI_OK);
     }
@@ -429,7 +442,13 @@ class SslTransportSecurityTest
         ASSERT_EQ(alpn_property, nullptr);
       } else {
         ASSERT_NE(alpn_property, nullptr);
-        const char* expected_match = "baz";
+        const char* expected_match;
+        if (ssl_fixture->alpn_client_protocols_.has_value() &&
+            ssl_fixture->alpn_server_protocols_.has_value()) {
+          expected_match = "bar";
+        } else {
+          expected_match = "baz";
+        }
         ASSERT_EQ(memcmp(alpn_property->value.data, expected_match,
                          alpn_property->value.length),
                   0);
@@ -660,6 +679,8 @@ class SslTransportSecurityTest
     bool verify_root_cert_subject_;
     tsi_tls_version tls_version_;
     bool send_client_ca_list_;
+    std::optional<std::string> alpn_client_protocols_ = std::nullopt;
+    std::optional<std::string> alpn_server_protocols_ = std::nullopt;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   };
@@ -1174,7 +1195,8 @@ TEST(SslTransportSecurityTest, TestClientHandshakerFactoryRefcounting) {
   for (i = 0; i < 3; ++i) {
     ASSERT_EQ(
         tsi_ssl_client_handshaker_factory_create_handshaker(
-            client_handshaker_factory, "google.com", 0, 0, &handshaker[i]),
+            client_handshaker_factory, "google.com", 0, 0,
+            /*alpn_preferred_protocol_list=*/std::nullopt, &handshaker[i]),
         TSI_OK);
   }
 
@@ -1223,9 +1245,11 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
       &test_handshaker_factory_vtable);
 
   for (i = 0; i < 3; ++i) {
-    ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
-                  server_handshaker_factory, 0, 0, &handshaker[i]),
-              TSI_OK);
+    ASSERT_EQ(
+        tsi_ssl_server_handshaker_factory_create_handshaker(
+            server_handshaker_factory, 0, 0,
+            /*alpn_preferred_protocol_list=*/std::nullopt, &handshaker[i]),
+        TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);
@@ -1415,6 +1439,15 @@ TEST(SslTransportSecurityTest, ExtractCertChain) {
   tsi_peer_property_destruct(&chain_property);
   sk_X509_INFO_pop_free(certInfos, X509_INFO_free);
   sk_X509_pop_free(cert_chain, X509_free);
+}
+
+TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->SetAlpnClientProtocols("toto,bar");
+  ssl_fixture_->SetAlpnServerProtocols("bar,foo");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
 }
 
 int main(int argc, char** argv) {
