@@ -455,6 +455,10 @@ UPB_INLINE envoy_config_endpoint_v3_LbEndpoint_host_identifier_oneofcases envoy_
   return (envoy_config_endpoint_v3_LbEndpoint_host_identifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_endpoint_v3_LbEndpoint_clear_host_identifier(envoy_config_endpoint_v3_LbEndpoint* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(28, 24), UPB_SIZE(-25, -17), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LbEndpoint_msg_init, &field);
+}
 UPB_INLINE void envoy_config_endpoint_v3_LbEndpoint_clear_endpoint(envoy_config_endpoint_v3_LbEndpoint* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 24), UPB_SIZE(-25, -17), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -712,6 +716,10 @@ UPB_INLINE envoy_config_endpoint_v3_LocalityLbEndpoints_lb_config_oneofcases env
   const upb_MiniTableField field = {7, UPB_SIZE(40, 64), UPB_SIZE(-37, -17), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_endpoint_v3_LocalityLbEndpoints_lb_config_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_endpoint_v3_LocalityLbEndpoints_clear_lb_config(envoy_config_endpoint_v3_LocalityLbEndpoints* msg) {
+  const upb_MiniTableField field = {7, UPB_SIZE(40, 64), UPB_SIZE(-37, -17), 4, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__endpoint__v3__LocalityLbEndpoints_msg_init, &field);
 }
 UPB_INLINE void envoy_config_endpoint_v3_LocalityLbEndpoints_clear_locality(envoy_config_endpoint_v3_LocalityLbEndpoints* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

@@ -83,6 +83,10 @@ UPB_INLINE envoy_type_matcher_v3_StringMatcher_match_pattern_oneofcases envoy_ty
   return (envoy_type_matcher_v3_StringMatcher_match_pattern_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_matcher_v3_StringMatcher_clear_match_pattern(envoy_type_matcher_v3_StringMatcher* msg) {
+  const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__StringMatcher_msg_init, &field);
+}
 UPB_INLINE void envoy_type_matcher_v3_StringMatcher_clear_exact(envoy_type_matcher_v3_StringMatcher* msg) {
   const upb_MiniTableField field = {1, 16, -13, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

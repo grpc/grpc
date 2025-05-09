@@ -144,6 +144,10 @@ UPB_INLINE envoy_config_trace_v3_Tracing_Http_config_type_oneofcases envoy_confi
   return (envoy_config_trace_v3_Tracing_Http_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_config_type(envoy_config_trace_v3_Tracing_Http* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__trace__v3__Tracing__Http_msg_init, &field);
+}
 UPB_INLINE void envoy_config_trace_v3_Tracing_Http_clear_name(envoy_config_trace_v3_Tracing_Http* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

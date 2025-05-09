@@ -177,6 +177,10 @@ UPB_INLINE envoy_config_trace_v3_ClientConfig_backend_token_specifier_oneofcases
   return (envoy_config_trace_v3_ClientConfig_backend_token_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_trace_v3_ClientConfig_clear_backend_token_specifier(envoy_config_trace_v3_ClientConfig* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(36, 48), UPB_SIZE(-17, -13), kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__trace__v3__ClientConfig_msg_init, &field);
+}
 UPB_INLINE void envoy_config_trace_v3_ClientConfig_clear_service_name(envoy_config_trace_v3_ClientConfig* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(20, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

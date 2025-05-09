@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef XDS_CORE_V3_EXTENSION_PROTO_UPB_H__UPBDEFS_H_
 #define XDS_CORE_V3_EXTENSION_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,6 +26,7 @@ UPB_INLINE const upb_MessageDef *xds_core_v3_TypedExtensionConfig_getmsgdef(upb_
   _upb_DefPool_LoadDefInit(s, &xds_core_v3_extension_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "xds.core.v3.TypedExtensionConfig");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

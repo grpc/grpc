@@ -698,6 +698,10 @@ UPB_INLINE envoy_admin_v3_SubjectAlternateName_name_oneofcases envoy_admin_v3_Su
   return (envoy_admin_v3_SubjectAlternateName_name_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_admin_v3_SubjectAlternateName_clear_name(envoy_admin_v3_SubjectAlternateName* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__admin__v3__SubjectAlternateName_msg_init, &field);
+}
 UPB_INLINE void envoy_admin_v3_SubjectAlternateName_clear_dns(envoy_admin_v3_SubjectAlternateName* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

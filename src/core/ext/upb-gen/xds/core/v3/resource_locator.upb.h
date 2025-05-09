@@ -81,6 +81,10 @@ UPB_INLINE xds_core_v3_ResourceLocator_context_param_specifier_oneofcases xds_co
   return (xds_core_v3_ResourceLocator_context_param_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void xds_core_v3_ResourceLocator_clear_context_param_specifier(xds_core_v3_ResourceLocator* msg) {
+  const upb_MiniTableField field = {5, UPB_SIZE(20, 72), UPB_SIZE(-17, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator_msg_init, &field);
+}
 UPB_INLINE void xds_core_v3_ResourceLocator_clear_scheme(xds_core_v3_ResourceLocator* msg) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -289,6 +293,10 @@ UPB_INLINE xds_core_v3_ResourceLocator_Directive_directive_oneofcases xds_core_v
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (xds_core_v3_ResourceLocator_Directive_directive_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void xds_core_v3_ResourceLocator_Directive_clear_directive(xds_core_v3_ResourceLocator_Directive* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &xds__core__v3__ResourceLocator__Directive_msg_init, &field);
 }
 UPB_INLINE void xds_core_v3_ResourceLocator_Directive_clear_alt(xds_core_v3_ResourceLocator_Directive* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

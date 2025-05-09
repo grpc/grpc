@@ -44,7 +44,6 @@ typedef struct envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_Metad
 typedef struct envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_StsService;
 typedef struct envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs;
 typedef struct envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value;
-typedef struct envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry { upb_Message UPB_PRIVATE(base); } envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_HeaderValue;
 struct envoy_config_core_v3_RetryPolicy;
@@ -101,6 +100,10 @@ UPB_INLINE envoy_config_core_v3_GrpcService_target_specifier_oneofcases envoy_co
   const upb_MiniTableField field = {1, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_GrpcService_target_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_core_v3_GrpcService_clear_target_specifier(envoy_config_core_v3_GrpcService* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__GrpcService_msg_init, &field);
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_clear_envoy_grpc(envoy_config_core_v3_GrpcService* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(28, 40), UPB_SIZE(-25, -13), 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -923,6 +926,10 @@ UPB_INLINE envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_creden
   return (envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_credential_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_clear_credential_specifier(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelCredentials_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials_clear_ssl_credentials(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelCredentials* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -1065,6 +1072,10 @@ UPB_INLINE envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_credentia
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_credential_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_clear_credential_specifier(envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials_msg_init, &field);
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_clear_access_token(envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
@@ -1443,6 +1454,10 @@ UPB_INLINE envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataC
   return (envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_config_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_clear_config_type(envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__GrpcService__GoogleGrpc__CallCredentials__MetadataCredentialsFromPlugin_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_clear_name(envoy_config_core_v3_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -1817,71 +1832,54 @@ typedef enum {
   envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_value_specifier_NOT_SET = 0
 } envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_value_specifier_oneofcases;
 UPB_INLINE envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_value_specifier_oneofcases envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_value_specifier_case(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_value_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_clear_value_specifier(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_clear_string_value(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE upb_StringView envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_string_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
   upb_StringView default_val = upb_StringView_FromString("");
   upb_StringView ret;
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_has_string_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_clear_int_value(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
 }
 UPB_INLINE int64_t envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_int_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
   int64_t default_val = (int64_t)0ll;
   int64_t ret;
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   _upb_Message_GetNonExtensionField(UPB_UPCAST(msg), &field,
                                     &default_val, &ret);
   return ret;
 }
 UPB_INLINE bool envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_has_int_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* msg) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
 }
 
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_set_string_value(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value *msg, upb_StringView value) {
-  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value_set_int_value(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value *msg, int64_t value) {
-  const upb_MiniTableField field = {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  const upb_MiniTableField field = {2, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-
-/* envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.ArgsEntry */
-
-UPB_INLINE upb_StringView envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_key(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry* msg) {
-  envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_has_value(const envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry_set_value(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_ArgsEntry *msg, envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value*));
 }
 
 #ifdef __cplusplus

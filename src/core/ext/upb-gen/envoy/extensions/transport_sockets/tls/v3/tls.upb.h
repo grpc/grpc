@@ -297,6 +297,10 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_sessio
   return (envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_session_ticket_keys_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_clear_session_ticket_keys_type(envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(40, 64), UPB_SIZE(-37, -17), 3, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__DownstreamTlsContext_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_clear_common_tls_context(envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 24), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -813,6 +817,10 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation
   const upb_MiniTableField field = {3, UPB_SIZE(56, 96), UPB_SIZE(-53, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_validation_context_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_clear_validation_context_type(envoy_extensions_transport_sockets_tls_v3_CommonTlsContext* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(56, 96), UPB_SIZE(-53, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_clear_tls_params(envoy_extensions_transport_sockets_tls_v3_CommonTlsContext* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1414,6 +1422,10 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_Certificat
   const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_config_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_clear_config(envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__CommonTlsContext__CertificateProvider_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider_clear_name(envoy_extensions_transport_sockets_tls_v3_CommonTlsContext_CertificateProvider* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

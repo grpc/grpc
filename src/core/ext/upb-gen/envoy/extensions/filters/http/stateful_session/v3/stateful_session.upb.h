@@ -160,6 +160,10 @@ UPB_INLINE envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerR
   return (envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_override_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_clear_override(envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__filters__http__stateful_0session__v3__StatefulSessionPerRoute_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute_clear_disabled(envoy_extensions_filters_http_stateful_session_v3_StatefulSessionPerRoute* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 8, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_1Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

@@ -23,7 +23,6 @@ extern "C" {
 #endif
 
 typedef struct grpc_gcp_AltsContext { upb_Message UPB_PRIVATE(base); } grpc_gcp_AltsContext;
-typedef struct grpc_gcp_AltsContext_PeerAttributesEntry { upb_Message UPB_PRIVATE(base); } grpc_gcp_AltsContext_PeerAttributesEntry;
 struct grpc_gcp_RpcProtocolVersions;
 
 
@@ -233,23 +232,6 @@ UPB_INLINE bool grpc_gcp_AltsContext_peer_attributes_delete(grpc_gcp_AltsContext
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-
-/* grpc.gcp.AltsContext.PeerAttributesEntry */
-
-UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_key(const grpc_gcp_AltsContext_PeerAttributesEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView grpc_gcp_AltsContext_PeerAttributesEntry_value(const grpc_gcp_AltsContext_PeerAttributesEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void grpc_gcp_AltsContext_PeerAttributesEntry_set_value(grpc_gcp_AltsContext_PeerAttributesEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 #ifdef __cplusplus
