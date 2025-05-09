@@ -229,14 +229,21 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {}
+                   DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream status=" << status
+                      << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
+  // This function MUST be idempotent.
   void CloseTransport(Http2Status status, DebugLocation whence = {}) {
     HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
                       << status << " location=" << whence.file() << ":"
                       << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
   }
 
   absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {

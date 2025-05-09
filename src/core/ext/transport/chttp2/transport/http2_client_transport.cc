@@ -383,6 +383,7 @@ Http2ClientTransport::Http2ClientTransport(
 Http2ClientTransport::~Http2ClientTransport() {
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
+  general_party_.reset();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
