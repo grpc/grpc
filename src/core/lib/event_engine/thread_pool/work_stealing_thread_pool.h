@@ -56,8 +56,7 @@ class WorkStealingThreadPool final : public ThreadPool {
   // Forkable
   // These methods are exposed on the public object to allow for testing.
   void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
+  void PostFork() override;
 
  private:
   // A basic communication mechanism to signal waiting threads that work is

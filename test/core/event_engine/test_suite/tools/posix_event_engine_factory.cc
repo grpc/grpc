@@ -37,7 +37,7 @@ CustomEventEngineFactory() {
 #else
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
   CHECK(false) <<  "This tool was not built for Posix environments.");
 }
