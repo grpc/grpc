@@ -315,7 +315,7 @@ ValueOrHttp2Status<Http2Frame> ParseDataFrame(const Http2FrameHeader& hdr,
 
   if (hdr.flags & kFlagPadded) {
     Http2Status s = StripPadding(hdr, payload);
-    if (!s.IsOk()) return ValueOrHttp2Status(std::move(s));
+    if (!s.IsOk()) return ValueOrHttp2Status<Http2Frame>(std::move(s));
   }
 
   return ValueOrHttp2Status<Http2Frame>(
@@ -337,7 +337,7 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
 
   if (hdr.flags & kFlagPadded) {
     Http2Status s = StripPadding(hdr, payload);
-    if (!s.IsOk()) return ValueOrHttp2Status(std::move(s));
+    if (!s.IsOk()) return ValueOrHttp2Status<Http2Frame>(std::move(s));
   }
 
   if (hdr.flags & kFlagPriority) {
