@@ -318,7 +318,6 @@
 
 /* Define to 1 if you have the windows.h header file. */
 #define HAVE_WINDOWS_H
-ares_config_h windows header is compiled!
 
 /* Define to 1 if you have the winsock2.h header file. */
 #define HAVE_WINSOCK2_H
