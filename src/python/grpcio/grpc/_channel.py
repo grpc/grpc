@@ -2249,6 +2249,13 @@ class Channel(grpc.Channel):
     def close(self) -> None:
         self._close()
 
+    def _get_target(self) -> Optional[str]:
+        """Returns the Verbatim Target channel or None if channel is closed."""
+        try:
+            return self._channel.target().decode('utf-8')
+        except Exception:
+            return None    
+
     def __del__(self):
         # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
         # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
