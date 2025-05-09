@@ -475,14 +475,14 @@ grpc_cc_library(
     hdrs = [
         "util/env.h",
     ],
-    deps = [
-        "tchar",
-        "//:gpr_platform",
-    ],
     defines = select({
         ":force_unsecure_getenv": ["GRPC_FORCE_UNSECURE_GETENV"],
         "//conditions:default": [],
     }),
+    deps = [
+        "tchar",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
