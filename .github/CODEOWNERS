@@ -1,4 +1,4 @@
-/bazel/** @veblush @sergiitk
+/bazel/** @veblush
 /bazel/experiments.yaml
 /bazel/rollouts.yaml
 /cmake/** @veblush @apolcyn
