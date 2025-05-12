@@ -87,6 +87,11 @@ constexpr absl::string_view kSimpleRequestDecoded =
 
 constexpr size_t kSimpleRequestDecodedLen = 224;
 
+TEST(HeaderAssemblerTest, TestTheTestData) {
+  const size_t sum = (kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len + kSimpleRequestEncodedPart3Len);
+  EXPECT_EQ(kSimpleRequestEncodedLen, sum);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
