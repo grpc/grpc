@@ -24,7 +24,7 @@
 namespace grpc_core {
 
 std::string TcpCallTracer::TcpEventMetric::ToString() {
-  return absl::StrCat("key=", value);
+  return absl::StrCat(key, "=", value);
 }
 
 std::string TcpCallTracer::TcpEventMetricsToString(
