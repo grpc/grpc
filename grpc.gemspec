@@ -1803,6 +1803,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/telemetry/stats.h )
   s.files += %w( src/core/telemetry/stats_data.cc )
   s.files += %w( src/core/telemetry/stats_data.h )
+  s.files += %w( src/core/telemetry/tcp_tracer.cc )
   s.files += %w( src/core/telemetry/tcp_tracer.h )
   s.files += %w( src/core/transport/auth_context.cc )
   s.files += %w( src/core/transport/auth_context.h )

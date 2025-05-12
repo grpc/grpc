@@ -1785,6 +1785,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />

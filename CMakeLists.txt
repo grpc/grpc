@@ -2878,6 +2878,7 @@ add_library(grpc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
@@ -3634,6 +3635,7 @@ add_library(grpc_unsecure
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/transport/endpoint_transport_client_channel_factory.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -5949,6 +5951,7 @@ add_library(grpc_authorization_provider
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/transport/auth_context.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/transport_security.cc
@@ -9602,6 +9605,7 @@ add_executable(call_utils_test
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
@@ -15696,6 +15700,7 @@ add_executable(filter_fusion_test
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
@@ -18553,6 +18558,7 @@ add_executable(header_assembler_test
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
   src/core/telemetry/stats_data.cc
+  src/core/telemetry/tcp_tracer.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/util/backoff.cc
   src/core/util/dump_args.cc
