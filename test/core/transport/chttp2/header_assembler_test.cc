@@ -38,20 +38,28 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-#define USUAL_HDR                                                     \
-  "\x00\x00\xc9\x01\x04\x00\x00\x00\x01" /* headers: generated from   \
-                                            simple_request.headers */ \
-  "\x10\x05:path\x08/foo/bar"                                         \
-  "\x10\x07:scheme\x04http"                                           \
-  "\x10\x07:method\x04POST"                                           \
-  "\x10\x0a:authority\x09localhost"                                   \
-  "\x10\x0c"                                                          \
-  "content-type\x10"                                                  \
-  "application/grpc"                                                  \
-  "\x10\x14grpc-accept-encoding\x15"                                  \
-  "deflate,identity,gzip"                                             \
-  "\x10\x02te\x08trailers"                                            \
-  "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
+constexpr absl::string_view kSimpleRequestEncoded =
+    "\x10\x05:path\x08/foo/bar"
+    "\x10\x07:scheme\x04http"
+    "\x10\x07:method\x04POST"
+    "\x10\x0a:authority\x09localhost"
+    "\x10\x0c"
+    "content-type\x10"
+    "application/grpc"
+    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
+    "\x10\x02te\x08trailers"
+    "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
+
+constexpr absl::string_view kSimpleRequestDecoded =
+    "user-agent: grpc-c/0.12.0.0 (linux),"
+    " :authority: localhost,"
+    " :path: /foo/bar,"
+    " grpc-accept-encoding: identity,"
+    " deflate, gzip, te: trailers,"
+    " content-type: application/grpc,"
+    " :scheme: http,"
+    " :method: POST,"
+    " GrpcStatusFromWire: true";
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
@@ -86,9 +94,9 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   HPackParser parser;
   absl::BitGen bitgen;
   HeaderAssembler assembler;
-  Http2HeaderFrame header =
-      GenerateHeaderFrame("USUAL_HDR", stream_id, /*end_headers=*/true,
-                          /*end_stream=*/false);
+  Http2HeaderFrame header = GenerateHeaderFrame(kSimpleRequestEncoded,
+                                                stream_id, /*end_headers=*/true,
+                                                /*end_stream=*/false);
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
   assembler.AppendHeaderFrame(std::move(header));
@@ -99,7 +107,8 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
                              /*is_client=*/true, bitgen);
   EXPECT_TRUE(result.IsOk());
   Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
-  // TODO(tjagtap) - [PH2][P2] Validate metadata
+  EXPECT_STREQ(metadata->DebugString().c_str(),
+               std::string(kSimpleRequestDecoded).c_str());
 }
 
 TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
@@ -109,9 +118,9 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   HPackParser parser;
   absl::BitGen bitgen;
   HeaderAssembler assembler;
-  Http2HeaderFrame header =
-      GenerateHeaderFrame("USUAL_HDR", stream_id, /*end_headers=*/false,
-                          /*end_stream=*/false);
+  Http2HeaderFrame header = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
+      /*end_stream=*/false);
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
   assembler.AppendHeaderFrame(std::move(header));
