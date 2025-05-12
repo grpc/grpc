@@ -88,7 +88,17 @@ constexpr absl::string_view kSimpleRequestDecoded =
 constexpr size_t kSimpleRequestDecodedLen = 224;
 
 TEST(HeaderAssemblerTest, TestTheTestData) {
-  const size_t sum = (kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len + kSimpleRequestEncodedPart3Len);
+  EXPECT_EQ(std::string(kSimpleRequestEncoded).size(),
+            kSimpleRequestEncodedLen);
+  EXPECT_EQ(std::string(kSimpleRequestEncodedPart1).size(),
+            kSimpleRequestEncodedPart1Len);
+  EXPECT_EQ(std::string(kSimpleRequestEncodedPart2).size(),
+            kSimpleRequestEncodedPart2Len);
+  EXPECT_EQ(std::string(kSimpleRequestEncodedPart3).size(),
+            kSimpleRequestEncodedPart3Len);
+  const size_t sum =
+      (kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len +
+       kSimpleRequestEncodedPart3Len);
   EXPECT_EQ(kSimpleRequestEncodedLen, sum);
 }
 
