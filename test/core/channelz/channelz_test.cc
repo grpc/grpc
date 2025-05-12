@@ -301,6 +301,7 @@ class TestZTrace final : public ZTrace {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override {
     Json::Object object;
     object["test"] = Json::FromString("yes");
@@ -341,7 +342,12 @@ TEST_P(ChannelzChannelTest, BasicDataSource) {
     ASSERT_EQ(json.type(), Json::Type::kObject);
     const Json::Object& object = json.object();
     auto it = object.find("additionalInfo");
-    EXPECT_EQ(it, object.end());
+    if (it != object.end()) {
+      ASSERT_EQ(it->second.type(), Json::Type::kObject);
+      const Json::Object& additional_info = it->second.object();
+      auto it_test_data = additional_info.find("testData");
+      EXPECT_EQ(it_test_data, additional_info.end());
+    }
   }
 }
 
@@ -366,6 +372,7 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 class TestSubObjectDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestSubObjectDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override { sink.AddChildObjects({child_}); }
 
   int64_t child_id() const { return child_->uuid(); }
@@ -548,7 +555,8 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   const intptr_t kMidQuery = 40;
   ExecCtx exec_ctx;
   ChannelFixture channels[kNumChannels];
-  (void)channels;  // suppress unused variable error
+  ChannelzRegistry::GetAllEntities();  // Force uuids to be fresh
+  (void)channels;                      // suppress unused variable error
   // Only query for the end of the channels.
   std::string json_str = ChannelzRegistry::GetTopChannelsJson(kMidQuery);
   auto parsed_json = JsonParse(json_str);
@@ -565,6 +573,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture pre_channels[40];  // will take uuid[1, 40]
   (void)pre_channels;               // suppress unused variable error
@@ -588,6 +600,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   ExecCtx exec_ctx;
   ChannelFixture channel_with_uuid1;
   {
@@ -623,6 +639,10 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
 }
 
 TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
+  if (IsShardChannelzIndexEnabled()) {
+    GTEST_SKIP() << "This test validates implementation details of the legacy "
+                    "stack, not the contract guaranteed by the API.";
+  }
   const intptr_t kLoopIterations = 50;
   ExecCtx exec_ctx;
   std::vector<std::unique_ptr<ChannelFixture>> even_channels;

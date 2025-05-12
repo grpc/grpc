@@ -122,47 +122,47 @@ typedef struct tsi_frame_protector tsi_frame_protector;
 // - protected_output_frames_size is an input/output parameter used by the
 //   caller to specify how many bytes are available in protected_output_frames.
 //   As an output, this value indicates the number of bytes written.
-// - This method returns TSI_OK in case of success or a specific error code in
+// - Returns TSI_OK in case of success or a specific error code in
 //   case of failure. Note that even if all the input unprotected bytes are
 //   consumed, they may not have been processed into the returned protected
 //   output frames. The caller should call the protect_flush method
 //   to make sure that there are no more protected bytes buffered in the
 //   protector.
+//
+// Can be called concurrently with tsi_frame_protector_unprotect. Cannot be
+// called concurrently with tsi_frame_protector_protect_flush.
 
 // A typical way to call this method would be:
 
 // ------------------------------------------------------------------------
 // unsigned char protected_buffer[4096];
-// size_t protected_buffer_size = sizeof(protected_buffer);
+// uint8_t* cur = protected_buffer;
+// uint8_t* end = cur + sizeof(protected_buffer);
 // tsi_result result = TSI_OK;
 // while (message_size > 0) {
-//   size_t protected_buffer_size_to_send = protected_buffer_size;
+//   size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
 //   size_t processed_message_size = message_size;
-//   result = tsi_frame_protector_protect(protector,
-//                                        message_bytes,
-//                                        &processed_message_size,
-//                                        protected_buffer,
+//   result = tsi_frame_protector_protect(protector, message_bytes,
+//                                        &processed_message_size, cur,
 //                                        &protected_buffer_size_to_send);
 //   if (result != TSI_OK) break;
-//   send_bytes_to_peer(protected_buffer, protected_buffer_size_to_send);
 //   message_bytes += processed_message_size;
 //   message_size -= processed_message_size;
-
-//   // Don't forget to flush.
-//   if (message_size == 0) {
-//     size_t still_pending_size;
-//     do {
-//       protected_buffer_size_to_send = protected_buffer_size;
-//       result = tsi_frame_protector_protect_flush(
-//           protector, protected_buffer,
-//           &protected_buffer_size_to_send, &still_pending_size);
-//       if (result != TSI_OK) break;
-//       send_bytes_to_peer(protected_buffer, protected_buffer_size_to_send);
-//     } while (still_pending_size > 0);
-//   }
+//   cur += protected_buffer_size_to_send;
+//   if (cur == end) // Flush the protected buffer.
 // }
-
+// size_t still_pending_size;
+// do {
+//   size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+//   result = tsi_frame_protector_protect_flush(
+//       protector, cur, &protected_buffer_size_to_send, &still_pending_size);
+//   if (result != TSI_OK) break;
+//   cur += protected_buffer_size_to_send;
+//   if (cur == end) // Flush the protected buffer.
+// } while (still_pending_size > 0);
 // if (result != TSI_OK) HandleError(result);
+// std::string protected_bytes(reinterpret_cast<const char*>(protected_buffer),
+//                             cur - protected_buffer);
 // ------------------------------------------------------------------------
 tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
                                        const unsigned char* unprotected_bytes,
@@ -178,6 +178,9 @@ tsi_result tsi_frame_protector_protect(tsi_frame_protector* self,
 //   caller to specify how many bytes are available in protected_output_frames.
 // - still_pending_bytes is an output parameter indicating the number of bytes
 //   that still need to be flushed from the protector.
+//
+// Can be called concurrently with tsi_frame_protector_unprotect. Cannot be
+// called concurrently with tsi_frame_protector_protect.
 tsi_result tsi_frame_protector_protect_flush(
     tsi_frame_protector* self, unsigned char* protected_output_frames,
     size_t* protected_output_frames_size, size_t* still_pending_size);
@@ -198,12 +201,14 @@ tsi_result tsi_frame_protector_protect_flush(
 //   is the number of bytes actually written.
 //   If *unprotected_bytes_size is unchanged, there may be more data remaining
 //   to unprotect, and the caller should call this function again.
-
-// - This method returns TSI_OK in case of success. Success includes cases where
-//   there is not enough data to output a frame in which case
+// - Returns TSI_OK in case of success. Success includes cases where there is
+// not enough data to output a frame in which case
 //   unprotected_bytes_size will be set to 0 and cases where the internal buffer
 //   needs to be read before new protected data can be processed in which case
 //   protected_frames_size will be set to 0.
+//
+// Can be called concurrently with tsi_frame_protector_protect or
+// tsi_frame_protector_protect_flush.
 tsi_result tsi_frame_protector_unprotect(
     tsi_frame_protector* self, const unsigned char* protected_frames_bytes,
     size_t* protected_frames_bytes_size, unsigned char* unprotected_bytes,

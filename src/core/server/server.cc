@@ -1193,8 +1193,7 @@ void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
-    channelz_node_->AddChildListenSocket(
-        listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
+    listen_socket_node->AddParent(channelz_node_.get());
   }
   ListenerInterface* ptr = listener.get();
   listener_states_.emplace_back(
@@ -1257,7 +1256,6 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
-    // TODO(ctiller): add channelz node
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(&mu_global_);
     if (ShutdownCalled()) {
@@ -1265,6 +1263,9 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
+      socket_node->AddParent(channelz_node_.get());
+    }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
@@ -1295,7 +1296,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     intptr_t channelz_socket_uuid = 0;
     if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
       channelz_socket_uuid = socket_node->uuid();
-      channelz_node_->AddChildSocket(socket_node);
+      socket_node->AddParent(channelz_node_.get());
     }
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
@@ -1496,8 +1497,7 @@ void Server::StopListening() {
     channelz::ListenSocketNode* channelz_listen_socket_node =
         listener_state->listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
-      channelz_node_->RemoveChildListenSocket(
-          channelz_listen_socket_node->uuid());
+      channelz_listen_socket_node->RemoveParent(channelz_node_.get());
     }
     listener_state->Stop();
   }
@@ -1649,17 +1649,12 @@ class Server::ChannelData::ConnectivityWatcher
 
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
-    if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
-      server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
+    MutexLock lock(&server_->mu_global_);
+    if (list_position_.has_value()) {
+      server_->channels_.erase(*list_position_);
+      list_position_.reset();
     }
-    {
-      MutexLock lock(&server_->mu_global_);
-      if (list_position_.has_value()) {
-        server_->channels_.erase(*list_position_);
-        list_position_.reset();
-      }
-      server_->MaybeFinishShutdown();
-    }
+    server_->MaybeFinishShutdown();
   }
 }
 

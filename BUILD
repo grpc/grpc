@@ -1251,11 +1251,14 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/container:btree",
         "absl/log",
         "absl/log:check",
         "absl/status:statusor",
         "absl/strings",
+        "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
+        "absl/functional:function_ref",
     ],
     deps = [
         "exec_ctx",
@@ -1267,12 +1270,14 @@ grpc_cc_library(
         "uri",
         "//src/core:channel_args",
         "//src/core:connectivity_state",
+        "//src/core:dual_ref_counted",
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
+        "//src/core:shared_bit_gen",
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:time",
@@ -1579,7 +1584,6 @@ grpc_cc_library(
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
         "gpr",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:call_final_info",
         "//src/core:channel_args",
@@ -1589,6 +1593,7 @@ grpc_cc_library(
         "//src/core:metadata_batch",
         "//src/core:ref_counted_string",
         "//src/core:slice_buffer",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -2234,6 +2239,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:error",
         "//src/core:event_engine_memory_allocator",
+        "//src/core:experiments",
         "//src/core:gpr_atm",
         "//src/core:handshaker_factory",
         "//src/core:handshaker_registry",
@@ -2815,7 +2821,6 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_base",
         "grpc_public_hdrs",
-        "tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -2830,6 +2835,7 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:slice_refcount",
         "//src/core:sync",
+        "//src/core:tcp_tracer",
     ],
 )
 
@@ -4241,6 +4247,7 @@ grpc_cc_library(
         "tsi_base",
         "tsi_ssl_session_cache",
         "//src/core:channel_args",
+        "//src/core:env",
         "//src/core:error",
         "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
@@ -4663,29 +4670,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "context_list_entry",
-    hdrs = [
-        "//src/core:telemetry/context_list_entry.h",
-    ],
-    deps = [
-        "gpr",
-        "tcp_tracer",
-    ],
-)
-
-grpc_cc_library(
-    name = "tcp_tracer",
-    hdrs = [
-        "//src/core:telemetry/tcp_tracer.h",
-    ],
-    external_deps = [
-        "absl/time",
-    ],
-    visibility = ["//bazel:tcp_tracer"],
-    deps = ["gpr"],
-)
-
-grpc_cc_library(
     name = "grpc_transport_chttp2",
     srcs = [
         "//src/core:ext/transport/chttp2/transport/bin_decoder.cc",
@@ -4740,7 +4724,6 @@ grpc_cc_library(
         "chttp2_legacy_frame",
         "chttp2_varint",
         "config_vars",
-        "context_list_entry",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -4755,7 +4738,6 @@ grpc_cc_library(
         "iomgr_buffer_list",
         "ref_counted_ptr",
         "stats",
-        "tcp_tracer",
         "transport_auth_context",
         "//src/core:arena",
         "//src/core:bdp_estimator",
@@ -4764,6 +4746,7 @@ grpc_cc_library(
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
+        "//src/core:context_list_entry",
         "//src/core:default_tcp_tracer",
         "//src/core:error",
         "//src/core:error_utils",
@@ -4797,6 +4780,7 @@ grpc_cc_library(
         "//src/core:stats_data",
         "//src/core:status_conversion",
         "//src/core:status_helper",
+        "//src/core:tcp_tracer",
         "//src/core:time",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
@@ -4820,24 +4804,6 @@ grpc_cc_library(
         "gpr_platform",
         "grpc++_public_hdrs",
         "grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpcpp_chaotic_good",
-    srcs = [
-        "src/cpp/ext/chaotic_good.cc",
-    ],
-    hdrs = [
-        "src/cpp/ext/chaotic_good.h",
-    ],
-    visibility = ["//bazel:chaotic_good"],
-    deps = [
-        "gpr",
-        "grpc++_base",
-        "grpc_public_hdrs",
-        "//src/core:chaotic_good_connector",
-        "//src/core:chaotic_good_server",
     ],
 )
 

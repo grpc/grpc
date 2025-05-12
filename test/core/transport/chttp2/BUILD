@@ -531,6 +531,7 @@ grpc_cc_test(
         "//:chttp2_frame",
         "//:ref_counted_ptr",
         "//src/core:header_assembler",
+        "//src/core:http2_status",
         "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
@@ -714,5 +715,41 @@ grpc_cc_library(
         "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "ping_promise_test",
+    srcs = [
+        "ping_promise_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:map",
+        "//src/core:ping_promise",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "keepalive_test",
+    srcs = [
+        "keepalive_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:keepalive",
+        "//src/core:map",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
     ],
 )

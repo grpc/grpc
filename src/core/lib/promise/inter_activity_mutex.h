@@ -409,8 +409,6 @@ class InterActivityMutex {
       // some other waiter was added to the queue while we were waiting
       // go through the slow unlock path
       mutex_->Unlock();
-      // we should not be able to acquire the lock still!
-      DCHECK_NE(waiter_->CheckAcquired(), true);
       return Pending{};
     }
 
