@@ -24,37 +24,53 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 
+// WARNING : DO NOT USE. OpenCensus APIs have been deprecated.
+
+// OpenCensus was sunsetted in May, 2023
+// (https://opentelemetry.io/blog/2023/sunsetting-opencensus/), and the C++
+// OpenCensus repository has been archived
+// (https://github.com/census-instrumentation/opencensus-cpp)/
+
 namespace grpc {
 class ServerContext;
 // These symbols in this file will not be included in the binary unless
 // grpc_opencensus_plugin build target was added as a dependency. At the moment
 // it is only setup to be built with Bazel.
 
-// Registers the OpenCensus plugin with gRPC, so that it will be used for future
-// RPCs. This must be called before any views are created.
+// DEPRECATED: Registers the OpenCensus plugin with gRPC, so that it will be
+// used for future RPCs. This must be called before any views are created.
+GRPC_DEPRECATED(
+    "OpenCensus has been sunsetted in favor of OpenTelemetry "
+    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
 void RegisterOpenCensusPlugin();
 
 // RPC stats definitions, defined by
 // https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
 
-// Registers the cumulative gRPC views so that they will be exported by any
-// registered stats exporter. For on-task stats, construct a View using the
-// ViewDescriptors below.
+// DEPRECATED: Registers the cumulative gRPC views so that they will be exported
+// by any registered stats exporter. For on-task stats, construct a View using
+// the ViewDescriptors below.
+GRPC_DEPRECATED(
+    "OpenCensus has been sunsetted in favor of OpenTelemetry "
+    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
 void RegisterOpenCensusViewsForExport();
 
-// Returns the tracing Span for the current RPC.
+// DEPRECATED: Returns the tracing Span for the current RPC.
+GRPC_DEPRECATED(
+    "OpenCensus has been sunsetted in favor of OpenTelemetry "
+    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
 namespace experimental {
 
-// The tag keys set when recording RPC stats.
+// DEPRECATED: The tag keys set when recording RPC stats.
 ::opencensus::tags::TagKey ClientMethodTagKey();
 ::opencensus::tags::TagKey ClientStatusTagKey();
 ::opencensus::tags::TagKey ServerMethodTagKey();
 ::opencensus::tags::TagKey ServerStatusTagKey();
 
-// Names of measures used by the plugin--users can create views on these
-// measures but should not record data for them.
+// DEPRECATED: Names of measures used by the plugin--users can create views on
+// these measures but should not record data for them.
 extern const absl::string_view kRpcClientSentMessagesPerRpcMeasureName;
 extern const absl::string_view kRpcClientSentBytesPerRpcMeasureName;
 extern const absl::string_view kRpcClientReceivedMessagesPerRpcMeasureName;
@@ -74,7 +90,7 @@ extern const absl::string_view kRpcServerReceivedBytesPerRpcMeasureName;
 extern const absl::string_view kRpcServerServerLatencyMeasureName;
 extern const absl::string_view kRpcServerStartedRpcsMeasureName;
 
-// Canonical gRPC view definitions.
+// DEPRECATED: Canonical gRPC view definitions.
 const ::opencensus::stats::ViewDescriptor& ClientStartedRpcs();
 const ::opencensus::stats::ViewDescriptor& ClientCompletedRpcs();
 const ::opencensus::stats::ViewDescriptor& ClientRoundtripLatency();
@@ -165,6 +181,7 @@ const ::opencensus::stats::ViewDescriptor& ServerServerLatencyHour();
 const ::opencensus::stats::ViewDescriptor& ServerStartedRpcsHour();
 const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
+// DEPRECATED
 // Thread compatible.
 class CensusContext {
  public:
