@@ -499,8 +499,20 @@ ValueOrHttp2Status<Http2Frame> ParseWindowUpdateFrame(
   }
   uint8_t buffer[4];
   payload.CopyToBuffer(buffer);
-  return ValueOrHttp2Status<Http2Frame>(Http2WindowUpdateFrame{
-      hdr.stream_id, /*Window Size Increment (31)*/ Read31bits(buffer)});
+  const uint32_t window_size_increment = Read31bits(buffer);
+  if (window_size_increment == 0) {
+    if (hdr.stream_id == 0) {
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
+    } else {
+      return Http2Status::Http2StreamError(
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kWindowSizeIncrement, hdr.ToString()));
+    }
+  }
+  return ValueOrHttp2Status<Http2Frame>(
+      Http2WindowUpdateFrame{hdr.stream_id, window_size_increment});
 }
 
 ValueOrHttp2Status<Http2Frame> ParseSecurityFrame(
