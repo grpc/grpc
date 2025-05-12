@@ -82,7 +82,6 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
-    DCHECK_EQ(stream_id_, 0u);
     DCHECK_EQ(buffer_.Length(), 0u);
 
     // Validate input frame
@@ -90,6 +89,14 @@ class HeaderAssembler {
     // this.
     DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
+    // Validate input frame
+    if (frame.stream_id != stream_id_) {
+      Cleanup();
+      LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(kAssemblerMismatchedStreamId));
+    }
 
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
@@ -106,7 +113,6 @@ class HeaderAssembler {
 
     // Start header workflow
     header_in_progress_ = true;
-    stream_id_ = frame.stream_id;
 
     // Manage payload
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
@@ -131,7 +137,6 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
     DCHECK(is_ready_ == false);
-    DCHECK_GT(stream_id_, 0u);
 
     // Validate input frame
     if (frame.stream_id != stream_id_) {
@@ -202,8 +207,8 @@ class HeaderAssembler {
         std::move(metadata));
   }
 
-  HeaderAssembler()
-      : header_in_progress_(false), is_ready_(false), stream_id_(0) {}
+  HeaderAssembler(const uint32_t stream_id)
+      : header_in_progress_(false), is_ready_(false), stream_id_(stream_id) {}
 
   size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
 
@@ -221,12 +226,11 @@ class HeaderAssembler {
     buffer_.Clear();
     header_in_progress_ = false;
     is_ready_ = false;
-    stream_id_ = 0;
   }
 
   bool header_in_progress_;
   bool is_ready_;
-  uint32_t stream_id_;
+  const uint32_t stream_id_;
   SliceBuffer buffer_;
 };
 
