@@ -426,6 +426,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "posix_end2end_test",
+    srcs = ["posix_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["cpp_end2end_test"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_cc_grpc",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "health_service_end2end_test",
     srcs = ["health_service_end2end_test.cc"],
     external_deps = [
