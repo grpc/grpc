@@ -287,47 +287,8 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
   HPackParser parser;
   absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
-  Http2HeaderFrame header = GenerateHeaderFrame(kSimpleRequestEncoded,
-                                                stream_id, /*end_headers=*/true,
-                                                /*end_stream=*/false);
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
-  EXPECT_EQ(assembler.IsReady(), false);
-
-  assembler.AppendHeaderFrame(std::move(header));
-  EXPECT_GE(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
-  EXPECT_EQ(assembler.IsReady(), true);
-
-  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
-      assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true, bitgen);
-  EXPECT_TRUE(result.IsOk());
-  Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
-  EXPECT_STREQ(metadata->DebugString().c_str(),
-               std::string(kSimpleRequestDecoded).c_str());
-
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
-  EXPECT_EQ(assembler.IsReady(), false);
-
-  Http2HeaderFrame header1 = GenerateHeaderFrame(
-      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
-      /*end_stream=*/true);
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
-  EXPECT_EQ(assembler.IsReady(), false);
-
-  assembler.AppendHeaderFrame(std::move(header1));
-  EXPECT_GE(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
-  EXPECT_EQ(assembler.IsReady(), true);
-
-  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result1 =
-      assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true, bitgen);
-  EXPECT_TRUE(result1.IsOk());
-  Arena::PoolPtr<grpc_metadata_batch> metadata1 = TakeValue(std::move(result1));
-  EXPECT_STREQ(metadata1->DebugString().c_str(),
-               std::string(kSimpleRequestDecoded).c_str());
-
-  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
-  EXPECT_EQ(assembler.IsReady(), false);
+  ValidateOneHeader(stream_id, parser, bitgen, assembler, true);
+  ValidateOneHeader(stream_id, parser, bitgen, assembler, true);
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
