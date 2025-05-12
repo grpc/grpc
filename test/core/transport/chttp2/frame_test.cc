@@ -182,13 +182,40 @@ TEST(Frame, Http2GoawayFrameSerialization) {
       Serialize(Http2GoawayFrame{
           0x12345678, static_cast<uint32_t>(Http2ErrorCode::kEnhanceYourCalm),
           Slice::FromCopiedString("hello")}),
-      ByteVec(0, 0, 13, 7, 0, 0, 0, 0, 0, 0x12, 0x34, 0x56, 0x78, 0, 0, 0, 0x0b,
-              'h', 'e', 'l', 'l', 'o'));
+      ByteVec(/* Length (24) */ 0, 0, 13,
+              /* Type (8) */ 7,
+              /* Unused Flags (8) */ 0,
+              /* Reserved (1), Stream Identifier (31) */ 0, 0, 0, 0,
+              /* Reserved (1), Last-Stream-ID (31) */ 0x12, 0x34, 0x56, 0x78,
+              /* Error Code (32) */ 0, 0, 0, 0x0b,
+              /* Additional Debug Data (..) */ 'h', 'e', 'l', 'l', 'o'));
+  EXPECT_EQ(
+      Serialize(Http2GoawayFrame{0x7fffffff, static_cast<uint32_t>(0xffffffff),
+                                 Slice::FromCopiedString("hello")}),
+      ByteVec(/* Length (24) */ 0, 0, 13,
+              /* Type (8) */ 7,
+              /* Unused Flags (8) */ 0,
+              /* Reserved (1), Stream Identifier (31) */ 0, 0, 0, 0,
+              /* Reserved (1), Last-Stream-ID (31) */ 0x7f, 0xff, 0xff, 0xff,
+              /* Error Code (32) */ 0xff, 0xff, 0xff, 0xff,
+              /* Additional Debug Data (..) */ 'h', 'e', 'l', 'l', 'o'));
 }
 
 TEST(Frame, Http2WindowUpdateFrameSerialization) {
   EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0x12345678}),
-            ByteVec(0, 0, 4, 8, 0, 0, 0, 0, 1, 0x12, 0x34, 0x56, 0x78));
+            ByteVec(/* Length (24) */ 0, 0, 4,
+                    /* Type (8) */ 8,
+                    /* Unused Flags (8) */ 0,
+                    /* Reserved (1), Stream Identifier (31) */ 0, 0, 0, 1,
+                    /* Reserved (1), Window Size Increment (31) */ 0x12, 0x34,
+                    0x56, 0x78));
+  EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0xffffffff}),
+            ByteVec(/* Length (24) */ 0, 0, 4,
+                    /* Type (8) */ 8,
+                    /* Unused Flags (8) */ 0,
+                    /* Reserved (1), Stream Identifier (31) */ 0, 0, 0, 1,
+                    /* Reserved (1), Window Size Increment (31) */ 0x7f, 0xff,
+                    0xff, 0xff));
 }
 
 TEST(Frame, Http2SecurityFrameSerialization) {

@@ -81,10 +81,10 @@ uint32_t Read3b(const uint8_t* input) {
 constexpr uint32_t k8BitMask = 0x7f;
 
 void Write31bits(uint32_t x, uint8_t* output) {
-  output[0] = static_cast<uint8_t>(x >> 24);
+  output[0] = static_cast<uint8_t>(k8BitMask & (x >> 24));
   output[1] = static_cast<uint8_t>(x >> 16);
   output[2] = static_cast<uint8_t>(x >> 8);
-  output[3] = static_cast<uint8_t>(k8BitMask & x);
+  output[3] = static_cast<uint8_t>(x);
 }
 
 uint32_t Read31bits(const uint8_t* input) {
