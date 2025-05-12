@@ -97,10 +97,15 @@ class ControlEndpoint {
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointReadHdr",
+                                endpoint_->ReadSlice(length)));
   }
   auto Read(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointRead", endpoint_->Read(length)));
   }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }
   auto GetLocalAddress() const { return endpoint_->GetLocalAddress(); }

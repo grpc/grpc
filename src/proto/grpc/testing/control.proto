@@ -14,18 +14,18 @@
 
 syntax = "proto3";
 
+package grpc.testing;
+
+import "google/protobuf/timestamp.proto";
 import "src/proto/grpc/testing/payloads.proto";
 import "src/proto/grpc/testing/stats.proto";
-import "google/protobuf/timestamp.proto";
-
-package grpc.testing;
 
 enum ClientType {
   // Many languages support a basic distinction between using
   // sync or async client, and this allows the specification
   SYNC_CLIENT = 0;
   ASYNC_CLIENT = 1;
-  OTHER_CLIENT = 2; // used for some language-specific variants
+  OTHER_CLIENT = 2;  // used for some language-specific variants
   CALLBACK_CLIENT = 3;
 }
 
@@ -33,7 +33,7 @@ enum ServerType {
   SYNC_SERVER = 0;
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
-  OTHER_SERVER = 3; // used for some language-specific variants
+  OTHER_SERVER = 3;  // used for some language-specific variants
   CALLBACK_SERVER = 4;
 }
 
@@ -65,7 +65,7 @@ message LoadParams {
   oneof load {
     ClosedLoopParams closed_loop = 1;
     PoissonParams poisson = 2;
-  };
+  }
 }
 
 // presence of SecurityParams implies use of TLS
@@ -101,6 +101,9 @@ message ClientConfig {
   LoadParams load_params = 10;
   PayloadConfig payload_config = 11;
   HistogramParams histogram_params = 12;
+  // If true, load for each client channel will be distributed across all the
+  // async client threads.
+  bool distribute_load_across_threads = 23;
 
   // Specify the cores we should run the client on, if desired
   repeated int32 core_list = 13;
@@ -131,7 +134,9 @@ message ClientConfig {
   Protocol protocol = 22;
 }
 
-message ClientStatus { ClientStats stats = 1; }
+message ClientStatus {
+  ClientStats stats = 1;
+}
 
 // Request current stats
 message Mark {
@@ -158,9 +163,9 @@ message ServerConfig {
   // Specify the number of cores to limit server to, if desired
   int32 core_limit = 8;
   // payload config, used in generic server.
-  // Note this must NOT be used in proto (non-generic) servers. For proto servers,
-  // 'response sizes' must be configured from the 'response_size' field of the
-  // 'SimpleRequest' objects in RPC requests.
+  // Note this must NOT be used in proto (non-generic) servers. For proto
+  // servers, 'response sizes' must be configured from the 'response_size' field
+  // of the 'SimpleRequest' objects in RPC requests.
   PayloadConfig payload_config = 9;
 
   // Specify the cores we should run the server on, if desired
@@ -200,16 +205,14 @@ message ServerStatus {
   int32 cores = 3;
 }
 
-message CoreRequest {
-}
+message CoreRequest {}
 
 message CoreResponse {
   // Number of cores available on the server
   int32 cores = 1;
 }
 
-message Void {
-}
+message Void {}
 
 // A single performance scenario: input to qps_json_driver
 message Scenario {
@@ -238,24 +241,29 @@ message Scenarios {
 
 // Basic summary that can be computed from ClientStats and ServerStats
 // once the scenario has finished.
-message ScenarioResultSummary
-{
-  // Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
-  // For unary benchmarks, an operation is processing of a single unary RPC. 
-  // For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
+message ScenarioResultSummary {
+  // Total number of operations per second over all clients. What is counted as
+  // 1 'operation' depends on the benchmark scenarios: For unary benchmarks, an
+  // operation is processing of a single unary RPC. For streaming benchmarks, an
+  // operation is processing of a single ping pong of request and response.
   double qps = 1;
   // QPS per server core.
   double qps_per_server_core = 2;
-  // The total server cpu load based on system time across all server processes, expressed as percentage of a single cpu core.
-  // For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
-  // processes, the value could > 100 when there are multiple servers or a single server using multiple threads and cores. 
-  // Same explanation for the total client cpu load below.
+  // The total server cpu load based on system time across all server processes,
+  // expressed as percentage of a single cpu core. For example, 85 implies 85%
+  // of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating
+  // the cpu load across all the server processes, the value could > 100 when
+  // there are multiple servers or a single server using multiple threads and
+  // cores. Same explanation for the total client cpu load below.
   double server_system_time = 3;
-  // The total server cpu load based on user time across all server processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+  // The total server cpu load based on user time across all server processes,
+  // expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   double server_user_time = 4;
-  // The total client cpu load based on system time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+  // The total client cpu load based on system time across all client processes,
+  // expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   double client_system_time = 5;
-  // The total client cpu load based on user time across all client processes, expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
+  // The total client cpu load based on user time across all client processes,
+  // expressed as percentage of a single cpu core. (85 => 85%, 125 => 125%)
   double client_user_time = 6;
 
   // X% latency percentiles (in nanoseconds)
@@ -280,10 +288,9 @@ message ScenarioResultSummary
   double server_queries_per_cpu_sec = 17;
   double client_queries_per_cpu_sec = 18;
 
-
   // Start and end time for the test scenario
   google.protobuf.Timestamp start_time = 19;
-  google.protobuf.Timestamp end_time =20;
+  google.protobuf.Timestamp end_time = 20;
 }
 
 // Results of a single benchmark scenario.
