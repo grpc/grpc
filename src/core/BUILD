@@ -175,6 +175,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
@@ -7660,6 +7661,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "time",
         "//:gpr_platform",
     ],
 )
@@ -7675,7 +7677,7 @@ grpc_cc_library(
     ],
     deps = [
         "http2_status",
-        "message",
+        "metadata_batch",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -9191,7 +9193,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "cancel_callback",
-        "context_list_entry",
+        "dump_args",
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
