@@ -189,6 +189,8 @@ TEST(Frame, Http2GoawayFrameSerialization) {
               /* Reserved (1), Last-Stream-ID (31) */ 0x12, 0x34, 0x56, 0x78,
               /* Error Code (32) */ 0, 0, 0, 0x0b,
               /* Additional Debug Data (..) */ 'h', 'e', 'l', 'l', 'o'));
+
+  // Check if Reserved Bit is ignored
   EXPECT_EQ(
       Serialize(Http2GoawayFrame{0x7fffffff, static_cast<uint32_t>(0xffffffff),
                                  Slice::FromCopiedString("hello")}),
@@ -209,6 +211,8 @@ TEST(Frame, Http2WindowUpdateFrameSerialization) {
                     /* Reserved (1), Stream Identifier (31) */ 0, 0, 0, 1,
                     /* Reserved (1), Window Size Increment (31) */ 0x12, 0x34,
                     0x56, 0x78));
+
+  // Check if Reserved Bit is ignored
   EXPECT_EQ(Serialize(Http2WindowUpdateFrame{1, 0xffffffff}),
             ByteVec(/* Length (24) */ 0, 0, 4,
                     /* Type (8) */ 8,
