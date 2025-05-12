@@ -207,7 +207,15 @@ class Http2Status {
                         ", Message:", message_, "}");
   }
 
+  ~Http2Status() = default;
+
   Http2Status(Http2Status&& move_status) = default;
+  Http2Status(const Http2Status&) = delete;
+  Http2Status& operator=(const Http2Status&) = delete;
+
+  // Our http2_code_ code is a const, which makes an assignment illegal.
+  Http2Status& operator=(Http2Status&& rhs) = delete;
+
   Http2Status(const Http2Status&) = delete;
   Http2Status& operator=(const Http2Status&) = delete;
 
