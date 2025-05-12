@@ -55,9 +55,10 @@ namespace testing {
 ///////////////////////////////////////////////////////////////////////////////
 // Helpers
 
-Http2HeaderFrame GenerateHeader(absl::string_view str, uint32_t stream_id = 0,
-                                bool end_headers = false,
-                                bool end_stream = false) {
+Http2HeaderFrame GenerateHeaderFrame(absl::string_view str,
+                                     uint32_t stream_id = 0,
+                                     bool end_headers = false,
+                                     bool end_stream = false) {
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedString(str));
   return Http2HeaderFrame{stream_id, end_headers, end_stream,
@@ -81,12 +82,22 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 2. Validate output of GetBufferedHeadersLength
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 1111;
+  HPackParser parser;
+  absl::BitGen bitgen;
   HeaderAssembler assembler;
   Http2HeaderFrame header =
-      GenerateHeader("PUT REAL HEADER HERE", stream_id, /*end_headers=*/true,
-                     /*end_stream=*/false);
+      GenerateHeaderFrame("USUAL_HDR", stream_id, /*end_headers=*/true,
+                          /*end_stream=*/false);
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
+  assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_GE(assembler.GetBufferedHeadersLength(), 0u);
+  EXPECT_EQ(assembler.IsReady(), true);
+  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
+      assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                             /*is_client=*/true, bitgen);
+  EXPECT_TRUE(result.IsOk());
+  Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
 }
 
 // TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been

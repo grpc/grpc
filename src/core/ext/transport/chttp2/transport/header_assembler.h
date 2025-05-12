@@ -33,7 +33,8 @@
 namespace grpc_core {
 namespace http2 {
 
-// If the Client Transport code is doing something wrong, we fail with a DCHECK.
+// If the Client Transport code is using HeaderAssembler in the wrong way,
+// we fail with a DCHECK.
 // If the peer sent some bad data, we fail with the appropriate Http2Status.
 
 #define ASSEMBLER_LOG DVLOG(3)
@@ -44,12 +45,13 @@ constexpr absl::string_view kAssemblerContiguousSequenceError =
     "other stream.";
 
 constexpr absl::string_view kAssemblerMismatchedStreamId =
-    "CONTINUATION frame has a different  Stream Identifier than the preceeding "
+    "CONTINUATION frame has a different Stream Identifier than the preceeding "
     "HEADERS frame.";
 
 constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
+
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
@@ -70,7 +72,7 @@ class HeaderAssembler {
  public:
   // Call this for each incoming HTTP2 Header frame.
   // The payload of the Http2HeaderFrame will be cleared in this function.
-  Http2Status AppendHeaderFrame(Http2HeaderFrame& frame) {
+  Http2Status AppendHeaderFrame(Http2HeaderFrame&& frame) {
     // Validate current state of Assembler
     if (header_in_progress_) {
       Cleanup();
@@ -119,7 +121,7 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
-  Http2Status AppendContinuationFrame(Http2ContinuationFrame& frame) {
+  Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
     // Validate current state
     if (!header_in_progress_) {
       Cleanup();
@@ -207,12 +209,19 @@ class HeaderAssembler {
 
   bool IsReady() const { return is_ready_; }
 
+  ~HeaderAssembler() { Cleanup(); };
+
+  HeaderAssembler(HeaderAssembler&& rvalue) = delete;
+  HeaderAssembler& operator=(HeaderAssembler&& rvalue) = delete;
+  HeaderAssembler(const HeaderAssembler&) = delete;
+  HeaderAssembler& operator=(const HeaderAssembler&) = delete;
+
  private:
   void Cleanup() {
+    buffer_.Clear();
     header_in_progress_ = false;
     is_ready_ = false;
     stream_id_ = 0;
-    buffer_.Clear();
   }
 
   bool header_in_progress_;
