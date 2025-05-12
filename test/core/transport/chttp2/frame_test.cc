@@ -192,7 +192,7 @@ TEST(Frame, Http2GoawayFrameSerialization) {
 
   // Check if Reserved Bit is ignored
   EXPECT_EQ(
-      Serialize(Http2GoawayFrame{0x7fffffff, static_cast<uint32_t>(0xffffffff),
+      Serialize(Http2GoawayFrame{0xffffffff, static_cast<uint32_t>(0xffffffff),
                                  Slice::FromCopiedString("hello")}),
       ByteVec(/* Length (24) */ 0, 0, 13,
               /* Type (8) */ 7,
