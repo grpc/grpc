@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/random/random.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"

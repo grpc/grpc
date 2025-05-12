@@ -25,6 +25,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/random/random.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -98,16 +99,36 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
                              /*is_client=*/true, bitgen);
   EXPECT_TRUE(result.IsOk());
   Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
+  // TODO(tjagtap) - [PH2][P2] Validate metadata
 }
-
-// TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
-// removed.
 
 TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // Crash on invalid API usage.
   // If we try to read the Header before END_HEADERS is received.
-  GRPC_UNUSED HeaderAssembler assembler;
+  const uint32_t stream_id = 1111;
+  HPackParser parser;
+  absl::BitGen bitgen;
+  HeaderAssembler assembler;
+  Http2HeaderFrame header =
+      GenerateHeaderFrame("USUAL_HDR", stream_id, /*end_headers=*/false,
+                          /*end_stream=*/false);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
+  EXPECT_EQ(assembler.IsReady(), false);
+  assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_GE(assembler.GetBufferedHeadersLength(), 0u);
+  EXPECT_EQ(assembler.IsReady(), false);
+  ASSERT_DEATH(
+      {
+        GRPC_UNUSED ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>
+            result =
+                assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                                       /*is_client=*/true, bitgen);
+      },
+      "");
 }
+
+// TODO(tjagtap) : [PH2][P0] : Check if all instances of GRPC_UNUSED have been
+// removed.
 
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderAssembler - One Header Two Continuation Frames
