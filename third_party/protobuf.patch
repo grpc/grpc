@@ -5,7 +5,7 @@ index 45a6c20c5..c28dd8852 100755
 @@ -8,3 +8,9 @@
  # Copyright 2007 Google Inc. All Rights Reserved.
 
- __version__ = '6.31.0rc1'
+ __version__ = '6.31.0'
 +
 +if __name__ != '__main__':
 +  try:
