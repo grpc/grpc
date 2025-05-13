@@ -909,38 +909,3 @@ ChannelArgs Subchannel::MakeSubchannelArgs(
 }
 
 }  // namespace grpc_core
-
-// VTable for a non-owning EventEngine::Endpoint pointer.
-// Assumes the EventEngine::Endpoint's lifetime is managed externally
-static void* subchannel_endpoint_arg_copy(void* p) {
-  // For a non-owning pointer, "copy" returns the same pointer.
-  // The argument system is not taking separate ownership of the pointed-to
-  // object.
-  return p;
-}
-
-static void subchannel_endpoint_arg_destroy(void* p) {
-  // Do nothing, as ownership and lifetime are managed externally.
-  (void)p;  // Avoid unused parameter warning
-}
-
-static int subchannel_endpoint_arg_compare(void* p1, void* p2) {
-  // Simple pointer comparison.
-  if (p1 == p2) return 0;
-  if (reinterpret_cast<uintptr_t>(p1) < reinterpret_cast<uintptr_t>(p2)) {
-    return -1;
-  }
-  return 1;
-}
-
-const grpc_arg_pointer_vtable grpc_subchannel_endpoint_arg_vtable = {
-    subchannel_endpoint_arg_copy, subchannel_endpoint_arg_destroy,
-    subchannel_endpoint_arg_compare};
-
-grpc_arg make_subchannel_endpoint_grpc_arg(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SUBCHANNEL_ENDPOINT), &endpoint,
-      &grpc_subchannel_endpoint_arg_vtable);
-}
