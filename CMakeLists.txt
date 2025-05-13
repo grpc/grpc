@@ -4820,7 +4820,6 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
-  include/grpcpp/secure_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
@@ -5562,7 +5561,6 @@ foreach(_hdr
   include/grpcpp/completion_queue.h
   include/grpcpp/create_channel.h
   include/grpcpp/create_channel_posix.h
-  include/grpcpp/secure_posix.h
   include/grpcpp/ext/call_metric_recorder.h
   include/grpcpp/ext/health_check_service_server_builder_option.h
   include/grpcpp/ext/server_metric_recorder.h
