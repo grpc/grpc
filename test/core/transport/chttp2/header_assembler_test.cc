@@ -101,6 +101,8 @@ TEST(HeaderAssemblerTest, TestTheTestData) {
       (kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len +
        kSimpleRequestEncodedPart3Len);
   EXPECT_EQ(kSimpleRequestEncodedLen, sum);
+  EXPECT_EQ(std::string(kSimpleRequestDecoded).size(),
+            kSimpleRequestDecodedLen);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
