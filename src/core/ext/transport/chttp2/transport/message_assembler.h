@@ -76,7 +76,7 @@ class GrpcMessageAssembler {
   // Returns an error if an incomplete message is received and the stream ends.
   absl::StatusOr<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
-    if (GPR_UNLIKELY(current_len < kGrpcHeaderSizeInBytes)) {
+    if (current_len < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
