@@ -111,7 +111,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
@@ -176,7 +176,7 @@ class Http2ClientTransport final : public ClientTransport {
   // Returns a promise to enqueue a frame to MPSC
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;

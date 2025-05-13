@@ -319,7 +319,7 @@ void OutputBuffers::UpdateSendRate(uint32_t connection_id,
   buffer->UpdateSendRate(bytes_per_nanosecond);
 }
 
-void OutputBuffers::AddData(channelz::DataSink& sink) {
+void OutputBuffers::AddData(channelz::DataSink sink) {
   Json::Object data;
   MutexLock lock(&mu_);
   data["ready_endpoints"] =
@@ -404,7 +404,7 @@ void InputQueue::Cancel(uint64_t payload_tag) {
   read_completed_.Set(payload_tag);
 }
 
-void InputQueue::AddData(channelz::DataSink& sink) {
+void InputQueue::AddData(channelz::DataSink sink) {
   Json::Object data;
   MutexLock lock(&mu_);
   data["read_requested"] = Json::FromString(absl::StrCat(read_requested_));

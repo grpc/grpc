@@ -63,7 +63,7 @@ class TcpFrameTransport final : public FrameTransport,
     }
     return DataSource::GetZTrace(name);
   }
-  void AddData(channelz::DataSink& sink) override;
+  void AddData(channelz::DataSink sink) override;
 
  private:
   auto WriteFrame(const FrameInterface& frame,
