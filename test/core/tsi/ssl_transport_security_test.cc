@@ -1441,9 +1441,8 @@ TEST(SslTransportSecurityTest, ExtractCertChain) {
   sk_X509_pop_free(cert_chain, X509_free);
 }
 
-// Attempt to create a handhsake between a client and a server with a protocol
-// negotiation but overriding the preferred protocols values of the handshaker
-// factory.
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
 TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
