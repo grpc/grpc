@@ -25,12 +25,18 @@
 
 namespace grpc {
 
-// GcpObservability objects follow the RAII idiom and help manage the lifetime
-// of gRPC Observability data exporting to GCP. `GcpObservability::Init()`
-// should be invoked instead to return an `GcpObservability` instance.
-// Observability data is flushed at regular intervals, and also when this
-// instance goes out of scope and its destructor is invoked.
-class GcpObservability {
+// WARNING : DO NOT USE. OpenCensus and dependent APIs have been deprecated.
+
+// DEPRECATED: GcpObservability objects follow the RAII idiom and help manage
+// the lifetime of gRPC Observability data exporting to GCP.
+// `GcpObservability::Init()` should be invoked instead to return an
+// `GcpObservability` instance. Observability data is flushed at regular
+// intervals, and also when this instance goes out of scope and its destructor
+// is invoked.
+class GRPC_DEPRECATED(
+    "OpenCensus has been sunsetted in favor of OpenTelemetry "
+    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+    GcpObservability {
  public:
   // Initialize GCP Observability for gRPC.
   // This should be called before any other gRPC operations like creating a
@@ -66,6 +72,9 @@ class GcpObservability {
   // As an implementation detail, this properly initializes the OpenCensus stats
   // and tracing plugin, so applications do not need to perform any additional
   // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
+  GRPC_DEPRECATED(
+      "OpenCensus has been sunsetted in favor of OpenTelemetry "
+      "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
   static absl::StatusOr<GcpObservability> Init();
 
   GcpObservability() = default;

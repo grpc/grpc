@@ -19,6 +19,8 @@
 #ifndef GRPCPP_OPENCENSUS_H
 #define GRPCPP_OPENCENSUS_H
 
+#include <grpc/support/port_platform.h>
+
 #include "opencensus/stats/view_descriptor.h"
 #include "opencensus/tags/tag_map.h"
 #include "opencensus/trace/span.h"
@@ -183,7 +185,9 @@ const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
 // DEPRECATED
 // Thread compatible.
-class CensusContext {
+class GRPC_DEPRECATED(
+    "OpenCensus has been sunsetted in favor of OpenTelemetry "
+    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/") CensusContext {
  public:
   CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
 
