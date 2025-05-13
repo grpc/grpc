@@ -2109,8 +2109,7 @@ static tsi_result create_tsi_ssl_handshaker(
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
 #if TSI_OPENSSL_ALPN_SUPPORT
   if (alpn_preferred_protocol_raw_list.has_value() && !is_client) {
-    impl->preferred_protocol_byte_list =
-        std::move(preferred_protocol_byte_list);
+    impl->preferred_protocol_byte_list = preferred_protocol_byte_list;
     impl->preferred_protocol_byte_list_length =
         preferred_protocol_byte_list_length;
     SSL_CTX_set_alpn_select_cb(ctx, ServerHandshakerAlpnCallback, impl);
