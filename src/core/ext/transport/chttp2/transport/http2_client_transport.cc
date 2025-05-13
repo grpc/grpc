@@ -342,7 +342,7 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
   return TrySeq(
-      outgoing_frames_.NextBatch(),
+      outgoing_frames_.NextBatch(128),
       [self = RefAsSubclass<Http2ClientTransport>()](
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
