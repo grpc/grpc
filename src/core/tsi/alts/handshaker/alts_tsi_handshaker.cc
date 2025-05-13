@@ -44,7 +44,7 @@
 #include "upb/mem/arena.hpp"
 
 namespace {
-constexpr absl::string_view kUsegRPCExperimentalAltsHandshakerKeepaliveParams =
+constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =
     "GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS";
 
 // 10 seconds
@@ -550,7 +550,7 @@ static void alts_tsi_handshaker_create_channel(
   // TODO(gtcooke94) - Flag to try new values for ALTS keep alive settings,
   // remove after trial
   std::optional<std::string> env = grpc_core::GetEnv(
-      kUsegRPCExperimentalAltsHandshakerKeepaliveParams.data());
+      kUseGrpcExperimentalAltsHandshakerKeepaliveParams.data());
   if (env.has_value() && (*env == "true")) {
     args_vec.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
