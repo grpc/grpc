@@ -352,8 +352,9 @@ ValueOrHttp2Status<Http2Frame> ParseHeaderFrame(const Http2FrameHeader& hdr,
 
   if (hdr.flags & kFlagPadded) {
     Http2Status s = StripPadding(hdr, payload);
-    if (GPR_UNLIKELY(!s.IsOk()))
+    if (GPR_UNLIKELY(!s.IsOk())) {
       return ValueOrHttp2Status<Http2Frame>(std::move(s));
+    }
   }
 
   if (GPR_UNLIKELY(hdr.flags & kFlagPriority)) {
