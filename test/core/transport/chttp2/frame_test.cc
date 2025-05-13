@@ -966,8 +966,7 @@ TEST(Frame, ParseRejectsWindowUpdateFrame) {
                     /* Type (1 octet) */ 8,
                     /* Unused Flags (1 octet) */ 1,
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
-                    /* Reserved (1 bit) Window Size Increment (31 bits) */ 0, 0,
-                    0, 0),
+                    /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       StatusIs(
           absl::StatusCode::kInternal,
           absl::StrCat(RFC9113::kWindowSizeIncrement,
