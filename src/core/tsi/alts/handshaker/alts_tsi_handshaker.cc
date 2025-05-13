@@ -551,17 +551,13 @@ static void alts_tsi_handshaker_create_channel(
   // remove after trial
   std::optional<std::string> env = grpc_core::GetEnv(
       kUsegRPCExperimentalAltsHandshakerKeepaliveParams.data());
-  if (env.has_value()) {
-    bool use_experimental_params = false;
-    std::istringstream(*env) >> std::boolalpha >> use_experimental_params;
-    if (use_experimental_params) {
-      args_vec.push_back(grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
-          kExperimentalKeepAliveTimeoutMs));
-      args_vec.push_back(grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-          kExperimentalKeepAliveTimeMs));
-    }
+  if (env.has_value() && (*env == "true")) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
+        kExperimentalKeepAliveTimeoutMs));
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+        kExperimentalKeepAliveTimeMs));
   }
   grpc_channel_args args = {args_vec.size(), args_vec.data()};
   handshaker->channel = grpc_channel_create(
