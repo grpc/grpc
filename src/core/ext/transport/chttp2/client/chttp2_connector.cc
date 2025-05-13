@@ -111,8 +111,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
-  // step 3: rishesh@
-  std::unique_ptr<EventEngine::Endpoint> endpoint(args_.channel_args.GetObject<EventEngine::Endpoint>());
+  std::unique_ptr<EventEngine::Endpoint> endpoint(
+      args_.channel_args.GetObject<EventEngine::Endpoint>());
   ChannelArgs channel_args = args_.channel_args;
   if (endpoint == nullptr) {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
@@ -313,7 +313,6 @@ grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
-// #ifdef GRPC_SECURE_POSIX_H
 namespace grpc_core::experimental {
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngineSupportsFdExtension;
@@ -324,11 +323,7 @@ grpc_channel* CreateChannelFromEndpoint(
         endpoint,
     grpc_channel_credentials* creds, const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  // GRPC_TRACE_LOG(api, INFO) << "CreateChannelFromEndpoint(endpoint=" <<
-  // endpoint
-  //                           << ", creds=" << creds << ", args=" << args <<
-  //                           ")";
-  std::string endpoint_ = *ResolvedAddressToURI(endpoint->GetPeerAddress());
+  std::string resolved_address = *ResolvedAddressToURI(endpoint->GetPeerAddress());
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
@@ -341,12 +336,11 @@ grpc_channel* CreateChannelFromEndpoint(
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
           .SetObject<EventEngine::Endpoint>(ee_endpoint)
-          // .Set(make_subchannel_endpoint_grpc_arg(std::move(endpoint)))
-          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, endpoint_);
+          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, resolved_address);
   Resolver::Result result;
   result.args = args_;
   grpc_resolved_address address;
-  CHECK(grpc_parse_uri(URI::Parse(endpoint_).value(), &address));
+  CHECK(grpc_parse_uri(URI::Parse(resolved_address).value(), &address));
   result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
   response_generator->SetResponseAsync(std::move(result));
   args_ = args_.SetObject(response_generator);
@@ -375,5 +369,3 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
                                    args_.ToC().get());
 }
 }  // namespace grpc_core::experimental
-
-// #endif // GRPC_SECURE_POSIX_H

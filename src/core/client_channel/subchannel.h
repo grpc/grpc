@@ -390,8 +390,4 @@ class Subchannel final : public DualRefCounted<Subchannel> {
 
 }  // namespace grpc_core
 
-grpc_arg make_subchannel_endpoint_grpc_arg(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint);
-
 #endif  // GRPC_SRC_CORE_CLIENT_CHANNEL_SUBCHANNEL_H

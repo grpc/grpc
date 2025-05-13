@@ -3427,7 +3427,7 @@ grpc_core::Transport* grpc_create_chttp2_transport(
   return new grpc_chttp2_transport(channel_args, std::move(ep), is_client);
 }
 
-void grpc_chttp2_transport_start_reading( // here
+void grpc_chttp2_transport_start_reading(
     grpc_core::Transport* transport, grpc_slice_buffer* read_buffer,
     grpc_closure* notify_on_receive_settings,
     grpc_pollset_set* interested_parties_until_recv_settings,

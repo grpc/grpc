@@ -120,7 +120,6 @@ void TCPConnectHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   args_ = args;
-  // Step 1: rishesh@
   if (args->endpoint != nullptr) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;

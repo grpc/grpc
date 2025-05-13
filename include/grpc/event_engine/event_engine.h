@@ -30,7 +30,6 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-// Step 2: rishesh@
 /** This arg is intended for internal use only, primarily
  *  for passing endpoint information during subchannel creation or connection.
  */
@@ -376,8 +375,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// Returns the key of the write metric with the given name.
     /// If the name is not found, returns std::nullopt.
     virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
-
-    static std::string_view ChannelArgName() { return GRPC_ARG_SUBCHANNEL_ENDPOINT; }
   };
 
   /// Called when a new connection is established.

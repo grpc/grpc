@@ -56,7 +56,7 @@ class GreeterServiceImpl final : public Greeter::Service {
 };
 
 void RunServer(uint16_t port) {
-  std::string server_address = absl::StrFormat("127.0.0.1:%d", port);
+  std::string server_address = absl::StrFormat("0.0.0.0:%d", port);
   GreeterServiceImpl service;
 
   grpc::EnableDefaultHealthCheckService(true);
