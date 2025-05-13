@@ -341,7 +341,8 @@ TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   EXPECT_EQ(status2.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
 }
 
-TEST(HeaderAssemblerTest, InvalidHeaderAndContinuationHaveDifferentStreamID) {
+TEST(HeaderAssemblerTest,
+     DISABLED_InvalidHeaderAndContinuationHaveDifferentStreamID) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;

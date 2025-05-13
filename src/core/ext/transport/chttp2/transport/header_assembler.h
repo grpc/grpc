@@ -66,8 +66,8 @@ constexpr absl::string_view kAssemblerHpackError =
 // sequence of HEADERS or CONTINUATION frames has the END_HEADERS flag set.
 //
 // This class will first assemble all the header data into one SliceBuffer
-// from each frame. And when END_HEADERS is received, we generate the gRPC
-// Metadata from the SlicerBuffer.
+// from each frame. And when END_HEADERS is received, the caller can generate
+// the gRPC Metadata.
 class HeaderAssembler {
  public:
   // Call this for each incoming HTTP2 Header frame.
@@ -85,17 +85,14 @@ class HeaderAssembler {
     DCHECK_EQ(buffer_.Length(), 0u);
 
     // Validate input frame
-    // TODO(tjagtap) : [PH2][P2] : Ensure that the frame parser is managing
-    // this.
     DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
-    // Validate input frame
     if (frame.stream_id != stream_id_) {
       Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
+      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerMismatchedStreamId));
+          std::string(kAssemblerContiguousSequenceError));
     }
 
     // Manage size constraints
@@ -177,8 +174,10 @@ class HeaderAssembler {
     Arena::PoolPtr<grpc_metadata_batch> metadata =
         Arena::MakePooledForOverwrite<grpc_metadata_batch>();
     parser.BeginFrame(
-        metadata.get(), std::numeric_limits<uint32_t>::max(),
-        std::numeric_limits<uint32_t>::max(),
+        /*grpc_metadata_batch*/ metadata.get(),
+        // TODO(tjagtap) : [PH2][P1] : Manage limits
+        /*metadata_size_soft_limit*/ std::numeric_limits<uint32_t>::max(),
+        /*metadata_size_hard_limit*/ std::numeric_limits<uint32_t>::max(),
         is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
                             : HPackParser::Boundary::EndOfStream,
         HPackParser::Priority::None,
