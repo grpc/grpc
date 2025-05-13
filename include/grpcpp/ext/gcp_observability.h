@@ -23,8 +23,12 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 
-namespace grpc {
+#define GRPC_GCP_OBSERVABILITY_DEPRECATED_REASON                          \
+  "OpenCensus has been sunsetted in favor of OpenTelemetry "              \
+  "https://opentelemetry.io/blog/2023/sunsetting-opencensus/. Given GCP " \
+  "Observability's dependency on OpenCensus, it is deprecated as well."
 
+namespace grpc {
 // WARNING : DO NOT USE. OpenCensus and dependent APIs have been deprecated.
 
 // DEPRECATED: GcpObservability objects follow the RAII idiom and help manage
@@ -33,23 +37,22 @@ namespace grpc {
 // `GcpObservability` instance. Observability data is flushed at regular
 // intervals, and also when this instance goes out of scope and its destructor
 // is invoked.
-class GRPC_DEPRECATED(
-    "OpenCensus has been sunsetted in favor of OpenTelemetry "
-    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+class GRPC_DEPRECATED(GRPC_GCP_OBSERVABILITY_DEPRECATED_REASON)
     GcpObservability {
  public:
   // Initialize GCP Observability for gRPC.
   // This should be called before any other gRPC operations like creating a
   // channel, server, credentials etc.
   // The return value helps determine whether observability was
-  // successfully enabled or not. On success, an object of class `Observability`
-  // is returned. When this object goes out of scope, GCP Observability stats,
-  // tracing and logging data is flushed. On failure, the status message can be
-  // used to determine the cause of failure. It is up to the applications to
-  // either crash on failure, or continue without GCP observability being
-  // enabled. The status codes do not have any special meaning at present, and
-  // users should not make any assumptions based on the status code, other than
-  // a non-OK status code meaning that observability initialization failed.
+  // successfully enabled or not. On success, an object of class
+  // `Observability` is returned. When this object goes out of scope, GCP
+  // Observability stats, tracing and logging data is flushed. On failure, the
+  // status message can be used to determine the cause of failure. It is up to
+  // the applications to either crash on failure, or continue without GCP
+  // observability being enabled. The status codes do not have any special
+  // meaning at present, and users should not make any assumptions based on
+  // the status code, other than a non-OK status code meaning that
+  // observability initialization failed.
   //
   // The expected usage is to call this at the top (or near the top) in
   // main(), and let it go out of scope after all RPCs and activities that we
@@ -60,21 +63,20 @@ class GRPC_DEPRECATED(
   // for sample usage.
   //
   // It is possible for an initialized GcpObservability object to go out of
-  // scope while RPCs and other gRPC operations are still ongoing. In this case,
-  // GCP Observability tries to flush all observability data collected till that
-  // point.
+  // scope while RPCs and other gRPC operations are still ongoing. In this
+  // case, GCP Observability tries to flush all observability data collected
+  // till that point.
   //
-  // Note that this is a blocking call which properly sets up gRPC Observability
-  // to work with GCP and might take a few seconds to return.  Similarly, the
-  // destruction of a non-moved-from `Observability` object is also blocking
-  // since it flushes the observability data to GCP.
+  // Note that this is a blocking call which properly sets up gRPC
+  // Observability to work with GCP and might take a few seconds to return.
+  // Similarly, the destruction of a non-moved-from `Observability` object is
+  // also blocking since it flushes the observability data to GCP.
   //
-  // As an implementation detail, this properly initializes the OpenCensus stats
-  // and tracing plugin, so applications do not need to perform any additional
-  // gRPC C++ OpenCensus setup/registration to get GCP Observability for gRPC.
-  GRPC_DEPRECATED(
-      "OpenCensus has been sunsetted in favor of OpenTelemetry "
-      "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+  // As an implementation detail, this properly initializes the OpenCensus
+  // stats and tracing plugin, so applications do not need to perform any
+  // additional gRPC C++ OpenCensus setup/registration to get GCP
+  // Observability for gRPC.
+  GRPC_DEPRECATED(GRPC_GCP_OBSERVABILITY_DEPRECATED_REASON)
   static absl::StatusOr<GcpObservability> Init();
 
   GcpObservability() = default;
@@ -90,17 +92,17 @@ class GRPC_DEPRECATED(
 
  private:
   // Helper class that aids in implementing GCP Observability.
-  // Inheriting from GrpcLibrary makes sure that gRPC is initialized and remains
-  // initialized for the lifetime of GCP Observability. In the future, when gRPC
-  // initialization goes away, we might still want to keep gRPC Event Engine
-  // initialized, just in case, we need to perform some IO operations during
-  // observability close.
-  // Note that the lifetime guarantees are only one way, i.e., GcpObservability
-  // object guarantees that gRPC will not shutdown while the object is still in
-  // scope, but the other way around does not hold true. Even though that is not
-  // the expected usage, GCP Observability can shutdown before gRPC shuts down.
-  // It follows that gRPC should not hold any callbacks from GcpObservability. A
-  // change in this restriction should go through a design review.
+  // Inheriting from GrpcLibrary makes sure that gRPC is initialized and
+  // remains initialized for the lifetime of GCP Observability. In the future,
+  // when gRPC initialization goes away, we might still want to keep gRPC
+  // Event Engine initialized, just in case, we need to perform some IO
+  // operations during observability close. Note that the lifetime guarantees
+  // are only one way, i.e., GcpObservability object guarantees that gRPC will
+  // not shutdown while the object is still in scope, but the other way around
+  // does not hold true. Even though that is not the expected usage, GCP
+  // Observability can shutdown before gRPC shuts down. It follows that gRPC
+  // should not hold any callbacks from GcpObservability. A change in this
+  // restriction should go through a design review.
   class GcpObservabilityImpl : private internal::GrpcLibrary {
    public:
     ~GcpObservabilityImpl() override;

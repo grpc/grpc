@@ -33,34 +33,32 @@
 // OpenCensus repository has been archived
 // (https://github.com/census-instrumentation/opencensus-cpp)/
 
+#define GRPC_OPENCENSUS_DEPRECATION_REASON                   \
+  "OpenCensus has been sunsetted in favor of OpenTelemetry " \
+  "https://opentelemetry.io/blog/2023/sunsetting-opencensus/"
+
 namespace grpc {
 class ServerContext;
 // These symbols in this file will not be included in the binary unless
-// grpc_opencensus_plugin build target was added as a dependency. At the moment
-// it is only setup to be built with Bazel.
+// grpc_opencensus_plugin build target was added as a dependency. At the
+// moment it is only setup to be built with Bazel.
 
 // DEPRECATED: Registers the OpenCensus plugin with gRPC, so that it will be
 // used for future RPCs. This must be called before any views are created.
-GRPC_DEPRECATED(
-    "OpenCensus has been sunsetted in favor of OpenTelemetry "
-    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+GRPC_DEPRECATED(GRPC_OPENCENSUS_DEPRECATION_REASON)
 void RegisterOpenCensusPlugin();
 
 // RPC stats definitions, defined by
 // https://github.com/census-instrumentation/opencensus-specs/blob/master/stats/gRPC.md
 
-// DEPRECATED: Registers the cumulative gRPC views so that they will be exported
-// by any registered stats exporter. For on-task stats, construct a View using
-// the ViewDescriptors below.
-GRPC_DEPRECATED(
-    "OpenCensus has been sunsetted in favor of OpenTelemetry "
-    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+// DEPRECATED: Registers the cumulative gRPC views so that they will be
+// exported by any registered stats exporter. For on-task stats, construct a
+// View using the ViewDescriptors below.
+GRPC_DEPRECATED(GRPC_OPENCENSUS_DEPRECATION_REASON)
 void RegisterOpenCensusViewsForExport();
 
 // DEPRECATED: Returns the tracing Span for the current RPC.
-GRPC_DEPRECATED(
-    "OpenCensus has been sunsetted in favor of OpenTelemetry "
-    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/")
+GRPC_DEPRECATED(GRPC_OPENCENSUS_DEPRECATION_REASON)
 ::opencensus::trace::Span GetSpanFromServerContext(ServerContext* context);
 
 namespace experimental {
@@ -185,9 +183,7 @@ const ::opencensus::stats::ViewDescriptor& ServerCompletedRpcsHour();
 
 // DEPRECATED
 // Thread compatible.
-class GRPC_DEPRECATED(
-    "OpenCensus has been sunsetted in favor of OpenTelemetry "
-    "https://opentelemetry.io/blog/2023/sunsetting-opencensus/") CensusContext {
+class GRPC_DEPRECATED(GRPC_OPENCENSUS_DEPRECATION_REASON) CensusContext {
  public:
   CensusContext() : span_(::opencensus::trace::Span::BlankSpan()), tags_({}) {}
 
