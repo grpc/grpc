@@ -130,23 +130,26 @@ Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
                        absl::BitGen& bitgen, HeaderAssembler& assembler,
                        const bool end_headers) {
-  Http2HeaderFrame header = GenerateHeaderFrame(
-      kSimpleRequestEncoded, stream_id, /*end_headers=*/end_headers,
-      /*end_stream=*/false);
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  assembler.AppendHeaderFrame(std::move(header));
+  Http2HeaderFrame header = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/end_headers,
+      /*end_stream=*/false);
+  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
-  EXPECT_EQ(assembler.IsReady(), true);
 
-  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
-      assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true, bitgen);
-  EXPECT_TRUE(result.IsOk());
-  Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
-  EXPECT_STREQ(metadata->DebugString().c_str(),
-               std::string(kSimpleRequestDecoded).c_str());
+  if (end_headers) {
+    EXPECT_EQ(assembler.IsReady(), true);
+    ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
+        assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                               /*is_client=*/true, bitgen);
+    EXPECT_TRUE(result.IsOk());
+    Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
+    EXPECT_STREQ(metadata->DebugString().c_str(),
+                 std::string(kSimpleRequestDecoded).c_str());
+  }
 }
 
 TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
@@ -175,6 +178,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 
   assembler.AppendHeaderFrame(std::move(header));
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
+  // MUST be false when end_headers is false.
   EXPECT_EQ(assembler.IsReady(), false);
 
 #ifndef NDEBUG
@@ -327,11 +331,13 @@ TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
-      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
 
   Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
   EXPECT_TRUE(status1.IsOk());
+  EXPECT_EQ(assembler.IsReady(), false);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
 
   Http2HeaderFrame header2 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
@@ -341,17 +347,17 @@ TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   EXPECT_FALSE(status2.IsOk());
   EXPECT_EQ(status2.GetType(), Http2Status::Http2ErrorType::kConnectionError);
   EXPECT_EQ(status2.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+  EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
 }
 
-TEST(HeaderAssemblerTest,
-     DISABLED_InvalidHeaderAndContinuationHaveDifferentStreamID) {
+TEST(HeaderAssemblerTest, InvalidHeaderAndContinuationHaveDifferentStreamID) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
   absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
-      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
 
   Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
@@ -381,6 +387,38 @@ TEST(HeaderAssemblerTest, InvalidContinuationBeforeHeaders) {
   EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
   EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
 }
+
+TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
+  // Fail if the CONTINUATION frame is received after END_HEADERS.
+  // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
+  const uint32_t stream_id = 0x1111;
+  HPackParser parser;
+  absl::BitGen bitgen;
+  HeaderAssembler assembler(stream_id);
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      /*end_stream=*/false);
+
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_TRUE(status1.IsOk());
+
+  Http2ContinuationFrame continuation1 = GenerateContinuationFrame(
+      kSimpleRequestEncodedPart2, stream_id + 1, /*end_headers=*/false);
+
+  Http2Status status2 =
+      assembler.AppendContinuationFrame(std::move(continuation1));
+  EXPECT_FALSE(status2.IsOk());
+  EXPECT_EQ(status2.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status2.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+}
+
+// TODO(tjagtap) : [PH2][P3] : Validate later. Edge case
+//  Is this a valid case?
+//  First we receive one HEADER frame with END_HEADER . This is initial metadata
+//  The stream has no Messages. Hence no DATA Frames
+//  Then we receive one HEADER frame with END_HEADER and END_STREAM.
+//  We Append both and parse both because we read them together.
+//  Is this a valid case?
 
 }  // namespace testing
 }  // namespace http2

@@ -81,8 +81,6 @@ class HeaderAssembler {
           Http2ErrorCode::kProtocolError,
           std::string(kAssemblerContiguousSequenceError));
     }
-    DCHECK(is_ready_ == false);
-    DCHECK_EQ(buffer_.Length(), 0u);
 
     // Validate input frame
     DCHECK_GT(frame.stream_id, 0u)
@@ -133,7 +131,16 @@ class HeaderAssembler {
           Http2ErrorCode::kProtocolError,
           std::string(kAssemblerContiguousSequenceError));
     }
-    DCHECK(is_ready_ == false);
+
+    if (is_ready_ == true) {
+      // Received comtinuation frame after END_HEADERS was received. This is
+      // wrong.
+      Cleanup();
+      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kProtocolError,
+          std::string(kAssemblerContiguousSequenceError));
+    }
 
     // Validate input frame
     if (frame.stream_id != stream_id_) {
@@ -206,12 +213,12 @@ class HeaderAssembler {
         std::move(metadata));
   }
 
-  HeaderAssembler(const uint32_t stream_id)
-      : header_in_progress_(false), is_ready_(false), stream_id_(stream_id) {}
-
   size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
 
   bool IsReady() const { return is_ready_; }
+
+  explicit HeaderAssembler(const uint32_t stream_id)
+      : header_in_progress_(false), is_ready_(false), stream_id_(stream_id) {}
 
   ~HeaderAssembler() { Cleanup(); };
 
