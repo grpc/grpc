@@ -43,13 +43,15 @@
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
 
-#define GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS \
-  "grpc.alts_handshaker_keepalive_params"
+namespace {
+constexpr absl::string_view kUsegRPCExperimentalAltsHandshakerKeepaliveParams =
+    "GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS";
 
 // 10 seconds
 constexpr int kExperimentalKeepAliveTimeoutMs = 10 * 1000;
 // 10 minutes
 constexpr int kExperimentalKeepAliveTimeMs = 10 * 60 * 1000;
+}  // namespace
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
@@ -547,8 +549,8 @@ static void alts_tsi_handshaker_create_channel(
       const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0));
   // TODO(gtcooke94) - Flag to try new values for ALTS keep alive settings,
   // remove after trial
-  std::optional<std::string> env =
-      grpc_core::GetEnv(GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS);
+  std::optional<std::string> env = grpc_core::GetEnv(
+      kUsegRPCExperimentalAltsHandshakerKeepaliveParams.data());
   if (env.has_value()) {
     bool use_experimental_params = false;
     std::istringstream(*env) >> std::boolalpha >> use_experimental_params;
