@@ -239,11 +239,17 @@ int ServerHandshakerAlpnCallback(
     const unsigned char* client_preferred_protocol_list,
     unsigned int client_preferred_protocol_list_len, void* arg) {
   tsi_ssl_handshaker* handshaker = static_cast<tsi_ssl_handshaker*>(arg);
-  return SelectProtocolList(negotiated_protocol, negotiated_protocol_len,
+
+  if (SSL_select_next_proto(const_cast<unsigned char**>(negotiated_protocol),
+                            negotiated_protocol_len,
                             client_preferred_protocol_list,
                             client_preferred_protocol_list_len,
                             handshaker->preferred_protocol_byte_list,
-                            handshaker->preferred_protocol_byte_list_length);
+                            handshaker->preferred_protocol_byte_list_length) !=
+      OPENSSL_NPN_NEGOTIATED) {
+    return SSL_TLSEXT_ERR_NOACK;
+  }
+  return SSL_TLSEXT_ERR_OK;
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 }  // namespace
