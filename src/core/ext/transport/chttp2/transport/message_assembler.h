@@ -75,7 +75,8 @@ class GrpcMessageAssembler {
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
   absl::StatusOr<MessageHandle> ExtractMessage() {
-    if (GPR_UNLIKELY(message_buffer_.Length() < kGrpcHeaderSizeInBytes)) {
+    const size_t current_len = message_buffer_.Length();
+    if (GPR_UNLIKELY(current_len < kGrpcHeaderSizeInBytes)) {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
@@ -87,8 +88,7 @@ class GrpcMessageAssembler {
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
-    if (GPR_LIKELY(message_buffer_.Length() - kGrpcHeaderSizeInBytes >=
-                   header.length)) {
+    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header.length)) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
