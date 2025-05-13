@@ -176,7 +176,9 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_TRUE(status.IsOk());
+
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), kSimpleRequestEncodedLen);
   // MUST be false when end_headers is false.
   EXPECT_EQ(assembler.IsReady(), false);
@@ -211,17 +213,22 @@ void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
   EXPECT_EQ(assembler.IsReady(), false);
 
   size_t expected_size = kSimpleRequestEncodedPart1Len;
-  assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart2Len;
-  assembler.AppendContinuationFrame(std::move(continuation1));
+  Http2Status status1 =
+      assembler.AppendContinuationFrame(std::move(continuation1));
+  EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), false);
 
   expected_size += kSimpleRequestEncodedPart3Len;
-  assembler.AppendContinuationFrame(std::move(continuation2));
+  Http2Status status2 =
+      assembler.AppendContinuationFrame(std::move(continuation2));
+  EXPECT_TRUE(status2.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), expected_size);
   EXPECT_EQ(assembler.IsReady(), true);
 
@@ -263,12 +270,15 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  assembler.AppendHeaderFrame(std::move(header));
+  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  EXPECT_TRUE(status.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len);
   EXPECT_EQ(assembler.IsReady(), false);
 
-  assembler.AppendContinuationFrame(std::move(continuation1));
+  Http2Status status1 =
+      assembler.AppendContinuationFrame(std::move(continuation1));
+  EXPECT_TRUE(status1.IsOk());
   EXPECT_EQ(assembler.GetBufferedHeadersLength(),
             kSimpleRequestEncodedPart1Len + kSimpleRequestEncodedPart2Len);
   EXPECT_EQ(assembler.IsReady(), false);

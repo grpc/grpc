@@ -74,7 +74,7 @@ class HeaderAssembler {
   // The payload of the Http2HeaderFrame will be cleared in this function.
   Http2Status AppendHeaderFrame(Http2HeaderFrame&& frame) {
     // Validate current state of Assembler
-    if (header_in_progress_) {
+    if (GPR_UNLIKELY(header_in_progress_)) {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
@@ -85,7 +85,7 @@ class HeaderAssembler {
     // Validate input frame
     DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
-    if (frame.stream_id != stream_id_) {
+    if (GPR_UNLIKELY(frame.stream_id != stream_id_)) {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
@@ -96,7 +96,7 @@ class HeaderAssembler {
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
     if constexpr (sizeof(size_t) == 4) {
-      if (buffer_.Length() >= UINT32_MAX - current_len) {
+      if (GPR_UNLIKELY(buffer_.Length() >= UINT32_MAX - current_len)) {
         Cleanup();
         LOG(ERROR)
             << "Stream Error: SliceBuffer overflow for 32 bit platforms.";
@@ -124,7 +124,7 @@ class HeaderAssembler {
 
   Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
     // Validate current state
-    if (!header_in_progress_) {
+    if (GPR_UNLIKELY(!header_in_progress_)) {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
       return Http2Status::Http2ConnectionError(
@@ -132,7 +132,7 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
 
-    if (is_ready_ == true) {
+    if (GPR_UNLIKELY(is_ready_ == true)) {
       // Received comtinuation frame after END_HEADERS was received. This is
       // wrong.
       Cleanup();
@@ -143,7 +143,7 @@ class HeaderAssembler {
     }
 
     // Validate input frame
-    if (frame.stream_id != stream_id_) {
+    if (GPR_UNLIKELY(frame.stream_id != stream_id_)) {
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
       return Http2Status::Http2ConnectionError(
@@ -197,7 +197,7 @@ class HeaderAssembler {
       absl::Status result =
           parser.Parse(buffer_.c_slice_at(i), i == buffer_.Count() - 1, bitsrc,
                        /*call_tracer=*/nullptr);
-      if (!result.ok()) {
+      if (GPR_UNLIKELY(!result.ok())) {
         Cleanup();
         LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
         return Http2Status::Http2ConnectionError(
