@@ -16,7 +16,7 @@
 This module contains build rules relating to gRPC Objective-C.
 """
 
-load("@rules_proto//proto:defs.bzl", "ProtoInfo")
+load("@com_google_protobuf//bazel/common:proto_info.bzl", "ProtoInfo")
 load(
     "//bazel:protobuf.bzl",
     "get_include_directory",
