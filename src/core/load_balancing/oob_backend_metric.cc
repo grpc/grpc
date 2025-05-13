@@ -72,11 +72,11 @@ class OrcaProducer::ConnectivityWatcher final
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status&) override {
-    producer_->OnConnectivityStateChange(state);
-    self.reset();
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status&) override {
+    producer_->work_serializer_->Run([producer = producer_, state]() {
+      producer->OnConnectivityStateChange(state);
+    });
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -209,6 +209,7 @@ class OrcaProducer::OrcaStreamEventHandler final
 
 void OrcaProducer::Start(RefCountedPtr<Subchannel> subchannel) {
   subchannel_ = std::move(subchannel);
+  work_serializer_.Init(subchannel_->event_engine());
   connected_subchannel_ = subchannel_->connected_subchannel();
   auto connectivity_watcher =
       MakeRefCounted<ConnectivityWatcher>(WeakRefAsSubclass<OrcaProducer>());
