@@ -136,7 +136,7 @@ NativeDNSResolver::LookupHostnameBlocking(absl::string_view name,
     }
   }
   if (s != 0) {
-    err = absl::UnknownError(absl::StrCat(
+    err = absl::UnavailableError(absl::StrCat(
         "getaddrinfo(\"", name, "\"): ", gai_strerror(s), " (", s, ")"));
     goto done;
   }
