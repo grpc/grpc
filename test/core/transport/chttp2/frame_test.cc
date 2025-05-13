@@ -950,27 +950,31 @@ TEST(Frame, ParseRejectsWindowUpdateFrame) {
                        absl::StrCat(
                            RFC9113::kStreamIdMustBeOdd,
                            "{WINDOW_UPDATE: flags=1, stream_id=4, length=4}")));
+}
 
+TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
   // Window Size Increment MUST be non zero
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                            /* Type (1 octet) */ 8,
-                            /* Unused Flags (1 octet) */ 1,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kWindowSizeIncrement,
-                           "{WINDOW_UPDATE: flags=1, stream_id=4, length=4}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                     /* Type (1 octet) */ 8,
-                    /* Unused Flags (1 octet) */ 1,
-                    /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
+                    /* Unused Flags (1 octet) */ 0xff,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
       StatusIs(
           absl::StatusCode::kInternal,
           absl::StrCat(RFC9113::kWindowSizeIncrement,
-                       "{WINDOW_UPDATE: flags=1, stream_id=4, length=4}")));
+                       "{WINDOW_UPDATE: flags=255, stream_id=0, length=4}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
+                    /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
+      StatusIs(
+          absl::StatusCode::kInternal,
+          absl::StrCat(
+              RFC9113::kWindowSizeIncrement,
+              "{WINDOW_UPDATE: flags=0, stream_id=2147483647, length=4}")));
 }
 
 TEST(Frame, GrpcHeaderTest) {
