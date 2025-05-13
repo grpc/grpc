@@ -216,7 +216,7 @@ fi
 # Copy contents of OUTPUT_DIR back under the git repo root
 if [ "${OUTPUT_DIR}" != "" ]
 then
-  cp -r "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
+  cp -rf "${TEMP_OUTPUT_DIR}/${OUTPUT_DIR}" "${git_root}" || DOCKER_EXIT_CODE=$?
 fi
 
 exit $DOCKER_EXIT_CODE
