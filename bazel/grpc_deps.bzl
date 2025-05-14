@@ -357,12 +357,12 @@ def grpc_deps():
     if "io_opentelemetry_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opentelemetry_cpp",
-            sha256 = "a85a22521de7426c3e019d50e18d0af16e0391e0353923308eb168b3e624aea1",
-            strip_prefix = "opentelemetry-cpp-ced79860f8c8a091a2eabfee6d47783f828a9b59",
+            sha256 = "b74a72afa6a4f29b85d4d236528aba0f6d55cf1ec2f715613fe83524a7529089",
+            strip_prefix = "opentelemetry-cpp-6175aa0b213eea053247e43b4f35b8d201fa356e",
             urls = [
-                # v1.19.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
-                "https://github.com/open-telemetry/opentelemetry-cpp/archive/ced79860f8c8a091a2eabfee6d47783f828a9b59.tar.gz",
+                # v1.20.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/open-telemetry/opentelemetry-cpp/archive/6175aa0b213eea053247e43b4f35b8d201fa356e.tar.gz",
+                "https://github.com/open-telemetry/opentelemetry-cpp/archive/6175aa0b213eea053247e43b4f35b8d201fa356e.tar.gz",
             ],
         )
 
