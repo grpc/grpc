@@ -282,9 +282,12 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
 // scope.
 #define GRPC_LATENT_SEE_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
-#define GRPC_LATENT_SEE_PROMISE(name, promise)                           \
-  grpc_core::latent_see::Promise(GRPC_LATENT_SEE_METADATA("Poll:" name), \
-                                 GRPC_LATENT_SEE_METADATA(name), promise)
+#define GRPC_LATENT_SEE_PROMISE(name, promise)                                 \
+  grpc_core::latent_see::Promise(GRPC_LATENT_SEE_METADATA("Poll:" name),       \
+                                 GRPC_LATENT_SEE_METADATA(name), [&]() {       \
+                                   GRPC_LATENT_SEE_INNER_SCOPE("Setup:" name); \
+                                   return promise;                             \
+                                 }())
 #else  // !def(GRPC_ENABLE_LATENT_SEE)
 namespace grpc_core {
 namespace latent_see {
