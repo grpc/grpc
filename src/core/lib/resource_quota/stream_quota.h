@@ -32,7 +32,7 @@ namespace grpc_core {
 class StreamQuota : public RefCounted<StreamQuota> {
  public:
   StreamQuota() = default;
-  ~StreamQuota() = default;
+  ~StreamQuota() override = default;
 
   StreamQuota(const StreamQuota&) = delete;
   StreamQuota& operator=(const StreamQuota&) = delete;
