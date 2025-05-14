@@ -285,7 +285,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
   return AssertResultType<absl::Status>(TrySeq(
       // Fetch the first kFrameHeaderSize bytes of the Frame, these contain
       // the frame header.
-      endpoint_.ReadSlice(kFrameHeaderSize),
+      EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
       [](Slice header_bytes) -> Http2FrameHeader {
         HTTP2_CLIENT_DLOG
@@ -299,7 +299,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
         current_frame_header_ = header;
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            endpoint_.Read(header.length));
+            EndpointRead(header.length));
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {

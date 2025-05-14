@@ -240,6 +240,24 @@ class Http2ClientTransport final : public ClientTransport {
   void CloseTransport();
   bool bytes_sent_in_last_write_;
 
+  auto EndpointReadSlice(size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [self = RefAsSubclass<Http2ClientTransport>()](
+                   absl::StatusOr<Slice> status) {
+                 self->keepalive_manager_.GotData();
+                 return status;
+               });
+  }
+  
+  auto EndpointRead(size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [self = RefAsSubclass<Http2ClientTransport>()](
+                   absl::StatusOr<SliceBuffer> status) {
+                 self->keepalive_manager_.GotData();
+                 return status;
+               });
+  }
+
   // Ping related members
   Duration keepalive_interval_;
   Duration keepalive_timeout_;
