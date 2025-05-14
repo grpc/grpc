@@ -1447,7 +1447,7 @@ TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->OverrideHanshakerAlpnClientProtocols("toto,bar");
-  ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo");
+  ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
   DoHandshake();
 }

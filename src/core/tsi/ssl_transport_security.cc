@@ -203,31 +203,33 @@ tsi_result BuildAlpnProtocolNameList(const char** alpn_protocols,
   return TSI_OK;
 }
 
-// Helper method to negotiate the protocol between a client and a server. The
-// input of this function are in accordance to OpenSSL methods.
-int SelectProtocolList(const unsigned char** negotiated_protocol,
-                       unsigned char* negotiated_protocol_len,
-                       const unsigned char* client_list, size_t client_list_len,
-                       const unsigned char* server_list,
-                       size_t server_list_len) {
-  const unsigned char* client_current = client_list;
-  while (static_cast<unsigned int>(client_current - client_list) <
-         client_list_len) {
-    unsigned char client_current_len = *(client_current++);
-    const unsigned char* server_current = server_list;
-    while ((server_current >= server_list) &&
-           static_cast<uintptr_t>(server_current - server_list) <
-               server_list_len) {
-      unsigned char server_current_len = *(server_current++);
-      if ((client_current_len == server_current_len) &&
-          !memcmp(client_current, server_current, server_current_len)) {
-        *negotiated_protocol = server_current;
-        *negotiated_protocol_len = server_current_len;
+// Helper method to negotiate the protocol between a client and a server. With
+// this callback, the server is given preference when selecting a protocol to
+// negotiate. The input of this function are in accordance to OpenSSL methods.
+int SelectProtocolListServerSideFirst(const unsigned char** negotiated_protocol,
+                                      unsigned char* negotiated_protocol_len,
+                                      const unsigned char* client_list,
+                                      size_t client_list_len,
+                                      const unsigned char* server_list,
+                                      size_t server_list_len) {
+  const unsigned char* server_current = server_list;
+  while (static_cast<unsigned int>(server_current - server_list) <
+         server_list_len) {
+    unsigned char server_current_len = *(server_current++);
+    const unsigned char* client_current = client_list;
+    while ((client_current >= client_list) &&
+           static_cast<uintptr_t>(client_current - client_list) <
+               client_list_len) {
+      unsigned char client_current_len = *(client_current++);
+      if ((server_current_len == client_current_len) &&
+          !memcmp(server_current, client_current, client_current_len)) {
+        *negotiated_protocol = client_current;
+        *negotiated_protocol_len = client_current_len;
         return SSL_TLSEXT_ERR_OK;
       }
-      server_current += server_current_len;
+      client_current += client_current_len;
     }
-    client_current += client_current_len;
+    server_current += server_current_len;
   }
   return SSL_TLSEXT_ERR_NOACK;
 }
@@ -240,16 +242,11 @@ int ServerHandshakerAlpnCallback(
     unsigned int client_preferred_protocol_list_len, void* arg) {
   tsi_ssl_handshaker* handshaker = static_cast<tsi_ssl_handshaker*>(arg);
 
-  if (SSL_select_next_proto(const_cast<unsigned char**>(negotiated_protocol),
-                            negotiated_protocol_len,
-                            client_preferred_protocol_list,
-                            client_preferred_protocol_list_len,
-                            handshaker->preferred_protocol_byte_list,
-                            handshaker->preferred_protocol_byte_list_length) !=
-      OPENSSL_NPN_NEGOTIATED) {
-    return SSL_TLSEXT_ERR_NOACK;
-  }
-  return SSL_TLSEXT_ERR_OK;
+  return SelectProtocolListServerSideFirst(
+      negotiated_protocol, negotiated_protocol_len,
+      client_preferred_protocol_list, client_preferred_protocol_list_len,
+      handshaker->preferred_protocol_byte_list,
+      handshaker->preferred_protocol_byte_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 }  // namespace
@@ -2119,6 +2116,34 @@ static tsi_result create_tsi_ssl_handshaker(
   return TSI_OK;
 }
 
+static int select_protocol_list(const unsigned char** out,
+                                unsigned char* outlen,
+                                const unsigned char* client_list,
+                                size_t client_list_len,
+                                const unsigned char* server_list,
+                                size_t server_list_len) {
+  const unsigned char* client_current = client_list;
+  while (static_cast<unsigned int>(client_current - client_list) <
+         client_list_len) {
+    unsigned char client_current_len = *(client_current++);
+    const unsigned char* server_current = server_list;
+    while ((server_current >= server_list) &&
+           static_cast<uintptr_t>(server_current - server_list) <
+               server_list_len) {
+      unsigned char server_current_len = *(server_current++);
+      if ((client_current_len == server_current_len) &&
+          !memcmp(client_current, server_current, server_current_len)) {
+        *out = server_current;
+        *outlen = server_current_len;
+        return SSL_TLSEXT_ERR_OK;
+      }
+      server_current += server_current_len;
+    }
+    client_current += client_current_len;
+  }
+  return SSL_TLSEXT_ERR_NOACK;
+}
+
 // --- tsi_ssl_client_handshaker_factory methods implementation. ---
 
 tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
@@ -2163,9 +2188,9 @@ static int client_handshaker_factory_npn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_client_handshaker_factory* factory =
       static_cast<tsi_ssl_client_handshaker_factory*>(arg);
-  return SelectProtocolList(const_cast<const unsigned char**>(out), outlen,
-                            factory->alpn_protocol_list,
-                            factory->alpn_protocol_list_length, in, inlen);
+  return select_protocol_list(const_cast<const unsigned char**>(out), outlen,
+                              factory->alpn_protocol_list,
+                              factory->alpn_protocol_list_length, in, inlen);
 }
 
 // --- tsi_ssl_server_handshaker_factory methods implementation. ---
@@ -2279,8 +2304,9 @@ static int server_handshaker_factory_alpn_callback(
     const unsigned char* in, unsigned int inlen, void* arg) {
   tsi_ssl_server_handshaker_factory* factory =
       static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-  return SelectProtocolList(out, outlen, in, inlen, factory->alpn_protocol_list,
-                            factory->alpn_protocol_list_length);
+  return select_protocol_list(out, outlen, in, inlen,
+                              factory->alpn_protocol_list,
+                              factory->alpn_protocol_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 
