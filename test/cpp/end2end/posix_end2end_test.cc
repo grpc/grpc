@@ -37,7 +37,6 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
-#include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -77,61 +76,20 @@ const char* GetCredentialsTypeLiteral(CredentialsType type) {
   }
 }
 
-constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
-constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
-constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
-constexpr char kClientCertPath[] =
-    "src/core/tsi/test_creds/client-with-spiffe.pem";
-constexpr char kClientKeyPath[] =
-    "src/core/tsi/test_creds/client-with-spiffe.key";
-
 class PosixEnd2endTest : public ::testing::Test {
  protected:
-  PosixEnd2endTest() { create_fds(fd_pair_); }
+  PosixEnd2endTest() { create_sockets(fd_pair_); }
 
   void SetUp() override {}
-
-  std::shared_ptr<ChannelCredentials> get_channel_creds() {
-    return InsecureChannelCredentials();
-    std::vector<experimental::IdentityKeyCertPair>
-        channel_identity_key_cert_pairs = {
-            {grpc_core::testing::GetFileContents(kClientKeyPath),
-             grpc_core::testing::GetFileContents(kClientCertPath)}};
-    grpc::experimental::TlsChannelCredentialsOptions channel_options;
-    channel_options.set_certificate_provider(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            grpc_core::testing::GetFileContents(kCaCertPath),
-            channel_identity_key_cert_pairs));
-    channel_options.watch_identity_key_cert_pairs();
-    channel_options.watch_root_certs();
-    return grpc::experimental::TlsCredentials(channel_options);
-  }
-
-  std::shared_ptr<ServerCredentials> get_server_creds() {
-    return InsecureServerCredentials();
-    std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
-    std::string identity_cert =
-        grpc_core::testing::GetFileContents(kServerCertPath);
-    std::string private_key =
-        grpc_core::testing::GetFileContents(kServerKeyPath);
-    std::vector<experimental::IdentityKeyCertPair>
-        server_identity_key_cert_pairs = {{private_key, identity_cert}};
-    grpc::experimental::TlsServerCredentialsOptions server_options(
-        std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
-            root_cert, server_identity_key_cert_pairs));
-    server_options.watch_root_certs();
-    server_options.watch_identity_key_cert_pairs();
-    server_options.set_cert_request_type(
-        GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-    return grpc::experimental::TlsServerCredentials(server_options);
-  }
 
   void SetUpServer() {
     shut_down_ = false;
     std::unique_ptr<experimental::PassiveListener> passive_listener_;
     ServerBuilder builder;
     builder.RegisterAsyncGenericService(&generic_service_);
-    builder.experimental().AddPassiveListener(get_server_creds(), passive_listener_);
+    auto creds_ =
+        GetCredentialsProvider()->GetServerCredentials(credentials_type_);
+    builder.experimental().AddPassiveListener(creds_, passive_listener_);
     srv_cq_ = builder.AddCompletionQueue();
     server_ = builder.BuildAndStart();
     auto status = passive_listener_->AcceptConnectedFd(fd_pair_[1]);
@@ -142,7 +100,8 @@ class PosixEnd2endTest : public ::testing::Test {
     grpc::ChannelArguments args_;
     std::shared_ptr<Channel> channel = grpc::experimental::CreateChannelFromFd(
         fd_pair_[0],
-        get_channel_creds(),
+        GetCredentialsProvider()->GetChannelCredentials(credentials_type_,
+                                                        &args_),
         args_);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_ = std::make_unique<GenericStub>(channel);
@@ -267,85 +226,6 @@ class PosixEnd2endTest : public ::testing::Test {
     credentials_type_ = GetCredentialsTypeLiteral(type);
   }
 
-  static void create_fds(int sv[2]) {
-    // Create a listening socket
-    int server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd == -1) {
-      // std::cerr << "Error creating server socket" << std::endl;
-      return;
-    }
-
-    // Bind the socket to an address and port
-    sockaddr_in server_addr;
-    server_addr.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr);
-    server_addr.sin_port = htons(50052);
-    if (bind(server_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
-        0) {
-      // std::cerr << "Error binding server socket" << std::endl;
-      close(server_fd);
-      return;
-    }
-
-    // Listen for incoming connections
-    if (listen(server_fd, 128) < 0) {
-      // std::cerr << "Error listening on server socket" << std::endl;
-      close(server_fd);
-      return;
-    }
-
-    // std::cout << "Server listening on port 50052..." << std::endl;
-
-    // Accept an incoming connection
-   
-    int new_socket_fd;
-    std::thread t([&new_socket_fd, server_fd]() {
-        sockaddr_in client_addr;
-        socklen_t client_len = sizeof(client_addr);
-
-        new_socket_fd = accept(server_fd, (struct sockaddr*)&client_addr, &client_len);
-        if (new_socket_fd < 0) {
-            std::cerr << "Accept failed\n";
-        } else {
-            std::cout << "Connection accepted on socket: " << new_socket_fd << "\n";
-        }
-    });
-
-    // 1. Create a socket
-    int client_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_fd == -1) {
-      //  std::cerr << "Error creating socket" << std::endl;
-      return;
-    }
-
-    // // 2. Connect to the server using the socket
-    // sockaddr_in server_addr;
-    // server_addr.sin_family = AF_INET;
-    // server_addr.sin_port = htons(50052);
-    // if (inet_pton(AF_INET, "127.0.0.1", &server_addr.sin_addr) <= 0) {
-    //   //  std::cerr << "Invalid address/address not supported" << std::endl;
-    //   close(client_fd);
-    //   return;
-    // }
-
-    if (connect(client_fd, (struct sockaddr*)&server_addr,
-                sizeof(server_addr)) < 0) {
-      //  std::cerr << "Error connecting to server" << std::endl;
-      close(client_fd);
-      return;
-    }
-
-    t.join();
-
-    if (new_socket_fd < 0) {
-      // std::cerr << "Error accepting connection" << std::endl;
-      close(server_fd);
-      return;
-    }
-    sv[0] = client_fd;
-    sv[1] = new_socket_fd;
-  }
-
   static void create_sockets(int sv[2]) {
     int flags;
     grpc_create_socketpair_if_unix(sv);
@@ -359,7 +239,7 @@ class PosixEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(PosixEnd2endTest, SimpleRpc) {
-  SetCredentialsType(CredentialsType::Tls);
+  SetCredentialsType(CredentialsType::Insecure);
   SetUpServer();
   ResetStub();
   SendRpc(1);
