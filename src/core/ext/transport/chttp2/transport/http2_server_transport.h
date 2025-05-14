@@ -131,6 +131,34 @@ class Http2ServerTransport final : public ServerTransport {
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status) {
+    LOG(INFO) << "Http2ServerTransport::CloseStream status=" << status;
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  // This function is supposed to be idempotent.
+  void CloseTransport(Http2Status status, DebugLocation whence = {}) {
+    LOG(INFO) << "Http2ClientTransport::CloseTransport status=" << status
+              << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError());
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(std::move(status), whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
+
   // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it.
   // uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
   // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it. This was
