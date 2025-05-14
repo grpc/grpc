@@ -115,7 +115,7 @@ for label in args.build:
 targets = [t for t in targets if all(f in t.labels for f in args.filter)]
 
 # Exclude target if it has ALL of the specified exclude labels.
-targets = [t for t in targets if not all(l in args.exclude for l in t.labels)]
+targets = [t for t in targets if not all(l in t.labels for l in args.exclude)]
 
 print("Will build %d targets:" % len(targets))
 for target in targets:
