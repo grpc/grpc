@@ -141,7 +141,7 @@ class Http2ServerTransport final : public ServerTransport {
   }
 
   // This function is supposed to be idempotent.
-  void CloseTransport(Http2Status status, DebugLocation whence = {}) {
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
     LOG(INFO) << "Http2ClientTransport::CloseTransport status=" << status
               << " location=" << whence.file() << ":" << whence.line();
     // TODO(akshitpatel) : [PH2][P1] : Implement this.
@@ -156,9 +156,8 @@ class Http2ServerTransport final : public ServerTransport {
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
-      absl::Status connection_status = status.GetAbslConnectionError();
-      CloseTransport(std::move(status), whence);
-      return connection_status;
+      CloseTransport(status, whence);
+      return status.GetAbslConnectionError();
     }
 
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
