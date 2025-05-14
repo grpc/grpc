@@ -17,31 +17,22 @@
 #include <grpc/grpc.h>
 #include <stdio.h>
 
-#include <algorithm>
-#include <atomic>
 #include <memory>
 #include <thread>
 #include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/log.h"
+#include "absl/strings/match.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
-#include "src/core/lib/event_engine/event_engine_context.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/seq.h"
-#include "src/core/lib/promise/sleep.h"
 #include "src/core/lib/resource_quota/arena.h"
-#include "src/core/lib/resource_quota/memory_quota.h"
-#include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
-#include "src/core/util/time.h"
+#include "test/core/promise/poll_matcher.h"
 
 namespace grpc_core {
 
@@ -62,26 +53,27 @@ class PartyMpscTest : public ::testing::Test {
 };
 
 struct Payload {
-  std::unique_ptr<int> x;
+  std::unique_ptr<std::pair<int, int>> x;
   bool operator==(const Payload& other) const {
     return (x == nullptr && other.x == nullptr) ||
            (x != nullptr && other.x != nullptr && *x == *other.x);
   }
   bool operator!=(const Payload& other) const { return !(*this == other); }
-  explicit Payload(std::unique_ptr<int> x) : x(std::move(x)) {}
+  explicit Payload(std::unique_ptr<std::pair<int, int>> x) : x(std::move(x)) {}
+  Payload(int x, int y) : x(std::make_unique<std::pair<int, int>>(x, y)) {}
   Payload(const Payload& other)
-      : x(other.x ? std::make_unique<int>(*other.x) : nullptr) {}
+      : x(other.x ? std::make_unique<std::pair<int, int>>(*other.x) : nullptr) {
+  }
 
   friend std::ostream& operator<<(std::ostream& os, const Payload& payload) {
     if (payload.x == nullptr) return os << "Payload{nullptr}";
-    return os << "Payload{" << *payload.x << "}";
+    return os << "Payload{" << payload.x->first << ", " << payload.x->second
+              << "}";
   }
 };
 
-Payload MakePayload(int value) { return Payload{std::make_unique<int>(value)}; }
-
 auto OnCompleteNoop() {
-  return [](Empty) {};
+  return [](auto) {};
 }
 
 constexpr int kMpscNumPayloads = 20;
@@ -109,7 +101,6 @@ TEST_F(PartyMpscTest, MpscManySendersManyPartyIntegrationStressTest) {
   // Number of Parties   = kMpscNumThreads
   // Number of Threads   = kMpscNumThreads
 
-  std::vector<std::string> execution_order(kMpscNumThreads);
   MpscReceiver<Payload> receiver((kMpscNumThreads - 1) * kMpscNumPayloads);
   std::vector<MpscSender<Payload>> senders;
   std::vector<RefCountedPtr<Party>> parties;
@@ -126,39 +117,40 @@ TEST_F(PartyMpscTest, MpscManySendersManyPartyIntegrationStressTest) {
   // Each Spawned promise will perform the MPSC Send operation.
   for (int i = 0; i < kMpscNumThreads - 1; i++) {
     MpscSender<Payload>& sender = senders[i];
-    std::string& order = execution_order[i];
     RefCountedPtr<Party>& party = parties[i];
-    threads.emplace_back([&order, &party, &sender]() {
-      for (int j = 0; j < kMpscNumPayloads; j++) {
-        party->Spawn(
-            "send",
-            [&sender, &order, value = j]() {
-              auto send_promise = sender.Send(MakePayload(value));
-              Poll<StatusFlag> send_result = send_promise();
-              absl::StrAppend(&order, "S", value);
-            },
-            OnCompleteNoop());
-      }
+    threads.emplace_back([&party, &sender, i]() {
+      party->Spawn("send-loop",
+                   NTimes(kMpscNumPayloads,
+                          [sender, i](int j) mutable {
+                            return sender.Send(Payload(i, j), 1);
+                          }),
+                   OnCompleteNoop());
     });
   }
 
   // Spawn promises on the last Party object using the last thread.
   // These Spawned promises will read from the MPSC queue.
   int num_messages_sent = (kMpscNumThreads - 1) * kMpscNumPayloads;
-  std::string& receive_order = execution_order[kMpscNumThreads - 1];
+  absl::flat_hash_map<int, std::vector<int>> receive_order;
   RefCountedPtr<Party>& receive_party = parties[kMpscNumThreads - 1];
+  Notification receive_done;
   threads.emplace_back([&receive_order, &receive_party, &receiver,
-                        &num_messages_sent]() {
-    for (int j = 0; j < num_messages_sent; j++) {
-      receive_party->Spawn(
-          "receive",
-          [&receiver, &receive_order]() {
-            auto receive_promise = receiver.Next();
-            Poll<ValueOrFailure<Payload>> receive_result = receive_promise();
-            absl::StrAppend(&receive_order, "R");
-          },
-          OnCompleteNoop());
-    }
+                        &num_messages_sent, &receive_done]() {
+    receive_party->Spawn(
+        "receive-loop",
+        NTimes(num_messages_sent,
+               [&receiver, &receive_order, &receive_done](int) mutable {
+                 return Seq(
+                     receiver.Next(),
+                     [&receive_order](
+                         ValueOrFailure<MpscQueued<Payload>> receive_result) {
+                       CHECK_EQ(receive_result.ok(), true);
+                       CHECK_EQ(receive_result->tokens(), 1);
+                       receive_order[(*receive_result)->x->first].push_back(
+                           (*receive_result)->x->second);
+                     });
+               }),
+        [&receive_done](auto) { receive_done.Notify(); });
   });
 
   for (auto& thread : threads) {
@@ -166,16 +158,14 @@ TEST_F(PartyMpscTest, MpscManySendersManyPartyIntegrationStressTest) {
   }
 
   // Asserting that all payloads were sent and received.
-  for (int i = 0; i < kMpscNumThreads - 1; i++) {
-    for (int j = 0; j < kMpscNumPayloads; j++) {
-      // This check ensures that we sent all the payloads.
-      EXPECT_TRUE(
-          absl::StrContains(execution_order[i], absl::StrFormat("S%d", j)));
-    }
+  EXPECT_EQ(receive_order.size(), kMpscNumThreads - 1);
+  std::vector<int> expected_receive_order_for_each_thread;
+  for (int i = 0; i < kMpscNumPayloads; i++) {
+    expected_receive_order_for_each_thread.push_back(i);
   }
-  // For every payload received, one "R" was appended to the receive order.
-  // This check ensures that we received all the payloads.
-  EXPECT_EQ(receive_order.length(), num_messages_sent);
+  for (int i = 0; i < kMpscNumThreads - 1; i++) {
+    EXPECT_EQ(receive_order[i], expected_receive_order_for_each_thread);
+  }
 }
 
 }  // namespace grpc_core

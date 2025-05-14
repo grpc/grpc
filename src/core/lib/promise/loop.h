@@ -25,6 +25,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
@@ -195,6 +196,23 @@ class Loop {
 
 template <typename F>
 Loop(F) -> Loop<F>;
+
+template <typename N, typename PromiseFactory>
+auto NTimes(N times, PromiseFactory promise_factory) {
+  DCHECK_GT(times, 1);
+  return Loop([i = N(0), times,
+               promise_factory =
+                   promise_detail::RepeatedPromiseFactory<N, PromiseFactory>(
+                       std::move(promise_factory))]() mutable {
+    return Seq(promise_factory.Make(N(i)), [&i, times](auto result) {
+      using Result = decltype(result);
+      LoopCtl<Result> lc = std::move(result);
+      ++i;
+      if (i != times) lc = Continue{};
+      return lc;
+    });
+  });
+}
 
 }  // namespace grpc_core
 

@@ -19,18 +19,15 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
-#include <limits>
 #include <utility>
-#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/wait_set.h"
-#include "src/core/util/dump_args.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -45,103 +42,276 @@ namespace mpscpipe_detail {
 // The communication consists of one or more MpscSender objects and one
 // MpscReceiver.
 
+// Implementation notes:
+// We maintain two queues - one for the senders, one for the reader, each
+// under its own mutex.
+// Each sent item is enqueued with some number of tokens, and when the queue
+// is over max_queued tokens sends become blocking.
+// Receiving a node from Next() is not sufficient to release those tokens,
+// instead a separate call to ReleaseTokens() is required. This allows
+// receivers from the MPSC to delay the release of tokens until further
+// processing is complete.
+// The read mutex is then required to track the release of objects (which
+// needs to happen after both the pull and the wakeup because of token
+// release).
+// When tokens are released, we wakeup blocked senders in the order they
+// were enqueued.
+// Note carefully: since receivers may return tokens in any order, it means
+// that a different sent item may be unblocked than the one that caused the
+// tokens to be released. Nevertheless, it's thought that this is fair.
+class Mpsc {
+ public:
+  explicit Mpsc(size_t max_queued) : max_queued_(max_queued) {}
+
+  // Base class for nodes in the queue.
+  // Center<T>::Node extends this for various types.
+  class Node {
+   public:
+    explicit Node(uint32_t tokens) : tokens_(tokens) {}
+    virtual ~Node() = default;
+
+    uint32_t tokens() const { return tokens_; }
+    Node* next() const { return next_; }
+
+   private:
+    friend class Mpsc;
+    const uint32_t tokens_;
+    // All following fields are maintained by the Mpsc class.
+    uint64_t unblocked_at_serial_;
+    Waker waker_;
+    Node* next_;
+  };
+
+  auto Send(std::unique_ptr<Node> node) {
+    DCHECK(node->waker_.is_unwakeable());
+    // Enqueue the node immediately; this means that Send() must be called
+    // from the same activity that will poll the result.
+    auto queue_serial = Enqueue(std::move(node), false);
+    return [queue_serial, this]() -> Poll<StatusFlag> {
+      if (queue_serial == kClosedSerial) return Failure{};
+      if (queue_serial <=
+          pull_serial_.load(std::memory_order_relaxed) + max_queued_) {
+        return Success{};
+      }
+      return Pending{};
+    };
+  }
+
+  StatusFlag UnbufferedImmediateSend(std::unique_ptr<Node> node) {
+    DCHECK(node->waker_.is_unwakeable());
+    return StatusFlag(Enqueue(std::move(node), true) != kClosedSerial);
+  }
+
+  template <typename F>
+  auto Next(F map) {
+    using Result = decltype(map(nullptr).first);
+    return [this, map = std::move(map)]() -> Poll<ValueOrFailure<Result>> {
+      mu_read_.Lock();
+      // If the pull list is empty, we need to fetch some more from the
+      // enqueue list.
+      if (pull_head_ == nullptr && !FetchNodesFromQueue()) {
+        if (GPR_UNLIKELY(pull_serial_.load(std::memory_order_relaxed) ==
+                         kClosedSerial)) {
+          mu_read_.Unlock();
+          return Failure{};
+        }
+        mu_read_.Unlock();
+        return Pending{};
+      }
+      DCHECK_NE(pull_head_, nullptr);
+      auto* node = pull_head_;
+      auto [result, pull_head] = map(node);
+      pull_head_ = pull_head;
+      NodeRange delete_nodes = CatchUpReadHead();
+      mu_read_.Unlock();
+      delete_nodes.ForEach([](Node* node) { delete node; });
+      return std::move(result);
+    };
+  }
+
+  void ReleaseTokens(uint64_t tokens);
+  void Close(bool wake_reader);
+
+ private:
+  // Helper class for capturing a range of nodes in a linked list and
+  // iterating over them - we need to do this in a few places to keep
+  // node deletion outside of locks.
+  class NodeRange {
+   public:
+    NodeRange() = default;
+    NodeRange(Node* first, Node* last) : first_(first), last_(last) {}
+
+    template <typename F>
+    void ForEach(F f) {
+      Node* node = first_;
+      while (node != last_) {
+        Node* next = node->next_;
+        f(node);
+        node = next;
+      }
+    }
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const NodeRange& range) {
+      absl::Format(&sink, "%p..%p", range.first_, range.last_);
+    }
+
+   private:
+    Node* first_ = nullptr;
+    Node* last_ = nullptr;
+  };
+
+  struct QueryUnblockedNodesResult {
+    NodeRange wakeup_nodes;
+    NodeRange delete_nodes;
+  };
+
+  bool FetchNodesFromQueue() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_read_)
+      ABSL_LOCKS_EXCLUDED(mu_queue_);
+  uint64_t Enqueue(std::unique_ptr<Node> node, bool immediate)
+      ABSL_LOCKS_EXCLUDED(mu_queue_, mu_read_);
+  QueryUnblockedNodesResult QueryUnblockedNodes(uint64_t tokens_to_release)
+      ABSL_LOCKS_EXCLUDED(mu_queue_, mu_read_);
+  Poll<ValueOrFailure<Node*>> PollPull() ABSL_LOCKS_EXCLUDED(mu_read_);
+  NodeRange CatchUpReadHead() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_read_);
+
+  static constexpr uint64_t kClosedSerial =
+      std::numeric_limits<uint64_t>::max();
+  const uint64_t max_queued_;
+  // Enqueue state: protected by a mutex because we need all of this to be in
+  // sync.
+  // TODO(ctiller): there's likely a way to make this lock free. Investigate if
+  // it's better. When doing so, ensure that queue_serial increments are in
+  // order with node insertion order so we can safely unblock.
+  Mutex mu_queue_;
+  // Serial number of the queue. This is the number of tokens that have been
+  // pushed in the lifetime of the queue.
+  uint64_t queue_serial_ ABSL_GUARDED_BY(mu_queue_) = 0;
+  Node* queue_head_ ABSL_GUARDED_BY(mu_queue_) = nullptr;
+  Node* queue_tail_ ABSL_GUARDED_BY(mu_queue_) = nullptr;
+  // Serial number of the last pulled item. The difference between queue_serial_
+  // and pull_serial_ is the number of tokens that are currently in the queue.
+  std::atomic<uint64_t> pull_serial_{0};
+  alignas(GPR_CACHELINE_SIZE) Mutex mu_read_ ABSL_ACQUIRED_BEFORE(mu_queue_);
+  // Read queue is arranged into three pointers into the same list (and a single
+  // tail).
+  // The oldest node is read_head_, and the newest is read_tail_.
+  // pull_head_ is either the same or after read_head_, and points to the next
+  // node to be pulled from the queue.
+  // block_head_ is either the same or after read_tail_, and points to the next
+  // node that is blocked on queue size.
+  Node* pull_head_ ABSL_GUARDED_BY(mu_read_) = nullptr;
+  Node* block_head_ ABSL_GUARDED_BY(mu_read_) = nullptr;
+  Node* read_head_ ABSL_GUARDED_BY(mu_read_) = nullptr;
+  Node* read_tail_ ABSL_GUARDED_BY(mu_read_) = nullptr;
+  Waker read_waker_ ABSL_GUARDED_BY(mu_queue_);
+};
+
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
 template <typename T>
-class Center : public RefCounted<Center<T>> {
+class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
  public:
   // Construct the center with a maximum queue size.
-  explicit Center(size_t max_queued) : max_queued_(max_queued) {}
+  explicit Center(size_t max_queued) : mpsc_(max_queued) {}
 
-  static constexpr const uint64_t kClosedBatch =
-      std::numeric_limits<uint64_t>::max();
+  ~Center() {}
 
-  // Poll for new items.
-  // - Returns true if new items were obtained, in which case they are contained
-  //   in dest in the order they were added. Wakes up all pending senders since
-  //   there will now be space to send.
-  // - If receives have been closed, returns false.
-  // - If no new items are available, returns
-  //   Pending and sets up a waker to be awoken when more items are available.
-  // TODO(ctiller): consider the problem of thundering herds here. There may be
-  // more senders than there are queue spots, and so the strategy of waking up
-  // all senders is ill-advised.
-  // That said, some senders may have been cancelled by the time we wake them,
-  // and so waking a subset could cause starvation.
-  Poll<bool> PollReceiveBatch(std::vector<T>& dest) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::PollReceiveBatch: "
-        << GRPC_DUMP_ARGS(this, batch_, queue_.size());
-    if (queue_.empty()) {
-      if (batch_ == kClosedBatch) return false;
-      receive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
+  template <typename V>
+  class Queued {
+   public:
+    Queued() : tokens_(0) {}
+    Queued(V value, uint32_t tokens, RefCountedPtr<Center<T>> center)
+        : value_(std::move(value)),
+          tokens_(tokens),
+          center_(std::move(center)) {}
+    ~Queued() {
+      if (tokens_ > 0) center_->ReleaseTokens(tokens_);
     }
-    dest.swap(queue_);
-    queue_.clear();
-    if (batch_ != kClosedBatch) ++batch_;
-    auto wakeups = send_wakers_.TakeWakeupSet();
-    lock.Release();
-    wakeups.Wakeup();
-    return true;
+    Queued(const Queued&) = delete;
+    Queued& operator=(const Queued&) = delete;
+    Queued(Queued&& q)
+        : value_(std::move(q.value_)),
+          tokens_(std::exchange(q.tokens_, 0)),
+          center_(std::move(q.center_)) {}
+    Queued& operator=(Queued&& q) = delete;
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Queued& q) {
+      absl::Format(&sink, "Queued{%s, tokens=%d}", absl::StrCat(q.value_),
+                   q.tokens_);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Queued& q) {
+      return os << absl::StrCat(q);
+    }
+
+    V& operator*() { return value_; }
+    const V& operator*() const { return value_; }
+    V* operator->() { return &value_; }
+    const V* operator->() const { return &value_; }
+
+    uint32_t tokens() const { return tokens_; }
+
+   private:
+    V value_;
+    uint32_t tokens_;
+    RefCountedPtr<Center<T>> center_;
+  };
+
+  auto Send(T value, uint32_t tokens) {
+    return mpsc_.Send(std::make_unique<Node>(tokens, std::move(value)));
   }
 
-  // Return value:
-  //  - if the pipe is closed, returns kClosedBatch
-  //  - if await_receipt is false, returns the batch number the item was sent
-  //  in.
-  //  - if await_receipt is true, returns the first sending batch number that
-  //  guarantees the item has been received.
-  template <bool kAwaitReceipt>
-  uint64_t Send(T t) {
-    ReleasableMutexLock lock(&mu_);
-    if (batch_ == kClosedBatch) return kClosedBatch;
-    queue_.push_back(std::move(t));
-    auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch =
-        (!kAwaitReceipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
-    lock.Release();
-    receive_waker.Wakeup();
-    return batch;
+  StatusFlag UnbufferedImmediateSend(T value, uint32_t tokens) {
+    return mpsc_.UnbufferedImmediateSend(
+        std::make_unique<Node>(tokens, std::move(value)));
   }
 
-  // Poll until a particular batch number is received.
-  Poll<Empty> PollReceiveBatch(uint64_t batch) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::PollReceiveBatch: " << GRPC_DUMP_ARGS(this, batch_, batch);
-    if (batch_ >= batch) return Empty{};
-    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
-    return Pending{};
+  auto Next() {
+    return mpsc_.Next([this](Mpsc::Node* n) {
+      return std::pair(Queued<T>(std::move(DownCast<Node*>(n)->value),
+                                 n->tokens(), this->Ref()),
+                       n->next());
+    });
   }
 
-  // Mark that the receiver is closed.
-  void ReceiverClosed(bool wake_receiver) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::ReceiverClosed: " << GRPC_DUMP_ARGS(this, batch_);
-    if (batch_ == kClosedBatch) return;
-    batch_ = kClosedBatch;
-    auto wakeups = send_wakers_.TakeWakeupSet();
-    auto receive_waker = std::move(receive_waker_);
-    lock.Release();
-    if (wake_receiver) receive_waker.Wakeup();
-    wakeups.Wakeup();
+  auto AllNext() {
+    return mpsc_.Next([this](Mpsc::Node* n) {
+      std::vector<T> result;
+      uint64_t tokens = 0;
+      while (n != nullptr) {
+        tokens += n->tokens();
+        result.emplace_back(std::move(DownCast<Node*>(n)->value));
+        n = n->next();
+      }
+      return std::pair(
+          Queued<std::vector<T>>(std::move(result), tokens, this->Ref()),
+          nullptr);
+    });
   }
+
+  void ReleaseTokens(uint64_t tokens) { mpsc_.ReleaseTokens(tokens); }
+
+  void ReceiverClosed(bool wake_reader) { mpsc_.Close(wake_reader); }
 
  private:
-  Mutex mu_;
-  const size_t max_queued_;
-  std::vector<T> queue_ ABSL_GUARDED_BY(mu_);
-  // Every time we give queue_ to the receiver, we increment batch_.
-  // When the receiver is closed we set batch_ to kClosedBatch.
-  uint64_t batch_ ABSL_GUARDED_BY(mu_) = 1;
-  Waker receive_waker_ ABSL_GUARDED_BY(mu_);
-  WaitSet send_wakers_ ABSL_GUARDED_BY(mu_);
+  struct Node final : public Mpsc::Node {
+    explicit Node(uint32_t tokens, T value)
+        : Mpsc::Node(tokens), value(std::move(value)) {}
+    T value;
+  };
+
+  Mpsc mpsc_;
 };
 
 }  // namespace mpscpipe_detail
+
+template <typename T>
+using MpscQueued = typename mpscpipe_detail::Center<T>::template Queued<T>;
+template <typename T>
+using MpscQueuedVec =
+    typename mpscpipe_detail::Center<T>::template Queued<std::vector<T>>;
 
 template <typename T>
 class MpscReceiver;
@@ -167,34 +337,15 @@ class MpscSender {
   // The promise returned is thread safe. We can use multiple send calls
   // in parallel to generate multiple such send promises and these promises can
   // be run in parallel in a thread safe way.
-  auto Send(T t) { return SendGeneric<false>(std::move(t)); }
+  auto Send(T t, uint32_t tokens) {
+    return center_->Send(std::move(t), tokens);
+  }
 
-  // Similar to send, but the promise returned by SendAcked will not resolve
-  // until the item has been received by the receiver.
-  auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
-
-  StatusFlag UnbufferedImmediateSend(T t) {
-    return StatusFlag(center_->template Send<false>(std::move(t)) !=
-                      mpscpipe_detail::Center<T>::kClosedBatch);
+  StatusFlag UnbufferedImmediateSend(T t, uint32_t tokens) {
+    return center_->UnbufferedImmediateSend(std::move(t), tokens);
   }
 
  private:
-  template <bool kAwaitReceipt>
-  auto SendGeneric(T t) {
-    return [center = center_, t = std::move(t),
-            batch = uint64_t(0)]() mutable -> Poll<StatusFlag> {
-      if (center == nullptr) return Failure{};
-      if (batch == 0) {
-        batch = center->template Send<kAwaitReceipt>(std::move(t));
-        DCHECK_NE(batch, 0u);
-        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return Failure{};
-      }
-      auto p = center->PollReceiveBatch(batch);
-      if (p.pending()) return Pending{};
-      return Success{};
-    };
-  }
-
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}
@@ -205,15 +356,9 @@ class MpscSender {
 template <typename T>
 class MpscReceiver {
  public:
-  // max_buffer_hint is the maximum number of elements we'd like to buffer.
-  // We half this before passing to Center so that the number there is the
-  // maximum number of elements that can be queued in the center of the pipe.
-  // The receiver also holds some of the buffered elements (up to half of them!)
-  // so the total outstanding is equal to max_buffer_hint (unless it's 1 in
-  // which case instantaneosly we may have two elements buffered).
-  explicit MpscReceiver(size_t max_buffer_hint)
-      : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
-            std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
+  // max_buffer_hint is the maximum number of tokens we'd like to buffer.
+  explicit MpscReceiver(uint64_t max_buffer_hint)
+      : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(max_buffer_hint)) {}
   ~MpscReceiver() {
     if (center_ != nullptr) center_->ReceiverClosed(false);
   }
@@ -245,45 +390,9 @@ class MpscReceiver {
   // If receiving is closed, the promise will resolve to failure.
   // Otherwise, the promise resolves to the next item and removes
   // said item from the queue.
-  auto Next() {
-    return [this]() -> Poll<ValueOrFailure<T>> {
-      if (buffer_it_ != buffer_.end()) {
-        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
-      }
-      auto p = center_->PollReceiveBatch(buffer_);
-      if (bool* r = p.value_if_ready()) {
-        if (!*r) return Failure{};
-        buffer_it_ = buffer_.begin();
-        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
-      }
-      return Pending{};
-    };
-  }
-  // Returns a promise that will resolve to ValueOrFailure<std::vector<T>>.
-  // If receiving is closed, the promise will resolve to failure.
-  // Otherwise, the promise returns all the items enqueued till now and removes
-  // said items from the queue.
-  auto NextBatch() {
-    return [this]() -> Poll<ValueOrFailure<std::vector<T>>> {
-      if (buffer_it_ != buffer_.end()) {
-        std::vector<T> tmp_buffer;
-        std::move(buffer_it_, buffer_.end(), std::back_inserter(tmp_buffer));
-        buffer_.clear();
-        buffer_it_ = buffer_.end();
-        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
-      }
+  auto Next() { return center_->Next(); }
 
-      auto p = center_->PollReceiveBatch(buffer_);
-      if (bool* r = p.value_if_ready()) {
-        if (!*r) return Failure{};
-        auto tmp_buffer(std::move(buffer_));
-        buffer_.clear();
-        buffer_it_ = buffer_.end();
-        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
-      }
-      return Pending{};
-    };
-  }
+  auto AllNext() { return center_->AllNext(); }
 
  private:
   // Received items. We move out of here one by one, but don't resize the

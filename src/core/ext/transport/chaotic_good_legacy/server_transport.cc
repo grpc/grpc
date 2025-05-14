@@ -136,7 +136,7 @@ auto ChaoticGoodServerTransport::SendFrame(
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
-  return Map(outgoing_frames.Send(std::move(frame)),
+  return Map(outgoing_frames.Send(std::move(frame), 1),
              BooleanSuccessToTransportErrorCapturingInitiator(
                  std::move(call_initiator)));
 }
@@ -146,7 +146,7 @@ auto ChaoticGoodServerTransport::SendFrameAcked(
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
-  return Map(outgoing_frames.SendAcked(std::move(frame)),
+  return Map(outgoing_frames.Send(std::move(frame), 1),
              BooleanSuccessToTransportErrorCapturingInitiator(
                  std::move(call_initiator)));
 }

@@ -16,14 +16,18 @@
 
 #include <grpc/support/log.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
+#include "fuzztest/fuzztest.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "test/core/promise/poll_matcher.h"
 
 using testing::Mock;
@@ -31,6 +35,36 @@ using testing::StrictMock;
 
 namespace grpc_core {
 namespace {
+
+template <typename T>
+inline bool operator==(const MpscQueued<T>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return *a == b.first && a.tokens() == b.second;
+}
+
+template <typename T>
+inline bool operator!=(const MpscQueued<T>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return !operator==(a, b);
+}
+
+template <typename T>
+inline bool operator==(const ValueOrFailure<MpscQueued<T>>& a,
+                       const std::pair<T, uint32_t>& b) {
+  if (!a.ok()) return false;
+  return *a == b;
+}
+
+template <typename T>
+inline bool operator!=(const ValueOrFailure<MpscQueued<T>>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return !operator==(a, b);
+}
+
+template <typename T>
+inline bool operator==(const ValueOrFailure<MpscQueued<T>>& a, Failure) {
+  return !a.ok();
+}
 
 class MockActivity : public Activity, public Wakeable {
  public:
@@ -116,7 +150,7 @@ TEST(MpscTest, MakeSender) {
 TEST(MpscTest, SendOneThingInstantly) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
 }
 
 TEST(MpscTest, SendAckedOneThingWaitsForRead) {
@@ -124,7 +158,7 @@ TEST(MpscTest, SendAckedOneThingWaitsForRead) {
   activity.Activate();
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
-  auto send = sender.SendAcked(MakePayload(1));
+  auto send = sender.Send(MakePayload(1), 2);
   EXPECT_THAT(send(), IsPending());
   EXPECT_CALL(activity, WakeupRequested());
   EXPECT_THAT(receiver.Next()(), IsReady());
@@ -133,10 +167,13 @@ TEST(MpscTest, SendAckedOneThingWaitsForRead) {
 }
 
 TEST(MpscTest, SendOneThingInstantlyAndReceiveInstantly) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(1)));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(1), 1u)));
+  activity.Deactivate();
 }
 
 TEST(MpscTest, SendingLotsOfThingsGivesPushback) {
@@ -145,11 +182,11 @@ TEST(MpscTest, SendingLotsOfThingsGivesPushback) {
   MpscSender<Payload> sender = receiver.MakeSender();
 
   activity1.Activate();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
-  EXPECT_THAT(sender.Send(MakePayload(2))(), IsPending());
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
+  EXPECT_THAT(sender.Send(MakePayload(2), 1)(), IsPending());
   activity1.Deactivate();
 
-  EXPECT_CALL(activity1, WakeupRequested());
+  EXPECT_CALL(activity1, WakeupRequested());  // For the pending send.
 }
 
 TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
@@ -159,17 +196,17 @@ TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
   MpscSender<Payload> sender = receiver.MakeSender();
 
   activity1.Activate();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
-  auto send2 = sender.Send(MakePayload(2));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
+  auto send2 = sender.Send(MakePayload(2), 1);
   EXPECT_THAT(send2(), IsPending());
   activity1.Deactivate();
 
   activity2.Activate();
   EXPECT_CALL(activity1, WakeupRequested());
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(1)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(1), 1u)));
   Mock::VerifyAndClearExpectations(&activity1);
   auto receive2 = receiver.Next();
-  EXPECT_THAT(receive2(), IsReady(MakePayload(2)));
+  EXPECT_THAT(receive2(), IsReady(std::pair(MakePayload(2), 1u)));
   activity2.Deactivate();
 
   activity1.Activate();
@@ -179,22 +216,25 @@ TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
 }
 
 TEST(MpscTest, BigBufferAllowsBurst) {
+  StrictMock<MockActivity> activity;
+  activity.Activate();
   MpscReceiver<Payload> receiver(50);
   MpscSender<Payload> sender = receiver.MakeSender();
 
   for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(Success{}));
+    EXPECT_THAT(sender.Send(MakePayload(i), 1)(), IsReady(Success{}));
   }
   for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(i)));
+    EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(i), 1u)));
   }
+  activity.Deactivate();
 }
 
 TEST(MpscTest, ClosureIsVisibleToSenders) {
   auto receiver = std::make_unique<MpscReceiver<Payload>>(1);
   MpscSender<Payload> sender = receiver->MakeSender();
   receiver.reset();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Failure{}));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Failure{}));
 }
 
 TEST(MpscTest, ImmediateSendWorks) {
@@ -202,26 +242,110 @@ TEST(MpscTest, ImmediateSendWorks) {
   MpscReceiver<Payload> receiver(1);
   MpscSender<Payload> sender = receiver.MakeSender();
 
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7), 1), Success{});
 
   activity.Activate();
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(1)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(2)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(3)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(4)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(5)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(6)));
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(7)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(1), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(2), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(3), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(4), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(5), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(6), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(7), 1u)));
   auto receive2 = receiver.Next();
   EXPECT_THAT(receive2(), IsPending());
   activity.Deactivate();
 }
+
+TEST(MpscTest, AllNextWorks) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(1);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7), 1), Success{});
+
+  activity.Activate();
+  {
+    auto r = receiver.AllNext()();
+    ASSERT_TRUE(r.ready());
+    ASSERT_TRUE(r.value().ok());
+    ASSERT_EQ(r.value()->tokens(), 7u);
+    ASSERT_EQ((*r.value())->size(), 7u);
+    EXPECT_EQ((**r.value())[0], MakePayload(1));
+    EXPECT_EQ((**r.value())[1], MakePayload(2));
+    EXPECT_EQ((**r.value())[2], MakePayload(3));
+    EXPECT_EQ((**r.value())[3], MakePayload(4));
+    EXPECT_EQ((**r.value())[4], MakePayload(5));
+    EXPECT_EQ((**r.value())[5], MakePayload(6));
+    EXPECT_EQ((**r.value())[6], MakePayload(7));
+    auto receive2 = receiver.AllNext();
+    EXPECT_THAT(receive2(), IsPending());
+  }
+  activity.Deactivate();
+}
+
+void SendsConsistent(uint64_t max_queued, std::vector<uint32_t> poll_order,
+                     absl::flat_hash_map<uint32_t, uint32_t> weights) {
+  StrictMock<MockActivity> activity;
+  EXPECT_CALL(activity, WakeupRequested()).Times(::testing::AnyNumber());
+  std::map<uint32_t, absl::AnyInvocable<bool()>> sends;
+  std::vector<uint32_t> send_order;
+  std::vector<uint32_t> receive_order;
+  absl::flat_hash_set<uint32_t> done_set;
+  MpscReceiver<Payload> receiver(max_queued);
+  MpscSender<Payload> sender = receiver.MakeSender();
+  auto receive_once = [fn = receiver.Next(), &receiver,
+                       &receive_order]() mutable {
+    auto r = fn();
+    if (r.pending()) return;
+    CHECK(r.value().ok());
+    receive_order.push_back(*(**r.value()).x);
+  };
+  for (auto x : poll_order) {
+    activity.Activate();
+    if (x == 0) {
+      receive_once();
+    } else {
+      if (auto it = sends.find(x); it != sends.end()) {
+        if (it->second()) {
+          sends.erase(it);
+          done_set.insert(x);
+        }
+      } else if (done_set.count(x) == 0) {
+        send_order.push_back(x);
+        auto it = weights.find(x);
+        uint32_t weight = it == weights.end() ? 1 : it->second;
+        sends.emplace(x,
+                      [send = sender.Send(MakePayload(x), weight)]() mutable {
+                        auto r = send();
+                        if (r.pending()) return false;
+                        EXPECT_TRUE(r.value().ok());
+                        return true;
+                      });
+      }
+    }
+    activity.Deactivate();
+  }
+  while (receive_order.size() < send_order.size()) {
+    activity.Activate();
+    receive_once();
+    activity.Deactivate();
+  }
+  EXPECT_EQ(send_order, receive_order);
+}
+FUZZ_TEST(MpscTest, SendsConsistent);
 
 TEST(MpscTest, CloseFailsNext) {
   StrictMock<MockActivity> activity;
@@ -235,134 +359,5 @@ TEST(MpscTest, CloseFailsNext) {
   activity.Deactivate();
 }
 
-TEST(MpscTest, BigBufferBulkReceive) {
-  MpscReceiver<Payload> receiver(50);
-  MpscSender<Payload> sender = receiver.MakeSender();
-
-  for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(Success{}));
-  }
-  auto result = receiver.NextBatch()();
-  std::vector<Payload> expected;
-  for (int i = 0; i < 25; i++) {
-    expected.emplace_back(MakePayload(i));
-  }
-  EXPECT_THAT(result, IsReady(expected));
-}
-
-TEST(MpscTest, BulkReceive) {
-  MpscReceiver<Payload> receiver(1);
-  MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
-  auto promise = receiver.NextBatch();
-  auto result = promise();
-
-  std::vector<Payload> expected;
-  expected.emplace_back(MakePayload(1));
-  expected.emplace_back(MakePayload(2));
-  expected.emplace_back(MakePayload(3));
-  expected.emplace_back(MakePayload(4));
-  expected.emplace_back(MakePayload(5));
-  EXPECT_THAT(result, IsReady(expected));
-}
-
-TEST(MpscTest, BulkAndSingleReceive) {
-  MpscReceiver<Payload> receiver(1);
-  MpscSender<Payload> sender = receiver.MakeSender();
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
-  auto promise = receiver.Next();
-  auto result = promise();
-  EXPECT_THAT(result, IsReady(MakePayload(1)));
-
-  auto bulk_promise = receiver.NextBatch();
-  auto bulk_result = bulk_promise();
-  std::vector<Payload> expected;
-  expected.emplace_back(MakePayload(2));
-  expected.emplace_back(MakePayload(3));
-  expected.emplace_back(MakePayload(4));
-  expected.emplace_back(MakePayload(5));
-  EXPECT_THAT(bulk_result, IsReady(expected));
-}
-
-TEST(MpscTest, BulkReceiveAfterClose) {
-  MpscReceiver<Payload> receiver(1);
-  receiver.MarkClosed();
-  auto promise = receiver.NextBatch();
-  auto result = promise();
-  EXPECT_THAT(result, IsReady(Failure{}));
-}
-
-TEST(MpscTest, CloseAfterBulkReceive) {
-  StrictMock<MockActivity> activity;
-  MpscReceiver<Payload> receiver(1);
-  activity.Activate();
-  auto next = receiver.NextBatch();
-  EXPECT_THAT(next(), IsPending());
-  EXPECT_CALL(activity, WakeupRequested());
-  receiver.MarkClosed();
-  EXPECT_THAT(next(), IsReady(Failure{}));
-  activity.Deactivate();
-}
-
-TEST(MpscTest, ManySendsBulkReceive) {
-  StrictMock<MockActivity> activity;
-  MpscReceiver<Payload> receiver(10);
-
-  auto multi_send = [i = 0, max = 100,
-                     sender =
-                         receiver.MakeSender()]() mutable -> Poll<StatusFlag> {
-    if (i >= max) {
-      return Success{};
-    }
-    int cur_limit = std::min(i + 10, max);
-    while (i < cur_limit) {
-      sender.Send(MakePayload(i))();
-      i++;
-    }
-    return Pending{};
-  };
-  activity.Activate();
-  multi_send();
-  activity.Deactivate();
-
-  for (int i = 0; i < 10; i++) {
-    EXPECT_CALL(activity, WakeupRequested());
-    auto promise = receiver.NextBatch();
-    auto result = promise();
-    std::vector<Payload> expected;
-    int start = i * 10;
-    for (int j = start; j < start + 10; j++) {
-      expected.emplace_back(MakePayload(j));
-    }
-    EXPECT_THAT(result, IsReady(expected));
-    Mock::VerifyAndClearExpectations(&activity);
-
-    activity.Activate();
-    if (i < 9) {
-      EXPECT_THAT(multi_send(), IsPending());
-    }
-    activity.Deactivate();
-  }
-
-  EXPECT_THAT(multi_send(), IsReady(Success{}));
-  activity.Activate();
-  EXPECT_THAT(receiver.NextBatch()(), IsPending());
-  activity.Deactivate();
-}
-
 }  // namespace
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  gpr_log_verbosity_init();
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}

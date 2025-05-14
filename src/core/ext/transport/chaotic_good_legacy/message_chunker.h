@@ -99,13 +99,13 @@ class MessageChunker {
           BeginMessageFrame begin;
           begin.body.set_length(message->payload()->Length());
           begin.stream_id = stream_id;
-          return Seq(output.Send(std::move(begin)),
+          return Seq(output.Send(std::move(begin), 1),
                      Loop([chunker = message_chunker_detail::PayloadChunker(
                                max_chunk_size_, alignment_, stream_id,
                                std::move(*message->payload())),
                            &output]() mutable {
                        auto next = chunker.NextChunk();
-                       return Map(output.Send(std::move(next.frame)),
+                       return Map(output.Send(std::move(next.frame), 1),
                                   [done = next.done](
                                       StatusFlag x) -> LoopCtl<StatusFlag> {
                                     if (!done) return Continue{};
@@ -117,7 +117,7 @@ class MessageChunker {
           MessageFrame frame;
           frame.message = std::move(message);
           frame.stream_id = stream_id;
-          return output.Send(std::move(frame));
+          return output.Send(std::move(frame), 1);
         });
   }
 

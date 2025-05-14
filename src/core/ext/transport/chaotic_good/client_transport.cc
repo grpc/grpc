@@ -194,7 +194,7 @@ uint32_t ChaoticGoodClientTransport::StreamDispatch::MakeStream(
             << " done: cancelled=" << cancelled;
         if (cancelled) {
           self->outgoing_frames_.UnbufferedImmediateSend(
-              UntracedOutgoingFrame(CancelFrame{stream_id}));
+              UntracedOutgoingFrame(CancelFrame{stream_id}), 1);
         }
         MutexLock lock(&self->mu_);
         self->stream_map_.erase(stream_id);
@@ -260,7 +260,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   }
   auto send_fragment = [this, call_tracer, stream_id](auto frame) mutable {
     frame.stream_id = stream_id;
-    return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer});
+    return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer},
+                                 1);
   };
   auto send_message = [this, stream_id, call_tracer,
                        message_chunker =
@@ -317,8 +318,10 @@ void ChaoticGoodClientTransport::StartCall(CallHandler call_handler) {
                       GRPC_TRACE_LOG(chaotic_good, INFO)
                           << "CHAOTIC_GOOD: Send cancel";
                       if (!self->outgoing_frames_
-                               .UnbufferedImmediateSend(UntracedOutgoingFrame(
-                                   CancelFrame{stream_id}))
+                               .UnbufferedImmediateSend(
+                                   UntracedOutgoingFrame(
+                                       CancelFrame{stream_id}),
+                                   1)
                                .ok()) {
                         GRPC_TRACE_LOG(chaotic_good, INFO)
                             << "CHAOTIC_GOOD: Send cancel failed";

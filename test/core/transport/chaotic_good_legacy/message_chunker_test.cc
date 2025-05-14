@@ -39,7 +39,7 @@ struct Sender {
   Sender(Sender&&) = delete;
   Sender& operator=(const Sender&) = delete;
   Sender& operator=(Sender&&) = delete;
-  auto Send(Frame frame) {
+  auto Send(Frame frame, uint32_t) {
     frames.emplace_back(std::move(frame));
     return []() -> Poll<StatusFlag> { return Success{}; };
   }

@@ -491,15 +491,15 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "poll_matcher",
         "//:gpr",
@@ -707,12 +707,14 @@ grpc_cc_test(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
+        "absl/strings",
         "gtest",
     ],
     tags = ["party_mpsc_test"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
