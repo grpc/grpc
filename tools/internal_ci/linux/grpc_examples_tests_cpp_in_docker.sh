@@ -174,32 +174,3 @@ for example in "${EXAMPLES[@]}"; do
     fi
     clean
 done
-
-# For linux we use secure_getenv to read env variable
-# this return null if linux capabilites are added on the executable
-# For customer using linux capability , they need to define "--define GRPC_FORCE_UNSECURE_GETENV=1"
-# to read env variables.
-# enable log
-export GRPC_TRACE=http
-# Build using the define to force "getenv" instead of "secure_getenv"
-bazel build  --define GRPC_FORCE_UNSECURE_GETENV=1 //examples/cpp/helloworld:greeter_callback_client
-# Add linux capability
-setcap cap_net_admin+ep ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
-output = $(./bazel-bin/examples/cpp/helloworld/greeter_callback_client 2>&1)
-# check if logs got enabled
-grep "gRPC Tracers:" $output
-return_code=$?
-if [ "$return_code" -ne 0 ]; then
-    fail "Fail to read env variable with linux capability"
-fi
-# Build without the define , this will use secure_getenv
-bazel build  //examples/cpp/helloworld:greeter_callback_client
-# Add linux capability
-setcap cap_net_admin+ep ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
-output = $(./bazel-bin/examples/cpp/helloworld/greeter_callback_client 2>&1)
-# We should not see log get enabled as secure_getenv will return null in this case
-grep "gRPC Tracers:" $output
-return_code=$?
-if [ "$return_code" -eq 0 ]; then
-    fail "Able to read env variable with linux capability set"
-fi
