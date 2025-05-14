@@ -240,7 +240,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
 
   // Ping related members
-  Duration keepalive_interval_ = Duration::Seconds(20);
+  Duration keepalive_time_;
   Duration ping_timeout_;
   PingManager ping_manager_;
 

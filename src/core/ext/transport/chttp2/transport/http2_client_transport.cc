@@ -96,12 +96,12 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   return
       [self = RefAsSubclass<Http2ClientTransport>(),
-       frame1 = std::move(frame)]() -> absl::Status {
+       frame = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
-            << frame1.stream_id << ", end_stream=" << frame1.end_stream
-            << ", payload=" << frame1.payload.JoinIntoString() << "}";
+            << frame.stream_id << ", end_stream=" << frame.end_stream
+            << ", payload=" << frame.payload.JoinIntoString() << "}";
         self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
@@ -112,13 +112,13 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   return
       [self = RefAsSubclass<Http2ClientTransport>(),
-       frame1 = std::move(frame)]() -> absl::Status {
+       frame = std::move(frame)]() -> absl::Status {
         // TODO(tjagtap) : [PH2][P1] : Implement this.
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
-            << frame1.stream_id << ", end_headers=" << frame1.end_headers
-            << ", end_stream=" << frame1.end_stream
-            << ", payload=" << frame1.payload.JoinIntoString() << " }";
+            << frame.stream_id << ", end_headers=" << frame.end_headers
+            << ", end_stream=" << frame.end_stream
+            << ", payload=" << frame.payload.JoinIntoString() << " }";
         self->ping_manager_.ReceivedDataFrame();
         return absl::OkStatus();
       };
@@ -169,8 +169,10 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         return Immediate(absl::OkStatus());
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
-        // TODO(akshitpatel) : [PH2][P0] : This can result into undefined
-        // behaviour as there will be concurrent calls to endpoint_.write
+        // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
+        // pending induced frames (Ping/Settings Ack). This is to ensure that
+        // if write is taking a long time, we can stop reads and prioritize
+        // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
         return self->EnqueueOutgoingFrame(Http2PingFrame{true, opaque});
@@ -401,14 +403,14 @@ Http2ClientTransport::Http2ClientTransport(
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
       bytes_sent_in_last_write_(false),
-      keepalive_interval_(std::max(
-          Duration::Milliseconds(1),
+      keepalive_time_(std::max(
+          Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
               .value_or(Duration::Infinity()))),
       ping_timeout_(std::max(
           Duration::Zero(),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
-              .value_or(keepalive_interval_ == Duration::Infinity()
+              .value_or(keepalive_time_ == Duration::Infinity()
                             ? Duration::Infinity()
                             : Duration::Minutes(1)))),
       ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
