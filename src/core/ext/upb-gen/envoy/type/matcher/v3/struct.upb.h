@@ -211,6 +211,10 @@ UPB_INLINE envoy_type_matcher_v3_StructMatcher_PathSegment_segment_oneofcases en
   return (envoy_type_matcher_v3_StructMatcher_PathSegment_segment_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_matcher_v3_StructMatcher_PathSegment_clear_segment(envoy_type_matcher_v3_StructMatcher_PathSegment* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__StructMatcher__PathSegment_msg_init, &field);
+}
 UPB_INLINE void envoy_type_matcher_v3_StructMatcher_PathSegment_clear_key(envoy_type_matcher_v3_StructMatcher_PathSegment* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

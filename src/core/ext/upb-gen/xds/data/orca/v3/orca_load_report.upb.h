@@ -23,9 +23,6 @@ extern "C" {
 #endif
 
 typedef struct xds_data_orca_v3_OrcaLoadReport { upb_Message UPB_PRIVATE(base); } xds_data_orca_v3_OrcaLoadReport;
-typedef struct xds_data_orca_v3_OrcaLoadReport_RequestCostEntry { upb_Message UPB_PRIVATE(base); } xds_data_orca_v3_OrcaLoadReport_RequestCostEntry;
-typedef struct xds_data_orca_v3_OrcaLoadReport_UtilizationEntry { upb_Message UPB_PRIVATE(base); } xds_data_orca_v3_OrcaLoadReport_UtilizationEntry;
-typedef struct xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry { upb_Message UPB_PRIVATE(base); } xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry;
 
 
 
@@ -338,57 +335,6 @@ UPB_INLINE bool xds_data_orca_v3_OrcaLoadReport_named_metrics_delete(xds_data_or
 UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_set_application_utilization(xds_data_orca_v3_OrcaLoadReport *msg, double value) {
   const upb_MiniTableField field = {9, UPB_SIZE(64, 72), 0, kUpb_NoSub, 1, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-
-/* xds.data.orca.v3.OrcaLoadReport.RequestCostEntry */
-
-UPB_INLINE upb_StringView xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_key(const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_value(const xds_data_orca_v3_OrcaLoadReport_RequestCostEntry* msg) {
-  double ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-
-UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_RequestCostEntry_set_value(xds_data_orca_v3_OrcaLoadReport_RequestCostEntry *msg, double value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(double));
-}
-
-/* xds.data.orca.v3.OrcaLoadReport.UtilizationEntry */
-
-UPB_INLINE upb_StringView xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_key(const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_value(const xds_data_orca_v3_OrcaLoadReport_UtilizationEntry* msg) {
-  double ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-
-UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_UtilizationEntry_set_value(xds_data_orca_v3_OrcaLoadReport_UtilizationEntry *msg, double value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(double));
-}
-
-/* xds.data.orca.v3.OrcaLoadReport.NamedMetricsEntry */
-
-UPB_INLINE upb_StringView xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_key(const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE double xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_value(const xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry* msg) {
-  double ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-
-UPB_INLINE void xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry_set_value(xds_data_orca_v3_OrcaLoadReport_NamedMetricsEntry *msg, double value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(double));
 }
 
 #ifdef __cplusplus

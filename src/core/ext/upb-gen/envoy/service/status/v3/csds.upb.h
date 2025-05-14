@@ -264,6 +264,10 @@ UPB_INLINE envoy_service_status_v3_PerXdsConfig_per_xds_config_oneofcases envoy_
   return (envoy_service_status_v3_PerXdsConfig_per_xds_config_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_service_status_v3_PerXdsConfig_clear_per_xds_config(envoy_service_status_v3_PerXdsConfig* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 24), -17, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__service__status__v3__PerXdsConfig_msg_init, &field);
+}
 UPB_INLINE void envoy_service_status_v3_PerXdsConfig_clear_status(envoy_service_status_v3_PerXdsConfig* msg) {
   const upb_MiniTableField field = {1, 8, 0, kUpb_NoSub, 5, (int)kUpb_FieldMode_Scalar | (int)kUpb_LabelFlags_IsAlternate | ((int)kUpb_FieldRep_4Byte << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
