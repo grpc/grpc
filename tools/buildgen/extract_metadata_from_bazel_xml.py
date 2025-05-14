@@ -1120,6 +1120,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_mem_lib",
     },
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib",
+    },
     "@com_google_protobuf//upb:message": {
         "language": "c",
         "build": "all",

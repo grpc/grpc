@@ -3370,19 +3370,31 @@ libs:
   headers:
   - third_party/upb/upb/json/decode.h
   - third_party/upb/upb/json/encode.h
+  src:
+  - third_party/upb/upb/json/decode.c
+  - third_party/upb/upb/json/encode.c
+  deps:
+  - upb_lex_lib
+  - upb_reflection_lib
+- name: upb_lex_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/port/atomic.h
+  - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/undef.inc
+  - third_party/upb/upb/port/vsnprintf_compat.h
   src:
-  - third_party/upb/upb/json/decode.c
-  - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  deps:
-  - upb_reflection_lib
+  deps: []
 - name: upb_mem_lib
   build: all
   language: c
@@ -3550,21 +3562,14 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text/internal/encode.h
   - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/text/internal/encode.c
   deps:
+  - upb_lex_lib
   - upb_reflection_lib
 - name: upb_wire_lib
   build: all
@@ -11212,6 +11217,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
@@ -11220,6 +11226,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
@@ -12264,6 +12271,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -12741,6 +12749,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -12750,6 +12759,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/http2_status_test.cc
   deps:
   - gtest
