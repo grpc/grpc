@@ -113,6 +113,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   }
   std::unique_ptr<EventEngine::Endpoint> endpoint(
       args_.channel_args.GetObject<EventEngine::Endpoint>());
+  args_.channel_args = args_.channel_args.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
   ChannelArgs channel_args = args_.channel_args;
   if (endpoint == nullptr) {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
@@ -323,7 +324,8 @@ grpc_channel* CreateChannelFromEndpoint(
         endpoint,
     grpc_channel_credentials* creds, const grpc_channel_args* args) {
   grpc_core::ExecCtx exec_ctx;
-  std::string resolved_address = *ResolvedAddressToURI(endpoint->GetPeerAddress());
+  std::string resolved_address =
+      *ResolvedAddressToURI(endpoint->GetPeerAddress());
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();

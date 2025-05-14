@@ -6,7 +6,8 @@
 #include <iostream>
 #include <string>
 #include <thread>
-
+#include <fcntl.h>
+#include "absl/log/check.h"
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
 #else
@@ -43,6 +44,9 @@ void connection_accepter_thread_function(
       return;
     }
 
+    int flags = fcntl(new_socket_fd, F_GETFL, 0);
+    CHECK_EQ(fcntl(new_socket_fd, F_SETFL, flags | O_NONBLOCK), 0);
+    
     std::cout << "Thread: Accepted new connection. new_socket_fd: "
               << new_socket_fd << std::endl;
     auto status = passive_listener->AcceptConnectedFd(new_socket_fd);

@@ -3,10 +3,11 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <fcntl.h>
 #include <iostream>
 #include <memory>
 #include <string>
+#include "absl/log/check.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -40,10 +41,13 @@ int main(int argc, char** argv) {
 
   if (connect(client_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) <
       0) {
-    std::cerr << "Error connecting to server" << std::endl;
+    std::cerr << "Error connecting to server" << strerror(errno) << std::endl;
     close(client_fd);
     return 1;
   }
+
+  int flags = fcntl(client_fd, F_GETFL, 0);
+  CHECK_EQ(fcntl(client_fd, F_SETFL, flags | O_NONBLOCK), 0);
 
   std::cout << "connecting to server with client_fd" << client_fd << std::endl;
   // 3. Create a gRPC channel from the existing file descriptor
