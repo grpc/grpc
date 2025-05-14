@@ -16,6 +16,7 @@
 
 load("@bazel_skylib//lib:selects.bzl", "selects")
 load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
+load("@rules_pkg//pkg:zip.bzl", "pkg_zip")
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
@@ -5180,4 +5181,26 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+pkg_zip(
+    name = "grpc_objective_c_plugin_zip",
+    srcs = [
+        "//src/compiler:grpc_objective_c_plugin",
+    ],
+    out = "grpc_objective_c_plugin-" + version + "-macos-universal.zip",
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
+)
+
+pkg_zip(
+    name = "grpc_cpp_plugin_zip",
+    srcs = [
+        "//src/compiler:grpc_cpp_plugin",
+    ],
+    out = "grpc_cpp_plugin-" + version + "-macos-universal.zip",
+    target_compatible_with = [
+        "@platforms//os:macos",
+    ],
 )
