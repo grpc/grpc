@@ -1261,6 +1261,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
     ],
     deps = [
+        "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",

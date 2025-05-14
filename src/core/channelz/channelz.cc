@@ -170,7 +170,7 @@ BaseNode::BaseNode(EntityType type, std::string name)
   ChannelzRegistry::Register(this);
 }
 
-BaseNode::~BaseNode() { ChannelzRegistry::Unregister(this); }
+void BaseNode::Orphaned() { ChannelzRegistry::Unregister(this); }
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
