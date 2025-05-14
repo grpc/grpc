@@ -165,10 +165,10 @@ class PythonPackage:
         dockerfile_dir = (
             "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
         )
-        # if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
-        #     dockerfile_dir = (
-        #         "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
-        #     )
+        if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
+            dockerfile_dir = (
+                "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
+            )
         return create_docker_jobspec(
             self.name,
             dockerfile_dir,
@@ -204,5 +204,6 @@ def targets():
         CSharpPackage("windows"),
         RubyPackage(),
         PythonPackage(),
+        PythonPackage("musllinux_1_1", "aarch64"),
         PHPPackage(),
     ]
