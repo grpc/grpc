@@ -117,7 +117,12 @@ class TcpCallTracer {
   struct TcpEventMetric {
     absl::string_view key;
     int64_t value;
+
+    std::string ToString();
   };
+
+  std::string TcpEventMetricsToString(
+      const std::vector<TcpEventMetric>& metrics);
 
   virtual ~TcpCallTracer() = default;
 

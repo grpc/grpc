@@ -385,6 +385,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
@@ -1785,6 +1787,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />

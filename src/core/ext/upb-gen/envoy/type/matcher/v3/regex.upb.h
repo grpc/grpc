@@ -78,6 +78,10 @@ UPB_INLINE envoy_type_matcher_v3_RegexMatcher_engine_type_oneofcases envoy_type_
   return (envoy_type_matcher_v3_RegexMatcher_engine_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_clear_engine_type(envoy_type_matcher_v3_RegexMatcher* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__type__matcher__v3__RegexMatcher_msg_init, &field);
+}
 UPB_INLINE void envoy_type_matcher_v3_RegexMatcher_clear_google_re2(envoy_type_matcher_v3_RegexMatcher* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

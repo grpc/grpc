@@ -1174,6 +1174,8 @@ src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
 src/core/ext/transport/chttp2/transport/hpack_parser_table.h \
 src/core/ext/transport/chttp2/transport/http2_settings.cc \
 src/core/ext/transport/chttp2/transport/http2_settings.h \
+src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
+src/core/ext/transport/chttp2/transport/http2_stats_collector.h \
 src/core/ext/transport/chttp2/transport/http2_status.h \
 src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h \
 src/core/ext/transport/chttp2/transport/huffsyms.cc \
@@ -2582,6 +2584,7 @@ src/core/telemetry/stats.cc \
 src/core/telemetry/stats.h \
 src/core/telemetry/stats_data.cc \
 src/core/telemetry/stats_data.h \
+src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \

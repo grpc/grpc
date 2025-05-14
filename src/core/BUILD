@@ -7292,10 +7292,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_tracer",
+    srcs = [
+        "//src/core:telemetry/tcp_tracer.cc",
+    ],
     hdrs = [
         "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
+        "absl/strings",
         "absl/time",
     ],
     visibility = ["//bazel:tcp_tracer"],
@@ -7804,6 +7808,21 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_stats_collector",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.h",
+    ],
+    deps = [
+        "stats_data",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
     ],
 )
 
