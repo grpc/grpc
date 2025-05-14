@@ -151,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
-            strip_prefix = "abseil-cpp-20250127.1",
+            sha256 = "7262daa7c1711406248c10f41026d685e88223bc92817d16fb93c19adb57f669",
+            strip_prefix = "abseil-cpp-20250512.0",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
-                "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/refs/tags/20250512.0.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/refs/tags/20250512.0.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -204,6 +204,10 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
                 "https://github.com/census-instrumentation/opencensus-cpp/archive/5501a1a255805e0be83a41348bb5f2630d5ed6b3.tar.gz",
             ],
+            patches = [
+                "@com_github_grpc_grpc//third_party:opencensus-cpp.patch",
+            ],
+            patch_args = ["-p1"],
         )
 
     if "envoy_api" not in native.existing_rules():
