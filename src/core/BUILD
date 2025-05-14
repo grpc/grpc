@@ -101,11 +101,11 @@ grpc_cc_library(
     ],
     deps = [
         "memory_quota",
+        "tcp_tracer",
         "//:channelz",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
         "//:ref_counted_ptr",
-        "//:tcp_tracer",
     ],
 )
 
@@ -175,6 +175,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
@@ -2448,6 +2449,7 @@ grpc_cc_library(
     srcs = ["lib/event_engine/utils.cc"],
     hdrs = ["lib/event_engine/utils.h"],
     external_deps = [
+        "absl/log",
         "absl/status:statusor",
         "absl/strings",
     ],
@@ -7278,6 +7280,32 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "context_list_entry",
+    hdrs = [
+        "telemetry/context_list_entry.h",
+    ],
+    deps = [
+        "tcp_tracer",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "tcp_tracer",
+    hdrs = [
+        "//src/core:telemetry/tcp_tracer.h",
+    ],
+    external_deps = [
+        "absl/time",
+    ],
+    visibility = ["//bazel:tcp_tracer"],
+    deps = [
+        "//:event_engine_base_hdrs",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "default_tcp_tracer",
     srcs = [
         "telemetry/default_tcp_tracer.cc",
@@ -7296,8 +7324,8 @@ grpc_cc_library(
         "channel_args_endpoint_config",
         "metrics",
         "sync",
+        "tcp_tracer",
         "//:gpr",
-        "//:tcp_tracer",
     ],
 )
 
@@ -7633,6 +7661,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "time",
         "//:gpr_platform",
     ],
 )
@@ -7648,7 +7677,7 @@ grpc_cc_library(
     ],
     deps = [
         "http2_status",
-        "message",
+        "metadata_batch",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -7668,6 +7697,8 @@ grpc_cc_library(
         "absl/log:check",
     ],
     deps = [
+        "arena",
+        "http2_status",
         "message",
         ":slice",
         ":slice_buffer",
@@ -8147,6 +8178,7 @@ grpc_cc_library(
     deps = [
         "chaotic_good_frame_header",
         "chaotic_good_tcp_frame_header",
+        "event_engine_utils",
         "ztrace_collector",
         "//:gpr",
     ],
@@ -8238,6 +8270,7 @@ grpc_cc_library(
         "chaotic_good_tcp_ztrace_collector",
         "chaotic_good_transport_context",
         "default_tcp_tracer",
+        "dump_args",
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -8251,6 +8284,7 @@ grpc_cc_library(
         "slice_buffer",
         "status_flag",
         "time",
+        "transport_framing_endpoint_extension",
         "try_seq",
         "//:channelz",
         "//:gpr",
@@ -8278,8 +8312,8 @@ grpc_cc_library(
         "match_promise",
         "mpsc",
         "pipe",
+        "tcp_tracer",
         "//:promise",
-        "//:tcp_tracer",
     ],
 )
 
@@ -8315,6 +8349,7 @@ grpc_cc_library(
         "loop",
         "race",
         "seq",
+        "transport_framing_endpoint_extension",
         "try_seq",
     ],
 )
@@ -9158,6 +9193,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "cancel_callback",
+        "dump_args",
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -9167,7 +9203,6 @@ grpc_cc_library(
         "slice",
         "slice_buffer",
         "sync",
-        "//:context_list_entry",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -9614,6 +9649,31 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "keepalive",
+    srcs = [
+        "ext/transport/chttp2/transport/keepalive.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/keepalive.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/status",
+    ],
+    deps = [
+        "1999",
+        "all_ok",
+        "if",
+        "latch",
+        "loop",
+        "race",
+        "sleep",
+        "try_seq",
+        "//:promise",
+    ],
+)
+
+grpc_cc_library(
     name = "spiffe_utils",
     srcs = [
         "//src/core:credentials/transport/tls/spiffe_utils.cc",
@@ -9633,7 +9693,13 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "load_file",
         "status_helper",
+        "//:tsi_ssl_credentials",
     ],
 )
 

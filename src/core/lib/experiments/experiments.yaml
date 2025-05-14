@@ -40,22 +40,12 @@
 
 # This file only defines the experiments. Refer to rollouts.yaml for the rollout
 # state of each experiment.
-- name: backoff_cap_initial_at_max
-  description: Backoff library applies max_backoff even on initial_backoff.
-  expiry: 2025/05/01
-  owner: roth@google.com
-  test_tags: []
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
   expiry: 2025/06/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: call_tracer_transport_fix
-  description: Use the correct call tracer in transport
-  expiry: 2025/06/01
-  owner: yashkt@google.com
-  test_tags: []
 - name: callv3_client_auth_filter
   description: Use the CallV3 client auth filter.
   expiry: 2025/06/01
@@ -159,8 +149,7 @@
   owner: mattstev@google.com
   test_tags: ["core_end2end_test"]
 - name: max_inflight_pings_strict_limit
-  description:
-    If set, the max inflight pings limit is strictly enforced.
+  description: If set, the max inflight pings limit is strictly enforced.
   expiry: 2025/06/30
   owner: akshitpatel@google.com
   test_tags: []
@@ -248,23 +237,28 @@
   expiry: 2025/10/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+      "event_engine_secure_endpoint",
+    ]
 - name: secure_endpoint_offload_large_writes
   description: If a large read write to be encrypted, use a separate thread.
   expiry: 2025/10/10
   owner: ctiller@google.com
   test_tags: ["core_end2end_test"]
-  requires: ["event_engine_client", "event_engine_listener", "event_engine_secure_endpoint"]
+  requires:
+    [
+      "event_engine_client",
+      "event_engine_listener",
+      "event_engine_secure_endpoint",
+    ]
 - name: server_global_callbacks_ownership
   description: If set, server global callbacks ownership is fixed to not be owned by gRPC.
   expiry: 2025/06/30
   owner: yashkt@google.com
   test_tags: []
-- name: shard_channelz_index
-  description: If set, shard the channelz index for better concurrency
-  expiry: 2025/06/01
-  owner: ctiller@google.com
-  test_tags: [channelz_test]
 - name: shard_global_connection_pool
   description: If set, shard the global connection pool to improve parallelism.
   expiry: 2025/09/09

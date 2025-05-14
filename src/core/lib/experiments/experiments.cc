@@ -23,15 +23,9 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -168,9 +162,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -199,12 +190,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
@@ -292,8 +279,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -319,15 +304,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -464,9 +443,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -495,12 +471,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
@@ -588,8 +560,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -615,15 +585,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
@@ -760,9 +724,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -791,12 +752,8 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
@@ -884,8 +841,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},

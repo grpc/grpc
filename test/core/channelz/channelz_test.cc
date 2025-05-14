@@ -301,6 +301,7 @@ class TestZTrace final : public ZTrace {
 class TestDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override {
     Json::Object object;
     object["test"] = Json::FromString("yes");
@@ -371,6 +372,7 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 class TestSubObjectDataSource final : public DataSource {
  public:
   using DataSource::DataSource;
+  ~TestSubObjectDataSource() { ResetDataSource(); }
   void AddData(DataSink& sink) override { sink.AddChildObjects({child_}); }
 
   int64_t child_id() const { return child_->uuid(); }
@@ -568,111 +570,6 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   for (size_t i = 0; i < uuids.size(); ++i) {
     EXPECT_EQ(static_cast<intptr_t>(kMidQuery + i), uuids[i]);
   }
-}
-
-TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
-  if (IsShardChannelzIndexEnabled()) {
-    GTEST_SKIP() << "This test validates implementation details of the legacy "
-                    "stack, not the contract guaranteed by the API.";
-  }
-  ExecCtx exec_ctx;
-  ChannelFixture pre_channels[40];  // will take uuid[1, 40]
-  (void)pre_channels;               // suppress unused variable error
-  ServerFixture servers[10];        // will take uuid[41, 50]
-  (void)servers;                    // suppress unused variable error
-  ChannelFixture channels[10];      // will take uuid[51, 60]
-  (void)channels;                   // suppress unused variable error
-  // Query in the middle of the server channels.
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(45);
-  auto parsed_json = JsonParse(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  Json channel_json;
-  auto it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, 10);
-  std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
-  for (size_t i = 0; i < uuids.size(); ++i) {
-    EXPECT_EQ(static_cast<intptr_t>(51 + i), uuids[i]);
-  }
-}
-
-TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
-  if (IsShardChannelzIndexEnabled()) {
-    GTEST_SKIP() << "This test validates implementation details of the legacy "
-                    "stack, not the contract guaranteed by the API.";
-  }
-  ExecCtx exec_ctx;
-  ChannelFixture channel_with_uuid1;
-  {
-    ServerFixture channel_with_uuid2;
-  }
-  ChannelFixture channel_with_uuid3;
-  {
-    ServerFixture server_with_uuid4;
-  }
-  ChannelFixture channel_with_uuid5;
-  // Current state of list: [1, NULL, 3, NULL, 5]
-  std::string json_str = ChannelzRegistry::GetTopChannelsJson(2);
-  auto parsed_json = JsonParse(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  Json channel_json;
-  auto it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, 2);
-  std::vector<intptr_t> uuids = GetUuidListFromArray(channel_json.array());
-  EXPECT_EQ(3, uuids[0]);
-  EXPECT_EQ(5, uuids[1]);
-  json_str = ChannelzRegistry::GetTopChannelsJson(4);
-  parsed_json = JsonParse(json_str);
-  ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-  ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-  channel_json = Json();
-  it = parsed_json->object().find("channel");
-  if (it != parsed_json->object().end()) channel_json = it->second;
-  ValidateJsonArraySize(channel_json, 1);
-  uuids = GetUuidListFromArray(channel_json.array());
-  EXPECT_EQ(5, uuids[0]);
-}
-
-TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
-  if (IsShardChannelzIndexEnabled()) {
-    GTEST_SKIP() << "This test validates implementation details of the legacy "
-                    "stack, not the contract guaranteed by the API.";
-  }
-  const intptr_t kLoopIterations = 50;
-  ExecCtx exec_ctx;
-  std::vector<std::unique_ptr<ChannelFixture>> even_channels;
-  {
-    // these will delete and unregister themselves after this block.
-    std::vector<std::unique_ptr<ChannelFixture>> odd_channels;
-    for (int i = 0; i < kLoopIterations; i++) {
-      odd_channels.push_back(std::make_unique<ChannelFixture>());
-      even_channels.push_back(std::make_unique<ChannelFixture>());
-    }
-  }
-  Notification done;
-  grpc_event_engine::experimental::GetDefaultEventEngine()->RunAfter(
-      std::chrono::seconds(5 * grpc_test_slowdown_factor()), [&] {
-        ExecCtx exec_ctx;
-        std::string json_str = ChannelzRegistry::GetTopChannelsJson(0);
-        auto parsed_json = JsonParse(json_str);
-        ASSERT_TRUE(parsed_json.ok()) << parsed_json.status();
-        ASSERT_EQ(parsed_json->type(), Json::Type::kObject);
-        Json channel_json;
-        auto it = parsed_json->object().find("channel");
-        if (it != parsed_json->object().end()) channel_json = it->second;
-        ValidateJsonArraySize(channel_json, kLoopIterations);
-        std::vector<intptr_t> uuids =
-            GetUuidListFromArray(channel_json.array());
-        for (int i = 0; i < kLoopIterations; ++i) {
-          // only the even uuids will still be present.
-          EXPECT_EQ((i + 1) * 2, uuids[i]);
-        }
-        done.Notify();
-      });
-  done.WaitForNotification();
 }
 
 TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {

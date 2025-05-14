@@ -21,6 +21,7 @@
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 
 namespace grpc_core {
 namespace util {
@@ -55,6 +56,54 @@ class MockEndpoint
               (override));
   MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
               (override));
+
+  void* QueryExtension(absl::string_view name) override {
+    for (const auto& extension : added_extensions_) {
+      if (extension->ExtensionName() == name) {
+        return extension->Extension();
+      }
+    }
+    return nullptr;
+  }
+
+  template <typename T>
+  T* AddExtension() {
+    auto p = std::make_unique<AddedExtensionT<T>>();
+    auto* r = p->extension();
+    added_extensions_.emplace_back(std::move(p));
+    return r;
+  }
+
+ private:
+  class AddedExtension {
+   public:
+    virtual ~AddedExtension() = default;
+    virtual absl::string_view ExtensionName() const = 0;
+    virtual void* Extension() = 0;
+  };
+
+  template <typename T>
+  class AddedExtensionT final : public AddedExtension {
+   public:
+    absl::string_view ExtensionName() const override {
+      return T::EndpointExtensionName();
+    }
+    void* Extension() override { return &extension_; }
+
+    T* extension() { return &extension_; }
+
+   private:
+    T extension_;
+  };
+
+  std::vector<std::unique_ptr<AddedExtension>> added_extensions_;
+};
+
+struct MockTransportFramingEndpointExtension
+    : public TransportFramingEndpointExtension {
+  MOCK_METHOD(void, SetSendFrameCallback,
+              (absl::AnyInvocable<void(SliceBuffer*)>), (override));
+  MOCK_METHOD(void, ReceiveFrame, (SliceBuffer), (override));
 };
 
 struct MockPromiseEndpoint {

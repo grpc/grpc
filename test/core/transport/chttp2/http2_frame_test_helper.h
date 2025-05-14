@@ -58,8 +58,12 @@ class Http2FrameTestHelper {
   }
 
   EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
-      const bool ack = false) const {
-    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{ack, {}});
+      std::vector<Http2SettingsFrame::Setting> settings) const {
+    if (settings.empty()) {
+      return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
+    }
+    return EventEngineSliceFromHttp2Frame(
+        Http2SettingsFrame{false, std::move(settings)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2PingFrame(

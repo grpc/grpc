@@ -84,9 +84,15 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+
   mock_endpoint.ExpectRead(
       {helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+           /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());
@@ -118,8 +124,13 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
 
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2DataFrame(
-              /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+              /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
       },
       event_engine().get());
 
@@ -128,7 +139,7 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       event_engine());
 
   Http2Frame frame = Http2DataFrame{
-      .stream_id = 10,
+      .stream_id = 9,
       .end_stream = false,
       .payload = SliceBuffer(Slice::FromExternalString("Hello!"))};
 
@@ -152,14 +163,17 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
                                 event_engine().get());
 
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+
   // Expect Client Initial Metadata to be sent.
   mock_endpoint.ExpectWrite(
       {helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-          kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))},
-      event_engine().get());
-  // Expect one data frame and one end of stream frame.
-  mock_endpoint.ExpectWrite(
-      {helper_.EventEngineSliceFromHttp2DataFrame(
+           kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+       helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/(grpc_header.JoinIntoString() + data_payload),
            /*stream_id=*/1, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(

@@ -64,6 +64,18 @@ class ControlEndpoint {
       };
     }
 
+    // Force queue some buffer to be written: ignores caps.
+    void ForceQueue(SliceBuffer&& buffer) {
+      Waker waker;
+      auto cleanup = absl::MakeCleanup([&waker]() { waker.Wakeup(); });
+      MutexLock lock(&mu_);
+      GRPC_TRACE_LOG(chaotic_good, INFO)
+          << "CHAOTIC_GOOD: Force queue control write " << buffer.Length()
+          << " bytes on " << this;
+      waker = std::move(flush_waker_);
+      queued_output_.Append(buffer);
+    }
+
     auto Pull();
 
    private:
@@ -85,13 +97,35 @@ class ControlEndpoint {
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->ReadSlice(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointReadHdr",
+                                endpoint_->ReadSlice(length)));
   }
   auto Read(size_t length) {
-    return AddErrorPrefix("CONTROL_CHANNEL: ", endpoint_->Read(length));
+    return AddErrorPrefix(
+        "CONTROL_CHANNEL: ",
+        GRPC_LATENT_SEE_PROMISE("CtlEndpointRead", endpoint_->Read(length)));
   }
   auto GetPeerAddress() const { return endpoint_->GetPeerAddress(); }
   auto GetLocalAddress() const { return endpoint_->GetLocalAddress(); }
+
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+  GetEventEngineEndpoint() const {
+    return endpoint_->GetEventEngineEndpoint();
+  }
+
+  auto SecureFrameWriterCallback() {
+    return [buffer = buffer_](SliceBuffer* data) {
+      SliceBuffer output;
+      CHECK_LT(data->Length(), std::numeric_limits<uint32_t>::max());
+      const uint32_t length = data->Length();
+      TcpFrameHeader hdr{{FrameType::kTcpSecurityFrame, 0, length}};
+      hdr.Serialize(output.AddTiny(TcpFrameHeader::kFrameHeaderSize));
+      output.TakeAndAppend(*data);
+      buffer->ForceQueue(std::move(output));
+    };
+  }
 
  private:
   std::shared_ptr<PromiseEndpoint> endpoint_;

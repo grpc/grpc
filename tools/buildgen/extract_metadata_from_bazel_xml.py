@@ -107,6 +107,7 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@utf8_range//": "third_party/utf8_range",
     "@com_googlesource_code_re2//": "third_party/re2",
     "@com_google_googletest//": "third_party/googletest",
+    "@@googletest//": "third_party/googletest",
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
@@ -1118,6 +1119,11 @@ _BUILD_EXTRA_METADATA = {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib",
+    },
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib",
     },
     "@com_google_protobuf//upb:message": {
         "language": "c",
