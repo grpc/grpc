@@ -132,8 +132,11 @@ class Http2ServerTransport final : public ServerTransport {
       ABSL_GUARDED_BY(transport_mutex_);
 
   // This function MUST be idempotent.
-  void CloseStream(uint32_t stream_id, absl::Status status) {
-    LOG(INFO) << "Http2ServerTransport::CloseStream status=" << status;
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   DebugLocation whence = {}) {
+    LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
+              << " status=" << status << " location=" << whence.file() << ":"
+              << whence.line();
     // TODO(akshitpatel) : [PH2][P1] : Implement this.
   }
 
@@ -149,11 +152,13 @@ class Http2ServerTransport final : public ServerTransport {
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
-      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError());
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      absl::Status connection_status = status.GetAbslConnectionError();
       CloseTransport(std::move(status), whence);
-      return status.GetAbslConnectionError();
+      return connection_status;
     }
 
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));

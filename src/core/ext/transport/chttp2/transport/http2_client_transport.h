@@ -232,7 +232,8 @@ class Http2ClientTransport final : public ClientTransport {
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
                    DebugLocation whence = {}) {
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream status=" << status
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " status=" << status
                       << " location=" << whence.file() << ":" << whence.line();
     // TODO(akshitpatel) : [PH2][P1] : Implement this.
   }
@@ -255,8 +256,9 @@ class Http2ClientTransport final : public ClientTransport {
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      absl::Status connection_status = status.GetAbslConnectionError();
       CloseTransport(std::move(status), whence);
-      return status.GetAbslConnectionError();
+      return connection_status;
     }
 
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
