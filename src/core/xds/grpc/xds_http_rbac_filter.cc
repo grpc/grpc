@@ -462,7 +462,7 @@ Json ParseHttpRbacToJson(const XdsResourceType::DecodeContext& context,
         ValidationErrors::ScopedField field(
             errors, absl::StrCat(".policies[", key, "]"));
         Json policy = ParsePolicyToJson(val, errors);
-        policies_object.emplace(std::string(key), std::move(policy));
+        policies_object.emplace(key, std::move(policy));
       }
       inner_rbac_json.emplace("policies",
                               Json::FromObject(std::move(policies_object)));
