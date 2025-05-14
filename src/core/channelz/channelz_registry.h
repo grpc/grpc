@@ -116,13 +116,12 @@ class ChannelzRegistry final {
   }
 
   // Test only helper function to reset to initial state.
-  static void TestOnlyReset() {
-    auto* p = Default();
-    p->node_map_ = MakeNodeMap();
-  }
+  static void TestOnlyReset();
 
  private:
-  ChannelzRegistry() : node_map_(MakeNodeMap()) {}
+  ChannelzRegistry() { LoadConfig(); }
+
+  void LoadConfig();
 
   // Takes a callable F: (WeakRefCountedPtr<BaseNode>) -> bool, and returns
   // a (BaseNode*) -> bool that filters unreffed objects and returns true.
@@ -136,96 +135,74 @@ class ChannelzRegistry final {
     };
   }
 
-  class NodeMapInterface {
-   public:
-    virtual ~NodeMapInterface() = default;
-
-    virtual void Register(BaseNode* node) = 0;
-    virtual void Unregister(BaseNode* node) = 0;
-
-    virtual std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
-    QueryNodes(intptr_t start_node,
-               absl::FunctionRef<bool(const BaseNode*)> filter,
-               size_t max_results) = 0;
-    virtual WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) = 0;
-
-    virtual intptr_t NumberNode(BaseNode* node) = 0;
+  struct NodeList {
+    BaseNode* head = nullptr;
+    BaseNode* tail = nullptr;
+    size_t count = 0;
+    bool Holds(BaseNode* node) const;
+    void AddToHead(BaseNode* node);
+    void Remove(BaseNode* node);
   };
-
-  class LegacyNodeMap final : public NodeMapInterface {
-   public:
-    void Register(BaseNode* node) override;
-    void Unregister(BaseNode* node) override;
-
-    std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
-        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
-        size_t max_results) override;
-    WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
-
-    intptr_t NumberNode(BaseNode* node) override { return node->uuid_; }
-
-   private:
-    Mutex mu_;
-    std::map<intptr_t, BaseNode*> node_map_ ABSL_GUARDED_BY(mu_);
-    intptr_t uuid_generator_ ABSL_GUARDED_BY(mu_) = 1;
+  // Nodes traverse through up to four lists, depending on
+  // whether they have a uuid (this is becoming numbered),
+  // and whether they have been orphaned or not.
+  // The lists help us find un-numbered nodes when needed for
+  // queries, and the oldest orphaned node when needed for
+  // garbage collection.
+  // Nodes are organized into shards based on their pointer
+  // address. A shard tracks the four lists of nodes
+  // independently - we strive to have no cross-talk between
+  // shards as these are very global objects.
+  struct alignas(GPR_CACHELINE_SIZE) NodeShard {
+    Mutex mu;
+    // Nursery nodes have no uuid and are not orphaned.
+    NodeList nursery ABSL_GUARDED_BY(mu);
+    // Numbered nodes have been assigned a uuid, and are not orphaned.
+    NodeList numbered ABSL_GUARDED_BY(mu);
+    // Orphaned nodes have no uuid, but have been orphaned.
+    NodeList orphaned ABSL_GUARDED_BY(mu);
+    // Finally, orphaned numbered nodes are orphaned, and have been assigned a
+    // uuid.
+    NodeList orphaned_numbered ABSL_GUARDED_BY(mu);
+    uint64_t next_orphan_index ABSL_GUARDED_BY(mu) = 1;
+    size_t TotalOrphaned() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu) {
+      return orphaned.count + orphaned_numbered.count;
+    }
   };
-
-  class ShardedNodeMap final : public NodeMapInterface {
-   public:
-    void Register(BaseNode* node) override;
-    void Unregister(BaseNode* node) override;
-
-    std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
-        intptr_t start_node, absl::FunctionRef<bool(const BaseNode*)> filter,
-        size_t max_results) override;
-    WeakRefCountedPtr<BaseNode> GetNode(intptr_t uuid) override;
-
-    intptr_t NumberNode(BaseNode* node) override;
-
-   private:
-    struct BaseNodeList {
-      Mutex mu;
-      BaseNode* nursery ABSL_GUARDED_BY(mu) = nullptr;
-      BaseNode* numbered ABSL_GUARDED_BY(mu) = nullptr;
-    };
-
-    static size_t NodeShardIndex(BaseNode* node);
-    static void AddNodeToHead(BaseNode* node, BaseNode*& head);
-    static void RemoveNodeFromHead(BaseNode* node, BaseNode*& head);
-
-    static constexpr size_t kNodeShards = 63;
-    int64_t uuid_generator_{1};
-    BaseNodeList node_list_[kNodeShards];
-    Mutex index_mu_;
-    absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
-  };
-
-  static std::unique_ptr<NodeMapInterface> MakeNodeMap();
 
   // Returned the singleton instance of ChannelzRegistry;
   static ChannelzRegistry* Default();
 
   // globally registers an Entry. Returns its unique uuid
-  void InternalRegister(BaseNode* node) { node_map_->Register(node); }
+  void InternalRegister(BaseNode* node);
 
   // globally unregisters the object that is associated to uuid. Also does
   // sanity check that an object doesn't try to unregister the wrong type.
-  void InternalUnregister(BaseNode* node) { node_map_->Unregister(node); }
+  void InternalUnregister(BaseNode* node);
 
-  intptr_t InternalNumberNode(BaseNode* node) {
-    return node_map_->NumberNode(node);
-  }
+  intptr_t InternalNumberNode(BaseNode* node);
 
   // if object with uuid has previously been registered as the correct type,
   // returns the void* associated with that uuid. Else returns nullptr.
-  WeakRefCountedPtr<BaseNode> InternalGet(intptr_t uuid) {
-    return node_map_->GetNode(uuid);
-  }
+  WeakRefCountedPtr<BaseNode> InternalGet(intptr_t uuid);
+
+  // Generic query over nodes.
+  // This function takes care of all the gnarly locking, and allows high level
+  // code to request a start node and maximum number of results (for pagination
+  // purposes).
+  // `discriminator` allows callers to choose which nodes will be returned - if
+  // it returns true, the node is included in the result.
+  // `discriminator` *MUST NOT* ref the node, nor call into ChannelzRegistry via
+  // any code path (locks are held during the call).
+  std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool> QueryNodes(
+      intptr_t start_node,
+      absl::FunctionRef<bool(const BaseNode*)> discriminator,
+      size_t max_results);
 
   std::tuple<std::vector<WeakRefCountedPtr<BaseNode>>, bool>
   InternalGetChildrenOfType(intptr_t start_node, const BaseNode* parent,
                             BaseNode::EntityType type, size_t max_results) {
-    return node_map_->QueryNodes(
+    return QueryNodes(
         start_node,
         [type, parent](const BaseNode* n) {
           return n->type() == type && n->HasParent(parent);
@@ -247,7 +224,7 @@ class ChannelzRegistry final {
       intptr_t start_id) {
     const int kPaginationLimit = 100;
     std::vector<WeakRefCountedPtr<T>> top_level_channels;
-    const auto [nodes, end] = node_map_->QueryNodes(
+    const auto [nodes, end] = QueryNodes(
         start_id,
         [](const BaseNode* node) { return node->type() == entity_type; },
         kPaginationLimit);
@@ -260,7 +237,16 @@ class ChannelzRegistry final {
   void InternalLogAllEntities();
   std::vector<WeakRefCountedPtr<BaseNode>> InternalGetAllEntities();
 
-  std::unique_ptr<NodeMapInterface> node_map_;
+  static constexpr size_t kNodeShards = 63;
+  size_t NodeShardIndex(BaseNode* node) {
+    return absl::HashOf(node) % kNodeShards;
+  }
+
+  int64_t uuid_generator_{1};
+  std::vector<NodeShard> node_shards_{kNodeShards};
+  Mutex index_mu_;
+  absl::btree_map<intptr_t, BaseNode*> index_ ABSL_GUARDED_BY(index_mu_);
+  size_t max_orphaned_per_shard_;
 };
 
 // `additionalInfo` section is not yet in the protobuf format, so we
