@@ -70,7 +70,8 @@ DNSResolver::TaskHandle NativeDNSResolver::LookupHostname(
     absl::string_view name, absl::string_view default_port,
     Duration /* timeout */, grpc_pollset_set* /* interested_parties */,
     absl::string_view /* name_server */) {
-  engine()->Run([on_done = std::move(on_done), name, default_port]() {
+  engine()->Run([on_done = std::move(on_done), name = std::string(name),
+                 default_port = std::string(default_port)]() {
     ExecCtx exec_ctx;
     auto result = GetDNSResolver()->LookupHostnameBlocking(name, default_port);
     on_done(std::move(result));
