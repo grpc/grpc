@@ -58,7 +58,9 @@ class WritableStreamList {
   // 2. Enough stream level flow control
   // 3. Data to be written
 
-  // *Maybe* One list to hold list of RST_STREAMS
+  // *Maybe* One list to hold list of streams reset by peer
+  // *Maybe* One list to hold list of streams reset by us
+  // Or *Maybe* One common list for both the above
 };
 
 }  // namespace http2
