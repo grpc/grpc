@@ -143,13 +143,13 @@ struct SeqState<Traits, P, F0> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.current_promise);
+      step0["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(current_promise);
+      step1["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     obj["steps"] = Json::FromArray(steps);
@@ -290,19 +290,19 @@ struct SeqState<Traits, P, F0, F1> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.prior.current_promise);
+      step0["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.current_promise);
+      step1["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(current_promise);
+      step2["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     obj["steps"] = Json::FromArray(steps);
@@ -493,25 +493,25 @@ struct SeqState<Traits, P, F0, F1, F2> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step0["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.prior.current_promise);
+      step1["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.current_promise);
+      step2["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(current_promise);
+      step3["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     obj["steps"] = Json::FromArray(steps);
@@ -751,31 +751,32 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step1["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.prior.current_promise);
+      step2["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(prior.current_promise);
+      step3["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(current_promise);
+      step4["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     obj["steps"] = Json::FromArray(steps);
@@ -1073,38 +1074,39 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] =
+      step0["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step2["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(prior.prior.current_promise);
+      step3["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(prior.current_promise);
+      step4["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(current_promise);
+      step5["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     obj["steps"] = Json::FromArray(steps);
@@ -1457,45 +1459,46 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] =
+      step0["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] =
+      step1["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step3["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(prior.prior.current_promise);
+      step4["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(prior.current_promise);
+      step5["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] = PromiseAsJson(current_promise);
+      step6["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     obj["steps"] = Json::FromArray(steps);
@@ -1904,52 +1907,53 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(
+      step0["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] =
+      step1["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] =
+      step2["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step4["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(prior.prior.current_promise);
+      step5["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] = PromiseAsJson(prior.current_promise);
+      step6["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] = PromiseAsJson(current_promise);
+      step7["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     obj["steps"] = Json::FromArray(steps);
@@ -2413,59 +2417,60 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(
+      step0["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(
+      step1["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] =
+      step2["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] =
+      step3["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step4["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step5["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] = PromiseAsJson(prior.prior.current_promise);
+      step6["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] = PromiseAsJson(prior.current_promise);
+      step7["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     Json::Object step8;
     step8["type"] = Json::FromString(std::string(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["state"] = PromiseAsJson(current_promise);
+      step8["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step8));
     obj["steps"] = Json::FromArray(steps);
@@ -2992,66 +2997,68 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.current_promise);
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(
+      step1["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(
+      step2["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] =
+      step3["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] =
+      step4["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step5["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step6["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] = PromiseAsJson(prior.prior.current_promise);
+      step7["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     Json::Object step8;
     step8["type"] = Json::FromString(std::string(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["state"] = PromiseAsJson(prior.current_promise);
+      step8["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step8));
     Json::Object step9;
     step9["type"] = Json::FromString(std::string(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["state"] = PromiseAsJson(current_promise);
+      step9["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step9));
     obj["steps"] = Json::FromArray(steps);
@@ -3640,73 +3647,76 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.prior.current_promise);
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.current_promise);
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(
+      step2["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(
+      step3["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] =
+      step4["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] =
+      step5["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step6["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step7["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     Json::Object step8;
     step8["type"] = Json::FromString(std::string(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["state"] = PromiseAsJson(prior.prior.current_promise);
+      step8["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step8));
     Json::Object step9;
     step9["type"] = Json::FromString(std::string(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["state"] = PromiseAsJson(prior.current_promise);
+      step9["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step9));
     Json::Object step10;
     step10["type"] = Json::FromString(std::string(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["state"] = PromiseAsJson(current_promise);
+      step10["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step10));
     obj["steps"] = Json::FromArray(steps);
@@ -4358,7 +4368,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] =
+      step0["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.current_promise);
     }
@@ -4366,73 +4376,76 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.prior.current_promise);
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step1));
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.current_promise);
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(
+      step3["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(
+      step4["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] =
+      step5["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] =
+      step6["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step7["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     Json::Object step8;
     step8["type"] = Json::FromString(std::string(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step8["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step8));
     Json::Object step9;
     step9["type"] = Json::FromString(std::string(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["state"] = PromiseAsJson(prior.prior.current_promise);
+      step9["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step9));
     Json::Object step10;
     step10["type"] = Json::FromString(std::string(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["state"] = PromiseAsJson(prior.current_promise);
+      step10["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step10));
     Json::Object step11;
     step11["type"] = Json::FromString(std::string(TypeName<F10>()));
     if (state == State::kState11) {
-      step11["state"] = PromiseAsJson(current_promise);
+      step11["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step11));
     obj["steps"] = Json::FromArray(steps);
@@ -5150,7 +5163,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] =
+      step0["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.prior.current_promise);
     }
@@ -5158,7 +5171,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
     Json::Object step1;
     step1["type"] = Json::FromString(std::string(TypeName<F0>()));
     if (state == State::kState1) {
-      step1["state"] =
+      step1["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
                             .prior.prior.current_promise);
     }
@@ -5166,73 +5179,76 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
     Json::Object step2;
     step2["type"] = Json::FromString(std::string(TypeName<F1>()));
     if (state == State::kState2) {
-      step2["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.prior.current_promise);
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step2));
     Json::Object step3;
     step3["type"] = Json::FromString(std::string(TypeName<F2>()));
     if (state == State::kState3) {
-      step3["state"] = PromiseAsJson(prior.prior.prior.prior.prior.prior.prior
-                                         .prior.prior.current_promise);
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
     }
     steps.emplace_back(Json::FromObject(step3));
     Json::Object step4;
     step4["type"] = Json::FromString(std::string(TypeName<F3>()));
     if (state == State::kState4) {
-      step4["state"] = PromiseAsJson(
+      step4["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step4));
     Json::Object step5;
     step5["type"] = Json::FromString(std::string(TypeName<F4>()));
     if (state == State::kState5) {
-      step5["state"] = PromiseAsJson(
+      step5["polling_state"] = PromiseAsJson(
           prior.prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step5));
     Json::Object step6;
     step6["type"] = Json::FromString(std::string(TypeName<F5>()));
     if (state == State::kState6) {
-      step6["state"] =
+      step6["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step6));
     Json::Object step7;
     step7["type"] = Json::FromString(std::string(TypeName<F6>()));
     if (state == State::kState7) {
-      step7["state"] =
+      step7["polling_state"] =
           PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step7));
     Json::Object step8;
     step8["type"] = Json::FromString(std::string(TypeName<F7>()));
     if (state == State::kState8) {
-      step8["state"] = PromiseAsJson(prior.prior.prior.prior.current_promise);
+      step8["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step8));
     Json::Object step9;
     step9["type"] = Json::FromString(std::string(TypeName<F8>()));
     if (state == State::kState9) {
-      step9["state"] = PromiseAsJson(prior.prior.prior.current_promise);
+      step9["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step9));
     Json::Object step10;
     step10["type"] = Json::FromString(std::string(TypeName<F9>()));
     if (state == State::kState10) {
-      step10["state"] = PromiseAsJson(prior.prior.current_promise);
+      step10["polling_state"] = PromiseAsJson(prior.prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step10));
     Json::Object step11;
     step11["type"] = Json::FromString(std::string(TypeName<F10>()));
     if (state == State::kState11) {
-      step11["state"] = PromiseAsJson(prior.current_promise);
+      step11["polling_state"] = PromiseAsJson(prior.current_promise);
     }
     steps.emplace_back(Json::FromObject(step11));
     Json::Object step12;
     step12["type"] = Json::FromString(std::string(TypeName<F11>()));
     if (state == State::kState12) {
-      step12["state"] = PromiseAsJson(current_promise);
+      step12["polling_state"] = PromiseAsJson(current_promise);
     }
     steps.emplace_back(Json::FromObject(step12));
     obj["steps"] = Json::FromArray(steps);

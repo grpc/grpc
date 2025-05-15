@@ -323,9 +323,9 @@ TEST(SeqTest, ToJson) {
       Json::Object step = steps[i].object();
       EXPECT_EQ(step.count("type"), 1);
       if (i == current_step) {
-        EXPECT_EQ(step.count("state"), 1);
+        EXPECT_EQ(step.count("polling_state"), 1);
       } else {
-        EXPECT_EQ(step.count("state"), 0);
+        EXPECT_EQ(step.count("polling_state"), 0);
       }
     }
   };

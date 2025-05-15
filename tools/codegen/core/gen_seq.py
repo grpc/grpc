@@ -132,14 +132,14 @@ tail${i}:
     Json::Object step0;
     step0["type"] = Json::FromString(std::string(TypeName<P>()));
     if (state == State::kState0) {
-      step0["state"] = PromiseAsJson(${"prior."*(n-1)}current_promise);
+      step0["polling_state"] = PromiseAsJson(${"prior."*(n-1)}current_promise);
     }
     steps.emplace_back(Json::FromObject(step0));
 % for i in range(1,n):
     Json::Object step${i};
     step${i}["type"] = Json::FromString(std::string(TypeName<F${i-1}>()));
     if (state == State::kState${i}) {
-      step${i}["state"] = PromiseAsJson(${"prior."*(n-1-i)}current_promise);
+      step${i}["polling_state"] = PromiseAsJson(${"prior."*(n-1-i)}current_promise);
     }
     steps.emplace_back(Json::FromObject(step${i}));
 % endfor
