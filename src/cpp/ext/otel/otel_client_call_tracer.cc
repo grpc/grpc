@@ -47,6 +47,7 @@
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
@@ -60,6 +61,30 @@
 
 namespace grpc {
 namespace internal {
+
+class OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    TcpCallTracer : public grpc_core::TcpCallTracer {
+ public:
+  explicit TcpCallTracer(
+      OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer*
+          call_attempt_tracer)
+      : call_attempt_tracer_(call_attempt_tracer) {}
+
+  void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
+                   absl::Time time, size_t byte_offset,
+                   std::vector<TcpEventMetric> metrics) override {
+    call_attempt_tracer_->RecordAnnotation(
+        absl::StrCat(
+            "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
+            " byte_offset=", byte_offset, " ",
+            grpc_core::TcpCallTracer::TcpEventMetricsToString(metrics)),
+        time);
+  }
+
+ private:
+  OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer*
+      call_attempt_tracer_;
+};
 
 //
 // OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer
@@ -286,6 +311,14 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
 void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
     RecordAnnotation(const Annotation& /*annotation*/) {
   // Not implemented
+}
+
+void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::
+    RecordAnnotation(absl::string_view annotation, absl::Time time) {
+  if (span_ != nullptr) {
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation),
+                    absl::ToChronoTime(time));
+  }
 }
 
 std::shared_ptr<grpc_core::TcpCallTracer> OpenTelemetryPluginImpl::

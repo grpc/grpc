@@ -356,8 +356,8 @@ const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArg
 
 const upb_MiniTable* envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init_ptr = &envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs_msg_init;
 static const upb_MiniTableField envoy_config_core_v3_GrpcService_GoogleGrpc_ChannelArgs_Value__fields[2] = {
-  {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
-  {2, UPB_SIZE(12, 16), -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
+  {1, 16, -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)},
+  {2, 16, -9, kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)},
 };
 
 const upb_MiniTable envoy__config__core__v3__GrpcService__GoogleGrpc__ChannelArgs__Value_msg_init = {

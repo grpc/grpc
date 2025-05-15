@@ -26,12 +26,20 @@
 #define GRPC_DEPRECATED(reason)
 #endif  // __cplusplus >= 201402L
 
+#ifndef GPR_DISABLE_ABSEIL_SYNC
 /*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
+ *
+ * You can opt for gRPC's native synchronization by enabling
+ * GPR_DISABLE_ABSEIL_SYNC. However, this flag is temporary and will be
+ * removed once the Abseil synchronization is stabilized.
+ * If you encounter any issues with this feature, please report them
+ * by filing a bug at https://github.com/grpc/grpc.
  */
 #ifndef GPR_ABSEIL_SYNC
 #define GPR_ABSEIL_SYNC 1
 #endif  // GPR_ABSEIL_SYNC
+#endif  // GPR_DISABLE_ABSEIL_SYNC
 
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
