@@ -1876,6 +1876,7 @@
     <file baseinstalldir="/" name="src/core/util/examine_stack.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/fork.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/function_signature.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/gcp_metadata_query.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/gethostname.h" role="src" />

@@ -846,8 +846,8 @@ grpc_cc_library(
     deps = [
         "poll",
         "//:gpr_platform",
-        "//src/core:json",
         "//src/core:function_signature",
+        "//src/core:json",
     ],
 )
 
@@ -1048,11 +1048,11 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_factory",
-        "//:promise",
         "promise_like",
         "//:debug_location",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise",
     ],
 )
 
@@ -9233,11 +9233,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "function_signature",
     hdrs = [
-        "util/function_signature.h"
+        "util/function_signature.h",
     ],
-    external_deps=[
+    external_deps = [
         "absl/strings",
-    ]
+    ],
 )
 
 grpc_cc_library(
