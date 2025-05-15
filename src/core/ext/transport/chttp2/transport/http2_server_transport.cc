@@ -83,6 +83,7 @@ void Http2ServerTransport::PerformOp(GRPC_UNUSED grpc_transport_op*) {
 void Http2ServerTransport::Orphan() {
   HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan Begin";
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
+  general_party_.reset();
   Unref();
   HTTP2_SERVER_DLOG << "Http2ServerTransport Orphan End";
 }
