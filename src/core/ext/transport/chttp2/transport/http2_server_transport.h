@@ -147,6 +147,14 @@ class Http2ServerTransport final : public ServerTransport {
     // TODO(akshitpatel) : [PH2][P1] : Implement this.
   }
 
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
   absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
     auto error_type = status.GetType();
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);

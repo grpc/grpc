@@ -299,10 +299,12 @@ auto Http2ServerTransport::ReadLoop() {
 
 auto Http2ServerTransport::OnReadLoopEnded() {
   HTTP2_SERVER_DLOG << "Http2ServerTransport OnReadLoopEnded Factory";
-  return [](absl::Status status) {
+  return [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_SERVER_DLOG << "Http2ServerTransport OnReadLoopEnded Promise Status="
                       << status;
+    auto error_status = self->HandleError(Http2Status::AbslConnectionError(
+        status.code(), std::string(status.message())));
   };
 }
 
@@ -328,10 +330,12 @@ auto Http2ServerTransport::WriteLoop() {
 
 auto Http2ServerTransport::OnWriteLoopEnded() {
   HTTP2_SERVER_DLOG << "Http2ServerTransport OnWriteLoopEnded Factory";
-  return [](absl::Status status) {
+  return [self = RefAsSubclass<Http2ServerTransport>()](absl::Status status) {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_SERVER_DLOG << "Http2ServerTransport OnWriteLoopEnded Promise Status="
                       << status;
+    auto error_status = self->HandleError(Http2Status::AbslConnectionError(
+        status.code(), std::string(status.message())));
   };
 }
 

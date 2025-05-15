@@ -422,22 +422,22 @@ TEST(ValueOrHttp2StatusTest, TakeStatusStreamTest) {
         Http2Status::AbslStreamError(absl::StatusCode::kCancelled, "Message1"));
   };
   ValueOrHttp2Status<std::string> result = test_lambda();
+  Http2Status status =
+      ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
 
   // 1. IsOk() is false
-  EXPECT_FALSE(result.IsOk());
+  EXPECT_FALSE(status.IsOk());
 
   // 2. Http2ErrorType
-  EXPECT_EQ(result.GetErrorType(), Http2Status::Http2ErrorType::kStreamError);
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kStreamError);
 
   // 3. Http2ErrorCode
-  EXPECT_EQ(result.GetStreamErrorCode(), Http2ErrorCode::kInternalError);
+  EXPECT_EQ(status.GetStreamErrorCode(), Http2ErrorCode::kInternalError);
   ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code2 = result.GetConnectionErrorCode(); },
+      { GRPC_UNUSED Http2ErrorCode code2 = status.GetConnectionErrorCode(); },
       "");
 
   // 4. Absl status
-  Http2Status status =
-      ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
   absl::Status absl_status = status.GetAbslStreamError();
   EXPECT_FALSE(absl_status.ok());
   EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
@@ -449,25 +449,35 @@ TEST(ValueOrHttp2StatusTest, TakeStatusConnectionTest) {
         absl::StatusCode::kCancelled, "Message1"));
   };
   ValueOrHttp2Status<std::string> result = test_lambda();
-
-  // 1. IsOk() is false
-  EXPECT_FALSE(result.IsOk());
-
-  // 2. Http2ErrorType
-  EXPECT_EQ(result.GetErrorType(),
-            Http2Status::Http2ErrorType::kConnectionError);
-
-  // 3. Http2ErrorCode
-  EXPECT_EQ(result.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
-  ASSERT_DEATH(
-      { GRPC_UNUSED Http2ErrorCode code2 = result.GetStreamErrorCode(); }, "");
-
-  // 4. Absl status
   Http2Status status =
       ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
+
+  // 1. IsOk() is false
+  EXPECT_FALSE(status.IsOk());
+
+  // 2. Http2ErrorType
+  EXPECT_EQ(status.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+
+  // 3. Http2ErrorCode
+  EXPECT_EQ(status.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+  ASSERT_DEATH(
+      { GRPC_UNUSED Http2ErrorCode code2 = status.GetStreamErrorCode(); }, "");
+
+  // 4. Absl status
   absl::Status absl_status = status.GetAbslConnectionError();
   EXPECT_FALSE(absl_status.ok());
   EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
+}
+
+TEST(ValueOrHttp2StatusTest, TakeStatusOkTest) {
+  ValueOrHttp2Status<std::string> result = std::string("Message");
+
+  ASSERT_DEATH(
+      {
+        Http2Status status =
+            ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
+      },
+      "");
 }
 
 }  // namespace testing

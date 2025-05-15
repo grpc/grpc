@@ -84,7 +84,7 @@ void Http2ClientTransport::AbortWithError() {
 ///////////////////////////////////////////////////////////////////////////////
 // Promise factory for processing each type of frame
 
-auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : Implement this.
@@ -95,7 +95,8 @@ auto Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
+    Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : Implement this.
@@ -107,7 +108,7 @@ auto Http2ClientTransport::ProcessHttp2HeaderFrame(Http2HeaderFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
+Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
     Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
@@ -118,7 +119,8 @@ auto Http2ClientTransport::ProcessHttp2RstStreamFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
+    Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : Implement this.
@@ -130,7 +132,7 @@ auto Http2ClientTransport::ProcessHttp2SettingsFrame(Http2SettingsFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : Implement this.
@@ -139,7 +141,8 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
+    Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
   // TODO(tjagtap) : [PH2][P1] : Implement this.
@@ -152,7 +155,7 @@ auto Http2ClientTransport::ProcessHttp2GoawayFrame(Http2GoawayFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
+Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
     Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_TRANSPORT_DLOG
@@ -165,7 +168,7 @@ auto Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2ContinuationFrame(
+Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     Http2ContinuationFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   HTTP2_TRANSPORT_DLOG
@@ -179,7 +182,8 @@ auto Http2ClientTransport::ProcessHttp2ContinuationFrame(
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
+Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
+    Http2SecurityFrame frame) {
   // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
@@ -189,7 +193,7 @@ auto Http2ClientTransport::ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
   return Http2Status::Ok();
 }
 
-auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
+Http2Status Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<Http2Status>(MatchPromise(
       std::move(frame),
