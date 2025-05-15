@@ -16,14 +16,14 @@
 set -x
 set +e
 
-apt-get update && apt-get install -y libcap
+apt-get update && apt-get install -y libcap2-bin
 
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
 echo "Current dir ${PWD}"
 
-cd "examples/cpp" || exit 1
+pushd "examples/cpp" || exit 1
 
 SERVER_PID=
 
@@ -177,6 +177,8 @@ for example in "${EXAMPLES[@]}"; do
     clean
 done
 
+popd # go back to root
+
 # For linux we use secure_getenv to read env variable
 # this return null if linux capabilites are added on the executable
 # For customer using linux capability , they need to define "--define GRPC_FORCE_UNSECURE_GETENV=1"
@@ -186,7 +188,7 @@ export GRPC_TRACE=http
 # Build using the define to force "getenv" instead of "secure_getenv"
 bazel build  --define GRPC_FORCE_UNSECURE_GETENV=1 //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
-setcap cap_net_admin+ep ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
+setcap "cap_net_admin+ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 output_log=$(./bazel-bin/examples/cpp/helloworld/greeter_callback_client 2>&1)
 # check if logs got enabled
 if [[ ! "$output_log" =~ "gRPC Tracers:" ]]; then
@@ -195,7 +197,7 @@ fi
 # Build without the define , this will use secure_getenv
 bazel build  //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
-setcap cap_net_admin+ep ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
+setcap "cap_net_admin+ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 output_log=$(./bazel-bin/examples/cpp/helloworld/greeter_callback_client 2>&1)
 # We should not see log get enabled as secure_getenv will return null in this case
 if [[ "$output_log" =~ "gRPC Tracers:" ]]; then
