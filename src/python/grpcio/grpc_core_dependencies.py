@@ -584,7 +584,6 @@ CORE_SOURCE_FILES = [
     'src/core/lib/iomgr/event_engine_shims/endpoint.cc',
     'src/core/lib/iomgr/event_engine_shims/tcp_client.cc',
     'src/core/lib/iomgr/exec_ctx.cc',
-    'src/core/lib/iomgr/executor.cc',
     'src/core/lib/iomgr/fork_posix.cc',
     'src/core/lib/iomgr/fork_windows.cc',
     'src/core/lib/iomgr/internal_errqueue.cc',

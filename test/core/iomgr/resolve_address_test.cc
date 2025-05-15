@@ -32,18 +32,12 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
-#include "test/cpp/util/test_config.h"
 
 namespace {
 
