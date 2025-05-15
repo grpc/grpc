@@ -303,8 +303,9 @@ auto Http2ServerTransport::OnReadLoopEnded() {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_SERVER_DLOG << "Http2ServerTransport OnReadLoopEnded Promise Status="
                       << status;
-    auto error_status = self->HandleError(Http2Status::AbslConnectionError(
-        status.code(), std::string(status.message())));
+    GRPC_UNUSED absl::Status error_status =
+        self->HandleError(Http2Status::AbslConnectionError(
+            status.code(), std::string(status.message())));
   };
 }
 
@@ -334,8 +335,9 @@ auto Http2ServerTransport::OnWriteLoopEnded() {
     // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_SERVER_DLOG << "Http2ServerTransport OnWriteLoopEnded Promise Status="
                       << status;
-    auto error_status = self->HandleError(Http2Status::AbslConnectionError(
-        status.code(), std::string(status.message())));
+    GRPC_UNUSED absl::Status error_status =
+        self->HandleError(Http2Status::AbslConnectionError(
+            status.code(), std::string(status.message())));
   };
 }
 
