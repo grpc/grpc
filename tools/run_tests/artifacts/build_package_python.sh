@@ -25,7 +25,7 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
     -maxdepth 1 \
     -type d \
     -name "${ARTIFACT_PREFIX}*" \
-    ! -name "${EXCLUDE_PREFIX}" \
+    ! -name "${EXCLUDE_PREFIX}*" \
     -exec sh -c '
         cp -r "$1"/* artifacts/ || true
     ' sh {} \;
