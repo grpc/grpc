@@ -7292,10 +7292,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_tracer",
+    srcs = [
+        "//src/core:telemetry/tcp_tracer.cc",
+    ],
     hdrs = [
         "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
+        "absl/strings",
         "absl/time",
     ],
     visibility = ["//bazel:tcp_tracer"],
@@ -9693,7 +9697,13 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "load_file",
         "status_helper",
+        "//:tsi_ssl_credentials",
     ],
 )
 

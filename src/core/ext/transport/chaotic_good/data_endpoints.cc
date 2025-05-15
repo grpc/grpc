@@ -510,12 +510,12 @@ auto Endpoint::WriteLoop(uint32_t id,
                  EventEngine::Endpoint::WriteEvent::kScheduled,
                  EventEngine::Endpoint::WriteEvent::kAcked},
                 [data_rate_metric, id, output_buffers, ztrace_collector,
-                 endpoint](
+                 endpoint = endpoint.get()](
                     EventEngine::Endpoint::WriteEvent event,
                     absl::Time timestamp,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
                   ztrace_collector->Append([event, timestamp, &metrics,
-                                            endpoint = endpoint.get()]() {
+                                            endpoint]() {
                     EndpointWriteMetricsTrace trace{timestamp, event, {}};
                     trace.metrics.reserve(metrics.size());
                     for (const auto [id, value] : metrics) {

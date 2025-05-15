@@ -39,7 +39,6 @@ extern "C" {
 typedef struct envoy_config_rbac_v3_RBAC { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_RBAC;
 typedef struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_RBAC_AuditLoggingOptions;
 typedef struct envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig;
-typedef struct envoy_config_rbac_v3_RBAC_PoliciesEntry { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_RBAC_PoliciesEntry;
 typedef struct envoy_config_rbac_v3_Policy { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_Policy;
 typedef struct envoy_config_rbac_v3_SourcedMetadata { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_SourcedMetadata;
 typedef struct envoy_config_rbac_v3_Permission { upb_Message UPB_PRIVATE(base); } envoy_config_rbac_v3_Permission;
@@ -432,27 +431,6 @@ UPB_INLINE void envoy_config_rbac_v3_RBAC_AuditLoggingOptions_AuditLoggerConfig_
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
 }
 
-/* envoy.config.rbac.v3.RBAC.PoliciesEntry */
-
-UPB_INLINE upb_StringView envoy_config_rbac_v3_RBAC_PoliciesEntry_key(const envoy_config_rbac_v3_RBAC_PoliciesEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const envoy_config_rbac_v3_Policy* envoy_config_rbac_v3_RBAC_PoliciesEntry_value(const envoy_config_rbac_v3_RBAC_PoliciesEntry* msg) {
-  envoy_config_rbac_v3_Policy* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_config_rbac_v3_RBAC_PoliciesEntry_has_value(const envoy_config_rbac_v3_RBAC_PoliciesEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_config_rbac_v3_RBAC_PoliciesEntry_set_value(envoy_config_rbac_v3_RBAC_PoliciesEntry *msg, envoy_config_rbac_v3_Policy* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(envoy_config_rbac_v3_Policy*));
-}
-
 /* envoy.config.rbac.v3.Policy */
 
 UPB_INLINE envoy_config_rbac_v3_Policy* envoy_config_rbac_v3_Policy_new(upb_Arena* arena) {
@@ -826,6 +804,10 @@ UPB_INLINE envoy_config_rbac_v3_Permission_rule_oneofcases envoy_config_rbac_v3_
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_rbac_v3_Permission_rule_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_rbac_v3_Permission_clear_rule(envoy_config_rbac_v3_Permission* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__rbac__v3__Permission_msg_init, &field);
 }
 UPB_INLINE void envoy_config_rbac_v3_Permission_clear_and_rules(envoy_config_rbac_v3_Permission* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
@@ -1390,6 +1372,10 @@ UPB_INLINE envoy_config_rbac_v3_Principal_identifier_oneofcases envoy_config_rba
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_rbac_v3_Principal_identifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_rbac_v3_Principal_clear_identifier(envoy_config_rbac_v3_Principal* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__rbac__v3__Principal_msg_init, &field);
 }
 UPB_INLINE void envoy_config_rbac_v3_Principal_clear_and_ids(envoy_config_rbac_v3_Principal* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

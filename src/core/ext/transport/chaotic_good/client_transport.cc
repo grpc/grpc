@@ -119,7 +119,8 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
     IncomingFrame incoming_frame) {
   auto stream = LookupStream(incoming_frame.header().stream_id);
   if (stream == nullptr) return;
-  stream->frame_dispatch_serializer->Spawn(
+  auto dispatcher = stream->frame_dispatch_serializer;
+  dispatcher->Spawn(
       [stream = std::move(stream),
        incoming_frame = std::move(incoming_frame)]() mutable {
         return Map(stream->call.CancelIfFails(TrySeq(

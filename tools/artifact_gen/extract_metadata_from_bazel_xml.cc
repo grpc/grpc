@@ -451,7 +451,7 @@ class ArtifactGen {
       bazel_rule.deps = {
           "@com_google_protobuf//upb:descriptor_upb_proto",
           "@com_google_protobuf//"
-          "upb:generated_code_support__only_for_generated_code_do_not_use__i_"
+          "upb:generated_code_support"
           "give_permission_to_break_me",
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers

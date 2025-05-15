@@ -86,8 +86,6 @@
   default: false
 - name: server_global_callbacks_ownership
   default: false
-- name: shard_channelz_index
-  default: true
 - name: shard_global_connection_pool
   default: true
 - name: sleep_promise_exec_ctx_removal

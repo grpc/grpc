@@ -34,6 +34,9 @@
 namespace grpc_core {
 namespace http2 {
 
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// assembler and disassembler code
+
 constexpr uint32_t kOneGb = (1024u * 1024u * 1024u);
 
 // For the mapping of gRPC Messages to Http2DataFrame, we can have
@@ -55,7 +58,8 @@ class GrpcMessageAssembler {
            "frame does not make sense.";
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) == 4) {
-      if (message_buffer_.Length() >= UINT32_MAX - payload.Length()) {
+      if (GPR_UNLIKELY(message_buffer_.Length() >=
+                       UINT32_MAX - payload.Length())) {
         // STREAM_ERROR
         return absl::Status(
             absl::StatusCode::kInternal,
@@ -71,19 +75,20 @@ class GrpcMessageAssembler {
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
   absl::StatusOr<MessageHandle> ExtractMessage() {
-    if (message_buffer_.Length() < kGrpcHeaderSizeInBytes) {
+    const size_t current_len = message_buffer_.Length();
+    if (current_len < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) == 4) {
-      if (header.length > kOneGb) {
+      if (GPR_UNLIKELY(header.length > kOneGb)) {
         // STREAM_ERROR
         return absl::Status(
             absl::StatusCode::kInternal,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
-    if (message_buffer_.Length() - kGrpcHeaderSizeInBytes >= header.length) {
+    if (GPR_LIKELY(current_len - kGrpcHeaderSizeInBytes >= header.length)) {
       SliceBuffer discard;
       message_buffer_.MoveFirstNBytesIntoSliceBuffer(kGrpcHeaderSizeInBytes,
                                                      discard);
@@ -105,7 +110,7 @@ class GrpcMessageAssembler {
  private:
   absl::StatusOr<MessageHandle> ReturnNullOrError() {
     // TODO(tjagtap) : [PH2][P1] Replace with Http2StatusOr when that PR lands
-    if (is_end_stream_ && message_buffer_.Length() > 0) {
+    if (GPR_UNLIKELY(is_end_stream_ && message_buffer_.Length() > 0)) {
       return absl::InternalError("Incomplete gRPC frame received");
     }
     return nullptr;

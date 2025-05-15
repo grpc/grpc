@@ -21,6 +21,7 @@ syntax = "proto3";
 package grpc.testing;
 
 message FuzzConfigVars {
+  optional int32 channelz_max_orphaned_nodes = 475973073;
   optional bool enable_fork_support = 61008869;
   optional string dns_resolver = 76817901;
   optional string verbosity = 68420950;
