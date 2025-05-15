@@ -20,6 +20,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -225,6 +226,46 @@ TEST(SeqTest, ThreeThens) {
             return [i, y = std::make_unique<int>(4)]() { return i + "d"; };
           })(),
       Poll<std::string>("abcd"));
+}
+
+TEST(SeqTest, ToJson) {
+  auto x = Seq([]() { return 42; },
+               [polled = false](int i) mutable -> Poll<int> {
+                 if (!polled) {
+                   polled = true;
+                   return Pending{};
+                 }
+                 return i + 1;
+               },
+               [](int i) { return i; });
+  EXPECT_TRUE(promise_detail::kHasToJsonMethod<decltype(x)>)
+      << TypeName<decltype(x)>();
+  auto validate_json = [](const Json& js, int current_step) {
+    LOG(INFO) << JsonDump(js);
+    ASSERT_EQ(js.type(), Json::Type::kObject);
+    Json::Object obj = js.object();
+    EXPECT_EQ(obj.count("seq_type"), 1);
+    EXPECT_EQ(obj["seq_type"], Json::FromString("Seq"));
+    EXPECT_EQ(obj.count("steps"), 1);
+    ASSERT_EQ(obj["steps"].type(), Json::Type::kArray);
+    auto steps = obj["steps"].array();
+    EXPECT_EQ(steps.size(), 3);
+    for (int i = 0; i < 3; i++) {
+      EXPECT_EQ(steps[i].type(), Json::Type::kObject);
+      Json::Object step = steps[i].object();
+      EXPECT_EQ(step.count("type"), 1);
+      if (i == current_step) {
+        EXPECT_EQ(step.count("state"), 1);
+      } else {
+        EXPECT_EQ(step.count("state"), 0);
+      }
+    }
+  };
+  validate_json(PromiseAsJson(x), 0);
+  x();
+  validate_json(PromiseAsJson(x), 1);
+  x();
+  validate_json(PromiseAsJson(x), 2);
 }
 
 struct Big {

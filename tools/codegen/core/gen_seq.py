@@ -121,6 +121,31 @@ tail${i}:
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] = Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(${n});
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["state"] = PromiseAsJson(${"prior."*(n-1)}current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+% for i in range(1,n):
+    Json::Object step${i};
+    step${i}["type"] = Json::FromString(std::string(TypeName<F${i-1}>()));
+    if (state == State::kState${i}) {
+      step${i}["state"] = PromiseAsJson(${"prior."*(n-1-i)}current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step${i}));
+% endfor
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
 % for i in range(0,n-1):
@@ -188,6 +213,8 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/json/json.h"
+#include "src/core/lib/promise/promise.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
