@@ -197,7 +197,6 @@ class Http2ClientTransport final : public ClientTransport {
     const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
-    GrpcMessageDisassembler disassembler;
     HeaderAssembler header_assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
