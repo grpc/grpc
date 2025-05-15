@@ -38,6 +38,10 @@
 
 namespace grpc_core {
 
+// Debug helper function to extract a string type name from a C++ type.
+// This is absolutely best effort and certainly doesn't actually work on some
+// platforms. Do not use this for actual functionality, but it's super useful
+// for exporting debug/trace information.
 template <typename T>
 static constexpr inline absl::string_view TypeName() {
 #if defined(__clang__)
