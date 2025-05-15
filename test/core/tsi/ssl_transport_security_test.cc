@@ -380,8 +380,17 @@ class SslTransportSecurityTest
       if (alpn_lib->alpn_mode == ALPN_SERVER_NO_CLIENT ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_OK ||
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
-        server_options.alpn_protocols = alpn_lib->server_alpn_protocols;
-        server_options.num_alpn_protocols = alpn_lib->num_server_alpn_protocols;
+        if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
+          size_t num_parsed_protocols = 0;
+          server_options.alpn_protocols = ParseALPNStringIntoArray(
+              ssl_fixture->alpn_server_overriden_protocols_.value(),
+              static_cast<size_t*>(&num_parsed_protocols));
+          server_options.num_alpn_protocols = num_parsed_protocols;
+        } else {
+          server_options.alpn_protocols = alpn_lib->server_alpn_protocols;
+          server_options.num_alpn_protocols =
+              alpn_lib->num_server_alpn_protocols;
+        }
         if (alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
           server_options.num_alpn_protocols--;
         }
@@ -418,6 +427,14 @@ class SslTransportSecurityTest
       ASSERT_EQ(tsi_create_ssl_server_handshaker_factory_with_options(
                     &server_options, &ssl_fixture->server_handshaker_factory_),
                 TSI_OK);
+      if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
+        // Free memory from creating the server protocol list if
+        // ParseALPNStringIntoArray was used.
+        for (size_t i = 0; i < server_options.num_alpn_protocols; i++) {
+          gpr_free(const_cast<char*>(server_options.alpn_protocols[i]));
+        }
+        gpr_free(server_options.alpn_protocols);
+      }
       // Create server and client handshakers.
       ASSERT_EQ(tsi_ssl_client_handshaker_factory_create_handshaker(
                     ssl_fixture->client_handshaker_factory_,
@@ -431,7 +448,6 @@ class SslTransportSecurityTest
                     ssl_fixture->server_handshaker_factory_,
                     ssl_fixture->network_bio_buf_size_,
                     ssl_fixture->ssl_bio_buf_size_,
-                    ssl_fixture->alpn_server_overriden_protocols_,
                     &ssl_fixture->base_.server_handshaker),
                 TSI_OK);
     }
@@ -1252,11 +1268,9 @@ TEST(SslTransportSecurityTest, TestServerHandshakerFactoryRefcounting) {
       &test_handshaker_factory_vtable);
 
   for (i = 0; i < 3; ++i) {
-    ASSERT_EQ(
-        tsi_ssl_server_handshaker_factory_create_handshaker(
-            server_handshaker_factory, 0, 0,
-            /*alpn_preferred_protocol_list=*/std::nullopt, &handshaker[i]),
-        TSI_OK);
+    ASSERT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
+                  server_handshaker_factory, 0, 0, &handshaker[i]),
+              TSI_OK);
   }
 
   tsi_handshaker_destroy(handshaker[1]);

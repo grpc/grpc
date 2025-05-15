@@ -77,6 +77,11 @@ tsi_tls_version grpc_get_tsi_tls_version(grpc_tls_version tls_version);
 // Return an array of strings containing alpn protocols.
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 
+// Parse a list of comma-separated protocol names into a const char** struct
+// that can be injected into the handshaker factory options.
+const char** ParseALPNStringIntoArray(std::string preferred_protocols,
+                                      size_t* num_alpn_protocols);
+
 // Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,

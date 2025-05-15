@@ -400,9 +400,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 //  where a parameter is invalid.
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size,
-    std::optional<std::string> alpn_preferred_protocol_list,
-    tsi_handshaker** handshaker);
+    size_t ssl_bio_buf_size, tsi_handshaker** handshaker);
 
 // Decrements reference count of the handshaker factory. Handshaker factory will
 // be destroyed once no references exist.

@@ -200,6 +200,24 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   return alpn_protocol_strings;
 }
 
+const char** ParseALPNStringIntoArray(std::string preferred_protocols_raw,
+                                      size_t* num_alpn_protocols) {
+  CHECK_NE(num_alpn_protocols, nullptr);
+  std::vector<std::string> preferred_protocols;
+  preferred_protocols =
+      absl::StrSplit(preferred_protocols_raw, ',', absl::SkipWhitespace());
+  *num_alpn_protocols = preferred_protocols.size();
+  const char** alpn_protocol_strings = nullptr;
+  if (*num_alpn_protocols != 0) {
+    alpn_protocol_strings = static_cast<const char**>(
+        gpr_malloc(sizeof(const char*) * (*num_alpn_protocols)));
+    for (size_t i = 0; i < *num_alpn_protocols; i++) {
+      alpn_protocol_strings[i] = gpr_strdup(preferred_protocols[i].c_str());
+    }
+  }
+  return alpn_protocol_strings;
+}
+
 int grpc_ssl_host_matches_name(const tsi_peer* peer,
                                absl::string_view peer_name) {
   absl::string_view allocated_name;

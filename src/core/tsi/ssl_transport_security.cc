@@ -61,6 +61,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_crl_provider.h"
+#include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
@@ -139,8 +140,6 @@ struct tsi_ssl_handshaker {
   tsi_result result;
   unsigned char* outgoing_bytes_buffer;
   size_t outgoing_bytes_buffer_size;
-  unsigned char* preferred_protocol_byte_list;
-  size_t preferred_protocol_byte_list_length;
   tsi_ssl_handshaker_factory* factory_ref;
 };
 struct tsi_ssl_handshaker_result {
@@ -235,18 +234,15 @@ int SelectProtocolListServerSideFirst(const unsigned char** negotiated_protocol,
 }
 
 #if TSI_OPENSSL_ALPN_SUPPORT
-int ServerHandshakerAlpnCallback(
-    SSL* /*ssl*/, const unsigned char** negotiated_protocol,
-    unsigned char* negotiated_protocol_len,
-    const unsigned char* client_preferred_protocol_list,
-    unsigned int client_preferred_protocol_list_len, void* arg) {
-  tsi_ssl_handshaker* handshaker = static_cast<tsi_ssl_handshaker*>(arg);
-
-  return SelectProtocolListServerSideFirst(
-      negotiated_protocol, negotiated_protocol_len,
-      client_preferred_protocol_list, client_preferred_protocol_list_len,
-      handshaker->preferred_protocol_byte_list,
-      handshaker->preferred_protocol_byte_list_length);
+int ServerHandshakerFactoryAlpnCallback(SSL* /*ssl*/, const unsigned char** out,
+                                        unsigned char* outlen,
+                                        const unsigned char* in,
+                                        unsigned int inlen, void* arg) {
+  tsi_ssl_server_handshaker_factory* factory =
+      static_cast<tsi_ssl_server_handshaker_factory*>(arg);
+  return SelectProtocolListServerSideFirst(out, outlen, in, inlen,
+                                           factory->alpn_protocol_list,
+                                           factory->alpn_protocol_list_length);
 }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
 }  // namespace
@@ -1797,9 +1793,6 @@ static void ssl_handshaker_destroy(tsi_handshaker* self) {
   SSL_free(impl->ssl);
   BIO_free(impl->network_io);
   gpr_free(impl->outgoing_bytes_buffer);
-  if (impl->preferred_protocol_byte_list != nullptr) {
-    gpr_free(impl->preferred_protocol_byte_list);
-  }
   tsi_ssl_handshaker_factory_unref(impl->factory_ref);
   gpr_free(impl);
 }
@@ -2012,25 +2005,21 @@ static tsi_result create_tsi_ssl_handshaker(
     return TSI_OUT_OF_RESOURCES;
   }
   SSL_set_bio(ssl, ssl_io, ssl_io);
-  unsigned char* preferred_protocol_byte_list = nullptr;
-  size_t preferred_protocol_byte_list_length = 0;
 #if TSI_OPENSSL_ALPN_SUPPORT
   if (alpn_preferred_protocol_raw_list.has_value()) {
-    std::vector<std::string> transport_protocols;
-    transport_protocols = absl::StrSplit(
-        alpn_preferred_protocol_raw_list.value(), ',', absl::SkipWhitespace());
-    size_t num_preferred_protocols = transport_protocols.size();
-    if (num_preferred_protocols != 0) {
-      const char** preferred_protocols = static_cast<const char**>(
-          gpr_malloc(sizeof(const char*) * (num_preferred_protocols)));
-      for (size_t i = 0; i < num_preferred_protocols; i++) {
-        preferred_protocols[i] = transport_protocols[i].c_str();
-      }
+    size_t num_preferred_protocols = 0;
+    const char** preferred_protocols = ParseALPNStringIntoArray(
+        alpn_preferred_protocol_raw_list.value(), &num_preferred_protocols);
+    if (preferred_protocols != nullptr) {
+      unsigned char* preferred_protocol_byte_list = nullptr;
+      size_t preferred_protocol_byte_list_length = 0;
       tsi_result result = BuildAlpnProtocolNameList(
           preferred_protocols, num_preferred_protocols,
           &preferred_protocol_byte_list, &preferred_protocol_byte_list_length);
+      for (size_t i = 0; i < num_preferred_protocols; i++) {
+        gpr_free(const_cast<char*>(preferred_protocols[i]));
+      }
       gpr_free(preferred_protocols);
-
       if (result != TSI_OK) {
         LOG(ERROR) << "Building alpn list failed with error "
                    << tsi_result_to_string(result);
@@ -2064,9 +2053,6 @@ static tsi_result create_tsi_ssl_handshaker(
                    << server_name_indication;
         SSL_free(ssl);
         BIO_free(network_io);
-        if (preferred_protocol_byte_list != nullptr) {
-          gpr_free(preferred_protocol_byte_list);
-        }
         return TSI_INTERNAL_ERROR;
       }
     }
@@ -2085,9 +2071,6 @@ static tsi_result create_tsi_ssl_handshaker(
           << grpc_core::SslErrorString(ssl_result);
       SSL_free(ssl);
       BIO_free(network_io);
-      if (preferred_protocol_byte_list != nullptr) {
-        gpr_free(preferred_protocol_byte_list);
-      }
       return TSI_INTERNAL_ERROR;
     }
   } else {
@@ -2104,14 +2087,6 @@ static tsi_result create_tsi_ssl_handshaker(
       static_cast<unsigned char*>(gpr_zalloc(impl->outgoing_bytes_buffer_size));
   impl->base.vtable = &handshaker_vtable;
   impl->factory_ref = tsi_ssl_handshaker_factory_ref(factory);
-#if TSI_OPENSSL_ALPN_SUPPORT
-  if (alpn_preferred_protocol_raw_list.has_value() && !is_client) {
-    impl->preferred_protocol_byte_list = preferred_protocol_byte_list;
-    impl->preferred_protocol_byte_list_length =
-        preferred_protocol_byte_list_length;
-    SSL_CTX_set_alpn_select_cb(ctx, ServerHandshakerAlpnCallback, impl);
-  }
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
   *handshaker = &impl->base;
   return TSI_OK;
 }
@@ -2197,16 +2172,13 @@ static int client_handshaker_factory_npn_callback(
 
 tsi_result tsi_ssl_server_handshaker_factory_create_handshaker(
     tsi_ssl_server_handshaker_factory* factory, size_t network_bio_buf_size,
-    size_t ssl_bio_buf_size,
-    std::optional<std::string> alpn_preferred_protocol_list,
-    tsi_handshaker** handshaker) {
+    size_t ssl_bio_buf_size, tsi_handshaker** handshaker) {
   if (factory->ssl_context_count == 0) return TSI_INVALID_ARGUMENT;
   // Create the handshaker with the first context. We will switch if needed
   // because of SNI in ssl_server_handshaker_factory_servername_callback.
   return create_tsi_ssl_handshaker(factory->ssl_contexts[0], 0, nullptr,
                                    network_bio_buf_size, ssl_bio_buf_size,
-                                   alpn_preferred_protocol_list, &factory->base,
-                                   handshaker);
+                                   std::nullopt, &factory->base, handshaker);
 }
 
 void tsi_ssl_server_handshaker_factory_unref(
@@ -2297,18 +2269,6 @@ static int ssl_server_handshaker_factory_servername_callback(SSL* ssl,
   LOG(ERROR) << "No match found for server name: " << servername;
   return SSL_TLSEXT_ERR_NOACK;
 }
-
-#if TSI_OPENSSL_ALPN_SUPPORT
-static int server_handshaker_factory_alpn_callback(
-    SSL* /*ssl*/, const unsigned char** out, unsigned char* outlen,
-    const unsigned char* in, unsigned int inlen, void* arg) {
-  tsi_ssl_server_handshaker_factory* factory =
-      static_cast<tsi_ssl_server_handshaker_factory*>(arg);
-  return select_protocol_list(out, outlen, in, inlen,
-                              factory->alpn_protocol_list,
-                              factory->alpn_protocol_list_length);
-}
-#endif  // TSI_OPENSSL_ALPN_SUPPORT
 
 static int server_handshaker_factory_npn_advertised_callback(
     SSL* /*ssl*/, const unsigned char** out, unsigned int* outlen, void* arg) {
@@ -2736,7 +2696,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       SSL_CTX_set_tlsext_servername_arg(impl->ssl_contexts[i], impl);
 #if TSI_OPENSSL_ALPN_SUPPORT
       SSL_CTX_set_alpn_select_cb(impl->ssl_contexts[i],
-                                 server_handshaker_factory_alpn_callback, impl);
+                                 ServerHandshakerFactoryAlpnCallback, impl);
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
       SSL_CTX_set_next_protos_advertised_cb(
           impl->ssl_contexts[i],
