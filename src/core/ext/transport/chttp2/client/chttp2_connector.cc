@@ -332,7 +332,7 @@ grpc_channel* CreateChannelFromEndpoint(
   // TODO(rishesh@) once https://github.com/grpc/grpc/issues/34172 is
   // resolved, we should use a different address that will be less confusing for
   // debuggability.
-  std::shared_ptr<EventEngine::Endpoint> ee_endpoint(endpoint.release());
+  std::shared_ptr<EventEngine::Endpoint> ee_endpoint(endpoint.release()); // how many times this line has executed
   grpc_core::ChannelArgs args_ =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
@@ -348,8 +348,8 @@ grpc_channel* CreateChannelFromEndpoint(
   response_generator->SetResponseAsync(std::move(result));
   args_ = args_.SetObject(response_generator);
   grpc_core::ExecCtx::Get()->Flush();
-  return grpc_channel_create("fake:created-from-endpoint", creds,
-                             args_.ToC().get());
+  return *CreateClientEndpointChannel("fake:created-from-endpoint", creds,
+                                      args_);
 }
 
 grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
