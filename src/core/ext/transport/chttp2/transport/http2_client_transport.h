@@ -122,15 +122,15 @@ class Http2ClientTransport final : public ClientTransport {
 
  private:
   // Promise factory for processing each type of frame
-  auto ProcessHttp2DataFrame(Http2DataFrame frame);
-  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
-  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
-  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
-  auto ProcessHttp2PingFrame(Http2PingFrame frame);
-  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
-  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
-  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
-  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessHttp2DataFrame(Http2DataFrame frame);
+  Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  Http2Status ProcessHttp2PingFrame(Http2PingFrame frame);
+  Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
 
   // Reading from the endpoint.
 
