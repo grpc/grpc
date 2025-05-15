@@ -332,6 +332,11 @@ class SslTransportSecurityTest
       alpn_server_overriden_protocols_ = alpn_server_protocols;
     }
 
+    void SetExpectedAlpnNegotiatedProtocol(
+        std::optional<std::string> expected_alpn_negotiated_protocol) {
+      expected_alpn_negotiated_protocol_ = expected_alpn_negotiated_protocol;
+    }
+
    private:
     static void SetupHandshakers(tsi_test_fixture* fixture) {
       SslTsiTestFixture* ssl_fixture =
@@ -442,16 +447,16 @@ class SslTransportSecurityTest
         ASSERT_EQ(alpn_property, nullptr);
       } else {
         ASSERT_NE(alpn_property, nullptr);
-        const char* expected_match;
-        if (ssl_fixture->alpn_client_overriden_protocols_.has_value() &&
-            ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
-          expected_match = "bar";
+        std::string expected_match;
+        if (ssl_fixture->expected_alpn_negotiated_protocol_.has_value()) {
+          expected_match =
+              ssl_fixture->expected_alpn_negotiated_protocol_.value();
         } else {
           expected_match = "baz";
         }
-        ASSERT_EQ(memcmp(alpn_property->value.data, expected_match,
-                         alpn_property->value.length),
-                  0);
+        ASSERT_EQ(
+            std::string(alpn_property->value.data, alpn_property->value.length),
+            expected_match);
       }
     }
 
@@ -681,6 +686,8 @@ class SslTransportSecurityTest
     bool send_client_ca_list_;
     std::optional<std::string> alpn_client_overriden_protocols_ = std::nullopt;
     std::optional<std::string> alpn_server_overriden_protocols_ = std::nullopt;
+    std::optional<std::string> expected_alpn_negotiated_protocol_ =
+        std::nullopt;
     tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
     tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   };
@@ -1443,11 +1450,36 @@ TEST(SslTransportSecurityTest, ExtractCertChain) {
 
 // Attempt to perform a handshake between a client and server with ALPN enabled
 // and overriding the preferred protocols on the handshaker factory.
-TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
+TEST_P(SslTransportSecurityTest, TestClientAndServerHandshakerOverrideALPN) {
   SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
                   /*send_client_ca_list=*/std::get<1>(GetParam()));
   ssl_fixture_->OverrideHanshakerAlpnClientProtocols("toto,bar");
   ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("bar");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
+TEST_P(SslTransportSecurityTest, TestClientHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  ssl_fixture_->OverrideHanshakerAlpnClientProtocols("toto,baz");
+  // The server default protocols set by the handshaker factory are [foo, baz].
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("baz");
+  ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
+  DoHandshake();
+}
+
+// Attempt to perform a handshake between a client and server with ALPN enabled
+// and overriding the preferred protocols on the handshaker factory.
+TEST_P(SslTransportSecurityTest, TestServerHandshakerOverrideALPN) {
+  SetUpSslFixture(/*tls_version=*/std::get<0>(GetParam()),
+                  /*send_client_ca_list=*/std::get<1>(GetParam()));
+  // The client default protocols set by the handshaker factory are [toto, baz].
+  ssl_fixture_->OverrideHanshakerAlpnServerProtocols("bar,foo,toto");
+  ssl_fixture_->SetExpectedAlpnNegotiatedProtocol("toto");
   ssl_fixture_->SetAlpnMode(ALPN_CLIENT_SERVER_OK);
   DoHandshake();
 }
