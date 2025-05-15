@@ -96,12 +96,17 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   void RecordAnnotation(const Annotation& /*annotation*/) override {
     // Not implemented
   }
+
+  void RecordAnnotation(absl::string_view annotation, absl::Time time);
+
   std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
     // No TCP trace.
     return nullptr;
   }
 
  private:
+  class TcpCallTracer;
+
   absl::string_view MethodForStats() const {
     absl::string_view method = absl::StripPrefix(path_.as_string_view(), "/");
     if (registered_method_ ||

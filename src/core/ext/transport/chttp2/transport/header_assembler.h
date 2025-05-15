@@ -30,6 +30,9 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
+// TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
+// assembler and disassembler code
+
 namespace grpc_core {
 namespace http2 {
 

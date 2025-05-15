@@ -180,14 +180,14 @@ void grpc_shutdown(void) {
         !grpc_event_engine::experimental::TimerManager::
             IsTimerManagerThread() &&
         grpc_core::ExecCtx::Get() == nullptr) {
-      // just run clean-up when this is called on non-executor thread.
+      // just run clean-up when this is called on non-EventEngine thread.
       VLOG(2) << "grpc_shutdown starts clean-up now";
       g_shutting_down = true;
       grpc_shutdown_internal_locked();
       VLOG(2) << "grpc_shutdown done";
     } else {
       // spawn a detached thread to do the actual clean up in case we are
-      // currently in an executor thread.
+      // currently in an EventEngine thread.
       VLOG(2) << "grpc_shutdown spawns clean-up thread";
       g_initializations++;
       g_shutting_down = true;

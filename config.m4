@@ -608,7 +608,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
@@ -775,6 +774,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
+    src/core/telemetry/tcp_tracer.cc \
     src/core/transport/auth_context.cc \
     src/core/transport/endpoint_transport_client_channel_factory.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
