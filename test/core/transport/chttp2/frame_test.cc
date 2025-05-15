@@ -27,9 +27,9 @@
 namespace grpc_core {
 namespace {
 
+using http2::Http2ErrorCode;
 using http2::Http2Status;
 using http2::ValueOrHttp2Status;
-using http2::Http2ErrorCode;
 
 MATCHER_P3(Http2StatusIs, error_type, code, message, "") {
   if (arg.GetType() != error_type) {
@@ -739,20 +739,22 @@ TEST(Frame, ParseRejectsRstStreamFrame) {
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 100, 100, 100, 100),
-      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
-                    Http2ErrorCode::kProtocolError,
-                    absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
-                      "{RST_STREAM: flags=0, stream_id=0, length=4}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
+                       "{RST_STREAM: flags=0, stream_id=0, length=4}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                     /* Type (1 octet) */ 3,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 2,
                     /* */ 100, 100, 100, 100),
-      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
-                    Http2ErrorCode::kProtocolError,
-                    absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                      "{RST_STREAM: flags=0, stream_id=2, length=4}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                       "{RST_STREAM: flags=0, stream_id=2, length=4}")));
 }
 
 TEST(Frame, ParseRejectsSettingsFrame) {
@@ -1041,31 +1043,6 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
       Http2StatusIs(
           Http2Status::Http2ErrorType::kStreamError,
           Http2ErrorCode::kProtocolError,
-          absl::StrCat(
-              RFC9113::kWindowSizeIncrement,
-              "{WINDOW_UPDATE: flags=0, stream_id=2147483647, length=4}")));
-}
-
-TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
-  // Window Size Increment MUST be non zero
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                    /* Type (1 octet) */ 8,
-                    /* Unused Flags (1 octet) */ 0xff,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
-      StatusIs(
-          absl::StatusCode::kInternal,
-          absl::StrCat(RFC9113::kWindowSizeIncrement,
-                       "{WINDOW_UPDATE: flags=255, stream_id=0, length=4}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                    /* Type (1 octet) */ 8,
-                    /* Unused Flags (1 octet) */ 0,
-                    /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
-                    /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
-      StatusIs(
-          absl::StatusCode::kInternal,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,
               "{WINDOW_UPDATE: flags=0, stream_id=2147483647, length=4}")));
