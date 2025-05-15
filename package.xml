@@ -1302,8 +1302,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_win_sockets.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_polled_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator_factory.h" role="src" />
@@ -1317,6 +1315,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/file_descriptor_collection.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
@@ -1333,6 +1333,9 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.h" role="src" />
