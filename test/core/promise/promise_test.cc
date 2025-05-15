@@ -43,8 +43,10 @@ TEST(PromiseTest, NowOrNever) {
 TEST(PromiseTest, CanConvertToJson) {
   auto x = []() { return 42; };
   EXPECT_FALSE(promise_detail::kHasToJsonMethod<decltype(x)>);
+#if GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES
   EXPECT_THAT(JsonDump(PromiseAsJson(x)),
               ::testing::HasSubstr("promise_test.cc"));
+#endif
 }
 
 TEST(PromiseTest, CanCustomizeJsonConversion) {

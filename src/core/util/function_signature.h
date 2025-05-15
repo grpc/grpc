@@ -17,10 +17,21 @@
 
 #include "absl/strings/string_view.h"
 
+// Macros defined:
+// GRPC_FUNCTION_SIGNATURE
+//   - a c-string variable that contains a reasonable rendering of the function
+//     name
+// GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES
+//   - a bool that indicates if a lambda is captured, will it contain the
+//     filename - this can be used for tests that want to check the filename
+//     is there on some platforms
+
 #if defined(_MSC_VER)
 #define GRPC_FUNCTION_SIGNATURE __FUNCSIG__
+#define GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES false
 #elif defined(__GNUC__)
 #define GRPC_FUNCTION_SIGNATURE __PRETTY_FUNCTION__
+#define GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES true
 #else
 #define GRPC_FUNCTION_SIGNATURE "???()"
 #endif
