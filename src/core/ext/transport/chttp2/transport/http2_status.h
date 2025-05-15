@@ -94,7 +94,7 @@ inline Http2ErrorCode AbslStatusCodeToErrorCode(const absl::StatusCode status) {
   };
 }
 
-class Http2Status {
+class GRPC_MUST_USE_RESULT Http2Status {
  public:
   // Classifying if an error is a stream error or a connection Http2Status must
   // be done at the time of error object creation. Once the Http2Status object

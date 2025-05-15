@@ -301,6 +301,9 @@ inline constexpr absl::string_view kPingLength8 =
 inline constexpr absl::string_view kWindowUpdateLength4 =
     "RFC9113: A WINDOW_UPDATE frame with a length other than 4 octets MUST be "
     "treated as a connection error";
+inline constexpr absl::string_view kWindowSizeIncrement =
+    "RFC9113: The legal range for the increment to the flow-control window is "
+    "1 to (2^31)-1";
 inline constexpr absl::string_view kPaddingLengthLargerThanFrameLength =
     "RFC9113: If the length of the padding is the length of the frame payload "
     "or greater, the recipient MUST treat this as a connection error";

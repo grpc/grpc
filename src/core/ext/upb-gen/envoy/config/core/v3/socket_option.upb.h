@@ -84,6 +84,10 @@ UPB_INLINE envoy_config_core_v3_SocketOption_value_oneofcases envoy_config_core_
   return (envoy_config_core_v3_SocketOption_value_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_SocketOption_clear_value(envoy_config_core_v3_SocketOption* msg) {
+  const upb_MiniTableField field = {4, UPB_SIZE(48, 40), UPB_SIZE(-21, -17), kUpb_NoSub, 3, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_8Byte << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__SocketOption_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_SocketOption_clear_description(envoy_config_core_v3_SocketOption* msg) {
   const upb_MiniTableField field = {1, 24, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
