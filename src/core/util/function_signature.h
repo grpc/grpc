@@ -56,7 +56,7 @@ static constexpr inline absl::string_view TypeName() {
 #else
   return "unknown";
 #endif
-  constexpr auto function = std::string_view{GRPC_FUNCTION_SIGNATURE};
+  constexpr auto function = absl::string_view{GRPC_FUNCTION_SIGNATURE};
   constexpr auto start = function.find(prefix) + prefix.size();
   constexpr auto end = function.rfind(suffix);
   static_assert(start < end);
