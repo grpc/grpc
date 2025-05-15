@@ -193,7 +193,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
+auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<Http2Status>(MatchPromise(
       std::move(frame),
