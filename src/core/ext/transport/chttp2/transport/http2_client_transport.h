@@ -243,6 +243,7 @@ class Http2ClientTransport final : public ClientTransport {
   Duration keepalive_time_;
   Duration ping_timeout_;
   PingManager ping_manager_;
+  std::vector<uint64_t> pending_ping_acks_;
 
   // Flags
   bool keepalive_permit_without_calls_;
@@ -271,6 +272,22 @@ class Http2ClientTransport final : public ClientTransport {
   auto MaybeSendPing() {
     return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
                                        ping_timeout_);
+  }
+
+  auto MaybeSendPingAcks() {
+    return AssertResultType<absl::Status>(If(
+        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
+        [this] {
+          std::vector<Http2Frame> frames;
+          frames.reserve(pending_ping_acks_.size());
+          for (auto& opaque_data : pending_ping_acks_) {
+            frames.push_back(Http2PingFrame{true, opaque_data});
+          }
+          pending_ping_acks_.clear();
+          SliceBuffer output_buf;
+          Serialize(absl::Span<Http2Frame>(frames), output_buf);
+          return endpoint_.Write(std::move(output_buf), {});
+        }));
   }
 
   class PingSystemInterfaceImpl : public PingInterface {

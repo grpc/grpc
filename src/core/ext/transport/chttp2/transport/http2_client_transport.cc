@@ -175,7 +175,8 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // writes.
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
-        return self->EnqueueOutgoingFrame(Http2PingFrame{true, opaque});
+        self->pending_ping_acks_.push_back(opaque);
+        return self->EnqueueOutgoingFrame(Http2EmptyFrame{});
       });
 }
 
@@ -371,6 +372,9 @@ auto Http2ClientTransport::WriteLoop() {
         WriteFromQueue(),
         [self = RefAsSubclass<Http2ClientTransport>()] {
           return self->MaybeSendPing();
+        },
+        [self = RefAsSubclass<Http2ClientTransport>()] {
+          return self->MaybeSendPingAcks();
         },
         [this]() -> LoopCtl<absl::Status> {
           // If any Header/Data/WindowUpdate frame was sent in the last write,
