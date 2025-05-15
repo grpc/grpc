@@ -628,18 +628,19 @@ TEST(Frame, ParseRejectsDataFrame) {
                        absl::StrCat(RFC9113::kStreamIdMustBeOdd,
                                     "{DATA: flags=0, stream_id=2, length=0}")));
 
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 9,
-                            /* Type (1 octet) */ 0,
-                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
-                               (2), END_STREAM Flag (1)*/
-                            9,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                            /* Pad Length */ 0xff,
-                            /* Data */ 'h', 'e', 'l', 'l', 'o',
-                            /* Padding */ 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
-                       absl::StrCat(RFC9113::kFrameParserIncorrectPadding,
-                                    "{DATA: flags=9, stream_id=1, length=9}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 9,
+                    /* Type (1 octet) */ 0,
+                    /* Unused Flags (4), PADDED Flag (1), Unused Flags
+                       (2), END_STREAM Flag (1)*/
+                    9,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                    /* Pad Length */ 0xff,
+                    /* Data */ 'h', 'e', 'l', 'l', 'o',
+                    /* Padding */ 0, 0, 0),
+      StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
+               absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
+                            "{DATA: flags=9, stream_id=1, length=9}")));
 }
 
 TEST(Frame, ParseRejectsHeaderFrame) {

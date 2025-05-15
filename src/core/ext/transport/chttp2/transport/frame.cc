@@ -283,6 +283,7 @@ class SerializeHeaderAndPayload {
 };
 
 Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
+  const size_t payload_size = payload.Length();
   if (GPR_UNLIKELY(payload.Length() < 1)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
@@ -291,11 +292,7 @@ Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
 
-  if (GPR_UNLIKELY(payload.Length() <= padding_bytes)) {
-    return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kProtocolError,
-        absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
-  } else if (GPR_UNLIKELY(hdr.length <= padding_bytes)) {
+  if (GPR_UNLIKELY(payload_size <= padding_bytes)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
