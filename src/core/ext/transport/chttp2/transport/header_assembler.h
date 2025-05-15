@@ -240,6 +240,46 @@ class HeaderAssembler {
   SliceBuffer buffer_;
 };
 
+class HeaderDisassembler {
+public:
+  HeaderDisassembler(HeaderDisassembler&& rvalue) = delete;
+  HeaderDisassembler& operator=(HeaderDisassembler&& rvalue) = delete;
+  HeaderDisassembler(const HeaderDisassembler&) = delete;
+  HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
+
+protected:
+  void PrepareMetadataForSending(const uint32_t stream_id,
+    Arena::PoolPtr<grpc_metadata_batch>&& metadata, HPackCompressor& encoder){
+    stream_id_  = stream_id; // Move ctor
+    encoder_.EncodeRawHeaders(*metadata.get(), buffer_);
+   }
+
+  Http2Frame GetNextFrame(const uint32_t max_size) {
+    DCHECK_LE(stream_id, RFC9113::kMaxStreamId31Bit);
+  }
+
+  HeaderDisassembler():did_send_header_fame_(false) {}
+
+private:
+  uint32_t stream_id_;
+  bool did_send_header_fame_;
+  SliceBuffer buffer_;
+};
+
+class ClientHeaderDisassembler : public HeaderDisassembler {
+public :
+  void PrepareInitialMetadataForSending(const uint32_t stream_id,
+    Arena::PoolPtr<grpc_metadata_batch>&& metadata, HPackCompressor& encoder){
+      PrepareMetadataForSending(stream_id, metadata, encoder);
+  }
+
+  Http2Frame GetFrame(const uint32_t max_size) {
+    return GetNextFrame(max_size);
+  }
+
+private:
+};
+
 }  // namespace http2
 }  // namespace grpc_core
 
