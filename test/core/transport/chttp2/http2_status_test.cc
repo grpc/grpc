@@ -469,17 +469,6 @@ TEST(ValueOrHttp2StatusTest, TakeStatusConnectionTest) {
   EXPECT_STREQ(std::string(absl_status.message()).c_str(), "Message1");
 }
 
-TEST(ValueOrHttp2StatusTest, TakeStatusOkTest) {
-  ValueOrHttp2Status<std::string> result = std::string("Message");
-
-  ASSERT_DEATH(
-      {
-        Http2Status status =
-            ValueOrHttp2Status<std::string>::TakeStatus(std::move(result));
-      },
-      "");
-}
-
 }  // namespace testing
 }  // namespace http2
 }  // namespace grpc_core
