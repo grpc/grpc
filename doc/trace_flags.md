@@ -37,6 +37,7 @@ processing requests via debug logs. Available tracers include:
   - event_engine_endpoint - EventEngine Endpoint operations.
   - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
   - event_engine_poller - EventEngine Poller events.
+  - executor - gRPC's legacy thread pool ('the executor').
   - fault_injection_filter - Fault injection.
   - flowctl - Http2 flow control.
   - fork - Fork support.
