@@ -65,4 +65,4 @@ static constexpr inline absl::string_view TypeName() {
 
 }  // namespace grpc_core
 
-#endif
+#endif  // GRPC_SRC_CORE_UTIL_FUNCTION_SIGNATURE_H
