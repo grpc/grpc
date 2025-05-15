@@ -175,6 +175,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "absl/log",
         "absl/strings",
+        "absl/strings:str_format",
     ],
     visibility = ["//bazel:latent_see"],
     deps = [
@@ -7291,10 +7292,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "tcp_tracer",
+    srcs = [
+        "//src/core:telemetry/tcp_tracer.cc",
+    ],
     hdrs = [
         "//src/core:telemetry/tcp_tracer.h",
     ],
     external_deps = [
+        "absl/strings",
         "absl/time",
     ],
     visibility = ["//bazel:tcp_tracer"],
@@ -7660,6 +7665,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "time",
         "//:gpr_platform",
     ],
 )
@@ -7675,7 +7681,7 @@ grpc_cc_library(
     ],
     deps = [
         "http2_status",
-        "message",
+        "metadata_batch",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -9192,7 +9198,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "cancel_callback",
-        "context_list_entry",
+        "dump_args",
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
@@ -9692,7 +9698,13 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "json",
+        "json_args",
+        "json_object_loader",
+        "json_reader",
+        "load_file",
         "status_helper",
+        "//:tsi_ssl_credentials",
     ],
 )
 

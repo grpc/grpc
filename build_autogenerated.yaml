@@ -944,7 +944,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -1830,7 +1829,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -1997,6 +1995,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
@@ -2537,7 +2536,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -2998,7 +2996,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -3148,6 +3145,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -3370,19 +3368,31 @@ libs:
   headers:
   - third_party/upb/upb/json/decode.h
   - third_party/upb/upb/json/encode.h
+  src:
+  - third_party/upb/upb/json/decode.c
+  - third_party/upb/upb/json/encode.c
+  deps:
+  - upb_lex_lib
+  - upb_reflection_lib
+- name: upb_lex_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/port/atomic.h
+  - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/undef.inc
+  - third_party/upb/upb/port/vsnprintf_compat.h
   src:
-  - third_party/upb/upb/json/decode.c
-  - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  deps:
-  - upb_reflection_lib
+  deps: []
 - name: upb_mem_lib
   build: all
   language: c
@@ -3550,21 +3560,14 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text/internal/encode.h
   - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/text/internal/encode.c
   deps:
+  - upb_lex_lib
   - upb_reflection_lib
 - name: upb_wire_lib
   build: all
@@ -4516,7 +4519,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -4840,7 +4842,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -4950,6 +4951,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
@@ -6019,7 +6021,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -6103,7 +6104,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -6366,7 +6366,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -6654,7 +6653,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -6753,6 +6751,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -6834,7 +6833,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/cancel_callback.h
@@ -6889,7 +6887,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -7471,7 +7468,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -7526,7 +7522,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -10118,7 +10113,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -10160,7 +10154,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -10434,7 +10427,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -10722,7 +10714,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -10821,6 +10812,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -10927,7 +10919,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -10986,7 +10977,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -11038,7 +11028,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -11102,7 +11091,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -11212,6 +11200,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
@@ -11220,6 +11209,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
@@ -12091,7 +12081,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -12264,6 +12253,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -12387,7 +12377,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -12486,6 +12475,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -12744,6 +12734,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -12753,6 +12744,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/http2_status_test.cc
   deps:
   - gtest
@@ -13015,7 +13007,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13071,7 +13062,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13476,7 +13466,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13540,7 +13529,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13685,7 +13673,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13743,7 +13730,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -14441,7 +14427,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/slice/percent_encoding.h
@@ -14471,7 +14456,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -15446,7 +15430,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -15540,7 +15523,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc

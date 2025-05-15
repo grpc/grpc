@@ -190,8 +190,13 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         auto ctx =
             setup_ctx(channels_[ch].get_stub(), next_issuers_[t], request_);
         ctx->Start(cq, config);
+        if (config.distribute_load_across_threads()) {
+          t = (t + 1) % cli_cqs_.size();
+        }
       }
-      t = (t + 1) % cli_cqs_.size();
+      if (!config.distribute_load_across_threads()) {
+        t = (t + 1) % cli_cqs_.size();
+      }
     }
   }
   ~AsyncClient() override {

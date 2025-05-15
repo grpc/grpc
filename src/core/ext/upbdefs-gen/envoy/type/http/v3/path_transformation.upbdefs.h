@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_TYPE_HTTP_V3_PATH_TRANSFORMATION_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -38,6 +41,7 @@ UPB_INLINE const upb_MessageDef *envoy_type_http_v3_PathTransformation_Operation
   _upb_DefPool_LoadDefInit(s, &envoy_type_http_v3_path_transformation_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.type.http.v3.PathTransformation.Operation.MergeSlashes");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

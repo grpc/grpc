@@ -162,6 +162,11 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_mem_lib"
     },
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib"
+    },
     "@com_google_protobuf//upb:message": {
         "language": "c",
         "build": "all",
@@ -446,7 +451,7 @@ class ArtifactGen {
       bazel_rule.deps = {
           "@com_google_protobuf//upb:descriptor_upb_proto",
           "@com_google_protobuf//"
-          "upb:generated_code_support__only_for_generated_code_do_not_use__i_"
+          "upb:generated_code_support"
           "give_permission_to_break_me",
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers

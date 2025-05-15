@@ -6,13 +6,16 @@
  * regenerated.
  * NO CHECKED-IN PROTOBUF GENCODE */
 
+
+
 #ifndef ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H__UPBDEFS_H_
 #define ENVOY_EXTENSIONS_FILTERS_NETWORK_HTTP_CONNECTION_MANAGER_V3_HTTP_CONNECTION_MANAGER_PROTO_UPB_H__UPBDEFS_H_
 
 #include "upb/reflection/def.h"
 #include "upb/reflection/internal/def_pool.h"
 
-#include "upb/port/def.inc" // Must be last.
+#include "upb/port/def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -123,6 +126,7 @@ UPB_INLINE const upb_MessageDef *envoy_extensions_filters_network_http_connectio
   _upb_DefPool_LoadDefInit(s, &envoy_extensions_filters_network_http_connection_manager_v3_http_connection_manager_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "envoy.extensions.filters.network.http_connection_manager.v3.EnvoyMobileHttpConnectionManager");
 }
+
 
 #ifdef __cplusplus
 }  /* extern "C" */

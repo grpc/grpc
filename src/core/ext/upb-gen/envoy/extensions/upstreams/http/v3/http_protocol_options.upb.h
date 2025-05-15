@@ -88,6 +88,10 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_proto
   return (envoy_extensions_upstreams_http_v3_HttpProtocolOptions_upstream_protocol_options_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_upstream_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
+  const upb_MiniTableField field = {3, UPB_SIZE(32, 48), UPB_SIZE(-29, -13), 2, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_clear_common_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -383,6 +387,10 @@ UPB_INLINE envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpCo
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_protocol_config_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_clear_protocol_config(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__upstreams__http__v3__HttpProtocolOptions__ExplicitHttpConfig_msg_init, &field);
 }
 UPB_INLINE void envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig_clear_http_protocol_options(envoy_extensions_upstreams_http_v3_HttpProtocolOptions_ExplicitHttpConfig* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
