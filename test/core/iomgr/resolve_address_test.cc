@@ -506,6 +506,32 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
   PollPollsetUntilRequestDone();
 }
 
+TEST_F(ResolveAddressTest, StressTestTargetNameDeletion) {
+  // The Lookup APIs take a string_view name to resolve. This regression test
+  // attempts to catch bad implementations that rely on that string_view's
+  // source string to be alive after the function returns.
+  constexpr size_t kIterations = 100;
+  auto resolver = grpc_core::GetDNSResolver();
+  std::atomic<size_t> resolved_count{0};
+  for (size_t i = 0; i < kIterations; i++) {
+    grpc_core::ExecCtx exec_ctx;
+    // Creating target on the heap, to try to delete it before resolution
+    // completes.
+    auto* target = new std::string("arst");
+    resolver->LookupHostname(
+        [&resolved_count](
+            absl::StatusOr<std::vector<grpc_resolved_address>> /* result */) {
+          ++resolved_count;
+        },
+        *target, "8080", grpc_core::Duration::Milliseconds(10), pollset_set(),
+        "");
+    delete target;
+  }
+  while (resolved_count.load() != kIterations) {
+    absl::SleepFor(absl::Milliseconds(10));
+  }
+}
+
 TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
   if (absl::string_view(g_resolver_type) == "ares") {
     GTEST_SKIP() << "this test is only for native resolvers";
