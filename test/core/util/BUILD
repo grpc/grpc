@@ -826,12 +826,13 @@ grpc_fuzz_test(
 )
 
 grpc_cc_test(
-    name="function_signature_test",
-    srcs=["function_signature_test.cc"],
-    deps=[
+    name = "function_signature_test",
+    srcs = ["function_signature_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
         "//src/core:function_signature",
     ],
-    external_deps=[
-        "gtest","gtest_main"
-    ]
 )
