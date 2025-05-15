@@ -1436,8 +1436,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine_shims/tcp_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/internal_errqueue.cc" role="src" />
@@ -1785,6 +1783,7 @@
     <file baseinstalldir="/" name="src/core/telemetry/stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/stats_data.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/tcp_tracer.h" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/transport/auth_context.h" role="src" />
