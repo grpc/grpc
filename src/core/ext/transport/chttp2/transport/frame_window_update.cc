@@ -109,14 +109,15 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
       if (s != nullptr) {
         grpc_core::Timestamp now = grpc_core::Timestamp::Now();
         if (s->last_window_update_time != grpc_core::Timestamp::InfPast()) {
-          t->http2_stats->IncrementHttp2StreamWindowUpdatePeriod(
+          grpc_core::global_stats().IncrementHttp2StreamWindowUpdatePeriod(
               (now - s->last_window_update_time).millis());
         }
         s->last_window_update_time = now;
         grpc_core::chttp2::StreamFlowControl::OutgoingUpdateContext(
             &s->flow_control)
             .RecvUpdate(received_update);
-        t->http2_stats->IncrementHttp2StreamRemoteWindowUpdate(received_update);
+        grpc_core::global_stats().IncrementHttp2StreamRemoteWindowUpdate(
+            received_update);
         if (grpc_chttp2_list_remove_stalled_by_stream(t, s)) {
           grpc_chttp2_mark_stream_writable(t, s);
           grpc_chttp2_initiate_write(
@@ -128,11 +129,11 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
           &t->flow_control);
       grpc_core::Timestamp now = grpc_core::Timestamp::Now();
       if (t->last_window_update_time != grpc_core::Timestamp::InfPast()) {
-        t->http2_stats->IncrementHttp2TransportWindowUpdatePeriod(
+        grpc_core::global_stats().IncrementHttp2TransportWindowUpdatePeriod(
             (now - t->last_window_update_time).millis());
       }
       t->last_window_update_time = now;
-      t->http2_stats->IncrementHttp2TransportRemoteWindowUpdate(
+      grpc_core::global_stats().IncrementHttp2TransportRemoteWindowUpdate(
           received_update);
       upd.RecvUpdate(received_update);
       if (upd.Finish() == grpc_core::chttp2::StallEdge::kUnstalled) {

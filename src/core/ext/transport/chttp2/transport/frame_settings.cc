@@ -108,18 +108,19 @@ grpc_error_handle grpc_chttp2_settings_parser_parse(void* p,
           if (is_last) {
             grpc_core::Http2Settings* target_settings =
                 parser->incoming_settings.get();
-            t->http2_stats->IncrementHttp2HeaderTableSize(
+            grpc_core::global_stats().IncrementHttp2HeaderTableSize(
                 target_settings->header_table_size());
-            t->http2_stats->IncrementHttp2InitialWindowSize(
+            grpc_core::global_stats().IncrementHttp2InitialWindowSize(
                 target_settings->initial_window_size());
-            t->http2_stats->IncrementHttp2MaxConcurrentStreams(
+            grpc_core::global_stats().IncrementHttp2MaxConcurrentStreams(
                 target_settings->max_concurrent_streams());
-            t->http2_stats->IncrementHttp2MaxFrameSize(
+            grpc_core::global_stats().IncrementHttp2MaxFrameSize(
                 target_settings->max_frame_size());
-            t->http2_stats->IncrementHttp2MaxHeaderListSize(
+            grpc_core::global_stats().IncrementHttp2MaxHeaderListSize(
                 target_settings->max_header_list_size());
-            t->http2_stats->IncrementHttp2PreferredReceiveCryptoMessageSize(
-                target_settings->preferred_receive_crypto_message_size());
+            grpc_core::global_stats()
+                .IncrementHttp2PreferredReceiveCryptoMessageSize(
+                    target_settings->preferred_receive_crypto_message_size());
             t->http2_ztrace_collector.Append([parser]() {
               grpc_core::H2SettingsTrace<true> settings{false, {}};
               // TODO(ctiller): produce actual wire settings here, not a

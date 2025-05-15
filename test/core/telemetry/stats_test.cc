@@ -54,7 +54,7 @@ TEST(StatsTest, IncSpecificCounter) {
 
 TEST(StatsTest, IncrementHttp2MetadataSize) {
   ExecCtx exec_ctx;
-  http2_global_stats().IncrementHttp2MetadataSize(0);
+  global_stats().IncrementHttp2MetadataSize(0);
 }
 
 static int FindExpectedBucket(const HistogramView& h, int value) {

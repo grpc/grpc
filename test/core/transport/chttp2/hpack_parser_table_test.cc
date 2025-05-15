@@ -113,7 +113,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
 
   ExecCtx exec_ctx;
 
-  auto stats_before = http2_global_stats().Collect();
+  auto stats_before = global_stats().Collect();
 
   for (i = 0; i < 100000; i++) {
     std::string key = absl::StrCat("K.", i);
@@ -137,7 +137,7 @@ TEST(HpackParserTableTest, ManyAdditions) {
     }
   }
 
-  auto stats_after = http2_global_stats().Collect();
+  auto stats_after = global_stats().Collect();
 
   EXPECT_EQ(stats_after->http2_hpack_hits - stats_before->http2_hpack_hits,
             100000);
@@ -150,7 +150,7 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
 
   ExecCtx exec_ctx;
 
-  auto stats_before = http2_global_stats().Collect();
+  auto stats_before = global_stats().Collect();
   const Timestamp start = Timestamp::Now();
 
   for (i = 0; i < 100000; i++) {
@@ -169,7 +169,7 @@ TEST(HpackParserTableTest, ManyUnusedAdditions) {
 
   tbl.reset();
 
-  auto stats_after = http2_global_stats().Collect();
+  auto stats_after = global_stats().Collect();
   const Timestamp end = Timestamp::Now();
 
   EXPECT_EQ(stats_after->http2_hpack_hits, stats_before->http2_hpack_hits);

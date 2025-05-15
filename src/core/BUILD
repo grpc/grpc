@@ -7812,21 +7812,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "http2_stats_collector",
-    srcs = [
-        "ext/transport/chttp2/transport/http2_stats_collector.cc",
-    ],
-    hdrs = [
-        "ext/transport/chttp2/transport/http2_stats_collector.h",
-    ],
-    deps = [
-        "stats_data",
-        "//:grpc_core_credentials_header",
-        "//:grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "http2_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_transport.cc",
