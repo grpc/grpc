@@ -33,6 +33,7 @@
 #include "src/core/call/parsed_metadata.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/unique_ptr_with_bitset.h"
 
@@ -49,6 +50,8 @@ class HPackTable {
   HPackTable(HPackTable&&) = default;
   HPackTable& operator=(HPackTable&&) = default;
 
+  void SetHttp2StatsCollector(
+      std::shared_ptr<Http2StatsCollector> http2_stats_collector);
   void SetMaxBytes(uint32_t max_bytes);
   bool SetCurrentTableSize(uint32_t bytes);
   uint32_t current_table_size() { return current_table_bytes_; }
@@ -101,13 +104,19 @@ class HPackTable {
 
   class MementoRingBuffer {
    public:
-    MementoRingBuffer() {}
+    MementoRingBuffer()
+        : http2_stats_collector_(CreateHttp2StatsCollector(nullptr)) {}
     ~MementoRingBuffer();
 
     MementoRingBuffer(const MementoRingBuffer&) = delete;
     MementoRingBuffer& operator=(const MementoRingBuffer&) = delete;
     MementoRingBuffer(MementoRingBuffer&&) = default;
     MementoRingBuffer& operator=(MementoRingBuffer&&) = default;
+
+    void SetHttp2StatsCollector(
+        std::shared_ptr<Http2StatsCollector> http2_stats_collector) {
+      http2_stats_collector_ = http2_stats_collector;
+    }
 
     // Rebuild this buffer with a new max_entries_ size.
     void Rebuild(uint32_t max_entries);
@@ -145,6 +154,8 @@ class HPackTable {
     uint32_t timestamp_index_ = kNoTimestamp;
     // The timestamp associated with timestamp_entry_.
     Timestamp timestamp_;
+
+    std::shared_ptr<Http2StatsCollector> http2_stats_collector_ = nullptr;
 
     std::vector<Memento> entries_;
   };
