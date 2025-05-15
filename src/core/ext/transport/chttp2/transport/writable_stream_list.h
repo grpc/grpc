@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -19,25 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAM_LIST_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAM_LIST_H
 
-#include <cstdint>
-#include <utility>
-
-#include "src/core/call/call_spine.h"
-#include "src/core/ext/transport/chttp2/transport/frame.h"
-#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
-#include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
-#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
-#include "src/core/ext/transport/chttp2/transport/http2_status.h"
-#include "src/core/ext/transport/chttp2/transport/http2_transport.h"
-#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
-#include "src/core/lib/promise/inter_activity_mutex.h"
-#include "src/core/lib/promise/mpsc.h"
-#include "src/core/lib/promise/party.h"
-#include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/lib/transport/transport.h"
-#include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
 
 namespace grpc_core {
 namespace http2 {
