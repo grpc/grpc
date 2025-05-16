@@ -283,6 +283,25 @@ public :
 private:
 };
 
+class ServerHeaderDisassembler : public HeaderDisassembler {
+public :
+  void PrepareInitialMetadataForSending(const uint32_t stream_id,
+    Arena::PoolPtr<grpc_metadata_batch>&& metadata, HPackCompressor& encoder){
+      PrepareMetadataForSending(stream_id, metadata, encoder);
+  }
+
+  void PrepareTrailingMetadataForSending(const uint32_t stream_id,
+    Arena::PoolPtr<grpc_metadata_batch>&& metadata, HPackCompressor& encoder){
+      PrepareMetadataForSending(stream_id, metadata, encoder);
+  }
+
+  Http2Frame GetFrame(const uint32_t max_size) {
+    return GetNextFrame(max_size);
+  }
+
+private:
+};
+
 }  // namespace http2
 }  // namespace grpc_core
 
