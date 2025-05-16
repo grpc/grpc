@@ -281,7 +281,7 @@ class Http2ClientTransport final : public ClientTransport {
           std::vector<Http2Frame> frames;
           frames.reserve(pending_ping_acks_.size());
           for (auto& opaque_data : pending_ping_acks_) {
-            frames.push_back(Http2PingFrame{true, opaque_data});
+            frames.emplace_back(Http2PingFrame{true, opaque_data});
           }
           pending_ping_acks_.clear();
           SliceBuffer output_buf;

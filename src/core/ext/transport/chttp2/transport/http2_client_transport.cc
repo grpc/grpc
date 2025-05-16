@@ -367,8 +367,17 @@ auto Http2ClientTransport::WriteFromQueue() {
 auto Http2ClientTransport::WriteLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
   return AssertResultType<absl::Status>(Loop([this]() {
+    // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
+    // can move bytes_sent_in_last_write_ to be a local variable.
     bytes_sent_in_last_write_ = false;
     return TrySeq(
+        // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
+        // acks as well. This will break the call to ResetPingClock as it only
+        // needs to be called on writing Data/Header/WindowUpdate frames.
+        // Possible fixes: Either WriteFromQueue iterates over all the frames
+        // and figures out the types of frames needed (this may anyways be
+        // needed to check that we do not send frames for closed streams) or we
+        // have flags to indicate the types of frame that are enqueued.
         WriteFromQueue(),
         [self = RefAsSubclass<Http2ClientTransport>()] {
           return self->MaybeSendPing();
