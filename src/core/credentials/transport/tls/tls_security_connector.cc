@@ -347,7 +347,8 @@ void TlsChannelSecurityConnector::add_handshakers(
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
         /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0,
+        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);

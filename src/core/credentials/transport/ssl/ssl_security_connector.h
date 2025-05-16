@@ -76,6 +76,7 @@ struct grpc_ssl_server_config {
 //
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials);
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials,
+    const grpc_core::ChannelArgs& args);
 
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_SECURITY_CONNECTOR_H
