@@ -19074,6 +19074,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     src/core/ext/transport/chttp2/transport/http2_client_transport.cc
     src/core/ext/transport/chttp2/transport/http2_transport.cc
+    src/core/ext/transport/chttp2/transport/ping_promise.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
     test/core/event_engine/event_engine_test_utils.cc

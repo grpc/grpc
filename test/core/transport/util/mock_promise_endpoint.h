@@ -131,6 +131,9 @@ struct MockPromiseEndpoint {
   void ExpectRead(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+  absl::AnyInvocable<void()> ExpectDelayedRead(
+      std::initializer_list<grpc_event_engine::experimental::Slice> slices_init,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
   void ExpectReadClose(
       absl::Status status,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
@@ -142,6 +145,10 @@ struct MockPromiseEndpoint {
   void ExpectWrite(
       std::initializer_list<grpc_event_engine::experimental::Slice> slices,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
+  void ExpectWriteWithCallback(
+      std::initializer_list<grpc_event_engine::experimental::Slice> slices,
+      grpc_event_engine::experimental::EventEngine* schedule_on_event_engine,
+      absl::AnyInvocable<void(SliceBuffer&, SliceBuffer&)> callback);
   void CaptureWrites(
       SliceBuffer& writes,
       grpc_event_engine::experimental::EventEngine* schedule_on_event_engine);
