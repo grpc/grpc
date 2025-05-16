@@ -228,12 +228,12 @@ class grpc_ssl_server_security_connector
           static_cast<const grpc_ssl_server_credentials*>(server_creds());
       size_t num_alpn_protocols = 0;
       const char** alpn_protocol_strings = nullptr;
-#if TSI_OPENSSL_ALPN_SUPPORT
       if (alpn_preferred_protocol_raw_list.has_value()) {
+#if TSI_OPENSSL_ALPN_SUPPORT
         alpn_protocol_strings = ParseALPNStringIntoArray(
             alpn_preferred_protocol_raw_list.value(), &num_alpn_protocols);
-      }
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
+      }
       if (alpn_protocol_strings == nullptr) {
         alpn_protocol_strings =
             grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
