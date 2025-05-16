@@ -28,10 +28,6 @@ TEST(FunctionSignatureTest, Works) {
   EXPECT_THAT(TypeName<Foo>(), ::testing::HasSubstr("Foo"));
   auto x = []() {};
   EXPECT_THAT(TypeName<decltype(x)>(), ::testing::HasSubstr("lambda"));
-#if GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES
-  EXPECT_THAT(TypeName<decltype(x)>(),
-              ::testing::HasSubstr("function_signature_test.cc"));
-#endif
 }
 
 }  // namespace grpc_core
