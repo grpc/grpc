@@ -41,7 +41,7 @@ tools/bazel version
 # Build without the define , this will use secure_getenv
 tools/bazel build  //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
-setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
+sudo setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 getcap ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 export GRPC_TRACE=http
 ./bazel-bin/examples/cpp/helloworld/greeter_callback_client &> wow.log
@@ -56,7 +56,7 @@ fi
 # Build using the define to force "getenv" instead of "secure_getenv"
 tools/bazel build  --define GRPC_FORCE_UNSECURE_GETENV=1 //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
-setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
+sudo setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 ls -lrt ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 ./bazel-bin/examples/cpp/helloworld/greeter_callback_client &> wow.log
 grep "gRPC Tracers:" wow.log
