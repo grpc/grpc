@@ -17,7 +17,9 @@
 #include <memory>
 #include <utility>
 
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/util/json/json_writer.h"
 
 namespace grpc_core {
 
@@ -36,6 +38,24 @@ TEST(PromiseTest, AssertResultType) {
 
 TEST(PromiseTest, NowOrNever) {
   EXPECT_EQ(NowOrNever(Immediate(42)), std::optional<int>(42));
+}
+
+TEST(PromiseTest, CanConvertToJson) {
+  auto x = []() { return 42; };
+  EXPECT_FALSE(promise_detail::kHasToJsonMethod<decltype(x)>);
+#if GRPC_FUNCTION_SIGNATURE_CAPTURES_LAMBDA_FILENAMES
+  EXPECT_THAT(JsonDump(PromiseAsJson(x)),
+              ::testing::HasSubstr("promise_test.cc"));
+#endif
+}
+
+TEST(PromiseTest, CanCustomizeJsonConversion) {
+  class FooPromise {
+   public:
+    Json ToJson() const { return Json::FromObject(Json::Object()); }
+  };
+  EXPECT_TRUE(promise_detail::kHasToJsonMethod<FooPromise>);
+  EXPECT_EQ(JsonDump(PromiseAsJson(FooPromise())), "{}");
 }
 
 }  // namespace grpc_core
