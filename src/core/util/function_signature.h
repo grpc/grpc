@@ -45,22 +45,22 @@ namespace grpc_core {
 template <typename T>
 static constexpr inline absl::string_view TypeName() {
 #if defined(__clang__)
-  constexpr auto prefix = absl::string_view{"[T = "};
-  constexpr auto suffix = absl::string_view{"]"};
+  constexpr absl::string_view kPrefix{"[T = "};
+  constexpr absl::string_view kSuffix{"]"};
 #elif defined(__GNUC__)
-  constexpr auto prefix = absl::string_view{"[with T = "};
-  constexpr auto suffix = absl::string_view{";"};
+  constexpr absl::string_view kPrefix{"[with T = "};
+  constexpr absl::string_view kSuffix{";"};
 #elif defined(_MSC_VER)
-  constexpr auto prefix = absl::string_view{"TypeName<"};
-  constexpr auto suffix = absl::string_view{">(void)"};
+  constexpr absl::string_view kPrefix{"TypeName<"};
+  constexpr absl::string_view kSuffix{">(void)"};
 #else
   return "unknown";
 #endif
-  constexpr auto function = absl::string_view{GRPC_FUNCTION_SIGNATURE};
-  constexpr auto start = function.find(prefix) + prefix.size();
-  constexpr auto end = function.rfind(suffix);
-  static_assert(start < end);
-  return function.substr(start, (end - start));
+  constexpr absl::string_view kFunction{GRPC_FUNCTION_SIGNATURE};
+  constexpr size_t kStart = kFunction.find(kPrefix) + kPrefix.size();
+  constexpr size_t kEnd = kFunction.rfind(kSuffix);
+  static_assert(kStart < kEnd);
+  return kFunction.substr(kStart, (kEnd - kStart));
 }
 
 }  // namespace grpc_core

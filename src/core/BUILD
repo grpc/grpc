@@ -1046,6 +1046,7 @@ grpc_cc_library(
     ],
     deps = [
         "construct_destruct",
+        "json",
         "poll",
         "promise_factory",
         "promise_like",
