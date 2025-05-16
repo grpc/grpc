@@ -165,7 +165,7 @@ class PythonPackage:
         dockerfile_dir = (
             "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
         )
-        environ={
+        environ = {
             "PYTHON": "/opt/python/cp39-cp39/bin/python",
             "ARTIFACT_PREFIX": "python_",
             "EXCLUDE_PATTERN": "python_musllinux_1_1_aarch64_*",
