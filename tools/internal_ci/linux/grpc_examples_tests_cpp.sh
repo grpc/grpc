@@ -32,8 +32,10 @@ export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_examples_tests_cpp_in_dock
 # to read env variables.
 # enable log
 
+tools/bazel version
+
 # Build without the define , this will use secure_getenv
-bazel build  //examples/cpp/helloworld:greeter_callback_client
+bazel_rbe/bazel_wrapper build  //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
 setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 getcap ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
@@ -48,7 +50,7 @@ if [[ $return_code -eq 0 ]]; then
 fi
 
 # Build using the define to force "getenv" instead of "secure_getenv"
-bazel build  --define GRPC_FORCE_UNSECURE_GETENV=1 //examples/cpp/helloworld:greeter_callback_client
+bazel_rbe/bazel_wrapper build  --define GRPC_FORCE_UNSECURE_GETENV=1 //examples/cpp/helloworld:greeter_callback_client
 # Add linux capability
 setcap "cap_net_raw=ep" ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
 ls -lrt ./bazel-bin/examples/cpp/helloworld/greeter_callback_client
