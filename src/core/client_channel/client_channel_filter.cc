@@ -17,6 +17,7 @@
 #include "src/core/client_channel/client_channel_filter.h"
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -922,13 +923,6 @@ class ClientChannelFilter::ClientChannelControlHelper final
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
-    if (chand_->subchannel_endpoint_ != nullptr) {
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-          subchannel_endpoint(chand_->subchannel_endpoint_.release());
-      subchannel_args = subchannel_args.SetObject<
-          grpc_event_engine::experimental::EventEngine::Endpoint>(
-          subchannel_endpoint);
-    }
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address,
@@ -1058,18 +1052,19 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
           std::make_shared<WorkSerializer>(*args->channel_stack->event_engine)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
-  bool has_subchannel_endpoint =
-      channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  GRPC_TRACE_LOG(client_channel, INFO) << has_subchannel_endpoint;
-  work_serializer_->Run(
-      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-        bool endpoint = channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-        if (endpoint) {
-          subchannel_endpoint_ = std::unique_ptr<
-              grpc_event_engine::experimental::EventEngine::Endpoint>();
-        }
-        channel_args_ = channel_args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-      });
+  // bool has_subchannel_endpoint =
+  //     channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  // GRPC_TRACE_LOG(client_channel, INFO) << has_subchannel_endpoint;
+  // work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+  //                           *work_serializer_) {
+  //   bool endpoint = channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  //   if (endpoint) {
+  //     subchannel_endpoint_.reset(
+  //         channel_args_.GetObject<
+  //             grpc_event_engine::experimental::EventEngine::EndpointManager>());
+  //   }
+  //   channel_args_ = channel_args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  // });
   GRPC_TRACE_LOG(client_channel, INFO)
       << "chand=" << this << ": creating client_channel for channel stack "
       << owning_stack_;

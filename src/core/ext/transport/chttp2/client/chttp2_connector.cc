@@ -111,9 +111,12 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
-  std::unique_ptr<EventEngine::Endpoint> endpoint(
-      args_.channel_args.GetObject<EventEngine::Endpoint>());
-  args_.channel_args = args_.channel_args.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+
+  auto r_pointer = args_.channel_args.GetPointer<EventEngine::EndpointManager*>(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  // std::shared_ptr<EventEngine::EndpointManager> endpoint_mgr(*r_pointer);
+  auto endpoint = (*r_pointer)->take_endpoint();
+  // args_.channel_args =
+  // args_.channel_args.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
   ChannelArgs channel_args = args_.channel_args;
   if (endpoint == nullptr) {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
@@ -132,8 +135,8 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
   handshake_mgr_->DoHandshake(
-      endpoint ? OrphanablePtr<grpc_endpoint>(
-                     grpc_event_engine_endpoint_create(std::move(endpoint)))
+      endpoint ? OrphanablePtr<grpc_endpoint>(grpc_event_engine_endpoint_create(
+                     std::move(endpoint)))
                : nullptr,
       channel_args, args.deadline, /*acceptor=*/nullptr,
       [self = RefAsSubclass<Chttp2Connector>()](
@@ -332,12 +335,13 @@ grpc_channel* CreateChannelFromEndpoint(
   // TODO(rishesh@) once https://github.com/grpc/grpc/issues/34172 is
   // resolved, we should use a different address that will be less confusing for
   // debuggability.
-  std::shared_ptr<EventEngine::Endpoint> ee_endpoint(endpoint.release()); // how many times this line has executed
+  std::shared_ptr<EventEngine::EndpointManager> ee_endpoint =
+    std::make_shared<EventEngine::EndpointManager>(std::move(endpoint)); // how many times this line has executed
   grpc_core::ChannelArgs args_ =
       grpc_core::CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject<EventEngine::Endpoint>(ee_endpoint)
+          .SetObject(ee_endpoint)
           .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, resolved_address)
           .SetObject(creds->Ref());
   Resolver::Result result;
