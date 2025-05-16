@@ -52,12 +52,13 @@ struct PrivateGenerator {
 
   bool PrintAddServicerToServer(
       const std::string& package_qualified_service_name,
-      const grpc_generator::Service* service, grpc_generator::Printer* out);
+      const grpc_generator::Service* service, grpc_generator::Printer* out,
+      const bool render_async);
   bool PrintServicer(const grpc_generator::Service* service,
-                     grpc_generator::Printer* out);
+                     grpc_generator::Printer* out, const bool render_async);
   bool PrintStub(const std::string& package_qualified_service_name,
                  const grpc_generator::Service* service,
-                 grpc_generator::Printer* out);
+                 grpc_generator::Printer* out, const bool render_async);
 
   bool PrintServiceClass(const std::string& package_qualified_service_name,
                          const grpc_generator::Service* service,
