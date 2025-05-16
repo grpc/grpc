@@ -30,6 +30,10 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
         echo "$1" ; cp -r "$1"/* artifacts/ || true
     ' sh {} \;
 
+ls -r artifacts
+
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
 # source distribution package, and only one of them will end up
 # in the artifacts/ directory. They should be all equivalent though.
+
+exit 1
