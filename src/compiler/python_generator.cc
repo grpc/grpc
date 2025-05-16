@@ -950,6 +950,7 @@ bool PythonGrpcGenerator::Generate(const FileDescriptor* file,
     std::string base(
         file->name().substr(0, file->name().size() - proto_suffix_length));
     std::replace(base.begin(), base.end(), '-', '_');
+    std::replace(base.begin(), base.end(), '.', '/');
     pb2_file_name = base + "_pb2.py";
     pb2_grpc_file_name = base + "_pb2_grpc.py";
   } else {
