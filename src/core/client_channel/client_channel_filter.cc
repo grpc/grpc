@@ -1052,19 +1052,6 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
           std::make_shared<WorkSerializer>(*args->channel_stack->event_engine)),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(channel_args_)) {
-  // bool has_subchannel_endpoint =
-  //     channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  // GRPC_TRACE_LOG(client_channel, INFO) << has_subchannel_endpoint;
-  // work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-  //                           *work_serializer_) {
-  //   bool endpoint = channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  //   if (endpoint) {
-  //     subchannel_endpoint_.reset(
-  //         channel_args_.GetObject<
-  //             grpc_event_engine::experimental::EventEngine::EndpointManager>());
-  //   }
-  //   channel_args_ = channel_args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  // });
   GRPC_TRACE_LOG(client_channel, INFO)
       << "chand=" << this << ": creating client_channel for channel stack "
       << owning_stack_;

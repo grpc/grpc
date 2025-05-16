@@ -68,7 +68,6 @@ build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
 build:asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
-# build:asan --compilation_mode=dbg
 
 build:coverage --copt=-fprofile-instr-generate
 build:coverage --copt=-fcoverage-mapping
@@ -146,12 +145,6 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 # build:ubsan --linkopt=-lgcc_s
 # build:ubsan --linkopt=-lubsan
 # build:ubsan --linkopt=--rtlib=compiler-rt
-
-build:asan_debug --copt=-fsanitize=address
-build:asan_debug --linkopt=-fsanitize=address
-build:asan_debug --copt=-g
-build:asan_debug --strip=never
-build:asan_debug --compilation_mode=dbg
 
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 

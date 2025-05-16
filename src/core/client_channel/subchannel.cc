@@ -427,7 +427,10 @@ class Subchannel::ConnectedSubchannelStateWatcher final
         // pass along the status from the transport, since it may have
         // keepalive info attached to it that the channel needs.
         // TODO(roth): Consider whether there's a cleaner way to do this.
-        c->SetConnectivityStateLocked(c->created_from_endpoint_ ? GRPC_CHANNEL_TRANSIENT_FAILURE : GRPC_CHANNEL_IDLE, status);
+        c->SetConnectivityStateLocked(c->created_from_endpoint_
+                                          ? GRPC_CHANNEL_TRANSIENT_FAILURE
+                                          : GRPC_CHANNEL_IDLE,
+                                      status);
         c->backoff_.Reset();
       }
     }
@@ -581,8 +584,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
     return c;
   }
   c = MakeRefCounted<Subchannel>(std::move(key), std::move(connector), args);
-  bool has_subchannel_endpoint = args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  if (has_subchannel_endpoint) {
+  if (args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
     {
       MutexLock lock(&c->mu_);
       c->created_from_endpoint_ = true;

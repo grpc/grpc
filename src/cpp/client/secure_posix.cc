@@ -24,7 +24,6 @@
 #include <memory>
 namespace grpc::experimental {
 
-// #ifdef GRPC_SECURE_POSIX_H
 std::shared_ptr<Channel> CreateChannelFromEndpoint(
     std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
         endpoint,
@@ -56,5 +55,4 @@ std::shared_ptr<Channel> CreateChannelFromFd(
   return channel;
 }
 
-// #endif
 }  // namespace grpc::experimental

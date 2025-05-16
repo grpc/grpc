@@ -387,8 +387,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     ~EndpointManager() {}
     std::unique_ptr<Endpoint> take_endpoint() { return std::move(endpoint_); }
 
-    bool is_valid() const { return static_cast<bool>(endpoint_); }
-
    private:
     std::unique_ptr<Endpoint> endpoint_;
   };

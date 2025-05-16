@@ -308,8 +308,6 @@ class ClientChannelFilter final {
   OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(*work_serializer_);
   bool previous_resolution_contained_addresses_
       ABSL_GUARDED_BY(*work_serializer_) = false;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine::EndpointManager>
-      subchannel_endpoint_ ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ServiceConfig> saved_service_config_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
