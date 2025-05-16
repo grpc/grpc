@@ -103,7 +103,10 @@ grpc_cc_test(
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//:promise"],
+    deps = [
+        "//:promise",
+        "//src/core:json_writer",
+    ],
 )
 
 grpc_cc_test(
@@ -304,7 +307,10 @@ grpc_cc_test(
     tags = ["promise_test"],
     uses_event_engine = False,
     uses_polling = False,
-    deps = ["//src/core:seq"],
+    deps = [
+        "//src/core:json_writer",
+        "//src/core:seq",
+    ],
 )
 
 grpc_cc_test(
@@ -316,6 +322,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "poll_matcher",
+        "//src/core:json_writer",
         "//src/core:try_seq",
     ],
 )

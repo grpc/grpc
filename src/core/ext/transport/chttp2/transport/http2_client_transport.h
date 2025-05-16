@@ -130,15 +130,15 @@ class Http2ClientTransport final : public ClientTransport {
 
  private:
   // Promise factory for processing each type of frame
-  auto ProcessHttp2DataFrame(Http2DataFrame frame);
-  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
-  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
-  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
-  auto ProcessHttp2PingFrame(Http2PingFrame frame);
-  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
-  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
-  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
-  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessHttp2DataFrame(Http2DataFrame frame);
+  Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  Http2Status ProcessHttp2PingFrame(Http2PingFrame frame);
+  Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
 
   // Reading from the endpoint.
 
@@ -177,11 +177,14 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),
-        [](StatusFlag status) {
+        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
+          return (status.ok())
+                     ? absl::OkStatus()
+                     : self->HandleError(Http2Status::AbslConnectionError(
+                           absl::StatusCode::kInternal,
+                           "Failed to enqueue frame"));
         }));
   }
 
@@ -234,9 +237,47 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " status=" << status
+                      << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
-  void CloseTransport();
+  // This function MUST be idempotent.
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
+                      << status << " location=" << whence.file() << ":"
+                      << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  whence);
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(status, whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
   bool bytes_sent_in_last_write_;
 
   // Ping related members

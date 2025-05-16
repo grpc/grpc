@@ -1475,6 +1475,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx format_request_test)
   add_dependencies(buildtests_cxx frame_handler_test)
   add_dependencies(buildtests_cxx frame_test)
+  add_dependencies(buildtests_cxx function_signature_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx fuzzing_event_engine_test)
   endif()
@@ -16298,6 +16299,39 @@ target_link_libraries(frame_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(function_signature_test
+  test/core/util/function_signature_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+target_compile_features(function_signature_test PUBLIC cxx_std_17)
+target_include_directories(function_signature_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(function_signature_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
 
   add_executable(fuzzing_event_engine_test
@@ -19523,6 +19557,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(if_test
   test/core/promise/if_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(if_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(if_test PUBLIC cxx_std_17)
 target_include_directories(if_test
   PRIVATE
@@ -19546,11 +19588,9 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
   absl::type_traits
   absl::statusor
-  absl::str_format
+  gpr
 )
 
 
@@ -20970,6 +21010,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(match_promise_test
   test/core/promise/match_promise_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(match_promise_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(match_promise_test PUBLIC cxx_std_17)
 target_include_directories(match_promise_test
   PRIVATE
@@ -20993,11 +21041,8 @@ target_include_directories(match_promise_test
 target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
   absl::type_traits
-  absl::status
-  absl::str_format
+  gpr
 )
 
 
@@ -24421,6 +24466,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(prioritized_race_test
   test/core/promise/prioritized_race_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(prioritized_race_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(prioritized_race_test PUBLIC cxx_std_17)
 target_include_directories(prioritized_race_test
   PRIVATE
@@ -24444,10 +24497,8 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
   absl::type_traits
-  absl::str_format
+  gpr
 )
 
 
@@ -24500,6 +24551,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_factory_test
   test/core/promise/promise_factory_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_factory_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_factory_test PUBLIC cxx_std_17)
 target_include_directories(promise_factory_test
   PRIVATE
@@ -24523,11 +24582,9 @@ target_include_directories(promise_factory_test
 target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
   absl::bind_front
-  absl::check
   absl::type_traits
-  absl::str_format
+  gpr
 )
 
 
@@ -24537,6 +24594,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(promise_map_test
   test/core/promise/map_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_map_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_map_test PUBLIC cxx_std_17)
 target_include_directories(promise_map_test
   PRIVATE
@@ -24560,13 +24625,9 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
-  absl::log
   absl::type_traits
-  absl::status
   absl::statusor
-  absl::str_format
+  gpr
 )
 
 
@@ -24628,8 +24689,17 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_test
+  src/core/util/json/json_writer.cc
   test/core/promise/promise_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(promise_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(promise_test PUBLIC cxx_std_17)
 target_include_directories(promise_test
   PRIVATE
@@ -24653,11 +24723,8 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::any_invocable
-  absl::check
   absl::type_traits
-  absl::status
-  absl::str_format
+  gpr
 )
 
 
@@ -26399,6 +26466,7 @@ add_executable(seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
+  src/core/util/json/json_writer.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -30772,6 +30840,7 @@ add_executable(try_seq_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
+  src/core/util/json/json_writer.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)
