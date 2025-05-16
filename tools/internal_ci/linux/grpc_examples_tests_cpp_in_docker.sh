@@ -16,14 +16,12 @@
 set -x
 set +e
 
-apt-get update && apt-get install -y libcap2-bin
-
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
 echo "Current dir ${PWD}"
 
-pushd "examples/cpp" || exit 1
+cd "examples/cpp" || exit 1
 
 SERVER_PID=
 
@@ -176,6 +174,3 @@ for example in "${EXAMPLES[@]}"; do
     fi
     clean
 done
-
-popd # go back to root
-
