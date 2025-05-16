@@ -172,7 +172,6 @@ class CrlSslTransportSecurityTest
                 TSI_OK);
       EXPECT_EQ(tsi_ssl_server_handshaker_factory_create_handshaker(
                     server_handshaker_factory_, 0, 0,
-                    /*alpn_preferred_protocol_list=*/std::nullopt,
                     &base_.server_handshaker),
                 TSI_OK);
     }
