@@ -271,6 +271,10 @@ class TransportFlowControl final {
 
   FlowControlAction SetAckedInitialWindow(uint32_t value);
 
+  void set_target_initial_window_size(int64_t value) {
+    target_initial_window_size_ = value;
+  }
+
   // Getters
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }
