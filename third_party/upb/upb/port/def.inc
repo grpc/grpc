@@ -71,6 +71,10 @@ Error, UINTPTR_MAX is undefined
 #define UPB_SIZEOF_FLEX(type, member, count) \
   UPB_MAX(sizeof(type), offsetof(type, member[count]))
 
+#define UPB_SIZEOF_FLEX_WOULD_OVERFLOW(type, member, count) \
+  (((SIZE_MAX - offsetof(type, member[0])) /                \
+    (offsetof(type, member[1]) - offsetof(type, member[0]))) < (size_t)count)
+
 #define UPB_MAPTYPE_STRING 0
 
 // UPB_EXPORT: always generate a public symbol.
@@ -129,6 +133,8 @@ Error, UINTPTR_MAX is undefined
 #ifdef _MSC_VER
 // Some versions of our Windows compiler don't support the C11 syntax.
 #define UPB_ALIGN_AS(x) __declspec(align(x))
+#elif defined(__GNUC__)
+#define UPB_ALIGN_AS(x) __attribute__((aligned(x)))
 #else
 #define UPB_ALIGN_AS(x) _Alignas(x)
 #endif
@@ -447,6 +453,10 @@ Error, UINTPTR_MAX is undefined
     (!defined(UPB_BOOTSTRAP_STAGE) || UPB_BOOTSTRAP_STAGE != 0)
 #define UPB_DESC(sym) proto2_##sym
 #define UPB_DESC_MINITABLE(sym) &proto2__##sym##_msg_init
+#elif defined(UPB_IS_GOOGLE3) && defined(UPB_BOOTSTRAP_STAGE) && \
+    UPB_BOOTSTRAP_STAGE == 0
+#define UPB_DESC(sym) proto2_##sym
+#define UPB_DESC_MINITABLE(sym) proto2__##sym##_msg_init()
 #elif defined(UPB_BOOTSTRAP_STAGE) && UPB_BOOTSTRAP_STAGE == 0
 #define UPB_DESC(sym) google_protobuf_##sym
 #define UPB_DESC_MINITABLE(sym) google__protobuf__##sym##_msg_init()
@@ -456,6 +466,12 @@ Error, UINTPTR_MAX is undefined
 #endif
 
 #undef UPB_IS_GOOGLE3
+
+#ifdef __clang__
+#define UPB_NO_SANITIZE_ADDRESS __attribute__((no_sanitize("address")))
+#else
+#define UPB_NO_SANITIZE_ADDRESS
+#endif
 
 // Linker arrays combine elements from multiple translation units into a single
 // array that can be iterated over at runtime.
@@ -483,12 +499,12 @@ Error, UINTPTR_MAX is undefined
 
 #if defined(__ELF__) || defined(__wasm__)
 
-#define UPB_LINKARR_APPEND(name)                          \
-  __attribute__((retain, used, section("linkarr_" #name), \
-                 no_sanitize("address")))
-#define UPB_LINKARR_DECLARE(name, type)     \
-  extern type const __start_linkarr_##name; \
-  extern type const __stop_linkarr_##name;  \
+#define UPB_LINKARR_APPEND(name) \
+  __attribute__((retain, used,   \
+                 section("linkarr_" #name))) UPB_NO_SANITIZE_ADDRESS
+#define UPB_LINKARR_DECLARE(name, type) \
+  extern type __start_linkarr_##name;   \
+  extern type __stop_linkarr_##name;    \
   UPB_LINKARR_APPEND(name) type UPB_linkarr_internal_empty_##name[1]
 #define UPB_LINKARR_START(name) (&__start_linkarr_##name)
 #define UPB_LINKARR_STOP(name) (&__stop_linkarr_##name)
@@ -496,15 +512,15 @@ Error, UINTPTR_MAX is undefined
 #elif defined(__MACH__)
 
 /* As described in: https://stackoverflow.com/a/22366882 */
-#define UPB_LINKARR_APPEND(name)                              \
-  __attribute__((retain, used, section("__DATA,__la_" #name), \
-                 no_sanitize("address")))
-#define UPB_LINKARR_DECLARE(name, type)           \
-  extern type const __start_linkarr_##name __asm( \
-      "section$start$__DATA$__la_" #name);        \
-  extern type const __stop_linkarr_##name __asm(  \
-      "section$end$__DATA$"                       \
-      "__la_" #name);                             \
+#define UPB_LINKARR_APPEND(name) \
+  __attribute__((retain, used,   \
+                 section("__DATA,__la_" #name))) UPB_NO_SANITIZE_ADDRESS
+#define UPB_LINKARR_DECLARE(name, type)     \
+  extern type __start_linkarr_##name __asm( \
+      "section$start$__DATA$__la_" #name);  \
+  extern type __stop_linkarr_##name __asm(  \
+      "section$end$__DATA$"                 \
+      "__la_" #name);                       \
   UPB_LINKARR_APPEND(name) type UPB_linkarr_internal_empty_##name[1]
 #define UPB_LINKARR_START(name) (&__start_linkarr_##name)
 #define UPB_LINKARR_STOP(name) (&__stop_linkarr_##name)
@@ -520,7 +536,7 @@ Error, UINTPTR_MAX is undefined
 // not work on MSVC.
 #define UPB_LINKARR_APPEND(name)         \
   __declspec(allocate("la_" #name "$j")) \
-  __attribute__((retain, used, no_sanitize("address")))
+  __attribute__((retain, used)) UPB_NO_SANITIZE_ADDRESS
 #define UPB_LINKARR_DECLARE(name, type)                               \
   __declspec(allocate("la_" #name "$a")) type __start_linkarr_##name; \
   __declspec(allocate("la_" #name "$z")) type __stop_linkarr_##name;  \

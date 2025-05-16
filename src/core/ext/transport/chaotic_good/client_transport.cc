@@ -119,20 +119,20 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
     IncomingFrame incoming_frame) {
   auto stream = LookupStream(incoming_frame.header().stream_id);
   if (stream == nullptr) return;
-  stream->frame_dispatch_serializer->Spawn(
-      [stream = std::move(stream),
-       incoming_frame = std::move(incoming_frame)]() mutable {
-        return Map(stream->call.CancelIfFails(TrySeq(
-                       incoming_frame.Payload(),
-                       [stream = std::move(stream)](Frame frame) mutable {
-                         auto& call = stream->call;
-                         return Map(call.CancelIfFails(PushFrameIntoCall(
-                                        std::move(std::get<T>(frame)),
-                                        std::move(stream))),
-                                    [](auto) { return absl::OkStatus(); });
-                       })),
-                   [](auto) {});
-      });
+  auto dispatcher = stream->frame_dispatch_serializer;
+  dispatcher->Spawn([stream = std::move(stream),
+                     incoming_frame = std::move(incoming_frame)]() mutable {
+    return Map(stream->call.CancelIfFails(TrySeq(
+                   incoming_frame.Payload(),
+                   [stream = std::move(stream)](Frame frame) mutable {
+                     auto& call = stream->call;
+                     return Map(
+                         call.CancelIfFails(PushFrameIntoCall(
+                             std::move(std::get<T>(frame)), std::move(stream))),
+                         [](auto) { return absl::OkStatus(); });
+                   })),
+               [](auto) {});
+  });
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
@@ -160,8 +160,10 @@ void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::OnFrameTransportClosed(
-    absl::Status) {
+    absl::Status status) {
   // Mark transport as unavailable when the endpoint write/read failed.
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: OnFrameTransportClosed: " << status;
   ReleasableMutexLock lock(&mu_);
   StreamMap stream_map = std::move(stream_map_);
   stream_map_.clear();
@@ -263,6 +265,9 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   auto send_message = [this, stream_id, call_tracer,
                        message_chunker =
                            message_chunker_](MessageHandle message) mutable {
+    if (ctx_->socket_node != nullptr) {
+      ctx_->socket_node->RecordMessagesSent(1);
+    }
     return message_chunker.Send(std::move(message), stream_id, call_tracer,
                                 outgoing_frames_);
   };

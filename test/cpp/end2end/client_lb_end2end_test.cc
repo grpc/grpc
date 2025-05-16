@@ -73,6 +73,7 @@
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/resolve_localhost_ip46.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/test_lb_policies.h"
@@ -599,7 +600,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
         // Parenthetical wrappers
         "( ?\\(*("
         "Secure read failed|"
-        "Handshake read failed|"
+        "Handshake (read|write) failed|"
         "Delayed close due to in-progress write|"
         // Syscall
         "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
@@ -616,6 +617,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   std::vector<std::unique_ptr<ServerData>> servers_;
+  grpc_core::PostMortem port_mortem_;
 };
 
 TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {

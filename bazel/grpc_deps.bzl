@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "20df38dedca03705d6d2ff208f6c31548ddff26cf12a3c2899dd8bfa700bd20f",
-            strip_prefix = "boringssl-c57adcf6947912fe17bc5bfaf0876225d1fe742d",
+            sha256 = "b717df72df0023933a729bac00fa422a222949cfa84eb8500f3a9af34441fb6e",
+            strip_prefix = "boringssl-c63fadbde60a2224c22189d14c4001bbd2a3a629",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c57adcf6947912fe17bc5bfaf0876225d1fe742d.tar.gz",
-                "https://github.com/google/boringssl/archive/c57adcf6947912fe17bc5bfaf0876225d1fe742d.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
+                "https://github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
             ],
         )
 
@@ -58,12 +58,12 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "000afdf8dd0af9f294726138eb4ea4dea28a84831e07f5edf6fff0fdf6d026f9",
-            strip_prefix = "protobuf-d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e",
+            sha256 = "2f92f74bf80f7d4a48d09056fb27dd237f82c57d2d505ec401f9c330729e3022",
+            strip_prefix = "protobuf-3d4adad5c4c4e6a6f9f038769b8c90716065b0e4",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v30.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v31.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -78,10 +78,10 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "bde221be7f3841fcbc3971665d77d717116394a42155d988ee6407dfc39f1f09",
-            strip_prefix = "googletest-6910c9d9165801d8827d628cb72eb7ea9dd538c5",
+            sha256 = "745c55415660044610f7fcd3af7a6420d5de16a7dbb9ebfe2e131275676232be",
+            strip_prefix = "googletest-52eb8108c5bdec04579160ae17225d66034bd723",
             urls = [
-                "https://github.com/google/googletest/archive/6910c9d9165801d8827d628cb72eb7ea9dd538c5.tar.gz",
+                "https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.tar.gz",
             ],
             repo_mapping = {
                 "@abseil-cpp": "@com_google_absl",
@@ -151,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
-            strip_prefix = "abseil-cpp-20240722.0",
+            sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
+            strip_prefix = "abseil-cpp-20250127.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+                "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",

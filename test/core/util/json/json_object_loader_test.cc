@@ -805,6 +805,101 @@ TEST(JsonObjectLoader, MapFields) {
 }
 
 //
+// map<> with comparator tests
+//
+
+TEST(JsonObjectLoader, MapWithComparatorFields) {
+  struct StringCmp {
+    using is_transparent = void;
+    bool operator()(absl::string_view a, absl::string_view b) const {
+      return a < b;
+    }
+  };
+
+  struct TestStruct {
+    std::map<std::string, int32_t, StringCmp> value;
+    std::map<std::string, std::string, StringCmp> optional_value;
+    std::optional<std::map<std::string, bool, StringCmp>> std_optional_value;
+    std::unique_ptr<std::map<std::string, int32_t, StringCmp>> unique_ptr_value;
+
+    static const JsonLoaderInterface* JsonLoader(const JsonArgs&) {
+      static const auto* loader =
+          JsonObjectLoader<TestStruct>()
+              .Field("value", &TestStruct::value)
+              .OptionalField("optional_value", &TestStruct::optional_value)
+              .OptionalField("std_optional_value",
+                             &TestStruct::std_optional_value)
+              .OptionalField("unique_ptr_value", &TestStruct::unique_ptr_value)
+              .Finish();
+      return loader;
+    }
+  };
+  // Valid map.
+  auto test_struct = Parse<TestStruct>("{\"value\": {\"a\":1}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
+  EXPECT_THAT(test_struct->optional_value, ::testing::ElementsAre());
+  EXPECT_FALSE(test_struct->std_optional_value.has_value());
+  EXPECT_EQ(test_struct->unique_ptr_value, nullptr);
+  // Fails if required field is not present.
+  test_struct = Parse<TestStruct>("{}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: [field:value error:field not present]")
+      << test_struct.status();
+  // Optional fields present.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":1}, \"optional_value\": {\"b\":\"foo\"}, "
+      "\"std_optional_value\": {\"c\":true}, "
+      "\"unique_ptr_value\": {\"d\":4}}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
+  EXPECT_THAT(test_struct->optional_value,
+              ::testing::ElementsAre(::testing::Pair("b", "foo")));
+  ASSERT_TRUE(test_struct->std_optional_value.has_value());
+  EXPECT_THAT(*test_struct->std_optional_value,
+              ::testing::ElementsAre(::testing::Pair("c", true)));
+  ASSERT_NE(test_struct->unique_ptr_value, nullptr);
+  EXPECT_THAT(*test_struct->unique_ptr_value,
+              ::testing::ElementsAre(::testing::Pair("d", 4)));
+  // Optional fields null.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":1}, \"optional_value\": null, "
+      "\"std_optional_value\": null, \"unique_ptr_value\": null}");
+  ASSERT_TRUE(test_struct.ok()) << test_struct.status();
+  EXPECT_THAT(test_struct->value,
+              ::testing::ElementsAre(::testing::Pair("a", 1)));
+  EXPECT_THAT(test_struct->optional_value, ::testing::ElementsAre());
+  EXPECT_FALSE(test_struct->std_optional_value.has_value());
+  EXPECT_EQ(test_struct->unique_ptr_value, nullptr);
+  // Wrong JSON type.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": [], \"optional_value\": true, "
+      "\"std_optional_value\": 1, \"unique_ptr_value\": \"foo\"}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:optional_value error:is not an object; "
+            "field:std_optional_value error:is not an object; "
+            "field:unique_ptr_value error:is not an object; "
+            "field:value error:is not an object]")
+      << test_struct.status();
+  // Wrong JSON type for map value.
+  test_struct = Parse<TestStruct>(
+      "{\"value\": {\"a\":\"foo\"}, \"optional_value\": {\"b\":true}, "
+      "\"std_optional_value\": {\"c\":1}}");
+  EXPECT_EQ(test_struct.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(test_struct.status().message(),
+            "errors validating JSON: ["
+            "field:optional_value[\"b\"] error:is not a string; "
+            "field:std_optional_value[\"c\"] error:is not a boolean; "
+            "field:value[\"a\"] error:failed to parse number]")
+      << test_struct.status();
+}
+
+//
 // vector<> tests
 //
 

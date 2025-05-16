@@ -320,6 +320,10 @@ UPB_INLINE envoy_config_listener_v3_Listener_listener_specifier_oneofcases envoy
   return (envoy_config_listener_v3_Listener_listener_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_listener_v3_Listener_clear_listener_specifier(envoy_config_listener_v3_Listener* msg) {
+  const upb_MiniTableField field = {27, UPB_SIZE(120, 248), UPB_SIZE(-117, -25), 19, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__listener__v3__Listener_msg_init, &field);
+}
 UPB_INLINE void envoy_config_listener_v3_Listener_clear_name(envoy_config_listener_v3_Listener* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(124, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -1484,6 +1488,10 @@ UPB_INLINE envoy_config_listener_v3_Listener_ConnectionBalanceConfig_balance_typ
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (envoy_config_listener_v3_Listener_ConnectionBalanceConfig_balance_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_config_listener_v3_Listener_ConnectionBalanceConfig_clear_balance_type(envoy_config_listener_v3_Listener_ConnectionBalanceConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__listener__v3__Listener__ConnectionBalanceConfig_msg_init, &field);
 }
 UPB_INLINE void envoy_config_listener_v3_Listener_ConnectionBalanceConfig_clear_exact_balance(envoy_config_listener_v3_Listener_ConnectionBalanceConfig* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};

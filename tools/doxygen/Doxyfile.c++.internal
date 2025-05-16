@@ -2770,10 +2770,13 @@ src/core/telemetry/stats.cc \
 src/core/telemetry/stats.h \
 src/core/telemetry/stats_data.cc \
 src/core/telemetry/stats_data.h \
+src/core/telemetry/tcp_tracer.cc \
 src/core/telemetry/tcp_tracer.h \
 src/core/transport/auth_context.cc \
 src/core/transport/auth_context.h \
 src/core/transport/endpoint_transport.h \
+src/core/transport/endpoint_transport_client_channel_factory.cc \
+src/core/transport/endpoint_transport_client_channel_factory.h \
 src/core/tsi/alts/crypt/aes_gcm.cc \
 src/core/tsi/alts/crypt/gsec.cc \
 src/core/tsi/alts/crypt/gsec.h \
@@ -2858,6 +2861,7 @@ src/core/util/examine_stack.cc \
 src/core/util/examine_stack.h \
 src/core/util/fork.cc \
 src/core/util/fork.h \
+src/core/util/function_signature.h \
 src/core/util/gcp_metadata_query.cc \
 src/core/util/gcp_metadata_query.h \
 src/core/util/gethostname.h \
