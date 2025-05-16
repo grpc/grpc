@@ -83,6 +83,10 @@ UPB_INLINE grpc_lb_v1_LoadBalanceRequest_load_balance_request_type_oneofcases gr
   return (grpc_lb_v1_LoadBalanceRequest_load_balance_request_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void grpc_lb_v1_LoadBalanceRequest_clear_load_balance_request_type(grpc_lb_v1_LoadBalanceRequest* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &grpc__lb__v1__LoadBalanceRequest_msg_init, &field);
+}
 UPB_INLINE void grpc_lb_v1_LoadBalanceRequest_clear_initial_request(grpc_lb_v1_LoadBalanceRequest* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -514,6 +518,10 @@ UPB_INLINE grpc_lb_v1_LoadBalanceResponse_load_balance_response_type_oneofcases 
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   return (grpc_lb_v1_LoadBalanceResponse_load_balance_response_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void grpc_lb_v1_LoadBalanceResponse_clear_load_balance_response_type(grpc_lb_v1_LoadBalanceResponse* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &grpc__lb__v1__LoadBalanceResponse_msg_init, &field);
 }
 UPB_INLINE void grpc_lb_v1_LoadBalanceResponse_clear_initial_response(grpc_lb_v1_LoadBalanceResponse* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
