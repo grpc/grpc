@@ -391,9 +391,6 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 //- factory is the factory from which the handshaker will be created.
 //- network_bio_buf_size and ssl_bio_buf_size represent BIO pair buffers used in
 //  SSL. The buffer size being 0 translates to 17KB in boringSSL.
-//- alpn_preferred_protocol_list is a comma sepparated ordered list of the
-//  preferred transport protocols for this handshaker. This will override the
-//  value provided by the handshaker factory for protocol negotiation.
 //- handshaker is the address of the handshaker pointer to be created.
 
 //- This method returns TSI_OK on success or TSI_INVALID_PARAMETER in the case
