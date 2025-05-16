@@ -20,6 +20,10 @@ set -ex
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+# install pre-requisites for gRPC C core build
+sudo apt update
+sudo apt install -y build-essential autoconf libtool pkg-config cmake python3 python3-pip clang
+
 
 export DOCKERFILE_DIR=tools/dockerfile/test/bazel
 export DOCKER_RUN_SCRIPT=tools/internal_ci/linux/grpc_examples_tests_cpp_in_docker.sh
