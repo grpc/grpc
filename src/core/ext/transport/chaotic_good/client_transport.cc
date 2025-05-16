@@ -120,20 +120,19 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
   auto stream = LookupStream(incoming_frame.header().stream_id);
   if (stream == nullptr) return;
   auto dispatcher = stream->frame_dispatch_serializer;
-  dispatcher->Spawn(
-      [stream = std::move(stream),
-       incoming_frame = std::move(incoming_frame)]() mutable {
-        return Map(stream->call.CancelIfFails(TrySeq(
-                       incoming_frame.Payload(),
-                       [stream = std::move(stream)](Frame frame) mutable {
-                         auto& call = stream->call;
-                         return Map(call.CancelIfFails(PushFrameIntoCall(
-                                        std::move(std::get<T>(frame)),
-                                        std::move(stream))),
-                                    [](auto) { return absl::OkStatus(); });
-                       })),
-                   [](auto) {});
-      });
+  dispatcher->Spawn([stream = std::move(stream),
+                     incoming_frame = std::move(incoming_frame)]() mutable {
+    return Map(stream->call.CancelIfFails(TrySeq(
+                   incoming_frame.Payload(),
+                   [stream = std::move(stream)](Frame frame) mutable {
+                     auto& call = stream->call;
+                     return Map(
+                         call.CancelIfFails(PushFrameIntoCall(
+                             std::move(std::get<T>(frame)), std::move(stream))),
+                         [](auto) { return absl::OkStatus(); });
+                   })),
+               [](auto) {});
+  });
 }
 
 void ChaoticGoodClientTransport::StreamDispatch::OnIncomingFrame(
