@@ -134,7 +134,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
   Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
   Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
-  Http2Status ProcessHttp2PingFrame(Http2PingFrame frame);
+  auto ProcessHttp2PingFrame(Http2PingFrame frame);
   Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
@@ -354,8 +354,9 @@ class Http2ClientTransport final : public ClientTransport {
       // Returns a promise that resolves once goaway is sent.
       LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
 
-      transport_->CloseTransport();
-      return Immediate(absl::OkStatus());
+      return Immediate(
+          transport_->HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kRefusedStream, "Ping timeout")));
     }
 
    private:

@@ -83,11 +83,6 @@ void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
-void Http2ClientTransport::CloseTransport() {
-  // TODO(akshitpatel) : [PH2][P1] : Implement this.
-  ping_manager_.CancelCallbacks();
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Promise factory for processing each type of frame
 
@@ -141,11 +136,11 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   return Http2Status::Ok();
 }
 
-Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
+auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2PingFrame { ack="
                        << frame.ack << ", opaque=" << frame.opaque << " }";
-  return If(
+  return AssertResultType<Http2Status>(If(
       frame.ack,
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // Received a ping ack.
@@ -153,7 +148,7 @@ Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
           HTTP2_TRANSPORT_DLOG << "Unknown ping resoponse received for ping id="
                                << opaque;
         }
-        return Immediate(absl::OkStatus());
+        return Immediate(Http2Status::Ok());
       },
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // TODO(akshitpatel) : [PH2][P2] : Have a counter to track number of
@@ -163,8 +158,18 @@ Http2Status Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // RFC9113: PING responses SHOULD be given higher priority than any
         // other frame.
         self->pending_ping_acks_.push_back(opaque);
-        return self->EnqueueOutgoingFrame(Http2EmptyFrame{});
-      });
+        // TODO(akshitpatel) : [PH2][P2] : This is done assuming that the other
+        // ProcessFrame promises may return stream or connection failures. If
+        // this does not turn out to be true, consider returning absl::Status
+        // here.
+        return Map(self->EnqueueOutgoingFrame(Http2EmptyFrame{}),
+                   [](absl::Status status) {
+                     return (status.ok()) ? Http2Status::Ok()
+                                          : Http2Status::AbslConnectionError(
+                                                status.code(),
+                                                std::string(status.message()));
+                   });
+      }));
 }
 
 Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
