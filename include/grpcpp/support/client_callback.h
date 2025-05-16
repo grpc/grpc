@@ -636,8 +636,8 @@ class ClientCallbackReaderWriterImpl
   // like StartCall or RemoveHold. If this is the last operation or hold on this
   // object, it will invoke the OnDone reaction. If MaybeFinish was called from
   // a reaction, it can call OnDone directly. If not, it would need to schedule
-  // OnDone onto an EventEngine thread to avoid the possibility of deadlocking
-  // with any locks in the user code that invoked it.
+  // OnDone onto an executor thread to avoid the possibility of deadlocking with
+  // any locks in the user code that invoked it.
   void MaybeFinish(bool from_reaction) {
     if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
                          1, std::memory_order_acq_rel) == 1)) {

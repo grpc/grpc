@@ -18,19 +18,17 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_CLIENT
 
 #include <errno.h>
-#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
 #include <netinet/in.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <memory>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
@@ -41,7 +39,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/tcp_client.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -72,7 +70,6 @@ struct async_connect {
   int64_t connection_handle;
   bool connect_cancelled;
   grpc_core::PosixTcpOptions options;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
 struct ConnectionShard {
@@ -273,21 +270,17 @@ finish:
     error =
         grpc_core::AddMessagePrefix("Failed to connect to remote host", error);
   }
-  auto engine = ac->engine;
   if (done) {
     // This is safe even outside the lock, because "done", the sentinel, is
     // populated *inside* the lock.
     gpr_mu_destroy(&ac->mu);
     delete ac;
   }
-  // Run the connect closure asynchronously since this may actually be called
-  // during the shutdown process, in which case a deadlock could form between
-  // the core shutdown mu and the connector mu (b/188239051)
+  // Push async connect closure to the executor since this may actually be
+  // called during the shutdown process, in which case a deadlock could form
+  // between the core shutdown mu and the connector mu (b/188239051)
   if (!connect_cancelled) {
-    engine->Run([closure, error]() {
-      grpc_core::ExecCtx exec_ctx;
-      closure->cb(closure->cb_arg, error);
-    });
+    grpc_core::Executor::Run(closure, error);
   }
 }
 
@@ -374,7 +367,6 @@ int64_t grpc_tcp_client_create_from_prepared_fd(
   ac->addr_str = addr_uri.value();
   ac->connection_handle = connection_id;
   ac->connect_cancelled = false;
-  ac->engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   gpr_mu_init(&ac->mu);
   ac->refs = 2;
   GRPC_CLOSURE_INIT(&ac->write_closure, on_writable, ac,
