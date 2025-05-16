@@ -501,9 +501,9 @@ class ServerContextBase {
     void OnCancel() override {}
     void OnDone() override {}
     // Override InternalInlineable for this class since its reactions are
-    // trivial and thus do not need to be run from the EventEngine (potentially
-    // triggering a thread hop). This should only be used by internal reactors
-    // (thus the name) and not by user application code.
+    // trivial and thus do not need to be run from the executor (triggering a
+    // thread hop). This should only be used by internal reactors (thus the
+    // name) and not by user application code.
     bool InternalInlineable() override { return true; }
   };
 
