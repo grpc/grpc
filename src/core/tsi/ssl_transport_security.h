@@ -436,4 +436,8 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
+const unsigned char* get_handshaker_client_protocols_list(
+    const tsi_ssl_client_handshaker_factory* factory,
+    size_t* protocol_name_list_length);
+
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H

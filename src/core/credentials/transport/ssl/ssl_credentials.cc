@@ -30,12 +30,14 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/str_split.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session_cache.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/core/util/examine_stack.h"
 
 //
 // SSL Channel Credentials.
@@ -63,7 +65,7 @@ grpc_ssl_credentials::grpc_ssl_credentials(
   }
 
   client_handshaker_initialization_status_ = InitializeClientHandshakerFactory(
-      &config_, config_.pem_root_certs, root_store_, nullptr,
+      &config_, config_.pem_root_certs, root_store_, nullptr, std::nullopt,
       &client_handshaker_factory_);
 }
 
@@ -105,6 +107,7 @@ grpc_ssl_credentials::create_security_connector(
     tsi_ssl_client_handshaker_factory* factory_with_cache = nullptr;
     grpc_security_status status = InitializeClientHandshakerFactory(
         &config_, config_.pem_root_certs, root_store_, session_cache,
+        args->GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS),
         &factory_with_cache);
     if (status != GRPC_SECURITY_OK) {
       LOG(ERROR) << "InitializeClientHandshakerFactory returned bad status.";
@@ -178,6 +181,7 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
     const grpc_ssl_config* config, const char* pem_root_certs,
     const tsi_ssl_root_certs_store* root_store,
     tsi_ssl_session_cache* ssl_session_cache,
+    std::optional<std::string> preferred_transport_protocols,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   // This class level factory can't have a session cache by design. If we want
   // to init one with a cache we need to make a new one
@@ -196,8 +200,20 @@ grpc_security_status grpc_ssl_credentials::InitializeClientHandshakerFactory(
   }
   options.pem_root_certs = pem_root_certs;
   options.root_store = root_store;
-  options.alpn_protocols =
-      grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+  if (preferred_transport_protocols.has_value()) {
+    std::vector<std::string> transport_protocols;
+    transport_protocols = absl::StrSplit(preferred_transport_protocols.value(),
+                                         ',', absl::SkipWhitespace());
+    options.num_alpn_protocols = transport_protocols.size();
+    options.alpn_protocols = static_cast<const char**>(
+        gpr_malloc(sizeof(const char*) * (options.num_alpn_protocols)));
+    for (size_t i = 0; i < options.num_alpn_protocols; i++) {
+      options.alpn_protocols[i] = gpr_strdup(transport_protocols[i].c_str());
+    }
+  } else {
+    options.alpn_protocols =
+        grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+  }
   if (has_key_cert_pair) {
     options.pem_key_cert_pair = config->pem_key_cert_pair;
   }

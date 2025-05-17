@@ -78,4 +78,8 @@ grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials);
 
+const unsigned char*
+grpc_ssl_channel_security_connector_get_handshaker_protocols_for_testing(
+    grpc_channel_security_connector* connector,
+    size_t* protocol_name_list_length);
 #endif  // GRPC_SRC_CORE_CREDENTIALS_TRANSPORT_SSL_SSL_SECURITY_CONNECTOR_H
