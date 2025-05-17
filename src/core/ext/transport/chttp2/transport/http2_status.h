@@ -329,7 +329,7 @@ class GRPC_MUST_USE_RESULT Http2Status {
 
 // A value if an operation was successful, or a Http2Status if not.
 template <typename T>
-class ValueOrHttp2Status {
+class GRPC_MUST_USE_RESULT ValueOrHttp2Status {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrHttp2Status(T value) : value_(std::move(value)) {
