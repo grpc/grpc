@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/random/random.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
@@ -193,7 +194,8 @@ class Http2ClientTransport final : public ClientTransport {
     explicit Stream(CallHandler call, const uint32_t stream_id1)
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
-          stream_id(stream_id1) {}
+          stream_id(stream_id1),
+          header_assembler(stream_id1) {}
 
     CallHandler call;
     HttpStreamState stream_state;
@@ -202,6 +204,7 @@ class Http2ClientTransport final : public ClientTransport {
     GrpcMessageAssembler assembler;
     GrpcMessageDisassembler disassembler;
     HeaderAssembler header_assembler;
+    absl::BitGen bitgen;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
 

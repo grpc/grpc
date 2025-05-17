@@ -7682,6 +7682,7 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/log:check",
+        "absl/random",
     ],
     deps = [
         "http2_status",
@@ -7727,6 +7728,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
+        "absl/random",
         "absl/status",
         "absl/status:statusor",
     ],
