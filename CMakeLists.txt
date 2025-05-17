@@ -4647,6 +4647,7 @@ add_library(grpc++
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/secure_posix.cc
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
@@ -5396,6 +5397,7 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel.cc
   src/cpp/client/create_channel_internal.cc
   src/cpp/client/create_channel_posix.cc
+  src/cpp/client/secure_posix.cc
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/common/alarm.cc

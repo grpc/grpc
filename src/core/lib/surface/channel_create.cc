@@ -105,18 +105,14 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
   }
 }
 
-namespace {
 absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
-    const char* target, grpc_channel_credentials* creds,
-    const grpc_channel_args* c_args) {
+    const char* target, grpc_channel_credentials* creds, ChannelArgs c_args) {
   const auto& c = CoreConfiguration::Get();
   if (target == nullptr) {
     return absl::InternalError("channel target is NULL");
   }
   if (creds == nullptr) return absl::InternalError("No credentials provided");
-  auto args = creds->update_arguments(c.channel_args_preconditioning()
-                                          .PreconditionChannelArgs(c_args)
-                                          .SetObject(creds->Ref()));
+  auto args = creds->update_arguments(c_args.SetObject(creds->Ref()));
   std::vector<absl::string_view> transport_preferences = absl::StrSplit(
       args.GetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS).value_or("h2"),
       ',');
@@ -134,7 +130,6 @@ absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
   return transport->ChannelCreate(target, args);
 }
 
-}  // namespace
 }  // namespace grpc_core
 
 grpc_channel* grpc_lame_client_channel_create(const char* target,
@@ -173,7 +168,10 @@ grpc_channel* grpc_channel_create(const char* target,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_create(target=" << target << ", creds=" << (void*)creds
       << ", args=" << (void*)c_args << ")";
-  auto r = grpc_core::CreateClientEndpointChannel(target, creds, c_args);
+  const auto& c = grpc_core::CoreConfiguration::Get();
+  grpc_core::ChannelArgs channel_args =
+      c.channel_args_preconditioning().PreconditionChannelArgs(c_args);
+  auto r = grpc_core::CreateClientEndpointChannel(target, creds, channel_args);
   if (!r.ok()) {
     return grpc_lame_client_channel_create(
         target, static_cast<grpc_status_code>(r.status().code()),

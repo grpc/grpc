@@ -24,11 +24,17 @@
 
 #include <bitset>
 #include <initializer_list>
+#include <mutex>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+
+/** This arg is intended for internal use only, primarily
+ *  for passing endpoint information during subchannel creation or connection.
+ */
+#define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 // TODO(hork): remove all references to the factory methods.
@@ -174,7 +180,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint : public Extensible {
+  class Endpoint : public std::enable_shared_from_this<Endpoint>,
+                   public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -372,6 +379,17 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
   };
 
+  class EndpointManager : public std::enable_shared_from_this<EndpointManager> {
+   public:
+    explicit EndpointManager(std::unique_ptr<Endpoint> endpoint)
+        : endpoint_(std::move(endpoint)) {}
+
+    ~EndpointManager() {}
+    std::unique_ptr<Endpoint> take_endpoint() { return std::move(endpoint_); }
+
+   private:
+    std::unique_ptr<Endpoint> endpoint_;
+  };
   /// Called when a new connection is established.
   ///
   /// If the connection attempt was not successful, implementations should pass

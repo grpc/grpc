@@ -19,6 +19,7 @@
 #ifndef GRPCPP_SECURITY_CREDENTIALS_H
 #define GRPCPP_SECURITY_CREDENTIALS_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>
@@ -55,6 +56,25 @@ std::shared_ptr<grpc::Channel> CreateCustomChannelWithInterceptors(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
+
+// Creates a channel from an EventEngine endpoint.
+// Channel target will be hard-coded to something like "ipv4:127.0.0.1:80".
+// Default authority will be set to the endpoint's peer address, but the
+// application can override that via the GRPC_ARG_DEFAULT_AUTHORITY channel
+// arg.
+std::shared_ptr<grpc::Channel> CreateChannelFromEndpoint(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args);
+
+// Creates a channel from a posix file descriptor.
+// Channel target will be hard-coded to something like "ipv4:127.0.0.1:80".
+// Default authority will be "unknown", but the application can override that
+// via the GRPC_ARG_DEFAULT_AUTHORITY channel arg.
+std::shared_ptr<grpc::Channel> CreateChannelFromFd(
+    int fd, const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args);
 }  // namespace experimental
 
 /// Builds XDS Credentials.
@@ -77,6 +97,15 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
   grpc_channel_credentials* c_creds() { return c_creds_; }
 
  private:
+  friend std::shared_ptr<grpc::Channel>
+  grpc::experimental::CreateChannelFromEndpoint(
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          endpoint,
+      const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
+  friend std::shared_ptr<grpc::Channel> grpc::experimental::CreateChannelFromFd(
+      int fd, const std::shared_ptr<ChannelCredentials>& creds,
+      const ChannelArguments& args);
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<grpc::ChannelCredentials>& creds,

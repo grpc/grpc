@@ -355,7 +355,7 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   Mutex mu_;
 
   bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
-
+  bool created_from_endpoint_ ABSL_GUARDED_BY(mu_) = false;
   // Connectivity state tracking.
   // Note that the connectivity state implies the state of the
   // Subchannel object:
