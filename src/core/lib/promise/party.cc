@@ -20,15 +20,16 @@
 #include <cstdint>
 #include <limits>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/util/latent_see.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/strings/str_format.h"
 
 #ifdef GRPC_MAXIMIZE_THREADYNESS
 #include "absl/random/random.h"           // IWYU pragma: keep
@@ -183,9 +184,70 @@ void Party::SpawnSerializer::Destroy() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// ToJson helpers
+
+namespace {
+
+Json ParticipantBitmaskToJson(uint64_t mask) {
+  Json::Array array;
+  for (int i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (mask & (1u << i)) {
+      array.emplace_back(Json::FromNumber(i));
+    }
+  }
+  return Json::FromArray(std::move(array));
+}
+
+}  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 // Party
 
 Party::~Party() {}
+
+Json::Object Party::ToJson() {
+  Notification n;
+  Json::Object json;
+  auto event_engine =
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
+  CHECK(event_engine != nullptr);
+  event_engine->Run([&n, &json, self = Ref()]() {
+    self->Spawn(
+        "get-json",
+        [&json, self]() {
+          return [&json, self]() {
+            json = self->ToJsonLocked();
+            return absl::OkStatus();
+          };
+        },
+        [&n](absl::Status) { n.Notify(); });
+  });
+  n.WaitForNotification();
+  return json;
+}
+
+Json::Object Party::ToJsonLocked() {
+  Json::Object obj;
+  auto state = state_.load(std::memory_order_relaxed);
+  obj["ref_count"] = Json::FromNumber(state >> kRefShift);
+  obj["allocated_participants"] =
+      ParticipantBitmaskToJson((state & kAllocatedMask) >> kAllocatedShift);
+  obj["wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_ & kWakeupMask);
+  obj["locked"] = Json::FromBool((state & kLocked) != 0);
+  obj["local_wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_);
+  obj["currently_polling"] = Json::FromNumber(currently_polling_);
+  Json::Array participants;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (auto* p = participants_[i].load(std::memory_order_acquire);
+        p != nullptr) {
+      auto obj = p->ToJson();
+      obj["participant_index"] = Json::FromNumber(i);
+      participants.emplace_back(Json::FromObject(std::move(obj)));
+    }
+  }
+  obj["participants"] = Json::FromArray(std::move(participants));
+  return obj;
+}
 
 void Party::CancelRemainingParticipants() {
   uint64_t prev_state = state_.load(std::memory_order_relaxed);

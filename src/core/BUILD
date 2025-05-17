@@ -726,6 +726,7 @@ grpc_cc_library(
         "context",
         "event_engine_context",
         "latent_see",
+        "notification",
         "poll",
         "promise_factory",
         "ref_counted",

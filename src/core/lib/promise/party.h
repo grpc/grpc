@@ -167,6 +167,9 @@ class Party : public Activity, private Wakeable {
     // Destroy the participant before finishing.
     virtual void Destroy() = 0;
 
+    // Return a Json description of this participant.
+    virtual Json::Object ToJson() = 0;
+
     // Return a Handle instance for this participant.
     Wakeable* MakeNonOwningWakeable(Party* party);
 
@@ -281,6 +284,19 @@ class Party : public Activity, private Wakeable {
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
+    Json::Object ToJson() override {
+      Json::Object obj;
+      if (active_ != nullptr) {
+        obj["active"] = Json::FromObject(active_->ToJson());
+      }
+      Json::Array queued;
+      next_.ForEach([&](Participant* p) {
+        queued.emplace_back(Json::FromObject(p->ToJson()));
+      });
+      obj["queued"] = Json::FromArray(std::move(queued));
+      return obj;
+    }
+
    private:
     friend class Party;
     friend class Arena;
@@ -367,6 +383,8 @@ class Party : public Activity, private Wakeable {
     return serializer;
   }
 
+  Json::Object ToJson();
+
  protected:
   friend class Arena;
 
@@ -420,6 +438,19 @@ class Party : public Activity, private Wakeable {
         return true;
       }
       return false;
+    }
+
+    Json::Object ToJson() override {
+      Json::Object obj;
+      obj["on_complete"] =
+          Json::FromString(std::string(TypeName<OnComplete>()));
+      if (!started_) {
+        obj["factory"] = Json::FromString(
+            std::string(TypeName<typename Factory::UnderlyingFactory>()));
+      } else {
+        obj["promise"] = PromiseAsJson(promise_);
+      }
+      return obj;
     }
 
     void Destroy() override { delete this; }
@@ -502,6 +533,24 @@ class Party : public Activity, private Wakeable {
     }
 
     void Destroy() override { this->Unref(); }
+
+    Json::Object ToJson() override {
+      Json::Object obj;
+      switch (state_.load(std::memory_order_relaxed)) {
+        case State::kFactory:
+          obj["factory"] = Json::FromString(
+              std::string(TypeName<typename Factory::UnderlyingFactory>()));
+          break;
+        case State::kPromise:
+          obj["promise"] = PromiseAsJson(promise_);
+          break;
+        case State::kResult:
+          obj["result"] = Json::FromString(
+              std::string(TypeName<typename Promise::Result>()));
+          break;
+      }
+      return obj;
+    }
 
    private:
     enum class State : uint8_t { kFactory, kPromise, kResult };
@@ -625,6 +674,8 @@ class Party : public Activity, private Wakeable {
         << absl::StrFormat("%016" PRIx64 " -> %016" PRIx64, prev_state,
                            new_state);
   }
+
+  Json::Object ToJsonLocked();
 
   // Sentinel value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
