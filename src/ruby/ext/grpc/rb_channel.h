@@ -26,9 +26,6 @@
 /* Initializes the Channel class. */
 void Init_grpc_channel();
 
-void grpc_rb_channel_polling_thread_start();
-void grpc_rb_channel_polling_thread_stop();
-
 /* Gets the wrapped channel from the ruby wrapper */
 grpc_channel* grpc_rb_get_wrapped_channel(VALUE v);
 
