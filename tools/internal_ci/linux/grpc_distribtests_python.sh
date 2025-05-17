@@ -53,7 +53,7 @@ if [[ "${IS_AARCH64_MUSL}" == "True" ]]; then
   # Not using TASK_RUNNER_EXTRA_FILTERS since we don't have a target with presubmit tag.
   tools/run_tests/task_runner.py -f package linux python musllinux_1_1 aarch64 -x build_packages/sponge_log.xml || FAILED="true"
 else
-  tools/run_tests/task_runner.py -f package linux python -x build_packages/sponge_log.xml || FAILED="true"
+  tools/run_tests/task_runner.py -f package linux python -x build_packages/sponge_log.xml -e aarch64 musllinux_1_1 || FAILED="true"
 fi
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
