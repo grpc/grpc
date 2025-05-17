@@ -271,6 +271,11 @@ class TransportFlowControl final {
 
   FlowControlAction SetAckedInitialWindow(uint32_t value);
 
+  void set_target_initial_window_size(uint32_t value) {
+    target_initial_window_size_ =
+        std::min(value, Http2Settings::max_initial_window_size());
+  }
+
   // Getters
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }

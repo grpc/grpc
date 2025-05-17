@@ -535,6 +535,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
   if (value >= 0) {
     t->settings.mutable_local().SetInitialWindowSize(value);
+    t->flow_control.set_target_initial_window_size(value);
   }
   value = channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
   if (value >= 0) {
