@@ -600,9 +600,10 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   }
 }
 
-ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
-                                                  SliceBuffer payload) {
+http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
+    const Http2FrameHeader& hdr, SliceBuffer payload) {
   CHECK(payload.Length() == hdr.length);
+
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
       return ParseDataFrame(hdr, payload);
@@ -629,19 +630,6 @@ ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
     default:
       return ValueOrHttp2Status<Http2Frame>(Http2UnknownFrame{});
   }
-}
-
-absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer payload) {
-  auto result = ParseFramePayload1(hdr, std::move(payload));
-  if (result.IsOk()) {
-    return http2::TakeValue<Http2Frame>(std::move(result));
-  }
-  Http2Status::Http2ErrorType type = result.GetErrorType();
-  if (type == Http2Status::Http2ErrorType::kConnectionError) {
-    return result.GetAbslConnectionError();
-  }
-  return result.GetAbslStreamError();
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {

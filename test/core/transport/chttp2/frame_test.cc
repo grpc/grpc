@@ -24,13 +24,24 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice_buffer.h"
 
-using grpc_core::http2::Http2ErrorCode;
-
 namespace grpc_core {
 namespace {
 
-MATCHER_P2(StatusIs, code, message, "") {
-  return arg.code() == code && arg.message() == message;
+using http2::Http2ErrorCode;
+using http2::Http2Status;
+using http2::ValueOrHttp2Status;
+
+MATCHER_P3(Http2StatusIs, error_type, code, message, "") {
+  if (arg.GetType() != error_type) {
+    return false;
+  }
+  if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+    return arg.GetStreamErrorCode() == code &&
+           arg.GetAbslStreamError().message() == message;
+  } else {
+    return arg.GetConnectionErrorCode() == code &&
+           arg.GetAbslConnectionError().message() == message;
+  }
 }
 
 void DoTheseThings(std::initializer_list<int>) {}
@@ -79,12 +90,12 @@ Http2Frame ParseFrame(I... i) {
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
   auto r = ParseFramePayload(frame_hdr, std::move(buffer));
-  EXPECT_TRUE(r.ok()) << r.status();
+  EXPECT_TRUE(r.IsOk()) << r.DebugString();
   return std::move(r.value());
 }
 
 template <typename... I>
-absl::Status ValidateFrame(I... i) {
+Http2Status ValidateFrame(I... i) {
   SliceBuffer buffer;
   buffer.Append(Slice::FromCopiedBuffer(ByteVec(i...)));
   uint8_t hdr[9];
@@ -92,7 +103,11 @@ absl::Status ValidateFrame(I... i) {
   auto frame_hdr = Http2FrameHeader::Parse(hdr);
   EXPECT_EQ(frame_hdr.length, buffer.Length())
       << "frame_hdr=" << frame_hdr.ToString();
-  return ParseFramePayload(frame_hdr, std::move(buffer)).status();
+
+  auto frame = ParseFramePayload(frame_hdr, std::move(buffer));
+  return (frame.IsOk()
+              ? Http2Status::Ok()
+              : ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
 }
 
 TEST(Header, Serialization) {
@@ -597,36 +612,42 @@ TEST(Frame, UnknownIgnored) {
 }
 
 TEST(Frame, ParseRejectsPushPromise) {
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 10,
-                            /* Type (1 octet) */ 5,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                            /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kNoPushPromise,
-                           "{PUSH_PROMISE: flags=0, stream_id=1, length=10}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 10,
+                    /* Type (1 octet) */ 5,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                    /* */ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kNoPushPromise,
+                       "{PUSH_PROMISE: flags=0, stream_id=1, length=10}")));
 }
 
 TEST(Frame, ParseRejectsDataFrame) {
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                            /* Type (1 octet) */ 0,
-                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
-   (2), END_STREAM Flag (1)*/
-                            0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
-                       absl::StrCat(RFC9113::kDataStreamIdMustBeNonZero,
-                                    "{DATA: flags=0, stream_id=0, length=0}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                            /* Type (1 octet) */ 0,
-                            /* Unused Flags (4), PADDED Flag (1), Unused Flags
-   (2), END_STREAM Flag (1)*/
-                            0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
-              StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
-                       absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                                    "{DATA: flags=0, stream_id=2, length=0}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 0,
+                    /* Unused Flags (4), PADDED Flag (1), Unused Flags
+(2), END_STREAM Flag (1)*/
+                    0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kDataStreamIdMustBeNonZero,
+                                 "{DATA: flags=0, stream_id=0, length=0}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 0,
+                    /* Unused Flags (4), PADDED Flag (1), Unused Flags
+(2), END_STREAM Flag (1)*/
+                    0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                                 "{DATA: flags=0, stream_id=2, length=0}")));
 
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 9,
@@ -638,9 +659,13 @@ TEST(Frame, ParseRejectsDataFrame) {
                     /* Pad Length */ 0xff,
                     /* Data */ 'h', 'e', 'l', 'l', 'o',
                     /* Padding */ 0, 0, 0),
-      StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
-               absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
-                            "{DATA: flags=9, stream_id=1, length=9}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
+                                 "{DATA: flags=9, stream_id=1, length=9}")));
+  // StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
+  //          absl::StrCat(RFC9113::kFrameParserIncorrectPadding,
+  //                       "{DATA: flags=9, stream_id=1, length=9}")));
 }
 
 TEST(Frame, ParseRejectsHeaderFrame) {
@@ -651,9 +676,10 @@ TEST(Frame, ParseRejectsHeaderFrame) {
              Flag (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
                     0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kHeaderStreamIdMustBeNonZero,
-                            "{HEADER: flags=0, stream_id=0, length=0}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kHeaderStreamIdMustBeNonZero,
+                                 "{HEADER: flags=0, stream_id=0, length=0}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
                     /* Type (1 octet) */ 1,
@@ -661,9 +687,10 @@ TEST(Frame, ParseRejectsHeaderFrame) {
              Flag (1),END_HEADERS Flag (1),Unused Flag (1),END_STREAM Flag (1)*/
                     0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                            "{HEADER: flags=0, stream_id=2, length=0}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                                 "{HEADER: flags=0, stream_id=2, length=0}")));
 
   // TODO(tjagtap) : [PH2][P5] : Add more test cases. The parser has a lot of
   // cases.
@@ -676,18 +703,22 @@ TEST(Frame, ParseRejectsContinuationFrame) {
           /* Type (1 octet) */ 9,
           /* Unused Flags (5), END_HEADERS Flag (1), Unused Flags (2) */ 0,
           /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kContinuationStreamIdMustBeNonZero,
-                            "{CONTINUATION: flags=0, stream_id=0, length=0}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kContinuationStreamIdMustBeNonZero,
+                       "{CONTINUATION: flags=0, stream_id=0, length=0}")));
   EXPECT_THAT(
       ValidateFrame(
           /* Length (3 octets) */ 0, 0, 0,
           /* Type (1 octet) */ 9,
           /* Unused Flags (5), END_HEADERS Flag (1), Unused Flags (2) */ 0,
           /* Stream Identifier (31 bits) */ 0, 0, 0, 2),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                            "{CONTINUATION: flags=0, stream_id=2, length=0}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                       "{CONTINUATION: flags=0, stream_id=2, length=0}")));
 }
 
 TEST(Frame, ParseRejectsRstStreamFrame) {
@@ -697,119 +728,137 @@ TEST(Frame, ParseRejectsRstStreamFrame) {
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                     /* */ 100, 100, 100),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kRstStreamLength4,
-                            "{RST_STREAM: flags=0, stream_id=1, length=3}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kRstStreamLength4,
+                       "{RST_STREAM: flags=0, stream_id=1, length=3}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                     /* Type (1 octet) */ 3,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 100, 100, 100, 100),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
-                            "{RST_STREAM: flags=0, stream_id=0, length=4}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kRstStreamStreamIdMustBeNonZero,
+                       "{RST_STREAM: flags=0, stream_id=0, length=4}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                     /* Type (1 octet) */ 3,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 2,
                     /* */ 100, 100, 100, 100),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kStreamIdMustBeOdd,
-                            "{RST_STREAM: flags=0, stream_id=2, length=4}")));
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                       "{RST_STREAM: flags=0, stream_id=2, length=4}")));
 }
 
 TEST(Frame, ParseRejectsSettingsFrame) {
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 1,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* */ 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength0,
-                            "{SETTINGS: flags=1, stream_id=0, length=1}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* */ 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=1}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 2,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting */ 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=2}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting */ 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=3}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting */ 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=4}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting */ 1, 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=5}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 7,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                    /* Setting */ 1, 1, 1, 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsLength6x,
-                            "{SETTINGS: flags=0, stream_id=0, length=7}")));
-  EXPECT_THAT(
-      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                    /* Type (1 octet) */ 4,
-                    /* Unused Flags (7), ACK Flag (1) */ 0,
-                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero,
-                            "{SETTINGS: flags=0, stream_id=1, length=0}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 1,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* */ 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength0,
+                               "{SETTINGS: flags=1, stream_id=0, length=1}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* */ 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=1}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 2,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting */ 1, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=2}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting */ 1, 1, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=3}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting */ 1, 1, 1, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=4}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting */ 1, 1, 1, 1, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=5}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 7,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                            /* Setting */ 1, 1, 1, 1, 1, 1, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kFrameSizeError,
+                  absl::StrCat(RFC9113::kSettingsLength6x,
+                               "{SETTINGS: flags=0, stream_id=0, length=7}")));
+  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                            /* Type (1 octet) */ 4,
+                            /* Unused Flags (7), ACK Flag (1) */ 0,
+                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1),
+              Http2StatusIs(
+                  Http2Status::Http2ErrorType::kConnectionError,
+                  Http2ErrorCode::kProtocolError,
+                  absl::StrCat(RFC9113::kSettingsStreamIdMustBeZero,
+                               "{SETTINGS: flags=0, stream_id=1, length=0}")));
 }
 
 TEST(Frame, ParseRejectsPingFrame) {
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                            /* Type (1 octet) */ 6,
-                            /* Unused Flags (7), ACK Flag (1) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(RFC9113::kPingLength8,
-                                    "{PING: flags=0, stream_id=0, length=0}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 8,
-                            /* Type (1 octet) */ 6,
-                            /* Unused Flags (7), ACK Flag (1) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
-                            /* */ 1, 2, 3, 4, 5, 6, 7, 8),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(RFC9113::kPingStreamIdMustBeZero,
-                                    "{PING: flags=0, stream_id=1, length=8}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 6,
+                    /* Unused Flags (7), ACK Flag (1) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kPingLength8,
+                                 "{PING: flags=0, stream_id=0, length=0}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 8,
+                    /* Type (1 octet) */ 6,
+                    /* Unused Flags (7), ACK Flag (1) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
+                    /* */ 1, 2, 3, 4, 5, 6, 7, 8),
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kPingStreamIdMustBeZero,
+                                 "{PING: flags=0, stream_id=1, length=8}")));
 }
 
 TEST(Frame, ParseRejectsGoawayFrame) {
@@ -818,139 +867,158 @@ TEST(Frame, ParseRejectsGoawayFrame) {
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=0}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=0}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=1}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=1}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 2,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=2}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=2}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=3}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=3}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=4}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=4}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=5}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=5}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 6,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1, 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=6}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=6}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 7,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* */ 1, 1, 1, 1, 1, 1, 1),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayLength8,
-                            "{GOAWAY: flags=0, stream_id=0, length=7}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kFrameSizeError,
+                    absl::StrCat(RFC9113::kGoAwayLength8,
+                                 "{GOAWAY: flags=0, stream_id=0, length=7}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 8,
                     /* Type (1 octet) */ 7,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 1,
                     /* */ 1, 2, 3, 4, 5, 6, 7, 8),
-      StatusIs(absl::StatusCode::kInternal,
-               absl::StrCat(RFC9113::kGoAwayStreamIdMustBeZero,
-                            "{GOAWAY: flags=0, stream_id=1, length=8}")));
+      Http2StatusIs(Http2Status::Http2ErrorType::kConnectionError,
+                    Http2ErrorCode::kProtocolError,
+                    absl::StrCat(RFC9113::kGoAwayStreamIdMustBeZero,
+                                 "{GOAWAY: flags=0, stream_id=1, length=8}")));
 }
 
 TEST(Frame, ParseRejectsWindowUpdateFrame) {
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
-                            /* Type (1 octet) */ 8,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kWindowUpdateLength4,
-                           "{WINDOW_UPDATE: flags=0, stream_id=0, length=0}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
-                            /* Type (1 octet) */ 8,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Window Size Increment (31 bits) */ 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kWindowUpdateLength4,
-                           "{WINDOW_UPDATE: flags=0, stream_id=0, length=1}")));
-  EXPECT_THAT(ValidateFrame(
-                  /* Length (3 octets) */ 0, 0, 2,
-                  /* Type (1 octet) */ 8,
-                  /* Unused Flags (1 octet) */ 0,
-                  /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                  /* Window Size Increment (31 bits) */ 1, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kWindowUpdateLength4,
-                           "{WINDOW_UPDATE: flags=0, stream_id=0, length=2}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
-                            /* Type (1 octet) */ 8,
-                            /* Unused Flags (1 octet) */ 0,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
-                            /* Window Size Increment (31 bits) */ 1, 1, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kWindowUpdateLength4,
-                           "{WINDOW_UPDATE: flags=0, stream_id=0, length=3}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 0,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kWindowUpdateLength4,
+                       "{WINDOW_UPDATE: flags=0, stream_id=0, length=0}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 1,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                    /* Window Size Increment (31 bits) */ 1),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kWindowUpdateLength4,
+                       "{WINDOW_UPDATE: flags=0, stream_id=0, length=1}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 2,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                    /* Window Size Increment (31 bits) */ 1, 1),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kWindowUpdateLength4,
+                       "{WINDOW_UPDATE: flags=0, stream_id=0, length=2}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 3,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 0,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
+                    /* Window Size Increment (31 bits) */ 1, 1, 1),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
+          absl::StrCat(RFC9113::kWindowUpdateLength4,
+                       "{WINDOW_UPDATE: flags=0, stream_id=0, length=3}")));
   EXPECT_THAT(
       ValidateFrame(/* Length (3 octets) */ 0, 0, 5,
                     /* Type (1 octet) */ 8,
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* Window Size Increment (31 bits) */ 1, 1, 1, 1, 1),
-      StatusIs(
-          absl::StatusCode::kInternal,
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kFrameSizeError,
           absl::StrCat(RFC9113::kWindowUpdateLength4,
                        "{WINDOW_UPDATE: flags=0, stream_id=0, length=5}")));
-  EXPECT_THAT(ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
-                            /* Type (1 octet) */ 8,
-                            /* Unused Flags (1 octet) */ 1,
-                            /* Stream Identifier (31 bits) */ 0, 0, 0, 4,
-                            /* Window Size Increment (31 bits) */ 1, 1, 1, 1),
-              StatusIs(absl::StatusCode::kInternal,
-                       absl::StrCat(
-                           RFC9113::kStreamIdMustBeOdd,
-                           "{WINDOW_UPDATE: flags=1, stream_id=4, length=4}")));
+  EXPECT_THAT(
+      ValidateFrame(/* Length (3 octets) */ 0, 0, 4,
+                    /* Type (1 octet) */ 8,
+                    /* Unused Flags (1 octet) */ 1,
+                    /* Stream Identifier (31 bits) */ 0, 0, 0, 4,
+                    /* Window Size Increment (31 bits) */ 1, 1, 1, 1),
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
+          absl::StrCat(RFC9113::kStreamIdMustBeOdd,
+                       "{WINDOW_UPDATE: flags=1, stream_id=4, length=4}")));
 }
 
 TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
@@ -961,8 +1029,9 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Unused Flags (1 octet) */ 0xff,
                     /* Stream Identifier (31 bits) */ 0, 0, 0, 0,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
-      StatusIs(
-          absl::StatusCode::kInternal,
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kConnectionError,
+          Http2ErrorCode::kProtocolError,
           absl::StrCat(RFC9113::kWindowSizeIncrement,
                        "{WINDOW_UPDATE: flags=255, stream_id=0, length=4}")));
   EXPECT_THAT(
@@ -971,8 +1040,9 @@ TEST(Frame, ParseRejectsWindowUpdateFrameZeroIncrement) {
                     /* Unused Flags (1 octet) */ 0,
                     /* Stream Identifier (31 bits) */ 0x7f, 0xff, 0xff, 0xff,
                     /* Window Size Increment (31 bits) */ 0, 0, 0, 0),
-      StatusIs(
-          absl::StatusCode::kInternal,
+      Http2StatusIs(
+          Http2Status::Http2ErrorType::kStreamError,
+          Http2ErrorCode::kProtocolError,
           absl::StrCat(
               RFC9113::kWindowSizeIncrement,
               "{WINDOW_UPDATE: flags=0, stream_id=2147483647, length=4}")));
