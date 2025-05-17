@@ -64,6 +64,8 @@
   default: false
 - name: keep_alive_ping_timer_batch
   default: false
+- name: keepalive_ping_timeout_enabled
+  default: true
 - name: local_connector_secure
   default: false
 - name: max_inflight_pings_strict_limit

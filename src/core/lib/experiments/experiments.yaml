@@ -143,6 +143,13 @@
   expiry: 2025/06/01
   owner: vigneshbabu@google.com
   test_tags: []
+- name: keepalive_ping_timeout_enabled
+  description:
+    Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
+    itself to the next ping interval.
+  expiry: 2025/06/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: local_connector_secure
   description: Local security connector uses TSI_SECURITY_NONE for LOCAL_TCP connections.
   expiry: 2025/07/31
