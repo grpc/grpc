@@ -120,7 +120,8 @@ void TCPConnectHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
   args_ = args;
-  if (args->endpoint != nullptr) {
+  if (args->endpoint != nullptr &&
+      args_->args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;
   }
