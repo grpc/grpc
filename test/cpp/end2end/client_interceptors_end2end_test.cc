@@ -67,7 +67,6 @@ enum class RPCType {
 enum class ChannelType {
   kHttpChannel,
   kFdChannel,
-  kSecureFdChannel,
 };
 
 // Hijacks Echo RPC and fills in the expected values
@@ -732,7 +731,6 @@ std::vector<TestScenario> CreateTestScenarios() {
   rpc_types.emplace_back(RPCType::kAsyncCQServerStreaming);
   for (const auto& rpc_type : rpc_types) {
     scenarios.emplace_back(ChannelType::kHttpChannel, rpc_type);
-    scenarios.emplace_back(ChannelType::kSecureFdChannel, rpc_type);
 // TODO(yashykt): Maybe add support for non-posix sockets too
 #ifdef GRPC_POSIX_SOCKET
     scenarios.emplace_back(ChannelType::kFdChannel, rpc_type);
@@ -755,22 +753,18 @@ class ParameterizedClientInterceptorsEnd2endTest
     }
 #ifdef GRPC_POSIX_SOCKET
     else if (GetParam().channel_type() == ChannelType::kFdChannel) {
-      create_sockets();
+      int flags;
+      CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv_), 0);
+      flags = fcntl(sv_[0], F_GETFL, 0);
+      CHECK_EQ(fcntl(sv_[0], F_SETFL, flags | O_NONBLOCK), 0);
+      flags = fcntl(sv_[1], F_GETFL, 0);
+      CHECK_EQ(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK), 0);
+      CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) == absl::OkStatus());
+      CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) == absl::OkStatus());
       server_ = builder.BuildAndStart();
       AddInsecureChannelFromFd(server_.get(), sv_[1]);
     }
 #endif  // GRPC_POSIX_SOCKET
-    else if (GetParams().channel_type() == ChannelType::kSecureFdChannel) {
-      create_sockets();
-      std::unique_ptr<grpc::experimental::PassiveListener> passive_listener;
-      ServerBuilder builder;
-      server_ = builder.experimental()
-                    .AddPassiveListener(grpc::InsecureServerCredentials(),
-                                        passive_listener)
-                    .BuildAndStart();
-      auto status = passive_listener->AcceptConnectedFd(new_socket_fd);
-      ASSERT_TRUE(status.ok());
-    }
   }
 
   ~ParameterizedClientInterceptorsEnd2endTest() override {
@@ -792,10 +786,6 @@ class ParameterizedClientInterceptorsEnd2endTest
           "", sv_[0], ChannelArguments(), std::move(creators));
     }
 #endif  // GRPC_POSIX_SOCKET
-    else if (GetParam().channel_type() == ChannelType::kSecureFdChannel) {
-      return grpc::experimental::CreateChannelFromFd(
-          client_fd, grpc::InsecureChannelCredentials(), ChannelArguments());
-    }
     return nullptr;
   }
 
@@ -826,17 +816,6 @@ class ParameterizedClientInterceptorsEnd2endTest
         // TODO(yashykt) : Fill this out
         break;
     }
-  }
-
-  void create_sockets() {
-    int flags;
-    CHECK_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv_), 0);
-    flags = fcntl(sv_[0], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv_[0], F_SETFL, flags | O_NONBLOCK), 0);
-    flags = fcntl(sv_[1], F_GETFL, 0);
-    CHECK_EQ(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK), 0);
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) == absl::OkStatus());
-    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) == absl::OkStatus());
   }
 
   std::string server_address_;
