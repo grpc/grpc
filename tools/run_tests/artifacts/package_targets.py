@@ -175,7 +175,7 @@ class PythonPackage:
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
             )
             environ["ARTIFACT_PREFIX"] = "python_musllinux_1_1_aarch64_"
-            del environ["EXCLUDE_PATTERN"]
+            environ["EXCLUDE_PATTERN"] = ""
 
         return create_docker_jobspec(
             self.name,
