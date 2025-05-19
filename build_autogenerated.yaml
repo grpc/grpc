@@ -8092,16 +8092,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: destroy_grpclb_channel_with_active_connect_stress_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
-  deps:
-  - gtest
-  - grpc++_test_util
 - name: directory_reader_test
   gtest: true
   build: test

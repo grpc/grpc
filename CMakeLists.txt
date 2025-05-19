@@ -1408,7 +1408,6 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx default_engine_methods_test)
   add_dependencies(buildtests_cxx delegating_channel_test)
-  add_dependencies(buildtests_cxx destroy_grpclb_channel_with_active_connect_stress_test)
   add_dependencies(buildtests_cxx directory_reader_test)
   add_dependencies(buildtests_cxx dns_resolver_cooldown_test)
   add_dependencies(buildtests_cxx dns_resolver_test)
@@ -12546,49 +12545,6 @@ target_include_directories(delegating_channel_test
 )
 
 target_link_libraries(delegating_channel_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gtest
-  grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(destroy_grpclb_channel_with_active_connect_stress_test
-  test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
-)
-if(WIN32 AND MSVC)
-  if(BUILD_SHARED_LIBS)
-    target_compile_definitions(destroy_grpclb_channel_with_active_connect_stress_test
-    PRIVATE
-      "GPR_DLL_IMPORTS"
-      "GRPC_DLL_IMPORTS"
-      "GRPCXX_DLL_IMPORTS"
-    )
-  endif()
-endif()
-target_compile_features(destroy_grpclb_channel_with_active_connect_stress_test PUBLIC cxx_std_17)
-target_include_directories(destroy_grpclb_channel_with_active_connect_stress_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
