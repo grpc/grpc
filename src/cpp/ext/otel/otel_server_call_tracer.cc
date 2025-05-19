@@ -37,6 +37,7 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
@@ -49,6 +50,28 @@
 
 namespace grpc {
 namespace internal {
+
+class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
+    : public grpc_core::TcpCallTracer {
+ public:
+  explicit TcpCallTracer(
+      OpenTelemetryPluginImpl::ServerCallTracer* server_call_tracer)
+      : server_call_tracer_(server_call_tracer) {}
+
+  void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
+                   absl::Time time, size_t byte_offset,
+                   std::vector<TcpEventMetric> metrics) override {
+    server_call_tracer_->RecordAnnotation(
+        absl::StrCat(
+            "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
+            " byte_offset=", byte_offset, " ",
+            grpc_core::TcpCallTracer::TcpEventMetricsToString(metrics)),
+        time);
+  }
+
+ private:
+  OpenTelemetryPluginImpl::ServerCallTracer* server_call_tracer_;
+};
 
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
@@ -246,6 +269,14 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordAnnotation(
     absl::string_view annotation) {
   if (span_ != nullptr) {
     span_->AddEvent(AbslStringViewToNoStdStringView(annotation));
+  }
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordAnnotation(
+    absl::string_view annotation, absl::Time time) {
+  if (span_ != nullptr) {
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation),
+                    absl::ToChronoTime(time));
   }
 }
 

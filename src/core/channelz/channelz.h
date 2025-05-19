@@ -40,6 +40,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/per_cpu.h"
 #include "src/core/util/ref_counted.h"
@@ -87,7 +88,7 @@ class SubchannelNodePeer;
 }  // namespace testing
 
 // base class for all channelz entities
-class BaseNode : public RefCounted<BaseNode> {
+class BaseNode : public DualRefCounted<BaseNode> {
  public:
   // There are only four high level channelz entities. However, to support
   // GetTopChannelsRequest, we split the Channel entity into two different
@@ -126,7 +127,7 @@ class BaseNode : public RefCounted<BaseNode> {
   BaseNode(EntityType type, std::string name);
 
  public:
-  ~BaseNode() override;
+  void Orphaned() override;
 
   bool HasParent(const BaseNode* parent) const {
     MutexLock lock(&parent_mu_);
@@ -135,7 +136,7 @@ class BaseNode : public RefCounted<BaseNode> {
 
   void AddParent(BaseNode* parent) {
     MutexLock lock(&parent_mu_);
-    parents_.insert(parent->Ref());
+    parents_.insert(parent->WeakRef());
   }
 
   void RemoveParent(BaseNode* parent) {
@@ -180,20 +181,21 @@ class BaseNode : public RefCounted<BaseNode> {
   friend class ChannelzRegistry;
   // allow data source to register/unregister itself
   friend class DataSource;
-  using ParentSet =
-      absl::flat_hash_set<RefCountedPtr<BaseNode>, RefCountedPtrHash<BaseNode>,
-                          RefCountedPtrEq<BaseNode>>;
+  using ParentSet = absl::flat_hash_set<WeakRefCountedPtr<BaseNode>,
+                                        WeakRefCountedPtrHash<BaseNode>,
+                                        WeakRefCountedPtrEq<BaseNode>>;
 
   intptr_t UuidSlow();
 
   const EntityType type_;
+  uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
   Mutex data_sources_mu_;
   absl::InlinedVector<DataSource*, 3> data_sources_
       ABSL_GUARDED_BY(data_sources_mu_);
-  BaseNode* prev_;
-  BaseNode* next_;
+  BaseNode* prev_;  // updated by registry
+  BaseNode* next_;  // updated by registry
   mutable Mutex parent_mu_;
   ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
 };
@@ -236,6 +238,10 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's destructor.
+  // It removes this data source from the node's list of data sources.
+  // If it is not called, then the AddData() function pointer may be invalid
+  // when the node is queried.
   void ResetDataSource();
 
  private:
@@ -316,6 +322,11 @@ class ChannelNode final : public BaseNode {
   ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               bool is_internal_channel);
 
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
+
   static absl::string_view ChannelArgName() {
     return GRPC_ARG_CHANNELZ_CHANNEL_NODE;
   }
@@ -362,6 +373,8 @@ class ChannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 
   // Least significant bit indicates whether the value is set.  Remaining
@@ -374,6 +387,11 @@ class SubchannelNode final : public BaseNode {
  public:
   SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
+
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
 
   // Sets the subchannel's connectivity state without health checking.
   void UpdateConnectivityState(grpc_connectivity_state state);
@@ -422,6 +440,8 @@ class SubchannelNode final : public BaseNode {
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 };
 
@@ -431,6 +451,11 @@ class ServerNode final : public BaseNode {
   explicit ServerNode(size_t channel_tracer_max_nodes);
 
   ~ServerNode() override;
+
+  void Orphaned() override {
+    channel_args_ = ChannelArgs();
+    BaseNode::Orphaned();
+  }
 
   Json RenderJson() override;
 
@@ -466,6 +491,8 @@ class ServerNode final : public BaseNode {
  private:
   PerCpuCallCountingHelper call_counter_;
   ChannelTrace trace_;
+  // TODO(ctiller): keeping channel args here can create odd circular references
+  // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
 };
 
@@ -567,6 +594,8 @@ class SocketNode final : public BaseNode {
   }
   const std::string& local() const { return local_; }
   const std::string& remote() const { return remote_; }
+
+  RefCountedPtr<Security> security() const { return security_; }
 
  private:
   std::optional<std::string> CycleCounterToTimestamp(

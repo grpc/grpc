@@ -68,8 +68,8 @@ EXCLUDED_TARGETS=(
   # Also exclude the artifact_gen tooling, which again contains some bazel hackery
   "-//tools/artifact_gen/..."
 
-  # Exclude the codegen tooling `experiments_compiler`, which contains some bazel hackery
-  "-//tools/codegen/core:experiments_compiler"
+  # Exclude the codegen gen_experiments tooling, which contains some bazel hackery
+  "-//tools/codegen/core/gen_experiments/..."
 )
 
 FAILED_TESTS=""

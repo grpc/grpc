@@ -79,7 +79,7 @@ _DEPS = [
     "//src/core:slice",
     "//src/core:stats_data",
     "//src/core:status_helper",
-    "//:tcp_tracer",
+    "//src/core:tcp_tracer",
     "//src/core:time",
     "//src/core:unique_type_name",
     "//test/core/test_util:fail_first_call_filter",

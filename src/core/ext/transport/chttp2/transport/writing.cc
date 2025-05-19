@@ -398,11 +398,14 @@ class DataSendContext {
   }
 
   uint32_t max_outgoing() const {
-    return grpc_core::Clamp<uint32_t>(
+    return grpc_core::Clamp<int64_t>(
         std::min<int64_t>(
             {t_->settings.peer().max_frame_size(), stream_remote_window(),
              t_->flow_control.remote_window(),
-             static_cast<int64_t>(write_context_->target_write_size())}),
+             static_cast<int64_t>(write_context_->target_write_size()) -
+                 (grpc_core::IsChttp2BoundWriteSizeEnabled()
+                      ? static_cast<int64_t>(t_->outbuf.Length())
+                      : static_cast<int64_t>(0))}),
         0, std::numeric_limits<uint32_t>::max());
   }
 
@@ -488,30 +491,16 @@ class StreamWriteContext {
     grpc_chttp2_complete_closure_step(t_, &s_->send_initial_metadata_finished,
                                       absl::OkStatus(),
                                       "send_initial_metadata_finished");
-    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
-      if (s_->parent_call_tracer != nullptr) {
-        grpc_core::HttpAnnotation::WriteStats write_stats;
-        write_stats.target_write_size = write_context_->target_write_size();
-        s_->parent_call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(
-                grpc_core::HttpAnnotation::Type::kHeadWritten,
-                gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s_->t->flow_control.stats())
-                .Add(s_->flow_control.stats())
-                .Add(write_stats));
-      }
-    } else {
-      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
-        grpc_core::HttpAnnotation::WriteStats write_stats;
-        write_stats.target_write_size = write_context_->target_write_size();
-        s_->call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(
-                grpc_core::HttpAnnotation::Type::kHeadWritten,
-                gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s_->t->flow_control.stats())
-                .Add(s_->flow_control.stats())
-                .Add(write_stats));
-      }
+    if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
+      grpc_core::HttpAnnotation::WriteStats write_stats;
+      write_stats.target_write_size = write_context_->target_write_size();
+      s_->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(
+              grpc_core::HttpAnnotation::Type::kHeadWritten,
+              gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s_->t->flow_control.stats())
+              .Add(s_->flow_control.stats())
+              .Add(write_stats));
     }
   }
 
@@ -556,6 +545,10 @@ class StreamWriteContext {
         grpc_core::global_stats().IncrementHttp2StreamStalls();
         report_stall(t_, s_, "stream");
         grpc_chttp2_list_add_stalled_by_stream(t_, s_);
+      } else if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
+        GRPC_CHTTP2_STREAM_REF(s_, "chttp2_writing:fork");
+        grpc_chttp2_list_add_writable_stream(t_, s_);
+        stream_became_writable_ = true;
       }
       return;  // early out: nothing to do
     }
@@ -663,22 +656,12 @@ class StreamWriteContext {
     }
     grpc_chttp2_mark_stream_closed(t_, s_, !t_->is_client, true,
                                    absl::OkStatus());
-    if (!grpc_core::IsCallTracerTransportFixEnabled()) {
-      if (s_->parent_call_tracer != nullptr) {
-        s_->parent_call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
-                                      gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s_->t->flow_control.stats())
-                .Add(s_->flow_control.stats()));
-      }
-    } else {
-      if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
-        s_->call_tracer->RecordAnnotation(
-            grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
-                                      gpr_now(GPR_CLOCK_REALTIME))
-                .Add(s_->t->flow_control.stats())
-                .Add(s_->flow_control.stats()));
-      }
+    if (s_->call_tracer != nullptr && s_->call_tracer->IsSampled()) {
+      s_->call_tracer->RecordAnnotation(
+          grpc_core::HttpAnnotation(grpc_core::HttpAnnotation::Type::kEnd,
+                                    gpr_now(GPR_CLOCK_REALTIME))
+              .Add(s_->t->flow_control.stats())
+              .Add(s_->flow_control.stats()));
     }
   }
 
