@@ -232,7 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20240722.0'
+    abseil_version = '~> 1.20250127.1'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -416,6 +416,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
+                      'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                       'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -1218,6 +1219,7 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.h',
                       'src/core/transport/endpoint_transport.h',
+                      'src/core/transport/endpoint_transport_client_channel_factory.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -1266,6 +1268,7 @@ Pod::Spec.new do |s|
                       'src/core/util/event_log.h',
                       'src/core/util/examine_stack.h',
                       'src/core/util/fork.h',
+                      'src/core/util/function_signature.h',
                       'src/core/util/gcp_metadata_query.h',
                       'src/core/util/gethostname.h',
                       'src/core/util/glob.h',
@@ -1732,6 +1735,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -2534,6 +2538,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
                               'src/core/transport/endpoint_transport.h',
+                              'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -2582,6 +2587,7 @@ Pod::Spec.new do |s|
                               'src/core/util/event_log.h',
                               'src/core/util/examine_stack.h',
                               'src/core/util/fork.h',
+                              'src/core/util/function_signature.h',
                               'src/core/util/gcp_metadata_query.h',
                               'src/core/util/gethostname.h',
                               'src/core/util/glob.h',

@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -27,7 +29,9 @@
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "test/core/transport/chttp2/http2_common_test_inputs.h"
@@ -36,8 +40,11 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-constexpr bool not_end_stream = false;
-constexpr bool end_stream = true;
+constexpr bool kNotEndStream = false;
+constexpr bool kEndStream = true;
+
+///////////////////////////////////////////////////////////////////////////////
+// Helper functions
 
 void AppendEmptyMessage(SliceBuffer& payload) {
   AppendGrpcHeaderToSliceBuffer(payload, kFlags0, 0);
@@ -59,25 +66,30 @@ void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
-TEST(GrpcMessageAssembler, MustMakeSliceBufferEmpty) {
+///////////////////////////////////////////////////////////////////////////////
+// GrpcMessageAssembler Tests
+
+TEST(GrpcMessageAssemblerTest, MustMakeSliceBufferEmpty) {
   SliceBuffer frame1;
   AppendHeaderAndMessage(frame1, kStr1024);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kStr1024.size());
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
   // AppendNewDataFrame must empty the original buffer
   EXPECT_EQ(frame1.Length(), 0);
 }
 
-TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
+TEST(GrpcMessageAssemblerTest, OneEmptyMessageInOneFrame) {
   SliceBuffer frame1;
   AppendEmptyMessage(frame1);
   // An empty message has the gRPC header
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -88,13 +100,14 @@ TEST(GrpcMessageAssembler, OneEmptyMessageInOneFrame) {
   EXPECT_EQ(result2->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
+TEST(GrpcMessageAssemblerTest, OneMessageInOneFrame) {
   SliceBuffer frame1;
   AppendHeaderAndMessage(frame1, kStr1024);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kStr1024.size());
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -108,7 +121,7 @@ TEST(GrpcMessageAssembler, OneMessageInOneFrame) {
   EXPECT_EQ(result2->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
+TEST(GrpcMessageAssemblerTest, OneMessageInThreeFrames) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + kString2.size() + kString3.size();
   AppendHeaderAndPartialMessage(frame1, kFlags0, length, kString1);
@@ -119,17 +132,20 @@ TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
   AppendPartialMessage(frame3, kString3);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, not_end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
   EXPECT_EQ(result1->get(), nullptr);
 
-  assembler.AppendNewDataFrame(frame2, not_end_stream);
+  result = assembler.AppendNewDataFrame(frame2, kNotEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get(), nullptr);
 
-  assembler.AppendNewDataFrame(frame3, end_stream);
+  result = assembler.AppendNewDataFrame(frame3, kEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
   EXPECT_EQ(result3->get()->payload()->Length(), length);
@@ -140,7 +156,7 @@ TEST(GrpcMessageAssembler, OneMessageInThreeFrames) {
   EXPECT_EQ(result4->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {
+TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrame) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + kString2.size() + kString3.size();
   AppendHeaderAndMessage(frame1, kString1);
@@ -149,7 +165,8 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {
   EXPECT_EQ(frame1.Length(), length + (3 * kGrpcHeaderSizeInBytes));
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -177,7 +194,7 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrame) {
   EXPECT_EQ(result4->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) {
+TEST(GrpcMessageAssemblerTest, ThreeEmptyMessagesInOneFrame) {
   SliceBuffer frame1;
   AppendEmptyMessage(frame1);
   AppendEmptyMessage(frame1);
@@ -185,7 +202,8 @@ TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) {
   EXPECT_EQ(frame1.Length(), 3 * kGrpcHeaderSizeInBytes);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -204,7 +222,7 @@ TEST(GrpcMessageAssembler, ThreeEmptyMessagesInOneFrame) {
   EXPECT_EQ(result4->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
+TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrameMiddleMessageEmpty) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + kString3.size();
   AppendHeaderAndMessage(frame1, kString1);
@@ -213,7 +231,8 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
   EXPECT_EQ(frame1.Length(), length + (3 * kGrpcHeaderSizeInBytes));
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -238,7 +257,7 @@ TEST(GrpcMessageAssembler, ThreeMessageInOneFrameMiddleMessageEmpty) {
   EXPECT_EQ(result4->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
+TEST(GrpcMessageAssemblerTest, FourMessageInThreeFrames) {
   SliceBuffer frame1;
   AppendHeaderAndMessage(frame1, kStr1024);  // Message 1 complete
   AppendHeaderAndPartialMessage(frame1, kFlags0, (2 * kStr1024.size()),
@@ -254,7 +273,8 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   AppendHeaderAndMessage(frame3, kStr1024);  // Message 4 complete
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, not_end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
@@ -264,7 +284,8 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   EXPECT_TRUE(result11.ok());
   EXPECT_EQ(result11->get(), nullptr);
 
-  assembler.AppendNewDataFrame(frame2, not_end_stream);
+  result = assembler.AppendNewDataFrame(frame2, kNotEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
@@ -275,7 +296,8 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   EXPECT_TRUE(result22.ok());
   EXPECT_EQ(result22->get(), nullptr);
 
-  assembler.AppendNewDataFrame(frame3, end_stream);
+  result = assembler.AppendNewDataFrame(frame3, kEndStream);
+  EXPECT_TRUE(result.ok());
 
   absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
   EXPECT_TRUE(result3.ok());
@@ -291,13 +313,14 @@ TEST(GrpcMessageAssembler, FourMessageInThreeFrames) {
   EXPECT_EQ(result5->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
+TEST(GrpcMessageAssemblerTest, IncompleteMessageHeader) {
   SliceBuffer frame1;
   AppendGrpcHeaderToSliceBuffer(frame1, kFlags0, kStr1024.size());
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, not_end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_TRUE(result1.ok());
   EXPECT_EQ(result1->get(), nullptr);
@@ -309,7 +332,8 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   discard.Clear();
   frame2.Append(Slice::FromCopiedString(kStr1024));
 
-  assembler.AppendNewDataFrame(frame2, end_stream);
+  result = assembler.AppendNewDataFrame(frame2, kEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
   EXPECT_TRUE(result2.ok());
   EXPECT_EQ(result2->get()->payload()->Length(), kStr1024.size());
@@ -320,27 +344,121 @@ TEST(GrpcMessageAssembler, IncompleteMessageHeader) {
   EXPECT_EQ(result3->get(), nullptr);
 }
 
-TEST(GrpcMessageAssembler, ErrorIncompleteMessageHeader) {
+TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessageHeader) {
   SliceBuffer frame1;
   AppendGrpcHeaderToSliceBuffer(frame1, kFlags0, kStr1024.size());
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_FALSE(result1.ok());
 }
 
-TEST(GrpcMessageAssembler, ErrorIncompleteMessagePayload) {
+TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessagePayload) {
   SliceBuffer frame1;
   const uint32_t length = kString1.size() + 1;
   AppendHeaderAndPartialMessage(frame1, kFlags0, length, kString1);
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
 
   GrpcMessageAssembler assembler;
-  assembler.AppendNewDataFrame(frame1, end_stream);
+  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.ok());
   absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
   EXPECT_FALSE(result1.ok());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// GrpcMessageDisassembler Tests
+
+MessageHandle MakeMessage() {
+  SliceBuffer payload;
+  payload.Append(Slice::FromCopiedString(kStr1024));
+  return Arena::MakePooled<Message>(std::move(payload), kFlags0);
+}
+
+TEST(GrpcMessageDisassemblerTest, OneMessageToOneFrame) {
+  const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
+  auto message = MakeMessage();
+
+  const uint32_t stream_id = 1;
+  GrpcMessageDisassembler disassembler;
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+  disassembler.PrepareSingleMessageForSending(std::move(message));
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
+
+  const uint32_t max_length = 1024 * 2;
+  Http2DataFrame frame1 =
+      disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
+  EXPECT_EQ(frame1.stream_id, stream_id);
+  EXPECT_EQ(frame1.end_stream, kNotEndStream);
+  EXPECT_EQ(frame1.payload.Length(), expected_size);
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+}
+
+TEST(GrpcMessageDisassemblerTest, TwoMessageOneFrame) {
+  auto message1 = MakeMessage();
+  auto message2 = MakeMessage();
+  const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
+
+  const uint32_t stream_id = 1;
+  GrpcMessageDisassembler disassembler;
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+  disassembler.PrepareBatchedMessageForSending(std::move(message1));
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
+  disassembler.PrepareBatchedMessageForSending(std::move(message2));
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_size * 2);
+
+  const uint32_t max_length = expected_size * 3;
+  Http2DataFrame frame1 =
+      disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
+  EXPECT_EQ(frame1.stream_id, stream_id);
+  EXPECT_EQ(frame1.end_stream, kNotEndStream);
+  EXPECT_EQ(frame1.payload.Length(), expected_size * 2);
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+}
+
+TEST(GrpcMessageDisassemblerTest, TwoMessageThreeFrames) {
+  auto message1 = MakeMessage();
+  auto message2 = MakeMessage();
+  const size_t expected_size = kGrpcHeaderSizeInBytes + kStr1024.size();
+
+  const uint32_t stream_id = 1;
+  GrpcMessageDisassembler disassembler;
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+  disassembler.PrepareBatchedMessageForSending(std::move(message1));
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_size);
+  disassembler.PrepareBatchedMessageForSending(std::move(message2));
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_size * 2);
+
+  const uint32_t max_length = 1024;
+  const uint8_t num_iterations = 3;
+  uint32_t counter = 0;
+  size_t total_bytes_counter = 0;
+  while (disassembler.GetBufferedLength() > 0) {
+    ++counter;
+    Http2DataFrame frame1 =
+        disassembler.GenerateNextFrame(stream_id, max_length, kNotEndStream);
+    EXPECT_EQ(frame1.stream_id, stream_id);
+    EXPECT_EQ(frame1.end_stream, kNotEndStream);
+    EXPECT_LE(frame1.payload.Length(), max_length);
+    total_bytes_counter += frame1.payload.Length();
+  }
+  EXPECT_EQ(counter, num_iterations);
+  EXPECT_EQ(total_bytes_counter, expected_size * 2);
+}
+
+TEST(GrpcMessageDisassemblerTest, GenerateEmptyEndFrame) {
+  const uint32_t stream_id = 1;
+  GrpcMessageDisassembler disassembler;
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
+
+  Http2DataFrame frame = disassembler.GenerateEmptyEndFrame(stream_id);
+  EXPECT_EQ(frame.stream_id, stream_id);
+  EXPECT_EQ(frame.end_stream, kEndStream);
+  EXPECT_EQ(frame.payload.Length(), 0);
+  EXPECT_EQ(disassembler.GetBufferedLength(), 0);
 }
 
 }  // namespace testing

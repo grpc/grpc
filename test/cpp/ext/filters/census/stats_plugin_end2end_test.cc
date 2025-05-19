@@ -584,11 +584,8 @@ TEST_F(StatsPluginEnd2EndTest, TestAllSpansAreExported) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // We never ended the two spans created in the scope above, so we don't
   // expect them to be exported.
   ASSERT_EQ(3, recorded_spans.size());
@@ -653,11 +650,8 @@ TEST_F(StatsPluginEnd2EndTest,
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of trace annotation for removal from channel's pending
   // resolver result queue.
   auto sent_span_data =
@@ -704,11 +698,8 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(1000 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of message size annotations in attempt span
   auto attempt_span_data = GetSpanByName(
       recorded_spans, absl::StrCat("Attempt.", client_method_name_));
@@ -767,11 +758,8 @@ TEST_F(StatsPluginEnd2EndTest, TestMessageSizeWithCompressionAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of message size annotations in attempt span
   auto attempt_span_data = GetSpanByName(
       recorded_spans, absl::StrCat("Attempt.", client_method_name_));
@@ -821,17 +809,11 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // Check presence of metadata size annotations in client span.
   auto sent_span_data = GetSpanByName(
-      recorded_spans,
-      absl::StrCat(
-          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
-          client_method_name_));
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
       sent_span_data,
@@ -868,16 +850,10 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   auto client_span_data = GetSpanByName(
-      recorded_spans,
-      absl::StrCat(
-          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
-          client_method_name_));
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,
                                   "HttpAnnotation type: Start time: .* "
@@ -929,11 +905,8 @@ TEST_F(StatsPluginEnd2EndTest, TestObservabilityDisabledChannelArg) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(0);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // The size might be 0 or 1, depending on whether the server-side ends up
   // getting sampled or not.
   ASSERT_LE(recorded_spans.size(), 1);
@@ -999,11 +972,8 @@ TEST_F(StatsPluginEnd2EndTest, TestGlobalEnableOpenCensusTracing) {
     grpc::Status status = stub_->Echo(&context, request, &response);
     EXPECT_TRUE(status.ok());
   }
-  absl::SleepFor(absl::Milliseconds(500 * grpc_test_slowdown_factor()));
-  TestUtils::Flush();
-  ::opencensus::trace::exporter::SpanExporterTestPeer::ExportForTesting();
+  auto recorded_spans = traces_recorder_->GetAndClearSpans(0);
   traces_recorder_->StopRecording();
-  auto recorded_spans = traces_recorder_->GetAndClearSpans();
   // No span should be exported
   ASSERT_EQ(0, recorded_spans.size());
 

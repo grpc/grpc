@@ -1744,20 +1744,15 @@ std::string GetSourceIncludes(grpc_generator::File* file,
     auto printer = file->CreatePrinter(&output);
     std::map<std::string, std::string> vars;
     static const char* headers_strs[] = {
-        "functional",
-        "grpcpp/support/async_stream.h",
-        "grpcpp/support/async_unary_call.h",
-        "grpcpp/impl/channel_interface.h",
-        "grpcpp/impl/client_unary_call.h",
-        "grpcpp/support/client_callback.h",
-        "grpcpp/support/message_allocator.h",
-        "grpcpp/support/method_handler.h",
-        "grpcpp/impl/rpc_service_method.h",
-        "grpcpp/support/server_callback.h",
-        "grpcpp/impl/server_callback_handlers.h",
-        "grpcpp/server_context.h",
-        "grpcpp/impl/service_type.h",
-        "grpcpp/support/sync_stream.h"};
+        "functional", "grpcpp/support/async_stream.h",
+        "grpcpp/support/async_unary_call.h", "grpcpp/impl/channel_interface.h",
+        "grpcpp/impl/client_unary_call.h", "grpcpp/support/client_callback.h",
+        "grpcpp/support/message_allocator.h", "grpcpp/support/method_handler.h",
+        "grpcpp/impl/rpc_service_method.h", "grpcpp/support/server_callback.h",
+        "grpcpp/impl/server_callback_handlers.h", "grpcpp/server_context.h",
+        "grpcpp/impl/service_type.h", "grpcpp/support/sync_stream.h",
+        // ports_def.inc Must be included as last
+        "grpcpp/ports_def.inc"};
     std::vector<std::string> headers(headers_strs, array_end(headers_strs));
     PrintIncludes(printer.get(), headers, params.use_system_headers,
                   params.grpc_search_path);
@@ -2253,6 +2248,8 @@ std::string GetSourceEpilogue(grpc_generator::File* file,
       temp.append(*part);
       temp.append("\n");
     }
+    // Must be included at end of file
+    temp.append("#include <grpcpp/ports_undef.inc>\n");
     temp.append("\n");
   }
 

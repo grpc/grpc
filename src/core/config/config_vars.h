@@ -35,6 +35,7 @@ class GPR_DLL ConfigVars {
  public:
   struct Overrides {
     absl::optional<int32_t> client_channel_backup_poll_interval_ms;
+    absl::optional<int32_t> channelz_max_orphaned_nodes;
     absl::optional<bool> enable_fork_support;
     absl::optional<bool> abort_on_leaks;
     absl::optional<bool> not_use_system_ssl_roots;
@@ -104,12 +105,19 @@ class GPR_DLL ConfigVars {
   bool CppExperimentalDisableReflection() const {
     return cpp_experimental_disable_reflection_;
   }
+  // EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the
+  // underlying object lifetime, up to this many nodes. The value may be
+  // adjusted slightly to account for implementation limits.
+  int32_t ChannelzMaxOrphanedNodes() const {
+    return channelz_max_orphaned_nodes_;
+  }
 
  private:
   explicit ConfigVars(const Overrides& overrides);
   static const ConfigVars& Load();
   static std::atomic<ConfigVars*> config_vars_;
   int32_t client_channel_backup_poll_interval_ms_;
+  int32_t channelz_max_orphaned_nodes_;
   bool enable_fork_support_;
   bool abort_on_leaks_;
   bool not_use_system_ssl_roots_;

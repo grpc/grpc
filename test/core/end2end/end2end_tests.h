@@ -696,11 +696,6 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#define SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED() \
-  if (!core_configuration_reset()) {                \
-    GTEST_SKIP() << "Skipping test for fuzzing";    \
-  }
-
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else

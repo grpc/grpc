@@ -188,6 +188,15 @@ struct grpc_channel_stack {
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
 
+  class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
+   public:
+    using grpc_core::channelz::DataSource::DataSource;
+    ~ChannelStackDataSource() { ResetDataSource(); }
+    void AddData(grpc_core::channelz::DataSink& sink) override;
+  };
+
+  grpc_core::ManualConstructor<ChannelStackDataSource> channelz_data_source;
+
   grpc_core::ManualConstructor<
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>>
       event_engine;

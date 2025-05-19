@@ -46,6 +46,7 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
         surface_user_agent_(surface_user_agent),
         allow_put_requests_(allow_put_requests) {}
+  ~HttpServerFilter() override { ResetDataSource(); }
 
   void AddData(channelz::DataSink& sink) override {
     Json::Object object;

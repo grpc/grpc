@@ -90,7 +90,8 @@
 
 namespace grpc_core {
 
-class ChaoticGoodFixture : public InsecureFixture {
+template <typename SecureFixtureImpl>
+class ChaoticGoodFixture : public SecureFixtureImpl {
  public:
   explicit ChaoticGoodFixture(int data_connections = 1, int chunk_size = 0,
                               std::string localaddr = JoinHostPort(
@@ -104,7 +105,8 @@ class ChaoticGoodFixture : public InsecureFixture {
 
  private:
   ChannelArgs MutateClientArgs(ChannelArgs args) override {
-    return args.Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
+    return SecureFixtureImpl::MutateClientArgs(args)
+        .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
         .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
         .SetIfUnset(GRPC_ARG_ENABLE_RETRIES, IsRetryInCallv3Enabled())
         .Set(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
@@ -112,7 +114,8 @@ class ChaoticGoodFixture : public InsecureFixture {
   }
 
   ChannelArgs MutateServerArgs(ChannelArgs args) override {
-    return args.Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
+    return SecureFixtureImpl::MutateServerArgs(args)
+        .Set(GRPC_ARG_CHAOTIC_GOOD_DATA_CONNECTIONS, data_connections_)
         .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_RECV_CHUNK_SIZE, chunk_size_)
         .Set(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE, chunk_size_)
         .Set(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS,
@@ -124,32 +127,52 @@ class ChaoticGoodFixture : public InsecureFixture {
   std::string localaddr_;
 };
 
-class ChaoticGoodSingleConnectionFixture final : public ChaoticGoodFixture {
+class ChaoticGoodSingleConnectionFixture final
+    : public ChaoticGoodFixture<InsecureFixture> {
  public:
-  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(1) {}
+  ChaoticGoodSingleConnectionFixture() : ChaoticGoodFixture(0) {}
 };
 
-class ChaoticGoodManyConnectionFixture final : public ChaoticGoodFixture {
+class ChaoticGoodSecureSingleConnectionFixture final
+    : public ChaoticGoodFixture<SslTlsFixture1_3> {
+ public:
+  ChaoticGoodSecureSingleConnectionFixture() : ChaoticGoodFixture(0) {}
+};
+
+class ChaoticGoodManyConnectionFixture final
+    : public ChaoticGoodFixture<InsecureFixture> {
  public:
   ChaoticGoodManyConnectionFixture() : ChaoticGoodFixture(16) {}
 };
 
-class ChaoticGoodOneByteChunkFixture final : public ChaoticGoodFixture {
+class ChaoticGoodSecureManyConnectionFixture final
+    : public ChaoticGoodFixture<SslTlsFixture1_3> {
+ public:
+  ChaoticGoodSecureManyConnectionFixture() : ChaoticGoodFixture(16) {}
+};
+
+class ChaoticGoodOneByteChunkFixture final
+    : public ChaoticGoodFixture<InsecureFixture> {
  public:
   ChaoticGoodOneByteChunkFixture() : ChaoticGoodFixture(1, 1) {}
 };
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
-  return std::vector<CoreTestConfiguration>{
-      CoreTestConfiguration{"ChaoticGoodFullStack",
-                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
-                                FEATURE_MASK_IS_CALL_V3,
-                            nullptr,
-                            [](const ChannelArgs& /*client_args*/,
-                               const ChannelArgs& /*server_args*/) {
-                              return std::make_unique<ChaoticGoodFixture>();
-                            }},
+  if (!IsEventEngineClientEnabled() || !IsEventEngineListenerEnabled()) {
+    return {};
+  }
+
+  std::vector<CoreTestConfiguration> config{
+      CoreTestConfiguration{
+          "ChaoticGoodFullStack",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3,
+          nullptr,
+          [](const ChannelArgs& /*client_args*/,
+             const ChannelArgs& /*server_args*/) {
+            return std::make_unique<ChaoticGoodFixture<InsecureFixture>>();
+          }},
       CoreTestConfiguration{
           "ChaoticGoodManyConnections",
           FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
@@ -184,6 +207,49 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
             return std::make_unique<ChaoticGoodOneByteChunkFixture>();
           }},
   };
+
+  if (IsEventEngineSecureEndpointEnabled() &&
+      IsChaoticGoodFramingLayerEnabled()) {
+    std::vector<CoreTestConfiguration> secure_config{
+        CoreTestConfiguration{
+            "ChaoticGoodSecureFullStack",
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                FEATURE_MASK_IS_CALL_V3,
+            "foo.test.google.fr",
+            [](const ChannelArgs& /*client_args*/,
+               const ChannelArgs& /*server_args*/) {
+              return std::make_unique<ChaoticGoodFixture<SslTlsFixture1_3>>();
+            }},
+        CoreTestConfiguration{
+            "ChaoticGoodSecureManyConnections",
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                FEATURE_MASK_IS_CALL_V3,
+            "foo.test.google.fr",
+            [](const ChannelArgs& /*client_args*/,
+               const ChannelArgs& /*server_args*/) {
+              return std::make_unique<ChaoticGoodSecureManyConnectionFixture>();
+            }},
+        CoreTestConfiguration{
+            "ChaoticGoodSecureSingleConnection",
+            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+            "foo.test.google.fr",
+            [](const ChannelArgs& /*client_args*/,
+               const ChannelArgs& /*server_args*/) {
+              return std::make_unique<
+                  ChaoticGoodSecureSingleConnectionFixture>();
+            }},
+    };
+    for (auto& c : secure_config) {
+      config.emplace_back(std::move(c));
+    }
+  }
+  return config;
 }
 
 }  // namespace grpc_core

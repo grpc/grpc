@@ -25,6 +25,8 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <string>
 #include <tuple>
 
@@ -168,7 +170,7 @@ BaseNode::BaseNode(EntityType type, std::string name)
   ChannelzRegistry::Register(this);
 }
 
-BaseNode::~BaseNode() { ChannelzRegistry::Unregister(this); }
+void BaseNode::Orphaned() { ChannelzRegistry::Unregister(this); }
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
@@ -244,12 +246,13 @@ DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
 }
 
 DataSource::~DataSource() {
-  if (node_ != nullptr) ResetDataSource();
+  DCHECK(node_ == nullptr) << "DataSource must be ResetDataSource()'d in the "
+                              "most derived class before destruction";
 }
 
 void DataSource::ResetDataSource() {
-  auto node = std::move(node_);
-  DCHECK(node != nullptr);
+  RefCountedPtr<BaseNode> node = std::move(node_);
+  if (node == nullptr) return;
   MutexLock lock(&node->data_sources_mu_);
   node->data_sources_.erase(
       std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),
@@ -357,6 +360,29 @@ const char* ChannelNode::GetChannelConnectivityStateChangeString(
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
+namespace {
+
+std::set<intptr_t> ChildIdSet(const BaseNode* parent,
+                              BaseNode::EntityType type) {
+  std::set<intptr_t> ids;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, parent, type, std::numeric_limits<size_t>::max());
+  for (const auto& node : children) {
+    ids.insert(node->uuid());
+  }
+  return ids;
+}
+
+}  // namespace
+
+std::set<intptr_t> ChannelNode::child_channels() const {
+  return ChildIdSet(this, BaseNode::EntityType::kInternalChannel);
+}
+
+std::set<intptr_t> ChannelNode::child_subchannels() const {
+  return ChildIdSet(this, BaseNode::EntityType::kSubchannel);
+}
+
 std::optional<std::string> ChannelNode::connectivity_state() {
   // Connectivity state.
   // If low-order bit is on, then the field is set.
@@ -400,19 +426,20 @@ Json ChannelNode::RenderJson() {
 }
 
 void ChannelNode::PopulateChildRefs(Json::Object* json) {
-  MutexLock lock(&child_mu_);
-  if (!child_subchannels_.empty()) {
+  auto child_subchannels = this->child_subchannels();
+  auto child_channels = this->child_channels();
+  if (!child_subchannels.empty()) {
     Json::Array array;
-    for (intptr_t subchannel_uuid : child_subchannels_) {
+    for (intptr_t subchannel_uuid : child_subchannels) {
       array.emplace_back(Json::FromObject({
           {"subchannelId", Json::FromString(absl::StrCat(subchannel_uuid))},
       }));
     }
     (*json)["subchannelRef"] = Json::FromArray(std::move(array));
   }
-  if (!child_channels_.empty()) {
+  if (!child_channels.empty()) {
     Json::Array array;
-    for (intptr_t channel_uuid : child_channels_) {
+    for (intptr_t channel_uuid : child_channels) {
       array.emplace_back(Json::FromObject({
           {"channelId", Json::FromString(absl::StrCat(channel_uuid))},
       }));
@@ -425,26 +452,6 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
   // Store with low-order bit set to indicate that the field is set.
   int state_field = (state << 1) + 1;
   connectivity_state_.store(state_field, std::memory_order_relaxed);
-}
-
-void ChannelNode::AddChildChannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_channels_.insert(child_uuid);
-}
-
-void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_channels_.erase(child_uuid);
-}
-
-void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_subchannels_.insert(child_uuid);
-}
-
-void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_subchannels_.erase(child_uuid);
 }
 
 //
@@ -523,51 +530,25 @@ ServerNode::ServerNode(size_t channel_tracer_max_nodes)
 
 ServerNode::~ServerNode() {}
 
-void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
-  MutexLock lock(&child_mu_);
-  child_sockets_.insert(std::pair(node->uuid(), std::move(node)));
-}
-
-void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_sockets_.erase(child_uuid);
-}
-
-void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
-  MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(std::pair(node->uuid(), std::move(node)));
-}
-
-void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_listen_sockets_.erase(child_uuid);
-}
-
 std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                             intptr_t max_results) {
   CHECK_GE(start_socket_id, 0);
   CHECK_GE(max_results, 0);
   // If user does not set max_results, we choose 500.
-  size_t pagination_limit = max_results == 0 ? 500 : max_results;
+  if (max_results == 0) max_results = 500;
   Json::Object object;
-  {
-    MutexLock lock(&child_mu_);
-    size_t sockets_rendered = 0;
-    // Create list of socket refs.
-    Json::Array array;
-    auto it = child_sockets_.lower_bound(start_socket_id);
-    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
-         ++it, ++sockets_rendered) {
-      array.emplace_back(Json::FromObject({
-          {"socketId", Json::FromString(absl::StrCat(it->first))},
-          {"name", Json::FromString(it->second->name())},
-      }));
-    }
-    object["socketRef"] = Json::FromArray(std::move(array));
-    if (it == child_sockets_.end()) {
-      object["end"] = Json::FromBool(true);
-    }
+  auto [children, end] = ChannelzRegistry::GetChildrenOfType(
+      start_socket_id, this, BaseNode::EntityType::kSocket, max_results);
+  // Create list of socket refs.
+  Json::Array array;
+  for (const auto& child : children) {
+    array.emplace_back(Json::FromObject({
+        {"socketId", Json::FromString(absl::StrCat(child->uuid()))},
+        {"name", Json::FromString(child->name())},
+    }));
   }
+  object["socketRef"] = Json::FromArray(std::move(array));
+  if (end) object["end"] = Json::FromBool(true);
   return JsonDump(Json::FromObject(std::move(object)));
 }
 
@@ -588,21 +569,45 @@ Json ServerNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Render listen sockets.
-  {
-    MutexLock lock(&child_mu_);
-    if (!child_listen_sockets_.empty()) {
-      Json::Array array;
-      for (const auto& it : child_listen_sockets_) {
-        array.emplace_back(Json::FromObject({
-            {"socketId", Json::FromString(absl::StrCat(it.first))},
-            {"name", Json::FromString(it.second->name())},
-        }));
-      }
-      object["listenSocket"] = Json::FromArray(std::move(array));
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kListenSocket,
+      std::numeric_limits<size_t>::max());
+  if (!children.empty()) {
+    Json::Array array;
+    for (const auto& child : children) {
+      array.emplace_back(Json::FromObject({
+          {"socketId", Json::FromString(absl::StrCat(child->uuid()))},
+          {"name", Json::FromString(child->name())},
+      }));
     }
+    object["listenSocket"] = Json::FromArray(std::move(array));
   }
   PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
+}
+
+std::map<intptr_t, RefCountedPtr<ListenSocketNode>>
+ServerNode::child_listen_sockets() const {
+  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> result;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kListenSocket,
+      std::numeric_limits<size_t>::max());
+  for (const auto& child : children) {
+    result[child->uuid()] = child->RefAsSubclass<ListenSocketNode>();
+  }
+  return result;
+}
+
+std::map<intptr_t, RefCountedPtr<SocketNode>> ServerNode::child_sockets()
+    const {
+  std::map<intptr_t, RefCountedPtr<SocketNode>> result;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kSocket,
+      std::numeric_limits<size_t>::max());
+  for (const auto& child : children) {
+    result[child->uuid()] = child->RefAsSubclass<SocketNode>();
+  }
+  return result;
 }
 
 //

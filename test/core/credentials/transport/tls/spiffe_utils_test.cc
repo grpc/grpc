@@ -19,6 +19,7 @@
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 
 #include <grpc/grpc.h>
+#include <openssl/x509.h>
 
 #include <string>
 
@@ -29,10 +30,45 @@
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
 #include "test/core/test_util/test_config.h"
+#include "test/core/test_util/tls_utils.h"
 
 namespace grpc_core {
 namespace testing {
+
+namespace {
+
+constexpr absl::string_view kCertificatePrefix =
+    "-----BEGIN CERTIFICATE-----\n";
+constexpr absl::string_view kCertificateSuffix =
+    "\n-----END CERTIFICATE-----\n";
+
+absl::StatusOr<X509*> ReadCertificate(absl::string_view raw_cert) {
+  std::string pem_cert =
+      absl::StrCat(kCertificatePrefix, raw_cert, kCertificateSuffix);
+  auto chain = ParsePemCertificateChain(pem_cert);
+  GRPC_RETURN_IF_ERROR(chain.status());
+  return (*chain)[0];
+}
+
+absl::StatusOr<X509*> ReadCertificateFromFile(absl::string_view filepath) {
+  FILE* file = fopen(filepath.data(), "r");
+  if (file == nullptr) {
+    return absl::InvalidArgumentError(
+        absl::StrFormat("Failed to read file %s", filepath));
+  }
+  X509* cert = PEM_read_X509(file, nullptr, nullptr, nullptr);
+  fclose(file);
+  if (cert == nullptr) {
+    return absl::InvalidArgumentError(
+        absl::StrFormat("Failed to load certificate from file %s", filepath));
+  }
+  return cert;
+}
+}  // namespace
 
 TEST(SpiffeId, EmptyFails) {
   EXPECT_EQ(
@@ -253,6 +289,200 @@ TEST(SpiffeId, TripleDotsSuccess) {
   ASSERT_TRUE(spiffe_id.ok()) << spiffe_id.status();
   EXPECT_EQ(spiffe_id->trust_domain(), "trustdomain");
   EXPECT_EQ(spiffe_id->path(), "/...");
+}
+
+TEST(SpiffeBundle, EmptyKeysFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_empty_keys.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: [field:trust_domains[\"\"] error:invalid "
+          "trust domain: INVALID_ARGUMENT: Trust domain cannot be empty]"));
+}
+
+TEST(SpiffeBundle, CorruptedCertFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_corrupted_cert.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: "
+          "[field:trust_domains[\"example.com\"].keys[0]"
+          ".x5c[0] error:FAILED_PRECONDITION: Invalid PEM.]"));
+}
+
+TEST(SpiffeBundle, EmptyStringKeyFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_empty_string_key.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: [field:trust_domains[\"\"] error:invalid "
+          "trust domain: INVALID_ARGUMENT: Trust domain cannot be empty]"));
+}
+
+TEST(SpiffeBundle, InvalidTrustDomainFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_invalid_trustdomain.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: [field:trust_domains[\"invalid#character\"] "
+          "error:invalid trust domain: INVALID_ARGUMENT: Trust domain contains "
+          "invalid character '#'. MUST contain only lowercase letters, "
+          "numbers, dots, dashes, and underscores]"));
+}
+
+TEST(SpiffeBundle, MalformedJsonFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_malformed.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: [field: error:is not an object]"));
+}
+
+TEST(SpiffeBundle, WrongKtyFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_wrong_kty.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: "
+          "[field:trust_domains[\"example.com\"].keys[0].kty error:value must "
+          "be \"RSA\", got \"EC\"]"));
+}
+
+TEST(SpiffeBundle, WrongKidFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_wrong_kid.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: "
+          "[field:trust_domains[\"example.com\"].keys[0].kty "
+          "error:field not present]"));
+}
+
+TEST(SpiffeBundle, MultiCertsFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_wrong_multi_certs.json")
+          .status(),
+      absl::InvalidArgumentError("errors validating JSON: "
+                                 "[field:trust_domains[\"google.com\"].keys[0]."
+                                 "x5c error:array length must be 1, got 2]"));
+}
+
+TEST(SpiffeBundle, WrongRootFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_wrong_root.json")
+          .status(),
+      absl::InvalidArgumentError("errors validating JSON: [field:trust_domains "
+                                 "error:field not present]"));
+}
+
+TEST(SpiffeBundle, WrongUseFails) {
+  EXPECT_EQ(
+      SpiffeBundleMap::FromFile(
+          "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+          "spiffebundle_wrong_use.json")
+          .status(),
+      absl::InvalidArgumentError(
+          "errors validating JSON: "
+          "[field:trust_domains[\"example.com\"].keys[0].use error:value must "
+          "be \"x509-svid\", got \"NOT-x509-svid\"]"));
+}
+
+TEST(SpiffeBundle, MultipleTrustDomainsSuccess) {
+  std::string json_str = testing::GetFileContents(
+      "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+      "spiffebundle.json");
+  auto json = JsonParse(json_str);
+  ASSERT_TRUE(json.ok());
+  auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
+  ASSERT_TRUE(bundle_map.ok()) << bundle_map.status();
+  ASSERT_EQ(bundle_map->size(), 2);
+  {
+    // check the example.com bundle
+    auto roots = bundle_map->GetRoots("example.com");
+    ASSERT_TRUE(roots.ok());
+    EXPECT_EQ(roots->size(), 1);
+    auto certificate = ReadCertificate((*roots)[0]);
+    ASSERT_TRUE(certificate.ok()) << certificate.status();
+    auto expected_certificate = ReadCertificateFromFile(
+        "test/core/credentials/transport/tls/test_data/spiffe/"
+        "spiffe_cert.pem");
+    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
+    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
+  }
+  {
+    // check the test.example.com bundle
+    auto roots = bundle_map->GetRoots("test.example.com");
+    ASSERT_TRUE(roots.ok());
+    EXPECT_EQ(roots->size(), 1);
+    auto certificate = ReadCertificate((*roots)[0]);
+    ASSERT_TRUE(certificate.ok()) << certificate.status();
+    auto expected_certificate = ReadCertificateFromFile(
+        "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+        "server1_spiffe.pem");
+    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
+    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
+  }
+}
+
+TEST(SpiffeBundle, MultipleRootsSuccess) {
+  std::string json_str = testing::GetFileContents(
+      "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+      "spiffebundle2.json");
+  auto json = JsonParse(json_str);
+  ASSERT_TRUE(json.ok());
+  auto bundle_map = LoadFromJson<SpiffeBundleMap>(*json);
+  ASSERT_TRUE(bundle_map.ok()) << bundle_map.status();
+  ASSERT_EQ(bundle_map->size(), 1);
+  // check the example.com bundle
+  auto roots = bundle_map->GetRoots("example.com");
+  ASSERT_TRUE(roots.ok());
+  EXPECT_EQ(roots->size(), 2);
+  {
+    // Check the first root
+    auto certificate = ReadCertificate((*roots)[0]);
+    ASSERT_TRUE(certificate.ok()) << certificate.status();
+    auto expected_certificate = ReadCertificateFromFile(
+        "test/core/credentials/transport/tls/test_data/spiffe/"
+        "spiffe_cert.pem");
+    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
+    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
+  }
+  {
+    // Check the second root
+    auto certificate = ReadCertificate((*roots)[1]);
+    ASSERT_TRUE(certificate.ok()) << certificate.status();
+    auto expected_certificate = ReadCertificateFromFile(
+        "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+        "server1_spiffe.pem");
+    ASSERT_TRUE(expected_certificate.ok()) << expected_certificate.status();
+    EXPECT_EQ(X509_cmp(*certificate, *expected_certificate), 0);
+    X509_free(*certificate);
+    X509_free(*expected_certificate);
+  }
 }
 
 }  // namespace testing

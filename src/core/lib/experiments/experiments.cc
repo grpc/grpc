@@ -23,21 +23,18 @@
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -165,9 +162,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -183,6 +177,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_tsi_frame_protector_without_locks =
+    "Do not hold locks while using the tsi_frame_protector.";
+const char* const additional_constraints_tsi_frame_protector_without_locks =
+    "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -192,16 +190,15 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
+     false},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -224,8 +221,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
-     true},
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
+     false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -282,8 +279,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -295,6 +290,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"tsi_frame_protector_without_locks",
+     description_tsi_frame_protector_without_locks,
+     additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
+     false, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -305,21 +304,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -447,9 +443,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -465,6 +458,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_tsi_frame_protector_without_locks =
+    "Do not hold locks while using the tsi_frame_protector.";
+const char* const additional_constraints_tsi_frame_protector_without_locks =
+    "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -474,16 +471,15 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
+     false},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -506,8 +502,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
-     true},
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
+     false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -564,8 +560,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -577,6 +571,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"tsi_frame_protector_without_locks",
+     description_tsi_frame_protector_without_locks,
+     additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
+     false, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
@@ -587,21 +585,18 @@ const ExperimentMetadata g_experiment_metadata[] = {
 
 #else
 namespace {
-const char* const description_backoff_cap_initial_at_max =
-    "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_call_tracer_transport_fix =
-    "Use the correct call tracer in transport";
-const char* const additional_constraints_call_tracer_transport_fix = "{}";
 const char* const description_callv3_client_auth_filter =
     "Use the CallV3 client auth filter.";
 const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
+const char* const description_chttp2_bound_write_size =
+    "Fix a bug where chttp2 can generate very large writes";
+const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
@@ -729,9 +724,6 @@ const char* const description_server_global_callbacks_ownership =
     "gRPC.";
 const char* const additional_constraints_server_global_callbacks_ownership =
     "{}";
-const char* const description_shard_channelz_index =
-    "If set, shard the channelz index for better concurrency";
-const char* const additional_constraints_shard_channelz_index = "{}";
 const char* const description_shard_global_connection_pool =
     "If set, shard the global connection pool to improve parallelism.";
 const char* const additional_constraints_shard_global_connection_pool = "{}";
@@ -747,6 +739,10 @@ const char* const additional_constraints_tcp_frame_size_tuning = "{}";
 const char* const description_tcp_rcv_lowat =
     "Use SO_RCVLOWAT to avoid wakeups on the read path.";
 const char* const additional_constraints_tcp_rcv_lowat = "{}";
+const char* const description_tsi_frame_protector_without_locks =
+    "Do not hold locks while using the tsi_frame_protector.";
+const char* const additional_constraints_tsi_frame_protector_without_locks =
+    "{}";
 const char* const description_unconstrained_max_quota_buffer_size =
     "Discard the cap on the max free pool size for one memory allocator";
 const char* const additional_constraints_unconstrained_max_quota_buffer_size =
@@ -756,16 +752,15 @@ const char* const additional_constraints_unconstrained_max_quota_buffer_size =
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-    {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max,
-     additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"call_tracer_transport_fix", description_call_tracer_transport_fix,
-     additional_constraints_call_tracer_transport_fix, nullptr, 0, true, true},
     {"callv3_client_auth_filter", description_callv3_client_auth_filter,
      additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
-     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true, true},
+     additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
+     false},
+    {"chttp2_bound_write_size", description_chttp2_bound_write_size,
+     additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
     {"event_engine_client", description_event_engine_client,
@@ -788,8 +783,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
-     additional_constraints_event_engine_secure_endpoint, nullptr, 0, false,
-     true},
+     additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
+     false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
@@ -846,8 +841,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_server_global_callbacks_ownership,
      additional_constraints_server_global_callbacks_ownership, nullptr, 0,
      false, true},
-    {"shard_channelz_index", description_shard_channelz_index,
-     additional_constraints_shard_channelz_index, nullptr, 0, true, true},
     {"shard_global_connection_pool", description_shard_global_connection_pool,
      additional_constraints_shard_global_connection_pool, nullptr, 0, true,
      true},
@@ -859,6 +852,10 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_tcp_frame_size_tuning, nullptr, 0, false, true},
     {"tcp_rcv_lowat", description_tcp_rcv_lowat,
      additional_constraints_tcp_rcv_lowat, nullptr, 0, false, true},
+    {"tsi_frame_protector_without_locks",
+     description_tsi_frame_protector_without_locks,
+     additional_constraints_tsi_frame_protector_without_locks, nullptr, 0,
+     false, true},
     {"unconstrained_max_quota_buffer_size",
      description_unconstrained_max_quota_buffer_size,
      additional_constraints_unconstrained_max_quota_buffer_size, nullptr, 0,
