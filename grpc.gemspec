@@ -1894,6 +1894,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/examine_stack.h )
   s.files += %w( src/core/util/fork.cc )
   s.files += %w( src/core/util/fork.h )
+  s.files += %w( src/core/util/function_signature.h )
   s.files += %w( src/core/util/gcp_metadata_query.cc )
   s.files += %w( src/core/util/gcp_metadata_query.h )
   s.files += %w( src/core/util/gethostname.h )
