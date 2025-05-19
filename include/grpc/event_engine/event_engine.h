@@ -180,8 +180,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// allocations. gRPC allows applications to set memory constraints per
   /// Channel or Server, and the implementation depends on all dynamic memory
   /// allocation being handled by the quota system.
-  class Endpoint : public std::enable_shared_from_this<Endpoint>,
-                   public Extensible {
+  class Endpoint : public Extensible {
    public:
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
@@ -379,6 +378,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
   };
 
+  // EndpointManager manages the lifetime of a unique Endpoint instance.
+  // It allows transferring ownership of the endpoint to another component.
   class EndpointManager : public std::enable_shared_from_this<EndpointManager> {
    public:
     explicit EndpointManager(std::unique_ptr<Endpoint> endpoint)
