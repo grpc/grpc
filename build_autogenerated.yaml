@@ -14690,7 +14690,6 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
-  - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -14702,7 +14701,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/posix_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
-  - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -16918,7 +16916,6 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
-  - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -16930,7 +16927,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/tls_credentials_test.cc
-  - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
   - grpc++_test_util

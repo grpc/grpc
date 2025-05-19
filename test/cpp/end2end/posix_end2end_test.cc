@@ -36,7 +36,6 @@
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
-#include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
 namespace testing {
@@ -44,6 +43,21 @@ namespace {
 
 using ::grpc::experimental::ExternalCertificateVerifier;
 using ::grpc::experimental::TlsChannelCredentialsOptions;
+
+class NoOpCertificateVerifier : public ExternalCertificateVerifier {
+ public:
+  ~NoOpCertificateVerifier() override = default;
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              std::function<void(grpc::Status)>,
+              grpc::Status* sync_status) override {
+    *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+    return true;
+  }
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+};
 
 constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";

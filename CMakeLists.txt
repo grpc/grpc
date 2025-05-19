@@ -23670,7 +23670,6 @@ add_executable(posix_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/posix_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
-  test/cpp/util/tls_test_utils.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
@@ -29711,7 +29710,6 @@ add_executable(test_cpp_end2end_tls_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
   test/cpp/end2end/test_service_impl.cc
   test/cpp/end2end/tls_credentials_test.cc
-  test/cpp/util/tls_test_utils.cc
 )
 if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)

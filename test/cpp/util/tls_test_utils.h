@@ -76,19 +76,6 @@ class AsyncCertificateVerifier
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
 };
 
-class NoOpCertificateVerifier
-    : public grpc::experimental::ExternalCertificateVerifier {
- public:
-  ~NoOpCertificateVerifier() override = default;
-
-  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest*,
-              std::function<void(grpc::Status)>,
-              grpc::Status* sync_status) override;
-
-  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
-  }
-};
-
 class VerifiedRootCertSubjectVerifier
     : public grpc::experimental::ExternalCertificateVerifier {
  public:

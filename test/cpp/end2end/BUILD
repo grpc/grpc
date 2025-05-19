@@ -448,7 +448,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
-        "//test/cpp/util:tls_test_utils",
     ],
 )
 
@@ -1177,7 +1176,6 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
-        "//test/cpp/util:tls_test_utils",
     ],
 )
 

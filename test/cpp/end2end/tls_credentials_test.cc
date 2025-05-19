@@ -34,7 +34,6 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
-#include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
 namespace testing {
@@ -47,6 +46,21 @@ constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
 constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kMessage[] = "Hello";
+
+class NoOpCertificateVerifier : public ExternalCertificateVerifier {
+ public:
+  ~NoOpCertificateVerifier() override = default;
+
+  bool Verify(grpc::experimental::TlsCustomVerificationCheckRequest*,
+              std::function<void(grpc::Status)>,
+              grpc::Status* sync_status) override {
+    *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+    return true;
+  }
+
+  void Cancel(grpc::experimental::TlsCustomVerificationCheckRequest*) override {
+  }
+};
 
 class TlsCredentialsTest : public ::testing::Test {
  protected:
