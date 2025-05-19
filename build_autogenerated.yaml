@@ -14684,6 +14684,28 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: posix_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/tls_test_utils.h
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/cpp/end2end/posix_end2end_test.cc
+  - test/cpp/end2end/test_service_impl.cc
+  - test/cpp/util/tls_test_utils.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: posix_endpoint_test
   gtest: true
   build: test
@@ -16896,6 +16918,7 @@ targets:
   language: c++
   headers:
   - test/cpp/end2end/test_service_impl.h
+  - test/cpp/util/tls_test_utils.h
   src:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/echo_messages.proto
@@ -16907,6 +16930,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/tls_credentials_test.cc
+  - test/cpp/util/tls_test_utils.cc
   deps:
   - gtest
   - grpc++_test_util

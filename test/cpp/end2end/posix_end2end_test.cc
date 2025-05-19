@@ -35,8 +35,8 @@
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
-#include "test/cpp/util/tls_test_utils.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/cpp/util/tls_test_utils.h"
 
 namespace grpc {
 namespace testing {
@@ -91,9 +91,7 @@ class FdCredentialsTest : public ::testing::Test {
     }
   }
 
-  void credential_type(const std::string& type) {
-    credential_type_ = type;
-  }
+  void credential_type(const std::string& type) { credential_type_ = type; }
 
   static void create_sockets(int sv[2]) {
     int flags;
