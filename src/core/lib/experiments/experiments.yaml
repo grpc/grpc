@@ -42,7 +42,7 @@
 # state of each experiment.
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/06/01
+  expiry: 2026/02/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -64,7 +64,7 @@
   test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
-  expiry: 2025/06/01
+  expiry: 2025/09/01
   owner: roth@google.com
   test_tags:
     ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
