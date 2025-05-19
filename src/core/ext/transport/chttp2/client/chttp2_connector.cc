@@ -342,8 +342,7 @@ grpc_channel* CreateChannelFromEndpoint(
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
           .SetObject(endpoint_mgr)
-          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, resolved_address)
-          .SetObject(creds->Ref());
+          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, resolved_address);
   Resolver::Result result;
   result.args = args_;
   grpc_resolved_address address;

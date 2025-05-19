@@ -37,7 +37,6 @@ std::shared_ptr<Channel> CreateChannelFromEndpoint(
                                                          creds_, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  grpc_channel_credentials_release(creds_);
   return channel;
 }
 
@@ -51,7 +50,6 @@ std::shared_ptr<Channel> CreateChannelFromFd(
       grpc_core::experimental::CreateChannelFromFd(fd, creds_, &channel_args),
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>());
-  grpc_channel_credentials_release(creds_);
   return channel;
 }
 

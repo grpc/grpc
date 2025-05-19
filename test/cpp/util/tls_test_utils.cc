@@ -106,5 +106,12 @@ bool VerifiedRootCertSubjectVerifier::Verify(
   return true;
 }
 
+bool NoOpCertificateVerifier::Verify(
+    grpc::experimental::TlsCustomVerificationCheckRequest*,
+    std::function<void(grpc::Status)>, grpc::Status* sync_status) {
+  *sync_status = grpc::Status(grpc::StatusCode::OK, "");
+  return true;
+}
+
 }  // namespace testing
 }  // namespace grpc

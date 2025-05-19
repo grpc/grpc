@@ -426,6 +426,33 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "posix_end2end_test",
+    srcs = ["posix_end2end_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["posix_end2end_test"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_cc_grpc",
+        "//src/proto/grpc/testing:echo_messages_cc_proto",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+        "//test/cpp/util:tls_test_utils",
+    ],
+)
+
+grpc_cc_test(
     name = "health_service_end2end_test",
     srcs = ["health_service_end2end_test.cc"],
     external_deps = [
@@ -1150,6 +1177,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_cc_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//test/cpp/util:tls_test_utils",
     ],
 )
 

@@ -1,6 +1,6 @@
 //
 //
-// Copyright 2023 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
 // limitations under the License.
 //
 //
+#include <fcntl.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
@@ -28,13 +29,14 @@
 
 #include "absl/log/log.h"
 #include "absl/synchronization/notification.h"
-#include "gmock/gmock.h"
 #include "gtest/gtest.h"
-#include "test/core/test_util/port.h"
+#include "src/core/lib/iomgr/socket_utils_posix.h"
+#include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/tls_test_utils.h"
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -48,9 +50,29 @@ constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kMessage[] = "Hello";
 
-class TlsCredentialsTest : public ::testing::Test {
+class FdCredentialsTest : public ::testing::Test {
+ public:
+  FdCredentialsTest() { create_sockets(fd_pair_); }
+
  protected:
   void RunServer(absl::Notification* notification) {
+    grpc::ServerBuilder builder;
+    TestServiceImpl service_;
+    std::unique_ptr<experimental::PassiveListener> passive_listener_;
+    builder.experimental().AddPassiveListener(GetServerCredentials(),
+                                              passive_listener_);
+    builder.RegisterService(&service_);
+    server_ = builder.BuildAndStart();
+    auto status = passive_listener_->AcceptConnectedFd(fd_pair_[1]);
+    EXPECT_EQ(status, absl::OkStatus());
+    notification->Notify();
+    server_->Wait();
+  }
+
+  std::shared_ptr<ServerCredentials> GetServerCredentials() {
+    if (credential_type_ == testing::kInsecureCredentialsType) {
+      return InsecureServerCredentials();
+    }
     std::string root_cert = grpc_core::testing::GetFileContents(kCaCertPath);
     grpc::SslServerCredentialsOptions::PemKeyCertPair key_cert_pair = {
         grpc_core::testing::GetFileContents(kServerKeyPath),
@@ -58,16 +80,7 @@ class TlsCredentialsTest : public ::testing::Test {
     grpc::SslServerCredentialsOptions ssl_options;
     ssl_options.pem_key_cert_pairs.push_back(key_cert_pair);
     ssl_options.pem_root_certs = root_cert;
-
-    grpc::ServerBuilder builder;
-    TestServiceImpl service_;
-
-    builder
-        .AddListeningPort(server_addr_, grpc::SslServerCredentials(ssl_options))
-        .RegisterService(&service_);
-    server_ = builder.BuildAndStart();
-    notification->Notify();
-    server_->Wait();
+    return grpc::SslServerCredentials(ssl_options);
   }
 
   void TearDown() override {
@@ -78,24 +91,37 @@ class TlsCredentialsTest : public ::testing::Test {
     }
   }
 
+  void credential_type(const std::string& type) {
+    credential_type_ = type;
+  }
+
+  static void create_sockets(int sv[2]) {
+    int flags;
+    grpc_create_socketpair_if_unix(sv);
+    flags = fcntl(sv[0], F_GETFL, 0);
+    CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+    flags = fcntl(sv[1], F_GETFL, 0);
+    CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+    CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+  }
+
+  int fd_pair_[2];
+  std::string credential_type_;
   TestServiceImpl service_;
   std::unique_ptr<Server> server_ = nullptr;
   std::thread* server_thread_ = nullptr;
-  std::string server_addr_;
 };
 
-// NOLINTNEXTLINE(clang-diagnostic-unused-function)
-void DoRpc(const std::string& server_addr,
-           const TlsChannelCredentialsOptions& tls_options) {
+void DoRpc(const std::shared_ptr<ChannelCredentials>& creds, int fd) {
   std::shared_ptr<Channel> channel =
-      grpc::CreateChannel(server_addr, TlsCredentials(tls_options));
-
+      grpc::experimental::CreateChannelFromFd(fd, creds, ChannelArguments());
   auto stub = grpc::testing::EchoTestService::NewStub(channel);
   grpc::testing::EchoRequest request;
   grpc::testing::EchoResponse response;
   request.set_message(kMessage);
   ClientContext context;
-  context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
+  //   context.set_deadline(grpc_timeout_seconds_to_deadline(/*time_s=*/10));
   grpc::Status result = stub->Echo(&context, request, &response);
   EXPECT_TRUE(result.ok());
   if (!result.ok()) {
@@ -105,29 +131,25 @@ void DoRpc(const std::string& server_addr,
   EXPECT_EQ(response.message(), kMessage);
 }
 
-// TODO(gregorycooke) - failing with OpenSSL1.0.2
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
-// How do we test that skipping server certificate verification works as
-// expected? Give the server credentials that chain up to a custom CA (that does
-// not belong to the default or OS trust store), do not configure the client to
-// have this CA in its trust store, and attempt to establish a connection
-// between the client and server.
-TEST_F(TlsCredentialsTest, SkipServerCertificateVerification) {
-  server_addr_ = absl::StrCat("localhost:",
-                              std::to_string(grpc_pick_unused_port_or_die()));
+TEST_F(FdCredentialsTest, InsecureVerification) {
+  absl::Notification notification;
+  credential_type(testing::kInsecureCredentialsType);
+  server_thread_ = new std::thread([&]() { RunServer(&notification); });
+  notification.WaitForNotification();
+  DoRpc(InsecureChannelCredentials(), fd_pair_[0]);
+}
+
+TEST_F(FdCredentialsTest, CertificateVerification) {
   absl::Notification notification;
   server_thread_ = new std::thread([&]() { RunServer(&notification); });
   notification.WaitForNotification();
-
   TlsChannelCredentialsOptions tls_options;
   tls_options.set_certificate_verifier(
       ExternalCertificateVerifier::Create<NoOpCertificateVerifier>());
   tls_options.set_check_call_host(/*check_call_host=*/false);
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
-
-  DoRpc(server_addr_, tls_options);
+  DoRpc(TlsCredentials(tls_options), fd_pair_[0]);
 }
-#endif  // OPENSSL_VERSION_NUMBER >= 0x10100000
 
 }  // namespace
 }  // namespace testing
