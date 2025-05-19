@@ -207,7 +207,7 @@ class grpc_ssl_server_security_connector
   //
   // For the server handshaker, override the preferred protocols given
   // by the channel args on the handshaker factory creation. Do this for all
-  // handhsake that a server may producebecause it is unlikely that a server
+  // handshake that a server may produce because it is unlikely that a server
   // handshaker would change protocol list per handshake.
   //
   // OpenSSL's provided method to override the selection of the handshaker
@@ -230,7 +230,7 @@ class grpc_ssl_server_security_connector
       const char** alpn_protocol_strings = nullptr;
       if (alpn_preferred_protocol_raw_list.has_value()) {
 #if TSI_OPENSSL_ALPN_SUPPORT
-        alpn_protocol_strings = ParseALPNStringIntoArray(
+        alpn_protocol_strings = ParseAlpnStringIntoArray(
             alpn_preferred_protocol_raw_list.value(), &num_alpn_protocols);
 #endif  // TSI_OPENSSL_ALPN_SUPPORT
       }

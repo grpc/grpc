@@ -2008,7 +2008,7 @@ static tsi_result create_tsi_ssl_handshaker(
 #if TSI_OPENSSL_ALPN_SUPPORT
   if (alpn_preferred_protocol_raw_list.has_value()) {
     size_t num_preferred_protocols = 0;
-    const char** preferred_protocols = ParseALPNStringIntoArray(
+    const char** preferred_protocols = ParseAlpnStringIntoArray(
         alpn_preferred_protocol_raw_list.value(), &num_preferred_protocols);
     if (preferred_protocols != nullptr) {
       unsigned char* preferred_protocol_byte_list = nullptr;

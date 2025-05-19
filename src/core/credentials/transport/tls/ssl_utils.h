@@ -79,7 +79,7 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 
 // Parse a list of comma-separated protocol names into a const char** struct
 // that can be injected into the handshaker factory options.
-const char** ParseALPNStringIntoArray(std::string preferred_protocols,
+const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
                                       size_t* num_alpn_protocols);
 
 // Initialize TSI SSL server/client handshaker factory.

@@ -200,7 +200,7 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   return alpn_protocol_strings;
 }
 
-const char** ParseALPNStringIntoArray(std::string preferred_protocols_raw,
+const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols_raw,
                                       size_t* num_alpn_protocols) {
   CHECK_NE(num_alpn_protocols, nullptr);
   std::vector<std::string> preferred_protocols;

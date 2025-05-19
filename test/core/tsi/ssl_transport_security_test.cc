@@ -382,7 +382,7 @@ class SslTransportSecurityTest
           alpn_lib->alpn_mode == ALPN_CLIENT_SERVER_MISMATCH) {
         if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
           size_t num_parsed_protocols = 0;
-          server_options.alpn_protocols = ParseALPNStringIntoArray(
+          server_options.alpn_protocols = ParseAlpnStringIntoArray(
               ssl_fixture->alpn_server_overriden_protocols_.value(),
               static_cast<size_t*>(&num_parsed_protocols));
           server_options.num_alpn_protocols = num_parsed_protocols;
@@ -429,7 +429,7 @@ class SslTransportSecurityTest
                 TSI_OK);
       if (ssl_fixture->alpn_server_overriden_protocols_.has_value()) {
         // Free memory from creating the server protocol list if
-        // ParseALPNStringIntoArray was used.
+        // ParseAlpnStringIntoArray was used.
         for (size_t i = 0; i < server_options.num_alpn_protocols; i++) {
           gpr_free(const_cast<char*>(server_options.alpn_protocols[i]));
         }
