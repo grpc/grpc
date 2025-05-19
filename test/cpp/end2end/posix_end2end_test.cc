@@ -30,6 +30,7 @@
 #include "absl/log/log.h"
 #include "absl/synchronization/notification.h"
 #include "gtest/gtest.h"
+#include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "test/core/test_util/test_config.h"
@@ -64,6 +65,7 @@ constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
 constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
 constexpr char kMessage[] = "Hello";
 
+#ifdef GRPC_POSIX_SOCKET
 class FdCredentialsTest : public ::testing::Test {
  public:
   FdCredentialsTest() { create_sockets(fd_pair_); }
@@ -162,6 +164,7 @@ TEST_F(FdCredentialsTest, CertificateVerification) {
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
   DoRpc(TlsCredentials(tls_options), fd_pair_[0]);
 }
+#endif
 
 }  // namespace
 }  // namespace testing
