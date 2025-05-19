@@ -824,3 +824,15 @@ grpc_fuzz_test(
     ],
     deps = ["//src/core:seq_bit_set"],
 )
+
+grpc_cc_test(
+    name = "function_signature_test",
+    srcs = ["function_signature_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:function_signature",
+    ],
+)

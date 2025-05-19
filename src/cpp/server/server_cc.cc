@@ -306,9 +306,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the EventEngine (potentially triggering a thread
-    // hop). This should only be used by internal callbacks like this and not by
-    // user application code.
+    // need to be run from the executor (triggering a thread hop). This should
+    // only be used by internal callbacks like this and not by user application
+    // code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
@@ -635,10 +635,10 @@ class Server::CallbackRequest final
       functor_run = &CallbackCallTag::StaticRun;
       // Set inlineable to true since this callback is internally-controlled
       // without taking any locks, and thus does not need to be run from the
-      // EventEngine (which may trigger a thread hop). This should only be used
-      // by internal callbacks like this and not by user application code. The
-      // work here is actually non-trivial, but there is no chance of having
-      // user locks conflict with each other so it's ok to run inlined.
+      // executor (which triggers a thread hop). This should only be used by
+      // internal callbacks like this and not by user application code. The work
+      // here is actually non-trivial, but there is no chance of having user
+      // locks conflict with each other so it's ok to run inlined.
       inlineable = true;
     }
 

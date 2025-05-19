@@ -129,66 +129,52 @@ XdsMetadataMap ParseXdsMetadataMap(
   XdsMetadataMap metadata_map;
   if (metadata == nullptr) return metadata_map;  // Not present == empty.
   // First, try typed_filter_metadata.
-  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-  // v30.0.
   envoy_config_core_v3_Metadata* metadata_upb =
       (envoy_config_core_v3_Metadata*)metadata;
-  const upb_Map* typed_filter_metadata_upb_map =
-      _envoy_config_core_v3_Metadata_typed_filter_metadata_upb_map(
-          metadata_upb);
-  if (typed_filter_metadata_upb_map) {
-    size_t iter = kUpb_Map_Begin;
-    upb_MessageValue k, v;
-    while (upb_Map_Next(typed_filter_metadata_upb_map, &k, &v, &iter)) {
-      upb_StringView typed_filter_metadata_key_view = k.str_val;
-      const google_protobuf_Any* typed_filter_metadata_val =
-          (google_protobuf_Any*)v.msg_val;
-      absl::string_view key = UpbStringToAbsl(typed_filter_metadata_key_view);
-      ValidationErrors::ScopedField field(
-          errors, absl::StrCat(".typed_filter_metadata[", key, "]"));
-      auto extension =
-          ExtractXdsExtension(context, typed_filter_metadata_val, errors);
-      if (!extension.has_value()) continue;
-      // TODO(roth): If we start to need a lot of types here, refactor
-      // this into a separate registry.
-      std::unique_ptr<XdsMetadataValue> metadata_value;
-      if (XdsGcpAuthFilterEnabled() &&
-          extension->type == XdsGcpAuthnAudienceMetadataValue::Type()) {
-        metadata_value =
-            ParseGcpAuthnAudience(context, std::move(*extension), errors);
-      } else if (XdsHttpConnectEnabled() &&
-                 extension->type == XdsAddressMetadataValue::Type()) {
-        metadata_value = ParseAddress(context, std::move(*extension), errors);
-      }
-      if (metadata_value != nullptr) {
-        metadata_map.Insert(key, std::move(metadata_value));
-      }
+  size_t iter = kUpb_Map_Begin;
+  upb_StringView typed_filter_metadata_key_view;
+  const google_protobuf_Any* typed_filter_metadata_val;
+  while (envoy_config_core_v3_Metadata_typed_filter_metadata_next(
+      metadata_upb, &typed_filter_metadata_key_view, &typed_filter_metadata_val,
+      &iter)) {
+    absl::string_view key = UpbStringToAbsl(typed_filter_metadata_key_view);
+    ValidationErrors::ScopedField field(
+        errors, absl::StrCat(".typed_filter_metadata[", key, "]"));
+    auto extension =
+        ExtractXdsExtension(context, typed_filter_metadata_val, errors);
+    if (!extension.has_value()) continue;
+    // TODO(roth): If we start to need a lot of types here, refactor
+    // this into a separate registry.
+    std::unique_ptr<XdsMetadataValue> metadata_value;
+    if (XdsGcpAuthFilterEnabled() &&
+        extension->type == XdsGcpAuthnAudienceMetadataValue::Type()) {
+      metadata_value =
+          ParseGcpAuthnAudience(context, std::move(*extension), errors);
+    } else if (XdsHttpConnectEnabled() &&
+               extension->type == XdsAddressMetadataValue::Type()) {
+      metadata_value = ParseAddress(context, std::move(*extension), errors);
+    }
+    if (metadata_value != nullptr) {
+      metadata_map.Insert(key, std::move(metadata_value));
     }
   }
   // Then, try filter_metadata.
-  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-  // v30.0.
-  const upb_Map* filter_metadata_upb_map =
-      _envoy_config_core_v3_Metadata_filter_metadata_upb_map(metadata_upb);
-  if (filter_metadata_upb_map) {
-    size_t iter = kUpb_Map_Begin;
-    upb_MessageValue k, v;
-    while (upb_Map_Next(filter_metadata_upb_map, &k, &v, &iter)) {
-      upb_StringView filter_metadata_key_view = k.str_val;
-      const google_protobuf_Struct* filter_metadata_val =
-          (google_protobuf_Struct*)v.msg_val;
-      absl::string_view key = UpbStringToAbsl(filter_metadata_key_view);
-      auto json = ParseProtobufStructToJson(context, filter_metadata_val);
-      if (!json.ok()) {
-        ValidationErrors::ScopedField field(
-            errors, absl::StrCat(".filter_metadata[", key, "]"));
-        errors->AddError(json.status().message());
-      }
-      // Add only if not already added from typed_filter_metadata.
-      else if (metadata_map.Find(key) == nullptr) {
-        metadata_map.Insert(
-            key, std::make_unique<XdsStructMetadataValue>(std::move(*json)));
-      }
+  size_t iter2 = kUpb_Map_Begin;
+  upb_StringView filter_metadata_key_view;
+  const google_protobuf_Struct* filter_metadata_val;
+  while (envoy_config_core_v3_Metadata_filter_metadata_next(
+      metadata_upb, &filter_metadata_key_view, &filter_metadata_val, &iter2)) {
+    absl::string_view key = UpbStringToAbsl(filter_metadata_key_view);
+    auto json = ParseProtobufStructToJson(context, filter_metadata_val);
+    if (!json.ok()) {
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".filter_metadata[", key, "]"));
+      errors->AddError(json.status().message());
+    }
+    // Add only if not already added from typed_filter_metadata.
+    else if (metadata_map.Find(key) == nullptr) {
+      metadata_map.Insert(
+          key, std::make_unique<XdsStructMetadataValue>(std::move(*json)));
     }
   }
   return metadata_map;

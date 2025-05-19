@@ -61,6 +61,7 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -557,8 +558,7 @@ struct grpc_tcp {
 
 struct backup_poller {
   gpr_mu* pollset_mu;
-  grpc_closure done_poller;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
+  grpc_closure run_poller;
 };
 
 void LogCommonIOErrors(absl::string_view prefix, int error_no) {
@@ -619,11 +619,11 @@ static void done_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " destroy";
   grpc_pollset_destroy(BACKUP_POLLER_POLLSET(p));
-  p->engine.reset();
   gpr_free(p);
 }
 
-static void run_poller(backup_poller* p) {
+static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
+  backup_poller* p = static_cast<backup_poller*>(bp);
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " run";
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
@@ -641,15 +641,14 @@ static void run_poller(backup_poller* p) {
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " shutdown";
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
-                          GRPC_CLOSURE_INIT(&p->done_poller, done_poller, p,
+                          GRPC_CLOSURE_INIT(&p->run_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
   } else {
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " reschedule";
-    p->engine->Run([p]() {
-      grpc_core::ExecCtx exec_ctx;
-      run_poller(p);
-    });
+    grpc_core::Executor::Run(&p->run_poller, absl::OkStatus(),
+                             grpc_core::ExecutorType::DEFAULT,
+                             grpc_core::ExecutorJobType::LONG);
   }
 }
 
@@ -680,15 +679,14 @@ static void cover_self(grpc_tcp* tcp) {
     g_uncovered_notifications_pending = 2;
     p = static_cast<backup_poller*>(
         gpr_zalloc(sizeof(*p) + grpc_pollset_size()));
-    p->engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " create";
-    p->engine->Run([p]() {
-      grpc_core::ExecCtx exec_ctx;
-      run_poller(p);
-    });
+    grpc_core::Executor::Run(
+        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, nullptr),
+        absl::OkStatus(), grpc_core::ExecutorType::DEFAULT,
+        grpc_core::ExecutorJobType::LONG);
   } else {
     old_count = g_uncovered_notifications_pending++;
     p = g_backup_poller;
