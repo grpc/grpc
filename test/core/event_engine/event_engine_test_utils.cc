@@ -36,6 +36,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/crash.h"
@@ -249,7 +250,8 @@ bool IsSaneTimerEnvironment() {
   return grpc_core::IsEventEngineClientEnabled() &&
          grpc_core::IsEventEngineListenerEnabled() &&
          grpc_core::IsEventEngineDnsEnabled() &&
-         grpc_core::IsEventEngineDnsNonClientChannelEnabled();
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+         !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython();
 }
 
 }  // namespace experimental

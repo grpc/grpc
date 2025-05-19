@@ -177,7 +177,8 @@ static void test_named_and_numeric_scope_ids(void) {
 ABSL_FLAG(std::string, resolver, "", "Resolver type (ares or native)");
 
 TEST(ResolveAddressUsingAresResolverPosixTest, MainTest) {
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() ||
+      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
     GTEST_SKIP()
         << "The event_engine_dns_non_client_channel experiment is "
            "enabled, so the legacy resolver is not used in this binary.";

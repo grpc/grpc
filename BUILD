@@ -3911,6 +3911,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",

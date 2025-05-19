@@ -747,7 +747,8 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {     \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \
