@@ -203,7 +203,6 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-    absl::BitGen bitgen;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
 

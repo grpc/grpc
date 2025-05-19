@@ -130,8 +130,7 @@ Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
 // HeaderAssembler - One Header Frame
 
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
-                       absl::BitGen& bitgen, HeaderAssembler& assembler,
-                       const bool end_headers) {
+                       HeaderAssembler& assembler, const bool end_headers) {
   EXPECT_EQ(assembler.GetBufferedHeadersLength(), 0u);
   EXPECT_EQ(assembler.IsReady(), false);
 
@@ -146,7 +145,7 @@ void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
     EXPECT_EQ(assembler.IsReady(), true);
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
         assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                               /*is_client=*/true, bitgen);
+                               /*is_client=*/true);
     EXPECT_TRUE(result.IsOk());
     Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
     EXPECT_STREQ(metadata->DebugString().c_str(),
@@ -160,9 +159,8 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
-  ValidateOneHeader(stream_id, parser, bitgen, assembler, /*end_headers=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
 TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
@@ -170,7 +168,6 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // If we try to read the Header before END_HEADERS is received.
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
@@ -191,7 +188,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
         GRPC_UNUSED ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>
             result =
                 assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                                       /*is_client=*/true, bitgen);
+                                       /*is_client=*/true);
       },
       "");
 #endif
@@ -201,7 +198,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 // HeaderAssembler - One Header Two Continuation Frames
 
 void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
-                                      HPackParser& parser, absl::BitGen& bitgen,
+                                      HPackParser& parser,
                                       HeaderAssembler& assembler,
                                       const bool end_stream) {
   Http2HeaderFrame header = GenerateHeaderFrame(
@@ -236,7 +233,7 @@ void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
 
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
       assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                             /*is_client=*/true, bitgen);
+                             /*is_client=*/true);
 
   EXPECT_TRUE(result.IsOk());
   Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
@@ -250,9 +247,8 @@ TEST(HeaderAssemblerTest, ValidOneHeaderTwoContinuationFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x78654321;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
-  ValidateOneHeaderTwoContinuation(stream_id, parser, bitgen, assembler,
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
 }
 
@@ -261,7 +257,6 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
   // If we try to read the Metadata before END_HEADERS is received.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header =
       GenerateHeaderFrame(kSimpleRequestEncodedPart1, stream_id,
@@ -291,7 +286,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
         GRPC_UNUSED ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>
             result =
                 assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
-                                       /*is_client=*/true, bitgen);
+                                       /*is_client=*/true);
       },
       "");
 #endif
@@ -309,10 +304,9 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
   // 4. Do all the above for the second HEADERS frame.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
-  ValidateOneHeader(stream_id, parser, bitgen, assembler, /*end_headers=*/true);
-  ValidateOneHeader(stream_id, parser, bitgen, assembler, /*end_headers=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
@@ -324,11 +318,10 @@ TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
   // 4. Do all the above for the second set of Header and Continuation frames.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
-  ValidateOneHeaderTwoContinuation(stream_id, parser, bitgen, assembler,
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
-  ValidateOneHeaderTwoContinuation(stream_id, parser, bitgen, assembler,
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/true);
 }
 
@@ -340,7 +333,6 @@ TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   // END_STREAM.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
@@ -366,7 +358,6 @@ TEST(HeaderAssemblerTest, InvalidHeaderAndContinuationHaveDifferentStreamID) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
@@ -389,7 +380,6 @@ TEST(HeaderAssemblerTest, InvalidContinuationBeforeHeaders) {
   // Fail if the CONTINUATION frame is received before HEADERS.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2ContinuationFrame continuation1 = GenerateContinuationFrame(
       kSimpleRequestEncodedPart2, stream_id, /*end_headers=*/false);
@@ -405,7 +395,6 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  absl::BitGen bitgen;
   HeaderAssembler assembler(stream_id);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
