@@ -111,13 +111,15 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
-  auto endpoint_mgr =
-      args_.channel_args.GetPointer<EventEngine::EndpointManager*>(
-          GRPC_ARG_SUBCHANNEL_ENDPOINT);
-  std::unique_ptr<EventEngine::Endpoint> endpoint;
+  std::unique_ptr<EventEngine::Endpoint> endpoint = nullptr;
   ChannelArgs channel_args = args_.channel_args;
-  if (*endpoint_mgr != nullptr) {
-    endpoint = (*endpoint_mgr)->take_endpoint();
+  if (channel_args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
+    auto endpoint_mgr =
+        args_.channel_args.GetPointer<EventEngine::EndpointManager*>(
+            GRPC_ARG_SUBCHANNEL_ENDPOINT);
+    if (*endpoint_mgr != nullptr) {
+      endpoint = (*endpoint_mgr)->take_endpoint();
+    }
   } else {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
     if (!address.ok()) {
