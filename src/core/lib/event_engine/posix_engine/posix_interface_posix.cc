@@ -788,7 +788,7 @@ EventEnginePosixInterface::LocalAddress(const FileDescriptor& fd) {
     return absl::InternalError(
         "getsockname: file descriptor from wrong generation");
   }
-  return ::grpc_event_engine::experimental::LocalAddress(fd.fd());
+  return grpc_event_engine::experimental::LocalAddress(fd.fd());
 }
 
 absl::StatusOr<std::string> EventEnginePosixInterface::LocalAddressString(
