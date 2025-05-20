@@ -651,7 +651,8 @@ absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
       GRPC_RETURN_IF_ERROR(resolved.status());
     } else {
       if (IsEventEngineDnsNonClientChannelEnabled() &&
-          !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
+          !grpc_event_engine::experimental::
+              EventEngineExperimentDisabledForPython()) {
         absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>> ee_resolver =
             args.GetObjectRef<EventEngine>()->GetDNSResolver(
                 EventEngine::DNSResolver::ResolverOptions());

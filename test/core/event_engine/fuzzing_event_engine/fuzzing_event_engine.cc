@@ -746,7 +746,8 @@ absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
   if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
-      !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     return std::make_unique<FuzzerDNSResolver>(shared_from_this());
   }
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());

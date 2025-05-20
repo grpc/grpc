@@ -588,7 +588,8 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   grpc_resolved_address first_address;
   VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
   if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
-      !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
         grpc_event_engine::experimental::EventEngine::DNSResolver::
             ResolverOptions());

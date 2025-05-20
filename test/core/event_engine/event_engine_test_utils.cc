@@ -251,7 +251,8 @@ bool IsSaneTimerEnvironment() {
          grpc_core::IsEventEngineListenerEnabled() &&
          grpc_core::IsEventEngineDnsEnabled() &&
          grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
-         !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython();
+         !grpc_event_engine::experimental::
+             EventEngineExperimentDisabledForPython();
 }
 
 }  // namespace experimental

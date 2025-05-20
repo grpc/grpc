@@ -133,7 +133,8 @@ void test_bind_server_to_addr(const char* host, bool secure) {
 
 static bool external_dns_works(const char* host) {
   if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() ||
-      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
+      grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver =
         grpc_event_engine::experimental::GetDefaultEventEngine()
             ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::

@@ -42,7 +42,8 @@ gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
   if (IsEventEngineDnsNonClientChannelEnabled() &&
-      !grpc_event_engine::experimental::EventEngineExperimentDisabledForPython()) {
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver =
         grpc_event_engine::experimental::GetDefaultEventEngine()
             ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
