@@ -120,6 +120,16 @@ struct grpc_auth_context
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
   void add_cstring_property(const char* name, const char* value);
+  void set_compare_peer(
+      absl::AnyInvocable<bool(grpc_auth_context*, grpc_auth_context*)>
+          compare_peer) {
+    compare_peer_ = std::move(compare_peer);
+  }
+
+  // Compares the peer in this auth context and another auth context with the
+  // injected compare_peer_ function. Should return std::nullopt if no function
+  // is injected.
+  std::optional<bool> ArePeersSame(grpc_auth_context* other);
 
  private:
   grpc_core::RefCountedPtr<grpc_auth_context> chained_;
@@ -127,6 +137,8 @@ struct grpc_auth_context
   const char* peer_identity_property_name_ = nullptr;
   std::unique_ptr<Extension> extension_;
   grpc_core::OrphanablePtr<grpc_core::ConnectionContext> connection_context_;
+  absl::AnyInvocable<bool(grpc_auth_context*, grpc_auth_context*)>
+      compare_peer_;
 };
 
 // --- Channel args for auth context ---
