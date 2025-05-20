@@ -61,7 +61,6 @@ class WorkStealingThreadPool final : public ThreadPool {
 
   void PreventFork() override;
   void AllowFork() override;
-
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
@@ -223,9 +222,11 @@ class WorkStealingThreadPool final : public ThreadPool {
   };
 
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
+#if GRPC_ENABLE_FORK_SUPPORT
   grpc_core::Mutex can_fork_mutex_;
   bool can_fork_ ABSL_GUARDED_BY(can_fork_mutex_);
   grpc_core::CondVar can_fork_cond_;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 }  // namespace grpc_event_engine::experimental
