@@ -154,7 +154,7 @@ void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
     LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
-               << ": Stack trace not available";
+                                      << ": Stack trace not available";
   } else {
     LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
   }
@@ -213,9 +213,31 @@ EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
   return nullptr;
 }
 
-void WorkStealingThreadPool::PrepareFork() { pool_->PrepareFork(); }
+#if GRPC_ENABLE_FORK_SUPPORT
+
+void WorkStealingThreadPool::AllowFork() {
+  grpc_core::MutexLock lock(&can_fork_mutex_);
+  can_fork_ = true;
+  can_fork_cond_.SignalAll();
+}
+
+void WorkStealingThreadPool::PreventFork() {
+  grpc_core::MutexLock lock(&can_fork_mutex_);
+  can_fork_ = false;
+  can_fork_cond_.SignalAll();
+}
+
+void WorkStealingThreadPool::PrepareFork() {
+  grpc_core::MutexLock lock(&can_fork_mutex_);
+  while (!can_fork_) {
+    can_fork_cond_.Wait(&can_fork_mutex_);
+  }
+  pool_->PrepareFork();
+}
 
 void WorkStealingThreadPool::PostFork() { pool_->Postfork(); }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 // -------- WorkStealingThreadPool::WorkStealingThreadPoolImpl --------
 

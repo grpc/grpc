@@ -35,8 +35,14 @@ class ThreadPool {
   virtual void Run(absl::AnyInvocable<void()> callback) = 0;
   virtual void Run(EventEngine::Closure* closure) = 0;
 
+#if GRPC_ENABLE_FORK_SUPPORT
   virtual void PrepareFork() = 0;
   virtual void PostFork() = 0;
+
+  virtual void PreventFork() = 0;
+  virtual void AllowFork() = 0;
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 
 // Creates a default thread pool.

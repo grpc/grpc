@@ -127,11 +127,11 @@ std::pair<std::string, std::string> DoExchangeAsync(absl::string_view label,
       EchoTestService::NewStub(CreateChannel(addr));
   EchoClientBidiReactor reactor;
   stub->async()->BidiStream(&context, &reactor);
-  request.set_message(absl::Substitute("Hello again from [$0]", getpid()));
+  request.set_message(absl::Substitute("Hello again from $0", getpid()));
   reactor.StartWrite(&request);
   reactor.StartRead(&response);
   reactor.StartCall();
-  VLOG(2) << label << " Doing the call";
+  VLOG(2).WithThreadID(getpid()) << label << " Doing the call";
   reactor.WaitReadWriteDone();
   reactor.StartWritesDone();
   reactor.WaitAllDone();

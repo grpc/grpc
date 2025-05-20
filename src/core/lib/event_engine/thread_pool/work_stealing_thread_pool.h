@@ -53,10 +53,16 @@ class WorkStealingThreadPool final : public ThreadPool {
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
+#if GRPC_ENABLE_FORK_SUPPORT
   // Forkable
   // These methods are exposed on the public object to allow for testing.
   void PrepareFork() override;
   void PostFork() override;
+
+  void PreventFork() override;
+  void AllowFork() override;
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
   // A basic communication mechanism to signal waiting threads that work is
@@ -217,6 +223,9 @@ class WorkStealingThreadPool final : public ThreadPool {
   };
 
   const std::shared_ptr<WorkStealingThreadPoolImpl> pool_;
+  grpc_core::Mutex can_fork_mutex_;
+  bool can_fork_ ABSL_GUARDED_BY(can_fork_mutex_);
+  grpc_core::CondVar can_fork_cond_;
 };
 
 }  // namespace grpc_event_engine::experimental

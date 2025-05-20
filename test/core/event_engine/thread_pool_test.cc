@@ -65,6 +65,8 @@ TYPED_TEST(ThreadPoolTest, CanDestroyInsideClosure) {
   n.WaitForNotification();
 }
 
+#if GRPC_ENABLE_FORK_SUPPORT
+
 TYPED_TEST(ThreadPoolTest, CanSurviveFork) {
   TypeParam p(8);
   grpc_core::Notification inner_closure_ran;
@@ -169,6 +171,8 @@ TYPED_TEST(ThreadPoolTest, StartQuiesceRaceStressTest) {
     t2.Join();
   }
 }
+
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
 void ScheduleSelf(ThreadPool* p) {
   p->Run([p] { ScheduleSelf(p); });

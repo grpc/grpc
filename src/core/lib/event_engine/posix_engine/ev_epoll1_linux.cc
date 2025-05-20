@@ -60,22 +60,21 @@ class Epoll1EventHandle : public EventHandle {
   Epoll1EventHandle(const FileDescriptor& fd, Epoll1Poller* poller)
       : fd_(fd),
         poller_(poller),
-        read_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
-        write_closure_(std::make_unique<LockfreeEvent>(poller->GetScheduler())),
-        error_closure_(
-            std::make_unique<LockfreeEvent>(poller->GetScheduler())) {
-    read_closure_->InitEvent();
-    write_closure_->InitEvent();
-    error_closure_->InitEvent();
+        read_closure_(poller->GetScheduler()),
+        write_closure_(poller->GetScheduler()),
+        error_closure_(poller->GetScheduler()) {
+    read_closure_.InitEvent();
+    write_closure_.InitEvent();
+    error_closure_.InitEvent();
     pending_read_.store(false, std::memory_order_relaxed);
     pending_write_.store(false, std::memory_order_relaxed);
     pending_error_.store(false, std::memory_order_relaxed);
   }
   void ReInit(FileDescriptor fd) {
     fd_ = fd;
-    read_closure_->InitEvent();
-    write_closure_->InitEvent();
-    error_closure_->InitEvent();
+    read_closure_.InitEvent();
+    write_closure_.InitEvent();
+    error_closure_.InitEvent();
     pending_read_.store(false, std::memory_order_relaxed);
     pending_write_.store(false, std::memory_order_relaxed);
     pending_error_.store(false, std::memory_order_relaxed);
@@ -120,19 +119,19 @@ class Epoll1EventHandle : public EventHandle {
     // These may execute in Parallel with ShutdownHandle. Thats not an issue
     // because the lockfree event implementation should be able to handle it.
     if (pending_read_.exchange(false, std::memory_order_acq_rel)) {
-      read_closure_->SetReady();
+      read_closure_.SetReady();
     }
     if (pending_write_.exchange(false, std::memory_order_acq_rel)) {
-      write_closure_->SetReady();
+      write_closure_.SetReady();
     }
     if (pending_error_.exchange(false, std::memory_order_acq_rel)) {
-      error_closure_->SetReady();
+      error_closure_.SetReady();
     }
   }
   grpc_core::Mutex* mu() { return &mu_; }
-  LockfreeEvent* ReadClosure() { return read_closure_.get(); }
-  LockfreeEvent* WriteClosure() { return write_closure_.get(); }
-  LockfreeEvent* ErrorClosure() { return error_closure_.get(); }
+  LockfreeEvent* ReadClosure() { return &read_closure_; }
+  LockfreeEvent* WriteClosure() { return &write_closure_; }
+  LockfreeEvent* ErrorClosure() { return &error_closure_; }
   ~Epoll1EventHandle() override = default;
 
  private:
@@ -147,10 +146,9 @@ class Epoll1EventHandle : public EventHandle {
   std::atomic<bool> pending_write_{false};
   std::atomic<bool> pending_error_{false};
   Epoll1Poller* poller_;
-  std::unique_ptr<LockfreeEvent> read_closure_;
-  std::unique_ptr<LockfreeEvent> write_closure_;
-  std::unique_ptr<LockfreeEvent> error_closure_;
-  std::unique_ptr<LockfreeEvent> fork_closure_;
+  LockfreeEvent read_closure_;
+  LockfreeEvent write_closure_;
+  LockfreeEvent error_closure_;
 };
 
 namespace {
@@ -177,7 +175,7 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
                                      absl::string_view reason) {
   bool is_release_fd = (release_fd != nullptr);
   bool was_shutdown = false;
-  if (!read_closure_->IsShutdown()) {
+  if (!read_closure_.IsShutdown()) {
     was_shutdown = true;
     HandleShutdownInternal(absl::Status(absl::StatusCode::kUnknown, reason),
                            is_release_fd);
@@ -203,9 +201,9 @@ void Epoll1EventHandle::OrphanHandle(PosixEngineClosure* on_done,
     // See Epoll1Poller::ShutdownHandle for explanation on why a mutex is
     // required here.
     grpc_core::MutexLock lock(&mu_);
-    read_closure_->DestroyEvent();
-    write_closure_->DestroyEvent();
-    error_closure_->DestroyEvent();
+    read_closure_.DestroyEvent();
+    write_closure_.DestroyEvent();
+    error_closure_.DestroyEvent();
   }
   pending_read_.store(false, std::memory_order_release);
   pending_write_.store(false, std::memory_order_release);
@@ -230,7 +228,7 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                                                bool releasing_fd) {
   grpc_core::StatusSetInt(&why, grpc_core::StatusIntProperty::kRpcStatus,
                           GRPC_STATUS_UNAVAILABLE);
-  if (read_closure_->SetShutdown(why)) {
+  if (read_closure_.SetShutdown(why)) {
     if (releasing_fd) {
       auto result = poller_->posix_interface().EpollCtlDel(
           poller_->g_epoll_set_.epfd, fd_);
@@ -239,8 +237,8 @@ void Epoll1EventHandle::HandleShutdownInternal(absl::Status why,
                    << result.StrError();
       }
     }
-    write_closure_->SetShutdown(why);
-    error_closure_->SetShutdown(why);
+    write_closure_.SetShutdown(why);
+    error_closure_.SetShutdown(why);
   }
 }
 
@@ -391,26 +389,26 @@ void Epoll1EventHandle::ShutdownHandle(absl::Status why) {
 }
 
 bool Epoll1EventHandle::IsHandleShutdown() {
-  return read_closure_->IsShutdown();
+  return read_closure_.IsShutdown();
 }
 
 void Epoll1EventHandle::NotifyOnRead(PosixEngineClosure* on_read) {
-  read_closure_->NotifyOn(on_read);
+  read_closure_.NotifyOn(on_read);
 }
 
 void Epoll1EventHandle::NotifyOnWrite(PosixEngineClosure* on_write) {
-  write_closure_->NotifyOn(on_write);
+  write_closure_.NotifyOn(on_write);
 }
 
 void Epoll1EventHandle::NotifyOnError(PosixEngineClosure* on_error) {
-  error_closure_->NotifyOn(on_error);
+  error_closure_.NotifyOn(on_error);
 }
 
-void Epoll1EventHandle::SetReadable() { read_closure_->SetReady(); }
+void Epoll1EventHandle::SetReadable() { read_closure_.SetReady(); }
 
-void Epoll1EventHandle::SetWritable() { write_closure_->SetReady(); }
+void Epoll1EventHandle::SetWritable() { write_closure_.SetReady(); }
 
-void Epoll1EventHandle::SetHasError() { error_closure_->SetReady(); }
+void Epoll1EventHandle::SetHasError() { error_closure_.SetReady(); }
 
 // Polls the registered Fds for events until timeout is reached or there is a
 // Kick(). If there is a Kick(), it collects and processes any previously
@@ -460,7 +458,11 @@ void Epoll1Poller::Kick() {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
 
 void Epoll1Poller::HandleForkInChild() {
-  posix_interface().AdvanceGeneration();
+  // Experiment guards closing fds/incrementing the generation. epoll fd
+  // needs to be reset outside the experiment to support iomgr
+  if (grpc_core::IsEventEngineForkEnabled()) {
+    posix_interface().AdvanceGeneration();
+  }
   {
     grpc_core::MutexLock lock(&mu_);
     for (EventHandle* handle : fork_handles_set_) {
