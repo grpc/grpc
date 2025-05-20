@@ -239,6 +239,10 @@ UPB_INLINE envoy_extensions_transport_sockets_tls_v3_Secret_type_oneofcases envo
   return (envoy_extensions_transport_sockets_tls_v3_Secret_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_Secret_clear_type(envoy_extensions_transport_sockets_tls_v3_Secret* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(12, 32), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__transport_0sockets__tls__v3__Secret_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_Secret_clear_name(envoy_extensions_transport_sockets_tls_v3_Secret* msg) {
   const upb_MiniTableField field = {1, 16, 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

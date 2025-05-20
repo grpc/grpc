@@ -328,6 +328,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -1129,6 +1130,7 @@ libs:
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
   - src/core/transport/endpoint_transport.h
+  - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/crypt/gsec.h
   - src/core/tsi/alts/frame_protector/alts_counter.h
   - src/core/tsi/alts/frame_protector/alts_crypter.h
@@ -1170,6 +1172,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gcp_metadata_query.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
@@ -1996,7 +1999,9 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
+  - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
   - src/core/tsi/alts/crypt/gsec.cc
   - src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -2370,6 +2375,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -2707,6 +2713,7 @@ libs:
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
   - src/core/transport/endpoint_transport.h
+  - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/fake_transport_security.h
   - src/core/tsi/local_transport_security.h
@@ -2724,6 +2731,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -3145,7 +3153,9 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
+  - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/fake_transport_security.cc
   - src/core/tsi/local_transport_security.cc
@@ -3366,19 +3376,31 @@ libs:
   headers:
   - third_party/upb/upb/json/decode.h
   - third_party/upb/upb/json/encode.h
+  src:
+  - third_party/upb/upb/json/decode.c
+  - third_party/upb/upb/json/encode.c
+  deps:
+  - upb_lex_lib
+  - upb_reflection_lib
+- name: upb_lex_lib
+  build: all
+  language: c
+  public_headers: []
+  headers:
   - third_party/upb/upb/lex/atoi.h
   - third_party/upb/upb/lex/round_trip.h
   - third_party/upb/upb/lex/strtod.h
   - third_party/upb/upb/lex/unicode.h
+  - third_party/upb/upb/port/atomic.h
+  - third_party/upb/upb/port/def.inc
+  - third_party/upb/upb/port/undef.inc
+  - third_party/upb/upb/port/vsnprintf_compat.h
   src:
-  - third_party/upb/upb/json/decode.c
-  - third_party/upb/upb/json/encode.c
   - third_party/upb/upb/lex/atoi.c
   - third_party/upb/upb/lex/round_trip.c
   - third_party/upb/upb/lex/strtod.c
   - third_party/upb/upb/lex/unicode.c
-  deps:
-  - upb_reflection_lib
+  deps: []
 - name: upb_mem_lib
   build: all
   language: c
@@ -3546,21 +3568,14 @@ libs:
   language: c
   public_headers: []
   headers:
-  - third_party/upb/upb/lex/atoi.h
-  - third_party/upb/upb/lex/round_trip.h
-  - third_party/upb/upb/lex/strtod.h
-  - third_party/upb/upb/lex/unicode.h
   - third_party/upb/upb/text/encode.h
   - third_party/upb/upb/text/internal/encode.h
   - third_party/upb/upb/text/options.h
   src:
-  - third_party/upb/upb/lex/atoi.c
-  - third_party/upb/upb/lex/round_trip.c
-  - third_party/upb/upb/lex/strtod.c
-  - third_party/upb/upb/lex/unicode.c
   - third_party/upb/upb/text/encode.c
   - third_party/upb/upb/text/internal/encode.c
   deps:
+  - upb_lex_lib
   - upb_reflection_lib
 - name: upb_wire_lib
   build: all
@@ -4664,6 +4679,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -4946,6 +4962,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
@@ -5127,7 +5144,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -5373,7 +5392,9 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -6060,8 +6081,10 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/if_list.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -6169,7 +6192,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -6498,6 +6523,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -6749,6 +6775,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -6844,6 +6871,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -6862,7 +6890,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -7480,6 +7510,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -7499,7 +7530,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -7721,6 +7754,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
@@ -7738,6 +7772,7 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
+  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -8054,16 +8089,6 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
-  deps:
-  - gtest
-  - grpc++_test_util
-- name: destroy_grpclb_channel_with_active_connect_stress_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
   - gtest
   - grpc++_test_util
@@ -10131,7 +10156,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -10564,6 +10591,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -10815,6 +10843,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -10934,6 +10963,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -10953,6 +10983,7 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
@@ -11052,6 +11083,7 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
@@ -11072,7 +11104,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -11206,6 +11240,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/lib/debug/trace.cc
@@ -11214,6 +11249,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/frame_test.cc
   deps:
   - gtest
@@ -11223,6 +11259,17 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
+- name: function_signature_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/function_signature.h
+  src:
+  - test/core/util/function_signature_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
 - name: fuzzing_event_engine_test
   gtest: true
   build: test
@@ -12221,6 +12268,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -12258,6 +12306,7 @@ targets:
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
   - src/core/util/work_serializer.h
+  - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_arena_allocator.cc
@@ -12480,6 +12529,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -12644,7 +12694,9 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
+  - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
@@ -12660,6 +12712,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -12735,6 +12788,7 @@ targets:
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/util/glob.h
+  - src/core/util/time.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   src:
   - src/core/ext/transport/chttp2/transport/frame.cc
@@ -12744,6 +12798,7 @@ targets:
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/transport/chttp2/http2_status_test.cc
   deps:
   - gtest
@@ -12853,16 +12908,15 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/if_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: init_test
   gtest: true
@@ -12943,11 +12997,14 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13020,6 +13077,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -13038,7 +13096,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13195,7 +13255,9 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13287,12 +13349,15 @@ targets:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -13420,8 +13485,11 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -13487,6 +13555,7 @@ targets:
   - src/core/lib/promise/map_pipe.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
@@ -13507,7 +13576,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13573,18 +13644,16 @@ targets:
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   - src/core/util/overload.h
   - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/match_promise_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: match_test
   gtest: true
@@ -13689,6 +13758,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -13708,7 +13778,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13889,7 +13961,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -14018,7 +14092,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
@@ -14877,15 +14953,14 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/prioritized_race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_endpoint_test
   gtest: true
@@ -14909,16 +14984,15 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
   - absl/functional:bind_front
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_map_test
   gtest: true
@@ -14929,19 +15003,16 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
-  - absl/log:log
   - absl/meta:type_traits
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_mutex_test
   gtest: true
@@ -14969,7 +15040,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -15003,16 +15076,16 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   src:
+  - src/core/util/json/json_writer.cc
   - test/core/promise/promise_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: proto_buffer_reader_test
   gtest: true
@@ -15077,6 +15150,50 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
   - test/cpp/qps/driver.h
@@ -15090,6 +15207,7 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -15097,6 +15215,29 @@ targets:
   - src/proto/grpc/testing/report_qps_scenario_service.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -15119,6 +15260,50 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/ext/transport/chaotic_good/chaotic_good.h
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good/client_transport.h
+  - src/core/ext/transport/chaotic_good/config.h
+  - src/core/ext/transport/chaotic_good/control_endpoint.h
+  - src/core/ext/transport/chaotic_good/data_endpoints.h
+  - src/core/ext/transport/chaotic_good/frame.h
+  - src/core/ext/transport/chaotic_good/frame_header.h
+  - src/core/ext/transport/chaotic_good/frame_transport.h
+  - src/core/ext/transport/chaotic_good/message_chunker.h
+  - src/core/ext/transport/chaotic_good/message_reassembly.h
+  - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/serialize_little_endian.h
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good/server_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.h
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.h
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h
+  - src/core/ext/transport/chaotic_good/transport_context.h
+  - src/core/ext/transport/chaotic_good_legacy/chaotic_good_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.h
+  - src/core/ext/transport/chaotic_good_legacy/config.h
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.h
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.h
+  - src/core/ext/transport/chaotic_good_legacy/frame.h
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.h
+  - src/core/ext/transport/chaotic_good_legacy/message_chunker.h
+  - src/core/ext/transport/chaotic_good_legacy/message_reassembly.h
+  - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.h
+  - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/event_engine_wakeup_scheduler.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_pipe.h
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
+  - src/core/lib/promise/switch.h
+  - src/core/lib/promise/wait_for_callback.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/lib/transport/promise_endpoint.h
+  - src/core/util/seq_bit_set.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
   - test/cpp/qps/interarrival.h
@@ -15128,12 +15313,36 @@ targets:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
+  - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/payloads.proto
   - src/proto/grpc/testing/stats.proto
   - src/proto/grpc/testing/worker_service.proto
+  - src/core/ext/transport/chaotic_good/chaotic_good.cc
+  - src/core/ext/transport/chaotic_good/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good/client_transport.cc
+  - src/core/ext/transport/chaotic_good/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good/frame.cc
+  - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good/server_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
+  - src/core/ext/transport/chaotic_good/tcp_frame_transport.cc
+  - src/core/ext/transport/chaotic_good/tcp_ztrace_collector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.cc
+  - src/core/ext/transport/chaotic_good_legacy/client_transport.cc
+  - src/core/ext/transport/chaotic_good_legacy/control_endpoint.cc
+  - src/core/ext/transport/chaotic_good_legacy/data_endpoints.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame.cc
+  - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
+  - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
+  - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/wait_set.cc
+  - src/core/lib/transport/promise_endpoint.cc
+  - src/core/util/seq_bit_set.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
   - test/cpp/qps/client_sync.cc
@@ -15351,8 +15560,10 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/if_list.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
@@ -15694,12 +15905,17 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - test/core/promise/seq_test.cc
   deps:
   - gtest
@@ -16363,6 +16579,8 @@ targets:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/switch.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/switch_test.cc
   deps:
@@ -16645,6 +16863,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/postmortem.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -16655,6 +16874,7 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
+  - test/core/test_util/postmortem.cc
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -17019,7 +17239,9 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -17058,14 +17280,19 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
@@ -17193,7 +17420,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h

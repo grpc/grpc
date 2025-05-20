@@ -813,10 +813,7 @@ TEST_F(StatsPluginEnd2EndTest, TestMetadataSizeAnnotations) {
   traces_recorder_->StopRecording();
   // Check presence of metadata size annotations in client span.
   auto sent_span_data = GetSpanByName(
-      recorded_spans,
-      absl::StrCat(
-          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
-          client_method_name_));
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(sent_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(
       sent_span_data,
@@ -856,10 +853,7 @@ TEST_F(StatsPluginEnd2EndTest, TestHttpAnnotations) {
   auto recorded_spans = traces_recorder_->GetAndClearSpans(3);
   traces_recorder_->StopRecording();
   auto client_span_data = GetSpanByName(
-      recorded_spans,
-      absl::StrCat(
-          grpc_core::IsCallTracerTransportFixEnabled() ? "Attempt." : "Sent.",
-          client_method_name_));
+      recorded_spans, absl::StrCat("Attempt.", client_method_name_));
   ASSERT_NE(client_span_data, recorded_spans.end());
   EXPECT_TRUE(IsAnnotationPresent(client_span_data,
                                   "HttpAnnotation type: Start time: .* "

@@ -57,12 +57,8 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
-inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
@@ -80,7 +76,8 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEngineSecureEndpointEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
+inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -105,8 +102,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
-inline bool IsShardChannelzIndexEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
@@ -116,12 +111,8 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
-inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
@@ -139,7 +130,8 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEngineSecureEndpointEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
+inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -164,8 +156,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
-inline bool IsShardChannelzIndexEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
@@ -175,12 +165,8 @@ inline bool IsTsiFrameProtectorWithoutLocksEnabled() { return false; }
 inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
-inline bool IsCallTracerTransportFixEnabled() { return true; }
 inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
@@ -198,7 +184,8 @@ inline bool IsEventEngineListenerEnabled() { return true; }
 inline bool IsEventEngineCallbackCqEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_FOR_ALL_OTHER_ENDPOINTS
 inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
-inline bool IsEventEngineSecureEndpointEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_EVENT_ENGINE_SECURE_ENDPOINT
+inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
@@ -223,8 +210,6 @@ inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
 inline bool IsServerGlobalCallbacksOwnershipEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
-inline bool IsShardChannelzIndexEnabled() { return true; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() { return true; }
 inline bool IsSleepPromiseExecCtxRemovalEnabled() { return false; }
@@ -236,9 +221,7 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 
 #else
 enum ExperimentIds {
-  kExperimentIdBackoffCapInitialAtMax,
   kExperimentIdCallTracerInTransport,
-  kExperimentIdCallTracerTransportFix,
   kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChttp2BoundWriteSize,
@@ -270,7 +253,6 @@ enum ExperimentIds {
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
   kExperimentIdServerGlobalCallbacksOwnership,
-  kExperimentIdShardChannelzIndex,
   kExperimentIdShardGlobalConnectionPool,
   kExperimentIdSleepPromiseExecCtxRemoval,
   kExperimentIdTcpFrameSizeTuning,
@@ -279,17 +261,9 @@ enum ExperimentIds {
   kExperimentIdUnconstrainedMaxQuotaBufferSize,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() {
-  return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>();
-}
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
-inline bool IsCallTracerTransportFixEnabled() {
-  return IsExperimentEnabled<kExperimentIdCallTracerTransportFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_CLIENT_AUTH_FILTER
 inline bool IsCallv3ClientAuthFilterEnabled() {
@@ -414,10 +388,6 @@ inline bool IsSecureEndpointOffloadLargeWritesEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_SERVER_GLOBAL_CALLBACKS_OWNERSHIP
 inline bool IsServerGlobalCallbacksOwnershipEnabled() {
   return IsExperimentEnabled<kExperimentIdServerGlobalCallbacksOwnership>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_CHANNELZ_INDEX
-inline bool IsShardChannelzIndexEnabled() {
-  return IsExperimentEnabled<kExperimentIdShardChannelzIndex>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SHARD_GLOBAL_CONNECTION_POOL
 inline bool IsShardGlobalConnectionPoolEnabled() {

@@ -1,3 +1,5 @@
+//
+//
 // Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,8 +13,26 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+//
 
-// TODO(ladynana): Replace this dummy test with the actual experiments compiler test.
-int main(int argc, char** argv) {
-  return 0;
+#include "src/core/telemetry/tcp_tracer.h"
+
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_join.h"
+
+namespace grpc_core {
+
+std::string TcpCallTracer::TcpEventMetric::ToString() {
+  return absl::StrCat(key, "=", value);
 }
+
+std::string TcpCallTracer::TcpEventMetricsToString(
+    const std::vector<TcpEventMetric>& metrics) {
+  return absl::StrJoin(metrics, ", ",
+                       [](std::string* out, TcpEventMetric metric) {
+                         absl::StrAppend(out, metric.ToString());
+                       });
+}
+
+}  // namespace grpc_core
