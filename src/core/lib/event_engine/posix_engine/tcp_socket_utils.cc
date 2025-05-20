@@ -24,6 +24,7 @@
 
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/strerror.h"
 #include "src/core/util/useful.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
@@ -189,7 +190,21 @@ bool IsIpv6LoopbackAvailable() {
   return kIpv6LoopbackAvailable;
 }
 
+absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(int fd) {
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (getsockname(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
+}
+
 #else  // GRPC_POSIX_SOCKET_UTILS_COMMON
+
+absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(int fd) {
+  grpc_core::Crash("unimplemented");
+}
 
 bool IsIpv6LoopbackAvailable() { grpc_core::Crash("unimplemented"); }
 

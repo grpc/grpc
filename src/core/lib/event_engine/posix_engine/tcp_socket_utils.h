@@ -160,6 +160,8 @@ bool IsIpv6LoopbackAvailable();
 // Return true if SO_REUSEPORT is supported
 bool IsSocketReusePortSupported();
 
+absl::StatusOr<EventEngine::ResolvedAddress> LocalAddress(int fd);
+
 bool SetSocketDualStack(int fd);
 
 }  // namespace grpc_event_engine::experimental

@@ -33,6 +33,7 @@
 #include "absl/strings/str_replace.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/posix_engine/file_descriptor_collection.h"
+#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/status_helper.h"
@@ -787,13 +788,7 @@ EventEnginePosixInterface::LocalAddress(const FileDescriptor& fd) {
     return absl::InternalError(
         "getsockname: file descriptor from wrong generation");
   }
-  EventEngine::ResolvedAddress addr;
-  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  if (getsockname(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
-    return absl::InternalError(
-        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
-  }
-  return EventEngine::ResolvedAddress(addr.address(), len);
+  return ::grpc_event_engine::experimental::LocalAddress(fd.fd());
 }
 
 absl::StatusOr<std::string> EventEnginePosixInterface::LocalAddressString(
