@@ -191,7 +191,7 @@
     Use promises for the http2 client transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2025/06/03
+  expiry: 2025/10/03
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
@@ -200,7 +200,7 @@
     Use promises for the http2 server transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2025/06/03
+  expiry: 2025/10/03
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
