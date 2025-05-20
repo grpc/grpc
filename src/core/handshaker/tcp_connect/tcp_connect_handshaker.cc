@@ -119,9 +119,7 @@ void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
 void TCPConnectHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
-  args_ = args;
-  if (args->endpoint != nullptr &&
-      args_->args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
+  if (args->endpoint != nullptr) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;
   }
@@ -129,8 +127,7 @@ void TCPConnectHandshaker::DoHandshake(
     MutexLock lock(&mu_);
     on_handshake_done_ = std::move(on_handshake_done);
   }
-
-  CHECK_EQ(args->endpoint.get(), nullptr);
+  args_ = args;
   absl::string_view resolved_address_text =
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
   absl::StatusOr<URI> uri = URI::Parse(resolved_address_text);

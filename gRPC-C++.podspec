@@ -1391,7 +1391,6 @@ Pod::Spec.new do |s|
                       'src/cpp/client/insecure_credentials.cc',
                       'src/cpp/client/secure_credentials.cc',
                       'src/cpp/client/secure_credentials.h',
-                      'src/cpp/client/secure_posix.cc',
                       'src/cpp/client/xds_credentials.cc',
                       'src/cpp/common/alarm.cc',
                       'src/cpp/common/auth_property_iterator.cc',

@@ -95,7 +95,6 @@ let package = Package(
         "include/grpc/impl/slice_type.h",
         "include/grpc/load_reporting.h",
         "include/grpc/passive_listener.h",
-        "include/grpc/secure_posix.h",
         "include/grpc/slice.h",
         "include/grpc/slice_buffer.h",
         "include/grpc/status.h",

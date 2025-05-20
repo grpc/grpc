@@ -16,7 +16,6 @@
 
 #include "src/core/client_channel/subchannel.h"
 
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
@@ -515,6 +514,7 @@ Subchannel::Subchannel(SubchannelKey key,
                                      ? "Subchannel"
                                      : nullptr),
       key_(std::move(key)),
+      created_from_endpoint_(args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)),
       args_(args),
       pollset_set_(grpc_pollset_set_create()),
       connector_(std::move(connector)),
@@ -584,11 +584,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
     return c;
   }
   c = MakeRefCounted<Subchannel>(std::move(key), std::move(connector), args);
-  if (args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
-    {
-      MutexLock lock(&c->mu_);
-      c->created_from_endpoint_ = true;
-    }
+  if (c->created_from_endpoint_) {
     c->RequestConnection();
     return c;
   }
@@ -784,8 +780,12 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
         next_attempt_time_ - Timestamp::Now();
     GRPC_TRACE_LOG(subchannel, INFO)
         << "subchannel " << this << " " << key_.ToString()
-        << ": connect failed (" << StatusToString(error)
-        << "), backing off for " << time_until_next_attempt.millis() << " ms";
+        << ": connect failed (" << StatusToString(error) << ")"
+        << (created_from_endpoint_
+                ? ", no retry will be attempted (created from endpoint); "
+                  "remaining in TRANSIENT_FAILURE"
+                : ", backing off for " +
+                      std::to_string(time_until_next_attempt.millis()) + " ms");
     SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                grpc_error_to_absl_status(error));
     if (created_from_endpoint_) return;

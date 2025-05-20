@@ -24,17 +24,11 @@
 
 #include <bitset>
 #include <initializer_list>
-#include <mutex>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-
-/** This arg is intended for internal use only, primarily
- *  for passing endpoint information during subchannel creation or connection.
- */
-#define GRPC_ARG_SUBCHANNEL_ENDPOINT "grpc.internal.subchannel_endpoint"
 
 // TODO(vigneshbabu): Define the Endpoint::Write metrics collection system
 // TODO(hork): remove all references to the factory methods.
@@ -182,6 +176,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// allocation being handled by the quota system.
   class Endpoint : public Extensible {
    public:
+    // Flag that this object gets stored in channel args as a raw pointer.
+    struct RawPointerChannelArgTag {};
+    static absl::string_view ChannelArgName() {
+      return "grpc.internal.subchannel_endpoint";
+    }
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
     virtual ~Endpoint() = default;
@@ -378,19 +377,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
   };
 
-  // EndpointManager manages the lifetime of a unique Endpoint instance.
-  // It allows transferring ownership of the endpoint to another component.
-  class EndpointManager : public std::enable_shared_from_this<EndpointManager> {
-   public:
-    explicit EndpointManager(std::unique_ptr<Endpoint> endpoint)
-        : endpoint_(std::move(endpoint)) {}
-
-    ~EndpointManager() {}
-    std::unique_ptr<Endpoint> take_endpoint() { return std::move(endpoint_); }
-
-   private:
-    std::unique_ptr<Endpoint> endpoint_;
-  };
   /// Called when a new connection is established.
   ///
   /// If the connection attempt was not successful, implementations should pass

@@ -20,6 +20,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/create_channel_posix.h>
 #include <grpcpp/security/tls_certificate_verifier.h>
 #include <grpcpp/security/tls_credentials_options.h>
 #include <grpcpp/server.h>
@@ -164,7 +165,7 @@ TEST_F(FdCredentialsTest, CertificateVerification) {
   tls_options.set_verify_server_certs(/*verify_server_certs=*/false);
   DoRpc(TlsCredentials(tls_options), fd_pair_[0]);
 }
-#endif
+#endif  // GRPC_POSIX_SOCKET
 
 }  // namespace
 }  // namespace testing

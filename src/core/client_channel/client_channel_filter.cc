@@ -17,7 +17,6 @@
 #include "src/core/client_channel/client_channel_filter.h"
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>

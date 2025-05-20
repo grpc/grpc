@@ -28,14 +28,20 @@
 #include "src/core/client_channel/direct_channel.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
+#include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/extensions/supports_fd.h"
+#include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/surface/legacy_channel.h"
+#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/transport/endpoint_transport.h"
@@ -106,20 +112,23 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
 }
 
 absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
-    const char* target, grpc_channel_credentials* creds, ChannelArgs c_args) {
+    const char* target, grpc_channel_credentials* creds,
+    const ChannelArgs& args) {
   const auto& c = CoreConfiguration::Get();
   if (target == nullptr) {
     return absl::InternalError("channel target is NULL");
   }
   if (creds == nullptr) return absl::InternalError("No credentials provided");
-  auto args = creds->update_arguments(c_args.SetObject(creds->Ref()));
+  auto final_args = creds->update_arguments(args.SetObject(creds->Ref()));
   std::vector<absl::string_view> transport_preferences = absl::StrSplit(
-      args.GetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS).value_or("h2"),
+      final_args.GetString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS)
+          .value_or("h2"),
       ',');
   if (transport_preferences.size() != 1) {
     return absl::InternalError(absl::StrCat(
         "Only one preferred transport name is currently supported: requested='",
-        *args.GetOwnedString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS), "'"));
+        *final_args.GetOwnedString(GRPC_ARG_PREFERRED_TRANSPORT_PROTOCOLS),
+        "'"));
   }
   auto* transport =
       c.endpoint_transport_registry().GetTransport(transport_preferences[0]);
@@ -127,8 +136,79 @@ absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
     return absl::InternalError(
         absl::StrCat("Unknown transport '", transport_preferences[0], "'"));
   }
-  return transport->ChannelCreate(target, args);
+  return transport->ChannelCreate(target, final_args);
 }
+
+namespace experimental {
+
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::EventEngineSupportsFdExtension;
+using ::grpc_event_engine::experimental::QueryExtension;
+
+grpc_channel* CreateChannelFromEndpoint(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    grpc_channel_credentials* creds, const grpc_channel_args* args) {
+  ExecCtx exec_ctx;
+  absl::StatusOr<std::string> resolved_address =
+      ResolvedAddressToURI(endpoint->GetPeerAddress());
+  auto response_generator = MakeRefCounted<FakeResolverResponseGenerator>();
+  ChannelArgs channel_args = CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(args)
+                                 .SetObject(endpoint.release());
+  if (resolved_address.ok()) {
+    channel_args =
+        channel_args.SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, *resolved_address);
+  }
+  Resolver::Result result;
+  result.args = channel_args;
+  // TODO(rishesh@) once https://github.com/grpc/grpc/issues/34172 is
+  // resolved, we should use a different address that will be less confusing for
+  // debuggability.
+  grpc_resolved_address address;
+  CHECK(grpc_parse_uri(
+      URI::Parse(resolved_address.ok() ? *resolved_address : "ipv4:0.0.0.0:0")
+          .value(),
+      &address));
+  result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
+  response_generator->SetResponseAsync(std::move(result));
+  channel_args = channel_args.SetObject(response_generator);
+  auto r = CreateClientEndpointChannel("fake:created-from-endpoint", creds,
+                                       channel_args);
+  if (!r.ok()) {
+    return grpc_lame_client_channel_create(
+        "fake:created-from-endpoint",
+        static_cast<grpc_status_code>(r.status().code()),
+        absl::StrCat(
+            "Failed to create channel to 'fake:created-from-endpoint':",
+            r.status().message())
+            .c_str());
+  }
+  return *r;
+}
+
+grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
+                                  const grpc_channel_args* args) {
+  ChannelArgs channel_args = CoreConfiguration::Get()
+                                 .channel_args_preconditioning()
+                                 .PreconditionChannelArgs(args);
+  grpc_event_engine::experimental::EventEngineSupportsFdExtension* supports_fd =
+      QueryExtension<EventEngineSupportsFdExtension>(
+          channel_args.GetObjectRef<EventEngine>().get());
+  if (supports_fd == nullptr) {
+    return grpc_lame_client_channel_create("fake:created-from-endpoint",
+                                           GRPC_STATUS_INTERNAL,
+                                           "Failed to create client channel");
+  }
+  std::unique_ptr<EventEngine::Endpoint> endpoint =
+      supports_fd->CreateEndpointFromFd(
+          fd, ChannelArgsEndpointConfig(channel_args));
+  return CreateChannelFromEndpoint(std::move(endpoint), creds,
+                                   channel_args.ToC().get());
+}
+}  // namespace experimental
 
 }  // namespace grpc_core
 

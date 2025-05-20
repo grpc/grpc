@@ -3091,7 +3091,6 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
-  include/grpc/secure_posix.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -3784,7 +3783,6 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
-  include/grpc/secure_posix.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h
@@ -4653,7 +4651,6 @@ add_library(grpc++
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
   src/cpp/client/secure_credentials.cc
-  src/cpp/client/secure_posix.cc
   src/cpp/client/xds_credentials.cc
   src/cpp/common/alarm.cc
   src/cpp/common/auth_property_iterator.cc
@@ -5402,7 +5399,6 @@ add_library(grpc++_unsecure
   src/cpp/client/create_channel_posix.cc
   src/cpp/client/global_callback_hook.cc
   src/cpp/client/insecure_credentials.cc
-  src/cpp/client/secure_posix.cc
   src/cpp/common/alarm.cc
   src/cpp/common/channel_arguments.cc
   src/cpp/common/completion_queue_cc.cc
@@ -6087,7 +6083,6 @@ foreach(_hdr
   include/grpc/impl/slice_type.h
   include/grpc/load_reporting.h
   include/grpc/passive_listener.h
-  include/grpc/secure_posix.h
   include/grpc/slice.h
   include/grpc/slice_buffer.h
   include/grpc/status.h

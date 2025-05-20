@@ -52,25 +52,19 @@
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
-#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
-#include "src/core/lib/event_engine/extensions/supports_fd.h"
-#include "src/core/lib/event_engine/query_extensions.h"
-#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
-#include "src/core/resolver/fake/fake_resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
@@ -111,15 +105,13 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
-  std::unique_ptr<EventEngine::Endpoint> endpoint = nullptr;
+  OrphanablePtr<grpc_endpoint> endpoint;
   ChannelArgs channel_args = args_.channel_args;
   if (channel_args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
-    auto endpoint_mgr =
-        args_.channel_args.GetPointer<EventEngine::EndpointManager*>(
-            GRPC_ARG_SUBCHANNEL_ENDPOINT);
-    if (*endpoint_mgr != nullptr) {
-      endpoint = (*endpoint_mgr)->take_endpoint();
-    }
+    endpoint = OrphanablePtr<grpc_endpoint>(grpc_event_engine_endpoint_create(
+        std::unique_ptr<EventEngine::Endpoint>(
+            args_.channel_args.GetPointer<EventEngine::Endpoint>(
+                GRPC_ARG_SUBCHANNEL_ENDPOINT))));
   } else {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
     if (!address.ok()) {
@@ -136,15 +128,12 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
-  handshake_mgr_->DoHandshake(
-      endpoint ? OrphanablePtr<grpc_endpoint>(
-                     grpc_event_engine_endpoint_create(std::move(endpoint)))
-               : nullptr,
-      channel_args, args.deadline, /*acceptor=*/nullptr,
-      [self = RefAsSubclass<Chttp2Connector>()](
-          absl::StatusOr<HandshakerArgs*> result) {
-        self->OnHandshakeDone(std::move(result));
-      });
+  handshake_mgr_->DoHandshake(std::move(endpoint), channel_args, args.deadline,
+                              /*acceptor=*/nullptr,
+                              [self = RefAsSubclass<Chttp2Connector>()](
+                                  absl::StatusOr<HandshakerArgs*> result) {
+                                self->OnHandshakeDone(std::move(result));
+                              });
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
@@ -318,62 +307,3 @@ grpc_channel* grpc_channel_create_from_fd(const char* /* target */,
 }
 
 #endif  // GPR_SUPPORT_CHANNELS_FROM_FD
-
-namespace grpc_core::experimental {
-
-using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EventEngineSupportsFdExtension;
-using ::grpc_event_engine::experimental::QueryExtension;
-
-grpc_channel* CreateChannelFromEndpoint(
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        endpoint,
-    grpc_channel_credentials* creds, const grpc_channel_args* args) {
-  grpc_core::ExecCtx exec_ctx;
-  std::string resolved_address =
-      *ResolvedAddressToURI(endpoint->GetPeerAddress());
-  grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
-      response_generator =
-          grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  std::shared_ptr<EventEngine::EndpointManager> endpoint_mgr =
-      std::make_shared<EventEngine::EndpointManager>(std::move(endpoint));
-  grpc_core::ChannelArgs args_ =
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(args)
-          .SetObject(endpoint_mgr)
-          .SetIfUnset(GRPC_ARG_DEFAULT_AUTHORITY, resolved_address);
-  Resolver::Result result;
-  result.args = args_;
-  grpc_resolved_address address;
-  CHECK(grpc_parse_uri(URI::Parse(resolved_address).value(), &address));
-  result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
-  // TODO(rishesh@) once https://github.com/grpc/grpc/issues/34172 is
-  // resolved, we should use a different address that will be less confusing for
-  // debuggability.
-  response_generator->SetResponseAsync(std::move(result));
-  args_ = args_.SetObject(response_generator);
-  grpc_core::ExecCtx::Get()->Flush();
-  return *CreateClientEndpointChannel("fake:created-from-endpoint", creds,
-                                      args_);
-}
-
-grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
-                                  const grpc_channel_args* args) {
-  grpc_core::ChannelArgs args_ = grpc_core::CoreConfiguration::Get()
-                                     .channel_args_preconditioning()
-                                     .PreconditionChannelArgs(args);
-  grpc_event_engine::experimental::EventEngineSupportsFdExtension* supports_fd =
-      QueryExtension<EventEngineSupportsFdExtension>(
-          args_.GetObjectRef<EventEngine>().get());
-  if (supports_fd == nullptr) {
-    return grpc_lame_client_channel_create("fake:created-from-endpoint",
-                                           GRPC_STATUS_INTERNAL,
-                                           "Failed to create client channel");
-  }
-  std::unique_ptr<EventEngine::Endpoint> endpoint =
-      supports_fd->CreateEndpointFromFd(fd, ChannelArgsEndpointConfig(args_));
-  return CreateChannelFromEndpoint(std::move(endpoint), creds,
-                                   args_.ToC().get());
-}
-}  // namespace grpc_core::experimental
