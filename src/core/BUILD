@@ -7675,6 +7675,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "internal_channel_arg_names",
+    hdrs = [
+        "ext/transport/chttp2/transport/internal_channel_arg_names.h",
+    ],
+)
+
+grpc_cc_library(
     name = "header_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/header_assembler.h",
@@ -7716,6 +7723,36 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "writable_stream_list",
+    hdrs = [
+        "ext/transport/chttp2/transport/writable_stream_list.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
+    name = "stream_data_queue",
+    hdrs = [
+        "ext/transport/chttp2/transport/stream_data_queue.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "arena",
+        "http2_status",
+        "message",
+        "metadata_batch",
+    ],
+)
+
+grpc_cc_library(
     name = "http2_client_transport",
     srcs = [
         "ext/transport/chttp2/transport/http2_client_transport.cc",
@@ -7743,6 +7780,7 @@ grpc_cc_library(
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
+        "internal_channel_arg_names",
         "latent_see",
         "loop",
         "map",
@@ -7750,6 +7788,7 @@ grpc_cc_library(
         "message_assembler",
         "metadata",
         "mpsc",
+        "ping_promise",
         "sync",
         ":match_promise",
         ":poll",

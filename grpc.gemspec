@@ -408,6 +408,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/legacy_frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/parsing.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc )
