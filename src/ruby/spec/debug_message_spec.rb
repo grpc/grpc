@@ -70,7 +70,7 @@ describe 'surfacing and transmitting of debug messages' do
 
   it 'debug error message is present in locally generated errors' do
     # Create a secure channel. This is just one way to force a
-    # connection handshake error, which shoud result in C-core
+    # connection handshake error, which should result in C-core
     # generating a status and error message and surfacing them up.
     test_root = File.join(File.dirname(__FILE__), 'testdata')
     files = ['ca.pem', 'client.key', 'client.pem']
