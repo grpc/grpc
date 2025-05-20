@@ -21,6 +21,7 @@
 #include <string.h>
 
 #include "absl/log/log.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -138,6 +139,68 @@ TEST(AuthContextTest, ContextWithExtension) {
   // Just set the extension, the goal of this test is to catch any memory
   // leaks when context goes out of scope.
   ctx->set_extension(std::make_unique<SampleExtension>());
+}
+
+TEST(AuthContextTest, CompareAuthContextEqualProps) {
+  // Setup two auth contexts with a foo/bar property
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx2, nullptr);
+  grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "bar");
+  // Set a custom comparison function
+  ctx->set_compare_auth_context(
+      [](const grpc_auth_context* one, const grpc_auth_context* two) -> bool {
+        auto it1 = grpc_auth_context_find_properties_by_name(one, "foo");
+        auto it2 = grpc_auth_context_find_properties_by_name(two, "foo");
+        return strcmp(grpc_auth_property_iterator_next(&it1)->value,
+                      grpc_auth_property_iterator_next(&it2)->value) == 0;
+      });
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(true));
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(AuthContextTest, CompareAuthContextUnequalProps) {
+  // Setup two auth contexts with a foo/bar property
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx2, nullptr);
+  grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "baz");
+  // Set a custom comparison function
+  ctx->set_compare_auth_context(
+      [](const grpc_auth_context* one, const grpc_auth_context* two) -> bool {
+        auto it1 = grpc_auth_context_find_properties_by_name(one, "foo");
+        auto it2 = grpc_auth_context_find_properties_by_name(two, "foo");
+        return strcmp(grpc_auth_property_iterator_next(&it1)->value,
+                      grpc_auth_property_iterator_next(&it2)->value) == 1;
+      });
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(false));
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
+  // Setup two auth contexts with a foo/bar property
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx2, nullptr);
+  grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "baz");
+  // Set a custom comparison function
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), std::nullopt);
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
 }
 
 int main(int argc, char** argv) {
