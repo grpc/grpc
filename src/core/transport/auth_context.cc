@@ -234,9 +234,10 @@ grpc_auth_context* grpc_find_auth_context_in_args(
   return nullptr;
 }
 
-std::optional<bool> grpc_auth_context::ArePeersSame(grpc_auth_context* other) {
-  if (compare_peer_ == nullptr) {
-    return absl::nullopt;
+std::optional<bool> grpc_auth_context::CompareAuthContext(
+    const grpc_auth_context* other) {
+  if (compare_auth_context_ == nullptr) {
+    return std::nullopt;
   }
-  return compare_peer_(this, other);
+  return compare_auth_context_(this, other);
 }
