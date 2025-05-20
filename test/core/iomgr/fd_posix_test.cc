@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
