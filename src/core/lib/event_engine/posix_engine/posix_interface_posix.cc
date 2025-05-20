@@ -353,17 +353,6 @@ void TrySetSocketTcpUserTimeout(int fd, const PosixTcpOptions& options,
   }
 }
 
-#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
-#ifndef GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-
-bool SetSocketDualStack(int fd) {
-  const int off = 0;
-  return 0 == setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY, &off, sizeof(off));
-}
-
-#endif  // GRPC_SET_SOCKET_DUALSTACK_CUSTOM
-#endif  // GRPC_POSIX_SOCKET_UTILS_COMMON
-
 absl::StatusOr<int> InternalCreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,
     const experimental::EventEngine::ResolvedAddress& addr, int type,

@@ -160,6 +160,8 @@ bool IsIpv6LoopbackAvailable();
 // Return true if SO_REUSEPORT is supported
 bool IsSocketReusePortSupported();
 
+bool SetSocketDualStack(int fd);
+
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TCP_SOCKET_UTILS_H

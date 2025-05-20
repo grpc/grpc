@@ -3081,6 +3081,8 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
+        "posix_event_engine_file_descriptor_collection",
+        "posix_event_engine_posix_interface",
         "posix_event_engine_tcp_socket_utils",
         "ref_counted_dns_resolver_interface",
         "resolved_address",
