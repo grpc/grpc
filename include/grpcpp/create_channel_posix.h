@@ -62,6 +62,12 @@ CreateCustomInsecureChannelWithInterceptorsFromFd(
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
 
+}  // namespace experimental
+
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
+
+namespace experimental {
+
 /// Creates a new \a Channel from an EventEngine endpoint.
 /// The channel target will be hard-coded to something like "ipv4:127.0.0.1:80".
 /// The default authority will be set to the endpoint's peer address, but the
@@ -92,8 +98,6 @@ std::shared_ptr<grpc::Channel> CreateChannelFromFd(
     const ChannelArguments& args);
 
 }  // namespace experimental
-
-#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
 
 }  // namespace grpc
 
