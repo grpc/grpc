@@ -53,7 +53,6 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
 using grpc_event_engine::experimental::EventEngine;
 
 // Experimental : This is just the initial skeleton of class
