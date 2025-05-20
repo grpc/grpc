@@ -142,7 +142,7 @@ TEST(AuthContextTest, ContextWithExtension) {
 }
 
 TEST(AuthContextTest, CompareAuthContextEqualProps) {
-  // Setup two auth contexts with a foo/bar property
+  // Setup two auth contexts with equal foo props
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
@@ -165,7 +165,7 @@ TEST(AuthContextTest, CompareAuthContextEqualProps) {
 }
 
 TEST(AuthContextTest, CompareAuthContextUnequalProps) {
-  // Setup two auth contexts with a foo/bar property
+  // Setup two auth contexts with  unequal foo props
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
@@ -188,16 +188,12 @@ TEST(AuthContextTest, CompareAuthContextUnequalProps) {
 }
 
 TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
-  // Setup two auth contexts with a foo/bar property
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
-  grpc_auth_context_add_cstring_property(ctx.get(), "foo", "bar");
   grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx2, nullptr);
-  grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "baz");
-  // Set a custom comparison function
   EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), std::nullopt);
   ctx.reset(DEBUG_LOCATION, "test");
   ctx2.reset(DEBUG_LOCATION, "test");
