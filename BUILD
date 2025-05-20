@@ -1261,6 +1261,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
     ],
     deps = [
+        "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
@@ -4758,6 +4759,7 @@ grpc_cc_library(
         "//src/core:http2_status",
         "//src/core:http2_ztrace_collector",
         "//src/core:init_internally",
+        "//src/core:internal_channel_arg_names",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",

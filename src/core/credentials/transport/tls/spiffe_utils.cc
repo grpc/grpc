@@ -18,19 +18,30 @@
 
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 
+#include <openssl/x509.h>
+
 #include <string>
 
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
+#include "src/core/tsi/ssl_transport_security_utils.h"
+#include "src/core/util/json/json_object_loader.h"
+#include "src/core/util/json/json_reader.h"
+#include "src/core/util/load_file.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_core {
 namespace {
-
-constexpr absl::string_view kSpiffePrefix = "spiffe://";
+constexpr absl::string_view kAllowedUse = "x509-svid";
+constexpr absl::string_view kAllowedKty = "RSA";
+constexpr absl::string_view kCertificatePrefix =
+    "-----BEGIN CERTIFICATE-----\n";
+constexpr absl::string_view kCertificateSuffix = "\n-----END CERTIFICATE-----";
 constexpr int kMaxTrustDomainLength = 255;
+constexpr absl::string_view kSpiffePrefix = "spiffe://";
+constexpr int kX5cSize = 1;
 
 // Checks broad conditions on the whole input before splitting into the
 // pieces of a SPIFFE ID
@@ -154,6 +165,105 @@ absl::StatusOr<SpiffeId> SpiffeId::FromString(absl::string_view input) {
     return SpiffeId(trust_domain, "");
   }
   return SpiffeId(trust_domain, absl::StrCat("/", path));
+}
+
+const JsonLoaderInterface* SpiffeBundleKey::JsonLoader(const JsonArgs&) {
+  static const auto* kLoader = JsonObjectLoader<SpiffeBundleKey>().Finish();
+  return kLoader;
+}
+
+void SpiffeBundleKey::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                   ValidationErrors* errors) {
+  auto use =
+      LoadJsonObjectField<std::string>(json.object(), args, "use", errors);
+  {
+    ValidationErrors::ScopedField field(errors, ".use");
+    if (use.has_value() && *use != kAllowedUse) {
+      errors->AddError(absl::StrFormat("value must be \"%s\", got \"%s\"",
+                                       kAllowedUse, *use));
+    }
+  }
+  auto kty =
+      LoadJsonObjectField<std::string>(json.object(), args, "kty", errors);
+  {
+    ValidationErrors::ScopedField field(errors, ".kty");
+    if (kty.has_value() && *kty != kAllowedKty) {
+      errors->AddError(absl::StrFormat("value must be \"%s\", got \"%s\"",
+                                       kAllowedKty, *kty));
+    }
+  }
+  auto x5c = LoadJsonObjectField<std::vector<std::string>>(json.object(), args,
+                                                           "x5c", errors);
+  if (x5c.has_value()) {
+    ValidationErrors::ScopedField field(errors, ".x5c");
+    if (x5c->size() != kX5cSize) {
+      errors->AddError(
+          absl::StrCat("array length must be 1, got ", x5c->size()));
+    }
+    if (!x5c->empty()) {
+      ValidationErrors::ScopedField field(errors, "[0]");
+      std::string pem_cert =
+          absl::StrCat(kCertificatePrefix, (*x5c)[0], kCertificateSuffix);
+      auto certs = ParsePemCertificateChain(pem_cert);
+      if (!certs.ok()) {
+        errors->AddError(certs.status().ToString());
+      } else {
+        root_ = std::move((*x5c)[0]);
+        for (X509* cert : *certs) {
+          X509_free(cert);
+        }
+      }
+    }
+  }
+}
+
+absl::string_view SpiffeBundleKey::GetRoot() { return root_; }
+
+void SpiffeBundle::JsonPostLoad(const Json& json, const JsonArgs& args,
+                                ValidationErrors* errors) {
+  auto keys = LoadJsonObjectField<std::vector<SpiffeBundleKey>>(
+      json.object(), args, "keys", errors);
+  if (!keys.has_value()) {
+    return;
+  }
+  for (size_t i = 0; i < keys->size(); ++i) {
+    roots_.emplace_back((*keys)[i].GetRoot());
+  }
+}
+
+absl::Span<const std::string> SpiffeBundle::GetRoots() { return roots_; }
+
+void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
+                                   ValidationErrors* errors) {
+  {
+    for (auto const& [k, _] : bundles_) {
+      ValidationErrors::ScopedField field(
+          errors, absl::StrCat(".trust_domains[\"", k, "\"]"));
+      absl::Status status = ValidateTrustDomain(k);
+      if (!status.ok()) {
+        errors->AddError(
+            absl::StrCat("invalid trust domain: ", status.ToString()));
+      }
+    }
+  }
+}
+
+absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
+    absl::string_view file_path) {
+  auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
+  GRPC_RETURN_IF_ERROR(slice.status());
+  auto json = JsonParse(slice->as_string_view());
+  GRPC_RETURN_IF_ERROR(json.status());
+  return LoadFromJson<SpiffeBundleMap>(*json);
+}
+
+absl::StatusOr<absl::Span<const std::string>> SpiffeBundleMap::GetRoots(
+    const absl::string_view trust_domain) {
+  if (auto it = bundles_.find(trust_domain); it != bundles_.end()) {
+    return it->second.GetRoots();
+  }
+  return absl::NotFoundError(absl::StrFormat(
+      "No spiffe bundle found for trust domain %s", trust_domain));
 }
 
 }  // namespace grpc_core

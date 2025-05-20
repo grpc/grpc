@@ -38,9 +38,20 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/env.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
+
+namespace {
+constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =
+    "GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS";
+
+// 10 seconds
+constexpr int kExperimentalKeepAliveTimeoutMs = 10 * 1000;
+// 10 minutes
+constexpr int kExperimentalKeepAliveTimeMs = 10 * 60 * 1000;
+}  // namespace
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
@@ -380,19 +391,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_attributes_size(identity) != 0) {
-    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-    // v30.0.
-    const upb_Map* upb_map =
-        _grpc_gcp_Identity_attributes_upb_map(peer_identity);
-    if (upb_map) {
-      size_t iter = kUpb_Map_Begin;
-      upb_MessageValue k, v;
-      while (upb_Map_Next(upb_map, &k, &v, &iter)) {
-        upb_StringView key = k.str_val;
-        upb_StringView val = v.str_val;
-        grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
-                                                 context_arena.ptr());
-      }
+    size_t iter = kUpb_Map_Begin;
+    upb_StringView key;
+    upb_StringView val;
+    while (
+        grpc_gcp_Identity_attributes_next(peer_identity, &key, &val, &iter)) {
+      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                               context_arena.ptr());
     }
   }
 
@@ -533,9 +538,22 @@ static void alts_tsi_handshaker_create_channel(
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   // Disable retries so that we quickly get a signal when the
   // handshake server is not reachable.
-  grpc_arg disable_retries_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
-  grpc_channel_args args = {1, &disable_retries_arg};
+  std::vector<grpc_arg> args_vec;
+  args_vec.push_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0));
+  // TODO(gtcooke94) - Flag to try new values for ALTS keep alive settings,
+  // remove after trial
+  std::optional<std::string> env = grpc_core::GetEnv(
+      kUseGrpcExperimentalAltsHandshakerKeepaliveParams.data());
+  if (env.has_value() && (*env == "true")) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
+        kExperimentalKeepAliveTimeoutMs));
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+        kExperimentalKeepAliveTimeMs));
+  }
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
   handshaker->channel = grpc_channel_create(
       next_args->handshaker->handshaker_service_url, creds, &args);
   grpc_channel_credentials_release(creds);

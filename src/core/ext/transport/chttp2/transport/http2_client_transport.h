@@ -30,7 +30,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -119,11 +121,9 @@ class Http2ClientTransport final : public ClientTransport {
                                : absl::InternalError("Failed to enqueue frame");
         }));
   }
-
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_manager_.RequestPing(std::move(on_initiate));
   }
-
   template <typename Factory>
   auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
     return general_party_->Spawn(name, std::move(factory), [](auto) {});
@@ -131,15 +131,15 @@ class Http2ClientTransport final : public ClientTransport {
 
  private:
   // Promise factory for processing each type of frame
-  auto ProcessHttp2DataFrame(Http2DataFrame frame);
-  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
-  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
-  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  Http2Status ProcessHttp2DataFrame(Http2DataFrame frame);
+  Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
   auto ProcessHttp2PingFrame(Http2PingFrame frame);
-  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
-  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
-  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
-  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
 
   // Reading from the endpoint.
 
@@ -178,11 +178,14 @@ class Http2ClientTransport final : public ClientTransport {
   auto EnqueueOutgoingFrame(Http2Frame frame) {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),
-        [](StatusFlag status) {
+        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
+          return (status.ok())
+                     ? absl::OkStatus()
+                     : self->HandleError(Http2Status::AbslConnectionError(
+                           absl::StatusCode::kInternal,
+                           "Failed to enqueue frame"));
         }));
   }
 
@@ -206,7 +209,6 @@ class Http2ClientTransport final : public ClientTransport {
     const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
-    GrpcMessageDisassembler disassembler;
     HeaderAssembler header_assembler;
     // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
@@ -235,10 +237,15 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " status=" << status
+                      << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
-
-  void CloseTransport();
-  bool bytes_sent_in_last_write_;
 
   auto EndpointReadSlice(size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
@@ -248,7 +255,7 @@ class Http2ClientTransport final : public ClientTransport {
                  return status;
                });
   }
-  
+
   auto EndpointRead(size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
                [self = RefAsSubclass<Http2ClientTransport>()](
@@ -258,11 +265,45 @@ class Http2ClientTransport final : public ClientTransport {
                });
   }
 
+  // This function MUST be idempotent.
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
+                      << status << " location=" << whence.file() << ":"
+                      << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  whence);
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(status, whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
+  bool bytes_sent_in_last_write_;
+
   // Ping related members
-  Duration keepalive_interval_;
+  Duration keepalive_time_;
   Duration keepalive_timeout_;
   Duration ping_timeout_;
   PingManager ping_manager_;
+  std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
 
   // Flags
@@ -295,6 +336,22 @@ class Http2ClientTransport final : public ClientTransport {
                                        ping_timeout_);
   }
 
+  auto MaybeSendPingAcks() {
+    return AssertResultType<absl::Status>(If(
+        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
+        [this] {
+          std::vector<Http2Frame> frames;
+          frames.reserve(pending_ping_acks_.size());
+          for (auto& opaque_data : pending_ping_acks_) {
+            frames.emplace_back(Http2PingFrame{true, opaque_data});
+          }
+          pending_ping_acks_.clear();
+          SliceBuffer output_buf;
+          Serialize(absl::Span<Http2Frame>(frames), output_buf);
+          return endpoint_.Write(std::move(output_buf), {});
+        }));
+  }
+
   class PingSystemInterfaceImpl : public PingInterface {
    public:
     static std::unique_ptr<PingInterface> Make(
@@ -318,8 +375,9 @@ class Http2ClientTransport final : public ClientTransport {
       // Returns a promise that resolves once goaway is sent.
       LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
 
-      transport_->CloseTransport();
-      return Immediate(absl::OkStatus());
+      return Immediate(
+          transport_->HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kRefusedStream, "Ping timeout")));
     }
 
    private:
@@ -352,8 +410,9 @@ class Http2ClientTransport final : public ClientTransport {
       // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
       LOG(INFO) << "Keepalive timeout triggered";
 
-      transport_->CloseTransport();
-      return Immediate(absl::OkStatus());
+      return Immediate(
+          transport_->HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kRefusedStream, "Keepalive timeout")));
     }
 
     bool NeedToSendKeepAlivePing() override {
@@ -366,6 +425,10 @@ class Http2ClientTransport final : public ClientTransport {
       return need_to_send_ping;
     }
 
+    // TODO(akshitpatel) : [PH2][P1] : Eventually there should be a separate ref
+    // counted struct/class passed to all the transport promises/members. This
+    // will help removing back references from the transport members to
+    // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
 };

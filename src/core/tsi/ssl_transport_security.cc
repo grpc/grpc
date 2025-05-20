@@ -989,7 +989,7 @@ static int RootCertExtractCallback(X509_STORE_CTX* ctx, void* /*arg*/) {
   }
 
   // Free the old root and save the new one. There should not be an old root,
-  // but if renegotiation is not disabled (required by RFC 9113, Section
+  // but if renegotiation is not disabled (required by RFC9113, Section
   // 9.2.1), it is possible that this callback run multiple times for a single
   // connection. gRPC does not always disable renegotiation. See
   // https://github.com/grpc/grpc/issues/35368
