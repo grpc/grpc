@@ -32,7 +32,6 @@
 #include "absl/strings/str_format.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"

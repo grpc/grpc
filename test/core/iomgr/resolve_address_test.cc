@@ -33,18 +33,12 @@
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/event_engine/shim.h"
-#include "src/core/lib/iomgr/executor.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/util/crash.h"
-#include "src/core/util/string.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
-#include "test/core/test_util/cmdline.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"
 #include "test/core/test_util/test_config.h"
-#include "test/cpp/util/test_config.h"
 
 namespace {
 
@@ -513,6 +507,32 @@ TEST_F(ResolveAddressTest, DeleteInterestedPartiesAfterCancellation) {
     Finish();
   }
   PollPollsetUntilRequestDone();
+}
+
+TEST_F(ResolveAddressTest, StressTestTargetNameDeletion) {
+  // The Lookup APIs take a string_view name to resolve. This regression test
+  // attempts to catch bad implementations that rely on that string_view's
+  // source string to be alive after the function returns.
+  constexpr size_t kIterations = 100;
+  auto resolver = grpc_core::GetDNSResolver();
+  std::atomic<size_t> resolved_count{0};
+  for (size_t i = 0; i < kIterations; i++) {
+    grpc_core::ExecCtx exec_ctx;
+    // Creating target on the heap, to try to delete it before resolution
+    // completes.
+    auto* target = new std::string("arst");
+    resolver->LookupHostname(
+        [&resolved_count](
+            absl::StatusOr<std::vector<grpc_resolved_address>> /* result */) {
+          ++resolved_count;
+        },
+        *target, "8080", grpc_core::Duration::Milliseconds(10), pollset_set(),
+        "");
+    delete target;
+  }
+  while (resolved_count.load() != kIterations) {
+    absl::SleepFor(absl::Milliseconds(10));
+  }
 }
 
 TEST_F(ResolveAddressTest, NativeResolverCannotLookupSRVRecords) {
