@@ -17,18 +17,18 @@
 
 #include <atomic>
 #include <chrono>
+#include <cstddef>
 #include <cstdint>
 #include <memory>
 
+#include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/party.h"
-#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/status_flag.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
-#include "src/core/telemetry/metrics.h"
 #include "src/core/util/seq_bit_set.h"
 
 namespace grpc_core {
@@ -54,7 +54,9 @@ class SendRate {
   void SetCurrentRate(double bytes_per_nanosecond);
   bool IsRateMeasurementStale() const;
   // Returns double nanoseconds from now.
-  double DeliveryTime(uint64_t current_time, size_t bytes);
+  LbDecision GetLbDecision(uint64_t current_time, size_t bytes);
+  void AddData(Json::Object& obj) const;
+  void PerformRateProbe() { last_rate_measurement_ = Timestamp::Now(); }
 
  private:
   uint64_t send_start_time_ = 0;
@@ -71,7 +73,7 @@ struct NextWrite {
 // Buffered writes for one data endpoint
 class OutputBuffer {
  public:
-  std::optional<double> DeliveryTime(uint64_t current_time, size_t bytes);
+  LbDecision GetLbDecision(uint64_t current_time, size_t bytes);
   SliceBuffer& pending() { return pending_; }
   Waker TakeWaker() { return std::move(flush_waker_); }
   void SetWaker() {
@@ -81,23 +83,31 @@ class OutputBuffer {
   NextWrite TakePendingAndStartWrite(uint64_t current_time);
   void MaybeCompleteSend(uint64_t current_time);
   void UpdateSendRate(double bytes_per_nanosecond) {
-    rate_probe_outstanding_ = false;
     send_rate_.SetCurrentRate(bytes_per_nanosecond);
   }
+
+  void AddData(Json::Object& obj) const;
 
  private:
   Waker flush_waker_;
   SliceBuffer pending_;
   SendRate send_rate_;
-  bool rate_probe_outstanding_ = false;
 };
 
 // The set of output buffers for all connected data endpoints
-class OutputBuffers : public RefCounted<OutputBuffers> {
+class OutputBuffers final : public RefCounted<OutputBuffers>,
+                            public channelz::DataSource {
  public:
-  OutputBuffers(Clock* clock,
-                std::shared_ptr<TcpZTraceCollector> ztrace_collector)
-      : ztrace_collector_(std::move(ztrace_collector)), clock_(clock) {}
+  OutputBuffers(Clock* clock, uint32_t encode_alignment,
+                std::shared_ptr<TcpZTraceCollector> ztrace_collector,
+                TransportContextPtr ctx)
+      : channelz::DataSource(ctx->socket_node),
+        ztrace_collector_(std::move(ztrace_collector)),
+        encode_alignment_(encode_alignment),
+        clock_(clock) {}
+  ~OutputBuffers() override { ResetDataSource(); }
+
+  void AddData(channelz::DataSink& sink) override;
 
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer,
              std::shared_ptr<TcpCallTracer> call_tracer) {
@@ -107,6 +117,8 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
       return PollWrite(payload_tag, send_time, output_buffer, call_tracer);
     };
   }
+
+  void WriteSecurityFrame(uint32_t connection_id, SliceBuffer output_buffer);
 
   auto Next(uint32_t connection_id) {
     return [this, connection_id]() { return PollNext(connection_id); };
@@ -132,10 +144,11 @@ class OutputBuffers : public RefCounted<OutputBuffers> {
   std::vector<std::optional<OutputBuffer>> buffers_ ABSL_GUARDED_BY(mu_);
   Waker write_waker_ ABSL_GUARDED_BY(mu_);
   std::atomic<uint32_t> ready_endpoints_{0};
+  const uint32_t encode_alignment_;
   Clock* const clock_;
 };
 
-class InputQueue : public RefCounted<InputQueue> {
+class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
  public:
   // One outstanding read.
   // ReadTickets get filed by read requests, and all tickets are fullfilled
@@ -188,14 +201,30 @@ class InputQueue : public RefCounted<InputQueue> {
     RefCountedPtr<InputQueue> input_queues_;
   };
 
-  InputQueue() {
+  explicit InputQueue(TransportContextPtr ctx)
+      : channelz::DataSource(ctx->socket_node) {
     read_requested_.Set(0);
     read_completed_.Set(0);
   }
+  ~InputQueue() override { ResetDataSource(); }
 
   ReadTicket Read(uint64_t payload_tag);
-  void CompleteRead(uint64_t payload_tag, absl::StatusOr<SliceBuffer> buffer);
+  void CompleteRead(uint64_t payload_tag, SliceBuffer buffer);
   void Cancel(uint64_t payload_tag);
+
+  void AddData(channelz::DataSink& sink) override;
+
+  void SetClosed(absl::Status status);
+  auto AwaitClosed() {
+    return [this]() -> Poll<absl::Status> {
+      MutexLock lock(&mu_);
+      if (closed_error_.ok()) {
+        await_closed_ = GetContext<Activity>()->MakeNonOwningWaker();
+        return Pending{};
+      }
+      return closed_error_;
+    };
+  }
 
  private:
   struct Cancelled {};
@@ -206,27 +235,39 @@ class InputQueue : public RefCounted<InputQueue> {
   SeqBitSet read_requested_ ABSL_GUARDED_BY(mu_);
   SeqBitSet read_completed_ ABSL_GUARDED_BY(mu_);
   absl::flat_hash_map<uint64_t, Waker> read_wakers_ ABSL_GUARDED_BY(mu_);
-  absl::flat_hash_map<uint64_t, absl::StatusOr<SliceBuffer>> read_buffers_
-      ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<uint64_t, SliceBuffer> read_buffers_ ABSL_GUARDED_BY(mu_);
+  absl::Status closed_error_ ABSL_GUARDED_BY(mu_);
+  Waker await_closed_ ABSL_GUARDED_BY(mu_);
 };
 
 class Endpoint final {
  public:
-  Endpoint(uint32_t id, RefCountedPtr<OutputBuffers> output_buffers,
+  Endpoint(uint32_t id, uint32_t decode_alignment,
+           RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
            std::shared_ptr<TcpZTraceCollector> ztrace_collector);
+  Endpoint(const Endpoint&) = delete;
+  Endpoint& operator=(const Endpoint&) = delete;
+  Endpoint(Endpoint&&) = delete;
+  Endpoint& operator=(Endpoint&&) = delete;
+  ~Endpoint() { ztrace_collector_->Append(EndpointCloseTrace{id_}); }
 
  private:
   static auto WriteLoop(uint32_t id,
                         RefCountedPtr<OutputBuffers> output_buffers,
                         std::shared_ptr<PromiseEndpoint> endpoint,
                         std::shared_ptr<TcpZTraceCollector> ztrace_collector);
-  static auto ReadLoop(uint32_t id, RefCountedPtr<InputQueue> input_queues,
+  static auto ReadLoop(uint32_t id, uint32_t decode_alignment,
+                       RefCountedPtr<InputQueue> input_queues,
                        std::shared_ptr<PromiseEndpoint> endpoint,
                        std::shared_ptr<TcpZTraceCollector> ztrace_collector);
+  static void ReceiveSecurityFrame(PromiseEndpoint& endpoint,
+                                   SliceBuffer buffer);
 
+  const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
+  const uint32_t id_;
   RefCountedPtr<Party> party_;
 };
 
@@ -238,7 +279,8 @@ class DataEndpoints {
   using ReadTicket = data_endpoints_detail::InputQueue::ReadTicket;
 
   explicit DataEndpoints(std::vector<PendingConnection> endpoints,
-                         TransportContextPtr ctx,
+                         TransportContextPtr ctx, uint32_t encode_alignment,
+                         uint32_t decode_alignment,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing,
                          data_endpoints_detail::Clock* clock = DefaultClock());
@@ -257,6 +299,8 @@ class DataEndpoints {
 
   ReadTicket Read(uint64_t tag) { return input_queues_->Read(tag); }
 
+  auto AwaitClosed() { return input_queues_->AwaitClosed(); }
+
   bool empty() const { return output_buffers_->ReadyEndpoints() == 0; }
 
  private:
@@ -274,7 +318,8 @@ class DataEndpoints {
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;
   RefCountedPtr<data_endpoints_detail::InputQueue> input_queues_;
   Mutex mu_;
-  std::vector<data_endpoints_detail::Endpoint> endpoints_ ABSL_GUARDED_BY(mu_);
+  std::vector<std::unique_ptr<data_endpoints_detail::Endpoint>> endpoints_
+      ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace chaotic_good

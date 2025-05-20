@@ -1020,6 +1020,8 @@ TEST_P(SslTransportSecurityTest, DoHandshakeWithCustomBioPair) {
   DoHandshake();
 }
 
+// TODO(matthewstevenson88): Make tests below compatible with OpenSSL.
+#if defined(OPENSSL_IS_BORINGSSL)
 TEST_P(SslTransportSecurityTest, Protect) {
   LOG(INFO) << "ssl_tsi_test_protect";
   SetUpSslFixture(tsi_tls_version::TSI_TLS1_3, /*send_client_ca_list=*/false);
@@ -1134,6 +1136,7 @@ TEST_P(SslTransportSecurityTest, ConcurrentlyProtectAndUnprotectOnServer) {
   tsi_frame_protector_destroy(client_protector);
   tsi_frame_protector_destroy(server_protector);
 }
+#endif  // defined(OPENSSL_IS_BORINGSSL)
 
 static const tsi_ssl_handshaker_factory_vtable* original_vtable;
 static bool handshaker_factory_destructor_called;

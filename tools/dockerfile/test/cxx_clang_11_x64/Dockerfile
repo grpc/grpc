@@ -52,10 +52,6 @@ RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-clien
 RUN python3 -m pip install twisted
 
 #=================
-# C++ dependencies
-RUN apt-get update && apt-get -y install libc++-dev clang && apt-get clean
-
-#=================
 # Install cmake using the install script.
 RUN curl -sSL -o cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh \
     && sh cmake-linux.sh -- --skip-license --prefix=/usr \

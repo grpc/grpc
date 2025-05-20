@@ -19,12 +19,14 @@
 #ifndef GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 #define GRPC_SRC_CORE_TELEMETRY_TCP_TRACER_H
 
+#include <grpc/event_engine/internal/write_event.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "absl/time/time.h"
 
@@ -112,28 +114,24 @@ struct TcpConnectionMetrics {
 
 class TcpCallTracer {
  public:
-  enum class Type {
-    kUnknown = 0,
-    // When the sendmsg system call or its variants returned for the traced byte
-    // offset.
-    kSendMsg,
-    // When the traced byte offset is enqueued in kernel schedulers (aka,
-    // qdiscs). There can be multiple schedulers.
-    kScheduled,
-    // When the traced byte offset is handed over to the NIC.
-    kSent,
-    // When the acknowledgement for the traced byte offset was received.
-    kAcked,
-    // When the connection is closed. This is not associated with a byte offset.
-    kClosed,
+  struct TcpEventMetric {
+    absl::string_view key;
+    int64_t value;
+
+    std::string ToString();
   };
+
+  std::string TcpEventMetricsToString(
+      const std::vector<TcpEventMetric>& metrics);
 
   virtual ~TcpCallTracer() = default;
 
   // Records a per-message event with an optional snapshot of connection
   // metrics.
-  virtual void RecordEvent(Type type, absl::Time time, size_t byte_offset,
-                           std::optional<TcpConnectionMetrics> metrics) = 0;
+  virtual void RecordEvent(
+      grpc_event_engine::experimental::internal::WriteEvent event,
+      absl::Time time, size_t byte_offset,
+      std::vector<TcpEventMetric> metrics) = 0;
 };
 
 class TcpConnectionTracer {

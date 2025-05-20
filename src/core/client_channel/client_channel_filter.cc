@@ -623,12 +623,12 @@ class ClientChannelFilter::SubchannelWrapper final
           << ": connectivity change for subchannel wrapper " << parent_.get()
           << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
+      auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
-          [self = RefAsSubclass<WatcherWrapper>(), state, status]()
-              ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                  *self->parent_->chand_->work_serializer_) {
-                self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
-              });
+          [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *self->parent_->chand_->work_serializer_) {
+            self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
+          });
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -1552,11 +1552,13 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
+    std::string trace =
+        channelz::ChannelNode::GetChannelConnectivityStateChangeString(state);
+    if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      absl::StrAppend(&trace, " status:", status.ToString());
+    }
+    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
+                                  grpc_slice_from_cpp_string(std::move(trace)));
   }
 }
 

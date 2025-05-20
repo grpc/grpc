@@ -25,7 +25,7 @@
 # behavior for some environment variables.
 #
 # Optionally, fuzz: true can be added to enable fuzzers to explore variations
-# in this config var with their regular fuzzing work - or fuzz: FunctionName 
+# in this config var with their regular fuzzing work - or fuzz: FunctionName
 # can be used to specify that the config space be explored, but FunctionName should be called to pre-format/validate the value for fuzzing.
 # Such functions should be listed in fuzz_config_vars_helpers.h.
 
@@ -68,8 +68,7 @@
     #define GPR_DEFAULT_LOG_VERBOSITY_STRING ""
     #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
   default: $GPR_DEFAULT_LOG_VERBOSITY_STRING
-  description:
-    Logging verbosity.
+  description: Logging verbosity.
   fuzz: true
 - name: enable_fork_support
   type: bool
@@ -84,8 +83,7 @@
   fuzz: true
 - name: poll_strategy
   type: string
-  description:
-    Declares which polling engines to try when starting gRPC.
+  description: Declares which polling engines to try when starting gRPC.
     This is a comma-separated list of engines, which are tried in priority
     order first -> last.
   default: all
@@ -123,3 +121,10 @@
   type: bool
   description: "EXPERIMENTAL. Only respected when there is a dependency on :grpc++_reflection. If true, no reflection server will be automatically added."
   default: false
+- name: channelz_max_orphaned_nodes
+  type: int
+  default: 0
+  fuzz: true
+  description: "EXPERIMENTAL: \
+    If non-zero, extend the lifetime of channelz nodes past the underlying object lifetime, up to this many nodes. \
+    The value may be adjusted slightly to account for implementation limits."

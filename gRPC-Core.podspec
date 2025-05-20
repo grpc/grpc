@@ -47,7 +47,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '~> 1.20240722.0'
+  abseil_version = '~> 1.20250127.1'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -201,7 +201,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency "#{s.name}/Privacy", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.40'
+    ss.dependency 'BoringSSL-GRPC', '0.0.41'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -523,6 +523,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
+                      'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                       'src/core/ext/transport/chttp2/transport/parsing.cc',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc',
@@ -1569,8 +1570,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/exec_ctx.h',
-                      'src/core/lib/iomgr/executor.cc',
-                      'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/internal_errqueue.cc',
@@ -1918,10 +1917,13 @@ Pod::Spec.new do |s|
                       'src/core/telemetry/stats.h',
                       'src/core/telemetry/stats_data.cc',
                       'src/core/telemetry/stats_data.h',
+                      'src/core/telemetry/tcp_tracer.cc',
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.cc',
                       'src/core/transport/auth_context.h',
                       'src/core/transport/endpoint_transport.h',
+                      'src/core/transport/endpoint_transport_client_channel_factory.cc',
+                      'src/core/transport/endpoint_transport_client_channel_factory.h',
                       'src/core/tsi/alts/crypt/aes_gcm.cc',
                       'src/core/tsi/alts/crypt/gsec.cc',
                       'src/core/tsi/alts/crypt/gsec.h',
@@ -2006,6 +2008,7 @@ Pod::Spec.new do |s|
                       'src/core/util/examine_stack.h',
                       'src/core/util/fork.cc',
                       'src/core/util/fork.h',
+                      'src/core/util/function_signature.h',
                       'src/core/util/gcp_metadata_query.cc',
                       'src/core/util/gcp_metadata_query.h',
                       'src/core/util/gethostname.h',
@@ -2596,6 +2599,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -3213,7 +3217,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                               'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                               'src/core/lib/iomgr/exec_ctx.h',
-                              'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
@@ -3398,6 +3401,7 @@ Pod::Spec.new do |s|
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
                               'src/core/transport/endpoint_transport.h',
+                              'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -3446,6 +3450,7 @@ Pod::Spec.new do |s|
                               'src/core/util/event_log.h',
                               'src/core/util/examine_stack.h',
                               'src/core/util/fork.h',
+                              'src/core/util/function_signature.h',
                               'src/core/util/gcp_metadata_query.h',
                               'src/core/util/gethostname.h',
                               'src/core/util/glob.h',

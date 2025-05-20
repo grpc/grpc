@@ -70,7 +70,6 @@ grpc_cc_library(
         "//:grpc_base",
         "//:grpc_client_channel",
         "//:grpc_public_hdrs",
-        "//:tcp_tracer",
         "//src/core:arena",
         "//src/core:arena_promise",
         "//src/core:channel_args",
@@ -79,6 +78,7 @@ grpc_cc_library(
         "//src/core:context",
         "//src/core:down_cast",
         "//src/core:error",
+        "//src/core:event_engine_utils",
         "//src/core:experiments",
         "//src/core:match",
         "//src/core:metadata_batch",
@@ -86,5 +86,6 @@ grpc_cc_library(
         "//src/core:slice",
         "//src/core:slice_buffer",
         "//src/core:sync",
+        "//src/core:tcp_tracer",
     ],
 )
