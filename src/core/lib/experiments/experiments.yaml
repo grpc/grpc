@@ -42,7 +42,7 @@
 # state of each experiment.
 - name: call_tracer_in_transport
   description: Transport directly passes byte counts to CallTracer.
-  expiry: 2025/06/01
+  expiry: 2026/02/01
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
@@ -64,7 +64,7 @@
   test_tags: [core_end2end_test]
 - name: error_flatten
   description: Flatten errors to ordinary absl::Status form.
-  expiry: 2025/06/01
+  expiry: 2025/09/01
   owner: roth@google.com
   test_tags:
     ["core_end2end_test", "cpp_end2end_test", "xds_end2end_test", "error_tests"]
@@ -119,7 +119,7 @@
   allow_in_fuzzing_config: false
 - name: event_engine_listener
   description: Use EventEngine listeners instead of iomgr's grpc_tcp_server
-  expiry: 2025/05/01
+  expiry: 2025/10/01
   owner: vigneshbabu@google.com
   test_tags: ["core_end2end_test", "event_engine_listener_test"]
   uses_polling: true
@@ -140,7 +140,7 @@
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
     itself to the next ping interval.
-  expiry: 2025/06/01
+  expiry: 2025/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: local_connector_secure
@@ -229,7 +229,7 @@
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
-  expiry: 2025/06/01
+  expiry: 2025/10/01
   owner: vigneshbabu@google.com
   test_tags: []
 - name: secure_endpoint_offload_large_reads
@@ -275,12 +275,12 @@
     TCP would not indicate completion of a read operation until a specified
     number of bytes have been read over the socket.
     Buffers are also allocated according to estimated RPC sizes.
-  expiry: 2025/06/01
+  expiry: 2025/10/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tcp_rcv_lowat
   description: Use SO_RCVLOWAT to avoid wakeups on the read path.
-  expiry: 2025/06/01
+  expiry: 2025/10/01
   owner: vigneshbabu@google.com
   test_tags: ["endpoint_test", "flow_control_test"]
 - name: tsi_frame_protector_without_locks

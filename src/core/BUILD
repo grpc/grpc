@@ -7675,6 +7675,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "internal_channel_arg_names",
+    hdrs = [
+        "ext/transport/chttp2/transport/internal_channel_arg_names.h",
+    ],
+)
+
+grpc_cc_library(
     name = "header_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/header_assembler.h",
@@ -7773,6 +7780,7 @@ grpc_cc_library(
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
+        "internal_channel_arg_names",
         "latent_see",
         "loop",
         "map",
@@ -7780,6 +7788,7 @@ grpc_cc_library(
         "message_assembler",
         "metadata",
         "mpsc",
+        "ping_promise",
         "sync",
         ":match_promise",
         ":poll",
