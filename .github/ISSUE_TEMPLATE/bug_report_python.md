@@ -3,7 +3,9 @@ name: Report a gRPC Python bug
 about: Create a report to help us improve
 labels: kind/bug, priority/P2, lang/Python
 assignees:
-  - grpc/grpc-python-team
+  - asheshvidyut
+  - sergiitk
+  - sreenithi
 
 ---
 
