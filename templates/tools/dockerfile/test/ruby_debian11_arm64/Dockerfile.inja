@@ -16,7 +16,7 @@ FROM arm64v8/debian:11
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
-{% include "../../ruby_3_0_deps.include" %}
+{% include "../../ruby_3_1_deps.include" %}
 {% include "../../rvm_mkdir_workaround.include" %}
 {% include "../../cmake.include" %}
 {% include "../../ccache.include" %}
