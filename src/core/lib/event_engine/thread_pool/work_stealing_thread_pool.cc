@@ -154,7 +154,7 @@ void DumpSignalHandler(int /* sig */) {
   const auto trace = grpc_core::GetCurrentStackTrace();
   if (!trace.has_value()) {
     LOG(ERROR) << "DumpStack::" << gpr_thd_currentid()
-                                      << ": Stack trace not available";
+               << ": Stack trace not available";
   } else {
     LOG(ERROR) << "DumpStack::" << gpr_thd_currentid() << ": " << trace.value();
   }
