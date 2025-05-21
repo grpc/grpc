@@ -25,10 +25,9 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
     -maxdepth 1 \
     -type d \
     -name "${ARTIFACT_PREFIX}*" \
-    ! -name "${EXCLUDE_PATTERN}" \
-    -exec sh -c '
-        cp -r "$1"/* artifacts/ || true
-    ' sh {} \;
+    -not -name "${EXCLUDE_PREFIX}" \
+    -print0 \
+        | find -files0-from - -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
 
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
 # source distribution package, and only one of them will end up
