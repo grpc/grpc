@@ -27,7 +27,7 @@ configs:
   asan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -39,7 +39,7 @@ configs:
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument
     CXX: clang++
     LD: clang++
     LDFLAGS: fsanitize=address
@@ -51,7 +51,6 @@ configs:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
       -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -93,7 +92,7 @@ configs:
     CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory
       -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer
       -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -fPIE -pie
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -113,7 +112,6 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
     LD: clang++
