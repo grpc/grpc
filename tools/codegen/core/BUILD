@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test")
 
 exports_files(
     glob(
@@ -43,4 +43,36 @@ grpc_cc_binary(
 grpc_cc_binary(
     name = "gen_switch",
     srcs = ["gen_switch.cc"],
+)
+
+grpc_cc_library(
+    name = "experiments_compiler",
+    srcs = ["experiments_compiler.cc"],
+    hdrs = ["experiments_compiler.h"],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "absl/strings:str_format",
+        "absl/time:time",
+        "yaml-cpp",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+grpc_cc_test(
+    name = "experiments_compiler_test",
+    srcs = ["experiments_compiler_test.cc"],
+    external_deps = [
+        "gtest",
+        "absl/log:log",
+        "absl/status",
+    ],
+    deps = [
+        ":experiments_compiler",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
 )
