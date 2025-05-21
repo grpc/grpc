@@ -180,7 +180,7 @@ TEST(AuthContextTest, CompareAuthContextUnequalProps) {
         auto it1 = grpc_auth_context_find_properties_by_name(one, "foo");
         auto it2 = grpc_auth_context_find_properties_by_name(two, "foo");
         return strcmp(grpc_auth_property_iterator_next(&it1)->value,
-                      grpc_auth_property_iterator_next(&it2)->value) == 1;
+                      grpc_auth_property_iterator_next(&it2)->value) == 0;
       });
   EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(false));
   ctx.reset(DEBUG_LOCATION, "test");
