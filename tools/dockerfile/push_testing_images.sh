@@ -50,7 +50,7 @@ then
     # an emulator.
     # Perform a check that "qemu-user-static" with binfmt-misc hook
     # is installed, to give an early warning (otherwise building arm64 images won't work)
-    docker run --rm --platform=linux/arm64 -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    docker run --rm --platform=linux/arm64 -it arm64v8/debian:12 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
         (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
   fi
 fi
@@ -64,7 +64,7 @@ ALL_DOCKERFILE_DIRS=(
   #tools/dockerfile/interoptest/*
   #tools/dockerfile/distribtest/*
   #third_party/rake-compiler-dock/*
-  tools/dockerfile/test/ruby_debian11_arm64/*
+  tools/dockerfile/test/ruby_*_arm64
 )
 
 # These Docker directories contain obsolete images that cannot be built.
