@@ -1,4 +1,4 @@
-# Copyright 2023 The gRPC Authors
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:22.04
+FROM debian:11
 
 # Workaround the "tzdata hangs apt-get install during docker image build" issue for ubuntu20.04
 # by setting timezone to "Etc/UTC" in advance.

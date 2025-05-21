@@ -339,16 +339,6 @@ grpc_run_distribtest_test(
 )
 
 grpc_run_distribtest_test(
-    name = "distribtest_csharp_linux_x64_ubuntu2404",
-    # depend on the C# packages
-    artifact_deps = [
-        "package_csharp_linux",
-    ],
-    build_script = "run_distribtest_csharp_linux.sh",
-    docker_image_version = "tools/dockerfile/distribtest/csharp_ubuntu2404_x64.current_version",
-)
-
-grpc_run_distribtest_test(
     name = "distribtest_csharp_linux_x64_alpine",
     # depend on the C# packages
     artifact_deps = [
@@ -386,7 +376,6 @@ test_suite(
         ":distribtest_csharp_linux_x64_dotnet31",
         ":distribtest_csharp_linux_x64_dotnet5",
         ":distribtest_csharp_linux_x64_ubuntu2204",
-        ":distribtest_csharp_linux_x64_ubuntu2404",
     ],
 )
 
