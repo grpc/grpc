@@ -1,4 +1,4 @@
-name: Build gRPC Python Wheel for win_arm64
+name: Build Python Wheel for win_arm64
 
 on:
   workflow_dispatch:
