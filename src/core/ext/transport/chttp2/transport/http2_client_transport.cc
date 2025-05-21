@@ -161,13 +161,12 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
         // here.
-        return Map(self->EnqueueOutgoingFrame(Http2EmptyFrame{}),
-                   [](absl::Status status) {
-                     return (status.ok()) ? Http2Status::Ok()
-                                          : Http2Status::AbslConnectionError(
-                                                status.code(),
-                                                std::string(status.message()));
-                   });
+        return Map(self->TriggerWriteCycle(), [](absl::Status status) {
+          return (status.ok())
+                     ? Http2Status::Ok()
+                     : Http2Status::AbslConnectionError(
+                           status.code(), std::string(status.message()));
+        });
       }));
 }
 
@@ -460,9 +459,8 @@ Http2ClientTransport::Http2ClientTransport(
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
 
-  if (keepalive_time_ != Duration::Infinity()) {
-    keepalive_manager_.Spawn(general_party_.get());
-  }
+  // The keepalive loop is only spawned if the keepalive time is not infinity.
+  keepalive_manager_.Spawn(general_party_.get());
 
   // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
   std::optional<Http2SettingsFrame> settings_frame =

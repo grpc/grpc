@@ -189,6 +189,9 @@ class Http2ClientTransport final : public ClientTransport {
         }));
   }
 
+  // Force triggers a transport write cycle
+  auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
+
   RefCountedPtr<Party> general_party_;
 
   PromiseEndpoint endpoint_;
@@ -247,19 +250,31 @@ class Http2ClientTransport final : public ClientTransport {
   }
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
-  auto EndpointReadSlice(size_t num_bytes) {
+  auto EndpointReadSlice(const size_t num_bytes) {
     return Map(endpoint_.ReadSlice(num_bytes),
                [self = RefAsSubclass<Http2ClientTransport>()](
                    absl::StatusOr<Slice> status) {
+                 // We are ignoring the case where the read fails and call
+                 // GotData() regardless. Reasoning:
+                 // 1. It is expected that if the read fails, the transport will
+                 //    close and the keepalive loop will be stopped.
+                 // 2. It does not seem worth to have an extra condition for the
+                 //    success cases which would be way more common.
                  self->keepalive_manager_.GotData();
                  return status;
                });
   }
 
-  auto EndpointRead(size_t num_bytes) {
+  auto EndpointRead(const size_t num_bytes) {
     return Map(endpoint_.Read(num_bytes),
                [self = RefAsSubclass<Http2ClientTransport>()](
                    absl::StatusOr<SliceBuffer> status) {
+                 // We are ignoring the case where the read fails and call
+                 // GotData() regardless. Reasoning:
+                 // 1. It is expected that if the read fails, the transport will
+                 //    close and the keepalive loop will be stopped.
+                 // 2. It does not seem worth to have an extra condition for the
+                 //    success cases which would be way more common.
                  self->keepalive_manager_.GotData();
                  return status;
                });
@@ -299,9 +314,12 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
 
   // Ping related members
-  Duration keepalive_time_;
-  Duration keepalive_timeout_;
-  Duration ping_timeout_;
+  // TODO(akshitpatel) : [PH2][P2] : There might be cases where we need to
+  // change the following members in certain conditions. Evaluate later and
+  // remove const if needed.
+  const Duration keepalive_time_;
+  const Duration keepalive_timeout_;
+  const Duration ping_timeout_;
   PingManager ping_manager_;
   std::vector<uint64_t> pending_ping_acks_;
   KeepaliveManager keepalive_manager_;
@@ -367,11 +385,11 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
     Promise<absl::Status> TriggerWrite() override {
-      return transport_->EnqueueOutgoingFrame(Http2EmptyFrame{});
+      return transport_->TriggerWriteCycle();
     }
 
     Promise<absl::Status> PingTimeout() override {
-      // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
+      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
       // Returns a promise that resolves once goaway is sent.
       LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
 
@@ -381,7 +399,7 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
    private:
-    // TODO(akshitpatel) : [PH2][P1] : Eventually there should be a separate ref
+    // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
     // counted struct/class passed to all the transport promises/members. This
     // will help removing back references from the transport members to
     // transport and greatly simpilfy the cleanup path.
@@ -402,12 +420,12 @@ class Http2ClientTransport final : public ClientTransport {
     explicit KeepAliveInterfaceImpl(Http2ClientTransport* transport)
         : transport_(transport) {}
     Promise<absl::Status> SendPingAndWaitForAck() override {
-      return TrySeq(
-          transport_->EnqueueOutgoingFrame(Http2EmptyFrame{}),
-          [transport = transport_] { return transport->WaitForPingAck(); });
+      return TrySeq(transport_->TriggerWriteCycle(), [transport = transport_] {
+        return transport->WaitForPingAck();
+      });
     }
     Promise<absl::Status> OnKeepAliveTimeout() override {
-      // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
+      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
       LOG(INFO) << "Keepalive timeout triggered";
 
       return Immediate(
@@ -425,7 +443,7 @@ class Http2ClientTransport final : public ClientTransport {
       return need_to_send_ping;
     }
 
-    // TODO(akshitpatel) : [PH2][P1] : Eventually there should be a separate ref
+    // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
     // counted struct/class passed to all the transport promises/members. This
     // will help removing back references from the transport members to
     // transport and greatly simpilfy the cleanup path.

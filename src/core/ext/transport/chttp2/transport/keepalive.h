@@ -112,12 +112,14 @@ class KeepaliveManager {
            (keep_alive_interface_->NeedToSendKeepAlivePing());
   }
 
+  bool IsKeepAliveNeeded() { return (keepalive_time_ != Duration::Infinity()); }
+
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
   // If the keepalive_timeout_ is set to infinity, then the timeout is dictated
   // by the ping timeout. Otherwise, this field can be used to set a specific
   // timeout for keepalive pings.
   Duration keepalive_timeout_;
-  Duration keepalive_interval_;
+  const Duration keepalive_time_;
   bool data_received_in_last_cycle_ = false;
   bool keep_alive_timeout_triggered_ = false;
   Waker waker_;
