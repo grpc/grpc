@@ -42,6 +42,9 @@ namespace grpc_core {
 // for exporting debug/trace information.
 template <typename T>
 static constexpr inline absl::string_view TypeName() {
+#if ABSL_USES_STD_STRING_VIEW
+  // absl::string_view doesn't have the constexpr find methods we need
+  // here.
 #if defined(__clang__)
   constexpr absl::string_view kPrefix{"[T = "};
   constexpr absl::string_view kSuffix{"]"};
@@ -59,6 +62,9 @@ static constexpr inline absl::string_view TypeName() {
   constexpr size_t kEnd = kFunction.rfind(kSuffix);
   static_assert(kStart < kEnd);
   return kFunction.substr(kStart, (kEnd - kStart));
+#else  // !ABSL_USES_STD_STRING_VIEW
+  return "unknown";
+#endif
 }
 
 }  // namespace grpc_core
