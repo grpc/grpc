@@ -157,7 +157,7 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCall) {
           ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         auto call2 = MakeCall(std::move(md.value()));
-        ForwardCall(handler, call2.initiator);
+        handler.ForwardTo(call2.initiator);
         UnaryRequest(initiator, call2.handler.StartCall());
       });
   WaitForAllPendingWork();
@@ -174,8 +174,8 @@ CALL_SPINE_TEST(UnaryRequestThroughForwardCallWithServerTrailingMetadataHook) {
        &got_md](ValueOrFailure<ClientMetadataHandle> md) mutable {
         EXPECT_TRUE(md.ok());
         auto call2 = MakeCall(std::move(md.value()));
-        ForwardCall(handler, call2.initiator,
-                    [&got_md](ServerMetadata&) { got_md = true; });
+        handler.ForwardTo(call2.initiator,
+                          [&got_md](ServerMetadata&) { got_md = true; });
         UnaryRequest(initiator, call2.handler.StartCall());
       });
   WaitForAllPendingWork();

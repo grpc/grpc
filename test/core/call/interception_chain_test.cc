@@ -187,8 +187,7 @@ class TestHijackingInterceptor final : public Interceptor {
         "hijack", [this, unstarted_call_handler]() mutable {
           return Map(Hijack(std::move(unstarted_call_handler)),
                      [](ValueOrFailure<HijackedCall> hijacked_call) {
-                       ForwardCall(
-                           hijacked_call.value().original_call_handler(),
+                       hijacked_call.value().original_call_handler().ForwardTo(
                            hijacked_call.value().MakeCall());
                      });
         });
