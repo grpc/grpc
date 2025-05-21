@@ -12,36 +12,28 @@ permissions:
 
 jobs:
   build_wheels:
-    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} # e.g., cp312-win_arm64
-    runs-on: ${{ matrix.buildplat[0] }} # e.g., windows-11-arm
+    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
+    runs-on: ${{ matrix.buildplat[0] }}
     strategy:
       fail-fast: false
       matrix:
         buildplat:
           - ["windows-11-arm", "win_arm64"]
-        #python: [["cp312", "3.12"]]
         python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
 
     steps:
       - name: Checkout grpc
         uses: actions/checkout@v4
         with:
-          submodules: 'recursive' # Add this line to checkout submodules
-
-      # - name: Set up MSVC environment # Uncomment this block
-      #   uses: ilammy/msvc-dev-cmd@v1
-      #   with:
-      #     arch: arm64
+          submodules: 'recursive'
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.23.3
         env:
-          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} # e.g., "cp312-win_arm64"
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
           CIBW_BUILD_FRONTEND: 'pip'
           CIBW_PLATFORM: 'windows'
           CIBW_ARCHS: 'ARM64'
-          # grpc/grpc has requirements.txt at the root, cibuildwheel will install it.
-          # grpc/grpc has setup.py at the root, cibuildwheel will find it.
 
       - name: Validate wheel RECORD
         shell: bash -el {0}
