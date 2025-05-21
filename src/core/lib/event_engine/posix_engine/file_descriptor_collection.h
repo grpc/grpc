@@ -115,6 +115,8 @@ class PosixErrorOr {
 
   T* operator->() { return &std::get<T>(value_); }
 
+  const T* operator->() const { return &std::get<T>(value_); }
+
   T& operator*() { return std::get<T>(value_); }
 
   const T& value() const { return std::get<T>(value_); }

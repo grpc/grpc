@@ -303,6 +303,7 @@ grpc_cc_test(
     deps = [
         ":posix_engine_test_utils",
         "//:grpc++",
+        "//src/core:posix_event_engine",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/test_util:grpc_test_util",
     ],
@@ -341,6 +342,7 @@ grpc_cc_test(
     deps = [
         ":dns_server",
         "//:gpr_platform",
+        "//src/core:posix_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

@@ -120,10 +120,10 @@ std::vector<ForkHandlerPointers<std::shared_ptr>> LockForkHandlers() {
 
 void PrepareFork() {
   for (const auto& [event_engine, executor] : LockForkHandlers()) {
-    if (event_engine) {
+    if (event_engine != nullptr) {
       event_engine->BeforeFork();
     }
-    if (executor) {
+    if (executor != nullptr) {
       executor->PrepareFork();
     }
   }
@@ -131,10 +131,10 @@ void PrepareFork() {
 
 void PostForkInParent() {
   for (const auto& [event_engine, executor] : LockForkHandlers()) {
-    if (executor) {
+    if (executor != nullptr) {
       executor->PostFork();
     }
-    if (event_engine) {
+    if (event_engine != nullptr) {
       event_engine->AfterFork(PosixEventEngine::OnForkRole::kParent);
     }
   }
@@ -142,10 +142,10 @@ void PostForkInParent() {
 
 void PostForkInChild() {
   for (const auto& [event_engine, executor] : LockForkHandlers()) {
-    if (executor) {
+    if (executor != nullptr) {
       executor->PostFork();
     }
-    if (event_engine) {
+    if (event_engine != nullptr) {
       event_engine->AfterFork(PosixEventEngine::OnForkRole::kChild);
     }
   }

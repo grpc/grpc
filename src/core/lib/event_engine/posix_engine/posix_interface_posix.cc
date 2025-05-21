@@ -788,7 +788,13 @@ EventEnginePosixInterface::LocalAddress(const FileDescriptor& fd) {
     return absl::InternalError(
         "getsockname: file descriptor from wrong generation");
   }
-  return grpc_event_engine::experimental::LocalAddress(fd.fd());
+  EventEngine::ResolvedAddress addr;
+  socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
+  if (getsockname(fd.fd(), const_cast<sockaddr*>(addr.address()), &len) < 0) {
+    return absl::InternalError(
+        absl::StrCat("getsockname:", grpc_core::StrError(errno)));
+  }
+  return EventEngine::ResolvedAddress(addr.address(), len);
 }
 
 absl::StatusOr<std::string> EventEnginePosixInterface::LocalAddressString(
