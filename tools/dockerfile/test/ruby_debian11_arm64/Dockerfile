@@ -96,7 +96,7 @@ RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E206
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.1
-RUN apt-get update && apt-get install -y procps && apt-get clean
+RUN apt-get update && apt-get install -y procps linux-libc-dev && apt-get clean
 RUN /bin/bash -l -c "rvm install ruby-3.1.3 || cat /usr/local/rvm/log/*_ruby-3.1.3/make.log"
 RUN /bin/bash -l -c "rvm use --default ruby-3.1.3"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
