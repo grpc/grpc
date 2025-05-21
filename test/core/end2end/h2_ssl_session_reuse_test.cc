@@ -177,9 +177,9 @@ void do_round_trip(grpc_completion_queue* cq, grpc_server* server,
   const grpc_auth_property* property = grpc_auth_property_iterator_next(&it);
   CHECK_NE(property, nullptr);
   if (expect_session_reuse) {
-    CHECK_EQ(strcmp(property->value, "true"), 0);
+    EXPECT_STREQ(property->value, "true");
   } else {
-    CHECK_EQ(strcmp(property->value, "false"), 0);
+    EXPECT_STREQ(property->value, "false");
   }
   grpc_auth_context_release(auth);
 
@@ -237,8 +237,11 @@ TEST(H2SessionReuseTest, SingleReuse) {
 
   grpc_server* server = server_create(cq, server_addr.c_str());
 
+  VLOG(2) << "1st do_round_trip";
   do_round_trip(cq, server, server_addr.c_str(), cache, false);
+  VLOG(2) << "2nd do_round_trip";
   do_round_trip(cq, server, server_addr.c_str(), cache, true);
+  VLOG(2) << "3rd do_round_trip";
   do_round_trip(cq, server, server_addr.c_str(), cache, true);
 
   grpc_ssl_session_cache_destroy(cache);
