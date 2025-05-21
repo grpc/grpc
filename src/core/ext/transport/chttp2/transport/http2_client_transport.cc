@@ -422,6 +422,10 @@ Http2ClientTransport::Http2ClientTransport(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
               .value_or(Duration::Infinity()))),
+      // Keepalive timeout is only passed to the keepalive manager if it is less
+      // than the ping timeout. As keepalives use pings for health checks, if
+      // keepalive timeout is greater than ping timeout, we would always hit the
+      // ping timeout first.
       keepalive_timeout_(std::max(
           Duration::Zero(),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
