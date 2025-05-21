@@ -185,6 +185,15 @@ class Loop {
     }
   }
 
+  Json ToJson() const {
+    Json::Object obj;
+    obj["loop_factory"] = Json::FromString(std::string(TypeName<Factory>()));
+    if (started_) {
+      obj["promise"] = PromiseAsJson(promise_);
+    }
+    return Json::FromObject(std::move(obj));
+  }
+
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
   GPR_NO_UNIQUE_ADDRESS union {
