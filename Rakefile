@@ -215,6 +215,13 @@ task 'gem:native', [:plat] do |t, args|
     else
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
     end
+    makefile_system_override = ''
+    if if plat =~ /darwin/
+      # When cross-compiling c-core for macos from linux, we need to overwrite
+      # SYSTEM for our Makefile to work. Note this is not needed for mingw b/c
+      # C-core is built in a separate command.
+      makefile_system_override = 'Darwin'
+    end
     run_rake_compiler(plat, <<~EOT)
       #{prepare_ccache_cmd} && \
       gem update --system --no-document && \
@@ -225,7 +232,8 @@ task 'gem:native', [:plat] do |t, args|
         RUBY_CC_VERSION=#{RakeCompilerDock.ruby_cc_version(*target_ruby_minor_versions)} \
         V=#{verbose} \
         GRPC_CONFIG=#{grpc_config} \
-        GRPC_RUBY_BUILD_PROCS=#{nproc_override}
+        GRPC_RUBY_BUILD_PROCS=#{nproc_override} \
+        SYSTEM=#{makefile_system_override}
     EOT
   end
   # Generate debug symbol packages to complement the native libraries we just built
