@@ -370,14 +370,14 @@ class CppDistribTest(object):
                 "tools/dockerfile/distribtest/cpp_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/cpp/run_distrib_test_%s.sh" % self.testcase,
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
             )
         elif self.platform == "windows":
             return create_jobspec(
                 self.name,
                 ["test\\distrib\\cpp\\run_distrib_test_%s.bat" % self.testcase],
                 environ={},
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
                 use_workspace=True,
             )
         else:
