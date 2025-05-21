@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/strings/match.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/time.h"
@@ -82,6 +83,10 @@ CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload) {
 }
 
 CORE_END2END_TEST(CoreLargeSendTests, RequestResponseWithPayload10Times) {
+  if (fuzzing() && absl::StrContains(test_config()->name, "Compression")) {
+    GTEST_SKIP()
+        << "Skipping, since the fuzzer will time out with compression enabled.";
+  }
   for (int i = 0; i < 10; i++) {
     RequestResponseWithPayload(*this);
   }

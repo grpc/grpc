@@ -215,7 +215,13 @@ AresClientChannelDNSResolver::AresClientChannelDNSResolver(
       query_timeout_ms_(
           std::max(0, channel_args()
                           .GetInt(GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS)
-                          .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {}
+                          .value_or(GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS))) {
+  if (IsEventEngineDnsEnabled() && IsEventEngineDnsNonClientChannelEnabled()) {
+    Crash(
+        "The iomgr Ares DNS resolver should not be instantiated when all "
+        "EventEngine DNS experiments are on.");
+  }
+}
 
 AresClientChannelDNSResolver::~AresClientChannelDNSResolver() {
   GRPC_TRACE_VLOG(cares_resolver, 2)
@@ -716,7 +722,8 @@ class AresDNSResolver final : public DNSResolver {
   }
 
   // the previous default DNS resolver, used to delegate blocking DNS calls to
-  std::shared_ptr<DNSResolver> default_resolver_ = GetDNSResolver();
+  std::shared_ptr<DNSResolver> default_resolver_ =
+      GetDNSResolverForAresBackupOnly();
   Mutex mu_;
   TaskHandleSet open_requests_ ABSL_GUARDED_BY(mu_);
   intptr_t aba_token_ ABSL_GUARDED_BY(mu_) = 0;
@@ -738,7 +745,6 @@ void RegisterAresDnsResolver(CoreConfiguration::Builder* builder) {
 void grpc_resolver_dns_ares_init() {
   if (grpc_core::ShouldUseAresDnsResolver(
           grpc_core::ConfigVars::Get().DnsResolver())) {
-    address_sorting_init();
     grpc_error_handle error = grpc_ares_init();
     if (!error.ok()) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
@@ -751,7 +757,6 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (grpc_core::ShouldUseAresDnsResolver(
           grpc_core::ConfigVars::Get().DnsResolver())) {
-    address_sorting_shutdown();
     grpc_ares_cleanup();
   }
 }
