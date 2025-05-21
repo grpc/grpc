@@ -37,23 +37,23 @@ cd $(dirname $0)/../..
 
 # Various check that the environment is setup correctly.
 # The environment checks are skipped when running as a sanity check on CI.
-#if [ "${CHECK_MODE}" == "" ]
-#then
-#  # Check that docker is installed and sudoless docker works.
-#  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
-#      (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
-#
-#  if [ "${HOST_ARCH_ONLY}" == "" ]; then
-#    # Some of the images we build are for arm64 architecture and the easiest
-#    # way of allowing them to build locally on x64 machine is to use
-#    # qemu binfmt-misc hook that automatically runs arm64 binaries under
-#    # an emulator.
-#    # Perform a check that "qemu-user-static" with binfmt-misc hook
-#    # is installed, to give an early warning (otherwise building arm64 images won't work)
-#    docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
-#        (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
-#  fi
-#fi
+if [ "${CHECK_MODE}" == "" ]
+then
+  # Check that docker is installed and sudoless docker works.
+  docker run --rm -it debian:11 bash -c 'echo "sudoless docker run works!"' || \
+      (echo "Error: docker not installed or sudoless docker doesn't work?" && exit 1)
+
+  if [ "${HOST_ARCH_ONLY}" == "" ]; then
+    # Some of the images we build are for arm64 architecture and the easiest
+    # way of allowing them to build locally on x64 machine is to use
+    # qemu binfmt-misc hook that automatically runs arm64 binaries under
+    # an emulator.
+    # Perform a check that "qemu-user-static" with binfmt-misc hook
+    # is installed, to give an early warning (otherwise building arm64 images won't work)
+    docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+        (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
+  fi
+fi
 
 ARTIFACT_REGISTRY_PREFIX=us-docker.pkg.dev/grpc-testing/testing-images-public
 
@@ -104,9 +104,6 @@ fi
 
 for DOCKERFILE_DIR in "${ALL_DOCKERFILE_DIRS[@]}"
 do
-  if [[ "$DOCKERFILE_DIR" == "tools/dockerfile/test/ruby_debian11_arm64" ]]; then
-    continue
-fi
   # Generate image name based on Dockerfile checksum. That works well as long
   # as can count on dockerfiles being written in a way that changing the logical 
   # contents of the docker image always changes the SHA (e.g. using "ADD file" 
