@@ -16,6 +16,32 @@
 
 FROM quay.io/pypa/musllinux_1_1_i686:2024-09-09-f386546
 
+# Configure git early so the cache reused by other py build based on the same image.
+# TODO: simplify the list of third_party modules list
+# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
+# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
+RUN <<EOF
+git config --global --add safe.directory /var/local/jenkins/grpc
+git config --global --add safe.directory /var/local/jenkins/grpc/.git
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
+git config --global protocol.file.allow always
+EOF
+
 #===================================
 # Install Python build requirements
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1'
@@ -24,7 +50,6 @@ RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1'
 RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1'
 RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1'
 RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
-
 
 #=================
 # Install ccache
@@ -40,26 +65,3 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
 
-
-# TODO: simplify the list of third_party modules list
-# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
-# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule  
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
-RUN git config --global protocol.file.allow always

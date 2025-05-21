@@ -16,8 +16,35 @@
 # on x64 machine. The dockcross/linux-armv7 image is a x86_64
 # image with crosscompilation toolchain installed
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.inja`!!!
 FROM dockcross/linux-armv7
+
+# Configure git early so the cache reused by other py build based on the same image.
+# TODO: simplify the list of third_party modules list
+# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
+# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
+RUN <<EOF
+git config --global --add safe.directory /var/local/jenkins/grpc
+git config --global --add safe.directory /var/local/jenkins/grpc/.git
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
+git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
+git config --global protocol.file.allow always
+EOF
+
 
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                                  libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
@@ -65,26 +92,3 @@ ENV CXX ${CROSS_TRIPLE}-g++
 # truncate it.
 # TODO(jtattermusch): Remove this hack when possible.
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
-
-# TODO: simplify the list of third_party modules list
-# NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
-# current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule  
-RUN git config --global --add safe.directory /var/local/jenkins/grpc
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/bloaty
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googleapis
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/googletest
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opencensus-proto
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/boringssl-with-bazel
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/envoy-api
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protobuf
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/benchmark
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/re2
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/abseil-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/opentelemetry-cpp
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/protoc-gen-validate
-RUN git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/cares/cares
-RUN git config --global protocol.file.allow always
