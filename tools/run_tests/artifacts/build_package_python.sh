@@ -19,6 +19,8 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p artifacts/
 
+uname -a
+
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
@@ -27,7 +29,7 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
     -name "${ARTIFACT_PREFIX}*" \
     -not -name "${EXCLUDE_PREFIX}" \
     -print0 \
-        | find -files0-from - -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
+        | find -files0-from - -type f -maxdepth 1 -exec 'cp -v {} ./artifacts || true' \;
 
 # TODO: all the artifact builder configurations generate a grpcio-VERSION.tar.gz
 # source distribution package, and only one of them will end up
