@@ -314,9 +314,8 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
 
   // Ping related members
-  // TODO(akshitpatel) : [PH2][P2] : There might be cases where we need to
-  // change the following members in certain conditions. Evaluate later and
-  // remove const if needed.
+  // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
+  // members.
   const Duration keepalive_time_;
   const Duration keepalive_timeout_;
   const Duration ping_timeout_;

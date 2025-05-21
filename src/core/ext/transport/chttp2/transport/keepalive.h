@@ -45,6 +45,9 @@ class KeepaliveManager {
  public:
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
                    Duration keepalive_timeout, Duration keepalive_interval);
+
+  // Spawns the keepalive loop on the given party. This MUST be called at most
+  // once during the lifetime of the keepalive manager.
   void Spawn(Party* party);
 
   // Needs to be called when any data is read from the endpoint.
