@@ -19,10 +19,6 @@ cd "$(dirname "$0")/../../.."
 
 mkdir -p artifacts/
 
-if command -v apk >/dev/null 2>&1; then
-    apk --no-cache add findutils
-fi
-
 # All the python packages have been built in the artifact phase already
 # and we only collect them here to deliver them to the distribtest phase.
 find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
