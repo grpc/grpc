@@ -44,7 +44,7 @@ class KeepAliveInterface {
 class KeepaliveManager {
  public:
   KeepaliveManager(std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-                   Duration keepalive_timeout, Duration keepalive_interval);
+                   Duration keepalive_timeout, Duration keepalive_time);
 
   // Spawns the keepalive loop on the given party. This MUST be called at most
   // once during the lifetime of the keepalive manager.
@@ -107,9 +107,9 @@ class KeepaliveManager {
     return keep_alive_interface_->SendPingAndWaitForAck();
   }
 
-  // If no data is received in the last keepalive_interval, we should send a
+  // If no data is received in the last keepalive_time, we should send a
   // keepalive ping. This also means that there can be scenarios where we would
-  // send one keepalive ping in ~(2*keepalive_interval).
+  // send one keepalive ping in ~(2*keepalive_time).
   bool NeedToSendKeepAlivePing() {
     return (!data_received_in_last_cycle_) &&
            (keep_alive_interface_->NeedToSendKeepAlivePing());
