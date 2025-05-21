@@ -19,8 +19,8 @@ jobs:
       matrix:
         buildplat:
           - ["windows-11-arm", "win_arm64"]
-        python: [["cp312", "3.12"]]
-        # python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
+        #python: [["cp312", "3.12"]]
+        python: [["cp311", "3.11"], ["cp312", "3.12"], ["cp313", "3.13"]]
 
     steps:
       - name: Checkout grpc
