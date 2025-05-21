@@ -16,10 +16,9 @@
 
 FROM quay.io/pypa/musllinux_1_1_x86_64:2024-09-09-f386546
 
-{% include "../python_pip_builds.include" %}
-
-{% include "../ccache.include" %}
-
+# Configure git early so the cache reused by other py build based on the same image.
 {% include "../git_config.include" %}
+{% include "../python_pip_builds.include" %}
+{% include "../ccache.include" %}
 
 RUN apk add openssl openssl-dev

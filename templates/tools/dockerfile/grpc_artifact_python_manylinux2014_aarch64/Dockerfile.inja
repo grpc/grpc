@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64/Dockerfile.inja`!!!
 
 FROM dockcross/manylinux2014-aarch64
+
+# Configure git early so the cache reused by other py build based on the same image.
+{% include "../git_config.include" %}
 
 # manylinux_2_17 is the preferred alias of manylinux2014
 ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
 
 {% include "../python_pip_builds.include" %}
-
 {% include "../ccache_crosscompile.include" %}
-
-{% include "../git_config.include" %}

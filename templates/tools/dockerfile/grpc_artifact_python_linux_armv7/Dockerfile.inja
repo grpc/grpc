@@ -16,8 +16,11 @@
 # on x64 machine. The dockcross/linux-armv7 image is a x86_64
 # image with crosscompilation toolchain installed
 
-# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.template`!!!
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/tools/dockerfile/grpc_artifact_python_linux_armv7/Dockerfile.inja`!!!
 FROM dockcross/linux-armv7
+
+# Configure git early so the cache reused by other py build based on the same image.
+{% include "../git_config.include" %}
 
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                                  libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
@@ -51,5 +54,3 @@ ENV CXX ${CROSS_TRIPLE}-g++
 # truncate it.
 # TODO(jtattermusch): Remove this hack when possible.
 RUN echo "# file contents removed to avoid resetting PATH set by the docker image" >/etc/profile
-
-{% include "../git_config.include" %}
