@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM arm64v8/ruby:3.1-bullseye
 
 #=================
 # Basic C core dependencies
@@ -87,21 +87,21 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-#==================
-# Ruby dependencies
-
-# Install rvm
-RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
-RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-RUN \curl -sSL https://get.rvm.io | bash -s stable
-
-# Install Ruby 3.1
-RUN apt-get update && apt-get install -y procps linux-libc-dev && apt-get clean
-RUN /bin/bash -l -c "rvm install ruby-3.1.7 || cat /usr/local/rvm/log/*_ruby-3.1.7/make.log"
-RUN /bin/bash -l -c "rvm use --default ruby-3.1.7"
-RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
-RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.1.7' >> ~/.bashrc"
+# #==================
+# # Ruby dependencies
+# 
+# # Install rvm
+# RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
+# RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+# RUN \curl -sSL https://get.rvm.io | bash -s stable
+# 
+# # Install Ruby 3.1
+# RUN apt-get update && apt-get install -y procps linux-libc-dev && apt-get clean
+# RUN /bin/bash -l -c "rvm install ruby-3.1.7 || cat /usr/local/rvm/log/*_ruby-3.1.7/make.log"
+# RUN /bin/bash -l -c "rvm use --default ruby-3.1.7"
+# RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
+# RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
+# RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.1.7' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document"
 
 # Workaround for rvm unable to find mkdir properly
