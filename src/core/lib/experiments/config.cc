@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <atomic>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -98,6 +99,58 @@ class TestExperiments {
 
 TestExperiments* g_test_experiments = nullptr;
 
+// Function to detect cycles in a directed graph using DFS .
+bool HasCycleDFS(size_t current_node,
+                 const std::map<size_t, std::vector<size_t>>& adj_list,
+                 std::set<size_t>& visiting_nodes,
+                 std::set<size_t>& visited_nodes) {
+  if (visiting_nodes.count(current_node)) {
+    // If the node is revisiting in the current visiting DFS path, it is a
+    // cycle.
+    return true;
+  }
+  if (visited_nodes.count(current_node)) {
+    // If the node has been fully visited (no cycles found in its sub-graph),
+    // it is not a cycle.
+    return false;
+  }
+  visiting_nodes.insert(current_node);
+  auto it = adj_list.find(current_node);
+  if (it != adj_list.end()) {
+    const std::vector<size_t>& neighbors = it->second;
+    for (size_t neighbor : neighbors) {
+      if (HasCycleDFS(neighbor, adj_list, visiting_nodes, visited_nodes)) {
+        return true;
+      }
+    }
+  }
+  // Unmark from currently visiting DFS path.
+  visiting_nodes.erase(current_node);
+  // Mark as fully visited.
+  visited_nodes.insert(current_node);
+  return false;
+}
+
+bool ValidateExperimentsRequirements(
+    const std::map<size_t, std::vector<size_t>>&
+        experiments_requirements_graph) {
+  // Use a set to keep track of nodes is being visited in the current DFS path.
+  std::set<size_t> visiting_nodes;
+  // Use a set to keep track of nodes whose subgraphs have been fully visited
+  // (no cycles found).
+  std::set<size_t> visited_nodes;
+
+  // Iterate over all experiments for DFS (in case the graph is disconnected).
+  for (const auto& pair : experiments_requirements_graph) {
+    size_t experiment_id = pair.first;
+    if (HasCycleDFS(experiment_id, experiments_requirements_graph,
+                    visiting_nodes, visited_nodes)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
   // Set defaults from metadata.
   Experiments experiments;
@@ -137,19 +190,22 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
       LOG(ERROR) << "Unknown experiment: " << experiment;
     }
   }
+  std::map<size_t, std::vector<size_t>> experiments_requirements_graph;
   for (size_t i = 0; i < kNumExperiments; i++) {
     // If required experiments are not enabled, disable this one too.
     for (size_t j = 0; j < g_experiment_metadata[i].num_required_experiments;
          j++) {
-      // Require that we can check dependent requirements with a linear sweep
-      // (implies the experiments generator must DAG sort the experiments)
-      CHECK(g_experiment_metadata[i].required_experiments[j] < i);
+      experiments_requirements_graph[i].push_back(
+          g_experiment_metadata[i].required_experiments[j]);
       if (!experiments
                .enabled[g_experiment_metadata[i].required_experiments[j]]) {
         experiments.enabled[i] = false;
       }
     }
   }
+  // Checks for circular dependencies in the required experiments. This check is
+  // performed only in debug mode and is skipped in production.
+  DCHECK(ValidateExperimentsRequirements(experiments_requirements_graph));
   return experiments;
 }
 
