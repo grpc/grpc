@@ -216,7 +216,7 @@ task 'gem:native', [:plat] do |t, args|
       debug_symbols_dir = File.join(Dir.pwd, 'src/ruby/nativedebug/symbols')
     end
     makefile_system_override = ''
-    if if plat =~ /darwin/
+    if plat =~ /darwin/
       # When cross-compiling c-core for macos from linux, we need to overwrite
       # SYSTEM for our Makefile to work. Note this is not needed for mingw b/c
       # C-core is built in a separate command.
