@@ -39,6 +39,11 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
+
+# Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
+RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
+
+# For some reason, this specific build segfaults on ccache unless cython is intalled.
 #===================================
 # Install Python build requirements
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
@@ -47,6 +52,7 @@ RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
   /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+
 
 #=================
 # Install ccache
@@ -63,4 +69,3 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && rm -rf ccache-4.7.5 ccache.tar.gz
 
 
-RUN apk add openssl openssl-dev
