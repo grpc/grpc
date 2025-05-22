@@ -957,26 +957,25 @@ struct FilterWrapper<Filter0, Filters...> : public FilterWrapper<Filters...> {
 
 #undef GRPC_FUSE_METHOD
 
-template <typename... Filters>
-class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
+template <FilterEndpoint ep, typename... Filters>
+class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>>,
                     public Filters... {
  public:
   static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() {
     static const std::string kName = absl::StrCat(
-        "Fused_Filter_",
         absl::StrJoin(std::make_tuple(Filters::TypeName()...), "_"));
     return kName;
   }
 
-  static absl::StatusOr<std::unique_ptr<FusedFilter<Filters...>>> Create(
+  static absl::StatusOr<std::unique_ptr<FusedFilter<ep, Filters...>>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args) {
     auto filters_wrapper =
         std::make_unique<FilterWrapper<Filters...>>(args, filter_args);
     GRPC_RETURN_IF_ERROR(filters_wrapper->status());
-    return absl::WrapUnique<FusedFilter<Filters...>>(
-        new FusedFilter<Filters...>(std::move(filters_wrapper)));
+    return absl::WrapUnique<FusedFilter<ep, Filters...>>(
+        new FusedFilter<ep, Filters...>(std::move(filters_wrapper)));
   }
 
   static constexpr bool IsFused = true;
@@ -1033,10 +1032,14 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
   std::unique_ptr<FilterWrapper<Filters...>> filters_;
 };
 
+template <FilterEndpoint ep, typename... Filters>
+const grpc_channel_filter FusedFilter<ep, Filters...>::kFilter =
+    MakePromiseBasedFilter<FusedFilter<ep, Filters...>, ep>();
+
 }  // namespace filters_detail
 
-template <typename... Filters>
-using FusedFilter = filters_detail::FusedFilter<Filters...>;
+template <FilterEndpoint ep, typename... Filters>
+using FusedFilter = filters_detail::FusedFilter<ep, Filters...>;
 
 }  // namespace grpc_core
 

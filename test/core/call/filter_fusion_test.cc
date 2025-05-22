@@ -269,9 +269,10 @@ class Test6 : public ImplementChannelFilter<Test5> {
   }
 };
 
-using TestFusedFilter = FusedFilter<Test1, Test2, Test3, Test4, Test5>;
-using TestFailedFusedFilter =
-    FusedFilter<Test1, Test2, Test3, Test4, Test5, Test6>;
+using TestFusedFilter =
+    FusedFilter<FilterEndpoint::kClient, Test1, Test2, Test3, Test4, Test5>;
+using TestFailedFusedFilter = FusedFilter<FilterEndpoint::kClient, Test1, Test2,
+                                          Test3, Test4, Test5, Test6>;
 
 static_assert(
     !std::is_same_v<decltype(&TestFusedFilter::Call::OnClientInitialMetadata),
@@ -369,7 +370,7 @@ TEST(FusedFilterTest, ClientFilterTest) {
 
 TEST(FusedFilterTest, FusedFilterTypeName) {
   EXPECT_EQ(TestFusedFilter::TypeName(),
-            "Fused_Filter_Test1_Test2_Test3_Test4_Test5");
+            "Test1_Test2_Test3_Test4_Test5");
 }
 
 // Assert that the fused filter creation fails when one of the filters creation
