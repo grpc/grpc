@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc/_grpcio_metadata.py.template`!!!
 
-__version__ = """1.73.0.dev0"""
+__version__ = """1.73.0rc1"""
