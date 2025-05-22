@@ -409,6 +409,18 @@ class ArenaSpsc {
     return result;
   }
 
+  // Iterate over queued nodes. At most one thread can be calling this at a
+  // time, and no other thread can be calling Pop().
+  template <typename F>
+  void ForEach(F f) {
+    Node* tail = tail_.load(std::memory_order_relaxed);
+    Node* n = tail->next.load(std::memory_order_acquire);
+    while (n != nullptr) {
+      f(n->value);
+      n = n->next.load(std::memory_order_acquire);
+    }
+  }
+
  private:
   struct Node {
     Node() {}

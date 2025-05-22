@@ -46,7 +46,7 @@ class ChannelzExtension {
         ChannelzExtension* ep)
         : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {}
     ~EndpointDataSource() { ResetDataSource(); }
-    void AddData(grpc_core::channelz::DataSink& sink) override {
+    void AddData(grpc_core::channelz::DataSink sink) override {
       ep_->AddJson(sink);
     }
 

@@ -80,6 +80,7 @@ namespace channelz {
 class SocketNode;
 class ListenSocketNode;
 class DataSource;
+class DataSinkImplementation;
 class ZTrace;
 
 namespace testing {
@@ -209,15 +210,50 @@ class ZTrace {
                    absl::AnyInvocable<void(Json)>) = 0;
 };
 
+class DataSinkImplementation {
+ public:
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
+  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children);
+  Json::Object Finalize(bool timed_out);
+
+ private:
+  void MergeChildObjectsIntoAdditionalInfo() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  Mutex mu_;
+  std::map<std::string, Json::Object> additional_info_ ABSL_GUARDED_BY(mu_);
+  std::vector<RefCountedPtr<BaseNode>> child_objects_ ABSL_GUARDED_BY(mu_);
+};
+
+class DataSinkCompletionNotification {
+ public:
+  explicit DataSinkCompletionNotification(absl::AnyInvocable<void()> callback)
+      : callback_(std::move(callback)) {}
+  ~DataSinkCompletionNotification() { callback_(); }
+
+ private:
+  absl::AnyInvocable<void()> callback_;
+};
+
 class DataSink {
  public:
-  virtual void AddAdditionalInfo(absl::string_view name,
-                                 Json::Object additional_info) = 0;
-  virtual void AddChildObjects(
-      std::vector<RefCountedPtr<BaseNode>> children) = 0;
+  DataSink(std::shared_ptr<DataSinkImplementation> impl,
+           std::shared_ptr<DataSinkCompletionNotification> notification)
+      : impl_(std::move(impl)), notification_(std::move(notification)) {}
 
- protected:
-  ~DataSink() = default;
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddAdditionalInfo(name, std::move(additional_info));
+  }
+  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddChildObjects(std::move(children));
+  }
+
+ private:
+  std::weak_ptr<DataSinkImplementation> impl_;
+  std::shared_ptr<DataSinkCompletionNotification> notification_;
 };
 
 class DataSource {
@@ -227,7 +263,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddData(DataSink&) {}
+  virtual void AddData(DataSink) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
