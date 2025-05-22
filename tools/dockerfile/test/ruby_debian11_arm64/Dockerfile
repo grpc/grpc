@@ -87,47 +87,14 @@ RUN python3 -m pip install six==1.16.0
 RUN python3 -m pip install --upgrade google-auth==1.23.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
-# #==================
-# # Ruby dependencies
-# 
-# # Install rvm
-# RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
-# RUN gpg2 --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
-# RUN \curl -sSL https://get.rvm.io | bash -s stable
-# 
-# # Install Ruby 3.1
-# RUN apt-get update && apt-get install -y procps linux-libc-dev && apt-get clean
-# RUN /bin/bash -l -c "rvm install ruby-3.1.7 || cat /usr/local/rvm/log/*_ruby-3.1.7/make.log"
-# RUN /bin/bash -l -c "rvm use --default ruby-3.1.7"
-# RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
-# RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-# RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.1.7' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler --no-document"
-
-# Workaround for rvm unable to find mkdir properly
-# https://stackoverflow.com/questions/64653051
-RUN ln -s /bin/mkdir /usr/bin/mkdir
-
 #=================
 # Install cmake
 # Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
 
 RUN apt-get update && apt-get install -y cmake && apt-get clean
 
-#=================
-# Install ccache
-
-#  # Install ccache from source since ccache 3.x packaged with most linux distributions
-#  # does not support Redis backend for caching.
-#  RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/download/v4.7.5/ccache-4.7.5.tar.gz \
-#      && tar -zxf ccache.tar.gz \
-#      && cd ccache-4.7.5 \
-#      && mkdir build && cd build \
-#      && cmake -DCMAKE_BUILD_TYPE=Release -DZSTD_FROM_INTERNET=ON -DHIREDIS_FROM_INTERNET=ON .. \
-#      && make -j4 && make install \
-#      && cd ../.. \
-#      && rm -rf ccache-4.7.5 ccache.tar.gz
-
+# TODO(apolcyn): maybe install ccache if possible, hitting SEGV on install
+# attempts so far.
 
 RUN mkdir /var/local/jenkins
 
