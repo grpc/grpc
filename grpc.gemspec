@@ -1455,8 +1455,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/event_engine_shims/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/exec_ctx.cc )
   s.files += %w( src/core/lib/iomgr/exec_ctx.h )
-  s.files += %w( src/core/lib/iomgr/executor.cc )
-  s.files += %w( src/core/lib/iomgr/executor.h )
   s.files += %w( src/core/lib/iomgr/fork_posix.cc )
   s.files += %w( src/core/lib/iomgr/fork_windows.cc )
   s.files += %w( src/core/lib/iomgr/internal_errqueue.cc )
