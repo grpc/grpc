@@ -25,7 +25,7 @@ find "${EXTERNAL_GIT_ROOT}"/input_artifacts/ \
     -maxdepth 1 \
     -type d \
     -name "${ARTIFACT_PREFIX}*" \
-    -not -name "${EXCLUDE_PREFIX}" \
+    -not -name "${EXCLUDE_PATTERN}" \
     -print0 \
         | xargs -0 -I% find % -type f -maxdepth 1 -exec cp -v {} ./artifacts \;
 
