@@ -52,6 +52,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -731,8 +732,6 @@ struct grpc_chttp2_stream {
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 };
-
-#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
 
 // EXPERIMENTAL: provide protection against overloading a server with too many
 // requests: wait for streams to be deallocated before they stop counting
