@@ -1214,18 +1214,29 @@ std::string OTelSpanTraceIdToString(opentelemetry::trace::Span* span) {
   if (span == nullptr) {
     return "";
   }
-  const auto& trace = span->GetContext().trace_id().Id();
-  return absl::BytesToHexString(absl::string_view(
-      reinterpret_cast<const char*>(trace.data()), trace.size()));
+  auto context = span->GetContext();
+  auto trace_id = context.trace_id();
+  if (!trace_id.IsValid()) {
+    return "";
+  }
+  auto trace_id_span = trace_id.Id();
+  return absl::BytesToHexString(
+      absl::string_view(reinterpret_cast<const char*>(trace_id_span.data()),
+                        trace_id_span.size()));
 }
 
 std::string OTelSpanSpanIdToString(opentelemetry::trace::Span* span) {
   if (span == nullptr) {
     return "";
   }
-  const auto& span_id = span->GetContext().span_id().Id();
+  auto context = span->GetContext();
+  auto span_id = context.span_id();
+  if (!span_id.IsValid()) {
+    return "";
+  }
+  auto span_id_span = span_id.Id();
   return absl::BytesToHexString(absl::string_view(
-      reinterpret_cast<const char*>(span_id.data()), span_id.size()));
+      reinterpret_cast<const char*>(span_id_span.data()), span_id_span.size()));
 }
 
 }  // namespace internal

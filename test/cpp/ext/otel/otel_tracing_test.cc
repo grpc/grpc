@@ -47,7 +47,7 @@ using ::testing::FieldsAre;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
-using ::testing::StrNe;
+using ::testing::StrEq;
 using ::testing::UnorderedElementsAre;
 using ::testing::VariantWith;
 
@@ -674,16 +674,23 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
 }
 
-TEST_F(OTelTracingTest, OTelSpanTraceIdToStringTest) {
-  auto span = tracer_->StartSpan("TestSpan");
+TEST(OTelTracingPluginTest, OTelSpanIdAndTraceIdToStringTest) {
+  char trace_id[] = "0123456789ABCDEF";
+  char span_id[] = "01234567";
+  auto span = std::shared_ptr<opentelemetry::trace::Span>(
+      new (std::nothrow)
+          opentelemetry::trace::DefaultSpan(opentelemetry::trace::SpanContext(
+              opentelemetry::trace::TraceId(
+                  opentelemetry::nostd::span<const uint8_t, 16>(
+                      reinterpret_cast<const uint8_t*>(trace_id), 16)),
+              opentelemetry::trace::SpanId(
+                  opentelemetry::nostd::span<const uint8_t, 8>(
+                      reinterpret_cast<const uint8_t*>(span_id), 8)),
+              opentelemetry::trace::TraceFlags(1), /*is_remote=*/true)));
   EXPECT_THAT(grpc::internal::OTelSpanTraceIdToString(span.get()),
-              ::testing::StrNe(""));
-}
-
-TEST_F(OTelTracingTest, OTelSpanSpanIdToStringTest) {
-  auto span = tracer_->StartSpan("TestSpan");
+              StrEq("30313233343536373839414243444546"));
   EXPECT_THAT(grpc::internal::OTelSpanSpanIdToString(span.get()),
-              ::testing::StrNe(""));
+              StrEq("3031323334353637"));
 }
 
 class OTelTracingTestForTransparentRetries : public OTelTracingTest {
