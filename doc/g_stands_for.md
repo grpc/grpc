@@ -72,4 +72,4 @@
 - 1.70 'g' stands for ['genius'](https://github.com/grpc/grpc/tree/v1.70.x)
 - 1.71 'g' stands for ['gears'](https://github.com/grpc/grpc/tree/v1.71.x)
 - 1.72 'g' stands for ['gusto'](https://github.com/grpc/grpc/tree/v1.72.x)
-- 1.73 'g' stands for ['gradient'](https://github.com/grpc/grpc/tree/master)
+- 1.73 'g' stands for ['gradient'](https://github.com/grpc/grpc/tree/v1.73.x)
