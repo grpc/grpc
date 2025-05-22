@@ -18,14 +18,12 @@
 
 FROM quay.io/pypa/manylinux2014_x86_64:2024-09-09-f386546
 
-# Configure git early so the cache reused by other py build based on the same image.
 {% include "../git_config.include" %}
-
-# manylinux_2_17 is the preferred alias of manylinux2014
-ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
+{% include "../ccache.include" %}
+{% include "../python_pip_builds.include" %}
 
 # TODO(jtattermusch): revisit which of the deps are really required
 RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
 
-{% include "../python_pip_builds.include" %}
-{% include "../ccache.include" %}
+# manylinux_2_17 is the preferred alias of manylinux2014
+ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
