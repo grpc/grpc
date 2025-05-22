@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/strings/escaping.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -1207,6 +1208,24 @@ void GrpcTextMapCarrier::Set(opentelemetry::nostd::string_view key,
                             << "Failed to add tracing information in metadata.";
                       });
   }
+}
+
+std::string OTelSpanTraceIdToString(opentelemetry::trace::Span* span) {
+  if (span == nullptr) {
+    return "";
+  }
+  const auto& trace = span->GetContext().trace_id().Id();
+  return absl::BytesToHexString(absl::string_view(
+      reinterpret_cast<const char*>(trace.data()), trace.size()));
+}
+
+std::string OTelSpanSpanIdToString(opentelemetry::trace::Span* span) {
+  if (span == nullptr) {
+    return "";
+  }
+  const auto& span_id = span->GetContext().span_id().Id();
+  return absl::BytesToHexString(absl::string_view(
+      reinterpret_cast<const char*>(span_id.data()), span_id.size()));
 }
 
 }  // namespace internal

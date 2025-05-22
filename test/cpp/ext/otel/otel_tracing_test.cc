@@ -47,6 +47,7 @@ using ::testing::FieldsAre;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
+using ::testing::StrNe;
 using ::testing::UnorderedElementsAre;
 using ::testing::VariantWith;
 
@@ -671,6 +672,18 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
       });
   ASSERT_NE(server_span, spans.end());
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
+}
+
+TEST_F(OTelTracingTest, OTelSpanTraceIdToStringTest) {
+  auto span = tracer_->StartSpan("TestSpan");
+  EXPECT_THAT(grpc::internal::OTelSpanTraceIdToString(span.get()),
+              ::testing::StrNe(""));
+}
+
+TEST_F(OTelTracingTest, OTelSpanSpanIdToStringTest) {
+  auto span = tracer_->StartSpan("TestSpan");
+  EXPECT_THAT(grpc::internal::OTelSpanSpanIdToString(span.get()),
+              ::testing::StrNe(""));
 }
 
 class OTelTracingTestForTransparentRetries : public OTelTracingTest {

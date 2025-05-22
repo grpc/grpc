@@ -56,18 +56,15 @@ class OpenTelemetryPluginImpl::ClientCallTracer
                       bool arena_allocated);
 
     std::string TraceId() override {
-      // Not implemented
-      return "";
+      return OTelSpanTraceIdToString(span_.get());
     }
 
     std::string SpanId() override {
-      // Not implemented
-      return "";
+      return OTelSpanSpanIdToString(span_.get());
     }
 
     bool IsSampled() override {
-      // Not implemented
-      return false;
+      return span_ != nullptr && span_->GetContext().IsSampled();
     }
 
     void RecordSendInitialMetadata(
@@ -133,18 +130,13 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   ~ClientCallTracer() override;
 
   std::string TraceId() override {
-    // Not implemented
-    return "";
+    return OTelSpanTraceIdToString(span_.get());
   }
 
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
+  std::string SpanId() override { return OTelSpanSpanIdToString(span_.get()); }
 
   bool IsSampled() override {
-    // Not implemented
-    return false;
+    return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
