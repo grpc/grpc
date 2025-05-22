@@ -427,4 +427,5 @@
 /* gRPC manual edits here! */
 /* TODO(apolcyn): maybe define these elsewhere */
 #define CARES_HAVE_WINDOWS_H
+#define CARES_HAVE_WINSOCK_H
 #define CARES_HAVE_WINSOCK2_H
