@@ -16,7 +16,6 @@
 
 FROM dockcross/manylinux2014-aarch64
 
-# Configure git early so the cache reused by other py build based on the same image.
 # TODO: simplify the list of third_party modules list
 # NOTE: git>=2.46 allows leading paths like third_party/* to include all subdirectories
 # current docker base images use git versions lower than 2.46 and hence require separate configs for each submodule
@@ -40,19 +39,6 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
-
-# manylinux_2_17 is the preferred alias of manylinux2014
-ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
-
-#===================================
-# Install Python build requirements
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1'
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1'
-RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1'
-RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1'
-RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1'
-RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
-
 #=================
 # Install ccache 
 
@@ -68,3 +54,15 @@ RUN unset CMAKE_TOOLCHAIN_FILE && unset AS AR CC CPP CXX LD STRIP OBJCOPY \
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
 
+#===================================
+# Install Python build requirements
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+
+
+# manylinux_2_17 is the preferred alias of manylinux2014
+ENV AUDITWHEEL_PLAT manylinux_2_17_$AUDITWHEEL_ARCH
