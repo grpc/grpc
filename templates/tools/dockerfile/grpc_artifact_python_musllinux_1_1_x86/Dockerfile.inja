@@ -17,5 +17,9 @@
 FROM quay.io/pypa/musllinux_1_1_i686:2024-09-09-f386546
 
 {% include "../git_config.include" %}
+
+# Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
+RUN apk add zstd zstd-dev hiredis-dev
 {% include "../ccache.include" %}
+
 {% include "../python_pip_builds.include" %}

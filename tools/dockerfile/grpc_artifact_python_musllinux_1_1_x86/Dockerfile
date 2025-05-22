@@ -39,6 +39,9 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
+
+# Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
+RUN apk add zstd zstd-dev hiredis-dev
 #=================
 # Install ccache
 
@@ -52,6 +55,7 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
+
 
 #===================================
 # Install Python build requirements

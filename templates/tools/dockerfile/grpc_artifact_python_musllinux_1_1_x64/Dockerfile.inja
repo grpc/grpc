@@ -17,7 +17,9 @@
 FROM quay.io/pypa/musllinux_1_1_x86_64:2024-09-09-f386546
 
 {% include "../git_config.include" %}
-{% include "../ccache.include" %}
-{% include "../python_pip_builds.include" %}
 
-RUN apk add openssl openssl-dev
+# Preinstall zstd and hiredis for ccache to avoid *_FROM_INTERNET downloads.
+RUN apk add openssl openssl-dev zstd zstd-dev hiredis-dev
+{% include "../ccache.include" %}
+
+{% include "../python_pip_builds.include" %}
