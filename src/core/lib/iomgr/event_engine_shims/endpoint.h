@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/util/ref_counted.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -51,6 +52,40 @@ std::unique_ptr<EventEngine::Endpoint> grpc_take_wrapped_event_engine_endpoint(
 /// set to the underlying endpoint's file descriptor.
 void grpc_event_engine_endpoint_destroy_and_release_fd(
     grpc_endpoint* ep, int* fd, grpc_closure* on_release_fd);
+
+/// Wrapper for EventEngine::Endpoint to enable storing it in channel args.
+///
+/// This class encapsulates a `std::unique_ptr<EventEngine::Endpoint>` so that
+/// an already-connected endpoint can be passed through channel arguments.
+/// This is useful when creating a channel with a pre-established connection,
+/// such as when using `CreateChannelFromEndpoint()` or `CreateChannelFromFd()`.
+///
+/// The wrapper provides:
+/// - Ownership management via unique_ptr
+/// - A static `ChannelArgName()` method to identify the channel arg
+/// - A comparison function for use in channel args internals
+///
+/// Note: This is intended for internal use only.
+class EndpointWrapper : public grpc_core::RefCounted<EndpointWrapper> {
+ public:
+  explicit EndpointWrapper(std::unique_ptr<EventEngine::Endpoint> endpoint)
+      : endpoint_(std::move(endpoint)) {}
+
+  std::unique_ptr<EventEngine::Endpoint> take_endpoint() {
+    return std::move(endpoint_);
+  }
+
+  static absl::string_view ChannelArgName() {
+    return "grpc.internal.subchannel_endpoint";
+  }
+  static int ChannelArgsCompare(const EndpointWrapper* a,
+                                const EndpointWrapper* b) {
+    return QsortCompare(a, b);
+  }
+
+ private:
+  std::unique_ptr<EventEngine::Endpoint> endpoint_;
+};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

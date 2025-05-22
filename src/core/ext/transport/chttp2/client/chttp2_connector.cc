@@ -110,8 +110,9 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   if (channel_args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
     endpoint = OrphanablePtr<grpc_endpoint>(grpc_event_engine_endpoint_create(
         std::unique_ptr<EventEngine::Endpoint>(
-            args_.channel_args.GetPointer<EventEngine::Endpoint>(
-                GRPC_ARG_SUBCHANNEL_ENDPOINT))));
+            args_.channel_args
+                .GetObject<grpc_event_engine::experimental::EndpointWrapper>()
+                ->take_endpoint())));
   } else {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
     if (!address.ok()) {

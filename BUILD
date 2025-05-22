@@ -1550,6 +1550,7 @@ grpc_cc_library(
         "//src/core:pollset_set",
         "//src/core:posix_event_engine_base_hdrs",
         "//src/core:posix_event_engine_endpoint",
+        "//src/core:ref_counted",
         "//src/core:resolved_address",
         "//src/core:resource_quota",
         "//src/core:slice",
@@ -1722,6 +1723,7 @@ grpc_cc_library(
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
         "//src/core:event_engine_extensions",
         "//src/core:event_engine_query_extensions",
         "//src/core:event_engine_tcp_socket_utils",
@@ -3686,6 +3688,7 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
+        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
     ],
     external_deps = [
         "absl/base:core_headers",

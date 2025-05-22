@@ -19,14 +19,13 @@
 #ifndef GRPC_GRPC_POSIX_H
 #define GRPC_GRPC_POSIX_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/grpc_types.h>
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
 #include <memory>
-
-#include "event_engine/event_engine.h"
 
 #ifdef __cplusplus
 extern "C" {

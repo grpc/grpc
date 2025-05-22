@@ -176,11 +176,6 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
   /// allocation being handled by the quota system.
   class Endpoint : public Extensible {
    public:
-    // Flag that this object gets stored in channel args as a raw pointer.
-    struct RawPointerChannelArgTag {};
-    static absl::string_view ChannelArgName() {
-      return "grpc.internal.subchannel_endpoint";
-    }
     /// Shuts down all connections and invokes all pending read or write
     /// callbacks with an error status.
     virtual ~Endpoint() = default;

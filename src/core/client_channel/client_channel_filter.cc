@@ -69,6 +69,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -921,6 +922,11 @@ class ClientChannelFilter::ClientChannelControlHelper final
     ChannelArgs subchannel_args = Subchannel::MakeSubchannelArgs(
         args, per_address_args, chand_->subchannel_pool_,
         chand_->default_authority_);
+    if (chand_->subchannel_endpoint_ != nullptr) {
+      subchannel_args = subchannel_args.SetObject(
+          MakeRefCounted<grpc_event_engine::experimental::EndpointWrapper>(
+              std::move(chand_->subchannel_endpoint_)));
+    }
     // Create subchannel.
     RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(address,
@@ -1060,6 +1066,13 @@ ClientChannelFilter::ClientChannelFilter(grpc_channel_element_args* args,
     *error = GRPC_ERROR_CREATE(
         "Missing client channel factory in args for client channel filter");
     return;
+  }
+  if (channel_args_.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
+    subchannel_endpoint_ =
+        channel_args_
+            .GetObject<grpc_event_engine::experimental::EndpointWrapper>()
+            ->take_endpoint();
+    channel_args_ = channel_args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
   }
   // Get default service config.  If none is specified via the client API,
   // we use an empty config.
