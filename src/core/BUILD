@@ -5695,6 +5695,24 @@ grpc_cc_library(
     ],
 )
 
+#Pawan
+grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "xds_type_matcher_upb"
+    ]
+)
+
 grpc_cc_library(
     name = "xds_metadata",
     srcs = [
@@ -5982,6 +6000,7 @@ grpc_cc_library(
         "xds_route_config",
         "xds_server_grpc",
         "xds_transport_grpc",
+        "xds_type_matcher_upb",
         "xds_type_upb",
         "xds_type_upbdefs",
         "//:channel",
@@ -9981,6 +10000,11 @@ grpc_upb_proto_library(
 grpc_upb_proto_library(
     name = "xds_type_upb",
     deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_reflection_library(

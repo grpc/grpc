@@ -340,6 +340,21 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "xds_matcher_test",
+    srcs = [ "xds_matcher_test.cc" ],
+    external_deps = ["gtest"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//src/core:grpc_xds_client",
+         "//src/core:xds_matcher",
+        "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:scoped_env_var",
+        "@com_github_cncf_xds//xds/type/matcher/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_cluster_resource_type_test",
     srcs = ["xds_cluster_resource_type_test.cc"],
     external_deps = ["gtest"],

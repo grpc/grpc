@@ -5092,6 +5092,11 @@ grpc_upb_proto_library(
     deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
 )
 
+grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
+)
+
 grpc_upb_proto_reflection_library(
     name = "xds_type_upbdefs",
     deps = ["@com_github_cncf_xds//xds/type/v3:pkg"],
