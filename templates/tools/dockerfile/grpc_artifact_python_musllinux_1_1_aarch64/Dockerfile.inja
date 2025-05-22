@@ -17,7 +17,7 @@
 FROM quay.io/pypa/musllinux_1_1_aarch64:2024-09-09-f386546
 
 {% include "../git_config.include" %}
-{% include "../ccache.include" %}
 {% include "../python_pip_builds.include" %}
+{% include "../ccache.include" %}
 
 RUN apk add openssl openssl-dev

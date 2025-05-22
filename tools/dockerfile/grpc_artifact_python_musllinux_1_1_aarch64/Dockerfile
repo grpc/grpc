@@ -39,6 +39,15 @@ RUN git config --global protocol.file.allow always && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/xds && \
   git config --global --add safe.directory /var/local/jenkins/grpc/.git/modules/third_party/zlib
 
+#===================================
+# Install Python build requirements
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
+  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
+
 #=================
 # Install ccache
 
@@ -52,15 +61,6 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.7.5 ccache.tar.gz
-
-#===================================
-# Install Python build requirements
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1' && \
-  /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
 
 
 RUN apk add openssl openssl-dev
