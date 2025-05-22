@@ -25134,6 +25134,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(race_test
   test/core/promise/race_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(race_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(race_test PUBLIC cxx_std_17)
 target_include_directories(race_test
   PRIVATE
@@ -25157,8 +25165,7 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::str_format
+  gpr
 )
 
 

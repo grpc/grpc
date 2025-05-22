@@ -15344,13 +15344,12 @@ targets:
   headers:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - absl/log:check
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
