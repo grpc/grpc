@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM arm64v8/debian:11
+FROM arm64v8/ruby:3.1-bullseye
 
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
-{% include "../../ruby_3_1_deps.include" %}
-{% include "../../rvm_mkdir_workaround.include" %}
 {% include "../../cmake.include" %}
-{% include "../../ccache.include" %}
+# TODO(apolcyn): maybe install ccache if possible, hitting SEGV on install
+# attempts so far.
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
 
