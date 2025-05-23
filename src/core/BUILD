@@ -724,6 +724,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/random",
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
     ],
