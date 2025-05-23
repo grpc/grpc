@@ -86,6 +86,10 @@ class Http2ClientTransport final : public ClientTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
+  Http2ClientTransport(const Http2ClientTransport&) = delete;
+  Http2ClientTransport& operator=(const Http2ClientTransport&) = delete;
+  Http2ClientTransport(Http2ClientTransport&&) = delete;
+  Http2ClientTransport& operator=(Http2ClientTransport&&) = delete;
   ~Http2ClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -316,8 +320,11 @@ class Http2ClientTransport final : public ClientTransport {
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
   // members.
+  // Duration between two consecutive keepalive pings
   const Duration keepalive_time_;
+  // Duration to wait for a keepalive ping ack before triggering timeout. This only takes effect if the assigned value is less than the ping timeout.
   const Duration keepalive_timeout_;
+  // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;
   PingManager ping_manager_;
   std::vector<uint64_t> pending_ping_acks_;
@@ -392,6 +399,11 @@ class Http2ClientTransport final : public ClientTransport {
       // Returns a promise that resolves once goaway is sent.
       LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
 
+      // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
+      // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
+      // to kRefusedStream). However looking at RFC9113, definition of
+      // kRefusedStream doesn't seem to fit this case. We should revisit this
+      // and update the error code.
       return Immediate(
           transport_->HandleError(Http2Status::Http2ConnectionError(
               Http2ErrorCode::kRefusedStream, "Ping timeout")));
@@ -427,6 +439,11 @@ class Http2ClientTransport final : public ClientTransport {
       // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
       LOG(INFO) << "Keepalive timeout triggered";
 
+      // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
+      // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
+      // to kRefusedStream). However looking at RFC9113, definition of
+      // kRefusedStream doesn't seem to fit this case. We should revisit this
+      // and update the error code.
       return Immediate(
           transport_->HandleError(Http2Status::Http2ConnectionError(
               Http2ErrorCode::kRefusedStream, "Keepalive timeout")));
