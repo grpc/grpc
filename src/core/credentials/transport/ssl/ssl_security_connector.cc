@@ -108,7 +108,8 @@ class grpc_ssl_channel_security_connector final
         overridden_target_name_.empty() ? target_name_.c_str()
                                         : overridden_target_name_.c_str(),
         /*network_bio_buf_size=*/0,
-        /*ssl_bio_buf_size=*/0, &tsi_hs);
+        /*ssl_bio_buf_size=*/0,
+        args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS), &tsi_hs);
     if (result != TSI_OK) {
       LOG(ERROR) << "Handshaker creation failed with error "
                  << tsi_result_to_string(result);
@@ -198,7 +199,24 @@ class grpc_ssl_server_security_connector
     return server_handshaker_factory_;
   }
 
-  grpc_security_status InitializeHandshakerFactory() {
+  // Helper method to initialize the handshaker factory for all handshaker on
+  // the server side.
+  // - alpn_preferred_protocol_raw_list: an optional string that represents the
+  // comma-separated ordered list of preferred protocols for alpn negotiation on
+  // this server.
+  //
+  // For the server handshaker, override the preferred protocols given
+  // by the channel args on the handshaker factory creation. Do this for all
+  // handshake that a server may produce because it is unlikely that a server
+  // handshaker would change protocol list per handshake.
+  //
+  // OpenSSL's provided method to override the selection of the handshaker
+  // protocols for alpn is only available per context base which makes it
+  // thread-unsafe. The introduction of a lock in the server callback may make
+  // the alternative thread-safe, however it will introduce too much contention
+  // which in turn will affect performance.
+  grpc_security_status InitializeHandshakerFactory(
+      std::optional<std::string> alpn_preferred_protocol_raw_list) {
     if (has_cert_config_fetcher()) {
       // Load initial credentials from certificate_config_fetcher:
       if (!try_fetch_ssl_server_credentials()) {
@@ -209,8 +227,17 @@ class grpc_ssl_server_security_connector
       auto* server_credentials =
           static_cast<const grpc_ssl_server_credentials*>(server_creds());
       size_t num_alpn_protocols = 0;
-      const char** alpn_protocol_strings =
-          grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
+      const char** alpn_protocol_strings = nullptr;
+      if (alpn_preferred_protocol_raw_list.has_value()) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+        alpn_protocol_strings = ParseAlpnStringIntoArray(
+            alpn_preferred_protocol_raw_list.value(), &num_alpn_protocols);
+#endif  // TSI_OPENSSL_ALPN_SUPPORT
+      }
+      if (alpn_protocol_strings == nullptr) {
+        alpn_protocol_strings =
+            grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
+      }
       tsi_ssl_server_handshaker_options options;
       options.pem_key_cert_pairs =
           server_credentials->config().pem_key_cert_pairs;
@@ -277,9 +304,10 @@ class grpc_ssl_server_security_connector
   }
 
  private:
-  // Attempts to fetch the server certificate config if a callback is available.
-  // Current certificate config will continue to be used if the callback returns
-  // an error. Returns true if new credentials were successfully loaded.
+  // Attempts to fetch the server certificate config if a callback is
+  // available. Current certificate config will continue to be used if the
+  // callback returns an error. Returns true if new credentials were
+  // successfully loaded.
   bool try_fetch_ssl_server_credentials() {
     grpc_ssl_server_certificate_config* certificate_config = nullptr;
     bool status;
@@ -307,8 +335,8 @@ class grpc_ssl_server_security_connector
     return status;
   }
 
-  // Attempts to replace the server_handshaker_factory with a new factory using
-  // the provided grpc_ssl_server_certificate_config. Should new factory
+  // Attempts to replace the server_handshaker_factory with a new factory
+  // using the provided grpc_ssl_server_certificate_config. Should new factory
   // creation fail, the existing factory will not be replaced. Returns true on
   // success (new factory created).
   bool try_replace_server_handshaker_factory(
@@ -390,12 +418,14 @@ grpc_ssl_channel_security_connector_create(
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_security_connector_create(
-    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials,
+    const grpc_core::ChannelArgs& args) {
   CHECK(server_credentials != nullptr);
   grpc_core::RefCountedPtr<grpc_ssl_server_security_connector> c =
       grpc_core::MakeRefCounted<grpc_ssl_server_security_connector>(
           std::move(server_credentials));
-  const grpc_security_status retval = c->InitializeHandshakerFactory();
+  const grpc_security_status retval = c->InitializeHandshakerFactory(
+      args.GetOwnedString(GRPC_ARG_TRANSPORT_PROTOCOLS));
   if (retval != GRPC_SECURITY_OK) {
     return nullptr;
   }
