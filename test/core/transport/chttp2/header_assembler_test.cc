@@ -296,6 +296,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
 // Other Valid cases
 
 TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
+  // This test is Valid only for Server. Not for Client.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
@@ -310,6 +311,7 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
+  // This test is Valid only for Server. Not for Client.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read all the Header and Continuation frames.
