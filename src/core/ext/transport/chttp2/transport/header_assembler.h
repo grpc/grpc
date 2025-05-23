@@ -105,7 +105,7 @@ class HeaderAssembler {
     }
 
     ++num_headers_received_;
-    if (num_headers_received_ == max_headers_ + 1) {
+    if (num_headers_received_ > max_headers_) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kInternalError,
           std::string("Too many header frames sent by peer"));
