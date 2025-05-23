@@ -438,8 +438,10 @@ static void write_test(size_t num_bytes, size_t slice_size) {
   GRPC_CLOSURE_INIT(&write_done_closure, write_done, &state,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_write(ep, &outgoing, &write_done_closure, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs write_args;
+  write_args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(ep, &outgoing, &write_done_closure,
+                      std::move(write_args));
   drain_socket_blocking(sv[0], num_bytes, num_bytes);
   exec_ctx.Flush();
   gpr_mu_lock(g_mu);
