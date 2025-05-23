@@ -7795,6 +7795,7 @@ grpc_cc_library(
         "http2_transport",
         "inter_activity_mutex",
         "internal_channel_arg_names",
+        "keepalive",
         "latent_see",
         "loop",
         "map",

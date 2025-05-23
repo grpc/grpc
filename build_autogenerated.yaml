@@ -12669,6 +12669,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/lib/promise/detail/promise_variant.h
@@ -12688,6 +12689,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
