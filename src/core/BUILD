@@ -724,6 +724,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/random",
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -7705,6 +7706,7 @@ grpc_cc_library(
     deps = [
         "http2_status",
         "metadata_batch",
+        "shared_bit_gen",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
