@@ -68,7 +68,7 @@ class Blackboard : public RefCounted<Blackboard> {
   template <typename T>
   RefCountedPtr<T> Set(const std::string& key, RefCountedPtr<T> constructed) {
     return Set({T::Type(), key}, std::move(constructed))
-               .template TakeAsSubclass<T>();
+        .template TakeAsSubclass<T>();
   }
 
  private:
