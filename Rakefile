@@ -30,8 +30,9 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.cross_compile = true
   ext.cross_platform = [
     'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
-    'x86_64-linux', 'x86-linux', 'aarch64-linux',
-    'x86_64-darwin', 'arm64-darwin',
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
   ]
   ext.cross_compiling do |spec|
     spec.files = spec.files.select {
@@ -157,7 +158,11 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
   supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
-  supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
+  supported_unix_platforms = [
+    'x86_64-linux-gnu', 'x86_64-linux-musl', 'x86-linux-gnu',
+    'x86-linux-musl', 'aarch64-linux-gnu', 'aarch64-linux-musl',
+    'x86_64-darwin', 'arm64-darwin'
+  ]
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
   if selected_plat.empty?
@@ -207,7 +212,11 @@ task 'gem:native', [:plat] do |t, args|
   # Currently we hit "objcopy: grpc_c.bundle: file format not recognized"
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
-  unix_platforms_without_debug_symbols = ['x86_64-darwin', 'arm64-darwin', 'aarch64-linux']
+  unix_platforms_without_debug_symbols = [
+    'x86_64-linux-musl', 'x86-linux-gnu', 'x86-linux-musl',
+    'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
+    'arm64-darwin'
+  ]
 
   unix_platforms.each do |plat|
     if unix_platforms_without_debug_symbols.include?(plat)
