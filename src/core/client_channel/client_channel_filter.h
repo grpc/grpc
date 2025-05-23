@@ -91,6 +91,8 @@
 
 namespace grpc_core {
 
+using grpc_event_engine::experimental::EventEngine;
+
 class ClientChannelFilter final {
  public:
   static const grpc_channel_filter kFilter;
@@ -304,6 +306,8 @@ class ClientChannelFilter final {
   // Fields used in the control plane.  Guarded by work_serializer.
   //
   std::shared_ptr<WorkSerializer> work_serializer_;
+  std::unique_ptr<EventEngine::Endpoint> subchannel_endpoint_
+      ABSL_GUARDED_BY(*work_serializer_);
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(*work_serializer_);
   bool previous_resolution_contained_addresses_

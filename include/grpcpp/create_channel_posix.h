@@ -19,6 +19,7 @@
 #ifndef GRPCPP_CREATE_CHANNEL_POSIX_H
 #define GRPCPP_CREATE_CHANNEL_POSIX_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/support/channel_arguments.h>
@@ -60,6 +61,35 @@ CreateCustomInsecureChannelWithInterceptorsFromFd(
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
+
+/// Creates a new \a Channel from an EventEngine endpoint.
+/// The channel target will be hard-coded to something like "ipv4:127.0.0.1:80".
+/// The default authority will be set to the endpoint's peer address, but the
+/// application can override it using the GRPC_ARG_DEFAULT_AUTHORITY channel
+/// argument. This API supports both secure and insecure channel credentials.
+///
+/// \param endpoint A unique pointer to an EventEngine endpoint representing
+///        an established connection.
+/// \param creds The channel credentials used to secure the connection.
+/// \param args Channel arguments used to configure the channel behavior.
+std::shared_ptr<grpc::Channel> CreateChannelFromEndpoint(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args);
+
+/// Creates a new \a Channel from a file descriptor.
+/// The channel target will be hard-coded to something like "ipv4:127.0.0.1:80".
+/// The default authority will be "unknown", but the application can override it
+/// using the GRPC_ARG_DEFAULT_AUTHORITY channel argument.
+/// This API supports both secure and insecure channel credentials.
+///
+/// \param fd The file descriptor representing the connection.
+/// \param creds The channel credentials used to secure the connection.
+/// \param args Channel arguments used to configure the channel behavior.
+std::shared_ptr<grpc::Channel> CreateChannelFromFd(
+    int fd, const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args);
 
 }  // namespace experimental
 

@@ -18,6 +18,7 @@
 
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -28,6 +29,7 @@
 #include <grpc/support/sync.h>
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -56,8 +58,8 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -103,26 +105,36 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
-  absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
-  if (!address.ok()) {
-    grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
-    NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
-    return;
+  OrphanablePtr<grpc_endpoint> endpoint;
+  ChannelArgs channel_args = args_.channel_args;
+  if (channel_args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
+    endpoint = OrphanablePtr<grpc_endpoint>(grpc_event_engine_endpoint_create(
+        std::unique_ptr<EventEngine::Endpoint>(
+            args_.channel_args
+                .GetObject<grpc_event_engine::experimental::EndpointWrapper>()
+                ->take_endpoint())));
+  } else {
+    absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
+    if (!address.ok()) {
+      grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
+      NullThenSchedClosure(DEBUG_LOCATION, &notify_, error);
+      return;
+    }
+    channel_args =
+        channel_args
+            .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
+            .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
   }
-  ChannelArgs channel_args =
-      args_.channel_args
-          .Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS, address.value())
-          .Set(GRPC_ARG_TCP_HANDSHAKER_BIND_ENDPOINT_TO_POLLSET, 1);
   handshake_mgr_ = MakeRefCounted<HandshakeManager>();
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
-  handshake_mgr_->DoHandshake(
-      /*endpoint=*/nullptr, channel_args, args.deadline, /*acceptor=*/nullptr,
-      [self = RefAsSubclass<Chttp2Connector>()](
-          absl::StatusOr<HandshakerArgs*> result) {
-        self->OnHandshakeDone(std::move(result));
-      });
+  handshake_mgr_->DoHandshake(std::move(endpoint), channel_args, args.deadline,
+                              /*acceptor=*/nullptr,
+                              [self = RefAsSubclass<Chttp2Connector>()](
+                                  absl::StatusOr<HandshakerArgs*> result) {
+                                self->OnHandshakeDone(std::move(result));
+                              });
 }
 
 void Chttp2Connector::Shutdown(grpc_error_handle error) {
