@@ -7706,6 +7706,7 @@ grpc_cc_library(
     deps = [
         "http2_status",
         "metadata_batch",
+        "shared_bit_gen",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -7794,6 +7795,7 @@ grpc_cc_library(
         "http2_transport",
         "inter_activity_mutex",
         "internal_channel_arg_names",
+        "keepalive",
         "latent_see",
         "loop",
         "map",
