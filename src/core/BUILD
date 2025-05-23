@@ -7702,11 +7702,11 @@ grpc_cc_library(
     external_deps = [
         "absl/log",
         "absl/log:check",
-        "absl/random",
     ],
     deps = [
         "http2_status",
         "metadata_batch",
+        "shared_bit_gen",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
@@ -7778,7 +7778,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
-        "absl/random",
         "absl/status",
         "absl/status:statusor",
     ],

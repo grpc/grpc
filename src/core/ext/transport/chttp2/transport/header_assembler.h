@@ -29,6 +29,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/shared_bit_gen.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for
 // assembler and disassembler code
@@ -169,8 +170,7 @@ class HeaderAssembler {
   }
 
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
-      HPackParser& parser, bool is_initial_metadata, bool is_client,
-      absl::BitGenRef bitsrc) {
+      HPackParser& parser, bool is_initial_metadata, bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
@@ -197,9 +197,9 @@ class HeaderAssembler {
                                  : HPackParser::LogInfo::Type::kTrailers,
                              is_client});
     for (size_t i = 0; i < buffer_.Count(); i++) {
-      absl::Status result =
-          parser.Parse(buffer_.c_slice_at(i), i == buffer_.Count() - 1, bitsrc,
-                       /*call_tracer=*/nullptr);
+      absl::Status result = parser.Parse(
+          buffer_.c_slice_at(i), i == buffer_.Count() - 1, SharedBitGen(),
+          /*call_tracer=*/nullptr);
       if (GPR_UNLIKELY(!result.ok())) {
         Cleanup();
         LOG(ERROR) << "Connection Error: " << kAssemblerHpackError;
