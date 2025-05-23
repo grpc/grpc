@@ -115,6 +115,14 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
   grpc_slice path = grpc_empty_slice();
   ScopedContext ctx(call);
   Call* parent = Call::FromC(args->parent);
+  // initial refcount dropped by grpc_call_unref
+  grpc_call_element_args call_args = {
+      call->call_stack(), args->server_transport_data,
+      call->start_time(), call->send_deadline(),
+      call->arena(),      &call->call_combiner_};
+  add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
+                                              call, &call_args));
+
   if (call->is_client()) {
     call->final_op_.client.status_details = nullptr;
     call->final_op_.client.status = nullptr;
@@ -167,14 +175,6 @@ grpc_error_handle FilterStackCall::Create(grpc_call_create_args* args,
     }
     (*channel_stack->stats_plugin_group)->AddServerCallTracers(arena.get());
   }
-
-  // initial refcount dropped by grpc_call_unref
-  grpc_call_element_args call_args = {
-      call->call_stack(), args->server_transport_data,
-      call->start_time(), call->send_deadline(),
-      call->arena(),      &call->call_combiner_};
-  add_init_error(&error, grpc_call_stack_init(channel_stack, 1, DestroyCall,
-                                              call, &call_args));
   // Publish this call to parent only after the call stack has been initialized.
   if (parent != nullptr) {
     call->PublishToParent(parent);
