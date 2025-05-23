@@ -17,18 +17,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+#nullable enable
 #pragma warning disable 0414, 1591, 8981, 0612
 #region Designer generated code
 
 using grpc = global::Grpc.Core;
 
-namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
+namespace Test.Csharp.Codegen.Nullable.Test {
   /// <summary>
   /// The greeting service definition.
   /// </summary>
   public static partial class Greeter
   {
-    static readonly string __ServiceName = "test.csharp.codegen.simple.proto.helloworld.Greeter";
+    static readonly string __ServiceName = "test.csharp.codegen.nullable.test.Greeter";
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     static void __Helper_SerializeMessage(global::Google.Protobuf.IMessage message, grpc::SerializationContext context)
@@ -64,30 +65,30 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
     }
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest> __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest.Parser));
+    static readonly grpc::Marshaller<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest> __Marshaller_test_csharp_codegen_nullable_test_HelloRequest = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Test.Csharp.Codegen.Nullable.Test.HelloRequest.Parser));
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Marshaller<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloReply = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply.Parser));
+    static readonly grpc::Marshaller<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> __Marshaller_test_csharp_codegen_nullable_test_HelloReply = grpc::Marshallers.Create(__Helper_SerializeMessage, context => __Helper_DeserializeMessage(context, global::Test.Csharp.Codegen.Nullable.Test.HelloReply.Parser));
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> __Method_SayHello = new grpc::Method<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply>(
+    static readonly grpc::Method<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply> __Method_SayHello = new grpc::Method<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply>(
         grpc::MethodType.Unary,
         __ServiceName,
         "SayHello",
-        __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloRequest,
-        __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloReply);
+        __Marshaller_test_csharp_codegen_nullable_test_HelloRequest,
+        __Marshaller_test_csharp_codegen_nullable_test_HelloReply);
 
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-    static readonly grpc::Method<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> __Method_SayHelloStreamReply = new grpc::Method<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply>(
+    static readonly grpc::Method<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply> __Method_SayHelloStreamReply = new grpc::Method<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply>(
         grpc::MethodType.ServerStreaming,
         __ServiceName,
         "SayHelloStreamReply",
-        __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloRequest,
-        __Marshaller_test_csharp_codegen_simple_proto_helloworld_HelloReply);
+        __Marshaller_test_csharp_codegen_nullable_test_HelloRequest,
+        __Marshaller_test_csharp_codegen_nullable_test_HelloReply);
 
     /// <summary>Service descriptor</summary>
     public static global::Google.Protobuf.Reflection.ServiceDescriptor Descriptor
     {
-      get { return global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloworldReflection.Descriptor.Services[0]; }
+      get { return global::Test.Csharp.Codegen.Nullable.Test.HelloworldReflection.Descriptor.Services[0]; }
     }
 
     /// <summary>Base class for server-side implementations of Greeter</summary>
@@ -101,13 +102,13 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
       /// <param name="context">The context of the server-side call handler being invoked.</param>
       /// <returns>The response to send back to the client (wrapped by a task).</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> SayHello(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> SayHello(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
 
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::System.Threading.Tasks.Task SayHelloStreamReply(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::IServerStreamWriter<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> responseStream, grpc::ServerCallContext context)
+      public virtual global::System.Threading.Tasks.Task SayHelloStreamReply(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::IServerStreamWriter<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> responseStream, grpc::ServerCallContext context)
       {
         throw new grpc::RpcException(new grpc::Status(grpc::StatusCode.Unimplemented, ""));
       }
@@ -150,7 +151,7 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply SayHello(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual global::Test.Csharp.Codegen.Nullable.Test.HelloReply SayHello(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::Metadata? headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return SayHello(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -161,7 +162,7 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
       /// <param name="options">The options for the call.</param>
       /// <returns>The response received from the server.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply SayHello(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::CallOptions options)
+      public virtual global::Test.Csharp.Codegen.Nullable.Test.HelloReply SayHello(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::CallOptions options)
       {
         return CallInvoker.BlockingUnaryCall(__Method_SayHello, null, options, request);
       }
@@ -174,7 +175,7 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
       /// <param name="cancellationToken">An optional token for canceling the call.</param>
       /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> SayHelloAsync(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncUnaryCall<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> SayHelloAsync(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::Metadata? headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return SayHelloAsync(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
@@ -185,17 +186,17 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
       /// <param name="options">The options for the call.</param>
       /// <returns>The call object.</returns>
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncUnaryCall<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> SayHelloAsync(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncUnaryCall<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> SayHelloAsync(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncUnaryCall(__Method_SayHello, null, options, request);
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> SayHelloStreamReply(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::Metadata headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
+      public virtual grpc::AsyncServerStreamingCall<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> SayHelloStreamReply(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::Metadata? headers = null, global::System.DateTime? deadline = null, global::System.Threading.CancellationToken cancellationToken = default(global::System.Threading.CancellationToken))
       {
         return SayHelloStreamReply(request, new grpc::CallOptions(headers, deadline, cancellationToken));
       }
       [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
-      public virtual grpc::AsyncServerStreamingCall<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply> SayHelloStreamReply(global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest request, grpc::CallOptions options)
+      public virtual grpc::AsyncServerStreamingCall<global::Test.Csharp.Codegen.Nullable.Test.HelloReply> SayHelloStreamReply(global::Test.Csharp.Codegen.Nullable.Test.HelloRequest request, grpc::CallOptions options)
       {
         return CallInvoker.AsyncServerStreamingCall(__Method_SayHelloStreamReply, null, options, request);
       }
@@ -223,8 +224,8 @@ namespace Test.Csharp.Codegen.Simple.Proto.Helloworld {
     [global::System.CodeDom.Compiler.GeneratedCode("grpc_csharp_plugin", null)]
     public static void BindService(grpc::ServiceBinderBase serviceBinder, GreeterBase serviceImpl)
     {
-      serviceBinder.AddMethod(__Method_SayHello, serviceImpl == null ? null : new grpc::UnaryServerMethod<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply>(serviceImpl.SayHello));
-      serviceBinder.AddMethod(__Method_SayHelloStreamReply, serviceImpl == null ? null : new grpc::ServerStreamingServerMethod<global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloRequest, global::Test.Csharp.Codegen.Simple.Proto.Helloworld.HelloReply>(serviceImpl.SayHelloStreamReply));
+      serviceBinder.AddMethod(__Method_SayHello, serviceImpl == null ? null! : new grpc::UnaryServerMethod<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply>(serviceImpl.SayHello));
+      serviceBinder.AddMethod(__Method_SayHelloStreamReply, serviceImpl == null ? null! : new grpc::ServerStreamingServerMethod<global::Test.Csharp.Codegen.Nullable.Test.HelloRequest, global::Test.Csharp.Codegen.Nullable.Test.HelloReply>(serviceImpl.SayHelloStreamReply));
     }
 
   }
