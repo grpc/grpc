@@ -3,7 +3,9 @@ name: Request a gRPC Python feature
 about: Suggest an idea for this project
 labels: kind/enhancement, priority/P2, lang/Python
 assignees:
-  - grpc/grpc-python-team
+  - asheshvidyut
+  - sergiitk
+  - sreenithi
 
 ---
 
