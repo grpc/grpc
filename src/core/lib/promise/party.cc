@@ -189,7 +189,7 @@ namespace {
 
 Json ParticipantBitmaskToJson(uint64_t mask) {
   Json::Array array;
-  for (int i = 0; i < party_detail::kMaxParticipants; i++) {
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
     if (mask & (1u << i)) {
       array.emplace_back(Json::FromNumber(i));
     }
