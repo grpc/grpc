@@ -193,7 +193,6 @@ class Http2ClientTransport final : public ClientTransport {
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
 
-  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   // Managing the streams
@@ -349,7 +348,7 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
     Promise<absl::Status> PingTimeout() override {
-      // TODO(akshitpatel) : [PH2][P1] : Trigger goaway here.
+      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
       // Returns a promise that resolves once goaway is sent.
       LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
 
@@ -359,7 +358,7 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
    private:
-    // TODO(akshitpatel) : [PH2][P1] : Eventually there should be a separate ref
+    // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
     // counted struct/class passed to all the transport promises/members. This
     // will help removing back references from the transport members to
     // transport and greatly simpilfy the cleanup path.
