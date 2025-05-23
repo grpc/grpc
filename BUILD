@@ -1275,6 +1275,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
+        "//src/core:notification",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",

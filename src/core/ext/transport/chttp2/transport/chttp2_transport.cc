@@ -582,12 +582,13 @@ static void init_keepalive_pings_if_enabled_locked(
 }
 
 void grpc_chttp2_transport::ChannelzDataSource::AddData(
-    grpc_core::channelz::DataSink& sink) {
-  grpc_core::Notification n;
-  transport_->event_engine->Run([t = transport_->Ref(), &n, &sink]() {
+    grpc_core::channelz::DataSink sink) {
+  transport_->event_engine->Run([t = transport_->Ref(),
+                                 sink = std::move(sink)]() mutable {
     grpc_core::ExecCtx exec_ctx;
     t->combiner->Run(
-        grpc_core::NewClosure([t, &n, &sink](grpc_error_handle) {
+        grpc_core::NewClosure([t, sink = std::move(sink)](
+                                  grpc_error_handle) mutable {
           Json::Object http2_info;
           http2_info["flowControl"] =
               Json::FromObject(t->flow_control.stats().ToJsonObject());
@@ -655,11 +656,9 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
             children.push_back(stream->channelz_call_node);
           }
           sink.AddChildObjects(std::move(children));
-          n.Notify();
         }),
         absl::OkStatus());
   });
-  n.WaitForNotification();
 }
 
 std::unique_ptr<grpc_core::channelz::ZTrace>
