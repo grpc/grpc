@@ -223,6 +223,7 @@ class OncePromiseFactory {
   using Arg = A;
   using Promise = decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_),
                                               std::declval<A>()));
+  using UnderlyingFactory = F;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
       : f_(std::move(f)) {}
@@ -240,6 +241,7 @@ class OncePromiseFactory<void, F> {
  public:
   using Arg = void;
   using Promise = decltype(PromiseFactoryImpl(OnceToken{}, std::move(f_)));
+  using UnderlyingFactory = F;
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit OncePromiseFactory(F f)
       : f_(std::move(f)) {}
