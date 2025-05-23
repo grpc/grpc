@@ -461,7 +461,7 @@ def targets():
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
-        PythonDistribTest("linux", "aarch64", "alpine"),
+        PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
