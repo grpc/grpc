@@ -17,8 +17,7 @@ FROM arm64v8/ruby:3.1-bullseye
 {% include "../../apt_get_basic.include" %}
 {% include "../../run_tests_python_deps.include" %}
 {% include "../../cmake.include" %}
-# TODO(apolcyn): maybe install ccache if possible, hitting SEGV on install
-# attempts so far.
+{% include "../../ccache.include" %}
 {% include "../../run_tests_addons.include" %}
 {% include "../../xds_interop_deps.include" %}
 
