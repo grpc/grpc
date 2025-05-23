@@ -20,13 +20,13 @@ created. AsyncIO doesn't provide thread safety for most of its APIs.
 from typing import Any, Optional, Sequence, Tuple
 
 import grpc
-from grpc._cython.cygrpc import AbortError
-from grpc._cython.cygrpc import BaseError
 from grpc._cython.cygrpc import EOF
-from grpc._cython.cygrpc import InternalError
-from grpc._cython.cygrpc import UsageError
 from grpc._cython.cygrpc import init_grpc_aio
 from grpc._cython.cygrpc import shutdown_grpc_aio
+from grpc._errors import AbortError
+from grpc._errors import BaseError
+from grpc._errors import InternalError
+from grpc._errors import UsageError
 
 from ._base_call import Call
 from ._base_call import RpcContext
