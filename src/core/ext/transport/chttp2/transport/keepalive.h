@@ -115,7 +115,9 @@ class KeepaliveManager {
            (keep_alive_interface_->NeedToSendKeepAlivePing());
   }
 
-  bool IsKeepAliveNeeded() { return (keepalive_time_ != Duration::Infinity()); }
+  bool IsKeepAliveNeeded() {
+    return (keepalive_time_ != Duration::Infinity() && !keep_alive_spawned_);
+  }
 
   std::unique_ptr<KeepAliveInterface> keep_alive_interface_;
   // If the keepalive_timeout_ is set to infinity, then the timeout is dictated

@@ -82,13 +82,12 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
 }
 
 void KeepaliveManager::Spawn(Party* party) {
-  DCHECK(!keep_alive_spawned_);
-  keep_alive_spawned_ = true;
   if (!IsKeepAliveNeeded()) {
-    KEEPALIVE_LOG
-        << "Keepalive interval is infinity. Not spawning keepalive loop.";
+    KEEPALIVE_LOG << "Not spawning keepalive loop.";
     return;
   }
+  keep_alive_spawned_ = true;
+
   party->Spawn("KeepAliveLoop", Loop([this]() {
                  return TrySeq(
                      Sleep(keepalive_time_),
