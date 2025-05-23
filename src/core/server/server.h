@@ -45,6 +45,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -647,6 +648,8 @@ class Server : public ServerInterface,
   RefCountedPtr<channelz::ServerNode> channelz_node_;
   std::unique_ptr<ServerConfigFetcher> config_fetcher_;
   ServerCallTracerFactory* const server_call_tracer_factory_;
+
+  RefCountedPtr<Blackboard> blackboard_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;

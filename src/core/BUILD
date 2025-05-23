@@ -3439,11 +3439,12 @@ grpc_cc_library(
         "filter/blackboard.h",
     ],
     external_deps = [
-        "absl/container:flat_hash_map",
         "absl/strings",
     ],
     deps = [
-        "ref_counted",
+        "avl",
+        "dual_ref_counted",
+        "sync",
         "unique_type_name",
         "useful",
         "//:debug_location",
