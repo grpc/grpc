@@ -56,59 +56,6 @@ constexpr absl::string_view kString3 = "Three Hello World!";
 constexpr uint8_t kFlags0 = 0;
 constexpr uint8_t kFlags5 = 5;
 
-//  headers: generated from simple_request.headers
-constexpr absl::string_view kSimpleRequestEncoded =
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c"
-    "content-type\x10"
-    "application/grpc"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
-
-constexpr size_t kSimpleRequestEncodedLen = 190;
-
-//  partial headers: generated from simple_request.headers
-constexpr absl::string_view kSimpleRequestEncodedPart1 =
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST";
-
-constexpr size_t kSimpleRequestEncodedPart1Len = 44;
-
-//  partial headers: generated from simple_request.headers
-constexpr absl::string_view kSimpleRequestEncodedPart2 =
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c"
-    "content-type\x10"
-    "application/grpc";
-
-constexpr size_t kSimpleRequestEncodedPart2Len = 53;
-
-//  partial headers: generated from simple_request.headers
-constexpr absl::string_view kSimpleRequestEncodedPart3 =
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
-
-constexpr size_t kSimpleRequestEncodedPart3Len = 93;
-
-constexpr absl::string_view kSimpleRequestDecoded =
-    "user-agent: grpc-c/0.12.0.0 (linux),"
-    " :authority: localhost,"
-    " :path: /foo/bar,"
-    " grpc-accept-encoding: identity,"
-    " deflate, gzip, te: trailers,"
-    " content-type: application/grpc,"
-    " :scheme: http,"
-    " :method: POST,"
-    " GrpcStatusFromWire: true";
-
-constexpr size_t kSimpleRequestDecodedLen = 224;
-
 // Returns all Http2ErrorCode values EXCEPT kNoError
 // This is because we want to test only invalid cases.
 inline std::vector<Http2ErrorCode> GetErrorCodes() {
