@@ -38,59 +38,6 @@ namespace grpc_core {
 namespace http2 {
 namespace testing {
 
-<<<<<<< HEAD
-=======
-//  headers: generated from simple_request.headers
-constexpr absl::string_view kSimpleRequestEncoded =
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST"
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c"
-    "content-type\x10"
-    "application/grpc"
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
-
-constexpr size_t kSimpleRequestEncodedLen = 190;
-
-constexpr absl::string_view kSimpleRequestEncodedPart1 =
-    "\x10\x05:path\x08/foo/bar"
-    "\x10\x07:scheme\x04http"
-    "\x10\x07:method\x04POST";
-
-constexpr size_t kSimpleRequestEncodedPart1Len = 44;
-
-constexpr absl::string_view kSimpleRequestEncodedPart2 =
-    "\x10\x0a:authority\x09localhost"
-    "\x10\x0c"
-    "content-type\x10"
-    "application/grpc";
-
-constexpr size_t kSimpleRequestEncodedPart2Len = 53;
-
-constexpr absl::string_view kSimpleRequestEncodedPart3 =
-    "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
-    "\x10\x02te\x08trailers"
-    "\x10\x0auser-agent\x17grpc-c/0.12.0.0 (linux)";
-
-constexpr size_t kSimpleRequestEncodedPart3Len = 93;
-
-constexpr absl::string_view kSimpleRequestDecoded =
-    "user-agent: grpc-c/0.12.0.0 (linux),"
-    " :authority: localhost,"
-    " :path: /foo/bar,"
-    " grpc-accept-encoding: identity,"
-    " deflate, gzip, te: trailers,"
-    " content-type: application/grpc,"
-    " :scheme: http,"
-    " :method: POST,"
-    " GrpcStatusFromWire: true";
-
-constexpr size_t kSimpleRequestDecodedLen = 224;
-
->>>>>>> master
 TEST(HeaderAssemblerTest, TestTheTestData) {
   EXPECT_EQ(std::string(kSimpleRequestEncoded).size(),
             kSimpleRequestEncodedLen);
@@ -162,11 +109,7 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
-<<<<<<< HEAD
   HeaderAssembler assembler(stream_id, /*is_client=*/true);
-=======
-  HeaderAssembler assembler(stream_id);
->>>>>>> master
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -175,11 +118,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // If we try to read the Header before END_HEADERS is received.
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
-<<<<<<< HEAD
   HeaderAssembler assembler(stream_id, /*is_client=*/true);
-=======
-  HeaderAssembler assembler(stream_id);
->>>>>>> master
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
