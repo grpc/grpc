@@ -3409,7 +3409,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
-        "ref_counted",
+        "avl",
+        "dual_ref_counted",
         "sync",
         "unique_type_name",
         "useful",
