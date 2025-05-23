@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.73.0-dev'
+  version = '1.74.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -1570,8 +1570,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/exec_ctx.h',
-                      'src/core/lib/iomgr/executor.cc',
-                      'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/internal_errqueue.cc',
@@ -3219,7 +3217,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                               'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                               'src/core/lib/iomgr/exec_ctx.h',
-                              'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',

@@ -144,9 +144,6 @@ event_engine_endpoint_data:
 event_engine_poller:
   default: false
   description: EventEngine Poller events.
-executor:
-  default: false
-  description: gRPC's legacy thread pool ('the executor').
 fault_injection_filter:
   default: false
   description: Fault injection.

@@ -191,7 +191,7 @@
     Use promises for the http2 client transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2025/06/03
+  expiry: 2025/10/03
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
@@ -200,7 +200,7 @@
     Use promises for the http2 server transport. We have kept client and
     server transport experiments separate to help with smoother roll outs
     and also help with interop testing.
-  expiry: 2025/06/03
+  expiry: 2025/10/03
   owner: tjagtap@google.com
   test_tags: []
   allow_in_fuzzing_config: true
@@ -266,7 +266,7 @@
   test_tags: [core_end2end_test]
 - name: sleep_promise_exec_ctx_removal
   description: If set, polling the sleep promise does not rely on the ExecCtx.
-  expiry: 2025/06/01
+  expiry: 2025/09/01
   owner: akshitpatel@google.com
   test_tags: ["promise_test"]
 - name: tcp_frame_size_tuning

@@ -44,18 +44,13 @@ class OpenTelemetryPluginImpl::ServerCallTracer
         scope_config_(std::move(scope_config)) {}
 
   std::string TraceId() override {
-    // Not implemented
-    return "";
+    return OTelSpanTraceIdToString(span_.get());
   }
 
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
+  std::string SpanId() override { return OTelSpanSpanIdToString(span_.get()); }
 
   bool IsSampled() override {
-    // Not implemented
-    return false;
+    return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on

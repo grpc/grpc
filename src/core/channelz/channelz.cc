@@ -42,6 +42,7 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
@@ -54,111 +55,68 @@ namespace channelz {
 // DataSink
 //
 
-namespace {
-class ChildObjectCollector {
- public:
-  void Add(RefCountedPtr<BaseNode> node) {
-    child_objects_[node->type()].insert(node->uuid());
-  }
+void DataSinkImplementation::AddAdditionalInfo(absl::string_view name,
+                                               Json::Object additional_info) {
+  MutexLock lock(&mu_);
+  additional_info_.emplace(std::string(name), std::move(additional_info));
+}
 
-  void Add(std::vector<RefCountedPtr<BaseNode>> nodes) {
-    for (auto& node : nodes) Add(std::move(node));
+void DataSinkImplementation::AddChildObjects(
+    std::vector<RefCountedPtr<BaseNode>> child_objects) {
+  MutexLock lock(&mu_);
+  for (auto& node : child_objects) {
+    child_objects_.push_back(std::move(node));
   }
+}
 
-  // Calls AddAdditionalInfo to export the collected child objects.
-  void Finalize(DataSink& sink) {
-    if (child_objects_.empty()) return;
-    Json::Object subobjects;
-    for (const auto& [type, child_objects] : child_objects_) {
-      std::string key;
-      switch (type) {
-        case BaseNode::EntityType::kTopLevelChannel:
-        case BaseNode::EntityType::kSubchannel:
-        case BaseNode::EntityType::kListenSocket:
-        case BaseNode::EntityType::kServer:
-        case BaseNode::EntityType::kInternalChannel: {
-          LOG(ERROR)
-              << "Nodes of type " << BaseNode::EntityTypeString(type)
-              << " not supported for child object collection in DataSink";
-          continue;
-        }
-        case BaseNode::EntityType::kSocket:
-          key = "subSockets";
-          break;
-        case BaseNode::EntityType::kCall:
-          key = "calls";
-          break;
+Json::Object DataSinkImplementation::Finalize(bool timed_out) {
+  if (timed_out) {
+    AddAdditionalInfo("channelzState", {{"timedOut", Json::FromBool(true)}});
+  }
+  MutexLock lock(&mu_);
+  MergeChildObjectsIntoAdditionalInfo();
+  Json::Object out;
+  for (auto& [name, additional_info] : additional_info_) {
+    out[name] = Json::FromObject(std::move(additional_info));
+  }
+  return out;
+}
+
+void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
+  if (child_objects_.empty()) return;
+  Json::Object subobjects;
+  std::map<BaseNode::EntityType, std::set<int64_t>> child_objects_by_type;
+  for (auto& node : child_objects_) {
+    child_objects_by_type[node->type()].insert(node->uuid());
+  }
+  for (const auto& [type, child_objects] : child_objects_by_type) {
+    std::string key;
+    switch (type) {
+      case BaseNode::EntityType::kTopLevelChannel:
+      case BaseNode::EntityType::kSubchannel:
+      case BaseNode::EntityType::kListenSocket:
+      case BaseNode::EntityType::kServer:
+      case BaseNode::EntityType::kInternalChannel: {
+        LOG(ERROR) << "Nodes of type " << BaseNode::EntityTypeString(type)
+                   << " not supported for child object collection in DataSink";
+        continue;
       }
-      Json::Array uuids;
-      uuids.reserve(child_objects.size());
-      for (int64_t uuid : child_objects) {
-        uuids.push_back(Json::FromNumber(uuid));
-      }
-      subobjects[key] = Json::FromArray(std::move(uuids));
+      case BaseNode::EntityType::kSocket:
+        key = "subSockets";
+        break;
+      case BaseNode::EntityType::kCall:
+        key = "calls";
+        break;
     }
-    sink.AddAdditionalInfo("childObjects", std::move(subobjects));
-  }
-
- private:
-  std::map<BaseNode::EntityType, std::set<int64_t>> child_objects_;
-};
-
-class JsonDataSink final : public DataSink {
- public:
-  explicit JsonDataSink(Json::Object& output) : output_(output) {
-    CHECK(output_.find("additionalInfo") == output_.end());
-  }
-  ~JsonDataSink() {
-    collector_.Finalize(*this);
-    if (additional_info_ != nullptr) {
-      output_["additionalInfo"] =
-          Json::FromObject(std::move(*additional_info_));
+    Json::Array uuids;
+    uuids.reserve(child_objects.size());
+    for (int64_t uuid : child_objects) {
+      uuids.push_back(Json::FromNumber(uuid));
     }
+    subobjects[key] = Json::FromArray(std::move(uuids));
   }
-
-  void AddAdditionalInfo(absl::string_view name,
-                         Json::Object additional_info) override {
-    if (additional_info_ == nullptr) {
-      additional_info_ = std::make_unique<Json::Object>();
-    }
-    additional_info_->emplace(name,
-                              Json::FromObject(std::move(additional_info)));
-  }
-
-  void AddChildObjects(
-      std::vector<RefCountedPtr<BaseNode>> child_objects) override {
-    collector_.Add(std::move(child_objects));
-  }
-
- private:
-  Json::Object& output_;
-  std::unique_ptr<Json::Object> additional_info_;
-  ChildObjectCollector collector_;
-};
-
-class ExplicitJsonDataSink final : public DataSink {
- public:
-  void AddAdditionalInfo(absl::string_view name,
-                         Json::Object additional_info) override {
-    additional_info_.emplace(name,
-                             Json::FromObject(std::move(additional_info)));
-  }
-
-  void AddChildObjects(
-      std::vector<RefCountedPtr<BaseNode>> child_objects) override {
-    collector_.Add(std::move(child_objects));
-  }
-
-  Json::Object Finalize() {
-    collector_.Finalize(*this);
-    return std::move(additional_info_);
-  }
-
- private:
-  Json::Object additional_info_;
-  ChildObjectCollector collector_;
-};
-}  // namespace
+  additional_info_.emplace("childObjects", std::move(subobjects));
+}
 
 //
 // BaseNode
@@ -180,20 +138,25 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
-  JsonDataSink sink(json);
-  MutexLock lock(&data_sources_mu_);
-  for (DataSource* data_source : data_sources_) {
-    data_source->AddData(sink);
-  }
+  auto info = AdditionalInfo();
+  if (info.empty()) return;
+  json["additionalInfo"] = Json::FromObject(std::move(info));
 }
 
 Json::Object BaseNode::AdditionalInfo() {
-  ExplicitJsonDataSink sink;
-  MutexLock lock(&data_sources_mu_);
-  for (DataSource* data_source : data_sources_) {
-    data_source->AddData(sink);
+  auto done = std::make_shared<Notification>();
+  auto sink_impl = std::make_shared<DataSinkImplementation>();
+  {
+    MutexLock lock(&data_sources_mu_);
+    auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
+        [done]() { done->Notify(); });
+    for (DataSource* data_source : data_sources_) {
+      data_source->AddData(DataSink(sink_impl, done_notifier));
+    }
   }
-  return sink.Finalize();
+  bool completed =
+      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  return sink_impl->Finalize(!completed);
 }
 
 void BaseNode::RunZTrace(
