@@ -40,4 +40,13 @@ bool UsePollsetAlternative() {
          grpc_core::IsPollsetAlternativeEnabled();
 }
 
+// Returns true if GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER is defined.
+bool EventEngineExperimentDisabledForPython() {
+#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+  return true;
+#else
+  return false;
+#endif
+}
+
 }  // namespace grpc_event_engine::experimental

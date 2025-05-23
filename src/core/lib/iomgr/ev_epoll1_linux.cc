@@ -45,6 +45,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/block_annotate.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
@@ -333,7 +334,9 @@ static void fork_fd_list_remove_grpc_fd(grpc_fd* fd) {
 
 static grpc_fd* fd_create(int fd, const char* name, bool track_err) {
   grpc_fd* new_fd = nullptr;
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     grpc_fd* new_fd = static_cast<grpc_fd*>(gpr_malloc(sizeof(grpc_fd)));
     new_fd->fd = fd;
     return new_fd;
@@ -415,7 +418,9 @@ static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     CHECK_NE(release_fd, nullptr);
     CHECK_EQ(on_done, nullptr);
     *release_fd = fd->fd;

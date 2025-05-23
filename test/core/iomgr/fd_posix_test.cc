@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -509,7 +510,9 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(FdPosixTest, MainTest) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
                     "enabled, which replaces iomgr grpc_fds with minimal "
                     "implementations. The full iomgr API is not supported, so "

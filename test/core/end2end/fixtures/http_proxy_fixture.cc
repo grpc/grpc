@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -586,7 +587,9 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   // Resolve address.
   grpc_resolved_address first_address;
   VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
         grpc_event_engine::experimental::EventEngine::DNSResolver::
             ResolverOptions());

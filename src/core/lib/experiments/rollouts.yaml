@@ -52,6 +52,8 @@
   default: true
 - name: event_engine_dns
   default: true
+- name: event_engine_dns_non_client_channel
+  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
