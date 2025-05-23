@@ -106,6 +106,13 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
+    {
+      auto new_blackboard = MakeRefCounted<Blackboard>();
+      MutexLock lock(&listener_state_->blackboard_mu_);
+      listener_state_->connection_manager_->UpdateBlackboard(
+          listener_state_->blackboard_.get(), new_blackboard.get());
+      listener_state_->blackboard_ = std::move(new_blackboard);
+    }
     listener_state_->is_serving_ = true;
     if (listener_state_->started_) return;
     listener_state_->started_ = true;
@@ -276,6 +283,18 @@ void Server::ListenerState::RemoveLogicalConnection(
       return;
     }
   }
+}
+
+grpc_error_handle Server::ListenerState::SetupTransport(
+    Transport* transport, grpc_pollset* accepting_pollset,
+    const ChannelArgs& args) {
+  RefCountedPtr<Blackboard> blackboard;
+  {
+    MutexLock lock(&blackboard_mu_);
+    blackboard = blackboard_;
+  }
+  return server_->SetupTransport(transport, accepting_pollset, args,
+                                 blackboard.get());
 }
 
 void Server::ListenerState::DrainConnectionsLocked() {
@@ -1150,8 +1169,9 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 }
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
-Server::MakeCallDestination(const ChannelArgs& args) {
-  InterceptionChainBuilder builder(args);
+Server::MakeCallDestination(const ChannelArgs& args,
+                            const Blackboard* blackboard) {
+  InterceptionChainBuilder builder(args, blackboard);
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
@@ -1282,7 +1302,8 @@ void Server::Start() {
 
 grpc_error_handle Server::SetupTransport(Transport* transport,
                                          grpc_pollset* accepting_pollset,
-                                         const ChannelArgs& args) {
+                                         const ChannelArgs& args,
+                                         const Blackboard* blackboard) {
   GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1294,7 +1315,8 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     OrphanablePtr<ServerTransport> t(transport->server_transport());
     auto destination = MakeCallDestination(
         args.SetObject(transport).SetObject<channelz::BaseNode>(
-            transport->GetSocketNode()));
+            transport->GetSocketNode()),
+        blackboard);
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
@@ -1317,7 +1339,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL);
+        GRPC_SERVER_CHANNEL, blackboard);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }

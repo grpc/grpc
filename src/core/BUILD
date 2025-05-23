@@ -6313,6 +6313,7 @@ grpc_cc_library(
         "channel_args",
         "channel_args_preconditioning",
         "channel_fwd",
+        "down_cast",
         "grpc_server_config_selector",
         "grpc_server_config_selector_filter",
         "grpc_service_config",

@@ -45,6 +45,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -86,6 +87,9 @@ class ServerConfigFetcher
     virtual absl::StatusOr<grpc_core::ChannelArgs>
     UpdateChannelArgsForConnection(const grpc_core::ChannelArgs& args,
                                    grpc_endpoint* tcp) = 0;
+
+    virtual void UpdateBlackboard(const Blackboard* old_blackboard,
+                                  Blackboard* new_blackboard) = 0;
   };
 
   class WatcherInterface {
@@ -247,6 +251,10 @@ class Server : public ServerInterface,
     void RemoveLogicalConnection(
         ListenerInterface::LogicalConnection* connection);
 
+    grpc_error_handle SetupTransport(Transport* transport,
+                                     grpc_pollset* accepting_pollset,
+                                     const ChannelArgs& args);
+
     const MemoryQuotaRefPtr& memory_quota() const { return memory_quota_; }
 
     const ConnectionQuotaRefPtr& connection_quota() const {
@@ -314,6 +322,9 @@ class Server : public ServerInterface,
     grpc_event_engine::experimental::EventEngine::TaskHandle
         drain_grace_timer_handle_ ABSL_GUARDED_BY(mu_) =
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
+
+    Mutex blackboard_mu_;
+    RefCountedPtr<Blackboard> blackboard_ ABSL_GUARDED_BY(&blackboard_mu_);
   };
 
   explicit Server(const ChannelArgs& args);
@@ -358,7 +369,8 @@ class Server : public ServerInterface,
   // Takes ownership of a ref on resource_user from the caller.
   grpc_error_handle SetupTransport(Transport* transport,
                                    grpc_pollset* accepting_pollset,
-                                   const ChannelArgs& args)
+                                   const ChannelArgs& args,
+                                   const Blackboard* blackboard = nullptr)
       ABSL_LOCKS_EXCLUDED(mu_global_);
 
   void RegisterCompletionQueue(grpc_completion_queue* cq);
@@ -644,7 +656,7 @@ class Server : public ServerInterface,
                                             ClientMetadataHandle md);
   auto MatchAndPublishCall(CallHandler call_handler);
   absl::StatusOr<RefCountedPtr<UnstartedCallDestination>> MakeCallDestination(
-      const ChannelArgs& args);
+      const ChannelArgs& args, const Blackboard* blackboard);
 
   ChannelArgs const channel_args_;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
