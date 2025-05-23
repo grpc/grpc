@@ -26,8 +26,8 @@ cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
 set(PACKAGE_VERSION       "1.73.0-dev")
-set(gRPC_CORE_VERSION     "47.0.0")
-set(gRPC_CORE_SOVERSION   "47")
+set(gRPC_CORE_VERSION     "48.0.0")
+set(gRPC_CORE_SOVERSION   "48")
 set(gRPC_CPP_VERSION      "1.73.0-dev")
 set(gRPC_CPP_SOVERSION    "1.73")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
@@ -2711,7 +2711,6 @@ add_library(grpc
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -3485,7 +3484,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -5841,7 +5839,6 @@ add_library(grpc_authorization_provider
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -9175,7 +9172,6 @@ add_executable(call_filters_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -9506,7 +9502,6 @@ add_executable(call_utils_test
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -9744,7 +9739,6 @@ add_executable(cancel_callback_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -10810,7 +10804,6 @@ add_executable(chunked_vector_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -15079,7 +15072,6 @@ add_executable(exec_ctx_wakeup_scheduler_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/slice/percent_encoding.cc
@@ -15558,7 +15550,6 @@ add_executable(filter_fusion_test
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -15878,7 +15869,6 @@ add_executable(flow_control_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/memory_quota.cc
@@ -15957,7 +15947,6 @@ add_executable(for_each_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -18449,7 +18438,6 @@ add_executable(header_assembler_test
   src/core/lib/iomgr/event_engine_shims/endpoint.cc
   src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/internal_errqueue.cc
@@ -19874,7 +19862,6 @@ add_executable(interceptor_list_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -20897,7 +20884,6 @@ add_executable(map_pipe_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -21254,7 +21240,6 @@ add_executable(message_assembler_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/resource_quota/arena.cc
@@ -23158,7 +23143,6 @@ add_executable(periodic_update_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/slice/percent_encoding.cc
@@ -25533,7 +25517,6 @@ add_executable(request_buffer_test
   src/core/lib/iomgr/combiner.cc
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
   src/core/lib/iomgr/iomgr_internal.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc

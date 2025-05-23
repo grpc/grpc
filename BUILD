@@ -217,7 +217,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "gradient"  # @unused
 
-core_version = "47.0.0"  # @unused
+core_version = "48.0.0"  # @unused
 
 version = "1.73.0-dev"  # @unused
 
@@ -3215,13 +3215,11 @@ grpc_cc_library(
     srcs = [
         "//src/core:lib/iomgr/combiner.cc",
         "//src/core:lib/iomgr/exec_ctx.cc",
-        "//src/core:lib/iomgr/executor.cc",
         "//src/core:lib/iomgr/iomgr_internal.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/combiner.h",
         "//src/core:lib/iomgr/exec_ctx.h",
-        "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
     external_deps = [
