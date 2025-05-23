@@ -563,7 +563,7 @@ except ImportError:
         sys.stderr.write(
             "We could not find Cython. Setup may take 10-20 minutes.\n"
         )
-        SETUP_REQUIRES += ("cython>=3.0.0",)
+        SETUP_REQUIRES += ("cython==3.1.1",)
 
 COMMAND_CLASS = {
     "doc": commands.SphinxDocumentation,

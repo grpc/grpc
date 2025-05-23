@@ -22,7 +22,7 @@ set PATH=C:\msys64\mingw%2\bin;C:\tools\msys64\mingw%2\bin;%PATH%
 python -m pip install --upgrade pip six
 @rem Ping to a single version to make sure we're building the same artifacts
 python -m pip install setuptools==69.5.1 wheel==0.43.0
-python -m pip install --upgrade "cython>=3.0.0"
+python -m pip install --upgrade "cython==3.1.1"
 python -m pip install -rrequirements.txt --user
 
 @rem set GRPC_PYTHON_OVERRIDE_CYGWIN_DETECTION_FOR_27=1
