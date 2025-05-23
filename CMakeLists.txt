@@ -104,8 +104,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_algorithm_container
   absl_any_invocable
   absl_atomic_hook
-  absl_bad_optional_access
-  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bind_front
@@ -167,11 +165,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_container_defaults
   absl_hash_function_defaults
   absl_hash_policy_traits
+  absl_hashtable_control_bytes
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
   absl_leak_check
@@ -211,6 +211,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_bit_gen_ref
   absl_random_distributions
   absl_random_internal_distribution_caller
+  absl_random_internal_entropy_pool
   absl_random_internal_fast_uniform_bits
   absl_random_internal_fastmath
   absl_random_internal_generate_real
@@ -218,7 +219,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_nonsecure_base
   absl_random_internal_pcg_engine
   absl_random_internal_platform
-  absl_random_internal_pool_urbg
   absl_random_internal_randen
   absl_random_internal_randen_engine
   absl_random_internal_randen_hwaes
@@ -234,6 +234,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_seed_sequences
   absl_raw_hash_map
   absl_raw_hash_set
+  absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
   absl_span
@@ -259,6 +260,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
+  absl_weakly_mixed_integer
   absl_meta
 )
 
