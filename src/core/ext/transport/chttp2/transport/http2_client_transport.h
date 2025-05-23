@@ -322,7 +322,8 @@ class Http2ClientTransport final : public ClientTransport {
   // members.
   // Duration between two consecutive keepalive pings
   const Duration keepalive_time_;
-  // Duration to wait for a keepalive ping ack before triggering timeout. This only takes effect if the assigned value is less than the ping timeout.
+  // Duration to wait for a keepalive ping ack before triggering timeout. This
+  // only takes effect if the assigned value is less than the ping timeout.
   const Duration keepalive_timeout_;
   // Duration to wait for ping ack before triggering timeout
   const Duration ping_timeout_;

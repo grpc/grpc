@@ -125,6 +125,7 @@ class KeepaliveManager {
   const Duration keepalive_time_;
   bool data_received_in_last_cycle_ = false;
   bool keep_alive_timeout_triggered_ = false;
+  bool keep_alive_spawned_ = false;
   Waker waker_;
 };
 
