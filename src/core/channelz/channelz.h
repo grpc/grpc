@@ -247,7 +247,7 @@ class DataSink {
  public:
   DataSink(std::shared_ptr<DataSinkImplementation> impl,
            std::shared_ptr<DataSinkCompletionNotification> notification)
-      : impl_(std::move(impl)), notification_(std::move(notification)) {}
+      : impl_(impl), notification_(std::move(notification)) {}
 
   void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
     auto impl = impl_.lock();
