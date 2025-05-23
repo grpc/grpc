@@ -18,16 +18,37 @@
 
 namespace grpc_core {
 
-RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
-                                                 const std::string& key) const {
-  auto it = map_.find(std::pair(type, key));
-  if (it == map_.end()) return nullptr;
-  return it->second;
+Blackboard::Entry::~Entry() {
+  if (blackboard_ == nullptr) return;
+  MutexLock lock(&blackboard_->mu_);
+  blackboard_->map_.erase(it_);
 }
 
-void Blackboard::Set(UniqueTypeName type, const std::string& key,
-                     RefCountedPtr<Entry> entry) {
-  map_[std::pair(type, key)] = std::move(entry);
+RefCountedPtr<Blackboard::Entry> Blackboard::Get(UniqueTypeName type,
+                                                 const std::string& key) const {
+  MutexLock lock(&mu_);
+  auto it = map_.find(std::pair(type, key));
+  if (it != map_.end() && it->second != nullptr) {
+    return it->second->RefIfNonZero();
+  }
+  return nullptr;
+}
+
+RefCountedPtr<Blackboard::Entry> Blackboard::Set(UniqueTypeName type,
+                                                 const std::string& key,
+                                                 RefCountedPtr<Entry> entry) {
+  MutexLock lock(&mu_);
+  auto [it, inserted] =
+      map_.emplace(std::piecewise_construct, std::forward_as_tuple(type, key),
+                   std::forward_as_tuple(entry.get()));
+  if (!inserted) {
+    auto existing_entry = it->second->RefIfNonZero();
+    if (existing_entry != nullptr) return existing_entry;
+    it->second = entry.get();
+  }
+  entry->blackboard_ = Ref();
+  entry->it_ = it;
+  return entry;
 }
 
 }  // namespace grpc_core

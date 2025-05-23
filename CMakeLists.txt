@@ -8919,7 +8919,6 @@ target_link_libraries(blackboard_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::config
-  absl::flat_hash_map
   absl::function_ref
   absl::hash
   absl::type_traits

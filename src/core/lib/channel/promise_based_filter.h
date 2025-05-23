@@ -1979,11 +1979,11 @@ struct ChannelFilterWithFlagsMethods {
   static absl::Status InitChannelElem(grpc_channel_element* elem,
                                       grpc_channel_element_args* args) {
     CHECK(args->is_last == ((kFlags & kFilterIsLast) != 0));
-    auto status = F::Create(
-        args->channel_args,
-        ChannelFilter::Args(args->channel_stack, elem,
-                            grpc_channel_stack_filter_instance_number,
-                            args->old_blackboard, args->new_blackboard));
+    auto status =
+        F::Create(args->channel_args,
+                  ChannelFilter::Args(args->channel_stack, elem,
+                                      grpc_channel_stack_filter_instance_number,
+                                      args->blackboard));
     if (!status.ok()) {
       new (elem->channel_data) F*(nullptr);
       return absl_status_to_grpc_error(status.status());

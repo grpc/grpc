@@ -17,15 +17,16 @@
 #ifndef GRPC_SRC_CORE_FILTER_BLACKBOARD_H
 #define GRPC_SRC_CORE_FILTER_BLACKBOARD_H
 
+#include <map>
 #include <string>
 #include <utility>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
 #include "src/core/resolver/endpoint_addresses.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/useful.h"
 
@@ -38,10 +39,26 @@ namespace grpc_core {
 // type (e.g., if there are two instantiations of the same filter).
 class Blackboard : public RefCounted<Blackboard> {
  public:
+  class Entry;
+
+ private:
+  // The map type needs to not invalidate iterators upon insertion.
+  using MapType = std::map<std::pair<UniqueTypeName, std::string>, Entry*>;
+
+ public:
   // All entries must derive from this type.
   // They must also have a static method with the following signature:
   //  static UniqueTypeName Type();
-  class Entry : public RefCounted<Entry> {};
+  class Entry : public RefCounted<Entry> {
+   public:
+    ~Entry() override;
+
+   private:
+    friend class Blackboard;
+
+    RefCountedPtr<Blackboard> blackboard_;
+    MapType::iterator it_;
+  };
 
   // Returns an entry for a particular type and name, or null if not present.
   template <typename T>
@@ -49,20 +66,21 @@ class Blackboard : public RefCounted<Blackboard> {
     return Get(T::Type(), key).template TakeAsSubclass<T>();
   }
 
-  // Sets an entry for a particular type and name.
+  // Sets an entry for a particular type and name if it doesn't already
+  // exist.  Returns the actual entry, which may not be the one passed in
+  // if the entry already exists.
   template <typename T>
-  void Set(const std::string& key, RefCountedPtr<T> entry) {
-    Set(T::Type(), key, std::move(entry));
+  RefCountedPtr<T> Set(const std::string& key, RefCountedPtr<T> entry) {
+    return Set(T::Type(), key, std::move(entry)).template TakeAsSubclass<T>();
   }
 
  private:
   RefCountedPtr<Entry> Get(UniqueTypeName type, const std::string& key) const;
-  void Set(UniqueTypeName type, const std::string& key,
-           RefCountedPtr<Entry> entry);
+  RefCountedPtr<Entry> Set(UniqueTypeName type, const std::string& key,
+                           RefCountedPtr<Entry> entry);
 
-  absl::flat_hash_map<std::pair<UniqueTypeName, std::string>,
-                      RefCountedPtr<Entry>>
-      map_;
+  mutable Mutex mu_;
+  MapType map_ ABSL_GUARDED_BY(&mu_);
 };
 
 }  // namespace grpc_core

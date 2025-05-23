@@ -1278,9 +1278,8 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   // Modify channel args.
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
-  auto new_blackboard = MakeRefCounted<Blackboard>();
-  InterceptionChainBuilder builder(new_args, blackboard_.get(),
-                                   new_blackboard.get());
+  if (blackboard_ == nullptr) blackboard_ = MakeRefCounted<Blackboard>();
+  InterceptionChainBuilder builder(new_args, blackboard_.get());
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
@@ -1298,7 +1297,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   }
   // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
-  blackboard_ = std::move(new_blackboard);
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(

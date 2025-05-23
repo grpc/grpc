@@ -75,7 +75,7 @@ ChannelStackBuilderImpl::Build() {
         gpr_free(stk);
       },
       channel_stack, stack.data(), stack.size(), channel_args(), name(),
-      channel_stack, old_blackboard_, new_blackboard_);
+      channel_stack, blackboard_);
 
   if (!error.ok()) {
     grpc_channel_stack_destroy(channel_stack);
