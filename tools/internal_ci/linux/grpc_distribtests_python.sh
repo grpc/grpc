@@ -72,7 +72,7 @@ cp -r artifacts/* input_artifacts/ || true
 # We're using alpine as tag in distribtest targets for musllinux_1_1 artifacts, so exclude filters must use this tag 
 DISTRIB_TASK_RUNNER_EXTRA_FILTERS="${TASK_RUNNER_EXTRA_FILTERS//musllinux_1_1/alpine}"
 
-tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
+tools/run_tests/task_runner.py -f distribtest linux python ${DISTRIB_TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
 # This step checks if any of the artifacts exceeds a per-file size limit.
 tools/internal_ci/helper_scripts/check_python_artifacts_size.sh
