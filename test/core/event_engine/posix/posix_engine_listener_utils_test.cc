@@ -72,11 +72,13 @@ class TestListenerSocketsContainer : public ListenerSocketsContainer {
 }  // namespace
 
 TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
+  EventEnginePosixInterface posix_interface;
   TestListenerSocketsContainer listener_sockets;
   int port = grpc_pick_unused_port_or_die();
   ChannelArgsEndpointConfig config;
   auto result = ListenerContainerAddWildcardAddresses(
-      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+      &posix_interface, listener_sockets, TcpOptionsFromEndpointConfig(config),
+      port);
   EXPECT_TRUE(result.ok());
   EXPECT_GT(*result, 0);
   port = *result;
@@ -94,7 +96,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddWildcardAddressesTest) {
                 absl::StrCat("0.0.0.0:", std::to_string(port)));
     }
     EXPECT_FALSE(IsSockAddrLinkLocal(&((*socket).addr)));
-    close(socket->sock.Fd());
+    posix_interface.Close(socket->sock);
   }
 }
 
@@ -186,6 +188,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerIpv6LinkLocalTest) {
 
 #ifdef GRPC_HAVE_IFADDRS
 TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
+  EventEnginePosixInterface posix_interface;
   TestListenerSocketsContainer listener_sockets;
   int port = grpc_pick_unused_port_or_die();
   ChannelArgsEndpointConfig config;
@@ -203,7 +206,8 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
   }
   freeifaddrs(ifa);
   auto result = ListenerContainerAddAllLocalAddresses(
-      listener_sockets, TcpOptionsFromEndpointConfig(config), port);
+      &posix_interface, listener_sockets, TcpOptionsFromEndpointConfig(config),
+      port);
   if (num_ifaddrs == 0 || !result.ok()) {
     // Its possible that the machine may not have any Ipv4/Ipv6 interfaces
     // configured for listening. In that case, don't fail test.
@@ -224,7 +228,7 @@ TEST(PosixEngineListenerUtils, ListenerContainerAddAllLocalAddressesTest) {
                 (*socket).addr.address()->sa_family == AF_INET);
     EXPECT_EQ(ResolvedAddressGetPort((*socket).addr), port);
     EXPECT_FALSE(IsSockAddrLinkLocal(&((*socket).addr)));
-    close(socket->sock.Fd());
+    posix_interface.Close(socket->sock);
   }
 }
 #endif  // GRPC_HAVE_IFADDRS

@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "absl/status/statusor.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -28,7 +29,8 @@ class WakeupFd;
 bool SupportsWakeupFd();
 
 // Create and return an initialized WakeupFd instance if supported.
-absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd();
+absl::StatusOr<std::unique_ptr<WakeupFd>> CreateWakeupFd(
+    EventEnginePosixInterface* posix_interface);
 
 }  // namespace grpc_event_engine::experimental
 
