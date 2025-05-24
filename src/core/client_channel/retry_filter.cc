@@ -93,37 +93,26 @@ namespace grpc_core {
 // RetryFilter
 //
 
-RetryFilter::RetryFilter(const ChannelArgs& args, grpc_error_handle* error)
-    : client_channel_(args.GetObject<ClientChannelFilter>()),
-      event_engine_(args.GetObject<EventEngine>()),
-      per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
+RetryFilter::RetryFilter(const grpc_channel_element_args& args,
+                         grpc_error_handle* error)
+    : client_channel_(args.channel_args.GetObject<ClientChannelFilter>()),
+      event_engine_(args.channel_args.GetObject<EventEngine>()),
+      per_rpc_retry_buffer_size_(
+          GetMaxPerRpcRetryBufferSize(args.channel_args)),
       service_config_parser_index_(
           internal::RetryServiceConfigParser::ParserIndex()) {
   // Get retry throttling parameters from service config.
-  auto* service_config = args.GetObject<ServiceConfig>();
+  auto* service_config = args.channel_args.GetObject<ServiceConfig>();
   if (service_config == nullptr) return;
   const auto* config = static_cast<const RetryGlobalConfig*>(
       service_config->GetGlobalParsedConfig(
           RetryServiceConfigParser::ParserIndex()));
   if (config == nullptr) return;
-  // Get server name from target URI.
-  auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
-    *error = GRPC_ERROR_CREATE(
-        "server URI channel arg missing or wrong type in client channel "
-        "filter");
-    return;
-  }
-  absl::StatusOr<URI> uri = URI::Parse(*server_uri);
-  if (!uri.ok() || uri->path().empty()) {
-    *error = GRPC_ERROR_CREATE("could not extract server name from target URI");
-    return;
-  }
-  std::string server_name(absl::StripPrefix(uri->path(), "/"));
-  // Get throttling config for server_name.
-  retry_throttle_data_ =
-      internal::ServerRetryThrottleMap::Get()->GetDataForServer(
-          server_name, config->max_milli_tokens(), config->milli_token_ratio());
+  // Get throttle state.
+  retry_throttle_data_ = internal::ServerRetryThrottleData::Create(
+      config->max_milli_tokens(), config->milli_token_ratio(),
+      args.old_blackboard->Get<internal::ServerRetryThrottleData>(""));
+  args.new_blackboard->Set("", retry_throttle_data_);
 }
 
 const RetryMethodConfig* RetryFilter::GetRetryPolicy(Arena* arena) {

@@ -131,8 +131,9 @@ std::optional<Duration> RetryState::ShouldRetry(
   return next_attempt_timeout;
 }
 
-absl::StatusOr<RefCountedPtr<internal::ServerRetryThrottleData>>
-ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
+RefCountedPtr<internal::ServerRetryThrottleData>
+ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args,
+                                       const FilterArgs& filter_args) {
   // Get retry throttling parameters from service config.
   auto* service_config = args.GetObject<ServiceConfig>();
   if (service_config == nullptr) return nullptr;
@@ -140,21 +141,13 @@ ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
       service_config->GetGlobalParsedConfig(
           internal::RetryServiceConfigParser::ParserIndex()));
   if (config == nullptr) return nullptr;
-  // Get server name from target URI.
-  auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
-    return GRPC_ERROR_CREATE(
-        "server URI channel arg missing or wrong type in client channel "
-        "filter");
-  }
-  absl::StatusOr<URI> uri = URI::Parse(*server_uri);
-  if (!uri.ok() || uri->path().empty()) {
-    return GRPC_ERROR_CREATE("could not extract server name from target URI");
-  }
-  std::string server_name(absl::StripPrefix(uri->path(), "/"));
-  // Get throttling config for server_name.
-  return internal::ServerRetryThrottleMap::Get()->GetDataForServer(
-      server_name, config->max_milli_tokens(), config->milli_token_ratio());
+  // Get throttle state.
+  return filter_args.GetOrCreateState<internal::ServerRetryThrottleData>(
+      "", [&](RefCountedPtr<internal::ServerRetryThrottleData> existing) {
+        return internal::ServerRetryThrottleData::Create(
+            config->max_milli_tokens(), config->milli_token_ratio(),
+            std::move(existing));
+      });
 }
 
 }  // namespace retry_detail
@@ -163,14 +156,10 @@ ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
 // RetryInterceptor
 
 absl::StatusOr<RefCountedPtr<RetryInterceptor>> RetryInterceptor::Create(
-    const ChannelArgs& args, const FilterArgs&) {
+    const ChannelArgs& args, const FilterArgs& filter_args) {
   auto retry_throttle_data =
-      retry_detail::ServerRetryThrottleDataFromChannelArgs(args);
-  if (!retry_throttle_data.ok()) {
-    return retry_throttle_data.status();
-  }
-  return MakeRefCounted<RetryInterceptor>(args,
-                                          std::move(*retry_throttle_data));
+      retry_detail::ServerRetryThrottleDataFromChannelArgs(args, filter_args);
+  return MakeRefCounted<RetryInterceptor>(args, std::move(retry_throttle_data));
 }
 
 RetryInterceptor::RetryInterceptor(

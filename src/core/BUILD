@@ -3635,6 +3635,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/base:core_headers"],
     deps = [
+        "blackboard",
         "ref_counted",
         "sync",
         "useful",
