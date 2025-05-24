@@ -95,7 +95,11 @@ OpenTelemetryPluginImpl::ServerCallTracer::ServerCallTracer(
       arena_(arena),
       scope_config_(std::move(scope_config)) {}
 
-OpenTelemetryPluginImpl::ServerCallTracer::~ServerCallTracer() { span_->End(); }
+OpenTelemetryPluginImpl::ServerCallTracer::~ServerCallTracer() {
+  if (span_ != nullptr) {
+    span_->End();
+  }
+}
 
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
