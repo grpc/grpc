@@ -106,6 +106,8 @@ class HeaderAssembler {
 
     ++num_headers_received_;
     if (GPR_UNLIKELY(num_headers_received_ > max_headers_)) {
+      Cleanup();
+      LOG(ERROR) << "Connection Error: Too many header frames sent by peer";
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kInternalError,
           std::string("Too many header frames sent by peer"));
