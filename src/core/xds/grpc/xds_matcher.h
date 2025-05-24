@@ -30,7 +30,6 @@ class Action {
  public:
   virtual ~Action() = default;
 };
-
 using ActionPtr = std::unique_ptr<Action>;
 using ActionCb = std::function<ActionPtr()>;
 
@@ -67,9 +66,9 @@ class AndMatcher : public Predicate<DataType> {
       : matcherList_(std::move(matcherList)) {}
   bool match(const DataType& data) {
     for (const auto& matcher : matcherList_) {
-      auto result = matcher->match(data);
-      if (!result.result.has_value() || !result.result.value()) {
-        return result;
+      bool result = matcher->match(data);
+      if (!result) {
+        return false;
       }
     }
     return true;
@@ -86,9 +85,9 @@ class AnyMatcher : public Predicate<DataType> {
       : matcherList_(std::move(matcherList)) {}
   bool match(const DataType& data) {
     for (const auto& matcher : matcherList_) {
-      auto result = matcher->match(data);
-      if (result.result.has_value() && result.result.value()) {
-        return result;
+      bool result = matcher->match(data);
+      if (result) {
+        return true;
       }
     }
     return false;
@@ -148,23 +147,46 @@ class MatcherList {
   }
 
   MatchResult match(const DataType& data) {
-    for (auto matcher : fieldMatchers_) {
-      const auto m_result = matcher.first->match(data);
-      if (m_result.result.has_value() && !m_result.result.value()) {
-        matcher.second.actionCb();
-        if (!matcher.second.keepMatching) {
+    for (auto& matcher_pair : fieldMatchers_) {
+      const bool predicate_matched = matcher_pair.first->match(data);
+      if (predicate_matched) {
+        matcher_pair.second.actionCb_();
+        if (!matcher_pair.second.keepMatching) {
           return true;
         }
       }
     }
     if (onNoMatch_.has_value()) {
-      onNoMatch_->actionCb();
+      onNoMatch_->actionCb_();
     }
     return false;
   }
   private:
    std::vector<std::pair<PredicatePtr<DataType>, OnMatch<DataType>>> fieldMatchers_;
    std::optional<OnMatch<DataType>> onNoMatch_;
+};
+
+class HttpData : public DataInput<MatchDataType> {
+  public:
+  explicit HttpData(const std::string& data) : httpData(data) {}
+  std::optional<MatchDataType> GetInput(const std::string& data) override {
+    return httpData;
+  }
+  private:
+  std::string httpData;
+};
+
+// Concrete class for InputMatcher
+class ExactMatcher : public InputMatcher {
+public:
+    explicit ExactMatcher(std::string exact_value) : exact_value_(std::move(exact_value)) {}
+
+    bool match(const MatchDataType& input) override {
+        return input == exact_value_;
+    }
+
+private:
+    std::string exact_value_;
 };
 
 }  // namespace matcher
