@@ -92,7 +92,7 @@ GPRAPI void grpc_absl_log_str(const char* file, int line,
   }
 }
 
-void gpr_log_verbosity_init(void) {
+void gpr_log_verbosity_init_internal(const char* path) {
 #ifndef GRPC_VERBOSITY_MACRO
   // SetMinLogLevel sets the value for the entire binary, not just gRPC.
   // This setting will change things for other libraries/code that is unrelated
@@ -103,20 +103,20 @@ void gpr_log_verbosity_init(void) {
         << "Log level INFO is not suitable for production. Prefer WARNING or "
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
-    absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel(path, -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
     LOG_FIRST_N(WARNING, 1)
         << "Log level DEBUG is not suitable for production. Prefer WARNING or "
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
-    absl::SetVLogLevel("*grpc*/*", 2);
+    absl::SetVLogLevel(path, 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
-    absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel(path, -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
-    absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel(path, -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   } else if (verbosity.empty()) {
     // Do not alter absl settings if GRPC_VERBOSITY flag is not set.
@@ -124,4 +124,12 @@ void gpr_log_verbosity_init(void) {
     LOG(ERROR) << "Unknown log verbosity: " << verbosity;
   }
 #endif  // GRPC_VERBOSITY_MACRO
+}
+
+void gpr_log_verbosity_init(void) {
+  gpr_log_verbosity_init_internal("*grpc*/*");
+}
+
+void gpr_log_verbosity_init_for_path(const char* path) {
+  gpr_log_verbosity_init_internal(path);
 }

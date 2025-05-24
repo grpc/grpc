@@ -747,6 +747,9 @@ extern grpc_absl_log_str_type grpc_absl_log_str_import;
 typedef void(*gpr_log_verbosity_init_type)(void);
 extern gpr_log_verbosity_init_type gpr_log_verbosity_init_import;
 #define gpr_log_verbosity_init gpr_log_verbosity_init_import
+typedef void(*gpr_log_verbosity_init_for_path_type)(const char* path);
+extern gpr_log_verbosity_init_for_path_type gpr_log_verbosity_init_for_path_import;
+#define gpr_log_verbosity_init_for_path gpr_log_verbosity_init_for_path_import
 typedef char*(*gpr_format_message_type)(int messageid);
 extern gpr_format_message_type gpr_format_message_import;
 #define gpr_format_message gpr_format_message_import
