@@ -78,7 +78,7 @@ void Http2ClientTransport::Orphan() {
 
 void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
@@ -174,7 +174,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Promise { "
                           "last_stream_id="
                        << frame.last_stream_id
@@ -213,7 +213,6 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG
@@ -281,7 +280,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Read the payload of the frame.
       [this](Http2FrameHeader header) {
-        // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
         current_frame_header_ = header;
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
@@ -502,7 +500,7 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                       const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  // TODO(tjagtap) : [PH2][P0] Validate implementation.
+  // TODO(tjagtap) : [PH2][P1] Validate implementation.
 
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
   // function is always called under the stream_id_mutex_. The issue is the

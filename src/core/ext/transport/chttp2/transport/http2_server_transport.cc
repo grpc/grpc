@@ -90,7 +90,7 @@ void Http2ServerTransport::Orphan() {
 
 void Http2ServerTransport::AbortWithError() {
   HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
   HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError End";
 }
 
@@ -167,7 +167,7 @@ Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
@@ -189,7 +189,6 @@ Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
 }
 
 Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
-  // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_SERVER_DLOG << "Http2ServerTransport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_SERVER_DLOG
@@ -254,7 +253,6 @@ auto Http2ServerTransport::ReadAndProcessOneFrame() {
       },
       // Read the payload of the frame.
       [this](Http2FrameHeader header) {
-        // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
         HTTP2_SERVER_DLOG << "Http2ServerTransport ReadAndProcessOneFrame Read";
         current_frame_header_ = header;
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
