@@ -187,8 +187,9 @@ class LockBasedMpscSender {
       if (batch == 0) {
         batch = center->template Send<kAwaitReceipt>(std::move(t));
         DCHECK_NE(batch, 0u);
-        if (batch == lock_based_mpscpipe_detail::Center<T>::kClosedBatch)
+        if (batch == lock_based_mpscpipe_detail::Center<T>::kClosedBatch) {
           return Failure{};
+        }
       }
       auto p = center->PollReceiveBatch(batch);
       if (p.pending()) return Pending{};
