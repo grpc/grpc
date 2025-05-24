@@ -241,7 +241,7 @@ void TcpFrameTransport::Orphan() {
   Unref();
 }
 
-void TcpFrameTransport::AddData(channelz::DataSink& sink) {
+void TcpFrameTransport::AddData(channelz::DataSink sink) {
   Json::Object options;
   options["encode_alignment"] = Json::FromNumber(options_.encode_alignment);
   options["decode_alignment"] = Json::FromNumber(options_.decode_alignment);

@@ -156,6 +156,13 @@ class Map {
     return Pending();
   }
 
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<Fn>()));
+    return Json::FromObject(std::move(obj));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +200,13 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<FusedFn>()));
+    return Json::FromObject(std::move(obj));
   }
 
  private:

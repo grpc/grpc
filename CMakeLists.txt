@@ -25,11 +25,11 @@
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.73.0-dev")
+set(PACKAGE_VERSION       "1.74.0-dev")
 set(gRPC_CORE_VERSION     "48.0.0")
 set(gRPC_CORE_SOVERSION   "48")
-set(gRPC_CPP_VERSION      "1.73.0-dev")
-set(gRPC_CPP_SOVERSION    "1.73")
+set(gRPC_CPP_VERSION      "1.74.0-dev")
+set(gRPC_CPP_SOVERSION    "1.74")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -19018,6 +19018,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     src/core/ext/transport/chttp2/transport/http2_client_transport.cc
     src/core/ext/transport/chttp2/transport/http2_transport.cc
+    src/core/ext/transport/chttp2/transport/keepalive.cc
     src/core/ext/transport/chttp2/transport/ping_promise.cc
     src/core/lib/promise/wait_set.cc
     src/core/lib/transport/promise_endpoint.cc
@@ -25134,6 +25135,14 @@ if(gRPC_BUILD_TESTS)
 add_executable(race_test
   test/core/promise/race_test.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(race_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(race_test PUBLIC cxx_std_17)
 target_include_directories(race_test
   PRIVATE
@@ -25157,8 +25166,7 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::check
-  absl::str_format
+  gpr
 )
 
 

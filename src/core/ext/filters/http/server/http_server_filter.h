@@ -48,7 +48,7 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
         allow_put_requests_(allow_put_requests) {}
   ~HttpServerFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     Json::Object object;
     object["surfaceUserAgent"] = Json::FromBool(surface_user_agent_);
     object["allowPutRequests"] = Json::FromBool(allow_put_requests_);

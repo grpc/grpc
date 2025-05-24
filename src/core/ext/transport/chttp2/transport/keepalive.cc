@@ -28,10 +28,10 @@ namespace grpc_core {
 namespace http2 {
 KeepaliveManager::KeepaliveManager(
     std::unique_ptr<KeepAliveInterface> keep_alive_interface,
-    Duration keepalive_timeout, Duration keepalive_interval)
+    Duration keepalive_timeout, const Duration keepalive_time)
     : keep_alive_interface_(std::move(keep_alive_interface)),
       keepalive_timeout_(keepalive_timeout),
-      keepalive_interval_(keepalive_interval) {}
+      keepalive_time_(keepalive_time) {}
 
 auto KeepaliveManager::WaitForKeepAliveTimeout() {
   return AssertResultType<absl::Status>(
@@ -64,7 +64,7 @@ auto KeepaliveManager::TimeoutAndSendPing() {
                              SendPingAndWaitForAck());
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
-  LOG(INFO) << "KeepaliveManager::MaybeSendKeepAlivePing";
+  KEEPALIVE_LOG << "KeepaliveManager::MaybeSendKeepAlivePing";
   return AssertResultType<absl::Status>(
       TrySeq(If(
                  NeedToSendKeepAlivePing(),
@@ -82,14 +82,20 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
 }
 
 void KeepaliveManager::Spawn(Party* party) {
+  if (!IsKeepAliveNeeded()) {
+    KEEPALIVE_LOG << "Not spawning keepalive loop.";
+    return;
+  }
+  keep_alive_spawned_ = true;
+
   party->Spawn("KeepAliveLoop", Loop([this]() {
                  return TrySeq(
-                     Sleep(keepalive_interval_),
+                     Sleep(keepalive_time_),
                      [this]() { return MaybeSendKeepAlivePing(); },
                      []() -> LoopCtl<absl::Status> { return Continue(); });
                }),
                [](auto status) {
-                 LOG(INFO) << "KeepAlive end with status: " << status;
+                 KEEPALIVE_LOG << "KeepAlive end with status: " << status;
                });
 }
 }  // namespace http2
