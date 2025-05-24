@@ -143,7 +143,7 @@ task 'gem:native', [:plat] do |t, args|
   verbose = ENV['V'] || '0'
 
   grpc_config = ENV['GRPC_CONFIG'] || 'opt'
-  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1', '3.0']
+  target_ruby_minor_versions = ['3.4', '3.3', '3.2', '3.1']
   selected_plat = "#{args[:plat]}"
 
   # use env variable to set artifact build paralellism

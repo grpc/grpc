@@ -32,12 +32,12 @@ RUN curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
 # Use "--insecure" to avoid cert expiration error
 RUN curl -sSL --insecure https://get.rvm.io | bash -s stable
 
-# Install Ruby 3.0
-RUN ulimit -n 1024 && /bin/bash -l -c "rvm install ruby-3.0.5 --32"
-RUN /bin/bash -l -c "rvm use --default ruby-3.0.5"
+# Install Ruby 3.1
+RUN ulimit -n 1024 && /bin/bash -l -c "rvm install ruby-3.1.3 --32"
+RUN /bin/bash -l -c "rvm use --default ruby-3.1.3"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
-RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.0.5' >> ~/.bashrc"
+RUN /bin/bash -l -c "echo 'rvm --default use ruby-3.1.3' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler"
 
 # Create default work directory.
