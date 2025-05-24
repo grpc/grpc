@@ -53,7 +53,6 @@ constexpr absl::string_view kSimpleRequestEncoded =
 
 constexpr size_t kSimpleRequestEncodedLen = 190;
 
-//  partial headers: generated from simple_request.headers
 constexpr absl::string_view kSimpleRequestEncodedPart1 =
     "\x10\x05:path\x08/foo/bar"
     "\x10\x07:scheme\x04http"
@@ -61,7 +60,6 @@ constexpr absl::string_view kSimpleRequestEncodedPart1 =
 
 constexpr size_t kSimpleRequestEncodedPart1Len = 44;
 
-//  partial headers: generated from simple_request.headers
 constexpr absl::string_view kSimpleRequestEncodedPart2 =
     "\x10\x0a:authority\x09localhost"
     "\x10\x0c"
@@ -70,7 +68,6 @@ constexpr absl::string_view kSimpleRequestEncodedPart2 =
 
 constexpr size_t kSimpleRequestEncodedPart2Len = 53;
 
-//  partial headers: generated from simple_request.headers
 constexpr absl::string_view kSimpleRequestEncodedPart3 =
     "\x10\x14grpc-accept-encoding\x15identity,deflate,gzip"
     "\x10\x02te\x08trailers"
