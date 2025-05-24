@@ -140,7 +140,7 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
-  // Call this for each incoming HTTP2 Header frame.
+  // Call this for each incoming HTTP2 Continuation frame.
   // The payload of the Http2ContinuationFrame will be cleared in this function.
   Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
     // Validate current state
