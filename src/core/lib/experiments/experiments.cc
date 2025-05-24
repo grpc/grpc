@@ -38,6 +38,12 @@ const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -49,19 +55,6 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
@@ -73,6 +66,13 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
+const char* const description_event_engine_listener =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
+const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -201,6 +201,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -209,17 +212,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+    {"event_engine_listener", description_event_engine_listener,
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -319,6 +319,12 @@ const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -330,19 +336,6 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
@@ -354,6 +347,13 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
+const char* const description_event_engine_listener =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
+const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -482,6 +482,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -490,17 +493,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+    {"event_engine_listener", description_event_engine_listener,
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
@@ -600,6 +600,12 @@ const char* const additional_constraints_chttp2_bound_write_size = "{}";
 const char* const description_error_flatten =
     "Flatten errors to ordinary absl::Status form.";
 const char* const additional_constraints_error_flatten = "{}";
+const char* const description_event_engine_callback_cq =
+    "Use EventEngine instead of the CallbackAlternativeCQ.";
+const char* const additional_constraints_event_engine_callback_cq = "{}";
+const uint8_t required_experiments_event_engine_callback_cq[] = {
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
+    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_client =
     "Use EventEngine clients instead of iomgr's grpc_tcp_client";
 const char* const additional_constraints_event_engine_client = "{}";
@@ -611,19 +617,6 @@ const char* const description_event_engine_dns_non_client_channel =
     "channel.";
 const char* const additional_constraints_event_engine_dns_non_client_channel =
     "{}";
-const char* const description_event_engine_fork =
-    "Enables event engine fork handling, including onfork events and file "
-    "descriptor generations";
-const char* const additional_constraints_event_engine_fork = "{}";
-const char* const description_event_engine_listener =
-    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
-const char* const additional_constraints_event_engine_listener = "{}";
-const char* const description_event_engine_callback_cq =
-    "Use EventEngine instead of the CallbackAlternativeCQ.";
-const char* const additional_constraints_event_engine_callback_cq = "{}";
-const uint8_t required_experiments_event_engine_callback_cq[] = {
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
-    static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
 const char* const description_event_engine_for_all_other_endpoints =
     "Use EventEngine endpoints for all call sites, including direct uses of "
     "grpc_tcp_create.";
@@ -635,6 +628,13 @@ const uint8_t required_experiments_event_engine_for_all_other_endpoints[] = {
     static_cast<uint8_t>(
         grpc_core::kExperimentIdEventEngineDnsNonClientChannel),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
+const char* const description_event_engine_fork =
+    "Enables event engine fork handling, including onfork events and file "
+    "descriptor generations";
+const char* const additional_constraints_event_engine_fork = "{}";
+const char* const description_event_engine_listener =
+    "Use EventEngine listeners instead of iomgr's grpc_tcp_server";
+const char* const additional_constraints_event_engine_listener = "{}";
 const char* const description_event_engine_secure_endpoint =
     "Use EventEngine secure endpoint wrapper instead of iomgr when available";
 const char* const additional_constraints_event_engine_secure_endpoint = "{}";
@@ -763,6 +763,9 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_chttp2_bound_write_size, nullptr, 0, false, true},
     {"error_flatten", description_error_flatten,
      additional_constraints_error_flatten, nullptr, 0, false, false},
+    {"event_engine_callback_cq", description_event_engine_callback_cq,
+     additional_constraints_event_engine_callback_cq,
+     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_client", description_event_engine_client,
      additional_constraints_event_engine_client, nullptr, 0, true, false},
     {"event_engine_dns", description_event_engine_dns,
@@ -771,17 +774,14 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_event_engine_dns_non_client_channel,
      additional_constraints_event_engine_dns_non_client_channel, nullptr, 0,
      false, false},
-    {"event_engine_fork", description_event_engine_fork,
-     additional_constraints_event_engine_fork, nullptr, 0, false, false},
-    {"event_engine_listener", description_event_engine_listener,
-     additional_constraints_event_engine_listener, nullptr, 0, true, false},
-    {"event_engine_callback_cq", description_event_engine_callback_cq,
-     additional_constraints_event_engine_callback_cq,
-     required_experiments_event_engine_callback_cq, 2, true, true},
     {"event_engine_for_all_other_endpoints",
      description_event_engine_for_all_other_endpoints,
      additional_constraints_event_engine_for_all_other_endpoints,
      required_experiments_event_engine_for_all_other_endpoints, 4, true, false},
+    {"event_engine_fork", description_event_engine_fork,
+     additional_constraints_event_engine_fork, nullptr, 0, false, false},
+    {"event_engine_listener", description_event_engine_listener,
+     additional_constraints_event_engine_listener, nullptr, 0, true, false},
     {"event_engine_secure_endpoint", description_event_engine_secure_endpoint,
      additional_constraints_event_engine_secure_endpoint, nullptr, 0, true,
      false},
