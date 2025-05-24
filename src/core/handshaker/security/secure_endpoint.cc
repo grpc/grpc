@@ -567,14 +567,15 @@ static void on_write(void* user_data, grpc_error_handle error) {
   });
 }
 
-static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg, int max_frame_size) {
+static void endpoint_write(
+    grpc_endpoint* secure_ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   tsi_result result;
   {
     grpc_core::MutexLock lock(ep->frame_protector.write_mu());
-    result = ep->frame_protector.Protect(slices, max_frame_size);
+    result = ep->frame_protector.Protect(slices, args.max_frame_size());
   }
 
   if (result != TSI_OK) {
@@ -591,7 +592,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   ep->write_cb = cb;
   grpc_endpoint_write(ep->wrapped_ep.get(),
                       ep->frame_protector.output_buffer()->c_slice_buffer(),
-                      &ep->on_write, arg, max_frame_size);
+                      &ep->on_write, std::move(args));
 }
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {

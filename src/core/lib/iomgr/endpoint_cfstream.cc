@@ -244,8 +244,9 @@ static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
 }
 
 static void CFStreamWrite(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, void* /*arg*/,
-                          int /*max_frame_size*/) {
+                          grpc_closure* cb,
+                          grpc_event_engine::experimental::EventEngine::
+                              Endpoint::WriteArgs /*args*/) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   GRPC_TRACE_VLOG(tcp, 2) << "CFStream endpoint:" << ep_impl << " write ("
                           << slices << ", " << cb

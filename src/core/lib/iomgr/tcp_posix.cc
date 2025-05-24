@@ -1795,8 +1795,9 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   }
 }
 
-static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
-                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
+static void tcp_write(
+    grpc_endpoint* ep, grpc_slice_buffer* buf, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
@@ -1835,8 +1836,9 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
   }
-  tcp->outgoing_buffer_arg = arg;
-  if (arg) {
+  tcp->outgoing_buffer_arg =
+      args.GetDeprecatedAndDiscouragedGoogleSpecificPointer();
+  if (tcp->outgoing_buffer_arg) {
     CHECK(grpc_event_engine_can_track_errors());
   }
 

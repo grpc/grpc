@@ -397,8 +397,9 @@ static void on_write(void* user_data, grpc_error_handle error) {
   });
 }
 
-static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                           grpc_closure* cb, void* arg, int max_frame_size) {
+static void endpoint_write(
+    grpc_endpoint* secure_ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
   unsigned i;
   tsi_result result = TSI_OK;
@@ -427,10 +428,10 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
       // tsi_zero_copy_grpc_protector_protect on each chunk. This ensures that
       // the protector cannot create frames larger than the specified
       // max_frame_size.
-      while (slices->length > static_cast<size_t>(max_frame_size) &&
+      while (slices->length > static_cast<size_t>(args.max_frame_size()) &&
              result == TSI_OK) {
         grpc_slice_buffer_move_first(slices,
-                                     static_cast<size_t>(max_frame_size),
+                                     static_cast<size_t>(args.max_frame_size()),
                                      &ep->protector_staging_buffer);
         result = tsi_zero_copy_grpc_protector_protect(
             ep->zero_copy_protector, &ep->protector_staging_buffer,
@@ -523,7 +524,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
   SECURE_ENDPOINT_REF(ep, "write");
   ep->write_cb = cb;
   grpc_endpoint_write(ep->wrapped_ep.get(), &ep->output_buffer, &ep->on_write,
-                      arg, max_frame_size);
+                      std::move(args));
 }
 
 static void endpoint_destroy(grpc_endpoint* secure_ep) {

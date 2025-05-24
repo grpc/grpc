@@ -19,6 +19,7 @@
 #ifndef GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 #define GRPC_SRC_CORE_LIB_IOMGR_ENDPOINT_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/port_platform.h>
@@ -37,8 +38,9 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 struct grpc_endpoint_vtable {
   void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
                bool urgent, int min_progress_size);
-  void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
-                void* arg, int max_frame_size);
+  void (*write)(
+      grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
@@ -79,8 +81,9 @@ int grpc_endpoint_get_fd(grpc_endpoint* ep);
 // \a max_frame_size. A hint to the endpoint implementation to construct
 // frames which do not exceed the specified size.
 //
-void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb, void* arg, int max_frame_size);
+void grpc_endpoint_write(
+    grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs arg);
 
 // Causes any pending and future read/write callbacks to run immediately with
 // success==0

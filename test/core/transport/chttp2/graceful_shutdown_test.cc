@@ -275,8 +275,9 @@ class GracefulShutdownTest : public ::testing::Test {
     Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+    grpc_endpoint_write(
+        fds_.client, buffer, &on_write_done_,
+        grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
     ExecCtx::Get()->Flush();
     CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
