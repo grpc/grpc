@@ -56,8 +56,9 @@ class RetryState {
   BackOff retry_backoff_;
 };
 
-absl::StatusOr<RefCountedPtr<internal::ServerRetryThrottleData>>
-ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args);
+RefCountedPtr<internal::ServerRetryThrottleData>
+ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args,
+                                       const FilterArgs& filter_args);
 }  // namespace retry_detail
 
 class RetryInterceptor : public Interceptor {
@@ -67,7 +68,7 @@ class RetryInterceptor : public Interceptor {
       RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data);
 
   static absl::StatusOr<RefCountedPtr<RetryInterceptor>> Create(
-      const ChannelArgs& args, const FilterArgs&);
+      const ChannelArgs& args, const FilterArgs& filter_args);
 
   void Orphaned() override {}
 

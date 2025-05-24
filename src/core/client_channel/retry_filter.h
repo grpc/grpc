@@ -80,14 +80,14 @@ class RetryFilter final {
                  0, INT_MAX);
   }
 
-  RetryFilter(const ChannelArgs& args, grpc_error_handle* error);
+  RetryFilter(const grpc_channel_element_args& args, grpc_error_handle* error);
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
     CHECK(args->is_last);
     CHECK(elem->filter == &kVtable);
     grpc_error_handle error;
-    new (elem->channel_data) RetryFilter(args->channel_args, &error);
+    new (elem->channel_data) RetryFilter(*args, &error);
     return error;
   }
 
