@@ -142,7 +142,7 @@ OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<UnrefBehavior>::
 
 template <typename UnrefBehavior>
 OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
-    UnrefBehavior>::~CallAttemptTracer() {
+    UnrefBehavior>::~CallAttemptTracer<UnrefBehavior>() {
   if (span_ != nullptr) {
     span_->End();
   }
