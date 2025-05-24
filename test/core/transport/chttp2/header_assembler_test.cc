@@ -127,7 +127,7 @@ Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Frame
+// HeaderAssembler - Test One Header Frame
 
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
                        HeaderAssembler& assembler, const bool end_headers) {
@@ -195,7 +195,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Two Continuation Frames
+// HeaderAssembler - Test One Header Two Continuation Frames
 
 void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
                                       HPackParser& parser,
@@ -293,7 +293,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Other Valid cases
+// HeaderAssembler - Test Other Valid incoming frames
 
 TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
   // This test is Valid only for Client. Not for Server.
@@ -328,7 +328,7 @@ TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Peer not honouring RFC9113
+// HeaderAssembler - Test Peer not honouring RFC9113
 
 TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   // Connection Error if second HEADER frame is received before the first one is
@@ -416,7 +416,7 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// gRPC Violations
+// HeaderAssembler - Test gRPC Violations
 
 TEST(HeaderAssemblerTest, InvalidClientTooManyHeaders) {
   const uint32_t stream_id = 1111;
