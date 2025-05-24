@@ -333,7 +333,6 @@ static void grpc_ruby_init_threads() {
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (!g_bg_thread_init_done) {
     grpc_rb_event_queue_thread_start();
-    grpc_rb_channel_polling_thread_start();
     g_bg_thread_init_done = true;
   }
   rb_mutex_unlock(g_bg_thread_init_rb_mu);
@@ -395,7 +394,6 @@ static VALUE grpc_rb_prefork(VALUE self) {
   g_grpc_rb_prefork_pending = true;
   rb_mutex_lock(g_bg_thread_init_rb_mu);
   if (g_bg_thread_init_done) {
-    grpc_rb_channel_polling_thread_stop();
     grpc_rb_event_queue_thread_stop();
     // all ruby-level background threads joined at this point
     g_bg_thread_init_done = false;
