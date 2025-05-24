@@ -105,7 +105,7 @@ class HeaderAssembler {
     }
 
     ++num_headers_received_;
-    if (num_headers_received_ > max_headers_) {
+    if (GPR_UNLIKELY(num_headers_received_ > max_headers_)) {
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kInternalError,
           std::string("Too many header frames sent by peer"));
@@ -140,6 +140,8 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
+  // Call this for each incoming HTTP2 Header frame.
+  // The payload of the Http2ContinuationFrame will be cleared in this function.
   Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
     // Validate current state
     if (GPR_UNLIKELY(!header_in_progress_)) {
@@ -183,6 +185,7 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
+  // The caller MUST check using IsReady() before calling this function
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
       HPackParser& parser, bool is_initial_metadata, bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
@@ -199,7 +202,7 @@ class HeaderAssembler {
         Arena::MakePooledForOverwrite<grpc_metadata_batch>();
     parser.BeginFrame(
         /*grpc_metadata_batch*/ metadata.get(),
-        // TODO(tjagtap) : [PH2][P1] : Manage limits
+        // TODO(tjagtap) : [PH2][P2] : Manage limits
         /*metadata_size_soft_limit*/ std::numeric_limits<uint32_t>::max(),
         /*metadata_size_hard_limit*/ std::numeric_limits<uint32_t>::max(),
         is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
@@ -232,6 +235,7 @@ class HeaderAssembler {
 
   size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
 
+  // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
   explicit HeaderAssembler(const uint32_t stream_id, const bool is_client)
@@ -242,7 +246,7 @@ class HeaderAssembler {
                                : kMaxHeaderFramesForServerAssembler),
         stream_id_(stream_id) {}
 
-  ~HeaderAssembler() { Cleanup(); };
+  ~HeaderAssembler() { buffer_.Clear(); };
 
   HeaderAssembler(HeaderAssembler&& rvalue) = delete;
   HeaderAssembler& operator=(HeaderAssembler&& rvalue) = delete;
@@ -259,7 +263,7 @@ class HeaderAssembler {
   bool header_in_progress_;
   bool is_ready_;
   uint8_t num_headers_received_;
-  uint8_t max_headers_;
+  const uint8_t max_headers_;
   const uint32_t stream_id_;
   SliceBuffer buffer_;
 };

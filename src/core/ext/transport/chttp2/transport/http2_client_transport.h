@@ -209,7 +209,7 @@ class Http2ClientTransport final : public ClientTransport {
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
-          header_assembler(stream_id1, /*is_client*/ true) {}
+          header_assembler(stream_id1, /*is_client=*/true) {}
 
     CallHandler call;
     HttpStreamState stream_state;
