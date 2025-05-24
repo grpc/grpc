@@ -127,7 +127,7 @@ Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Frame
+// HeaderAssembler - Test One Header Frame
 
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
                        HeaderAssembler& assembler, const bool end_headers) {
@@ -159,7 +159,7 @@ TEST(HeaderAssemblerTest, ValidOneHeaderFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x7fffffff;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
@@ -168,7 +168,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
   // If we try to read the Header before END_HEADERS is received.
   const uint32_t stream_id = 0x12345678;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2HeaderFrame header = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -195,7 +195,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Two Continuation Frames
+// HeaderAssembler - Test One Header Two Continuation Frames
 
 void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
                                       HPackParser& parser,
@@ -247,7 +247,7 @@ TEST(HeaderAssemblerTest, ValidOneHeaderTwoContinuationFrame) {
   // 3. Validate the contents of the Metadata.
   const uint32_t stream_id = 0x78654321;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
 }
@@ -257,7 +257,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
   // If we try to read the Metadata before END_HEADERS is received.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2HeaderFrame header =
       GenerateHeaderFrame(kSimpleRequestEncodedPart1, stream_id,
                           /*end_headers=*/false, /*end_stream=*/false);
@@ -293,10 +293,10 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Other Valid cases
+// HeaderAssembler - Test Other Valid incoming frames
 
 TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
-  // This test is Valid only for Server. Not for Client.
+  // This test is Valid only for Client. Not for Server.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
@@ -305,13 +305,13 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
   // 4. Do all the above for the second HEADERS frame.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
   ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
-  // This test is Valid only for Server. Not for Client.
+  // This test is Valid only for Client. Not for Server.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read all the Header and Continuation frames.
@@ -320,7 +320,7 @@ TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
   // 4. Do all the above for the second set of Header and Continuation frames.
   const uint32_t stream_id = 1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
                                    /*end_stream=*/false);
   ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
@@ -328,14 +328,14 @@ TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Peer not honouring RFC9113
+// HeaderAssembler - Test Peer not honouring RFC9113
 
 TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   // Connection Error if second HEADER frame is received before the first one is
   // END_STREAM.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -360,7 +360,7 @@ TEST(HeaderAssemblerTest, InvalidHeaderAndContinuationHaveDifferentStreamID) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
       /*end_stream=*/false);
@@ -382,7 +382,7 @@ TEST(HeaderAssemblerTest, InvalidContinuationBeforeHeaders) {
   // Fail if the CONTINUATION frame is received before HEADERS.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2ContinuationFrame continuation1 = GenerateContinuationFrame(
       kSimpleRequestEncodedPart2, stream_id, /*end_headers=*/false);
   Http2Status status =
@@ -397,7 +397,7 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
   // Fail if the HEADER and CONTINUATION frame do not have the same stream id.
   const uint32_t stream_id = 0x1111;
   HPackParser parser;
-  HeaderAssembler assembler(stream_id);
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
   Http2HeaderFrame header1 = GenerateHeaderFrame(
       kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
       /*end_stream=*/false);
@@ -413,6 +413,74 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
   EXPECT_FALSE(status2.IsOk());
   EXPECT_EQ(status2.GetType(), Http2Status::Http2ErrorType::kConnectionError);
   EXPECT_EQ(status2.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - Test gRPC Violations
+
+TEST(HeaderAssemblerTest, InvalidClientTooManyHeaders) {
+  const uint32_t stream_id = 1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+}
+
+TEST(HeaderAssemblerTest, InvalidClientTooManyHeadersContinuation) {
+  const uint32_t stream_id = 1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id, /*is_client=*/true);
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
+                                   /*end_stream=*/false);
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
+                                   /*end_stream=*/false);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+}
+
+TEST(HeaderAssemblerTest, InvalidServerTooManyHeaders) {
+  const uint32_t stream_id = 0x1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id, /*is_client=*/false);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+}
+
+TEST(HeaderAssemblerTest, InvalidServerTooManyHeadersContinuation) {
+  const uint32_t stream_id = 0x1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id, /*is_client=*/false);
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
+                                   /*end_stream=*/false);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
 }
 
 // TODO(tjagtap) : [PH2][P3] : Validate later. Edge case

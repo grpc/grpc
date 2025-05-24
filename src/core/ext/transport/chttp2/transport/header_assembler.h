@@ -56,6 +56,13 @@ constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
 
+// A gRPC client is permitted to send only initial metadata. A gRPC server is
+// permitted to send both initial metadata and trailing metadata where initial
+// metadata is optional. Hence, the server can receive only 1 HTTP2 Header frame
+// and the client can receive atmost 2 HTTP2 header frames.
+constexpr uint8_t kMaxHeaderFramesForClientAssembler = 2;
+constexpr uint8_t kMaxHeaderFramesForServerAssembler = 1;
+
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
@@ -97,6 +104,15 @@ class HeaderAssembler {
           std::string(kAssemblerContiguousSequenceError));
     }
 
+    ++num_headers_received_;
+    if (GPR_UNLIKELY(num_headers_received_ > max_headers_)) {
+      Cleanup();
+      LOG(ERROR) << "Connection Error: Too many header frames sent by peer";
+      return Http2Status::Http2ConnectionError(
+          Http2ErrorCode::kInternalError,
+          std::string("Too many header frames sent by peer"));
+    }
+
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
     if constexpr (sizeof(size_t) == 4) {
@@ -126,6 +142,8 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
+  // Call this for each incoming HTTP2 Continuation frame.
+  // The payload of the Http2ContinuationFrame will be cleared in this function.
   Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
     // Validate current state
     if (GPR_UNLIKELY(!header_in_progress_)) {
@@ -169,6 +187,7 @@ class HeaderAssembler {
     return Http2Status::Ok();
   }
 
+  // The caller MUST check using IsReady() before calling this function
   ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> ReadMetadata(
       HPackParser& parser, bool is_initial_metadata, bool is_client) {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
@@ -185,7 +204,7 @@ class HeaderAssembler {
         Arena::MakePooledForOverwrite<grpc_metadata_batch>();
     parser.BeginFrame(
         /*grpc_metadata_batch*/ metadata.get(),
-        // TODO(tjagtap) : [PH2][P1] : Manage limits
+        // TODO(tjagtap) : [PH2][P2] : Manage limits
         /*metadata_size_soft_limit*/ std::numeric_limits<uint32_t>::max(),
         /*metadata_size_hard_limit*/ std::numeric_limits<uint32_t>::max(),
         is_initial_metadata ? HPackParser::Boundary::EndOfHeaders
@@ -218,12 +237,18 @@ class HeaderAssembler {
 
   size_t GetBufferedHeadersLength() const { return buffer_.Length(); }
 
+  // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
-  explicit HeaderAssembler(const uint32_t stream_id)
-      : header_in_progress_(false), is_ready_(false), stream_id_(stream_id) {}
+  explicit HeaderAssembler(const uint32_t stream_id, const bool is_client)
+      : header_in_progress_(false),
+        is_ready_(false),
+        num_headers_received_(0),
+        max_headers_(is_client ? kMaxHeaderFramesForClientAssembler
+                               : kMaxHeaderFramesForServerAssembler),
+        stream_id_(stream_id) {}
 
-  ~HeaderAssembler() { Cleanup(); };
+  ~HeaderAssembler() { buffer_.Clear(); };
 
   HeaderAssembler(HeaderAssembler&& rvalue) = delete;
   HeaderAssembler& operator=(HeaderAssembler&& rvalue) = delete;
@@ -239,6 +264,8 @@ class HeaderAssembler {
 
   bool header_in_progress_;
   bool is_ready_;
+  uint8_t num_headers_received_;
+  const uint8_t max_headers_;
   const uint32_t stream_id_;
   SliceBuffer buffer_;
 };
