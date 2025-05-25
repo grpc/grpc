@@ -215,13 +215,6 @@
   expiry: 2025/06/06
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: rq_fast_reject
-  description:
-    Resource quota rejects requests immediately (before allocating the request
-    structure) under very high memory pressure.
-  expiry: 2025/06/06
-  owner: ctiller@google.com
-  test_tags: []
 - name: rst_stream_fix
   description: Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
   expiry: 2025/06/06
