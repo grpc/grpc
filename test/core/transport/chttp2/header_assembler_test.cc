@@ -144,7 +144,8 @@ void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
   if (end_headers) {
     EXPECT_EQ(assembler.IsReady(), true);
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
-        assembler.ReadMetadata(parser, /*is_initial_metadata=*/true);
+        assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                               /*is_client=*/true);
     EXPECT_TRUE(result.IsOk());
     Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
     EXPECT_STREQ(metadata->DebugString().c_str(),
@@ -295,7 +296,6 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
 // HeaderAssembler - Test Other Valid incoming frames
 
 TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
-  // This test is Valid only for Client. Not for Server.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
@@ -310,7 +310,6 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
-  // This test is Valid only for Client. Not for Server.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read all the Header and Continuation frames.
