@@ -56,6 +56,9 @@ constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
 
+constexpr absl::string_view kGrpcErrorMaxTwoHeaderFrames =
+    "Too many header frames sent by peer";
+
 // A gRPC server is permitted to send both initial metadata and trailing
 // metadata where initial metadata is optional. A gRPC C++ client is permitted
 // to send only initial metadata. However, other gRPC Client implementations may
@@ -107,10 +110,10 @@ class HeaderAssembler {
     ++num_headers_received_;
     if (GPR_UNLIKELY(num_headers_received_ > max_headers_)) {
       Cleanup();
-      LOG(ERROR) << "Connection Error: Too many header frames sent by peer";
+      LOG(ERROR) << "Connection Error: " << kGrpcErrorMaxTwoHeaderFrames;
       return Http2Status::Http2ConnectionError(
           Http2ErrorCode::kInternalError,
-          std::string("Too many header frames sent by peer"));
+          std::string(kGrpcErrorMaxTwoHeaderFrames));
     }
 
     // Manage size constraints
