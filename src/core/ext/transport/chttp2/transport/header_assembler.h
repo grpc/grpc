@@ -56,12 +56,12 @@ constexpr absl::string_view kAssemblerHpackError =
     "RFC9113 : A decoding error in a field block MUST be treated as a "
     "connection error of type COMPRESSION_ERROR.";
 
-// A gRPC client is permitted to send only initial metadata. A gRPC server is
-// permitted to send both initial metadata and trailing metadata where initial
-// metadata is optional. Hence, the server can receive only 1 HTTP2 Header frame
-// and the client can receive atmost 2 HTTP2 header frames.
-constexpr uint8_t kMaxHeaderFramesForClientAssembler = 2;
-constexpr uint8_t kMaxHeaderFramesForServerAssembler = 1;
+// A gRPC server is permitted to send both initial metadata and trailing
+// metadata where initial metadata is optional. A gRPC C++ client is permitted
+// to send only initial metadata. However, other gRPC Client implementations may
+// send trailing metadata too. So we allow only a maximum of 2 metadata per
+// streams. Which means only 2 HEADER frames are legal per stream.
+constexpr uint8_t kMaxHeaderFrames = 2;
 
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
@@ -240,12 +240,11 @@ class HeaderAssembler {
   // This value MUST be checked before calling ReadMetadata()
   bool IsReady() const { return is_ready_; }
 
-  explicit HeaderAssembler(const uint32_t stream_id, const bool is_client)
+  explicit HeaderAssembler(const uint32_t stream_id)
       : header_in_progress_(false),
         is_ready_(false),
         num_headers_received_(0),
-        max_headers_(is_client ? kMaxHeaderFramesForClientAssembler
-                               : kMaxHeaderFramesForServerAssembler),
+        max_headers_(kMaxHeaderFrames),
         stream_id_(stream_id) {}
 
   ~HeaderAssembler() { buffer_.Clear(); };
