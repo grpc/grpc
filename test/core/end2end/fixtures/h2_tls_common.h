@@ -154,7 +154,7 @@ class TlsFixture : public SecureFixture {
     grpc_tls_certificate_verifier_release(server_verifier_);
   }
 
- private:
+ protected:
   grpc_core::ChannelArgs MutateClientArgs(
       grpc_core::ChannelArgs args) override {
     return args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
@@ -209,12 +209,21 @@ class TlsFixture : public SecureFixture {
     return creds;
   }
 
+ private:
   grpc_tls_version tls_version_;
   grpc_tls_certificate_provider* client_provider_ = nullptr;
   grpc_tls_certificate_provider* server_provider_ = nullptr;
   grpc_tls_certificate_verifier* client_verifier_ = nullptr;
   grpc_tls_certificate_verifier* server_verifier_ = nullptr;
   bool check_call_host_ = true;
+};
+
+class TlsFixture_13 : public TlsFixture {
+ public:
+  TlsFixture_13()
+      : TlsFixture(SecurityPrimitives::TlsVersion::V_13,
+                   SecurityPrimitives::ProviderType::FILE_PROVIDER,
+                   SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER) {}
 };
 
 static const uint32_t kH2TLSFeatureMask =

@@ -119,7 +119,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   // If we weren't given the endpoint, add channel args needed by the
   // TCP connect handshaker.
   ChannelArgs channel_args = args_.channel_args;
-  if (endpoint != nullptr) {
+  if (endpoint == nullptr) {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
     if (!address.ok()) {
       grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());
