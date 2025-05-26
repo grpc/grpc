@@ -469,48 +469,23 @@ void ValidateHeaderFrame(Http2Frame&& frame, const bool is_trailing_metadata,
 void OneMetadataInOneFrame(const uint32_t stream_id,
                            HeaderDisassembler& disassembler,
                            const bool is_trailing_metadata, HPackParser& parser,
-                           HPackCompressor& encoder) {
+                           HPackCompressor& encoder,
+                           const uint32_t expected_len1) {
   Arena::PoolPtr<grpc_metadata_batch> metadata =
       GenerateMetadata(stream_id, is_trailing_metadata, parser);
   disassembler.PrepareForSending(std::move(metadata), encoder,
                                  is_trailing_metadata);
-  ExpectBufferLengths(disassembler, kEncodedMetadataLen);
+  ExpectBufferLengths(disassembler, expected_len1);
 
   uint8_t count = 0;
   while (disassembler.HasMoreData()) {
     ++count;
     bool is_end_headers = false;
-    Http2Frame frame =
-        disassembler.GetNextFrame(kEncodedMetadataLen, is_end_headers);
+    Http2Frame frame = disassembler.GetNextFrame(expected_len1, is_end_headers);
     EXPECT_EQ(is_end_headers, true);
 
     ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
-                        /*end_headers=*/true, kEncodedMetadataLen);
-    ExpectBufferLengths(disassembler, 0u);
-
-    EXPECT_EQ(count, 1);
-  }
-}
-
-void SecondMetadataInOneFrame(const uint32_t stream_id,
-                              HeaderDisassembler& disassembler,
-                              const bool is_trailing_metadata,
-                              HPackParser& parser, HPackCompressor& encoder) {
-  Arena::PoolPtr<grpc_metadata_batch> metadata =
-      GenerateMetadata(stream_id, is_trailing_metadata, parser);
-  disassembler.PrepareForSending(std::move(metadata), encoder,
-                                 is_trailing_metadata);
-  ExpectBufferLengths(disassembler, 8);
-
-  uint8_t count = 0;
-  while (disassembler.HasMoreData()) {
-    ++count;
-    bool is_end_headers = false;
-    Http2Frame frame = disassembler.GetNextFrame(8, is_end_headers);
-    EXPECT_EQ(is_end_headers, true);
-
-    ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
-                        /*end_headers=*/true, 8);
+                        /*end_headers=*/true, expected_len1);
     ExpectBufferLengths(disassembler, 0u);
 
     EXPECT_EQ(count, 1);
@@ -572,7 +547,8 @@ TEST(HeaderDisassemblerTest, OneInitialMetadataInOneFrame) {
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
-                        /*is_trailing_metadata=*/false, parser, encoder);
+                        /*is_trailing_metadata=*/false, parser, encoder,
+                        kEncodedMetadataLen);
 }
 
 TEST(HeaderDisassemblerTest, OneInitialMetadataInThreeFrames) {
@@ -593,7 +569,7 @@ TEST(HeaderDisassemblerTest, OneTrailingMetadataInOneFrame) {
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true,
-                        parser, encoder);
+                        parser, encoder, kEncodedMetadataLen);
 }
 
 TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
@@ -614,9 +590,10 @@ TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
-                        /*is_trailing_metadata=*/false, parser, encoder);
-  SecondMetadataInOneFrame(stream_id, disassembler,
-                           /*is_trailing_metadata=*/true, parser, encoder);
+                        /*is_trailing_metadata=*/false, parser, encoder,
+                        kEncodedMetadataLen);
+  OneMetadataInOneFrame(stream_id, disassembler,
+                        /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
 
 TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
@@ -626,8 +603,8 @@ TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
                            /*is_trailing_metadata=*/false, parser, encoder);
-  SecondMetadataInOneFrame(stream_id, disassembler,
-                           /*is_trailing_metadata=*/true, parser, encoder);
+  OneMetadataInOneFrame(stream_id, disassembler,
+                        /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
