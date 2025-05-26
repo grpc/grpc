@@ -21,10 +21,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
+#include <cstdint>
+
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
@@ -241,6 +245,94 @@ class HeaderAssembler {
   bool is_ready_;
   const uint32_t stream_id_;
   SliceBuffer buffer_;
+};
+
+class HeaderDisassembler {
+ public:
+  // This function will take ownership of metadata object
+  // The method will return false if encoding fails. A failed encoding operation
+  // is MUST be treated as a connection error by the caller.
+  // This function can queue a trailing metadata for sending even before the
+  // initial metadata has been extracted.
+  bool PrepareForSending(Arena::PoolPtr<grpc_metadata_batch>&& metadata,
+                         HPackCompressor& encoder,
+                         const bool is_trailing_metadata) {
+    // Validate disassembler state
+    DCHECK(!is_trailing_metadata ? (buffer_.Length() == 0) : true);
+
+    // Prepare metadata for sending
+    end_stream_ = is_trailing_metadata;
+    SliceBuffer& current = (buffer_.Length() == 0) ? buffer_ : second_buffer_;
+    if (buffer_.Length() == 0) {
+      did_send_header_frame_ = false;
+    }
+    return encoder.EncodeRawHeaders(*metadata.get(), current);
+  }
+
+  Http2Frame GetNextFrame(const uint32_t max_length, bool& out_end_headers) {
+    if (buffer_.Length() == 0) {
+      // TODO(tjagtap) : [PH2][P3] : Try to avoid this second_buffer_ and make
+      // the code clean and efficient.
+      if (second_buffer_.Length() != 0) {
+        did_send_header_frame_ = false;
+        buffer_.Swap(&second_buffer_);
+      } else {
+        DCHECK(false) << "Calling code must check size using HasMoreData() "
+                         "before GetNextFrame()";
+      }
+    }
+    out_end_headers = buffer_.Length() <= max_length;
+    SliceBuffer temp;
+    if (out_end_headers) {
+      temp.Swap(&buffer_);
+    } else {
+      buffer_.MoveFirstNBytesIntoSliceBuffer(max_length, temp);
+    }
+    if (!did_send_header_frame_) {
+      did_send_header_frame_ = true;
+      return Http2HeaderFrame{stream_id_, out_end_headers, end_stream_,
+                              std::move(temp)};
+    } else {
+      return Http2ContinuationFrame{stream_id_, out_end_headers,
+                                    std::move(temp)};
+    }
+  }
+
+  bool HasMoreData() const {
+    return buffer_.Length() > 0 || second_buffer_.Length() > 0;
+  }
+
+  // This number can be used for backpressure related calculations.
+  size_t GetBufferedLength() const {
+    return buffer_.Length() + second_buffer_.Length();
+  }
+
+  HeaderDisassembler(const uint32_t stream_id)
+      : stream_id_(stream_id),
+        did_send_header_frame_(false),
+        end_stream_(false) {}
+
+  ~HeaderDisassembler() {
+    buffer_.Clear();
+    second_buffer_.Clear();
+  }
+
+  HeaderDisassembler(HeaderDisassembler&& rvalue) = delete;
+  HeaderDisassembler& operator=(HeaderDisassembler&& rvalue) = delete;
+  HeaderDisassembler(const HeaderDisassembler&) = delete;
+  HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
+
+  size_t TestOnlyGetMainBufferLength() const { return buffer_.Length(); }
+  size_t TestOnlyGetSecondBufferLength() const {
+    return second_buffer_.Length();
+  }
+
+ private:
+  const uint32_t stream_id_;
+  bool did_send_header_frame_;
+  bool end_stream_;
+  SliceBuffer buffer_;
+  SliceBuffer second_buffer_;
 };
 
 }  // namespace http2

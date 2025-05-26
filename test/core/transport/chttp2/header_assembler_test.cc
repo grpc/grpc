@@ -20,6 +20,8 @@
 
 #include <grpc/grpc.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <utility>
 
@@ -29,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -422,6 +425,216 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
 //  Then we receive one HEADER frame with END_HEADER and END_STREAM.
 //  We Append both and parse both because we read them together.
 //  Is this a valid case?
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderDisassembler - Helpers
+
+constexpr uint32_t kEncodedMetadataLen = 166;
+
+Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(const uint32_t stream_id,
+                                                     bool is_trailing_metadata,
+                                                     HPackParser& parser) {
+  HeaderAssembler assembler(stream_id);
+  Http2HeaderFrame header = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      /*end_stream=*/is_trailing_metadata);
+  EXPECT_EQ(header.payload.Length(), kSimpleRequestEncodedLen);
+
+  Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+  ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
+      assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                             /*is_client=*/true);
+  Arena::PoolPtr<grpc_metadata_batch> metadata = TakeValue(std::move(result));
+  EXPECT_EQ(metadata->DebugString().c_str(), kSimpleRequestDecoded);
+  return metadata;
+}
+
+void ExpectBufferLengths(HeaderDisassembler& disassembler,
+                         const size_t expected_len) {
+  EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), expected_len);
+  EXPECT_EQ(disassembler.TestOnlyGetSecondBufferLength(), 0);
+  EXPECT_EQ(disassembler.GetBufferedLength(), expected_len);
+}
+
+void ValidateHeaderFrame(Http2Frame&& frame, const bool is_trailing_metadata,
+                         const bool is_end_headers,
+                         const size_t expected_length) {
+  EXPECT_TRUE(std::holds_alternative<Http2HeaderFrame>(frame));
+  Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
+  EXPECT_EQ(header.end_headers, is_end_headers);
+  EXPECT_EQ(header.end_stream, is_trailing_metadata);
+  EXPECT_EQ(header.payload.Length(), expected_length);
+}
+
+void OneMetadataInOneFrame(const uint32_t stream_id,
+                           HeaderDisassembler& disassembler,
+                           const bool is_trailing_metadata) {
+  HPackParser parser;
+  HPackCompressor encoder;
+  Arena::PoolPtr<grpc_metadata_batch> metadata =
+      GenerateMetadata(stream_id, is_trailing_metadata, parser);
+  disassembler.PrepareForSending(std::move(metadata), encoder,
+                                 is_trailing_metadata);
+  ExpectBufferLengths(disassembler, kEncodedMetadataLen);
+
+  uint8_t count = 0;
+  while (disassembler.HasMoreData()) {
+    ++count;
+    bool is_end_headers = false;
+    Http2Frame frame =
+        disassembler.GetNextFrame(kEncodedMetadataLen, is_end_headers);
+    EXPECT_EQ(is_end_headers, true);
+
+    ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
+                        /*end_headers=*/true, kEncodedMetadataLen);
+    ExpectBufferLengths(disassembler, 0u);
+
+    EXPECT_EQ(count, 1);
+  }
+}
+
+void OneMetadataInThreeFrames(const uint32_t stream_id,
+                              HeaderDisassembler& disassembler,
+                              const bool is_trailing_metadata) {
+  const uint8_t frame_length = (kEncodedMetadataLen / 2) - 1;
+  HPackParser parser;
+  HPackCompressor encoder;
+  Arena::PoolPtr<grpc_metadata_batch> metadata =
+      GenerateMetadata(stream_id, is_trailing_metadata, parser);
+  disassembler.PrepareForSending(std::move(metadata), encoder,
+                                 is_trailing_metadata);
+  ExpectBufferLengths(disassembler, kEncodedMetadataLen);
+
+  int8_t remaining_length = kEncodedMetadataLen;
+  uint8_t count = 0;
+  bool is_end_headers = false;
+  if (disassembler.HasMoreData()) {
+    ++count;
+    remaining_length -= frame_length;
+    Http2Frame frame = disassembler.GetNextFrame(frame_length, is_end_headers);
+    EXPECT_EQ(is_end_headers, false);
+
+    ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
+                        /*end_headers=*/false, frame_length);
+
+    ExpectBufferLengths(disassembler, remaining_length);
+  }
+  while (disassembler.HasMoreData()) {
+    ++count;
+    remaining_length = std::max(remaining_length - frame_length, 0);
+    Http2Frame frame = disassembler.GetNextFrame(frame_length, is_end_headers);
+    EXPECT_EQ(is_end_headers, (count == 3));
+
+    EXPECT_TRUE(std::holds_alternative<Http2ContinuationFrame>(frame));
+    Http2ContinuationFrame& continuation =
+        std::get<Http2ContinuationFrame>(frame);
+    EXPECT_EQ(continuation.end_headers, (count == 3));
+    EXPECT_EQ(continuation.payload.Length(), (count == 3 ? 2 : frame_length));
+
+    ExpectBufferLengths(disassembler, remaining_length);
+  }
+  EXPECT_EQ(count, 3);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderDisassembler Tests Initial Metadata Only
+
+TEST(HeaderDisassemblerTest, OneInitialMetadataInOneFrame) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInOneFrame(stream_id, disassembler,
+                        /*is_trailing_metadata=*/false);
+}
+
+TEST(HeaderDisassemblerTest, OneInitialMetadataInThreeFrames) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInThreeFrames(stream_id, disassembler,
+                           /*is_trailing_metadata=*/false);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderDisassembler Tests Trailing Metadata Only
+
+TEST(HeaderDisassemblerTest, OneTrailingMetadataInOneFrame) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true);
+}
+
+TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInThreeFrames(stream_id, disassembler,
+                           /*is_trailing_metadata=*/true);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderDisassembler Tests Initial and Trailing Metadata
+
+TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadata) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInOneFrame(stream_id, disassembler,
+                        /*is_trailing_metadata=*/false);
+  OneMetadataInOneFrame(stream_id, disassembler,
+                        /*is_trailing_metadata=*/true);
+}
+
+TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
+  const uint32_t stream_id = 0x1111;
+  HeaderDisassembler disassembler(stream_id);
+  OneMetadataInThreeFrames(stream_id, disassembler,
+                           /*is_trailing_metadata=*/false);
+  OneMetadataInThreeFrames(stream_id, disassembler,
+                           /*is_trailing_metadata=*/true);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAassembler HeaderDisassembler Reversibility Test
+
+TEST(HeaderDisassemblerTest, Reversibility) {
+  const uint32_t stream_id = 0x1111;
+  HPackParser parser;
+  // Generate a metadata object
+  Arena::PoolPtr<grpc_metadata_batch> metadata =
+      GenerateMetadata(stream_id,
+                       /*is_trailing_metadata=*/false, parser);
+
+  // Pass metadata to disassembler for frame generation
+  HPackCompressor encoder;
+  HeaderDisassembler disassembler(stream_id);
+  disassembler.PrepareForSending(std::move(metadata), encoder,
+                                 /*is_trailing_metadata=*/false);
+  EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), kEncodedMetadataLen);
+  EXPECT_TRUE(disassembler.HasMoreData());
+  if (disassembler.HasMoreData()) {
+    // Generate Http2HeaderFrame from disassembler
+    bool is_end_headers = false;
+    Http2Frame frame =
+        disassembler.GetNextFrame(kEncodedMetadataLen, is_end_headers);
+    EXPECT_EQ(is_end_headers, true);
+
+    // Give the frame back to the assembler
+    HeaderAssembler assembler(stream_id);
+    Http2HeaderFrame& header = std::get<Http2HeaderFrame>(frame);
+    Http2Status status = assembler.AppendHeaderFrame(std::move(header));
+    ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> result =
+        assembler.ReadMetadata(parser, /*is_initial_metadata=*/true,
+                               /*is_client=*/true);
+    EXPECT_TRUE(result.IsOk());
+    Arena::PoolPtr<grpc_metadata_batch> metadata_new =
+        TakeValue(std::move(result));
+    EXPECT_STREQ(metadata_new->DebugString().c_str(),
+                 std::string(kSimpleRequestDecoded).c_str());
+  }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderDisassembler Test for Multiple Metadata being queued
+// TODO(tjagtap) : [PH2][P2] : Do this only after the StreamDataQueue class is
+// finalized. Basically we want to test the swap workflows inside the
+// disassembler
 
 }  // namespace testing
 }  // namespace http2

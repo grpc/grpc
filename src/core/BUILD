@@ -7743,6 +7743,7 @@ grpc_cc_library(
         ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
