@@ -592,6 +592,8 @@ TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   OneMetadataInOneFrame(stream_id, disassembler,
                         /*is_trailing_metadata=*/false, parser, encoder,
                         kEncodedMetadataLen);
+  // Because we are sending the same metadata payload 2 times, the encoder just
+  // compresses it to a 8 byte header
   OneMetadataInOneFrame(stream_id, disassembler,
                         /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
@@ -603,6 +605,8 @@ TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
                            /*is_trailing_metadata=*/false, parser, encoder);
+  // Because we are sending the same metadata payload 2 times, the encoder just
+  // compresses it to a 8 byte header
   OneMetadataInOneFrame(stream_id, disassembler,
                         /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
