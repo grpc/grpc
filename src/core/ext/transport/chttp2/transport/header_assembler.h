@@ -250,7 +250,7 @@ class HeaderAssembler {
         max_headers_(kMaxHeaderFrames),
         stream_id_(stream_id) {}
 
-  ~HeaderAssembler() { buffer_.Clear(); };
+  ~HeaderAssembler() = default;
 
   HeaderAssembler(HeaderAssembler&& rvalue) = delete;
   HeaderAssembler& operator=(HeaderAssembler&& rvalue) = delete;
