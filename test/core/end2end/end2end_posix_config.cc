@@ -202,11 +202,6 @@ class FdInsecureCredentialsFixture final
   FdInsecureCredentialsFixture() : FdCredentialsFixture() {}
 };
 
-class FdTlsCredentialsFixture final
-    : public FdCredentialsFixture<TlsFixture_13> {
- public:
-  FdTlsCredentialsFixture() : FdCredentialsFixture() {}
-};
 #endif
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -260,14 +255,6 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
           nullptr,
           [](const ChannelArgs&, const ChannelArgs&) {
             return std::make_unique<FdInsecureCredentialsFixture>();
-          }},
-      CoreTestConfiguration{
-          "Chttp2FdTlsCreds",
-          FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<FdTlsCredentialsFixture>();
           }},
 #endif
 #ifdef GPR_LINUX
