@@ -307,7 +307,7 @@ class HeaderDisassembler {
     return buffer_.Length() + second_buffer_.Length();
   }
 
-  HeaderDisassembler(const uint32_t stream_id)
+  explicit HeaderDisassembler(const uint32_t stream_id)
       : stream_id_(stream_id),
         did_send_header_frame_(false),
         end_stream_(false) {}
