@@ -66,6 +66,11 @@ constexpr absl::string_view kGrpcErrorMaxTwoHeaderFrames =
 // streams. Which means only 2 HEADER frames are legal per stream.
 constexpr uint8_t kMaxHeaderFrames = 2;
 
+// TODO(tjagtap) : [PH2][P3] : Handle the case where a Server receives two
+// header frames. Which means that the client sent trailing metadata. While we
+// dont expect a gRPC C++ peer to behave like this, this might break interop
+// tests and genuine interop cases.
+
 // RFC9113
 // https://www.rfc-editor.org/rfc/rfc9113.html#name-field-section-compression-a
 // A complete field section (which contains our gRPC Metadata) consists of
