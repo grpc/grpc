@@ -57,6 +57,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/endpoint_channel_arg_wrapper.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -105,15 +106,20 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
     notify_ = notify;
     event_engine_ = args_.channel_args.GetObject<EventEngine>();
   }
+  // Check if there is an endpoint in channel args.
   OrphanablePtr<grpc_endpoint> endpoint;
+  auto endpoint_wrapper = args_.channel_args.GetObject<
+      grpc_event_engine::experimental::EndpointChannelArgWrapper>();
+  if (endpoint_wrapper != nullptr) {
+    auto ee_endpoint = endpoint_wrapper->TakeEndpoint();
+    if (ee_endpoint != nullptr) {
+      endpoint.reset(grpc_event_engine_endpoint_create(std::move(ee_endpoint)));
+    }
+  }
+  // If we weren't given the endpoint, add channel args needed by the
+  // TCP connect handshaker.
   ChannelArgs channel_args = args_.channel_args;
-  if (channel_args.Contains(GRPC_ARG_SUBCHANNEL_ENDPOINT)) {
-    endpoint = OrphanablePtr<grpc_endpoint>(grpc_event_engine_endpoint_create(
-        std::unique_ptr<EventEngine::Endpoint>(
-            args_.channel_args
-                .GetObject<grpc_event_engine::experimental::EndpointWrapper>()
-                ->take_endpoint())));
-  } else {
+  if (endpoint != nullptr) {
     absl::StatusOr<std::string> address = grpc_sockaddr_to_uri(args.address);
     if (!address.ok()) {
       grpc_error_handle error = GRPC_ERROR_CREATE(address.status().ToString());

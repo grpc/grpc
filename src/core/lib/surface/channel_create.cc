@@ -37,7 +37,7 @@
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/experiments/experiments.h"
-#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
+#include "src/core/lib/event_engine/endpoint_channel_arg_wrapper.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
@@ -144,7 +144,7 @@ absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
 namespace experimental {
 
 using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
-using ::grpc_event_engine::experimental::EndpointWrapper;
+using ::grpc_event_engine::experimental::EndpointChannelArgWrapper;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::EventEngineSupportsFdExtension;
 using ::grpc_event_engine::experimental::QueryExtension;
@@ -163,13 +163,14 @@ grpc_channel* CreateChannelFromEndpoint(
       CoreConfiguration::Get()
           .channel_args_preconditioning()
           .PreconditionChannelArgs(args)
-          .SetObject(MakeRefCounted<EndpointWrapper>(std::move(endpoint)));
+          .SetObject(
+              MakeRefCounted<EndpointChannelArgWrapper>(std::move(endpoint)));
   if (address_str.ok() && !address_str->empty()) {
     channel_args = channel_args.SetIfUnset(
         GRPC_ARG_DEFAULT_AUTHORITY, URI::PercentEncodeAuthority(*address_str));
   }
   Resolver::Result result;
-  result.args = channel_args.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
+  result.args = channel_args;
   result.addresses = EndpointAddressesList({EndpointAddresses{address, {}}});
   response_generator->SetResponseAsync(std::move(result));
   auto r = CreateClientEndpointChannel(

@@ -749,7 +749,6 @@ void Subchannel::StartConnectingLocked() {
   args.channel_args = args_;
   WeakRef(DEBUG_LOCATION, "Connect").release();  // Ref held by callback.
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
-  args_ = args_.Remove(GRPC_ARG_SUBCHANNEL_ENDPOINT);
 }
 
 void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {

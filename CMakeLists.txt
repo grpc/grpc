@@ -2650,6 +2650,7 @@ add_library(grpc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
@@ -3423,6 +3424,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
+  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/forkable.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
@@ -13039,95 +13041,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/end2end/fixtures/http_proxy_fixture.cc
     test/core/end2end/fixtures/local_util.cc
     test/core/end2end/fixtures/proxy.cc
-    test/core/end2end/tests/bad_ping.cc
-    test/core/end2end/tests/binary_metadata.cc
-    test/core/end2end/tests/call_creds.cc
-    test/core/end2end/tests/call_host_override.cc
-    test/core/end2end/tests/cancel_after_accept.cc
-    test/core/end2end/tests/cancel_after_client_done.cc
-    test/core/end2end/tests/cancel_after_invoke.cc
-    test/core/end2end/tests/cancel_after_round_trip.cc
-    test/core/end2end/tests/cancel_before_invoke.cc
-    test/core/end2end/tests/cancel_in_a_vacuum.cc
-    test/core/end2end/tests/cancel_with_status.cc
-    test/core/end2end/tests/channelz.cc
-    test/core/end2end/tests/client_streaming.cc
-    test/core/end2end/tests/compressed_payload.cc
-    test/core/end2end/tests/connectivity.cc
-    test/core/end2end/tests/default_host.cc
-    test/core/end2end/tests/disappearing_server.cc
-    test/core/end2end/tests/empty_batch.cc
-    test/core/end2end/tests/filter_causes_close.cc
-    test/core/end2end/tests/filter_init_fails.cc
-    test/core/end2end/tests/filtered_metadata.cc
-    test/core/end2end/tests/graceful_server_shutdown.cc
-    test/core/end2end/tests/grpc_authz.cc
-    test/core/end2end/tests/high_initial_seqno.cc
-    test/core/end2end/tests/hpack_size.cc
-    test/core/end2end/tests/http2_stats.cc
-    test/core/end2end/tests/invoke_large_request.cc
-    test/core/end2end/tests/keepalive_timeout.cc
-    test/core/end2end/tests/large_metadata.cc
-    test/core/end2end/tests/max_concurrent_streams.cc
-    test/core/end2end/tests/max_connection_age.cc
-    test/core/end2end/tests/max_connection_idle.cc
-    test/core/end2end/tests/max_message_length.cc
-    test/core/end2end/tests/negative_deadline.cc
-    test/core/end2end/tests/no_op.cc
-    test/core/end2end/tests/payload.cc
-    test/core/end2end/tests/ping.cc
-    test/core/end2end/tests/ping_pong_streaming.cc
-    test/core/end2end/tests/proxy_auth.cc
-    test/core/end2end/tests/registered_call.cc
-    test/core/end2end/tests/request_with_flags.cc
     test/core/end2end/tests/request_with_payload.cc
-    test/core/end2end/tests/resource_quota_server.cc
-    test/core/end2end/tests/retry.cc
-    test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-    test/core/end2end/tests/retry_cancel_during_delay.cc
-    test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-    test/core/end2end/tests/retry_cancellation.cc
-    test/core/end2end/tests/retry_disabled.cc
-    test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-    test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-    test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-    test/core/end2end/tests/retry_lb_drop.cc
-    test/core/end2end/tests/retry_lb_fail.cc
-    test/core/end2end/tests/retry_non_retriable_status.cc
-    test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-    test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-    test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-    test/core/end2end/tests/retry_recv_initial_metadata.cc
-    test/core/end2end/tests/retry_recv_message.cc
-    test/core/end2end/tests/retry_recv_message_replay.cc
-    test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-    test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-    test/core/end2end/tests/retry_send_op_fails.cc
-    test/core/end2end/tests/retry_send_recv_batch.cc
-    test/core/end2end/tests/retry_server_pushback_delay.cc
-    test/core/end2end/tests/retry_server_pushback_disabled.cc
-    test/core/end2end/tests/retry_streaming.cc
-    test/core/end2end/tests/retry_streaming_after_commit.cc
-    test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-    test/core/end2end/tests/retry_throttled.cc
-    test/core/end2end/tests/retry_too_many_attempts.cc
-    test/core/end2end/tests/retry_transparent_goaway.cc
-    test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-    test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-    test/core/end2end/tests/retry_unref_before_finish.cc
-    test/core/end2end/tests/retry_unref_before_recv.cc
-    test/core/end2end/tests/server_finishes_request.cc
-    test/core/end2end/tests/server_streaming.cc
-    test/core/end2end/tests/shutdown_finishes_calls.cc
-    test/core/end2end/tests/shutdown_finishes_tags.cc
-    test/core/end2end/tests/simple_delayed_request.cc
-    test/core/end2end/tests/simple_metadata.cc
-    test/core/end2end/tests/simple_request.cc
-    test/core/end2end/tests/streaming_error_response.cc
-    test/core/end2end/tests/timeout_before_request_call.cc
-    test/core/end2end/tests/trailing_metadata.cc
-    test/core/end2end/tests/write_buffering.cc
-    test/core/end2end/tests/write_buffering_at_end.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/test_util/fail_first_call_filter.cc
@@ -13437,95 +13351,7 @@ add_executable(end2end_http2_security_test
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/bad_ping.cc
-  test/core/end2end/tests/binary_metadata.cc
-  test/core/end2end/tests/call_creds.cc
-  test/core/end2end/tests/call_host_override.cc
-  test/core/end2end/tests/cancel_after_accept.cc
-  test/core/end2end/tests/cancel_after_client_done.cc
-  test/core/end2end/tests/cancel_after_invoke.cc
-  test/core/end2end/tests/cancel_after_round_trip.cc
-  test/core/end2end/tests/cancel_before_invoke.cc
-  test/core/end2end/tests/cancel_in_a_vacuum.cc
-  test/core/end2end/tests/cancel_with_status.cc
-  test/core/end2end/tests/channelz.cc
-  test/core/end2end/tests/client_streaming.cc
-  test/core/end2end/tests/compressed_payload.cc
-  test/core/end2end/tests/connectivity.cc
-  test/core/end2end/tests/default_host.cc
-  test/core/end2end/tests/disappearing_server.cc
-  test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_causes_close.cc
-  test/core/end2end/tests/filter_init_fails.cc
-  test/core/end2end/tests/filtered_metadata.cc
-  test/core/end2end/tests/graceful_server_shutdown.cc
-  test/core/end2end/tests/grpc_authz.cc
-  test/core/end2end/tests/high_initial_seqno.cc
-  test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/http2_stats.cc
-  test/core/end2end/tests/invoke_large_request.cc
-  test/core/end2end/tests/keepalive_timeout.cc
-  test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/max_concurrent_streams.cc
-  test/core/end2end/tests/max_connection_age.cc
-  test/core/end2end/tests/max_connection_idle.cc
-  test/core/end2end/tests/max_message_length.cc
-  test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_op.cc
-  test/core/end2end/tests/payload.cc
-  test/core/end2end/tests/ping.cc
-  test/core/end2end/tests/ping_pong_streaming.cc
-  test/core/end2end/tests/proxy_auth.cc
-  test/core/end2end/tests/registered_call.cc
-  test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
-  test/core/end2end/tests/resource_quota_server.cc
-  test/core/end2end/tests/retry.cc
-  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  test/core/end2end/tests/retry_cancel_during_delay.cc
-  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  test/core/end2end/tests/retry_cancellation.cc
-  test/core/end2end/tests/retry_disabled.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  test/core/end2end/tests/retry_lb_drop.cc
-  test/core/end2end/tests/retry_lb_fail.cc
-  test/core/end2end/tests/retry_non_retriable_status.cc
-  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  test/core/end2end/tests/retry_recv_initial_metadata.cc
-  test/core/end2end/tests/retry_recv_message.cc
-  test/core/end2end/tests/retry_recv_message_replay.cc
-  test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  test/core/end2end/tests/retry_send_op_fails.cc
-  test/core/end2end/tests/retry_send_recv_batch.cc
-  test/core/end2end/tests/retry_server_pushback_delay.cc
-  test/core/end2end/tests/retry_server_pushback_disabled.cc
-  test/core/end2end/tests/retry_streaming.cc
-  test/core/end2end/tests/retry_streaming_after_commit.cc
-  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  test/core/end2end/tests/retry_throttled.cc
-  test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  test/core/end2end/tests/retry_unref_before_finish.cc
-  test/core/end2end/tests/retry_unref_before_recv.cc
-  test/core/end2end/tests/server_finishes_request.cc
-  test/core/end2end/tests/server_streaming.cc
-  test/core/end2end/tests/shutdown_finishes_calls.cc
-  test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_delayed_request.cc
-  test/core/end2end/tests/simple_metadata.cc
-  test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/streaming_error_response.cc
-  test/core/end2end/tests/timeout_before_request_call.cc
-  test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/write_buffering.cc
-  test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
@@ -13628,95 +13454,7 @@ add_executable(end2end_http2_test
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/bad_ping.cc
-  test/core/end2end/tests/binary_metadata.cc
-  test/core/end2end/tests/call_creds.cc
-  test/core/end2end/tests/call_host_override.cc
-  test/core/end2end/tests/cancel_after_accept.cc
-  test/core/end2end/tests/cancel_after_client_done.cc
-  test/core/end2end/tests/cancel_after_invoke.cc
-  test/core/end2end/tests/cancel_after_round_trip.cc
-  test/core/end2end/tests/cancel_before_invoke.cc
-  test/core/end2end/tests/cancel_in_a_vacuum.cc
-  test/core/end2end/tests/cancel_with_status.cc
-  test/core/end2end/tests/channelz.cc
-  test/core/end2end/tests/client_streaming.cc
-  test/core/end2end/tests/compressed_payload.cc
-  test/core/end2end/tests/connectivity.cc
-  test/core/end2end/tests/default_host.cc
-  test/core/end2end/tests/disappearing_server.cc
-  test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_causes_close.cc
-  test/core/end2end/tests/filter_init_fails.cc
-  test/core/end2end/tests/filtered_metadata.cc
-  test/core/end2end/tests/graceful_server_shutdown.cc
-  test/core/end2end/tests/grpc_authz.cc
-  test/core/end2end/tests/high_initial_seqno.cc
-  test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/http2_stats.cc
-  test/core/end2end/tests/invoke_large_request.cc
-  test/core/end2end/tests/keepalive_timeout.cc
-  test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/max_concurrent_streams.cc
-  test/core/end2end/tests/max_connection_age.cc
-  test/core/end2end/tests/max_connection_idle.cc
-  test/core/end2end/tests/max_message_length.cc
-  test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_op.cc
-  test/core/end2end/tests/payload.cc
-  test/core/end2end/tests/ping.cc
-  test/core/end2end/tests/ping_pong_streaming.cc
-  test/core/end2end/tests/proxy_auth.cc
-  test/core/end2end/tests/registered_call.cc
-  test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
-  test/core/end2end/tests/resource_quota_server.cc
-  test/core/end2end/tests/retry.cc
-  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  test/core/end2end/tests/retry_cancel_during_delay.cc
-  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  test/core/end2end/tests/retry_cancellation.cc
-  test/core/end2end/tests/retry_disabled.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  test/core/end2end/tests/retry_lb_drop.cc
-  test/core/end2end/tests/retry_lb_fail.cc
-  test/core/end2end/tests/retry_non_retriable_status.cc
-  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  test/core/end2end/tests/retry_recv_initial_metadata.cc
-  test/core/end2end/tests/retry_recv_message.cc
-  test/core/end2end/tests/retry_recv_message_replay.cc
-  test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  test/core/end2end/tests/retry_send_op_fails.cc
-  test/core/end2end/tests/retry_send_recv_batch.cc
-  test/core/end2end/tests/retry_server_pushback_delay.cc
-  test/core/end2end/tests/retry_server_pushback_disabled.cc
-  test/core/end2end/tests/retry_streaming.cc
-  test/core/end2end/tests/retry_streaming_after_commit.cc
-  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  test/core/end2end/tests/retry_throttled.cc
-  test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  test/core/end2end/tests/retry_unref_before_finish.cc
-  test/core/end2end/tests/retry_unref_before_recv.cc
-  test/core/end2end/tests/server_finishes_request.cc
-  test/core/end2end/tests/server_streaming.cc
-  test/core/end2end/tests/shutdown_finishes_calls.cc
-  test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_delayed_request.cc
-  test/core/end2end/tests/simple_metadata.cc
-  test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/streaming_error_response.cc
-  test/core/end2end/tests/timeout_before_request_call.cc
-  test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/write_buffering.cc
-  test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
@@ -13922,95 +13660,7 @@ add_executable(end2end_inproc_test
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/bad_ping.cc
-  test/core/end2end/tests/binary_metadata.cc
-  test/core/end2end/tests/call_creds.cc
-  test/core/end2end/tests/call_host_override.cc
-  test/core/end2end/tests/cancel_after_accept.cc
-  test/core/end2end/tests/cancel_after_client_done.cc
-  test/core/end2end/tests/cancel_after_invoke.cc
-  test/core/end2end/tests/cancel_after_round_trip.cc
-  test/core/end2end/tests/cancel_before_invoke.cc
-  test/core/end2end/tests/cancel_in_a_vacuum.cc
-  test/core/end2end/tests/cancel_with_status.cc
-  test/core/end2end/tests/channelz.cc
-  test/core/end2end/tests/client_streaming.cc
-  test/core/end2end/tests/compressed_payload.cc
-  test/core/end2end/tests/connectivity.cc
-  test/core/end2end/tests/default_host.cc
-  test/core/end2end/tests/disappearing_server.cc
-  test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_causes_close.cc
-  test/core/end2end/tests/filter_init_fails.cc
-  test/core/end2end/tests/filtered_metadata.cc
-  test/core/end2end/tests/graceful_server_shutdown.cc
-  test/core/end2end/tests/grpc_authz.cc
-  test/core/end2end/tests/high_initial_seqno.cc
-  test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/http2_stats.cc
-  test/core/end2end/tests/invoke_large_request.cc
-  test/core/end2end/tests/keepalive_timeout.cc
-  test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/max_concurrent_streams.cc
-  test/core/end2end/tests/max_connection_age.cc
-  test/core/end2end/tests/max_connection_idle.cc
-  test/core/end2end/tests/max_message_length.cc
-  test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_op.cc
-  test/core/end2end/tests/payload.cc
-  test/core/end2end/tests/ping.cc
-  test/core/end2end/tests/ping_pong_streaming.cc
-  test/core/end2end/tests/proxy_auth.cc
-  test/core/end2end/tests/registered_call.cc
-  test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
-  test/core/end2end/tests/resource_quota_server.cc
-  test/core/end2end/tests/retry.cc
-  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  test/core/end2end/tests/retry_cancel_during_delay.cc
-  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  test/core/end2end/tests/retry_cancellation.cc
-  test/core/end2end/tests/retry_disabled.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  test/core/end2end/tests/retry_lb_drop.cc
-  test/core/end2end/tests/retry_lb_fail.cc
-  test/core/end2end/tests/retry_non_retriable_status.cc
-  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  test/core/end2end/tests/retry_recv_initial_metadata.cc
-  test/core/end2end/tests/retry_recv_message.cc
-  test/core/end2end/tests/retry_recv_message_replay.cc
-  test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  test/core/end2end/tests/retry_send_op_fails.cc
-  test/core/end2end/tests/retry_send_recv_batch.cc
-  test/core/end2end/tests/retry_server_pushback_delay.cc
-  test/core/end2end/tests/retry_server_pushback_disabled.cc
-  test/core/end2end/tests/retry_streaming.cc
-  test/core/end2end/tests/retry_streaming_after_commit.cc
-  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  test/core/end2end/tests/retry_throttled.cc
-  test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  test/core/end2end/tests/retry_unref_before_finish.cc
-  test/core/end2end/tests/retry_unref_before_recv.cc
-  test/core/end2end/tests/server_finishes_request.cc
-  test/core/end2end/tests/server_streaming.cc
-  test/core/end2end/tests/shutdown_finishes_calls.cc
-  test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_delayed_request.cc
-  test/core/end2end/tests/simple_metadata.cc
-  test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/streaming_error_response.cc
-  test/core/end2end/tests/timeout_before_request_call.cc
-  test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/write_buffering.cc
-  test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc
@@ -14216,95 +13866,7 @@ add_executable(end2end_posix_test
   test/core/end2end/fixtures/http_proxy_fixture.cc
   test/core/end2end/fixtures/local_util.cc
   test/core/end2end/fixtures/proxy.cc
-  test/core/end2end/tests/bad_ping.cc
-  test/core/end2end/tests/binary_metadata.cc
-  test/core/end2end/tests/call_creds.cc
-  test/core/end2end/tests/call_host_override.cc
-  test/core/end2end/tests/cancel_after_accept.cc
-  test/core/end2end/tests/cancel_after_client_done.cc
-  test/core/end2end/tests/cancel_after_invoke.cc
-  test/core/end2end/tests/cancel_after_round_trip.cc
-  test/core/end2end/tests/cancel_before_invoke.cc
-  test/core/end2end/tests/cancel_in_a_vacuum.cc
-  test/core/end2end/tests/cancel_with_status.cc
-  test/core/end2end/tests/channelz.cc
-  test/core/end2end/tests/client_streaming.cc
-  test/core/end2end/tests/compressed_payload.cc
-  test/core/end2end/tests/connectivity.cc
-  test/core/end2end/tests/default_host.cc
-  test/core/end2end/tests/disappearing_server.cc
-  test/core/end2end/tests/empty_batch.cc
-  test/core/end2end/tests/filter_causes_close.cc
-  test/core/end2end/tests/filter_init_fails.cc
-  test/core/end2end/tests/filtered_metadata.cc
-  test/core/end2end/tests/graceful_server_shutdown.cc
-  test/core/end2end/tests/grpc_authz.cc
-  test/core/end2end/tests/high_initial_seqno.cc
-  test/core/end2end/tests/hpack_size.cc
-  test/core/end2end/tests/http2_stats.cc
-  test/core/end2end/tests/invoke_large_request.cc
-  test/core/end2end/tests/keepalive_timeout.cc
-  test/core/end2end/tests/large_metadata.cc
-  test/core/end2end/tests/max_concurrent_streams.cc
-  test/core/end2end/tests/max_connection_age.cc
-  test/core/end2end/tests/max_connection_idle.cc
-  test/core/end2end/tests/max_message_length.cc
-  test/core/end2end/tests/negative_deadline.cc
-  test/core/end2end/tests/no_op.cc
-  test/core/end2end/tests/payload.cc
-  test/core/end2end/tests/ping.cc
-  test/core/end2end/tests/ping_pong_streaming.cc
-  test/core/end2end/tests/proxy_auth.cc
-  test/core/end2end/tests/registered_call.cc
-  test/core/end2end/tests/request_with_flags.cc
   test/core/end2end/tests/request_with_payload.cc
-  test/core/end2end/tests/resource_quota_server.cc
-  test/core/end2end/tests/retry.cc
-  test/core/end2end/tests/retry_cancel_after_first_attempt_starts.cc
-  test/core/end2end/tests/retry_cancel_during_delay.cc
-  test/core/end2end/tests/retry_cancel_with_multiple_send_batches.cc
-  test/core/end2end/tests/retry_cancellation.cc
-  test/core/end2end/tests/retry_disabled.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
-  test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
-  test/core/end2end/tests/retry_lb_drop.cc
-  test/core/end2end/tests/retry_lb_fail.cc
-  test/core/end2end/tests/retry_non_retriable_status.cc
-  test/core/end2end/tests/retry_non_retriable_status_before_trailers.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout.cc
-  test/core/end2end/tests/retry_per_attempt_recv_timeout_on_last_attempt.cc
-  test/core/end2end/tests/retry_recv_initial_metadata.cc
-  test/core/end2end/tests/retry_recv_message.cc
-  test/core/end2end/tests/retry_recv_message_replay.cc
-  test/core/end2end/tests/retry_recv_trailing_metadata_error.cc
-  test/core/end2end/tests/retry_send_initial_metadata_refs.cc
-  test/core/end2end/tests/retry_send_op_fails.cc
-  test/core/end2end/tests/retry_send_recv_batch.cc
-  test/core/end2end/tests/retry_server_pushback_delay.cc
-  test/core/end2end/tests/retry_server_pushback_disabled.cc
-  test/core/end2end/tests/retry_streaming.cc
-  test/core/end2end/tests/retry_streaming_after_commit.cc
-  test/core/end2end/tests/retry_streaming_succeeds_before_replay_finished.cc
-  test/core/end2end/tests/retry_throttled.cc
-  test/core/end2end/tests/retry_too_many_attempts.cc
-  test/core/end2end/tests/retry_transparent_goaway.cc
-  test/core/end2end/tests/retry_transparent_max_concurrent_streams.cc
-  test/core/end2end/tests/retry_transparent_not_sent_on_wire.cc
-  test/core/end2end/tests/retry_unref_before_finish.cc
-  test/core/end2end/tests/retry_unref_before_recv.cc
-  test/core/end2end/tests/server_finishes_request.cc
-  test/core/end2end/tests/server_streaming.cc
-  test/core/end2end/tests/shutdown_finishes_calls.cc
-  test/core/end2end/tests/shutdown_finishes_tags.cc
-  test/core/end2end/tests/simple_delayed_request.cc
-  test/core/end2end/tests/simple_metadata.cc
-  test/core/end2end/tests/simple_request.cc
-  test/core/end2end/tests/streaming_error_response.cc
-  test/core/end2end/tests/timeout_before_request_call.cc
-  test/core/end2end/tests/trailing_metadata.cc
-  test/core/end2end/tests/write_buffering.cc
-  test/core/end2end/tests/write_buffering_at_end.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   test/core/test_util/fail_first_call_filter.cc

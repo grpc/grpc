@@ -1722,6 +1722,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
         "//src/core:event_engine_common",
         "//src/core:event_engine_extensions",
@@ -3686,7 +3687,6 @@ grpc_cc_library(
         "//src/core:client_channel/subchannel.h",
         "//src/core:client_channel/subchannel_interface_internal.h",
         "//src/core:client_channel/subchannel_stream_client.h",
-        "//src/core:lib/iomgr/event_engine_shims/endpoint.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -3752,6 +3752,7 @@ grpc_cc_library(
         "//src/core:construct_destruct",
         "//src/core:context",
         "//src/core:dual_ref_counted",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",
