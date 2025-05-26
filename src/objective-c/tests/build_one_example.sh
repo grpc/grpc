@@ -53,7 +53,8 @@ if [ "$SCHEME" == "gRPC-Package" ]; then
     -derivedDataPath Build/Build \
     CODE_SIGN_IDENTITY="" \
     CODE_SIGNING_REQUIRED=NO \
-    CODE_SIGNING_ALLOWED=NO
+    CODE_SIGNING_ALLOWED=NO \
+    | "${XCODEBUILD_FILTER_OUTPUT_SCRIPT}"
 elif [ "$SCHEME" == "tvOS-sample" ]; then
   time xcodebuild \
     build \
