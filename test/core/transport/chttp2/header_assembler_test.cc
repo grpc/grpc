@@ -468,9 +468,8 @@ void ValidateHeaderFrame(Http2Frame&& frame, const bool is_trailing_metadata,
 
 void OneMetadataInOneFrame(const uint32_t stream_id,
                            HeaderDisassembler& disassembler,
-                           const bool is_trailing_metadata) {
-  HPackParser parser;
-  HPackCompressor encoder;
+                           const bool is_trailing_metadata, HPackParser& parser,
+                           HPackCompressor& encoder) {
   Arena::PoolPtr<grpc_metadata_batch> metadata =
       GenerateMetadata(stream_id, is_trailing_metadata, parser);
   disassembler.PrepareForSending(std::move(metadata), encoder,
@@ -493,80 +492,117 @@ void OneMetadataInOneFrame(const uint32_t stream_id,
   }
 }
 
+void SecondMetadataInOneFrame(const uint32_t stream_id,
+                              HeaderDisassembler& disassembler,
+                              const bool is_trailing_metadata,
+                              HPackParser& parser, HPackCompressor& encoder) {
+  Arena::PoolPtr<grpc_metadata_batch> metadata =
+      GenerateMetadata(stream_id, is_trailing_metadata, parser);
+  disassembler.PrepareForSending(std::move(metadata), encoder,
+                                 is_trailing_metadata);
+  ExpectBufferLengths(disassembler, 8);
+
+  uint8_t count = 0;
+  while (disassembler.HasMoreData()) {
+    ++count;
+    bool is_end_headers = false;
+    Http2Frame frame = disassembler.GetNextFrame(8, is_end_headers);
+    EXPECT_EQ(is_end_headers, true);
+
+    ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
+                        /*end_headers=*/true, 8);
+    ExpectBufferLengths(disassembler, 0u);
+
+    EXPECT_EQ(count, 1);
+  }
+}
+
 void OneMetadataInThreeFrames(const uint32_t stream_id,
                               HeaderDisassembler& disassembler,
-                              const bool is_trailing_metadata) {
+                              const bool is_trailing_metadata,
+                              HPackParser& parser, HPackCompressor& encoder) {
   const uint8_t frame_length = (kEncodedMetadataLen / 2) - 1;
-  HPackParser parser;
-  HPackCompressor encoder;
+  const uint8_t last_frame_size = 2;
   Arena::PoolPtr<grpc_metadata_batch> metadata =
       GenerateMetadata(stream_id, is_trailing_metadata, parser);
   disassembler.PrepareForSending(std::move(metadata), encoder,
                                  is_trailing_metadata);
   ExpectBufferLengths(disassembler, kEncodedMetadataLen);
 
+  const uint8_t expected_number_of_frames = 3;
   int8_t remaining_length = kEncodedMetadataLen;
   uint8_t count = 0;
   bool is_end_headers = false;
   if (disassembler.HasMoreData()) {
     ++count;
-    remaining_length -= frame_length;
     Http2Frame frame = disassembler.GetNextFrame(frame_length, is_end_headers);
     EXPECT_EQ(is_end_headers, false);
 
     ValidateHeaderFrame(std::move(frame), is_trailing_metadata,
                         /*end_headers=*/false, frame_length);
 
+    remaining_length -= frame_length;
     ExpectBufferLengths(disassembler, remaining_length);
   }
   while (disassembler.HasMoreData()) {
     ++count;
     remaining_length = std::max(remaining_length - frame_length, 0);
     Http2Frame frame = disassembler.GetNextFrame(frame_length, is_end_headers);
-    EXPECT_EQ(is_end_headers, (count == 3));
+    EXPECT_EQ(is_end_headers, (count == expected_number_of_frames));
 
     EXPECT_TRUE(std::holds_alternative<Http2ContinuationFrame>(frame));
     Http2ContinuationFrame& continuation =
         std::get<Http2ContinuationFrame>(frame);
-    EXPECT_EQ(continuation.end_headers, (count == 3));
-    EXPECT_EQ(continuation.payload.Length(), (count == 3 ? 2 : frame_length));
+    EXPECT_EQ(continuation.end_headers, (count == expected_number_of_frames));
+    EXPECT_EQ(
+        continuation.payload.Length(),
+        (count == expected_number_of_frames ? last_frame_size : frame_length));
 
     ExpectBufferLengths(disassembler, remaining_length);
   }
-  EXPECT_EQ(count, 3);
+  EXPECT_EQ(count, expected_number_of_frames);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderDisassembler Tests Initial Metadata Only
 
 TEST(HeaderDisassemblerTest, OneInitialMetadataInOneFrame) {
-  const uint32_t stream_id = 0x1111;
+  const uint32_t stream_id = 1;
   HeaderDisassembler disassembler(stream_id);
+  HPackParser parser;
+  HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
-                        /*is_trailing_metadata=*/false);
+                        /*is_trailing_metadata=*/false, parser, encoder);
 }
 
 TEST(HeaderDisassemblerTest, OneInitialMetadataInThreeFrames) {
-  const uint32_t stream_id = 0x1111;
+  const uint32_t stream_id = 3;
   HeaderDisassembler disassembler(stream_id);
+  HPackParser parser;
+  HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
-                           /*is_trailing_metadata=*/false);
+                           /*is_trailing_metadata=*/false, parser, encoder);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // HeaderDisassembler Tests Trailing Metadata Only
 
 TEST(HeaderDisassemblerTest, OneTrailingMetadataInOneFrame) {
-  const uint32_t stream_id = 0x1111;
+  const uint32_t stream_id = 0x7fffffff;
   HeaderDisassembler disassembler(stream_id);
-  OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true);
+  HPackParser parser;
+  HPackCompressor encoder;
+  OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true,
+                        parser, encoder);
 }
 
 TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
-  const uint32_t stream_id = 0x1111;
+  const uint32_t stream_id = 0x0fffffff;
   HeaderDisassembler disassembler(stream_id);
+  HPackParser parser;
+  HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
-                           /*is_trailing_metadata=*/true);
+                           /*is_trailing_metadata=*/true, parser, encoder);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -575,19 +611,23 @@ TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
 TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   const uint32_t stream_id = 0x1111;
   HeaderDisassembler disassembler(stream_id);
+  HPackParser parser;
+  HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
-                        /*is_trailing_metadata=*/false);
-  OneMetadataInOneFrame(stream_id, disassembler,
-                        /*is_trailing_metadata=*/true);
+                        /*is_trailing_metadata=*/false, parser, encoder);
+  SecondMetadataInOneFrame(stream_id, disassembler,
+                           /*is_trailing_metadata=*/true, parser, encoder);
 }
 
 TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
   const uint32_t stream_id = 0x1111;
   HeaderDisassembler disassembler(stream_id);
+  HPackParser parser;
+  HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
-                           /*is_trailing_metadata=*/false);
-  OneMetadataInThreeFrames(stream_id, disassembler,
-                           /*is_trailing_metadata=*/true);
+                           /*is_trailing_metadata=*/false, parser, encoder);
+  SecondMetadataInOneFrame(stream_id, disassembler,
+                           /*is_trailing_metadata=*/true, parser, encoder);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

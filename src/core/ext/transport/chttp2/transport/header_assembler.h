@@ -312,10 +312,7 @@ class HeaderDisassembler {
         did_send_header_frame_(false),
         end_stream_(false) {}
 
-  ~HeaderDisassembler() {
-    buffer_.Clear();
-    second_buffer_.Clear();
-  }
+  ~HeaderDisassembler() = default;
 
   HeaderDisassembler(HeaderDisassembler&& rvalue) = delete;
   HeaderDisassembler& operator=(HeaderDisassembler&& rvalue) = delete;
