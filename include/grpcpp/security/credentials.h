@@ -85,9 +85,11 @@ class ChannelCredentials : private grpc::internal::GrpcLibrary {
           endpoint,
       const std::shared_ptr<ChannelCredentials>& creds,
       const ChannelArguments& args);
+#ifdef GPR_SUPPORT_CHANNELS_FROM_FD
   friend std::shared_ptr<grpc::Channel> grpc::experimental::CreateChannelFromFd(
       int fd, const std::shared_ptr<ChannelCredentials>& creds,
       const ChannelArguments& args);
+#endif  // GPR_SUPPORT_CHANNELS_FROM_FD
   friend std::shared_ptr<grpc::Channel> CreateCustomChannel(
       const grpc::string& target,
       const std::shared_ptr<grpc::ChannelCredentials>& creds,
