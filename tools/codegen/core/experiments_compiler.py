@@ -529,7 +529,7 @@ class ExperimentsCompiler(object):
             if "kDefaultForDebugOnly" in have_defaults:
                 print("const bool kDefaultForDebugOnly = true;", file=file_desc)
             print("#endif", file=file_desc)
-        print("}", file=file_desc)
+        print("}  // namespace", file=file_desc)
         print(file=file_desc)
         print("namespace grpc_core {", file=file_desc)
         print(file=file_desc)
