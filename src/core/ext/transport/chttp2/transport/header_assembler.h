@@ -163,7 +163,7 @@ class HeaderAssembler {
     }
 
     if (GPR_UNLIKELY(is_ready_ == true)) {
-      // Received comtinuation frame after END_HEADERS was received. This is
+      // Received continuation frame after END_HEADERS was received. This is
       // wrong.
       Cleanup();
       LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
