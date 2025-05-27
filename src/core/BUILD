@@ -4464,11 +4464,11 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:ssl_transport_security_utils",
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//:tsi_ssl_session_cache",
-        "//:ssl_transport_security_utils"
     ],
 )
 
