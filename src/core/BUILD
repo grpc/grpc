@@ -4326,10 +4326,10 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:ssl_transport_security_utils",
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
-        "//:ssl_transport_security_utils",
         "//:tsi_ssl_session_cache",
     ],
 )
@@ -4465,11 +4465,11 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:ssl_transport_security_utils",
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
         "//:tsi_ssl_session_cache",
-        "//:ssl_transport_security_utils"
     ],
 )
 
@@ -4723,11 +4723,10 @@ grpc_cc_library(
         "//:iomgr",
         "//:promise",
         "//:ref_counted_ptr",
+        "//:ssl_transport_security_utils",
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
-        "//:ssl_transport_security_utils",
-
     ],
 )
 
@@ -5458,8 +5457,8 @@ grpc_cc_library(
         "//:gpr",
         "//:grpc_base",
         "//:ref_counted_ptr",
-        "//:tsi_ssl_credentials",
         "//:ssl_transport_security_utils",
+        "//:tsi_ssl_credentials",
     ],
 )
 
@@ -6023,9 +6022,9 @@ grpc_cc_library(
         "//:parse_address",
         "//:ref_counted_ptr",
         "//:sockaddr_utils",
+        "//:ssl_transport_security_utils",
         "//:transport_auth_context",
         "//:tsi_ssl_credentials",
-        "//:ssl_transport_security_utils",
         "//:uri",
         "//:work_serializer",
         "//:xds_client",

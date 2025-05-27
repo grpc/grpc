@@ -4210,14 +4210,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "ssl_transport_security_utils",
     srcs = [
-        "//src/core:tsi/ssl_transport_security_utils.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
+        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
-        "//src/core:tsi/ssl_transport_security_utils.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
+        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
-    visibility = ["//visibility:public"],
     external_deps = [
         "absl/base:core_headers",
         "absl/log:check",
@@ -4228,6 +4227,7 @@ grpc_cc_library(
         "libcrypto",
         "libssl",
     ],
+    visibility = ["//visibility:public"],
     deps = [
         "channel_arg_names",
         "config_vars",
