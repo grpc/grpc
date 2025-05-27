@@ -190,7 +190,6 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
       LOG(ERROR) << "Unknown experiment: " << experiment;
     }
   }
-  // Check if there are circular dependencies in the required experiments.
   std::map<size_t, std::vector<size_t>> experiments_requirements_graph;
   for (size_t i = 0; i < kNumExperiments; i++) {
     // If required experiments are not enabled, disable this one too.
@@ -204,7 +203,9 @@ GPR_ATTRIBUTE_NOINLINE Experiments LoadExperimentsFromConfigVariableInner() {
       }
     }
   }
-  CHECK(ValidateExperimentsRequirements(experiments_requirements_graph));
+  // Checks for circular dependencies in the required experiments. This check is
+  // performed only in debug mode and is skipped in production.
+  DCHECK(ValidateExperimentsRequirements(experiments_requirements_graph));
   return experiments;
 }
 
