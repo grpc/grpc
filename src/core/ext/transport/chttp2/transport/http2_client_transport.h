@@ -146,6 +146,10 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessMetadata(HeaderAssembler& assember, CallHandler& call,
+                              bool curr_end_stream,
+                              bool& did_push_initial_metadata,
+                              bool& did_push_trailing_metadata);
 
   // Reading from the endpoint.
 
@@ -213,7 +217,9 @@ class Http2ClientTransport final : public ClientTransport {
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
-          header_assembler(stream_id1) {}
+          header_assembler(stream_id1),
+          did_push_initial_metadata(false),
+          did_push_trailing_metadata(false) {}
 
     CallHandler call;
     HttpStreamState stream_state;
@@ -221,6 +227,9 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
+
+    bool did_push_initial_metadata;
+    bool did_push_trailing_metadata;
   };
 
   uint32_t NextStreamId(
@@ -312,17 +321,21 @@ class Http2ClientTransport final : public ClientTransport {
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      LOG(ERROR) << "Stream Error: " << status.DebugString();
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      LOG(ERROR) << "Connection Error: " << status.DebugString();
       CloseTransport(status, whence);
       return status.GetAbslConnectionError();
     }
-
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
+
   bool bytes_sent_in_last_write_;
+  bool incoming_header_in_progress_;
+  uint32_t incoming_header_stream_id_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
