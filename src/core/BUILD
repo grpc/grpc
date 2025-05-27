@@ -4329,6 +4329,7 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//:ssl_transport_security_utils",
         "//:tsi_ssl_session_cache",
     ],
 )
@@ -4725,6 +4726,8 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_credentials",
+        "//:ssl_transport_security_utils",
+
     ],
 )
 
@@ -5456,6 +5459,7 @@ grpc_cc_library(
         "//:grpc_base",
         "//:ref_counted_ptr",
         "//:tsi_ssl_credentials",
+        "//:ssl_transport_security_utils",
     ],
 )
 
@@ -6021,6 +6025,7 @@ grpc_cc_library(
         "//:sockaddr_utils",
         "//:transport_auth_context",
         "//:tsi_ssl_credentials",
+        "//:ssl_transport_security_utils",
         "//:uri",
         "//:work_serializer",
         "//:xds_client",
@@ -9766,7 +9771,7 @@ grpc_cc_library(
         "json_reader",
         "load_file",
         "status_helper",
-        "//:tsi_ssl_credentials",
+        "//:ssl_transport_security_utils",
     ],
 )
 
