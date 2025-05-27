@@ -80,7 +80,7 @@ class RetryFilter final {
                  0, INT_MAX);
   }
 
-  RetryFilter(const grpc_channel_element_args& args);
+  explicit RetryFilter(const grpc_channel_element_args& args);
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
