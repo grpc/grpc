@@ -27,6 +27,7 @@
 #include <utility>
 
 #include "absl/log/check.h"
+#include "absl/strings/escaping.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
 #include "opentelemetry/metrics/sync_instruments.h"
@@ -1051,11 +1052,13 @@ grpc_core::ClientCallTracer* OpenTelemetryPluginImpl::GetClientCallTracer(
 
 grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
-  return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<ServerCallTracer>(
-          this,
+  auto arena = grpc_core::GetContext<grpc_core::Arena>();
+  return arena
+      ->MakeRefCounted<ServerCallTracer>(
+          this, arena,
           std::static_pointer_cast<OpenTelemetryPluginImpl::ServerScopeConfig>(
-              scope_config));
+              scope_config))
+      .release();
 }
 
 bool OpenTelemetryPluginImpl::IsInstrumentEnabled(
@@ -1207,6 +1210,35 @@ void GrpcTextMapCarrier::Set(opentelemetry::nostd::string_view key,
                             << "Failed to add tracing information in metadata.";
                       });
   }
+}
+
+std::string OTelSpanTraceIdToString(opentelemetry::trace::Span* span) {
+  if (span == nullptr) {
+    return "";
+  }
+  auto context = span->GetContext();
+  auto trace_id = context.trace_id();
+  if (!trace_id.IsValid()) {
+    return "";
+  }
+  auto trace_id_span = trace_id.Id();
+  return absl::BytesToHexString(
+      absl::string_view(reinterpret_cast<const char*>(trace_id_span.data()),
+                        trace_id_span.size()));
+}
+
+std::string OTelSpanSpanIdToString(opentelemetry::trace::Span* span) {
+  if (span == nullptr) {
+    return "";
+  }
+  auto context = span->GetContext();
+  auto span_id = context.span_id();
+  if (!span_id.IsValid()) {
+    return "";
+  }
+  auto span_id_span = span_id.Id();
+  return absl::BytesToHexString(absl::string_view(
+      reinterpret_cast<const char*>(span_id_span.data()), span_id_span.size()));
 }
 
 }  // namespace internal

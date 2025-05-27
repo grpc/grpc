@@ -8224,6 +8224,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8354,6 +8355,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8572,6 +8574,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8698,6 +8701,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8824,6 +8828,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9038,6 +9043,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9252,6 +9258,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9378,6 +9385,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9592,6 +9600,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9718,6 +9727,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -11803,6 +11813,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -11975,21 +11986,28 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12311,11 +12329,16 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -12669,6 +12692,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/lib/promise/detail/promise_variant.h
@@ -12688,6 +12712,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
@@ -15155,6 +15180,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15265,6 +15291,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15344,13 +15371,12 @@ targets:
   headers:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - absl/log:check
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
