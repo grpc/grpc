@@ -26,12 +26,11 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
-#include "absl/log/log.h"
-#include "absl/status/status.h"
 #include "src/core/call/call_spine.h"
 #include "src/core/call/message.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/header_assembler.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
@@ -52,6 +51,9 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "absl/log/check.h"
+#include "absl/log/log.h"
+#include "absl/status/status.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -90,46 +92,61 @@ void Http2ClientTransport::AbortWithError() {
 
 Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
-  HTTP2_TRANSPORT_DLOG
-      << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
-      << frame.stream_id << ", end_stream=" << frame.end_stream
-      << ", payload=" << frame.payload.JoinIntoString() << "}";
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame { stream_id="
+                       << frame.stream_id << ", end_stream=" << frame.end_stream
+                       << ", payload=" << frame.payload.JoinIntoString() << "}";
 
   // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
   // the function returns a non-ok status?
   ping_manager_.ReceivedDataFrame();
 
   // Lookup stream
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Lookup Begin";
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P2] : Decide the correct behaviour later.
     // RFC9113 : If a DATA frame is received whose stream is not in the "open"
     // or "half-closed (local)" state, the recipient MUST respond with a stream
     // error (Section 5.4.2) of type STREAM_CLOSED.
+    HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame { stream_id="
+                         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
   }
 
   // Add frame to assembler
+  HTTP2_TRANSPORT_DLOG
+      << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame";
   GrpcMessageAssembler& assembler = stream->assembler;
   Http2Status status =
       assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
   if (!status.IsOk()) {
+    HTTP2_TRANSPORT_DLOG
+        << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame Failed";
     return status;
   }
 
   // Pass the messages up the stack if it is ready.
   while (true) {
+    HTTP2_TRANSPORT_DLOG
+        << "Http2Transport ProcessHttp2DataFrame While ExtractMessage";
     ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
     if (!result.IsOk()) {
+      HTTP2_TRANSPORT_DLOG
+          << "Http2Transport ProcessHttp2DataFrame ExtractMessage Failed";
       return ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
     }
     MessageHandle message = TakeValue(std::move(result));
     if (message != nullptr) {
       // TODO(tjagtap) : [PH2][P1] : Ask ctiller what is the right way to plumb
       // with call V3. PushMessage or SpawnPushMessage.
+      HTTP2_TRANSPORT_DLOG
+          << "Http2Transport ProcessHttp2DataFrame SpawnPushMessage "
+          << message->DebugString();
       stream->call.SpawnPushMessage(std::move(message));
       continue;
     }
+    HTTP2_TRANSPORT_DLOG
+        << "Http2Transport ProcessHttp2DataFrame While Break";
     break;
   }
 
@@ -148,14 +165,80 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
 Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
     Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2HeaderFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << " }";
   ping_manager_.ReceivedDataFrame();
+
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P3] : Implement this.
+    // RFC9113 : The identifier of a newly established stream MUST be
+    // numerically greater than all streams that the initiating endpoint has
+    // opened or reserved. This governs streams that are opened using a HEADERS
+    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
+    // receives an unexpected stream identifier MUST respond with a connection
+    // error (Section 5.4.1) of type PROTOCOL_ERROR.
+    HTTP2_TRANSPORT_DLOG
+        << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
+        << frame.stream_id << "} Lookup Failed";
+    return Http2Status::Ok();
+  }
+
+  incoming_header_in_progress_ = !frame.end_headers;
+  incoming_header_stream_id_ = frame.stream_id;
+  incoming_header_end_stream_ = frame.end_stream;
+  if ((incoming_header_end_stream_ && stream->did_push_trailing_metadata) ||
+      (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
+    return Http2Status::Http2StreamError(
+        Http2ErrorCode::kInternalError,
+        "A gRPC can send upto 1 intitial metadata followed by upto 1 "
+        "training metadata");
+  }
+
+  HeaderAssembler& assember = stream->header_assembler;
+  Http2Status append_result = assember.AppendHeaderFrame(std::move(frame));
+  if (append_result.IsOk()) {
+    return ProcessMetadata(assember, stream->call,
+                           stream->did_push_initial_metadata,
+                           stream->did_push_trailing_metadata);
+  }
+  return append_result;
+}
+
+Http2Status Http2ClientTransport::ProcessMetadata(
+    HeaderAssembler& assember, CallHandler& call,
+    bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
+  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
+  if (assember.IsReady()) {
+    ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
+        assember.ReadMetadata(parser_, !incoming_header_end_stream_,
+                              /*is_client=*/true);
+    if (read_result.IsOk()) {
+      Arena::PoolPtr<grpc_metadata_batch> metadata =
+          TakeValue(std::move(read_result));
+      if (incoming_header_end_stream_) {
+        // TODO(tjagtap) : [PH2][P1] : Is this the right way to differentiate
+        // between initial and trailing metadata?
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
+        did_push_trailing_metadata = true;
+        call.SpawnPushServerTrailingMetadata(std::move(metadata));
+      } else {
+        HTTP2_TRANSPORT_DLOG
+            << "Http2Transport ProcessMetadata SpawnPushServerInitialMetadata";
+        did_push_initial_metadata = true;
+        call.SpawnPushServerInitialMetadata(std::move(metadata));
+      }
+      return Http2Status::Ok();
+    }
+    HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata Failed";
+    return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>::TakeStatus(
+        std::move(read_result));
+  }
   return Http2Status::Ok();
 }
 
@@ -249,14 +332,32 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     Http2ContinuationFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
   HTTP2_TRANSPORT_DLOG
-      << "Http2Transport ProcessHttp2ContinuationFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
-  HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2ContinuationFrame Promise { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", payload=" << frame.payload.JoinIntoString() << " }";
-  return Http2Status::Ok();
+  incoming_header_in_progress_ = !frame.end_headers;
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P3] : Implement this.
+    // RFC9113 : The identifier of a newly established stream MUST be
+    // numerically greater than all streams that the initiating endpoint has
+    // opened or reserved. This governs streams that are opened using a HEADERS
+    // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
+    // receives an unexpected stream identifier MUST respond with a connection
+    // error (Section 5.4.1) of type PROTOCOL_ERROR.
+    return Http2Status::Ok();
+  }
+
+  HeaderAssembler& assember = stream->header_assembler;
+  Http2Status result = assember.AppendContinuationFrame(std::move(frame));
+  if (result.IsOk()) {
+    return ProcessMetadata(assember, stream->call,
+                           stream->did_push_initial_metadata,
+                           stream->did_push_trailing_metadata);
+  }
+  return result;
 }
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
@@ -326,12 +427,27 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << header_bytes.as_string_view();
         return Http2FrameHeader::Parse(header_bytes.begin());
       },
-      // Read the payload of the frame.
+      // Validate the frame as per the current state of the transport
       [this](Http2FrameHeader header) {
-        HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
+        if (incoming_header_in_progress_ &&
+            (current_frame_header_.type != 9 ||
+             current_frame_header_.stream_id != incoming_header_stream_id_)) {
+          return HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kProtocolError,
+              std::string(kAssemblerContiguousSequenceError)));
+        }
+        HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
+                             "Validated Frame Header:"
+                          << header.ToString();
         current_frame_header_ = header;
+        return absl::OkStatus();
+      },
+      // Read the payload of the frame.
+      [this]() {
+        HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            EndpointRead(header.length));
+            EndpointRead(current_frame_header_.length));
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
@@ -344,7 +460,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
           return HandleError(
               ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
         }
-
         return TakeValue(std::move(frame));
       },
       [this](GRPC_UNUSED Http2Frame frame) {
@@ -356,7 +471,6 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
               if (!status.IsOk()) {
                 return self->HandleError(std::move(status));
               }
-
               return absl::OkStatus();
             }));
       }));
@@ -463,6 +577,9 @@ Http2ClientTransport::Http2ClientTransport(
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
       bytes_sent_in_last_write_(false),
+      incoming_header_in_progress_(false),
+      incoming_header_end_stream_(false),
+      incoming_header_stream_id_(0),
       keepalive_time_(std::max(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)

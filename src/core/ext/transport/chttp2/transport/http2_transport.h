@@ -42,11 +42,9 @@ namespace http2 {
 // TODO(tjagtap) : [PH2][P3] : Update the experimental status of the code before
 // http2 rollout begins.
 
-#define HTTP2_TRANSPORT_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+#define HTTP2_TRANSPORT_DLOG LOG(ERROR)
 
-#define HTTP2_CLIENT_DLOG \
-  DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
+#define HTTP2_CLIENT_DLOG LOG(ERROR)
 
 #define HTTP2_SERVER_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))

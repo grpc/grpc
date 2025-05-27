@@ -25,10 +25,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/log.h"
-#include "absl/strings/string_view.h"
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -38,6 +34,10 @@
 #include "test/core/transport/chttp2/http2_frame_test_helper.h"
 #include "test/core/transport/util/mock_promise_endpoint.h"
 #include "test/core/transport/util/transport_test.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "absl/log/log.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -126,6 +126,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation End";
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Basic Write Tests
+
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
@@ -148,10 +151,12 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
       event_engine());
 
+  SliceBuffer buffer;
+  AppendGrpcHeaderToSliceBuffer(buffer, 0, 6);
+  buffer.Append(SliceBuffer(Slice::FromExternalString("Hello!")));
+
   Http2Frame frame = Http2DataFrame{
-      .stream_id = 9,
-      .end_stream = false,
-      .payload = SliceBuffer(Slice::FromExternalString("Hello!"))};
+      .stream_id = 9, .end_stream = false, .payload = std::move(buffer)};
 
   auto promise =
       client_transport->TestOnlyEnqueueOutgoingFrame(std::move(frame));
@@ -183,11 +188,11 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   mock_endpoint.ExpectWrite(
       {helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
            kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
-       helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/(grpc_header.JoinIntoString() + data_payload),
-           /*stream_id=*/1, /*end_stream=*/false),
-       helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"", /*stream_id=*/1, /*end_stream=*/true)},
+       helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
+                                                  /*stream_id=*/1,
+                                                  /*end_stream=*/false),
+       helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
+                                                       /*end_stream=*/true)},
       event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -223,7 +228,9 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   event_engine()->UnsetGlobalHooks();
 }
 
+////////////////////////////////////////////////////////////////////////////////
 // Ping tests
+
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   // Simple test to validate a proper ping ack is sent out on receiving a ping
   // request.
@@ -491,6 +498,101 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
   event_engine()->TickUntilIdle();
   event_engine()->UnsetGlobalHooks();
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// Ping Header and Continuation Frame Read Tests
+
+TEST_F(Http2ClientTransportTest, TestReadLoop) {
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+
+  // Send
+  // 1. Client Initial Metadata
+  // 2. Data frame with END_STREAM flag set.
+  // This will put stream in Half Close state.
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+          helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
+                                                     /*end_stream=*/true),
+      },
+      event_engine().get());
+
+  // Make our mock_enpoint pretend that the peer sent
+  // 1. A HEADER frame that contains our initial metadata
+  // 2. A DATA frame with END_STREAM flag false.
+  // 3. A HEADER frame that contains our trailing metadata.
+  mock_endpoint.ExpectRead(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),
+           /*stream_id=*/1,
+           /*end_headers=*/true, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2DataFrame(  // Change
+           /*payload=*/"Hello", /*stream_id=*/1, /*end_stream=*/false),
+       helper_.EventEngineSliceFromHttp2HeaderFrame(
+           std::string(kPathDemoServiceStep.begin(),
+                       kPathDemoServiceStep.end()),  // Change
+           /*stream_id=*/1,
+           /*end_headers=*/true, /*end_stream=*/true)},
+      event_engine().get());
+
+  // We need this so that we break the ReadLoop
+  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
+                                event_engine().get());
+
+  LOG(INFO) << "Creating Http2ClientTransport";
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine());
+  LOG(INFO) << "Initiating CallSpine";
+  auto call = MakeCall(TestInitialMetadata());
+
+  LOG(INFO) << "Create a stream and send client initial metadata";
+  client_transport->StartCall(call.handler.StartCall());
+
+  call.initiator.SpawnGuarded("test-send", [initiator =
+                                                call.initiator]() mutable {
+    return Seq(
+        [initiator = initiator]() mutable { return initiator.FinishSends(); },
+        []() { return absl::OkStatus(); });
+  });
+
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  call.initiator.SpawnInfallible("test-wait", [initator = call.initiator,
+                                               &on_done]() mutable {
+    return Seq(
+        initator.PullServerInitialMetadata(),
+        []() { LOG(INFO) << "PullServerInitialMetadata Resolved"; },
+        initator.PullMessage(), []() { LOG(INFO) << "PullMessage Resolved"; },
+        initator.PullServerTrailingMetadata(),
+        [&on_done]() {
+          on_done.Call();
+          LOG(INFO) << "PullServerTrailingMetadata Resolved";
+          return Empty{};
+        });
+  });
+
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
+// TODO(tjagtap) : [PH2][P3] Write tests for following failure cases
+// 1. Client receives header frame with unknown stream id
+// 2. Client receives DATA frame with unknown stream id
+// 3. Client DATA frame when waiting for continuation frame
+// 4. Received 1 initial metadata, and then 1 trailing metadata but trailing
+// metadata HEADER frame does not have END_STREAM set
+// 5. Received HEADER and DATA frame after half close
 
 }  // namespace testing
 }  // namespace http2

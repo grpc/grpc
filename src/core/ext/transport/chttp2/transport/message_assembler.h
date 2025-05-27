@@ -108,6 +108,7 @@ class GrpcMessageAssembler {
  private:
   ValueOrHttp2Status<MessageHandle> ReturnNullOrError() {
     if (GPR_UNLIKELY(is_end_stream_ && message_buffer_.Length() > 0)) {
+      LOG(ERROR) << "Incomplete gRPC message received";
       return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
                                            "Incomplete gRPC frame received");
     }
