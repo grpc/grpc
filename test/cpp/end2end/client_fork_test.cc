@@ -15,8 +15,13 @@
 #include <grpc/support/port_platform.h>
 
 #ifndef GRPC_ENABLE_FORK_SUPPORT
+#include <iostream>
+
 // No-op for builds without fork support.
-int main(int /* argc */, char** /* argv */) { return 0; }
+int main(int /* argc */, char** /* argv */) {
+  std::cerr << "Skipping: compiled without fork support\n";
+  return 0;
+}
 #else  // GRPC_ENABLE_FORK_SUPPORT
 
 #include <grpc/fork.h>
@@ -36,6 +41,7 @@ int main(int /* argc */, char** /* argv */) { return 0; }
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/substitute.h"
+#include "src/core/config/config_vars.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/fork.h"
 #include "src/core/util/sync.h"
@@ -168,6 +174,9 @@ void DoExchange(
 }
 
 TEST(ClientForkTest, ClientCallsBeforeAndAfterForkSucceed) {
+  if (!grpc_core::ConfigVars::Get().EnableForkSupport()) {
+    GTEST_SKIP() << "Fork support was not enabled";
+  }
   grpc_core::Fork::Enable(true);
   int port = grpc_pick_unused_port_or_die();
   std::string addr = absl::StrCat("localhost:", port);
