@@ -95,6 +95,12 @@ class SingleSetRefCountedPtr {
     if (p == nullptr) p = Set(MakeRefCounted<T>());
     return p->Ref();
   }
+  template <typename F>
+  RefCountedPtr<T> GetOrCreate(F factory) {
+    T* p = Get();
+    if (p == nullptr) p = Set(factory());
+    return p->Ref();
+  }
   T* Get() const { return p_.Get(); }
 
   T* operator->() const {

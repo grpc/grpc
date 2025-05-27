@@ -153,6 +153,15 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
       args_.endpoint.reset();
     }
+    // Since there was a handshaking error, commit this node with the reason.
+    // This will make it available for inspection after the handshaker
+    // completes.
+    args_.trace_node
+        ->NewChild([error]() {
+          return absl::StrCat("Failed with error: ", error.ToString());
+        })
+        ->Commit();
+    args_.trace_node->Commit();
     GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
                                      << ": handshaking complete -- scheduling "
                                         "on_handshake_done with error="
@@ -178,6 +187,18 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       << "handshake_manager " << this << ": calling handshaker "
       << handshaker->name() << " [" << handshaker.get() << "] at index "
       << index_;
+  auto channelz_node = args_.args.GetObjectRef<channelz::BaseNode>();
+  // Add a channelz trace that we're performing this stage of the handshake.
+  // Note that we only commit this to the log if we see an error - otherwise
+  // it's ephemeral and is cleaned up when refs to it are released.
+  args_.trace_node =
+      channelz_node.get() == nullptr
+          ? nullptr
+          : channelz_node->NewTraceNode([self = Ref(), index = index_]() {
+              MutexLock lock(&self->mu_);
+              return absl::StrCat("Handshake: stage=",
+                                  self->handshakers_[index]->name());
+            });
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
     MutexLock lock(&self->mu_);

@@ -26,9 +26,14 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <limits>
+#include <variant>
+
 #include "absl/base/thread_annotations.h"
+#include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {
@@ -45,14 +50,119 @@ class BaseNode;
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
  public:
-  explicit ChannelTrace(size_t max_event_memory);
-  ~ChannelTrace();
+  explicit ChannelTrace(size_t max_nodes) : max_nodes_(max_nodes) {}
+
+  using Renderer = absl::AnyInvocable<std::string() const>;
 
   enum Severity {
     Unset = 0,  // never to be used
     Info,       // we start at 1 to avoid using proto default values
     Warning,
     Error
+  };
+
+  class Node final : public DualRefCounted<Node, NonPolymorphicRefCount> {
+   public:
+    void Update(Renderer renderer) {
+      MutexLock lock(&mu_);
+      renderer.swap(renderer_);
+    }
+
+    RefCountedPtr<Node> NewChild(
+        Renderer renderer,
+        size_t max_nodes = std::numeric_limits<size_t>::max()) {
+      auto when = gpr_now(GPR_CLOCK_REALTIME);
+      auto node = RefCountedPtr<Node>(
+          new Node(WeakRef(), std::move(renderer), max_nodes));
+      Entry removed_entry;
+      MutexLock lock(&mu_);
+      if (children_.size() == max_nodes_) {
+        removed_entry = std::move(*children_.begin());
+        children_.erase(children_.begin());
+      }
+      children_.push_back({when, node->WeakRef()});
+      return node;
+    }
+
+    // Commit this line to the parent trace forever (or until that trace is
+    // expunged).
+    // Uncommitted nodes will be erased from the trace upon orphaning.
+    void Commit() {
+      CHECK(parent_ != nullptr);
+      MutexLock lock(&parent_->mu_);
+      for (auto& child : parent_->children_) {
+        if (auto* p = std::get_if<WeakRefCountedPtr<Node>>(&child.value);
+            p != nullptr) {
+          child.value = Ref();
+          return;
+        }
+      }
+    }
+
+    void Orphaned() override {
+      if (parent_ == nullptr) return;
+      parent_->mu_.Lock();
+      parent_->children_.erase(
+          std::remove_if(
+              parent_->children_.begin(), parent_->children_.end(),
+              [this](const Entry& entry) {
+                if (std::holds_alternative<RefCountedPtr<Node>>(entry.value)) {
+                  return false;
+                }
+                return std::get<WeakRefCountedPtr<Node>>(entry.value).get() ==
+                       this;
+              }),
+          parent_->children_.end());
+      parent_->mu_.Unlock();
+      parent_.reset();
+    }
+
+    void ForEachTraceEvent(
+        absl::FunctionRef<void(gpr_timespec, int, absl::string_view)> output,
+        int indent) const {
+      mu_.Lock();
+      std::vector<Entry> children = children_;
+      mu_.Unlock();
+      for (auto& child : children) {
+        WeakRefCountedPtr<Node> n = child.weak_value();
+        if (n == nullptr) continue;
+        n->mu_.Lock();
+        if (n->renderer_ == nullptr) {
+          n->mu_.Unlock();
+        } else {
+          std::string text = n->renderer_();
+          n->mu_.Unlock();
+          output(child.timestamp, indent, text);
+        }
+        n->ForEachTraceEvent(output, indent + 1);
+      }
+    }
+
+   private:
+    struct Entry {
+      gpr_timespec timestamp;
+      std::variant<RefCountedPtr<Node>, WeakRefCountedPtr<Node>> value;
+
+      WeakRefCountedPtr<Node> weak_value() {
+        if (auto* p = std::get_if<RefCountedPtr<Node>>(&value); p != nullptr) {
+          return (*p)->WeakRef();
+        }
+        return std::get<WeakRefCountedPtr<Node>>(value);
+      }
+    };
+
+    Node(WeakRefCountedPtr<Node> parent, Renderer renderer, size_t max_nodes)
+        : parent_(std::move(parent)),
+          max_nodes_(max_nodes),
+          renderer_(std::move(renderer)) {}
+
+    friend class ChannelTrace;
+
+    WeakRefCountedPtr<Node> parent_;
+    mutable Mutex mu_;
+    const size_t max_nodes_;
+    std::vector<Entry> children_ ABSL_GUARDED_BY(mu_);
+    Renderer renderer_ ABSL_GUARDED_BY(mu_);
   };
 
   static const char* SeverityString(ChannelTrace::Severity severity) {
@@ -68,29 +178,16 @@ class ChannelTrace {
     }
   }
 
-  // Adds a new trace event to the tracing object
-  //
-  // NOTE: each ChannelTrace tracks the memory used by its list of trace
-  // events, so adding an event with a large amount of data could cause other
-  // trace event to be evicted. If a single trace is larger than the limit, it
-  // will cause all events to be evicted. The limit is set with the arg:
-  // GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE.
-  //
-  // TODO(ncteisen): as this call is used more and more throughout the gRPC
-  // stack, determine if it makes more sense to accept a char* instead of a
-  // slice.
-  void AddTraceEvent(Severity severity, const grpc_slice& data);
-
-  // Adds a new trace event to the tracing object. This trace event refers to a
-  // an event that concerns a different channelz entity. For example, if this
-  // channel has created a new subchannel, then it would record that with
-  // a TraceEvent referencing the new subchannel.
-  //
-  // NOTE: see the note in the method above.
-  //
-  // TODO(ncteisen): see the todo in the method above.
-  void AddTraceEventWithReference(Severity severity, const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_entity);
+  RefCountedPtr<Node> NewNode(Renderer render) {
+    if (max_nodes_ == 0) {
+      return RefCountedPtr<Node>(new Node(nullptr, std::move(render), 0));
+    }
+    return root_
+        .GetOrCreate([this]() {
+          return RefCountedPtr<Node>(new Node(nullptr, nullptr, max_nodes_));
+        })
+        ->NewChild(std::move(render));
+  }
 
   // Creates and returns the raw Json object, so a parent channelz
   // object may incorporate the json before rendering.
@@ -100,67 +197,22 @@ class ChannelTrace {
       absl::FunctionRef<void(gpr_timespec, Severity, std::string,
                              RefCountedPtr<BaseNode>)>
           callback) const {
-    MutexLock lock(&mu_);
-    ForEachTraceEventLocked(callback);
-  }
-  std::string creation_timestamp() const;
-  uint64_t num_events_logged() const {
-    MutexLock lock(&mu_);
-    return num_events_logged_;
+    auto* node = root_.Get();
+    if (node == nullptr) return;
+    node->ForEachTraceEvent(
+        [callback](gpr_timespec timestamp, int indent, absl::string_view line) {
+          CHECK_GE(indent, 0);
+          callback(timestamp, Severity::Info,
+                   absl::StrCat(std::string(' ', indent), line), nullptr);
+        },
+        -1);
   }
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
 
-  // Private class to encapsulate all the data and bookkeeping needed for a
-  // a trace event.
-  class TraceEvent {
-   public:
-    // Constructor for a TraceEvent that references a channel.
-    TraceEvent(Severity severity, const grpc_slice& data,
-               RefCountedPtr<BaseNode> referenced_entity_);
-
-    // Constructor for a TraceEvent that does not reverence a different
-    // channel.
-    TraceEvent(Severity severity, const grpc_slice& data);
-
-    ~TraceEvent();
-
-    // set and get for the next_ pointer.
-    TraceEvent* next() const { return next_; }
-    void set_next(TraceEvent* next) { next_ = next; }
-
-    size_t memory_usage() const { return memory_usage_; }
-    gpr_timespec timestamp() const { return timestamp_; }
-    Severity severity() const { return severity_; }
-    std::string description() const;
-    RefCountedPtr<BaseNode> referenced_entity() const;
-
-   private:
-    const gpr_timespec timestamp_;
-    const Severity severity_;
-    const grpc_slice data_;
-    const size_t memory_usage_;
-    // the tracer object for the (sub)channel that this trace event refers to.
-    const RefCountedPtr<BaseNode> referenced_entity_;
-    TraceEvent* next_ = nullptr;
-  };  // TraceEvent
-
-  // Internal helper to add and link in a trace event
-  void AddTraceEventHelper(TraceEvent* new_trace_event);
-  void ForEachTraceEventLocked(
-      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                             RefCountedPtr<BaseNode>)>) const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  const size_t max_event_memory_;
-  const gpr_timespec time_created_;
-
-  mutable Mutex mu_;
-  uint64_t num_events_logged_ ABSL_GUARDED_BY(mu_) = 0;
-  size_t event_list_memory_usage_ ABSL_GUARDED_BY(mu_) = 0;
-  TraceEvent* head_trace_ ABSL_GUARDED_BY(mu_) = nullptr;
-  TraceEvent* tail_trace_ ABSL_GUARDED_BY(mu_) = nullptr;
+  const size_t max_nodes_;
+  SingleSetRefCountedPtr<Node> root_;
 };
 
 }  // namespace channelz

@@ -499,9 +499,9 @@ class ClientChannel::ClientChannelControlHelper
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     if (client_channel_->resolver_ == nullptr) return;  // Shutting down.
     if (client_channel_->channelz_node_ != nullptr) {
-      client_channel_->channelz_node_->AddTraceEvent(
-          ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_buffer(message.data(), message.size()));
+      client_channel_->channelz_node_
+          ->NewTraceNode([message = std::string(message)]() { return message; })
+          ->Commit();
     }
   }
 
@@ -1161,8 +1161,9 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     std::string message =
         absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
     if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                    grpc_slice_from_cpp_string(message));
+      channelz_node_
+          ->NewTraceNode([message = std::move(message)]() { return message; })
+          ->Commit();
     }
   }
 }
@@ -1324,8 +1325,8 @@ void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
     if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       absl::StrAppend(&trace, " status:", status.ToString());
     }
-    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                  grpc_slice_from_cpp_string(std::move(trace)));
+    channelz_node_->NewTraceNode([trace = std::move(trace)]() { return trace; })
+        ->Commit();
   }
 }
 

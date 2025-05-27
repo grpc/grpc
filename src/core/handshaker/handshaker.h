@@ -28,6 +28,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/inlined_vector.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -78,6 +79,8 @@ struct HandshakerArgs {
   // TODO(roth): Make this go away somehow as part of the EventEngine
   // migration?
   grpc_tcp_server_acceptor* acceptor = nullptr;
+  // Channelz trace node for the current handshaker
+  RefCountedPtr<channelz::ChannelTrace::Node> trace_node;
 };
 
 ///

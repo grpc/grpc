@@ -162,8 +162,7 @@ LegacyChannel::LegacyChannel(bool is_client, std::string target,
   }
   *channel_stack_->on_destroy = [node = std::move(node)]() {
     if (node != nullptr) {
-      node->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                          grpc_slice_from_static_string("Channel destroyed"));
+      node->NewTraceNode([]() { return "Channel destroyed"; })->Commit();
     }
     ShutdownInternally();
   };
