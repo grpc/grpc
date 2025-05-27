@@ -271,6 +271,7 @@ class HeaderDisassembler {
     out_end_headers = buffer_.Length() <= max_frame_length;
     SliceBuffer temp;
     if (out_end_headers) {
+      is_done_ = true;
       temp.Swap(&buffer_);
     } else {
       buffer_.MoveFirstNBytesIntoSliceBuffer(max_frame_length, temp);
