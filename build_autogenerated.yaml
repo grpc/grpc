@@ -19936,6 +19936,52 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
+- name: xds_matcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/xds/grpc/xds_matcher.h
+  - test/core/test_util/scoped_env_var.h
+  - third_party/protoc-gen-validate/validate/validate.h
+  src:
+  - third_party/googleapis/google/api/annotations.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/checked.proto
+  - third_party/googleapis/google/api/expr/v1alpha1/syntax.proto
+  - third_party/googleapis/google/api/http.proto
+  - third_party/googleapis/google/api/httpbody.proto
+  - third_party/googleapis/google/rpc/status.proto
+  - third_party/protoc-gen-validate/validate/validate.proto
+  - third_party/xds/xds/annotations/v3/migrate.proto
+  - third_party/xds/xds/annotations/v3/security.proto
+  - third_party/xds/xds/annotations/v3/sensitive.proto
+  - third_party/xds/xds/annotations/v3/status.proto
+  - third_party/xds/xds/annotations/v3/versioning.proto
+  - third_party/xds/xds/core/v3/authority.proto
+  - third_party/xds/xds/core/v3/cidr.proto
+  - third_party/xds/xds/core/v3/collection_entry.proto
+  - third_party/xds/xds/core/v3/context_params.proto
+  - third_party/xds/xds/core/v3/extension.proto
+  - third_party/xds/xds/core/v3/resource.proto
+  - third_party/xds/xds/core/v3/resource_locator.proto
+  - third_party/xds/xds/core/v3/resource_name.proto
+  - third_party/xds/xds/type/matcher/v3/cel.proto
+  - third_party/xds/xds/type/matcher/v3/domain.proto
+  - third_party/xds/xds/type/matcher/v3/http_inputs.proto
+  - third_party/xds/xds/type/matcher/v3/ip.proto
+  - third_party/xds/xds/type/matcher/v3/matcher.proto
+  - third_party/xds/xds/type/matcher/v3/range.proto
+  - third_party/xds/xds/type/matcher/v3/regex.proto
+  - third_party/xds/xds/type/matcher/v3/string.proto
+  - third_party/xds/xds/type/v3/cel.proto
+  - third_party/xds/xds/type/v3/range.proto
+  - third_party/xds/xds/type/v3/typed_struct.proto
+  - src/core/xds/grpc/xds_matcher.cc
+  - test/core/xds/xds_matcher_test.cc
+  deps:
+  - gtest
+  - protobuf
+  - grpc_test_util
 - name: xds_metadata_test
   gtest: true
   build: test
