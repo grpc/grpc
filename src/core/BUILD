@@ -36,6 +36,11 @@ config_setting(
     values = {"define": "GRPC_ENABLE_LATENT_SEE=1"},
 )
 
+config_setting(
+    name = "force_unsecure_getenv",
+    values = {"define": "GRPC_FORCE_UNSECURE_GETENV=1"},
+)
+
 # This is needed as a transitionary mechanism to build the src/core targets in
 # the top-level BUILD file that have not yet been moved here. Should go away
 # once the transition is complete.
@@ -47,6 +52,11 @@ exports_files(
 config_setting(
     name = "maximize_threadyness",
     values = {"define": "GRPC_MAXIMIZE_THREADYNESS=1"},
+)
+
+config_setting(
+    name = "minimize_threadyness",
+    values = {"define": "GRPC_MINIMIZE_THREADYNESS=1"},
 )
 
 grpc_cc_library(
@@ -471,6 +481,10 @@ grpc_cc_library(
     hdrs = [
         "util/env.h",
     ],
+    defines = select({
+        ":force_unsecure_getenv": ["GRPC_FORCE_UNSECURE_GETENV"],
+        "//conditions:default": [],
+    }),
     deps = [
         "tchar",
         "//:gpr_platform",
@@ -715,6 +729,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/random",
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -846,6 +861,8 @@ grpc_cc_library(
     deps = [
         "poll",
         "//:gpr_platform",
+        "//src/core:function_signature",
+        "//src/core:json",
     ],
 )
 
@@ -915,7 +932,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "race",
     public_hdrs = ["lib/promise/race.h"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "json",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -1044,12 +1064,14 @@ grpc_cc_library(
     ],
     deps = [
         "construct_destruct",
+        "json",
         "poll",
         "promise_factory",
         "promise_like",
         "//:debug_location",
         "//:gpr",
         "//:grpc_trace",
+        "//:promise",
     ],
 )
 
@@ -1306,6 +1328,28 @@ grpc_cc_library(
     name = "mpsc",
     hdrs = [
         "lib/promise/mpsc.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+    ],
+    deps = [
+        "activity",
+        "dump_args",
+        "poll",
+        "ref_counted",
+        "status_flag",
+        "sync",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "lock_based_mpsc",
+    hdrs = [
+        "lib/promise/lock_based_mpsc.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2831,6 +2875,11 @@ grpc_cc_library(
         "lib/event_engine/cf_engine/cftype_unique_ref.h",
         "lib/event_engine/cf_engine/dns_service_resolver.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_CFSTREAM_MAX_THREADPOOL_SIZE=16u"],
+        ":minimize_threadyness": ["GRPC_CFSTREAM_MAX_THREADPOOL_SIZE=2u"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/log",
@@ -7735,6 +7784,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "internal_channel_arg_names",
+    hdrs = [
+        "ext/transport/chttp2/transport/internal_channel_arg_names.h",
+    ],
+)
+
+grpc_cc_library(
     name = "header_assembler",
     hdrs = [
         "ext/transport/chttp2/transport/header_assembler.h",
@@ -7746,10 +7802,12 @@ grpc_cc_library(
     deps = [
         "http2_status",
         "metadata_batch",
+        "shared_bit_gen",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
@@ -7772,6 +7830,36 @@ grpc_cc_library(
         ":slice_buffer",
         "//:chttp2_frame",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "writable_stream_list",
+    hdrs = [
+        "ext/transport/chttp2/transport/writable_stream_list.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+    ],
+)
+
+grpc_cc_library(
+    name = "stream_data_queue",
+    hdrs = [
+        "ext/transport/chttp2/transport/stream_data_queue.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/log:check",
+    ],
+    deps = [
+        "arena",
+        "http2_status",
+        "message",
+        "metadata_batch",
     ],
 )
 
@@ -7803,6 +7891,8 @@ grpc_cc_library(
         "http2_status",
         "http2_transport",
         "inter_activity_mutex",
+        "internal_channel_arg_names",
+        "keepalive",
         "latent_see",
         "loop",
         "map",
@@ -7810,6 +7900,7 @@ grpc_cc_library(
         "message_assembler",
         "metadata",
         "mpsc",
+        "ping_promise",
         "sync",
         ":match_promise",
         ":poll",
@@ -8870,9 +8961,9 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
+        "lock_based_mpsc",
         "loop",
         "match_promise",
-        "mpsc",
         "seq",
         "try_join",
         "try_seq",
@@ -8915,12 +9006,12 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "if",
         "inter_activity_pipe",
+        "lock_based_mpsc",
         "loop",
         "map",
         "memory_quota",
         "metadata_batch",
         "metrics",
-        "mpsc",
         "pipe",
         "poll",
         "resource_quota",
@@ -8976,11 +9067,11 @@ grpc_cc_library(
         "if",
         "inter_activity_latch",
         "inter_activity_pipe",
+        "lock_based_mpsc",
         "loop",
         "memory_quota",
         "metadata_batch",
         "metrics",
-        "mpsc",
         "pipe",
         "poll",
         "resource_quota",
@@ -9288,6 +9379,16 @@ grpc_cc_library(
     deps = [
         "//:gpr",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "function_signature",
+    hdrs = [
+        "util/function_signature.h",
+    ],
+    external_deps = [
+        "absl/strings",
     ],
 )
 

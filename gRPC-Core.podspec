@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.73.0-dev'
+  version = '1.74.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -523,6 +523,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
+                      'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                       'src/core/ext/transport/chttp2/transport/parsing.cc',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc',
@@ -1572,8 +1573,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/exec_ctx.h',
-                      'src/core/lib/iomgr/executor.cc',
-                      'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/internal_errqueue.cc',
@@ -2012,6 +2011,7 @@ Pod::Spec.new do |s|
                       'src/core/util/examine_stack.h',
                       'src/core/util/fork.cc',
                       'src/core/util/fork.h',
+                      'src/core/util/function_signature.h',
                       'src/core/util/gcp_metadata_query.cc',
                       'src/core/util/gcp_metadata_query.h',
                       'src/core/util/gethostname.h',
@@ -2602,6 +2602,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -3220,7 +3221,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                               'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                               'src/core/lib/iomgr/exec_ctx.h',
-                              'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
@@ -3454,6 +3454,7 @@ Pod::Spec.new do |s|
                               'src/core/util/event_log.h',
                               'src/core/util/examine_stack.h',
                               'src/core/util/fork.h',
+                              'src/core/util/function_signature.h',
                               'src/core/util/gcp_metadata_query.h',
                               'src/core/util/gethostname.h',
                               'src/core/util/glob.h',

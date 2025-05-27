@@ -152,7 +152,7 @@ class SerializeExtraBytesRequired {
   size_t operator()(const Http2WindowUpdateFrame&) { return 4; }
   size_t operator()(const Http2SecurityFrame&) { return 0; }
   size_t operator()(const Http2UnknownFrame&) { Crash("unreachable"); }
-  size_t operator()(const Http2EmptyFrame&) { Crash("unreachable"); }
+  size_t operator()(const Http2EmptyFrame&) { return 0; }
 };
 
 class SerializeHeaderAndPayload {
@@ -288,14 +288,11 @@ Http2Status StripPadding(const Http2FrameHeader& hdr, SliceBuffer& payload) {
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
   }
+  const size_t payload_size = payload.Length();
   uint8_t padding_bytes;
   payload.MoveFirstNBytesIntoBuffer(1, &padding_bytes);
 
-  if (GPR_UNLIKELY(payload.Length() <= padding_bytes)) {
-    return Http2Status::Http2ConnectionError(
-        Http2ErrorCode::kProtocolError,
-        absl::StrCat(RFC9113::kFrameParserIncorrectPadding, hdr.ToString()));
-  } else if (GPR_UNLIKELY(hdr.length <= padding_bytes)) {
+  if (GPR_UNLIKELY(payload_size <= padding_bytes)) {
     return Http2Status::Http2ConnectionError(
         Http2ErrorCode::kProtocolError,
         absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
@@ -603,9 +600,10 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
   }
 }
 
-ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
-                                                  SliceBuffer payload) {
+http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
+    const Http2FrameHeader& hdr, SliceBuffer payload) {
   CHECK(payload.Length() == hdr.length);
+
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
       return ParseDataFrame(hdr, payload);
@@ -632,19 +630,6 @@ ValueOrHttp2Status<Http2Frame> ParseFramePayload1(const Http2FrameHeader& hdr,
     default:
       return ValueOrHttp2Status<Http2Frame>(Http2UnknownFrame{});
   }
-}
-
-absl::StatusOr<Http2Frame> ParseFramePayload(const Http2FrameHeader& hdr,
-                                             SliceBuffer payload) {
-  auto result = ParseFramePayload1(hdr, std::move(payload));
-  if (result.IsOk()) {
-    return http2::TakeValue<Http2Frame>(std::move(result));
-  }
-  Http2Status::Http2ErrorType type = result.GetErrorType();
-  if (type == Http2Status::Http2ErrorType::kConnectionError) {
-    return result.GetAbslConnectionError();
-  }
-  return result.GetAbslStreamError();
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
