@@ -269,7 +269,10 @@ const char* const additional_constraints_call_tracer_transport_fix = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+};
 
 }  // namespace grpc_core
 
@@ -286,7 +289,10 @@ const char* const additional_constraints_call_tracer_transport_fix = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+};
 
 }  // namespace grpc_core
 
@@ -308,7 +314,10 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, true},
+};
 
 }  // namespace grpc_core
 #endif
@@ -456,7 +465,10 @@ const char* const additional_constraints_call_tracer_transport_fix = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+};
 
 }  // namespace grpc_core
 
@@ -473,7 +485,10 @@ const char* const additional_constraints_call_tracer_transport_fix = "{}";
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+};
 
 }  // namespace grpc_core
 
@@ -495,7 +510,10 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, false},};
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, true},
+};
 
 }  // namespace grpc_core
 #endif
