@@ -255,38 +255,25 @@ class HeaderDisassembler {
   // This function can queue a trailing metadata for sending even before the
   // initial metadata has been extracted.
   bool PrepareForSending(Arena::PoolPtr<grpc_metadata_batch>&& metadata,
-                         HPackCompressor& encoder,
-                         const bool is_trailing_metadata) {
+                         HPackCompressor& encoder) {
     // Validate disassembler state
-    DCHECK(!is_trailing_metadata ? (buffer_.Length() == 0) : true);
-
+    DCHECK(!is_done_);
     // Prepare metadata for sending
-    end_stream_ = is_trailing_metadata;
-    SliceBuffer& current = (buffer_.Length() == 0) ? buffer_ : second_buffer_;
-    if (buffer_.Length() == 0) {
-      did_send_header_frame_ = false;
-    }
-    return encoder.EncodeRawHeaders(*metadata.get(), current);
+    return encoder.EncodeRawHeaders(*metadata.get(), buffer_);
   }
 
-  Http2Frame GetNextFrame(const uint32_t max_length, bool& out_end_headers) {
-    if (buffer_.Length() == 0) {
-      // TODO(tjagtap) : [PH2][P3] : Try to avoid this second_buffer_ and make
-      // the code clean and efficient.
-      if (second_buffer_.Length() != 0) {
-        did_send_header_frame_ = false;
-        buffer_.Swap(&second_buffer_);
-      } else {
-        DCHECK(false) << "Calling code must check size using HasMoreData() "
-                         "before GetNextFrame()";
-      }
+  Http2Frame GetNextFrame(const uint32_t max_frame_length,
+                          bool& out_end_headers) {
+    if (buffer_.Length() == 0 || is_done_) {
+      DCHECK(false) << "Calling code must check size using HasMoreData() "
+                       "before GetNextFrame()";
     }
-    out_end_headers = buffer_.Length() <= max_length;
+    out_end_headers = buffer_.Length() <= max_frame_length;
     SliceBuffer temp;
     if (out_end_headers) {
       temp.Swap(&buffer_);
     } else {
-      buffer_.MoveFirstNBytesIntoSliceBuffer(max_length, temp);
+      buffer_.MoveFirstNBytesIntoSliceBuffer(max_frame_length, temp);
     }
     if (!did_send_header_frame_) {
       did_send_header_frame_ = true;
@@ -298,19 +285,19 @@ class HeaderDisassembler {
     }
   }
 
-  bool HasMoreData() const {
-    return buffer_.Length() > 0 || second_buffer_.Length() > 0;
-  }
+  bool HasMoreData() const { return !is_done_ && buffer_.Length() > 0; }
 
   // This number can be used for backpressure related calculations.
-  size_t GetBufferedLength() const {
-    return buffer_.Length() + second_buffer_.Length();
-  }
+  size_t GetBufferedLength() const { return buffer_.Length(); }
 
-  explicit HeaderDisassembler(const uint32_t stream_id)
+  // A separate HeaderDisassembler object MUST be made for Initial Metadata and
+  // Trailing Metadata
+  explicit HeaderDisassembler(const uint32_t stream_id,
+                              const bool is_trailing_metadata)
       : stream_id_(stream_id),
+        end_stream_(is_trailing_metadata),
         did_send_header_frame_(false),
-        end_stream_(false) {}
+        is_done_(false) {}
 
   ~HeaderDisassembler() = default;
 
@@ -320,16 +307,14 @@ class HeaderDisassembler {
   HeaderDisassembler& operator=(const HeaderDisassembler&) = delete;
 
   size_t TestOnlyGetMainBufferLength() const { return buffer_.Length(); }
-  size_t TestOnlyGetSecondBufferLength() const {
-    return second_buffer_.Length();
-  }
 
  private:
   const uint32_t stream_id_;
+  const bool end_stream_;
   bool did_send_header_frame_;
-  bool end_stream_;
+  bool is_done_;  // Protect against the same disassembler from being used twice
+
   SliceBuffer buffer_;
-  SliceBuffer second_buffer_;
 };
 
 }  // namespace http2

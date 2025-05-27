@@ -452,7 +452,6 @@ Arena::PoolPtr<grpc_metadata_batch> GenerateMetadata(const uint32_t stream_id,
 void ExpectBufferLengths(HeaderDisassembler& disassembler,
                          const size_t expected_len) {
   EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), expected_len);
-  EXPECT_EQ(disassembler.TestOnlyGetSecondBufferLength(), 0);
   EXPECT_EQ(disassembler.GetBufferedLength(), expected_len);
 }
 
@@ -473,8 +472,7 @@ void OneMetadataInOneFrame(const uint32_t stream_id,
                            const uint32_t expected_len1) {
   Arena::PoolPtr<grpc_metadata_batch> metadata =
       GenerateMetadata(stream_id, is_trailing_metadata, parser);
-  disassembler.PrepareForSending(std::move(metadata), encoder,
-                                 is_trailing_metadata);
+  disassembler.PrepareForSending(std::move(metadata), encoder);
   ExpectBufferLengths(disassembler, expected_len1);
 
   uint8_t count = 0;
@@ -500,8 +498,7 @@ void OneMetadataInThreeFrames(const uint32_t stream_id,
   const uint8_t last_frame_size = 2;
   Arena::PoolPtr<grpc_metadata_batch> metadata =
       GenerateMetadata(stream_id, is_trailing_metadata, parser);
-  disassembler.PrepareForSending(std::move(metadata), encoder,
-                                 is_trailing_metadata);
+  disassembler.PrepareForSending(std::move(metadata), encoder);
   ExpectBufferLengths(disassembler, kEncodedMetadataLen);
 
   const uint8_t expected_number_of_frames = 3;
@@ -543,7 +540,7 @@ void OneMetadataInThreeFrames(const uint32_t stream_id,
 
 TEST(HeaderDisassemblerTest, OneInitialMetadataInOneFrame) {
   const uint32_t stream_id = 1;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler,
@@ -553,7 +550,7 @@ TEST(HeaderDisassemblerTest, OneInitialMetadataInOneFrame) {
 
 TEST(HeaderDisassemblerTest, OneInitialMetadataInThreeFrames) {
   const uint32_t stream_id = 3;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -565,7 +562,7 @@ TEST(HeaderDisassemblerTest, OneInitialMetadataInThreeFrames) {
 
 TEST(HeaderDisassemblerTest, OneTrailingMetadataInOneFrame) {
   const uint32_t stream_id = 0x7fffffff;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/true);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInOneFrame(stream_id, disassembler, /*is_trailing_metadata=*/true,
@@ -574,7 +571,7 @@ TEST(HeaderDisassemblerTest, OneTrailingMetadataInOneFrame) {
 
 TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
   const uint32_t stream_id = 0x0fffffff;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/true);
   HPackParser parser;
   HPackCompressor encoder;
   OneMetadataInThreeFrames(stream_id, disassembler,
@@ -586,28 +583,34 @@ TEST(HeaderDisassemblerTest, OneTrailingMetadataInThreeFrames) {
 
 TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadata) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler_initial(stream_id,
+                                          /*is_trailing_metadata=*/false);
+  HeaderDisassembler disassembler_trailing(stream_id,
+                                           /*is_trailing_metadata=*/true);
   HPackParser parser;
   HPackCompressor encoder;
-  OneMetadataInOneFrame(stream_id, disassembler,
+  OneMetadataInOneFrame(stream_id, disassembler_initial,
                         /*is_trailing_metadata=*/false, parser, encoder,
                         kEncodedMetadataLen);
   // Because we are sending the same metadata payload 2 times, the encoder just
   // compresses it to a 8 byte header
-  OneMetadataInOneFrame(stream_id, disassembler,
+  OneMetadataInOneFrame(stream_id, disassembler_trailing,
                         /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
 
 TEST(HeaderDisassemblerTest, OneInitialAndOneTrailingMetadataInFourFrames) {
   const uint32_t stream_id = 0x1111;
-  HeaderDisassembler disassembler(stream_id);
+  HeaderDisassembler disassembler_initial(stream_id,
+                                          /*is_trailing_metadata=*/false);
+  HeaderDisassembler disassembler_trailing(stream_id,
+                                           /*is_trailing_metadata=*/true);
   HPackParser parser;
   HPackCompressor encoder;
-  OneMetadataInThreeFrames(stream_id, disassembler,
+  OneMetadataInThreeFrames(stream_id, disassembler_initial,
                            /*is_trailing_metadata=*/false, parser, encoder);
   // Because we are sending the same metadata payload 2 times, the encoder just
   // compresses it to a 8 byte header
-  OneMetadataInOneFrame(stream_id, disassembler,
+  OneMetadataInOneFrame(stream_id, disassembler_trailing,
                         /*is_trailing_metadata=*/true, parser, encoder, 8);
 }
 
@@ -624,9 +627,8 @@ TEST(HeaderDisassemblerTest, Reversibility) {
 
   // Pass metadata to disassembler for frame generation
   HPackCompressor encoder;
-  HeaderDisassembler disassembler(stream_id);
-  disassembler.PrepareForSending(std::move(metadata), encoder,
-                                 /*is_trailing_metadata=*/false);
+  HeaderDisassembler disassembler(stream_id, /*is_trailing_metadata=*/false);
+  disassembler.PrepareForSending(std::move(metadata), encoder);
   EXPECT_EQ(disassembler.TestOnlyGetMainBufferLength(), kEncodedMetadataLen);
   EXPECT_TRUE(disassembler.HasMoreData());
   if (disassembler.HasMoreData()) {
@@ -650,12 +652,6 @@ TEST(HeaderDisassemblerTest, Reversibility) {
                  std::string(kSimpleRequestDecoded).c_str());
   }
 }
-
-///////////////////////////////////////////////////////////////////////////////
-// HeaderDisassembler Test for Multiple Metadata being queued
-// TODO(tjagtap) : [PH2][P2] : Do this only after the StreamDataQueue class is
-// finalized. Basically we want to test the swap workflows inside the
-// disassembler
 
 }  // namespace testing
 }  // namespace http2
