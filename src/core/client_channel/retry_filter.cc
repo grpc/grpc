@@ -31,7 +31,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/error.h"
 #include "src/core/service_config/service_config.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -93,8 +92,7 @@ namespace grpc_core {
 // RetryFilter
 //
 
-RetryFilter::RetryFilter(const grpc_channel_element_args& args,
-                         grpc_error_handle* error)
+RetryFilter::RetryFilter(const grpc_channel_element_args& args)
     : client_channel_(args.channel_args.GetObject<ClientChannelFilter>()),
       event_engine_(args.channel_args.GetObject<EventEngine>()),
       per_rpc_retry_buffer_size_(
