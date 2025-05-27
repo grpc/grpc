@@ -127,7 +127,7 @@ Http2ContinuationFrame GenerateContinuationFrame(absl::string_view str,
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Frame
+// HeaderAssembler - Test One Header Frame
 
 void ValidateOneHeader(const uint32_t stream_id, HPackParser& parser,
                        HeaderAssembler& assembler, const bool end_headers) {
@@ -195,7 +195,7 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady1) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// HeaderAssembler - One Header Two Continuation Frames
+// HeaderAssembler - Test One Header Two Continuation Frames
 
 void ValidateOneHeaderTwoContinuation(const uint32_t stream_id,
                                       HPackParser& parser,
@@ -293,10 +293,9 @@ TEST(HeaderAssemblerTest, InvalidAssemblerNotReady2) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Other Valid cases
+// HeaderAssembler - Test Other Valid incoming frames
 
 TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
-  // This test is Valid only for Server. Not for Client.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read a HTTP2 header that is sent in one HTTP2 HEADERS frame.
@@ -311,7 +310,6 @@ TEST(HeaderAssemblerTest, ValidTwoHeaderFrames) {
 }
 
 TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
-  // This test is Valid only for Server. Not for Client.
   // This scenario represents a case where the sender sends Initial Metadata and
   // Trailing Metadata after that. Without any messages.
   // 1. Correctly read all the Header and Continuation frames.
@@ -328,7 +326,7 @@ TEST(HeaderAssemblerTest, ValidMultipleHeadersAndContinuations) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Peer not honouring RFC9113
+// HeaderAssembler - Test Peer not honouring RFC9113
 
 TEST(HeaderAssemblerTest, InvalidTwoHeaderFrames) {
   // Connection Error if second HEADER frame is received before the first one is
@@ -413,6 +411,43 @@ TEST(HeaderAssemblerTest, InvalidContinuationAfterEndHeaders) {
   EXPECT_FALSE(status2.IsOk());
   EXPECT_EQ(status2.GetType(), Http2Status::Http2ErrorType::kConnectionError);
   EXPECT_EQ(status2.GetConnectionErrorCode(), Http2ErrorCode::kProtocolError);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// HeaderAssembler - Test gRPC Violations
+
+TEST(HeaderAssemblerTest, InvalidTooManyHeaders) {
+  const uint32_t stream_id = 1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+  ValidateOneHeader(stream_id, parser, assembler, /*end_headers=*/true);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/true,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
+}
+
+TEST(HeaderAssemblerTest, InvalidTooManyHeadersContinuation) {
+  const uint32_t stream_id = 1111;
+  HPackParser parser;
+  HeaderAssembler assembler(stream_id);
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
+                                   /*end_stream=*/false);
+  ValidateOneHeaderTwoContinuation(stream_id, parser, assembler,
+                                   /*end_stream=*/false);
+
+  Http2HeaderFrame header1 = GenerateHeaderFrame(
+      kSimpleRequestEncoded, stream_id, /*end_headers=*/false,
+      /*end_stream=*/true);
+  Http2Status status1 = assembler.AppendHeaderFrame(std::move(header1));
+  EXPECT_FALSE(status1.IsOk());
+  EXPECT_EQ(status1.GetType(), Http2Status::Http2ErrorType::kConnectionError);
+  EXPECT_EQ(status1.GetConnectionErrorCode(), Http2ErrorCode::kInternalError);
 }
 
 // TODO(tjagtap) : [PH2][P3] : Validate later. Edge case
