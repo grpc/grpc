@@ -25549,6 +25549,7 @@ add_executable(request_buffer_test
   src/core/lib/transport/timeout_encoding.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
