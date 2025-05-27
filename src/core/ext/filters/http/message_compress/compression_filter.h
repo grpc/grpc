@@ -135,7 +135,7 @@ class ClientCompressionFilter final
         compression_engine_(args) {}
   ~ClientCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("clientCompressionFilter",
                            compression_engine_.ToJsonObject());
   }
@@ -185,7 +185,7 @@ class ServerCompressionFilter final
         compression_engine_(args) {}
   ~ServerCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("serverCompressionFilter",
                            compression_engine_.ToJsonObject());
   }

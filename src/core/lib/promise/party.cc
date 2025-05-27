@@ -183,9 +183,66 @@ void Party::SpawnSerializer::Destroy() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// ToJson helpers
+
+namespace {
+
+Json ParticipantBitmaskToJson(uint64_t mask) {
+  Json::Array array;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (mask & (1u << i)) {
+      array.emplace_back(Json::FromNumber(i));
+    }
+  }
+  return Json::FromArray(std::move(array));
+}
+
+}  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 // Party
 
 Party::~Party() {}
+
+void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
+  auto event_engine =
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
+  CHECK(event_engine != nullptr);
+  event_engine->Run([f = std::move(f), self = Ref()]() mutable {
+    self->Spawn(
+        "get-json",
+        [f = std::move(f), self]() mutable {
+          return [f = std::move(f), self]() mutable {
+            f(self->ToJsonLocked());
+            return absl::OkStatus();
+          };
+        },
+        [](absl::Status) {});
+  });
+}
+
+Json::Object Party::ToJsonLocked() {
+  Json::Object obj;
+  auto state = state_.load(std::memory_order_relaxed);
+  obj["ref_count"] = Json::FromNumber(state >> kRefShift);
+  obj["allocated_participants"] =
+      ParticipantBitmaskToJson((state & kAllocatedMask) >> kAllocatedShift);
+  obj["wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_ & kWakeupMask);
+  obj["locked"] = Json::FromBool((state & kLocked) != 0);
+  obj["local_wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_);
+  obj["currently_polling"] = Json::FromNumber(currently_polling_);
+  Json::Array participants;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (auto* p = participants_[i].load(std::memory_order_acquire);
+        p != nullptr) {
+      auto obj = p->ToJson();
+      obj["participant_index"] = Json::FromNumber(i);
+      participants.emplace_back(Json::FromObject(std::move(obj)));
+    }
+  }
+  obj["participants"] = Json::FromArray(std::move(participants));
+  return obj;
+}
 
 void Party::CancelRemainingParticipants() {
   uint64_t prev_state = state_.load(std::memory_order_relaxed);

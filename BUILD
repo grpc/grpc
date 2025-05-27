@@ -215,11 +215,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gradient"  # @unused
+g_stands_for = "gee"  # @unused
 
-core_version = "47.0.0"  # @unused
+core_version = "48.0.0"  # @unused
 
-version = "1.73.0-dev"  # @unused
+version = "1.74.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1275,6 +1275,7 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
+        "//src/core:notification",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
