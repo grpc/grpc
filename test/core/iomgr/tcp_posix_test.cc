@@ -643,7 +643,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     LOG(INFO) << "This test is skipped since the "
                  "event_engine_for_all_other_endpoints experiment is enabled, "
                  "which replaces iomgr grpc_fds with minimal implementations. "
