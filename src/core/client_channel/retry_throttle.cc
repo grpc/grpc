@@ -43,12 +43,12 @@ T ClampedAdd(std::atomic<T>& value, T delta, T min, T max) {
 }  // namespace
 
 //
-// ServerRetryThrottleData
+// RetryThrottler
 //
 
-RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleData::Create(
+RefCountedPtr<RetryThrottler> RetryThrottler::Create(
     uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
-    RefCountedPtr<ServerRetryThrottleData> previous) {
+    RefCountedPtr<RetryThrottler> previous) {
   if (previous != nullptr && previous->max_milli_tokens_ == max_milli_tokens &&
       previous->milli_token_ratio_ == milli_token_ratio) {
     return previous;
@@ -65,50 +65,48 @@ RefCountedPtr<ServerRetryThrottleData> ServerRetryThrottleData::Create(
     initial_milli_tokens =
         static_cast<uintptr_t>(token_fraction * max_milli_tokens);
   }
-  auto throttle_data = MakeRefCounted<ServerRetryThrottleData>(
+  auto throttle_data = MakeRefCounted<RetryThrottler>(
       max_milli_tokens, milli_token_ratio, initial_milli_tokens);
   if (previous != nullptr) previous->SetReplacement(throttle_data);
   return throttle_data;
 }
 
-UniqueTypeName ServerRetryThrottleData::Type() {
+UniqueTypeName RetryThrottler::Type() {
   static UniqueTypeName::Factory factory("retry_throttle");
   return factory.Create();
 }
 
-ServerRetryThrottleData::ServerRetryThrottleData(uintptr_t max_milli_tokens,
-                                                 uintptr_t milli_token_ratio,
-                                                 uintptr_t milli_tokens)
+RetryThrottler::RetryThrottler(uintptr_t max_milli_tokens,
+                               uintptr_t milli_token_ratio,
+                               uintptr_t milli_tokens)
     : max_milli_tokens_(max_milli_tokens),
       milli_token_ratio_(milli_token_ratio),
       milli_tokens_(milli_tokens) {}
 
-ServerRetryThrottleData::~ServerRetryThrottleData() {
-  ServerRetryThrottleData* replacement =
-      replacement_.load(std::memory_order_acquire);
+RetryThrottler::~RetryThrottler() {
+  RetryThrottler* replacement = replacement_.load(std::memory_order_acquire);
   if (replacement != nullptr) {
     replacement->Unref();
   }
 }
 
-void ServerRetryThrottleData::SetReplacement(
-    RefCountedPtr<ServerRetryThrottleData> replacement) {
+void RetryThrottler::SetReplacement(RefCountedPtr<RetryThrottler> replacement) {
   replacement_.store(replacement.release(), std::memory_order_release);
 }
 
-void ServerRetryThrottleData::GetReplacementThrottleDataIfNeeded(
-    ServerRetryThrottleData** throttle_data) {
+void RetryThrottler::GetReplacementThrottleDataIfNeeded(
+    RetryThrottler** throttle_data) {
   while (true) {
-    ServerRetryThrottleData* new_throttle_data =
+    RetryThrottler* new_throttle_data =
         (*throttle_data)->replacement_.load(std::memory_order_acquire);
     if (new_throttle_data == nullptr) return;
     *throttle_data = new_throttle_data;
   }
 }
 
-bool ServerRetryThrottleData::RecordFailure() {
+bool RetryThrottler::RecordFailure() {
   // First, check if we are stale and need to be replaced.
-  ServerRetryThrottleData* throttle_data = this;
+  RetryThrottler* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We decrement milli_tokens by 1000 (1 token) for each failure.
   const uintptr_t new_value = ClampedAdd<intptr_t>(
@@ -120,9 +118,9 @@ bool ServerRetryThrottleData::RecordFailure() {
   return new_value > throttle_data->max_milli_tokens_ / 2;
 }
 
-void ServerRetryThrottleData::RecordSuccess() {
+void RetryThrottler::RecordSuccess() {
   // First, check if we are stale and need to be replaced.
-  ServerRetryThrottleData* throttle_data = this;
+  RetryThrottler* throttle_data = this;
   GetReplacementThrottleDataIfNeeded(&throttle_data);
   // We increment milli_tokens by milli_token_ratio for each success.
   ClampedAdd<intptr_t>(

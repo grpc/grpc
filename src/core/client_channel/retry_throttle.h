@@ -30,18 +30,18 @@ namespace grpc_core {
 namespace internal {
 
 /// Tracks retry throttling data for an individual server name.
-class ServerRetryThrottleData final : public Blackboard::Entry {
+class RetryThrottler final : public Blackboard::Entry {
  public:
-  static RefCountedPtr<ServerRetryThrottleData> Create(
+  static RefCountedPtr<RetryThrottler> Create(
       uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
-      RefCountedPtr<ServerRetryThrottleData> previous);
+      RefCountedPtr<RetryThrottler> previous);
 
   static UniqueTypeName Type();
 
   // Do not instantiate directly -- use Create() instead.
-  ServerRetryThrottleData(uintptr_t max_milli_tokens,
-                          uintptr_t milli_token_ratio, uintptr_t milli_tokens);
-  ~ServerRetryThrottleData() override;
+  RetryThrottler(uintptr_t max_milli_tokens, uintptr_t milli_token_ratio,
+                 uintptr_t milli_tokens);
+  ~RetryThrottler() override;
 
   /// Records a failure.  Returns true if it's okay to send a retry.
   bool RecordFailure();
@@ -57,18 +57,17 @@ class ServerRetryThrottleData final : public Blackboard::Entry {
   }
 
  private:
-  void SetReplacement(RefCountedPtr<ServerRetryThrottleData> replacement);
+  void SetReplacement(RefCountedPtr<RetryThrottler> replacement);
 
-  void GetReplacementThrottleDataIfNeeded(
-      ServerRetryThrottleData** throttle_data);
+  void GetReplacementThrottleDataIfNeeded(RetryThrottler** throttle_data);
 
   const uintptr_t max_milli_tokens_;
   const uintptr_t milli_token_ratio_;
   std::atomic<intptr_t> milli_tokens_;
-  // A pointer to the replacement for this ServerRetryThrottleData entry.
+  // A pointer to the replacement for this RetryThrottler entry.
   // If non-nullptr, then this entry is stale and must not be used.
   // We hold a reference to the replacement.
-  std::atomic<ServerRetryThrottleData*> replacement_{nullptr};
+  std::atomic<RetryThrottler*> replacement_{nullptr};
 };
 
 }  // namespace internal

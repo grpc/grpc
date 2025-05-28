@@ -25,85 +25,83 @@ namespace grpc_core {
 namespace internal {
 namespace {
 
-TEST(ServerRetryThrottleData, Basic) {
+TEST(RetryThrottler, Basic) {
   // Max token count is 4, so threshold for retrying is 2.
   // Token count starts at 4.
   // Each failure decrements by 1.  Each success increments by 1.6.
-  auto throttle_data = ServerRetryThrottleData::Create(4000, 1600, nullptr);
+  auto throttler = RetryThrottler::Create(4000, 1600, nullptr);
   // Failure: token_count=3.  Above threshold.
-  EXPECT_TRUE(throttle_data->RecordFailure());
+  EXPECT_TRUE(throttler->RecordFailure());
   // Success: token_count=4.  Not incremented beyond max.
-  throttle_data->RecordSuccess();
+  throttler->RecordSuccess();
   // Failure: token_count=3.  Above threshold.
-  EXPECT_TRUE(throttle_data->RecordFailure());
+  EXPECT_TRUE(throttler->RecordFailure());
   // Failure: token_count=2.  At threshold, so no retries.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Failure: token_count=1.  Below threshold, so no retries.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Failure: token_count=0.  Below threshold, so no retries.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Failure: token_count=0.  Below threshold, so no retries.  Not
   // decremented below min.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Success: token_count=1.6.
-  throttle_data->RecordSuccess();
+  throttler->RecordSuccess();
   // Success: token_count=3.2.
-  throttle_data->RecordSuccess();
+  throttler->RecordSuccess();
   // Failure: token_count=2.2.  Above threshold.
-  EXPECT_TRUE(throttle_data->RecordFailure());
+  EXPECT_TRUE(throttler->RecordFailure());
   // Failure: token_count=1.2.  Below threshold, so no retries.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Success: token_count=2.8.
-  throttle_data->RecordSuccess();
+  throttler->RecordSuccess();
   // Failure: token_count=1.8.  Below threshold, so no retries.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Success: token_count=3.4.
-  throttle_data->RecordSuccess();
+  throttler->RecordSuccess();
   // Failure: token_count=2.4.  Above threshold.
-  EXPECT_TRUE(throttle_data->RecordFailure());
+  EXPECT_TRUE(throttler->RecordFailure());
 }
 
-TEST(ServerRetryThrottleMap, Replacement) {
-  // Create old throttle data.
+TEST(RetryThrottler, Replacement) {
+  // Create throttler.
   // Max token count is 4, so threshold for retrying is 2.
   // Token count starts at 4.
   // Each failure decrements by 1.  Each success increments by 1.
-  auto old_throttle_data = ServerRetryThrottleData::Create(4000, 1000, nullptr);
-  EXPECT_EQ(old_throttle_data->max_milli_tokens(), 4000);
-  EXPECT_EQ(old_throttle_data->milli_token_ratio(), 1000);
-  EXPECT_EQ(old_throttle_data->milli_tokens(), 4000);
+  auto old_throttler = RetryThrottler::Create(4000, 1000, nullptr);
+  EXPECT_EQ(old_throttler->max_milli_tokens(), 4000);
+  EXPECT_EQ(old_throttler->milli_token_ratio(), 1000);
+  EXPECT_EQ(old_throttler->milli_tokens(), 4000);
   // Failure: token_count=3.  Above threshold.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Get the throttle data again with the same settings.  This should
+  EXPECT_TRUE(old_throttler->RecordFailure());
+  // Create a new throttler with the same settings.  This should
   // return the same object.
-  auto throttle_data =
-      ServerRetryThrottleData::Create(4000, 1000, old_throttle_data);
-  EXPECT_EQ(old_throttle_data, throttle_data);
-  // Get the throttle data with different settings.  This should create
+  auto throttler = RetryThrottler::Create(4000, 1000, old_throttler);
+  EXPECT_EQ(old_throttler, throttler);
+  // Create a new throttler with different settings.  This should create
   // a new object.
   // Max token count is 10, so threshold for retrying is 5.
-  // Token count starts at 7.5 (ratio inherited from old_throttle_data).
+  // Token count starts at 7.5 (ratio inherited from old_throttler).
   // Each failure decrements by 1.  Each success increments by 3.
-  throttle_data =
-      ServerRetryThrottleData::Create(10000, 3000, old_throttle_data);
-  EXPECT_NE(old_throttle_data, throttle_data);
-  EXPECT_EQ(throttle_data->max_milli_tokens(), 10000);
-  EXPECT_EQ(throttle_data->milli_token_ratio(), 3000);
-  EXPECT_EQ(throttle_data->milli_tokens(), 7500);
-  // Failure via old_throttle_data: token_count=6.5.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
+  throttler = RetryThrottler::Create(10000, 3000, old_throttler);
+  EXPECT_NE(old_throttler, throttler);
+  EXPECT_EQ(throttler->max_milli_tokens(), 10000);
+  EXPECT_EQ(throttler->milli_token_ratio(), 3000);
+  EXPECT_EQ(throttler->milli_tokens(), 7500);
+  // Failure via old_throttler: token_count=6.5.
+  EXPECT_TRUE(old_throttler->RecordFailure());
   // Failure: token_count=5.5.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
-  // Failure via old_throttle_data: token_count=4.5.  Below threshold.
-  EXPECT_FALSE(old_throttle_data->RecordFailure());
+  EXPECT_TRUE(old_throttler->RecordFailure());
+  // Failure via old_throttler: token_count=4.5.  Below threshold.
+  EXPECT_FALSE(old_throttler->RecordFailure());
   // Failure: token_count=3.5.  Below threshold.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
   // Success: token_count=6.5.
-  throttle_data->RecordSuccess();
-  // Failure via old_throttle_data: token_count=5.5.  Above threshold.
-  EXPECT_TRUE(old_throttle_data->RecordFailure());
+  throttler->RecordSuccess();
+  // Failure via old_throttler: token_count=5.5.  Above threshold.
+  EXPECT_TRUE(old_throttler->RecordFailure());
   // Failure: token_count=4.5.  Below threshold.
-  EXPECT_FALSE(throttle_data->RecordFailure());
+  EXPECT_FALSE(throttler->RecordFailure());
 }
 
 }  // namespace

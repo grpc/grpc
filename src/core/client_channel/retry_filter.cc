@@ -106,11 +106,11 @@ RetryFilter::RetryFilter(const grpc_channel_element_args& args)
       service_config->GetGlobalParsedConfig(
           RetryServiceConfigParser::ParserIndex()));
   if (config == nullptr) return;
-  // Get throttle state.
-  retry_throttle_data_ = internal::ServerRetryThrottleData::Create(
+  // Get throttler.
+  retry_throttler_ = internal::RetryThrottler::Create(
       config->max_milli_tokens(), config->milli_token_ratio(),
-      args.old_blackboard->Get<internal::ServerRetryThrottleData>(""));
-  args.new_blackboard->Set("", retry_throttle_data_);
+      args.old_blackboard->Get<internal::RetryThrottler>(""));
+  args.new_blackboard->Set("", retry_throttler_);
 }
 
 const RetryMethodConfig* RetryFilter::GetRetryPolicy(Arena* arena) {
