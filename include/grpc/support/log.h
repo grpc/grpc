@@ -78,6 +78,8 @@ GPRAPI void grpc_absl_log_str(const char* file, int line,
 
 GPRAPI void gpr_log_verbosity_init(void);
 
+GPRAPI void gpr_log_verbosity_init_for_path(const char* path);
+
 #ifdef __cplusplus
 }
 #endif
