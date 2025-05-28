@@ -367,11 +367,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
     channelz_socket.reset();
   }
 
-  if (ep != nullptr) {
-    grpc_core::MutexLock lock(&ep_destroy_mu);
-    ep.reset();
-  }
-
   grpc_slice_buffer_destroy(&qbuf);
 
   grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
