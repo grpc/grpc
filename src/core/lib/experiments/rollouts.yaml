@@ -47,7 +47,7 @@
 - name: error_flatten
   default: false
 - name: event_engine_callback_cq
-  default: true
+  default: false
 - name: event_engine_client
   default: true
 - name: event_engine_dns
