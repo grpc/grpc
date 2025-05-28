@@ -4245,7 +4245,6 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
-        "//src/core:grpc_crl_provider",
         "//src/core:grpc_transport_chttp2_alpn",
         "//src/core:load_file",
         "//src/core:ref_counted",
