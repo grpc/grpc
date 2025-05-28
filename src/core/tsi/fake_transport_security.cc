@@ -526,9 +526,9 @@ static tsi_result fake_zero_copy_grpc_protector_read_frame_size(
   if (self == nullptr || frame_size == nullptr) return TSI_INVALID_ARGUMENT;
   tsi_fake_zero_copy_grpc_protector* impl =
       reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
-  while (impl->protected_sb.length >= TSI_FAKE_FRAME_HEADER_SIZE) {
+  while (protected_slices->length >= TSI_FAKE_FRAME_HEADER_SIZE) {
     if (impl->parsed_frame_size == 0) {
-      impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
+      impl->parsed_frame_size = read_frame_size(protected_slices);
       if (impl->parsed_frame_size <= 4) {
         LOG(ERROR) << "Invalid frame size.";
         return TSI_DATA_CORRUPTED;
