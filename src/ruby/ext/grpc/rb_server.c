@@ -84,6 +84,9 @@ static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
   if (!server->destroy_done) {
     server->destroy_done = 1;
     if (server->wrapped != NULL) {
+      gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                           gpr_time_from_seconds(2, GPR_TIMESPAN));
+      grpc_rb_server_maybe_shutdown_and_notify(server, deadline);
       grpc_server_destroy(server->wrapped);
       grpc_rb_completion_queue_destroy(server->queue);
       server->wrapped = NULL;
@@ -94,18 +97,11 @@ static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
 
 static void grpc_rb_server_free_internal(void* p) {
   grpc_rb_server* svr = NULL;
-  gpr_timespec deadline;
   if (p == NULL) {
     return;
   };
   svr = (grpc_rb_server*)p;
-
-  deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                          gpr_time_from_seconds(2, GPR_TIMESPAN));
-
-  grpc_rb_server_maybe_shutdown_and_notify(svr, deadline);
   grpc_rb_server_maybe_destroy(svr);
-
   xfree(p);
 }
 
