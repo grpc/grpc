@@ -906,7 +906,7 @@ template <typename Derived, typename... Filters>
 class FuseImplOnServerTrailingMetadata<MethodVariant::kNoInterceptor, Derived,
                                        Filters...> {
  public:
-  static inline const NoInterceptor name;
+  static inline const NoInterceptor OnServerTrailingMetadata;
 };
 
 template <typename Derived, typename... Filters>
