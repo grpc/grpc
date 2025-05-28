@@ -28,6 +28,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc_core {
@@ -187,6 +188,51 @@ TEST_P(ChannelzRegistryTest, ThreadStressTest) {
   for (auto& thread : threads) {
     thread.join();
   }
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCount) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  nodes.reserve(200000);
+  for (int i = 0; i < 100000; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    nodes.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_FALSE(end);
+  auto [channels2, end2] =
+      ChannelzRegistry::GetTopChannels(channels1.back()->uuid());
+  EXPECT_FALSE(end2);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, HugeNodeCountWithParents) {
+  std::vector<RefCountedPtr<BaseNode>> nodes;
+  for (int i = 0; i < 100; ++i) {
+    nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
+    auto parent = nodes.back();
+    for (int j = 0; j < 1000; ++j) {
+      nodes.push_back(MakeRefCounted<SubchannelNode>("x", 1));
+      nodes.back()->AddParent(parent.get());
+    }
+  }
+  auto [channels1, end] = ChannelzRegistry::GetTopChannels(0);
+  EXPECT_TRUE(end);
+  std::shuffle(nodes.begin(), nodes.end(), SharedBitGen());
+}
+
+TEST_P(ChannelzRegistryTest, ServerWithChildren) {
+  auto server = MakeRefCounted<ServerNode>(1);
+  std::vector<RefCountedPtr<BaseNode>> sockets;
+  sockets.reserve(200000);
+  for (int i = 0; i < 200000; ++i) {
+    sockets.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
+    sockets.back()->AddParent(server.get());
+  }
+  std::shuffle(sockets.begin(), sockets.end(), SharedBitGen());
+  sockets.resize(100000);
+  auto child_sockets = server->child_sockets();
+  server.reset();
+  sockets.clear();
 }
 
 }  // namespace testing

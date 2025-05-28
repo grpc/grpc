@@ -67,7 +67,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    shard_count = 6,
+    shard_count = 50,
     tags = [
         "channelz_test",
     ],
