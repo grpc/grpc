@@ -520,12 +520,32 @@ static tsi_result fake_zero_copy_grpc_protector_max_frame_size(
   return TSI_OK;
 }
 
+static tsi_result fake_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size) {
+  if (self == nullptr || frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  tsi_fake_zero_copy_grpc_protector* impl =
+      reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
+  while (impl->protected_sb.length >= TSI_FAKE_FRAME_HEADER_SIZE) {
+    if (impl->parsed_frame_size == 0) {
+      impl->parsed_frame_size = read_frame_size(&impl->protected_sb);
+      if (impl->parsed_frame_size <= 4) {
+        LOG(ERROR) << "Invalid frame size.";
+        return TSI_DATA_CORRUPTED;
+      }
+    }
+  }
+  *frame_size = impl->parsed_frame_size;
+  return TSI_OK;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
         fake_zero_copy_grpc_protector_max_frame_size,
+        fake_zero_copy_grpc_protector_read_frame_size,
 };
 
 // --- tsi_handshaker_result methods implementation. ---

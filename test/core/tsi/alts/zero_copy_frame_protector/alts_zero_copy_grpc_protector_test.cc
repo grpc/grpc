@@ -195,6 +195,11 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
     // Unprotects one by one.
+    uint32_t frame_size;
+    ASSERT_EQ(tsi_zero_copy_grpc_protector_read_frame_size(
+                  receiver, &var->staging_sb, &frame_size),
+              TSI_OK);
+    EXPECT_EQ(frame_size, 40);
     ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
                                                      &var->unprotected_sb,
                                                      &min_progress_size),

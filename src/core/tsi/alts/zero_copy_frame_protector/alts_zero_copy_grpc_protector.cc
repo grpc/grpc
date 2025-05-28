@@ -249,12 +249,30 @@ static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
   return TSI_OK;
 }
 
+static tsi_result alts_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size) {
+  if (self == nullptr || frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  alts_zero_copy_grpc_protector* protector =
+      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
+
+  if (protector->parsed_frame_size == 0) {
+    // We have not parsed frame size yet. Parses frame size.
+    if (!read_frame_size(protected_slices, &protector->parsed_frame_size)) {
+      return TSI_DATA_CORRUPTED;
+    }
+  }
+  *frame_size = protector->parsed_frame_size;
+  return TSI_OK;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     alts_zero_copy_grpc_protector_vtable = {
         alts_zero_copy_grpc_protector_protect,
         alts_zero_copy_grpc_protector_unprotect,
         alts_zero_copy_grpc_protector_destroy,
-        alts_zero_copy_grpc_protector_max_frame_size};
+        alts_zero_copy_grpc_protector_max_frame_size,
+        alts_zero_copy_grpc_protector_read_frame_size};
 
 tsi_result alts_zero_copy_grpc_protector_create(
     const grpc_core::GsecKeyFactoryInterface& key_factory, bool is_client,
@@ -262,8 +280,8 @@ tsi_result alts_zero_copy_grpc_protector_create(
     size_t* max_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   if (protector == nullptr) {
-    LOG(ERROR)
-        << "Invalid nullptr arguments to alts_zero_copy_grpc_protector create.";
+    LOG(ERROR) << "Invalid nullptr arguments to "
+                  "alts_zero_copy_grpc_protector create.";
     return TSI_INVALID_ARGUMENT;
   }
   // Creates alts_zero_copy_protector.
