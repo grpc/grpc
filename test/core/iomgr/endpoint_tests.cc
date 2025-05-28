@@ -164,9 +164,10 @@ static void write_scheduler(void* data, grpc_error_handle error) {
   if (error.ok() && state->current_write_size != 0) {
     grpc_core::MutexLock lock(&state->ep_mu);
     if (state->write_ep != nullptr) {
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+      args.set_max_frame_size(state->max_write_frame_size);
       grpc_endpoint_write(state->write_ep, &state->outgoing, &state->done_write,
-                          nullptr,
-                          /*max_frame_size=*/state->max_write_frame_size);
+                          std::move(args));
       return;
     }
   }

@@ -231,7 +231,7 @@ File.rename('Makefile.new', 'Makefile')
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
+    o.puts 'hijack: all strip remove_unused_artifacts'
     o.puts
     o.write(File.read('Makefile'))
     o.puts

@@ -12,9 +12,9 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 47.0.0
+  core_version: 48.0.0
   csharp_major_version: 2
-  g_stands_for: gradient
+  g_stands_for: gee
   protobuf_version: 4.31.0
   supported_python_versions:
   - '3.9'
@@ -22,12 +22,12 @@ settings:
   - '3.11'
   - '3.12'
   - '3.13'
-  version: 1.73.0-dev
+  version: 1.74.0-dev
 configs:
   asan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -39,7 +39,7 @@ configs:
   asan-noleaks:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+      -Wno-unused-command-line-argument
     CXX: clang++
     LD: clang++
     LDFLAGS: fsanitize=address
@@ -51,7 +51,6 @@ configs:
     CC: clang
     CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
       -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
     LDFLAGS: -fsanitize=address
@@ -93,7 +92,7 @@ configs:
     CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory
       -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer
       -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
-      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+      -fPIE -pie
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
@@ -113,7 +112,6 @@ configs:
   tsan:
     CC: clang
     CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
-      -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
     LD: clang++

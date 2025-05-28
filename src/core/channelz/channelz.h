@@ -209,15 +209,60 @@ class ZTrace {
                    absl::AnyInvocable<void(Json)>) = 0;
 };
 
+// This class is used to collect additional information about the channelz
+// node. It's the backing implementation for DataSink. channelz users should
+// use DataSink instead of this class directly.
+// We form a shared_ptr<> around this class during collection.
+// In DataSink we use a weak_ptr<> to allow rapid resource reclamation once
+// the collection is complete (or has timed out).
+class DataSinkImplementation {
+ public:
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
+  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> child_objects);
+  Json::Object Finalize(bool timed_out);
+
+ private:
+  void MergeChildObjectsIntoAdditionalInfo() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  Mutex mu_;
+  std::map<std::string, Json::Object> additional_info_ ABSL_GUARDED_BY(mu_);
+  std::vector<RefCountedPtr<BaseNode>> child_objects_ ABSL_GUARDED_BY(mu_);
+};
+
+// Wrapper around absl::AnyInvocable<void()> that is used to notify when the
+// DataSink has completed.
+// We hold a shared_ptr<> around this class in DataSink to keep knowledge of
+// when the DataSink has completed.
+class DataSinkCompletionNotification {
+ public:
+  explicit DataSinkCompletionNotification(absl::AnyInvocable<void()> callback)
+      : callback_(std::move(callback)) {}
+  ~DataSinkCompletionNotification() { callback_(); }
+
+ private:
+  absl::AnyInvocable<void()> callback_;
+};
+
 class DataSink {
  public:
-  virtual void AddAdditionalInfo(absl::string_view name,
-                                 Json::Object additional_info) = 0;
-  virtual void AddChildObjects(
-      std::vector<RefCountedPtr<BaseNode>> children) = 0;
+  DataSink(std::shared_ptr<DataSinkImplementation> impl,
+           std::shared_ptr<DataSinkCompletionNotification> notification)
+      : impl_(impl), notification_(std::move(notification)) {}
 
- protected:
-  ~DataSink() = default;
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddAdditionalInfo(name, std::move(additional_info));
+  }
+  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddChildObjects(std::move(children));
+  }
+
+ private:
+  std::weak_ptr<DataSinkImplementation> impl_;
+  std::shared_ptr<DataSinkCompletionNotification> notification_;
 };
 
 class DataSource {
@@ -227,7 +272,7 @@ class DataSource {
   // Add any relevant json fragments to the output.
   // This method must not cause the DataSource to be deleted, or else there will
   // be a deadlock.
-  virtual void AddData(DataSink&) {}
+  virtual void AddData(DataSink) {}
 
   // If this data source exports some ztrace, return it here.
   virtual std::unique_ptr<ZTrace> GetZTrace(absl::string_view /*name*/) {
@@ -423,7 +468,7 @@ class SubchannelNode final : public BaseNode {
   const std::string& target() const { return target_; }
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  RefCountedPtr<SocketNode> child_socket() const {
+  WeakRefCountedPtr<SocketNode> child_socket() const {
     MutexLock lock(&socket_mu_);
     return child_socket_;
   }
@@ -436,7 +481,7 @@ class SubchannelNode final : public BaseNode {
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
   mutable Mutex socket_mu_;
-  RefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
+  WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
@@ -481,9 +526,9 @@ class ServerNode final : public BaseNode {
 
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
 
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets()
+  std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>> child_listen_sockets()
       const;
-  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets() const;
+  std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
   const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }

@@ -30,32 +30,26 @@ namespace grpc {
 namespace internal {
 
 // OpenTelemetryPluginImpl::ServerCallTracer implementation
-
 class OpenTelemetryPluginImpl::ServerCallTracer
-    : public grpc_core::ServerCallTracer {
+    : public grpc_core::ServerCallTracer,
+      public grpc_core::RefCounted<ServerCallTracer,
+                                   grpc_core::NonPolymorphicRefCount,
+                                   grpc_core::UnrefCallDtor> {
  public:
   ServerCallTracer(
-      OpenTelemetryPluginImpl* otel_plugin,
-      std::shared_ptr<OpenTelemetryPluginImpl::ServerScopeConfig> scope_config)
-      : start_time_(absl::Now()),
-        injected_labels_from_plugin_options_(
-            otel_plugin->plugin_options().size()),
-        otel_plugin_(otel_plugin),
-        scope_config_(std::move(scope_config)) {}
+      OpenTelemetryPluginImpl* otel_plugin, grpc_core::Arena* arena,
+      std::shared_ptr<OpenTelemetryPluginImpl::ServerScopeConfig> scope_config);
+
+  ~ServerCallTracer() override;
 
   std::string TraceId() override {
-    // Not implemented
-    return "";
+    return OTelSpanTraceIdToString(span_.get());
   }
 
-  std::string SpanId() override {
-    // Not implemented
-    return "";
-  }
+  std::string SpanId() override { return OTelSpanSpanIdToString(span_.get()); }
 
   bool IsSampled() override {
-    // Not implemented
-    return false;
+    return span_ != nullptr && span_->GetContext().IsSampled();
   }
 
   // Please refer to `grpc_transport_stream_op_batch_payload` for details on
@@ -99,10 +93,7 @@ class OpenTelemetryPluginImpl::ServerCallTracer
 
   void RecordAnnotation(absl::string_view annotation, absl::Time time);
 
-  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override {
-    // No TCP trace.
-    return nullptr;
-  }
+  std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
 
  private:
   class TcpCallTracer;
@@ -123,7 +114,8 @@ class OpenTelemetryPluginImpl::ServerCallTracer
   bool registered_method_;
   std::vector<std::unique_ptr<LabelsIterable>>
       injected_labels_from_plugin_options_;
-  OpenTelemetryPluginImpl* otel_plugin_;
+  OpenTelemetryPluginImpl* const otel_plugin_;
+  grpc_core::Arena* const arena_;
   std::shared_ptr<OpenTelemetryPluginImpl::ServerScopeConfig> scope_config_;
   // TODO(roth, ctiller): Won't need atomic here once chttp2 is migrated
   // to promises, after which we can ensure that the transport invokes
