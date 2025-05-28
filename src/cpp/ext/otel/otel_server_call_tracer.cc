@@ -71,7 +71,7 @@ class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
                    absl::Time time, size_t byte_offset,
-                   std::vector<TcpEventMetric> metrics) override {
+                   const std::vector<TcpEventMetric>& metrics) override {
     server_call_tracer_->RecordAnnotation(
         absl::StrCat(
             "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),

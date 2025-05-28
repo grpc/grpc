@@ -58,6 +58,7 @@
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
@@ -361,6 +362,13 @@ class WriteContext {
 
   grpc_chttp2_transport* transport() const { return t_; }
 
+  void AddTcpCallTracer(
+      std::shared_ptr<grpc_core::TcpCallTracer> tcp_call_tracer,
+      size_t byte_offset) {
+    result_.tcp_call_tracers.push_back(
+        {std::move(tcp_call_tracer), byte_offset});
+  }
+
   grpc_chttp2_begin_write_result Result() {
     result_.writing = t_->outbuf.c_slice_buffer()->count > 0;
     return result_;
@@ -378,7 +386,7 @@ class WriteContext {
   int initial_metadata_writes_ = 0;
   int trailing_metadata_writes_ = 0;
   int message_writes_ = 0;
-  grpc_chttp2_begin_write_result result_ = {false, false, false};
+  grpc_chttp2_begin_write_result result_ = {false, false, false, {}};
 };
 
 class DataSendContext {
@@ -707,6 +715,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       ++s->write_counter;
       if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
+        // Old way of collecting TCP traces
         grpc_core::CopyContextFn copy_context_fn =
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
@@ -714,6 +723,14 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           t->context_list->emplace_back(
               copy_context_fn(s->arena), outbuf_relative_start_pos,
               num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
+        }
+        // New way of collecting TCP traces
+        // TODO(yashykt): Should this be protected by a channel arg?
+        if (s->call_tracer != nullptr &&
+            grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+                t->ep.get())) {
+          ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
+                               s->byte_counter);
         }
       }
       outbuf_relative_start_pos += num_stream_bytes;

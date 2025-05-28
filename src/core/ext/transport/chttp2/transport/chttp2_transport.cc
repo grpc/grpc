@@ -152,7 +152,8 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
-static void write_action(grpc_chttp2_transport* t);
+static void write_action(grpc_chttp2_transport* t,
+                         std::vector<TcpCallTracerWrapper> tcp_call_tracers);
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
                              grpc_error_handle error);
 static void write_action_end_locked(
@@ -232,6 +233,11 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 using grpc_core::http2::Http2ErrorCode;
+using WriteMetric =
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
+using WriteEventSink =
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
+using ::grpc_event_engine::experimental::internal::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
 grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
@@ -359,6 +365,11 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   if (channelz_socket != nullptr) {
     channelz_socket.reset();
+  }
+
+  if (ep != nullptr) {
+    grpc_core::MutexLock lock(&ep_destroy_mu);
+    ep.reset();
   }
 
   grpc_slice_buffer_destroy(&qbuf);
@@ -1140,7 +1151,7 @@ static void write_action_begin_locked(
                     r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                               : GRPC_CHTTP2_WRITE_STATE_WRITING,
                     begin_writing_desc(r.partial));
-    write_action(t.get());
+    write_action(t.get(), std::move(r.tcp_call_tracers));
     if (t->reading_paused_on_pending_induced_frames) {
       CHECK_EQ(t->num_pending_induced_frames, 0u);
       // We had paused reading, because we had many induced frames (SETTINGS
@@ -1159,7 +1170,8 @@ static void write_action_begin_locked(
   }
 }
 
-static void write_action(grpc_chttp2_transport* t) {
+static void write_action(grpc_chttp2_transport* t,
+                         std::vector<TcpCallTracerWrapper> tcp_call_tracers) {
   void* cl = t->context_list;
   if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
@@ -1184,6 +1196,34 @@ static void write_action(grpc_chttp2_transport* t) {
   }
   args.set_max_frame_size(max_frame_size);
   args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
+  if (!tcp_call_tracers.empty()) {
+    EventEngine::Endpoint* ee_ep =
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            t->ep.get());
+    if (ee_ep != nullptr) {
+      args.set_metrics_sink(WriteEventSink(
+          {ee_ep->AllWriteMetrics()},
+          {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+           WriteEvent::kAcked},
+          [tcp_call_tracers = std::move(tcp_call_tracers)](
+              EventEngine::Endpoint* ee_ep, WriteEvent event,
+              absl::Time timestamp, std::vector<WriteMetric> metrics) {
+            std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
+            tcp_metrics.reserve(metrics.size());
+            for (auto& metric : metrics) {
+              auto name = ee_ep->GetMetricName(metric.key);
+              if (name.has_value()) {
+                tcp_metrics.push_back(grpc_core::TcpCallTracer::TcpEventMetric{
+                    name.value(), metric.value});
+              }
+            }
+            for (auto& tracer : tcp_call_tracers) {
+              tracer.tcp_call_tracer->RecordEvent(
+                  event, timestamp, tracer.byte_offset, tcp_metrics);
+            }
+          }));
+    }
+  }
   GRPC_TRACE_LOG(http2_ping, INFO)
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
