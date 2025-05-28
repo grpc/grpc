@@ -19,6 +19,7 @@
 
 namespace grpc_core {
 
+template <typename T = absl::BitGen>
 class SharedBitGen {
  public:
   SharedBitGen() = default;
@@ -27,17 +28,20 @@ class SharedBitGen {
   SharedBitGen(SharedBitGen&&) = default;
   SharedBitGen& operator=(SharedBitGen&&) = default;
 
-  using result_type = absl::BitGen::result_type;
+  using result_type = typename T::result_type;
   result_type operator()() { return bit_gen_(); }
 
-  static constexpr auto min() { return absl::BitGen::min(); }
-  static constexpr auto max() { return absl::BitGen::max(); }
+  static constexpr auto min() { return T::min(); }
+  static constexpr auto max() { return T::max(); }
 
  private:
   // TODO(ctiller): Perhaps use per-cpu storage? Would add additional overhead
   // for the mutex acquisition.
-  static thread_local absl::BitGen bit_gen_;
+  static thread_local T bit_gen_;
 };
+
+template<> thread_local absl::BitGen SharedBitGen<absl::BitGen>::bit_gen_;
+template<> thread_local absl::InsecureBitGen SharedBitGen<absl::InsecureBitGen>::bit_gen_;
 
 }  // namespace grpc_core
 

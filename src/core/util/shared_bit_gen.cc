@@ -16,6 +16,10 @@
 
 namespace grpc_core {
 
-thread_local absl::BitGen SharedBitGen::bit_gen_;
+template <>
+thread_local absl::BitGen SharedBitGen<absl::BitGen>::bit_gen_;
+
+template <>
+thread_local absl::InsecureBitGen SharedBitGen<absl::InsecureBitGen>::bit_gen_;
 
 }  // namespace grpc_core
