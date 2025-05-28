@@ -37,6 +37,7 @@ constexpr size_t kSmallBufferSize = 16;
 constexpr size_t kLargeBufferSize = 16384;
 constexpr size_t kChannelMaxSize = 2048;
 constexpr size_t kChannelMinSize = 128;
+constexpr size_t kOverhead = 24;
 
 // Test fixtures for each test cases.
 struct alts_zero_copy_grpc_protector_test_fixture {
@@ -194,12 +195,12 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
         1;
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
-    // Unprotects one by one.
     uint32_t frame_size;
     ASSERT_EQ(tsi_zero_copy_grpc_protector_read_frame_size(
                   receiver, &var->staging_sb, &frame_size),
               TSI_OK);
-    EXPECT_EQ(frame_size, 40);
+    EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+    // Unprotects one by one.
     ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
                                                      &var->unprotected_sb,
                                                      &min_progress_size),
