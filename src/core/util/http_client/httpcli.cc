@@ -333,8 +333,9 @@ void HttpRequest::StartWrite() {
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, std::move(args));
 }
 
 void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
