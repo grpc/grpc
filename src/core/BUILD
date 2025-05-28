@@ -740,6 +740,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
+        "json_writer",
         "latent_see",
         "poll",
         "promise_factory",
