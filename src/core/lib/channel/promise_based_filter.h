@@ -505,6 +505,63 @@ struct RunCallImpl<Promise (Derived::Call::*)(A, Derived* channel), Derived,
   }
 };
 
+// grpc_core::promise_filter_detail::RunCallImpl<
+//     grpc_core::promise_detail::TrySeq<
+//         grpc_core::promise_detail::Immediate<
+//             grpc_core::ServerMetadataOrHandle<grpc_metadata_batch>>,
+//         grpc_core::filters_detail::AdaptMethod<
+//             grpc_metadata_batch,
+//             std::unique_ptr<grpc_metadata_batch,
+//                             grpc_core::Arena::PooledDeleter> (
+//                 grpc_core::HttpServerFilter::Call::*)(
+//                 grpc_metadata_batch&, grpc_core::HttpServerFilter*),
+//             &grpc_core::HttpServerFilter::Call::OnClientInitialMetadata>,
+//         grpc_core::filters_detail::AdaptMethod<
+//             grpc_metadata_batch,
+//             void (grpc_core::ServerCompressionFilter::Call::*)(
+//                 grpc_metadata_batch&, grpc_core::ServerCompressionFilter*),
+//             &grpc_core::ServerCompressionFilter::Call::OnClientInitialMetadata>,
+//         grpc_core::filters_detail::AdaptMethod<
+//             grpc_metadata_batch,
+//             grpc_core::ImmediateOkStatus
+//             (grpc_core::ServerAuthFilter::Call::*)(
+//                 grpc_metadata_batch&, grpc_core::ServerAuthFilter*),
+//             &grpc_core::ServerAuthFilter::Call::OnClientInitialMetadata>> (
+//         grpc_core::filters_detail::FuseImplOnClientInitialMetadata<
+//             grpc_core::filters_detail::MethodVariant::kChannelAccess,
+//             grpc_core::filters_detail::FusedFilter<
+//                 grpc_core::FilterEndpoint::kServer,
+//                 grpc_core::ServerMessageSizeFilter,
+//                 grpc_core::HttpServerFilter,
+//                 grpc_core::ServerCompressionFilter,
+//                 grpc_core::ServerAuthFilter>,
+//             grpc_core::ServerMessageSizeFilter, grpc_core::HttpServerFilter,
+//             grpc_core::ServerCompressionFilter,
+//             grpc_core::ServerAuthFilter>::*)(
+//         std::unique_ptr<grpc_metadata_batch,
+//         grpc_core::Arena::PooledDeleter>,
+//         grpc_core::filters_detail::FusedFilter<
+//             grpc_core::FilterEndpoint::kServer,
+//             grpc_core::ServerMessageSizeFilter, grpc_core::HttpServerFilter,
+//             grpc_core::ServerCompressionFilter,
+//             grpc_core::ServerAuthFilter>*),
+//     grpc_core::filters_detail::FusedFilter<
+//         grpc_core::FilterEndpoint::kServer,
+//         grpc_core::ServerMessageSizeFilter, grpc_core::HttpServerFilter,
+//         grpc_core::ServerCompressionFilter, grpc_core::ServerAuthFilter>>
+
+// template <typename Derived, typename Promise>
+// struct RunCallImpl<
+//     Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),
+//     Derived,
+//     std::enable_if_t<
+//         std::is_same<absl::Status, typename Promise::Result>::value>> {
+//   static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
+//                   FilterCallData<Derived>* call_data) {
+//     return Immediate(ServerMetadataFromStatus(absl::OkStatus()));
+//   }
+// };
+
 template <typename Derived, typename Promise>
 struct RunCallImpl<
     Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),

@@ -34,6 +34,28 @@ ServerMetadataHandle ServerMetadataFromStatus(const absl::Status& status) {
   return hdl;
 }
 
+absl::Status ServerMetadataToStatus(ServerMetadata& md) {
+  const auto grpc_status =
+      md.get(grpc_core::GrpcStatusMetadata()).value_or(GRPC_STATUS_UNKNOWN);
+  const auto* error_slice = md.get_pointer(grpc_core::GrpcMessageMetadata());
+  return grpc_error_set_int(
+      absl::Status(static_cast<absl::StatusCode>(grpc_status),
+                   error_slice->as_string_view()),
+      StatusIntProperty::kRpcStatus, grpc_status);
+}
+
+void SetServerMetadataFromStatus(ServerMetadata& md,
+                                 const absl::Status& status) {
+  grpc_status_code code;
+  std::string message;
+  grpc_error_get_status(status, Timestamp::InfFuture(), &code, &message,
+                        nullptr, nullptr);
+  md.Set(GrpcStatusMetadata(), code);
+  if (!status.ok()) {
+    md.Set(GrpcMessageMetadata(), Slice::FromCopiedString(message));
+  }
+}
+
 ServerMetadataHandle CancelledServerMetadataFromStatus(
     const absl::Status& status) {
   auto hdl = ServerMetadataFromStatus(status);

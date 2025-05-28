@@ -119,7 +119,7 @@ class ChannelCompression {
   bool enable_decompression_;
 };
 
-class ClientCompressionFilter final
+class ClientCompressionFilter 
     : public ImplementChannelFilter<ClientCompressionFilter>,
       public channelz::DataSource {
  public:

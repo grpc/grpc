@@ -3429,6 +3429,49 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "fused_filters",
+    srcs = [
+        "filter/fused_filters.cc",
+    ],
+    deps = [
+        "experiments",
+        "filter_fusion",
+        "grpc_authorization_base",
+        "grpc_client_authority_filter",
+        "grpc_lb_policy_grpclb",
+        "grpc_message_size_filter",
+        "server_call_tracer_filter",
+        "service_config_channel_arg_filter",
+        "//:config",
+        "//:gpr",
+        "//:grpc_http_filters",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+    ],
+)
+
+# grpc_cc_library(
+#     name = "grpc_auth_filters",
+#     srcs = [
+#         "filter/auth/client_auth_filter.cc",
+#         "filter/auth/server_auth_filter.cc",
+#     ],
+#     hdrs = ["filter/auth/auth_filters.h"],
+#     deps = [
+#         "experiments",
+#         "filter_fusion",
+#         "grpc_client_authority_filter",
+#         "grpc_lb_policy_grpclb",
+#         "grpc_message_size_filter",
+#         "//:config",
+#         "//:gpr",
+#         "//:grpc_http_filters",
+#         "//:grpc_public_hdrs",
+#         "//:grpc_security_base",
+#     ],
+# )
+
+grpc_cc_library(
     name = "subchannel_connector",
     hdrs = [
         "client_channel/connector.h",
@@ -3638,6 +3681,7 @@ grpc_cc_library(
     srcs = [
         "service_config/service_config_channel_arg_filter.cc",
     ],
+    hdrs = ["service_config/service_config_channel_arg_filter.h"],
     external_deps = [
         "absl/log",
         "absl/status",

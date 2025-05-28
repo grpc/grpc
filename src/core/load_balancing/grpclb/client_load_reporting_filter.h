@@ -31,7 +31,7 @@
 
 namespace grpc_core {
 
-class ClientLoadReportingFilter final
+class ClientLoadReportingFilter 
     : public ImplementChannelFilter<ClientLoadReportingFilter> {
  public:
   static const grpc_channel_filter kFilter;
