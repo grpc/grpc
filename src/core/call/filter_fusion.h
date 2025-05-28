@@ -32,6 +32,7 @@
 #include "src/core/call/metadata.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/manual_constructor.h"
@@ -242,7 +243,7 @@ struct HasStatusMethod<
 };
 
 template <typename T>
-using EnableIfPromise = std::enable_if_t<std::is_invocable_v<T>, void>;
+constexpr bool IsPromise = std::is_invocable_v<T>;
 
 // For types T which are of the form StatusOr<U>. Type TakeValue on Type T
 // must return a value of type U. Further type T must have a method called
@@ -459,14 +460,27 @@ class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
   Derived* filter_;
 };
 
+// For methods which return a promise where the result of the promise
 template <typename T, typename R, typename Call, typename Derived,
           R (Call::*method)(Hdl<T>, Derived*)>
-class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
-                  EnableIfPromise<R>> {
+class AdaptMethod<
+    T, R (Call::*)(Hdl<T>, Derived*), method,
+    std::enable_if_t<IsPromise<R> && std::is_same_v<PromiseResult<R>,
+                                                    absl::StatusOr<Hdl<T>>>,
+                     void>> {
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
-  auto operator()(Hdl<T> x) { return (call_->*method)(std::move(x), filter_); }
+  auto operator()(Hdl<T> x) {
+    return Map((call_->*method)(std::move(x), filter_),
+               [](absl::StatusOr<Hdl<T>> result) {
+                 if (result.ok()) {
+                   return ServerMetadataOrHandle<T>::Ok(std::move(*result));
+                 }
+                 return ServerMetadataOrHandle<T>::Failure(
+                     ServerMetadataFromStatus(result.status()));
+               });
+  }
 
  private:
   Call* call_;
@@ -475,11 +489,23 @@ class AdaptMethod<T, R (Call::*)(Hdl<T>, Derived*), method,
 
 template <typename T, typename R, typename Call, typename Derived,
           R (Call::*method)(T&, Derived*)>
-class AdaptMethod<T, R (Call::*)(T&, Derived*), method, EnableIfPromise<R>> {
+class AdaptMethod<
+    T, R (Call::*)(T&, Derived*), method,
+    std::enable_if_t<
+        IsPromise<R> && std::is_same_v<absl::Status, PromiseResult<R>>, void>> {
  public:
   explicit AdaptMethod(Call* call, Derived* filter)
       : call_(call), filter_(filter) {}
-  auto operator()(Hdl<T> x) { return (call_->*method)(*x, filter_); }
+  auto operator()(Hdl<T> x) {
+    return Map((call_->*method)(*x, filter_),
+               [hdl = std::move(x)](absl::Status status) mutable {
+                 if (status.ok()) {
+                   return ServerMetadataOrHandle<T>::Ok(std::move(hdl));
+                 }
+                 return ServerMetadataOrHandle<T>::Failure(
+                     ServerMetadataFromStatus(status));
+               });
+  }
 
  private:
   Call* call_;

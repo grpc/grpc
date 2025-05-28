@@ -198,13 +198,12 @@ class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
    public:
     explicit Call(ServerAuthFilter* filter);
     auto OnClientInitialMetadata(ClientMetadata& md, ServerAuthFilter* filter) {
-      return ImmediateOkStatus();
-      // return  AssertResultType<absl::Status>(If(
-      //     filter->server_credentials_ == nullptr ||
-      //         filter->server_credentials_->auth_metadata_processor().process ==
-      //             nullptr,
-      //     ImmediateOkStatus(),
-      //     [filter, md = &md]() { return RunApplicationCode(filter, *md); }));
+      return AssertResultType<absl::Status>(If(
+          filter->server_credentials_ == nullptr ||
+              filter->server_credentials_->auth_metadata_processor().process ==
+                  nullptr,
+          ImmediateOkStatus(),
+          [filter, md = &md]() { return RunApplicationCode(filter, *md); }));
     }
     static inline const NoInterceptor OnServerInitialMetadata;
     static inline const NoInterceptor OnClientToServerMessage;

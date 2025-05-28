@@ -79,6 +79,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -225,6 +228,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -360,6 +365,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -506,6 +514,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},
@@ -641,6 +651,9 @@ const char* const additional_constraints_event_engine_secure_endpoint = "{}";
 const char* const description_free_large_allocator =
     "If set, return all free bytes from a \042big\042 allocator";
 const char* const additional_constraints_free_large_allocator = "{}";
+const char* const description_fuse_filters =
+    "If set, individual filters are merged into fused filters";
+const char* const additional_constraints_fuse_filters = "{}";
 const char* const description_keep_alive_ping_timer_batch =
     "Avoid explicitly cancelling the keepalive timer. Instead adjust the "
     "callback to re-schedule itself to the next ping interval.";
@@ -787,6 +800,8 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"free_large_allocator", description_free_large_allocator,
      additional_constraints_free_large_allocator, nullptr, 0, false, true},
+    {"fuse_filters", description_fuse_filters,
+     additional_constraints_fuse_filters, nullptr, 0, false, false},
     {"keep_alive_ping_timer_batch", description_keep_alive_ping_timer_batch,
      additional_constraints_keep_alive_ping_timer_batch, nullptr, 0, false,
      true},

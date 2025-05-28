@@ -505,58 +505,6 @@ struct RunCallImpl<Promise (Derived::Call::*)(A, Derived* channel), Derived,
   }
 };
 
-// error: implicit instantiation of undefined template
-
-//           grpc_core::promise_filter_detail::RunCallImpl<
-//               grpc_core::promise_detail::TrySeq<
-//                   grpc_core::promise_detail::Immediate<
-//                       grpc_core::ServerMetadataOrHandle<grpc_metadata_batch>>,
-//                   grpc_core::filters_detail::AdaptMethod<
-//                       grpc_metadata_batch,
-//                       grpc_core::ImmediateOkStatus (
-//                           grpc_core::ServerAuthFilter::Call::*)(
-//                           grpc_metadata_batch&,
-//                           grpc_core::ServerAuthFilter*),
-//                       &grpc_core::ServerAuthFilter::Call::
-//                           OnClientInitialMetadata>> (
-//                   grpc_core::filters_detail::FuseImplOnClientInitialMetadata<
-//                       grpc_core::filters_detail::MethodVariant::kChannelAccess,
-//                       grpc_core::filters_detail::FusedFilter<
-//                           grpc_core::FilterEndpoint::kServer,
-//                           grpc_core::ServerCompressionFilter,
-//                           grpc_core::ServerAuthFilter>,
-//                       grpc_core::ServerCompressionFilter,
-//                       grpc_core::ServerAuthFilter>::*)(
-//                   std::unique_ptr<grpc_metadata_batch,
-//                                   grpc_core::Arena::PooledDeleter>,
-//                   grpc_core::filters_detail::FusedFilter<
-//                       grpc_core::FilterEndpoint::kServer,
-//                       grpc_core::ServerCompressionFilter,
-//                       grpc_core::ServerAuthFilter>*),
-//               grpc_core::filters_detail::FusedFilter<
-//                   grpc_core::FilterEndpoint::kServer,
-//                   grpc_core::ServerCompressionFilter,
-//                   grpc_core::ServerAuthFilter>>
-
-template <typename Derived, typename Promise>
-struct RunCallImpl<
-    Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),
-    Derived,
-    std::enable_if_t<std::is_same_v<absl::Status, PromiseResult<Promise>>>> {
-  static auto Run(CallArgs call_args, NextPromiseFactory next_promise_factory,
-                  FilterCallData<Derived>* call_data) {
-    ClientMetadataHandle md = std::move(call_args.client_initial_metadata);
-    return TrySeq(call_data->call.OnClientInitialMetadata(std::move(md),
-                                                          call_data->channel),
-                  [call_args = std::move(call_args),
-                   next_promise_factory = std::move(next_promise_factory)](
-                      absl::Status status) mutable {
-                    // call_args.client_initial_metadata = std::move(md);
-                    return next_promise_factory(std::move(call_args));
-                  });
-  }
-};
-
 template <typename Derived, typename Promise>
 struct RunCallImpl<
     Promise (Derived::Call::*)(ClientMetadataHandle md, Derived* channel),

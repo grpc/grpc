@@ -136,6 +136,12 @@
   expiry: 2025/09/30
   owner: alishananda@google.com
   test_tags: [resource_quota_test]
+- name: fuse_filters
+  description: If set, individual filters are merged into fused filters 
+  expiry: 2025/09/30
+  owner: vigneshbabu@google.com
+  test_tags: []
+  allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
     Avoid explicitly cancelling the keepalive timer. Instead adjust the callback to re-schedule
