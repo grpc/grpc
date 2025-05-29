@@ -79,4 +79,11 @@ TEST(MemoryUsageTest, Regression1) {
   EXPECT_EQ(MemoryUsage(Foo()), sizeof(Foo));
 }
 
+TEST(MemoryUsageTest, EscapeHatch) {
+  struct Foo {
+    size_t MemoryUsage() const { return 12345; }
+  };
+  EXPECT_EQ(MemoryUsage(Foo()), 12345);
+}
+
 }  // namespace grpc_core

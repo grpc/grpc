@@ -96,6 +96,13 @@ constexpr Category
 template <typename T>
 constexpr Category kMemoryUsageCategory<std::optional<T>> = Category::kOptional;
 
+template <typename T, typename = void>
+constexpr bool kHasMemoryUsageMethod = false;
+
+template <typename T>
+constexpr bool kHasMemoryUsageMethod<
+    T, std::void_t<decltype(std::declval<T>().MemoryUsage())>> = true;
+
 }  // namespace memory_usage_detail
 
 // Given an object x, `MemoryUsage(x)` returns a size_t that approximates the
@@ -106,9 +113,12 @@ template <typename T>
 size_t MemoryUsage(const T& x) {
   using memory_usage_detail::AnyType;
   using memory_usage_detail::Category;
+  using memory_usage_detail::kHasMemoryUsageMethod;
   using memory_usage_detail::kIsBraceConstructible;
   constexpr Category category = memory_usage_detail::kMemoryUsageCategory<T>;
-  if constexpr (std::is_empty_v<T>) {
+  if constexpr (kHasMemoryUsageMethod<T>) {
+    return x.MemoryUsage();
+  } else if constexpr (std::is_empty_v<T>) {
     return sizeof(T);
   } else if constexpr (std::is_same_v<T, absl::Status>) {
     if (x.ok()) return sizeof(T);
@@ -204,7 +214,7 @@ size_t MemoryUsage(const T& x) {
       static_assert(false, "Unsupported type");
     }
   } else {
-    static_assert(false, "Unsupported type");
+    static_assert(false, "Unsupported category");
   }
 }
 
