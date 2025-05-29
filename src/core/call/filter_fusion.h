@@ -1077,7 +1077,6 @@ struct ConstructCall<Derived, absl::void_t<decltype(typename Derived::Call(
  public:
   using Call = typename Derived::Call;
   static void Run(grpc_core::ManualConstructor<Call>& call, Derived* channel) {
-    LOG(INFO) << "Calling Constructor init";
     call.Init(channel);
   }
 };
@@ -1157,11 +1156,9 @@ class FusedFilter
     auto filters_wrapper =
         std::make_unique<FilterWrapper<Typelist<Filters...>>>(args,
                                                               filter_args);
-    LOG(INFO) << "Creating fused filter";
     GRPC_RETURN_IF_ERROR(filters_wrapper->status());
     auto res = absl::WrapUnique<FusedFilter<ep, kFlags, Filters...>>(
         new FusedFilter<ep, kFlags, Filters...>(std::move(filters_wrapper)));
-    LOG(INFO) << "Created fused filter";
     return res;
   }
 
