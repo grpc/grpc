@@ -38,6 +38,7 @@ constexpr size_t kLargeBufferSize = 16384;
 constexpr size_t kChannelMaxSize = 2048;
 constexpr size_t kChannelMinSize = 128;
 constexpr size_t kOverhead = 24;
+constexpr size_t kMaxProtectedFrameSize = 1024;
 
 // Test fixtures for each test cases.
 struct alts_zero_copy_grpc_protector_test_fixture {
@@ -110,7 +111,7 @@ alts_zero_copy_grpc_protector_test_fixture_create(bool rekey,
           gpr_zalloc(sizeof(alts_zero_copy_grpc_protector_test_fixture)));
   size_t key_length = rekey ? kAes128GcmRekeyKeyLength : kAes128GcmKeyLength;
   uint8_t* key;
-  size_t max_protected_frame_size = 1024;
+  size_t max_protected_frame_size = kMaxProtectedFrameSize;
   size_t actual_max_protected_frame_size;
   gsec_test_random_array(&key, key_length);
   EXPECT_EQ(alts_zero_copy_grpc_protector_create(
@@ -195,10 +196,10 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
         1;
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
+    // TODO(gtcooke94) call the test with and without this
     uint32_t frame_size;
-    ASSERT_EQ(tsi_zero_copy_grpc_protector_read_frame_size(
-                  receiver, &var->staging_sb, &frame_size),
-              TSI_OK);
+    ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+        receiver, &var->staging_sb, &frame_size));
     EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
     // Unprotects one by one.
     ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
@@ -325,6 +326,119 @@ TEST(AltsZeroCopyGrpcProtectorTest, MainTest) {
       /*enable_extra_copy=*/true);
   grpc_shutdown();
 }
+
+TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesSmall) {
+  alts_zero_copy_grpc_protector_test_fixture* fixture =
+      alts_zero_copy_grpc_protector_test_fixture_create(
+          /*rekey=*/false, /*integrity_only=*/false, false);
+  alts_zero_copy_grpc_protector_test_var* var =
+      alts_zero_copy_grpc_protector_test_var_create();
+  // Creates a random small slice buffer and calls protect().
+  create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
+                             kSmallBufferSize);
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(
+                fixture->client, &var->original_sb, &var->protected_sb),
+            TSI_OK);
+  uint32_t frame_size;
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->protected_sb, &frame_size));
+  EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+  // // Splits protected slice buffer into two: first one is staging_sb, and
+  // // second one is protected_sb.
+  // uint32_t staging_sb_size =
+  // gsec_test_bias_random_uint32(static_cast<uint32_t>(
+  //                                var->protected_sb.length - 1)) +
+  //                            1;
+  // grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
+  //                              &var->staging_sb);
+}
+
+TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesLarge) {
+  alts_zero_copy_grpc_protector_test_fixture* fixture =
+      alts_zero_copy_grpc_protector_test_fixture_create(
+          /*rekey=*/false, /*integrity_only=*/false, false);
+  int min_progress_size;
+  alts_zero_copy_grpc_protector_test_var* var =
+      alts_zero_copy_grpc_protector_test_var_create();
+  // Creates a random small slice buffer and calls protect().
+  create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
+                             kLargeBufferSize);
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(
+                fixture->client, &var->original_sb, &var->protected_sb),
+            TSI_OK);
+  uint32_t frame_size;
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->protected_sb, &frame_size));
+  EXPECT_EQ(frame_size, kMaxProtectedFrameSize + 4);
+}
+
+TEST(AltsZeroCopyFrameProtectorTest,
+     ReadFrameSizeCallingTwiceDoesNotChangeValue) {
+  alts_zero_copy_grpc_protector_test_fixture* fixture =
+      alts_zero_copy_grpc_protector_test_fixture_create(
+          /*rekey=*/false, /*integrity_only=*/false, false);
+  int min_progress_size;
+  alts_zero_copy_grpc_protector_test_var* var =
+      alts_zero_copy_grpc_protector_test_var_create();
+  // Creates a random small slice buffer and calls protect().
+  create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
+                             kSmallBufferSize);
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(
+                fixture->client, &var->original_sb, &var->protected_sb),
+            TSI_OK);
+  // Splits protected slice buffer into two: first one is staging_sb, and
+  // second one is protected_sb.
+  // The first 4 bytes are the size, so splitting to 10 will be valid to read the frame size from.
+  uint32_t staging_sb_size = 10;
+  grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
+                               &var->staging_sb);
+  uint32_t frame_size;
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->staging_sb, &frame_size));
+  EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+  // Call with the other slice with different size, but it won't change the value or even read this.
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->protected_sb, &frame_size));
+  EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+}
+
+TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeHeaderIsSplit) {
+  alts_zero_copy_grpc_protector_test_fixture* fixture =
+      alts_zero_copy_grpc_protector_test_fixture_create(
+          /*rekey=*/false, /*integrity_only=*/false, false);
+  int min_progress_size;
+  alts_zero_copy_grpc_protector_test_var* var =
+      alts_zero_copy_grpc_protector_test_var_create();
+  // Creates a random small slice buffer and calls protect().
+  create_random_slice_buffer(&var->original_sb, &var->duplicate_sb,
+                             kSmallBufferSize);
+  ASSERT_EQ(tsi_zero_copy_grpc_protector_protect(
+                fixture->client, &var->original_sb, &var->protected_sb),
+            TSI_OK);
+  // Header is 4 bytes, split this so it can't read the size
+  uint32_t staging_sb_size = 2;
+  grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
+                               &var->staging_sb);
+  uint32_t frame_size;
+  EXPECT_FALSE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->staging_sb, &frame_size));
+  // Append the split slice to the slice buffer so it can read the size
+  grpc_slice_buffer_add(&var->staging_sb,
+                        grpc_slice_buffer_take_first(&var->protected_sb));
+  ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+      fixture->server, &var->staging_sb, &frame_size));
+  EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+}
+
+// When you call read_frame_size in isolation, everything is populated
+// correctly
+// - pass in buffer, get expected
+// - You've already called it once, call again with new buffer - does it keep
+// the old one like it should
+// - partial instead of full, just header, etc etc
+// If nothing more than to serve as documentation
+// - Call unprotect and read frame size in the sequence we expect to see it,
+// make sure it works together in the way we expect
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);

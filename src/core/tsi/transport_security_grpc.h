@@ -70,7 +70,7 @@ tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
 // - Returns TSI_OK in case of success.
 // - MUST be called BEFFORE tsi_zero_copy_grpc_protector_unprotect if this value
 // is desired.
-tsi_result tsi_zero_copy_grpc_protector_read_frame_size(
+bool tsi_zero_copy_grpc_protector_read_frame_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size);
 
@@ -88,7 +88,7 @@ struct tsi_zero_copy_grpc_protector_vtable {
   void (*destroy)(tsi_zero_copy_grpc_protector* self);
   tsi_result (*max_frame_size)(tsi_zero_copy_grpc_protector* self,
                                size_t* max_frame_size);
-  tsi_result (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
+  bool (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
                                 grpc_slice_buffer* protected_slices,
                                 uint32_t* frame_size);
 };
