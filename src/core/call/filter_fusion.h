@@ -825,6 +825,15 @@ void ExecuteCombinedOnFinalizeWithChannelAccess(Call* call, Derived* channel,
    ...);
 }
 
+template <typename Call, typename T, auto... filter_methods, size_t... Is>
+void ExecuteCombinedOnFinalize(Call* call, T* call_final_info,
+                               Valuelist<filter_methods...>,
+                               std::index_sequence<Is...>) {
+  (AdaptMethod<T, decltype(filter_methods), filter_methods>(
+       call->template fused_child<Is>(), nullptr)(call_final_info),
+   ...);
+}
+
 // Combine the result of a series of OnServerTrailingMetadata filter methods
 // into a single method.
 template <typename Call, typename Derived, typename T, typename... Filters,
@@ -890,6 +899,13 @@ void ExecuteCombinedWithChannelAccess(Call* call, Derived* channel,
   ExecuteCombinedOnFinalizeWithChannelAccess(
       call, channel, call_final_info, typename FilterTypes::Types(),
       typename FilterMethods::Methods(), typename FilterMethods::Idxs());
+}
+
+template <typename FilterMethods, typename Call, typename T>
+void ExecuteCombined(Call* call, T* call_final_info) {
+  ExecuteCombinedOnFinalize(call, call_final_info,
+                            typename FilterMethods::Methods(),
+                            typename FilterMethods::Idxs());
 }
 
 #define GRPC_FUSE_METHOD(name, type, forward)                                 \

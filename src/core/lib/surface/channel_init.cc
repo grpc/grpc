@@ -302,7 +302,7 @@ bool ChannelInit::MergeFilters(
 
   // Collect all merged filters and return them.
   i = 0;
-  while(i != -1 && !filter_list.empty()) {
+  while (i != -1 && !filter_list.empty()) {
     builder->AppendFilter(filter_list[i].curr->filter);
     i = filter_list[i].next;
     ++filter_count;
