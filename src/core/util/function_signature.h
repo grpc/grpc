@@ -49,21 +49,29 @@ static constexpr inline absl::string_view TypeName() {
   constexpr absl::string_view kPrefix{"[T = "};
   constexpr absl::string_view kSuffix{"]"};
 #elif defined(__GNUC__)
+#if __GNUC__ < 7 || (__GNUC__ == 7 && __GNUC_MINOR__ <= 2)
+#define GRPC_FUNCTION_SIGNATURE_TYPE_NAME_USE_FALLBACK
+#endif
   constexpr absl::string_view kPrefix{"[with T = "};
   constexpr absl::string_view kSuffix{";"};
 #elif defined(_MSC_VER)
   constexpr absl::string_view kPrefix{"TypeName<"};
   constexpr absl::string_view kSuffix{">(void)"};
 #else
-  return "unknown";
+#define GRPC_FUNCTION_SIGNATURE_TYPE_NAME_USE_FALLBACK
 #endif
+#else  // !ABSL_USE_STD_STRING_VIEW
+#define GRPC_FUNCTION_SIGNATURE_TYPE_NAME_USE_FALLBACK
+#endif
+
+#ifdef GRPC_FUNCTION_SIGNATURE_TYPE_NAME_USE_FALLBACK
+  return "unknown";
+#else
   constexpr absl::string_view kFunction{GRPC_FUNCTION_SIGNATURE};
   constexpr size_t kStart = kFunction.find(kPrefix) + kPrefix.size();
   constexpr size_t kEnd = kFunction.rfind(kSuffix);
   static_assert(kStart < kEnd);
   return kFunction.substr(kStart, (kEnd - kStart));
-#else  // !ABSL_USES_STD_STRING_VIEW
-  return "unknown";
 #endif
 }
 

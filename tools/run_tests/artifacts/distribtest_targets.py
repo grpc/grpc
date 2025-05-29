@@ -484,9 +484,6 @@ def targets():
             presubmit=True,
         ),
         RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_0", presubmit=True
-        ),
-        RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_1", presubmit=True
         ),
         RubyDistribTest(

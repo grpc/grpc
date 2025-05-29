@@ -49,6 +49,7 @@
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -747,7 +748,9 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::                                     \
+            EventEngineExperimentDisabledForPython()) {                        \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \

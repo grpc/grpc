@@ -32,6 +32,7 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/sync.h"
@@ -160,7 +161,9 @@ class ResolveAddressTest : public ::testing::Test {
 
  protected:
   void SetUp() override {
-    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+    if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+        !grpc_event_engine::experimental::
+            EventEngineExperimentDisabledForPython()) {
       GTEST_SKIP()
           << "Skipping all legacy ResolveAddress tests. The "
              "event_engine_for_all_other_endpoints experiment is enabled, so "
