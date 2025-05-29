@@ -64,12 +64,24 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
 tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
-// Reads the frame size of the input slice buffer.
+// In general, I think we need to clarify the relationship more between this
+// method and unprotect. For example, if we call this method once and
+// frame_size returns 1k, then I think calling this method will continue to
+// return 1k until we have unprotected 1k bytes. It would be good to walk
+// through the basic CUJs like this.
+
+// Reads the frame size of the input slice buffer. Does NOT consume any of
+// the protected_slices and they still need to be input to unprotect.
+// DOES cache the protected buffer size on the protector so that unprotect does
+// not re-do that work. Because this value is cached, once called, this method
+// will return that value until the protector does the unprotecting of a buffer.
+// Thus, if called, MUST be called BEFFORE
+// tsi_zero_copy_grpc_protector_unprotect.
 // - protected_slices is the bytes of protected frames.
 // - frame_size is the output frame size.
-// - Returns TSI_OK in case of success.
-// - MUST be called BEFFORE tsi_zero_copy_grpc_protector_unprotect if this value
-// is desired.
+// - Returns true in case of success.
+// - Returns false in the case the frame size cannot be read - in this case, the
+// protected buffer size on the protector will NOT be set.
 bool tsi_zero_copy_grpc_protector_read_frame_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size);
