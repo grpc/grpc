@@ -293,9 +293,9 @@ class Test6 : public ImplementChannelFilter<Test5> {
 };
 
 using TestFusedFilter =
-    FusedFilter<FilterEndpoint::kClient, Test1, Test2, Test3, Test4, Test5>;
-using TestFailedFusedFilter = FusedFilter<FilterEndpoint::kClient, Test1, Test2,
-                                          Test3, Test4, Test5, Test6>;
+    FusedFilter<FilterEndpoint::kClient, 0, Test1, Test2, Test3, Test4, Test5>;
+using TestFailedFusedFilter = FusedFilter<FilterEndpoint::kClient, 0, Test1,
+                                          Test2, Test3, Test4, Test5, Test6>;
 
 static_assert(
     !std::is_same_v<decltype(&TestFusedFilter::Call::OnClientInitialMetadata),

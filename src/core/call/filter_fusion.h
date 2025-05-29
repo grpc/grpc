@@ -1115,8 +1115,9 @@ struct CallWrapper<Typelist<Filter0, Filters...>>
 
 #undef GRPC_FUSE_METHOD
 
-template <FilterEndpoint ep, typename... Filters>
-class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>> {
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+class FusedFilter
+    : public ImplementChannelFilter<FusedFilter<ep, kFlags, Filters...>> {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -1135,14 +1136,17 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>> {
 
   FilterWrapper<Typelist<Filters...>>* get_wrapper() { return filters_.get(); }
 
-  static absl::StatusOr<std::unique_ptr<FusedFilter<ep, Filters...>>> Create(
-      const ChannelArgs& args, ChannelFilter::Args filter_args) {
+  static absl::StatusOr<std::unique_ptr<FusedFilter<ep, kFlags, Filters...>>>
+  Create(const ChannelArgs& args, ChannelFilter::Args filter_args) {
     auto filters_wrapper =
         std::make_unique<FilterWrapper<Typelist<Filters...>>>(args,
                                                               filter_args);
+    LOG(INFO) << "Creating fused filter";
     GRPC_RETURN_IF_ERROR(filters_wrapper->status());
-    return absl::WrapUnique<FusedFilter<ep, Filters...>>(
-        new FusedFilter<ep, Filters...>(std::move(filters_wrapper)));
+    auto res = absl::WrapUnique<FusedFilter<ep, kFlags, Filters...>>(
+        new FusedFilter<ep, kFlags, Filters...>(std::move(filters_wrapper)));
+    LOG(INFO) << "Created fused filter";
+    return res;
   }
 
   static constexpr bool IsFused = true;
@@ -1170,7 +1174,7 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>> {
           ->get_call();
     }
 
-    explicit Call(FusedFilter<ep, Filters...>* filter)
+    explicit Call(FusedFilter<ep, kFlags, Filters...>* filter)
         : filter_calls_(std::make_unique<CallWrapper<Typelist<Filters...>>>(
               filter->get_wrapper())) {};
 
@@ -1208,14 +1212,14 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>> {
   std::unique_ptr<FilterWrapper<Typelist<Filters...>>> filters_;
 };
 
-template <FilterEndpoint ep, typename... Filters>
-const grpc_channel_filter FusedFilter<ep, Filters...>::kFilter =
-    MakePromiseBasedFilter<FusedFilter<ep, Filters...>, ep>();
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+const grpc_channel_filter FusedFilter<ep, kFlags, Filters...>::kFilter =
+    MakePromiseBasedFilter<FusedFilter<ep, kFlags, Filters...>, ep, kFlags>();
 
 }  // namespace filters_detail
 
-template <FilterEndpoint ep, typename... Filters>
-using FusedFilter = filters_detail::FusedFilter<ep, Filters...>;
+template <FilterEndpoint ep, uint8_t kFlags, typename... Filters>
+using FusedFilter = filters_detail::FusedFilter<ep, kFlags, Filters...>;
 
 }  // namespace grpc_core
 

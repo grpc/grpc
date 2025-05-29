@@ -36,30 +36,41 @@
 namespace grpc_core {
 
 using FusedClientSubchannelFilter =
-    FusedFilter<FilterEndpoint::kClient, ClientLoadReportingFilter,
-                ClientMessageSizeFilter, HttpClientFilter,
-                ClientCompressionFilter>;
+    FusedFilter<FilterEndpoint::kClient,
+                kFilterExaminesServerInitialMetadata |
+                    kFilterExaminesInboundMessages |
+                    kFilterExaminesOutboundMessages,
+                ClientLoadReportingFilter, ClientMessageSizeFilter,
+                HttpClientFilter, ClientCompressionFilter>;
 
-using FusedClientSubchannelV3ClientAuthFilter =
-    FusedFilter<FilterEndpoint::kClient, ClientAuthorityFilter,
-                ClientAuthFilter, ClientLoadReportingFilter,
-                ClientMessageSizeFilter, HttpClientFilter,
-                ClientCompressionFilter>;
+using FusedClientSubchannelV3ClientAuthFilter = FusedFilter<
+    FilterEndpoint::kClient,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
+        kFilterExaminesOutboundMessages,
+    ClientAuthorityFilter, ClientAuthFilter, ClientLoadReportingFilter,
+    ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
 
 using FusedClientDirectChannelFilter =
-    FusedFilter<FilterEndpoint::kClient, ServiceConfigChannelArgFilter,
-                ClientMessageSizeFilter, HttpClientFilter,
-                ClientCompressionFilter>;
+    FusedFilter<FilterEndpoint::kClient,
+                kFilterExaminesServerInitialMetadata |
+                    kFilterExaminesInboundMessages |
+                    kFilterExaminesOutboundMessages,
+                ServiceConfigChannelArgFilter, ClientMessageSizeFilter,
+                HttpClientFilter, ClientCompressionFilter>;
 
-using FusedClientDirectChannelV3ClientAuthFilter =
-    FusedFilter<FilterEndpoint::kClient, ClientAuthorityFilter,
-                ClientAuthFilter, ServiceConfigChannelArgFilter,
-                ClientMessageSizeFilter, HttpClientFilter,
-                ClientCompressionFilter>;
+using FusedClientDirectChannelV3ClientAuthFilter = FusedFilter<
+    FilterEndpoint::kClient,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
+        kFilterExaminesOutboundMessages,
+    ClientAuthorityFilter, ClientAuthFilter, ServiceConfigChannelArgFilter,
+    ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
 
-using FusedServerChannelFilter =
-    FusedFilter<FilterEndpoint::kServer, ServerMessageSizeFilter,
-                HttpServerFilter, ServerCompressionFilter, ServerAuthFilter>;
+using FusedServerChannelFilter = FusedFilter<
+    FilterEndpoint::kServer,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesOutboundMessages |
+        kFilterExaminesInboundMessages,
+    ServerMessageSizeFilter, HttpServerFilter, ServerCompressionFilter,
+    ServerAuthFilter>;
 
 void RegisterFusedFilters(CoreConfiguration::Builder* builder) {
   if (!IsFuseFiltersEnabled()) {
