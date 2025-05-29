@@ -1479,13 +1479,6 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnparsableSessionState) {
 // GCP auth filter tests
 //
 
-using XdsGcpAuthnFilterNotRegisteredTest = XdsHttpFilterTest;
-
-TEST_F(XdsGcpAuthnFilterNotRegisteredTest, NotPresentWithoutEnvVar) {
-  XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  EXPECT_EQ(GetFilter(extension.type), nullptr);
-}
-
 class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
  protected:
   XdsGcpAuthnFilterTest() {
