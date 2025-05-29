@@ -1060,7 +1060,7 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
                .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
     channelz_node =
         MakeRefCounted<channelz::ServerNode>(channel_tracer_max_memory);
-    channelz_node->NewTraceNode([]() { return "Server created"; })->Commit();
+    channelz_node->NewTraceNode("Server created")->Commit();
     channelz_node->SetChannelArgs(args);
   }
   return channelz_node;

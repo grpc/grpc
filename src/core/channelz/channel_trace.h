@@ -27,11 +27,16 @@
 #include <sys/types.h>
 
 #include <limits>
+#include <tuple>
+#include <type_traits>
 #include <variant>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/memory_usage.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
@@ -52,7 +57,12 @@ class ChannelTrace {
  public:
   explicit ChannelTrace(size_t max_nodes) : max_nodes_(max_nodes) {}
 
-  using Renderer = absl::AnyInvocable<std::string() const>;
+  class Renderer {
+   public:
+    virtual ~Renderer();
+    virtual std::string Render() const = 0;
+    virtual size_t MemoryUsage() const = 0;
+  };
 
   enum Severity {
     Unset = 0,  // never to be used
@@ -63,13 +73,13 @@ class ChannelTrace {
 
   class Node final : public DualRefCounted<Node, NonPolymorphicRefCount> {
    public:
-    void Update(Renderer renderer) {
+    void Update(std::unique_ptr<Renderer> renderer) {
       MutexLock lock(&mu_);
       renderer.swap(renderer_);
     }
 
     RefCountedPtr<Node> NewChild(
-        Renderer renderer,
+        std::unique_ptr<Renderer> renderer,
         size_t max_nodes = std::numeric_limits<size_t>::max()) {
       auto when = gpr_now(GPR_CLOCK_REALTIME);
       auto node = RefCountedPtr<Node>(
@@ -82,6 +92,11 @@ class ChannelTrace {
       }
       children_.push_back({when, node->WeakRef()});
       return node;
+    }
+
+    template <typename... Args>
+    RefCountedPtr<Node> NewChild(Args&&... args) {
+      return NewChild(RendererFromConcatenation(std::forward<Args>(args)...));
     }
 
     // Commit this line to the parent trace forever (or until that trace is
@@ -130,7 +145,7 @@ class ChannelTrace {
         if (n->renderer_ == nullptr) {
           n->mu_.Unlock();
         } else {
-          std::string text = n->renderer_();
+          std::string text = n->renderer_->Render();
           n->mu_.Unlock();
           output(child.timestamp, indent, text);
         }
@@ -151,7 +166,8 @@ class ChannelTrace {
       }
     };
 
-    Node(WeakRefCountedPtr<Node> parent, Renderer renderer, size_t max_nodes)
+    Node(WeakRefCountedPtr<Node> parent, std::unique_ptr<Renderer> renderer,
+         size_t max_nodes)
         : parent_(std::move(parent)),
           max_nodes_(max_nodes),
           renderer_(std::move(renderer)) {}
@@ -162,7 +178,7 @@ class ChannelTrace {
     mutable Mutex mu_;
     const size_t max_nodes_;
     std::vector<Entry> children_ ABSL_GUARDED_BY(mu_);
-    Renderer renderer_ ABSL_GUARDED_BY(mu_);
+    std::unique_ptr<Renderer> renderer_ ABSL_GUARDED_BY(mu_);
   };
 
   static const char* SeverityString(ChannelTrace::Severity severity) {
@@ -178,7 +194,7 @@ class ChannelTrace {
     }
   }
 
-  RefCountedPtr<Node> NewNode(Renderer render) {
+  RefCountedPtr<Node> NewNode(std::unique_ptr<Renderer> render) {
     if (max_nodes_ == 0) {
       return RefCountedPtr<Node>(new Node(nullptr, std::move(render), 0));
     }
@@ -187,6 +203,11 @@ class ChannelTrace {
           return RefCountedPtr<Node>(new Node(nullptr, nullptr, max_nodes_));
         })
         ->NewChild(std::move(render));
+  }
+
+  template <typename... Args>
+  RefCountedPtr<Node> NewNode(Args&&... args) {
+    return NewNode(RendererFromConcatenation(std::forward<Args>(args)...));
   }
 
   // Creates and returns the raw Json object, so a parent channelz
@@ -210,6 +231,54 @@ class ChannelTrace {
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
+
+  template <typename T>
+  static size_t MemoryUsageOf(const T& x) {
+    return MemoryUsage(x);
+  }
+
+  struct StrCatFn {
+    template <typename... Arg>
+    std::string operator()(const Arg&... args) {
+      return absl::StrCat(args...);
+    }
+  };
+
+  template <typename A>
+  static auto AdaptForStorage(A&& a) {
+    using RawA = std::remove_reference_t<A>;
+    if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
+      return absl::string_view(a);
+    } else {
+      return std::forward<A>(a);
+    }
+  }
+
+  template <typename... Args>
+  static std::unique_ptr<Renderer> RendererFromConcatenationInner(
+      Args&&... args) {
+    class R final : public Renderer {
+     public:
+      explicit R(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+      std::string Render() const override {
+        return std::apply(StrCatFn(), args_);
+      }
+      size_t MemoryUsage() const override {
+        return MemoryUsageOf(args_) + sizeof(Renderer);
+      }
+
+     private:
+      std::tuple<Args...> args_;
+    };
+    return std::make_unique<R>(std::forward<Args>(args)...);
+  }
+
+  template <typename... Args>
+  static std::unique_ptr<Renderer> RendererFromConcatenation(Args&&... args) {
+    return RendererFromConcatenationInner(
+        AdaptForStorage<Args>(std::forward<Args>(args))...);
+  }
 
   const size_t max_nodes_;
   SingleSetRefCountedPtr<Node> root_;

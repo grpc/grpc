@@ -146,7 +146,7 @@ class OrcaProducer::OrcaStreamEventHandler final
       LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {
-        channelz_node->NewTraceNode([]() { return kErrorMessage; })->Commit();
+        channelz_node->NewTraceNode(kErrorMessage)->Commit();
       }
     }
   }

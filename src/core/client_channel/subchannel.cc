@@ -546,8 +546,7 @@ Subchannel::Subchannel(SubchannelKey key,
         grpc_sockaddr_to_uri(&key_.address())
             .value_or("<unknown address type>"),
         channel_tracer_max_memory);
-    channelz_node_->NewTraceNode([]() { return "subchannel created"; })
-        ->Commit();
+    channelz_node_->NewTraceNode("subchannel created")->Commit();
     channelz_node_->SetChannelArgs(args_);
     args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
@@ -555,8 +554,7 @@ Subchannel::Subchannel(SubchannelKey key,
 
 Subchannel::~Subchannel() {
   if (channelz_node_ != nullptr) {
-    channelz_node_->NewTraceNode([]() { return "Subchannel destroyed"; })
-        ->Commit();
+    channelz_node_->NewTraceNode("Subchannel destroyed")->Commit();
     channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   connector_.reset();
@@ -700,14 +698,17 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   }
   if (channelz_node_ != nullptr) {
     channelz_node_->UpdateConnectivityState(state);
-    channelz_node_
-        ->NewTraceNode([state, status]() {
-          return absl::StrCat(
-              "Subchannel connectivity state changed to ",
-              ConnectivityStateName(state),
-              status.ok() ? "" : absl::StrCat(": ", status.ToString()));
-        })
-        ->Commit();
+    if (status.ok()) {
+      channelz_node_
+          ->NewTraceNode("Subchannel connectivity state changed to ",
+                         ConnectivityStateName(state))
+          ->Commit();
+    } else {
+      channelz_node_
+          ->NewTraceNode("Subchannel connectivity state changed to ",
+                         ConnectivityStateName(state), ": ", status)
+          ->Commit();
+    }
   }
   // Notify watchers.
   watcher_list_.NotifyLocked(state, status_);

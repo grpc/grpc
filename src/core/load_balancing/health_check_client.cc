@@ -222,7 +222,7 @@ class HealthProducer::HealthChecker::HealthStreamEventHandler final
       auto* channelz_node =
           health_checker_->producer_->subchannel_->channelz_node();
       if (channelz_node != nullptr) {
-        channelz_node->NewTraceNode([]() { return kErrorMessage; })->Commit();
+        channelz_node->NewTraceNode(absl::string_view(kErrorMessage))->Commit();
       }
       SetHealthStatusLocked(client, GRPC_CHANNEL_READY, kErrorMessage);
     }

@@ -174,9 +174,9 @@ class BaseNode : public DualRefCounted<BaseNode> {
   Json::Object AdditionalInfo();
 
   const ChannelTrace& trace() const { return trace_; }
-  RefCountedPtr<ChannelTrace::Node> NewTraceNode(
-      ChannelTrace::Renderer renderer) {
-    return trace_.NewNode(std::move(renderer));
+  template <typename... Args>
+  RefCountedPtr<ChannelTrace::Node> NewTraceNode(Args&&... args) {
+    return trace_.NewNode(std::forward<Args>(args)...);
   }
 
  protected:

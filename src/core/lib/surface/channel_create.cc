@@ -75,7 +75,7 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     std::string channelz_node_target{target.empty() ? "unknown" : target};
     auto channelz_node = MakeRefCounted<channelz::ChannelNode>(
         channelz_node_target, channel_tracer_max_memory, is_internal_channel);
-    channelz_node->NewTraceNode([]() { return "Channel created"; })->Commit();
+    channelz_node->NewTraceNode("Channel created")->Commit();
     channelz_node->SetChannelArgs(args);
     // Add channelz node to channel args.
     // We remove the is_internal_channel arg, since we no longer need it.

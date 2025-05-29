@@ -18,7 +18,9 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/log/log.h"
@@ -219,6 +221,12 @@ size_t MemoryUsage(const T& x) {
     LOG(DFATAL) << "Unsupported type";
     return sizeof(T);
   }
+}
+
+template <typename... Args>
+size_t MemoryUsage(const std::tuple<Args...>& t) {
+  return std::apply(
+      [](const auto&... args) { return (MemoryUsage(args) + ...); }, t);
 }
 
 }  // namespace grpc_core
