@@ -95,11 +95,11 @@ grpc_cc_library(
         "util/memory_usage.h",
     ],
     external_deps = [
-      "absl/status",
-      "absl/status:statusor",
-      "absl/time",
-      "absl/strings:string_view",
-      "absl/log"
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+        "absl/strings:string_view",
+        "absl/log",
     ],
 )
 

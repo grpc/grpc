@@ -169,7 +169,6 @@ size_t MemoryUsage(const T& x) {
       return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
              MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
              MemoryUsage(v7) + padding;
-      ;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType>) {
       const auto& [v1, v2, v3, v4, v5, v6] = x;
