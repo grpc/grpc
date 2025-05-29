@@ -434,7 +434,8 @@ void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
 
 void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
   MutexLock lock(&socket_mu_);
-  child_socket_ = std::move(socket);
+  child_socket_ =
+      socket == nullptr ? nullptr : socket->WeakRefAsSubclass<SocketNode>();
 }
 
 std::string SubchannelNode::connectivity_state() const {
@@ -466,7 +467,7 @@ Json SubchannelNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
-  RefCountedPtr<SocketNode> child_socket;
+  WeakRefCountedPtr<SocketNode> child_socket;
   {
     MutexLock lock(&socket_mu_);
     child_socket = child_socket_;
@@ -548,26 +549,26 @@ Json ServerNode::RenderJson() {
   return Json::FromObject(std::move(object));
 }
 
-std::map<intptr_t, RefCountedPtr<ListenSocketNode>>
+std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>>
 ServerNode::child_listen_sockets() const {
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> result;
+  std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>> result;
   auto [children, _] = ChannelzRegistry::GetChildrenOfType(
       0, this, BaseNode::EntityType::kListenSocket,
       std::numeric_limits<size_t>::max());
   for (const auto& child : children) {
-    result[child->uuid()] = child->RefAsSubclass<ListenSocketNode>();
+    result[child->uuid()] = child->WeakRefAsSubclass<ListenSocketNode>();
   }
   return result;
 }
 
-std::map<intptr_t, RefCountedPtr<SocketNode>> ServerNode::child_sockets()
+std::map<intptr_t, WeakRefCountedPtr<SocketNode>> ServerNode::child_sockets()
     const {
-  std::map<intptr_t, RefCountedPtr<SocketNode>> result;
+  std::map<intptr_t, WeakRefCountedPtr<SocketNode>> result;
   auto [children, _] = ChannelzRegistry::GetChildrenOfType(
       0, this, BaseNode::EntityType::kSocket,
       std::numeric_limits<size_t>::max());
   for (const auto& child : children) {
-    result[child->uuid()] = child->RefAsSubclass<SocketNode>();
+    result[child->uuid()] = child->WeakRefAsSubclass<SocketNode>();
   }
   return result;
 }

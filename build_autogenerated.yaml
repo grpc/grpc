@@ -1194,6 +1194,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -2116,6 +2117,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -2746,6 +2748,7 @@ libs:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -3203,6 +3206,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -11986,21 +11990,28 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12269,6 +12280,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -12322,11 +12334,16 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -12558,6 +12575,7 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -13688,6 +13706,22 @@ targets:
   - gtest
   - grpc_test_util_unsecure
   uses_polling: false
+- name: memory_usage_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/memory_usage.h
+  src:
+  - test/core/util/memory_usage_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/log:log
+  - absl/status:status
+  - absl/status:statusor
+  - absl/strings:string_view
+  - absl/time:time
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -15545,6 +15579,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
@@ -15606,6 +15641,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc

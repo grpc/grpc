@@ -90,6 +90,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "memory_usage",
+    hdrs = [
+        "util/memory_usage.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+        "absl/strings:string_view",
+        "absl/log",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
@@ -740,6 +754,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
+        "json_writer",
         "latent_see",
         "poll",
         "promise_factory",
@@ -7743,6 +7758,7 @@ grpc_cc_library(
         ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
@@ -8055,6 +8071,7 @@ grpc_cc_library(
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "grpc_insecure_credentials",
@@ -8618,6 +8635,7 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "event_engine_wakeup_scheduler",
@@ -9059,6 +9077,7 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "event_engine_wakeup_scheduler",
@@ -9819,6 +9838,7 @@ grpc_cc_library(
     ],
     deps = [
         "json_writer",
+        "memory_usage",
         "single_set_ptr",
         "sync",
         "time",

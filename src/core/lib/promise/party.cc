@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
 
@@ -236,8 +237,8 @@ Json::Object Party::ToJsonLocked() {
     if (auto* p = participants_[i].load(std::memory_order_acquire);
         p != nullptr) {
       auto obj = p->ToJson();
-      obj["participant_index"] = Json::FromNumber(i);
-      participants.emplace_back(Json::FromObject(std::move(obj)));
+      participants.emplace_back(
+          Json::FromString(JsonDump(Json::FromObject(std::move(obj)))));
     }
   }
   obj["participants"] = Json::FromArray(std::move(participants));

@@ -115,6 +115,8 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
+    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
+    // and using that always would be more efficient.
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),
         [](StatusFlag status) {
@@ -180,6 +182,8 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Returns a promise to enqueue a frame to MPSC
   auto EnqueueOutgoingFrame(Http2Frame frame) {
+    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
+    // and using that always would be more efficient.
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame)),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
@@ -217,12 +221,15 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
 
   uint32_t NextStreamId(
       InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
     const uint32_t stream_id = *next_stream_id_lock;
+    if (stream_id > RFC9113::kMaxStreamId31Bit) {
+      // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
+      // ids
+    }
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
     (*next_stream_id_lock) += 2;
