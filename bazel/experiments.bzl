@@ -136,6 +136,9 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
@@ -211,6 +214,9 @@ EXPERIMENTS = {
             "event_engine_listener_test": [
                 "event_engine_listener",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
             ],
@@ -285,6 +291,9 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
+            ],
+            "minimal_stack_test": [
+                "fuse_filters",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",

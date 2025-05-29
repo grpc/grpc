@@ -150,16 +150,16 @@ TEST(ChannelStackFilters, LooksAsExpected) {
   if (grpc_core::IsFuseFiltersEnabled()) {
     EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_CLIENT_DIRECT_CHANNEL),
               std::vector<std::string>({"authority",
-                                        "message_size_http-client_compression",
+                                        "message_size+http-client+compression",
                                         "connected"}));
     EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_CLIENT_SUBCHANNEL),
               std::vector<std::string>({"authority",
-                                        "message_size_http-client_compression",
+                                        "message_size+http-client+compression",
                                         "connected"}));
     EXPECT_EQ(MakeStack("chttp2", no_args, GRPC_SERVER_CHANNEL),
               std::vector<std::string>(
                   {"server",
-                   "message_size_http-server_compression_server_call_tracer",
+                   "message_size+http-server+compression+server_call_tracer",
                    "connected"}));
   } else {
     EXPECT_EQ(

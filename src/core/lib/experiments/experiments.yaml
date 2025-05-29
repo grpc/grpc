@@ -140,7 +140,7 @@
   description: If set, individual filters are merged into fused filters 
   expiry: 2025/09/30
   owner: vigneshbabu@google.com
-  test_tags: []
+  test_tags: ["minimal_stack_test"]
   allow_in_fuzzing_config: false
 - name: keep_alive_ping_timer_batch
   description:
