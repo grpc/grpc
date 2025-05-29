@@ -49,7 +49,7 @@ static constexpr inline absl::string_view TypeName() {
   constexpr absl::string_view kPrefix{"[T = "};
   constexpr absl::string_view kSuffix{"]"};
 #elif defined(__GNUC__)
-#if __GNUC__ < 7 || (__GNUC__ == 7 && __GNUC_MINOR__ <= 2)
+#if __GNUC__ < 9
 #define GRPC_FUNCTION_SIGNATURE_TYPE_NAME_USE_FALLBACK
 #endif
   constexpr absl::string_view kPrefix{"[with T = "};
