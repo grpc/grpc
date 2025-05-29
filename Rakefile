@@ -29,7 +29,7 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   ext.lib_dir = File.join('src', 'ruby', 'lib', 'grpc')
   ext.cross_compile = true
   ext.cross_platform = [
-    'x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt',
+    'x86-mingw32', 'x64-mingw-ucrt',
     'x86_64-linux', 'x86-linux', 'aarch64-linux',
     'x86_64-darwin', 'arm64-darwin',
   ]
@@ -88,7 +88,6 @@ task 'dlls', [:plat] do |t, args|
 
   build_configs = [
     { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-ucrt.ruby', platform: 'x64-mingw-ucrt' },
-    { cross: 'x86_64-w64-mingw32', out: 'grpc_c.64-msvcrt.ruby', platform: 'x64-mingw32' },
     { cross: 'i686-w64-mingw32', out: 'grpc_c.32-msvcrt.ruby', platform: 'x86-mingw32' }
   ]
   selected_build_configs = []
@@ -156,7 +155,7 @@ task 'gem:native', [:plat] do |t, args|
   prepare_ccache_cmd += "export PATH=\"$PATH:/usr/local/bin\" && "
   prepare_ccache_cmd += "source tools/internal_ci/helper_scripts/prepare_ccache_symlinks_rc "
 
-  supported_windows_platforms = ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt']
+  supported_windows_platforms = ['x86-mingw32', 'x64-mingw-ucrt']
   supported_unix_platforms = ['x86_64-linux', 'x86-linux', 'aarch64-linux', 'x86_64-darwin', 'arm64-darwin']
   supported_platforms = supported_windows_platforms + supported_unix_platforms
 
