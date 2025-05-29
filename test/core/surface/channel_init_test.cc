@@ -282,17 +282,17 @@ TEST(ChannelInitTest, CanRegisterFusedFilters) {
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal2")).Terminal();
   b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
-                        FilterNamed("Filter4_Filter5_Filter6_Filter7"));
+                        FilterNamed("Filter4+Filter5+Filter6+Filter7"));
   b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
-                        FilterNamed("Filter2_Filter3_Filter4"));
-  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2_Filter3"));
-  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1_terminal2"))
+                        FilterNamed("Filter2+Filter3+Filter4"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2+Filter3"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1+terminal2"))
       .Terminal();
   EXPECT_EQ(
       GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
-      std::vector<std::string>({"Filter1", "Filter2_Filter3",
-                                "Filter4_Filter5_Filter6_Filter7", "Filter8",
-                                "Filter9", "terminal1_terminal2"}));
+      std::vector<std::string>({"Filter1", "Filter2+Filter3",
+                                "Filter4+Filter5+Filter6+Filter7", "Filter8",
+                                "Filter9", "terminal1+terminal2"}));
 }
 
 TEST(ChannelInitTest, PredicateMatchingWithFusedFilters) {
@@ -307,17 +307,17 @@ TEST(ChannelInitTest, PredicateMatchingWithFusedFilters) {
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
   b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
   b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
-                        FilterNamed("Filter1_Filter2_Filter3_Filter4_Filter5"));
+                        FilterNamed("Filter1+Filter2+Filter3+Filter4+Filter5"));
   b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
-                        FilterNamed("Filter2_Filter3_Filter4_Filter5"));
+                        FilterNamed("Filter2+Filter3+Filter4+Filter5"));
   b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
-                        FilterNamed("Filter3_Filter4_Filter5"));
-  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1_terminal2"))
+                        FilterNamed("Filter3+Filter4+Filter5"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1+terminal2"))
       .Terminal();
   EXPECT_EQ(
       GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL,
                      ChannelArgs().Set("filter1", false).Set("filter2", true)),
-      std::vector<std::string>({"Filter2_Filter3_Filter4_Filter5",
+      std::vector<std::string>({"Filter2+Filter3+Filter4+Filter5",
                                 "Filter6", "terminal1"}));
 }
 

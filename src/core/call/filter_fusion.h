@@ -1138,7 +1138,7 @@ class FusedFilter
 
   static absl::string_view TypeName() {
     static const std::string kName = absl::StrCat(
-        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "_"));
+        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "+"));
     return kName;
   }
 

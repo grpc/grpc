@@ -57,8 +57,8 @@ struct CompareFusedChannelFiltersByName {
   bool operator()(absl::string_view a, absl::string_view b) const {
     // Sort by descending order based on number of filters contained in the
     // FusedFilter.
-    int num_filters_a = std::count(a.begin(), a.end(), '_') + 1;
-    int num_filters_b = std::count(b.begin(), b.end(), '_') + 1;
+    int num_filters_a = std::count(a.begin(), a.end(), '+') + 1;
+    int num_filters_b = std::count(b.begin(), b.end(), '+') + 1;
     return num_filters_a < num_filters_b;
   }
 };
@@ -289,7 +289,7 @@ bool ChannelInit::MergeFilters(
       std::string fused_prefix(filter_list[i].curr->name.name());
       j = filter_list[i].next;
       do {
-        absl::StrAppend(&fused_prefix, "_", filter_list[j].curr->name.name());
+        absl::StrAppend(&fused_prefix, "+", filter_list[j].curr->name.name());
         if (fused_prefix == curr_fused_filter.name.name()) {
           filter_list[i].curr = &curr_fused_filter;
           filter_list[i].next = filter_list[j].next;
