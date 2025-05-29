@@ -107,7 +107,7 @@ class OutputBuffers final : public RefCounted<OutputBuffers>,
         clock_(clock) {}
   ~OutputBuffers() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override;
+  void AddData(channelz::DataSink sink) override;
 
   auto Write(uint64_t payload_tag, SliceBuffer output_buffer,
              std::shared_ptr<TcpCallTracer> call_tracer) {
@@ -212,7 +212,7 @@ class InputQueue final : public RefCounted<InputQueue>, channelz::DataSource {
   void CompleteRead(uint64_t payload_tag, SliceBuffer buffer);
   void Cancel(uint64_t payload_tag);
 
-  void AddData(channelz::DataSink& sink) override;
+  void AddData(channelz::DataSink sink) override;
 
   void SetClosed(absl::Status status);
   auto AwaitClosed() {

@@ -370,14 +370,14 @@ class CppDistribTest(object):
                 "tools/dockerfile/distribtest/cpp_%s_%s"
                 % (self.docker_suffix, self.arch),
                 "test/distrib/cpp/run_distrib_test_%s.sh" % self.testcase,
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
             )
         elif self.platform == "windows":
             return create_jobspec(
                 self.name,
                 ["test\\distrib\\cpp\\run_distrib_test_%s.bat" % self.testcase],
                 environ={},
-                timeout_seconds=60 * 60,
+                timeout_seconds=2 * 60 * 60,
                 use_workspace=True,
             )
         else:
@@ -461,7 +461,7 @@ def targets():
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
-        PythonDistribTest("linux", "aarch64", "alpine"),
+        PythonDistribTest("linux", "aarch64", "alpine", presubmit=True),
         PythonDistribTest(
             "linux", "x64", "alpine3.18", source=True, presubmit=True
         ),
@@ -482,9 +482,6 @@ def targets():
             ruby_version="ruby_3_2",
             source=True,
             presubmit=True,
-        ),
-        RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_0", presubmit=True
         ),
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_1", presubmit=True

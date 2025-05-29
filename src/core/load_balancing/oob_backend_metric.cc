@@ -72,11 +72,9 @@ class OrcaProducer::ConnectivityWatcher final
     grpc_pollset_set_destroy(interested_parties_);
   }
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status&) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status&) override {
     producer_->OnConnectivityStateChange(state);
-    self.reset();
   }
 
   grpc_pollset_set* interested_parties() override {

@@ -94,7 +94,7 @@ inline Http2ErrorCode AbslStatusCodeToErrorCode(const absl::StatusCode status) {
   };
 }
 
-class Http2Status {
+class GRPC_MUST_USE_RESULT Http2Status {
  public:
   // Classifying if an error is a stream error or a connection Http2Status must
   // be done at the time of error object creation. Once the Http2Status object
@@ -208,6 +208,11 @@ class Http2Status {
   }
 
   ~Http2Status() = default;
+
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, const Http2Status& frame) {
+    sink.Append(frame.DebugString());
+  }
 
   Http2Status(Http2Status&& move_status) = default;
 
@@ -324,7 +329,7 @@ class Http2Status {
 
 // A value if an operation was successful, or a Http2Status if not.
 template <typename T>
-class ValueOrHttp2Status {
+class GRPC_MUST_USE_RESULT ValueOrHttp2Status {
  public:
   // NOLINTNEXTLINE(google-explicit-constructor)
   ValueOrHttp2Status(T value) : value_(std::move(value)) {
@@ -346,6 +351,12 @@ class ValueOrHttp2Status {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
     DCHECK(std::holds_alternative<T>(value_));
     return std::get<T>(value_);
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Http2Status TakeStatus(
+      ValueOrHttp2Status<T>&& status) {
+    DCHECK(std::holds_alternative<Http2Status>(status.value_));
+    return std::move(std::get<Http2Status>(status.value_));
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool IsOk() const {

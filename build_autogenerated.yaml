@@ -328,6 +328,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -944,7 +945,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -1171,6 +1171,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gcp_metadata_query.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
@@ -1830,7 +1831,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -1997,6 +1997,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/crypt/aes_gcm.cc
@@ -2372,6 +2373,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -2537,7 +2539,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -2727,6 +2728,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -2998,7 +3000,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -3148,6 +3149,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/transport/endpoint_transport_client_channel_factory.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
@@ -4521,7 +4523,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -4673,6 +4674,7 @@ libs:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -4845,7 +4847,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -4955,6 +4956,7 @@ libs:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/transport/auth_context.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/tsi/transport_security.cc
@@ -5136,7 +5138,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -5382,7 +5386,9 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -6024,7 +6030,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -6069,8 +6074,10 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/if_list.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -6108,7 +6115,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -6178,7 +6184,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -6371,7 +6379,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -6507,6 +6514,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -6659,7 +6667,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -6758,6 +6765,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -6839,7 +6847,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/cancel_callback.h
@@ -6853,6 +6860,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -6871,7 +6879,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -6894,7 +6904,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -7476,7 +7485,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -7489,6 +7497,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -7508,7 +7517,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -7531,7 +7542,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -8068,16 +8078,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: destroy_grpclb_channel_with_active_connect_stress_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
-  deps:
-  - gtest
-  - grpc++_test_util
 - name: directory_reader_test
   gtest: true
   build: test
@@ -8224,6 +8224,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8354,6 +8355,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8572,6 +8574,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8698,6 +8701,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8824,6 +8828,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9038,6 +9043,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9252,6 +9258,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9378,6 +9385,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9592,6 +9600,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9718,6 +9727,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -10123,7 +10133,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -10142,7 +10151,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -10165,7 +10176,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -10439,7 +10449,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -10575,6 +10584,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -10727,7 +10737,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -10826,6 +10835,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -10932,7 +10942,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -10945,6 +10954,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/memory_quota.h
@@ -10964,6 +10974,7 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
@@ -10991,7 +11002,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -11043,7 +11053,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -11063,6 +11072,7 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
@@ -11083,7 +11093,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -11107,7 +11119,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -11236,6 +11247,17 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
+- name: function_signature_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/function_signature.h
+  src:
+  - test/core/util/function_signature_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
 - name: fuzzing_event_engine_test
   gtest: true
   build: test
@@ -11791,6 +11813,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -11963,21 +11986,28 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12098,7 +12128,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -12234,6 +12263,7 @@ targets:
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
   - src/core/util/event_log.h
+  - src/core/util/function_signature.h
   - src/core/util/gethostname.h
   - src/core/util/glob.h
   - src/core/util/grpc_if_nametoindex.h
@@ -12299,11 +12329,16 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -12395,7 +12430,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -12494,6 +12528,7 @@ targets:
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
   - src/core/telemetry/stats_data.cc
+  - src/core/telemetry/tcp_tracer.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/core/util/backoff.cc
   - src/core/util/dump_args.cc
@@ -12657,8 +12692,11 @@ targets:
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
+  - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
@@ -12674,6 +12712,8 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
+  - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -12869,16 +12909,15 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/if_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
   - absl/status:statusor
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: init_test
   gtest: true
@@ -12959,11 +12998,14 @@ targets:
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13022,7 +13064,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13036,6 +13077,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -13054,7 +13096,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13078,7 +13122,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13211,7 +13254,9 @@ targets:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/status_flag.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
@@ -13303,12 +13348,15 @@ targets:
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -13436,8 +13484,11 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -13483,7 +13534,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13503,6 +13553,7 @@ targets:
   - src/core/lib/promise/map_pipe.h
   - src/core/lib/promise/pipe.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/promise/status_flag.h
@@ -13523,7 +13574,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13547,7 +13600,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13589,18 +13641,16 @@ targets:
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   - src/core/util/overload.h
   - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/match_promise_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: match_test
   gtest: true
@@ -13692,7 +13742,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13705,6 +13754,7 @@ targets:
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/race.h
   - src/core/lib/promise/seq.h
   - src/core/lib/resource_quota/arena.h
@@ -13724,7 +13774,9 @@ targets:
   - src/core/util/cpp_impl_of.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/orphanable.h
@@ -13750,7 +13802,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13905,7 +13956,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -14034,7 +14087,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
@@ -14448,7 +14503,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/slice/percent_encoding.h
@@ -14478,7 +14532,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -14893,15 +14946,14 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/prioritized_race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_endpoint_test
   gtest: true
@@ -14925,16 +14977,15 @@ targets:
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/promise_factory_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
   - absl/functional:bind_front
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_map_test
   gtest: true
@@ -14945,19 +14996,16 @@ targets:
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   - test/core/promise/poll_matcher.h
   src:
   - test/core/promise/map_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
-  - absl/log:log
   - absl/meta:type_traits
-  - absl/status:status
   - absl/status:statusor
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: promise_mutex_test
   gtest: true
@@ -14985,7 +15033,9 @@ targets:
   - src/core/util/bitset.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/orphanable.h
   - src/core/util/per_cpu.h
@@ -15019,16 +15069,16 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   src:
+  - src/core/util/json/json_writer.cc
   - test/core/promise/promise_test.cc
   deps:
   - gtest
-  - absl/functional:any_invocable
-  - absl/log:check
   - absl/meta:type_traits
-  - absl/status:status
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: proto_buffer_reader_test
   gtest: true
@@ -15130,6 +15180,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15240,6 +15291,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15319,13 +15371,12 @@ targets:
   headers:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - absl/log:check
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
@@ -15453,7 +15504,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -15503,8 +15553,11 @@ targets:
   - src/core/util/down_cast.h
   - src/core/util/dual_ref_counted.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/if_list.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
@@ -15547,7 +15600,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
@@ -15567,6 +15619,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
@@ -15846,12 +15899,17 @@ targets:
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - test/core/promise/seq_test.cc
   deps:
   - gtest
@@ -16515,6 +16573,8 @@ targets:
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/switch.h
+  - src/core/util/function_signature.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/switch_test.cc
   deps:
@@ -17173,7 +17233,9 @@ targets:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/util/bitset.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -17212,14 +17274,19 @@ targets:
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_seq.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - test/core/promise/poll_matcher.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
@@ -17347,7 +17414,9 @@ targets:
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
