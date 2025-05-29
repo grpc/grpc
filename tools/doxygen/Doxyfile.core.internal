@@ -904,6 +904,7 @@ src/core/call/call_state.h \
 src/core/call/client_call.cc \
 src/core/call/client_call.h \
 src/core/call/custom_metadata.h \
+src/core/call/filter_fusion.h \
 src/core/call/interception_chain.cc \
 src/core/call/interception_chain.h \
 src/core/call/message.cc \
@@ -2014,6 +2015,7 @@ src/core/filter/auth/server_auth_filter.cc \
 src/core/filter/blackboard.cc \
 src/core/filter/blackboard.h \
 src/core/filter/filter_args.h \
+src/core/filter/fused_filters.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.cc \
 src/core/handshaker/endpoint_info/endpoint_info_handshaker.h \
 src/core/handshaker/handshaker.cc \
@@ -2564,6 +2566,7 @@ src/core/server/xds_server_config_fetcher.cc \
 src/core/service_config/service_config.h \
 src/core/service_config/service_config_call_data.h \
 src/core/service_config/service_config_channel_arg_filter.cc \
+src/core/service_config/service_config_channel_arg_filter.h \
 src/core/service_config/service_config_impl.cc \
 src/core/service_config/service_config_impl.h \
 src/core/service_config/service_config_parser.cc \
