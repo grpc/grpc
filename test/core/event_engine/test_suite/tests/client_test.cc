@@ -317,15 +317,14 @@ TEST_F(EventEngineClientTest, WriteEventCallbackEndpointValidityTest) {
   CHECK_OK(resolved_addr);
   std::unique_ptr<EventEngine::Endpoint> client_endpoint;
   std::unique_ptr<EventEngine::Endpoint> server_endpoint;
-  grpc_core::Notification client_signal;
-  grpc_core::Notification server_signal;
+  std::unique_ptr<grpc_core::Notification> server_signal;
 
   Listener::AcceptCallback accept_cb =
       [&server_endpoint, &server_signal](
           std::unique_ptr<Endpoint> ep,
           grpc_core::MemoryAllocator /*memory_allocator*/) {
         server_endpoint = std::move(ep);
-        server_signal.Notify();
+        server_signal->Notify();
       };
 
   grpc_core::ChannelArgs args;
@@ -342,69 +341,60 @@ TEST_F(EventEngineClientTest, WriteEventCallbackEndpointValidityTest) {
   ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
   ASSERT_TRUE(listener->Start().ok());
 
-  test_ee->Connect(
-      [&client_endpoint,
-       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
-        ASSERT_TRUE(endpoint.ok());
-        client_endpoint = std::move(*endpoint);
-        client_signal.Notify();
-      },
-      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
-      24h);
+  for (int i = 0; i < 100; ++i) {
+    server_signal = std::make_unique<grpc_core::Notification>();
+    grpc_core::Notification client_signal;
+    test_ee->Connect(
+        [&client_endpoint,
+         &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+          ASSERT_TRUE(endpoint.ok());
+          client_endpoint = std::move(*endpoint);
+          client_signal.Notify();
+        },
+        *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+        24h);
 
-  client_signal.WaitForNotification();
-  server_signal.WaitForNotification();
-  ASSERT_NE(client_endpoint.get(), nullptr);
-  ASSERT_NE(server_endpoint.get(), nullptr);
+    client_signal.WaitForNotification();
+    server_signal->WaitForNotification();
+    ASSERT_NE(client_endpoint.get(), nullptr);
+    ASSERT_NE(server_endpoint.get(), nullptr);
 
-  // Start writes with WriteEventCallbacks from the client endpoint and server
-  // endpoint and reset both endpoints immediately. It doesn't matter if the
-  // callbacks don't get invoked as long as there is no use-after-free behavior.
-  auto event_cb = [](EventEngine::Endpoint* ee_ep, WriteEvent /*event*/,
-                     absl::Time /*time*/,
-                     std::vector<WriteMetric> /*metrics*/) {
-    // some operation on the endpoint to ensure validity
-    ASSERT_NE(ee_ep->GetPeerAddress().address(), nullptr);
-  };
-  SliceBuffer client_write_slice_buf;
-  SliceBuffer server_write_slice_buf;
-  WriteArgs client_write_args;
-  client_write_args.set_metrics_sink(WriteEventSink(
-      client_endpoint->AllWriteMetrics(),
-      {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
-       WriteEvent::kAcked, WriteEvent::kClosed},
-      event_cb));
-  WriteArgs server_write_args;
-  server_write_args.set_metrics_sink(WriteEventSink(
-      client_endpoint->AllWriteMetrics(),
-      {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
-       WriteEvent::kAcked, WriteEvent::kClosed},
-      event_cb));
-  AppendStringToSliceBuffer(&client_write_slice_buf, GetNextSendMessage());
-  AppendStringToSliceBuffer(&server_write_slice_buf, GetNextSendMessage());
-  grpc_core::Notification client_write_signal;
-  grpc_core::Notification server_write_signal;
-  if (client_endpoint->Write(
-          [&](absl::Status status) {
-            CHECK_OK(status);
-            client_write_signal.Notify();
-          },
-          &client_write_slice_buf, std::move(client_write_args))) {
-    client_write_signal.Notify();
+    // Start writes with WriteEventCallbacks from the client endpoint and server
+    // endpoint and reset both endpoints immediately. It doesn't matter if the
+    // callbacks don't get invoked as long as there is no use-after-free
+    // behavior.
+    auto event_cb = [](EventEngine::Endpoint* ee_ep, WriteEvent /*event*/,
+                       absl::Time /*time*/,
+                       std::vector<WriteMetric> /*metrics*/) {
+      // some operation on the endpoint to ensure validity
+      ASSERT_NE(ee_ep->GetPeerAddress().address(), nullptr);
+    };
+    SliceBuffer client_write_slice_buf;
+    SliceBuffer server_write_slice_buf;
+    WriteArgs client_write_args;
+    client_write_args.set_metrics_sink(WriteEventSink(
+        client_endpoint->AllWriteMetrics(),
+        {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+         WriteEvent::kAcked, WriteEvent::kClosed},
+        event_cb));
+    WriteArgs server_write_args;
+    server_write_args.set_metrics_sink(WriteEventSink(
+        client_endpoint->AllWriteMetrics(),
+        {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+         WriteEvent::kAcked, WriteEvent::kClosed},
+        event_cb));
+    AppendStringToSliceBuffer(&client_write_slice_buf, GetNextSendMessage());
+    AppendStringToSliceBuffer(&server_write_slice_buf, GetNextSendMessage());
+    client_endpoint->Write([&](absl::Status /*status*/) {},
+                           &client_write_slice_buf,
+                           std::move(client_write_args));
+    server_endpoint->Write([&](absl::Status /*status*/) {},
+                           &server_write_slice_buf,
+                           std::move(server_write_args));
+    client_endpoint.reset();
+    server_endpoint.reset();
   }
-  if (server_endpoint->Write(
-          [&](absl::Status status) {
-            CHECK_OK(status);
-            server_write_signal.Notify();
-          },
-          &server_write_slice_buf, std::move(server_write_args))) {
-    server_write_signal.Notify();
-  }
-  client_endpoint.reset();
-  server_endpoint.reset();
   listener.reset();
-  client_write_signal.WaitForNotificationWithTimeout(absl::Seconds(5));
-  server_write_signal.WaitForNotificationWithTimeout(absl::Seconds(5));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix

@@ -725,7 +725,6 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
               num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
         }
         // New way of collecting TCP traces
-        // TODO(yashykt): Should this be protected by a channel arg?
         if (s->call_tracer != nullptr &&
             grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
                 t->ep.get())) {

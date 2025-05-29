@@ -207,7 +207,6 @@ PosixOracleEndpoint::PosixOracleEndpoint(int socket_fd)
 }
 
 void PosixOracleEndpoint::Shutdown() {
-  grpc_core::MutexLock lock(&mu_);
   if (std::exchange(is_shutdown_, true)) {
     return;
   }
@@ -215,9 +214,9 @@ void PosixOracleEndpoint::Shutdown() {
     grpc_core::MutexLock lock(&mu_);
     read_ops_channel_ = ReadOperation();
     write_ops_channel_ = WriteOperation();
+    read_op_signal_->Notify();
+    write_op_signal_->Notify();
   }
-  read_op_signal_->Notify();
-  write_op_signal_->Notify();
   read_ops_.Join();
   write_ops_.Join();
 }
@@ -256,12 +255,17 @@ bool PosixOracleEndpoint::Write(
 void PosixOracleEndpoint::ProcessReadOperations() {
   LOG(INFO) << "Starting thread to process read ops ...";
   while (true) {
-    read_op_signal_->WaitForNotification();
-    read_op_signal_ = std::make_unique<grpc_core::Notification>();
+    grpc_core::Notification* signal;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      signal = read_op_signal_.get();
+    }
+    signal->WaitForNotification();
     PosixOracleEndpoint::ReadOperation read_op;
     {
       grpc_core::MutexLock lock(&mu_);
       std::swap(read_op, read_ops_channel_);
+      read_op_signal_ = std::make_unique<grpc_core::Notification>();
     }
     if (!read_op.IsValid()) {
       read_op(std::string(), absl::CancelledError("Closed"));
@@ -282,12 +286,17 @@ void PosixOracleEndpoint::ProcessReadOperations() {
 void PosixOracleEndpoint::ProcessWriteOperations() {
   LOG(INFO) << "Starting thread to process write ops ...";
   while (true) {
-    write_op_signal_->WaitForNotification();
-    write_op_signal_ = std::make_unique<grpc_core::Notification>();
+    grpc_core::Notification* signal;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      signal = write_op_signal_.get();
+    }
+    signal->WaitForNotification();
     PosixOracleEndpoint::WriteOperation write_op;
     {
       grpc_core::MutexLock lock(&mu_);
       std::swap(write_op, write_ops_channel_);
+      write_op_signal_ = std::make_unique<grpc_core::Notification>();
     }
     if (!write_op.IsValid()) {
       write_op(absl::CancelledError("Closed"));
