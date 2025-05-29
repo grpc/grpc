@@ -2015,8 +2015,6 @@ TEST_F(MetadataTest, UntypedMetadata) {
 // they're being passed through.  A complete set of tests for metadata
 // validation is in xds_metadata_test.cc.
 TEST_F(MetadataTest, MetadataUnparseable) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
