@@ -965,7 +965,7 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<ep, Filters...>>,
 
   static absl::string_view TypeName() {
     static const std::string kName = absl::StrCat(
-        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "_"));
+        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "+"));
     return kName;
   }
 
