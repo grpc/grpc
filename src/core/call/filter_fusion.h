@@ -1183,13 +1183,12 @@ class FusedFilter
     auto* fused_child() {
       return reinterpret_cast<CallWrapper<
           typename TypesFromIdx<I, Typelist<Filters...>>::Types>*>(
-                 filter_calls_.get())
+                 &filter_calls_)
           ->get_call();
     }
 
     explicit Call(FusedFilter<ep, kFlags, Filters...>* filter)
-        : filter_calls_(std::make_unique<CallWrapper<Typelist<Filters...>>>(
-              filter->get_wrapper())) {};
+        : filter_calls_(filter->get_wrapper()) {};
 
     using FuseOnClientInitialMetadata<FusedFilter,
                                       Filters...>::OnClientInitialMetadata;
@@ -1206,7 +1205,7 @@ class FusedFilter
     using FuseOnFinalize<FusedFilter, Filters...>::OnFinalize;
 
    private:
-    std::unique_ptr<CallWrapper<Typelist<Filters...>>> filter_calls_;
+    CallWrapper<Typelist<Filters...>> filter_calls_;
   };
 
   bool StartTransportOp(grpc_transport_op* op) override {
