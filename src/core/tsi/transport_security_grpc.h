@@ -75,13 +75,15 @@ tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
 // DOES cache the protected buffer size on the protector so that unprotect does
 // not re-do that work. Because this value is cached, once called, this method
 // will return that value until the protector does the unprotecting of a buffer.
-// Thus, if called, MUST be called BEFFORE
+// Thus, if called, MUST be called sequentially BEFFORE
 // tsi_zero_copy_grpc_protector_unprotect.
 // - protected_slices is the bytes of protected frames.
 // - frame_size is the output frame size.
 // - Returns true in case of success.
 // - Returns false in the case the frame size cannot be read - in this case, the
 // protected buffer size on the protector will NOT be set.
+// - CANNOT be concurrently with tsi_zero_copy_grpc_protector_unprotect.
+// - Can be called concurrently with tsi_zero_copy_grpc_protector_protect.
 bool tsi_zero_copy_grpc_protector_read_frame_size(
     tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size);
