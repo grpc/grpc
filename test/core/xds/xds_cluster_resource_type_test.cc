@@ -944,7 +944,6 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
 }
 
 TEST_F(TlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
