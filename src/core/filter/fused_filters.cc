@@ -35,7 +35,13 @@
 
 namespace grpc_core {
 
-using FusedSubchannelLoadReportingMessageSizeHttpClientCompressionFilter =
+using FusedClientSubchannelMinimalHttp2StackFilter = FusedFilter<
+    FilterEndpoint::kClient,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
+        kFilterExaminesOutboundMessages,
+    ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
+
+using FusedClientSubchannelMinimalHttp2StackFilterExtended =
     FusedFilter<FilterEndpoint::kClient,
                 kFilterExaminesServerInitialMetadata |
                     kFilterExaminesInboundMessages |
@@ -43,21 +49,20 @@ using FusedSubchannelLoadReportingMessageSizeHttpClientCompressionFilter =
                 ClientLoadReportingFilter, ClientMessageSizeFilter,
                 HttpClientFilter, ClientCompressionFilter>;
 
-using FusedSubchannelMessageSizeHttpClientCompressionFilter = FusedFilter<
+using FusedClientSubchannelMinimalHttp2StackFilterExtendedV3 = FusedFilter<
+    FilterEndpoint::kClient,
+    kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
+        kFilterExaminesOutboundMessages,
+    ClientAuthorityFilter, ClientAuthFilter, ClientLoadReportingFilter,
+    ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
+
+using FusedClientDirectChannelMinimalHttp2StackFilter = FusedFilter<
     FilterEndpoint::kClient,
     kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
         kFilterExaminesOutboundMessages,
     ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
 
-using FusedV3SubchannelLoadReportingMessageSizeHttpClientCompressionFilter =
-    FusedFilter<
-        FilterEndpoint::kClient,
-        kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
-            kFilterExaminesOutboundMessages,
-        ClientAuthorityFilter, ClientAuthFilter, ClientLoadReportingFilter,
-        ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
-
-using FusedClientDirectChannelFilter =
+using FusedClientDirectChannelMinimalHttp2StackFilterExtended =
     FusedFilter<FilterEndpoint::kClient,
                 kFilterExaminesServerInitialMetadata |
                     kFilterExaminesInboundMessages |
@@ -65,12 +70,20 @@ using FusedClientDirectChannelFilter =
                 ServiceConfigChannelArgFilter, ClientMessageSizeFilter,
                 HttpClientFilter, ClientCompressionFilter>;
 
-using FusedClientDirectChannelV3ClientAuthFilter = FusedFilter<
+using FusedClientDirectChannelMinimalHttp2StackFilterExtendedV3 = FusedFilter<
     FilterEndpoint::kClient,
     kFilterExaminesServerInitialMetadata | kFilterExaminesInboundMessages |
         kFilterExaminesOutboundMessages,
     ClientAuthorityFilter, ClientAuthFilter, ServiceConfigChannelArgFilter,
     ClientMessageSizeFilter, HttpClientFilter, ClientCompressionFilter>;
+
+using FusedServerChannelMinimalHttp2StackFilter =
+    FusedFilter<FilterEndpoint::kServer,
+                kFilterExaminesServerInitialMetadata |
+                    kFilterExaminesOutboundMessages |
+                    kFilterExaminesInboundMessages,
+                ServerMessageSizeFilter, HttpServerFilter,
+                ServerCompressionFilter, ServerCallTracerFilter>;
 
 using FusedMessageSizeHttpServerCompressionAuthFilter =
     FusedFilter<FilterEndpoint::kServer,
@@ -95,22 +108,30 @@ void RegisterFusedFilters(CoreConfiguration::Builder* builder) {
   if (IsCallv3ClientAuthFilterEnabled()) {
     builder->channel_init()->RegisterFusedFilter(
         GRPC_CLIENT_SUBCHANNEL,
-        &FusedV3SubchannelLoadReportingMessageSizeHttpClientCompressionFilter::
-            kFilter);
+        &FusedClientSubchannelMinimalHttp2StackFilterExtendedV3::kFilter);
     builder->channel_init()->RegisterFusedFilter(
         GRPC_CLIENT_DIRECT_CHANNEL,
-        &FusedClientDirectChannelV3ClientAuthFilter::kFilter);
-  } else {
-    builder->channel_init()->RegisterFusedFilter(
-        GRPC_CLIENT_SUBCHANNEL,
-        &FusedSubchannelMessageSizeHttpClientCompressionFilter::kFilter);
-    builder->channel_init()->RegisterFusedFilter(
-        GRPC_CLIENT_SUBCHANNEL,
-        &FusedSubchannelLoadReportingMessageSizeHttpClientCompressionFilter::
-            kFilter);
-    builder->channel_init()->RegisterFusedFilter(
-        GRPC_CLIENT_DIRECT_CHANNEL, &FusedClientDirectChannelFilter::kFilter);
+        &FusedClientDirectChannelMinimalHttp2StackFilterExtendedV3::kFilter);
   }
+  // CLIENT_SUBCHANNEL
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_SUBCHANNEL,
+      &FusedClientSubchannelMinimalHttp2StackFilter::kFilter);
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_SUBCHANNEL,
+      &FusedClientSubchannelMinimalHttp2StackFilterExtended::kFilter);
+
+  // CLIENT_DIRECT_CHANNEL
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_DIRECT_CHANNEL,
+      &FusedClientDirectChannelMinimalHttp2StackFilter::kFilter);
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_DIRECT_CHANNEL,
+      &FusedClientDirectChannelMinimalHttp2StackFilterExtended::kFilter);
+
+  // SERVER_CHANNEL
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_SERVER_CHANNEL, &FusedServerChannelMinimalHttp2StackFilter::kFilter);
   builder->channel_init()->RegisterFusedFilter(
       GRPC_SERVER_CHANNEL,
       &FusedMessageSizeHttpServerCompressionAuthFilter::kFilter);
