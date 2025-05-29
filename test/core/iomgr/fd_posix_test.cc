@@ -520,7 +520,7 @@ TEST(FdPosixTest, MainTest) {
   }
   grpc_closure destroyed;
   grpc_init();
-  if (grpc_core::IsPollsetAlternativeEnabled()) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
     GTEST_SKIP() << "Skipping test since we're using pollset alternative";
   }
   {

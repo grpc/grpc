@@ -570,7 +570,7 @@ TEST_F(ResolveAddressTest, NativeResolverCannotLookupTXTRecords) {
 }
 
 int main(int argc, char** argv) {
-  if (grpc_core::IsPollsetAlternativeEnabled()) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
     LOG(WARNING) << "iomgr resolver tests are disabled since the pollset "
                     "alternative experiment breaks some iomgr APIs";
     return 0;

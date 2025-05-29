@@ -36,8 +36,12 @@ bool UseEventEngineListener() {
 }
 
 bool UsePollsetAlternative() {
+#ifdef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
+  return false;
+#else
   return UseEventEngineClient() && UseEventEngineListener() &&
          grpc_core::IsPollsetAlternativeEnabled();
+#endif
 }
 
 // Returns true if GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER is defined.
