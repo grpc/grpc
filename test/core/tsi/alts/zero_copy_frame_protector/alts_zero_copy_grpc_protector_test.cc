@@ -177,7 +177,8 @@ static void alts_zero_copy_grpc_protector_test_var_destroy(
 // --- ALTS zero-copy protector tests. ---
 
 static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
-                                     tsi_zero_copy_grpc_protector* receiver) {
+                                     tsi_zero_copy_grpc_protector* receiver,
+                                     bool do_frame_size_read = false) {
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     int min_progress_size;
     alts_zero_copy_grpc_protector_test_var* var =
@@ -197,10 +198,12 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
     // TODO(gtcooke94) call the test with and without this
-    uint32_t frame_size;
-    ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
-        receiver, &var->staging_sb, &frame_size));
-    EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+    if (do_frame_size_read) {
+      uint32_t frame_size;
+      ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+          receiver, &var->staging_sb, &frame_size));
+      EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+    }
     // Unprotects one by one.
     ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(receiver, &var->staging_sb,
                                                      &var->unprotected_sb,
@@ -224,7 +227,8 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
 }
 
 static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
-                                     tsi_zero_copy_grpc_protector* receiver) {
+                                     tsi_zero_copy_grpc_protector* receiver,
+                                     bool do_frame_size_read = false) {
   for (size_t i = 0; i < kSealRepeatTimes; i++) {
     alts_zero_copy_grpc_protector_test_var* var =
         alts_zero_copy_grpc_protector_test_var_create();
@@ -243,6 +247,12 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
       grpc_slice_buffer_reset_and_unref(&var->staging_sb);
       grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
                                    &var->staging_sb);
+      if (do_frame_size_read) {
+        uint32_t frame_size;
+        ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
+            receiver, &var->staging_sb, &frame_size));
+        EXPECT_EQ(frame_size, kMaxProtectedFrameSize + 4);
+      }
       ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(
                     receiver, &var->staging_sb, &var->unprotected_sb, nullptr),
                 TSI_OK);
@@ -265,24 +275,40 @@ static void alts_zero_copy_protector_seal_unseal_small_buffer_tests(
           /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
+  seal_unseal_small_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_small_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
+  seal_unseal_small_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_small_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
+  seal_unseal_small_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_small_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy);
   seal_unseal_small_buffer(fixture->client, fixture->server);
   seal_unseal_small_buffer(fixture->server, fixture->client);
+  seal_unseal_small_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_small_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
@@ -293,24 +319,40 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
           /*rekey=*/false, /*integrity_only=*/true, enable_extra_copy);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
+  seal_unseal_large_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_large_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/false, /*integrity_only=*/false, enable_extra_copy);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
+  seal_unseal_large_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_large_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/true, /*integrity_only=*/true, enable_extra_copy);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
+  seal_unseal_large_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_large_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 
   fixture = alts_zero_copy_grpc_protector_test_fixture_create(
       /*rekey=*/true, /*integrity_only=*/false, enable_extra_copy);
   seal_unseal_large_buffer(fixture->client, fixture->server);
   seal_unseal_large_buffer(fixture->server, fixture->client);
+  seal_unseal_large_buffer(fixture->client, fixture->server,
+                           /*do_frame_size_read=*/true);
+  seal_unseal_large_buffer(fixture->server, fixture->client,
+                           /*do_frame_size_read=*/true);
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
@@ -357,7 +399,6 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesLarge) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/false, false);
-  int min_progress_size;
   alts_zero_copy_grpc_protector_test_var* var =
       alts_zero_copy_grpc_protector_test_var_create();
   // Creates a random small slice buffer and calls protect().
@@ -377,7 +418,6 @@ TEST(AltsZeroCopyFrameProtectorTest,
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/false, false);
-  int min_progress_size;
   alts_zero_copy_grpc_protector_test_var* var =
       alts_zero_copy_grpc_protector_test_var_create();
   // Creates a random small slice buffer and calls protect().
@@ -406,7 +446,6 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeHeaderIsSplit) {
   alts_zero_copy_grpc_protector_test_fixture* fixture =
       alts_zero_copy_grpc_protector_test_fixture_create(
           /*rekey=*/false, /*integrity_only=*/false, false);
-  int min_progress_size;
   alts_zero_copy_grpc_protector_test_var* var =
       alts_zero_copy_grpc_protector_test_var_create();
   // Creates a random small slice buffer and calls protect().
@@ -429,16 +468,6 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeHeaderIsSplit) {
       fixture->server, &var->staging_sb, &frame_size));
   EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
 }
-
-// When you call read_frame_size in isolation, everything is populated
-// correctly
-// - pass in buffer, get expected
-// - You've already called it once, call again with new buffer - does it keep
-// the old one like it should
-// - partial instead of full, just header, etc etc
-// If nothing more than to serve as documentation
-// - Call unprotect and read frame size in the sequence we expect to see it,
-// make sure it works together in the way we expect
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
