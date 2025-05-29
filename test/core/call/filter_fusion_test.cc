@@ -369,8 +369,7 @@ TEST(FusedFilterTest, ClientFilterTest) {
 }
 
 TEST(FusedFilterTest, FusedFilterTypeName) {
-  EXPECT_EQ(TestFusedFilter::TypeName(),
-            "Test1_Test2_Test3_Test4_Test5");
+  EXPECT_EQ(TestFusedFilter::TypeName(), "Test1_Test2_Test3_Test4_Test5");
 }
 
 // Assert that the fused filter creation fails when one of the filters creation

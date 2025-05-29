@@ -415,13 +415,15 @@ class ChannelInit {
   };
 
   struct FilterNode {
-    Filter* curr;
+    const Filter* curr;
     int next;
   };
 
   struct StackConfig {
     std::vector<Filter> filters;
+    std::vector<Filter> fused_filters;
     std::vector<Filter> terminators;
+    std::vector<Filter> terminal_fused_filters;
     std::vector<PostProcessor> post_processors;
   };
 
@@ -434,8 +436,10 @@ class ChannelInit {
           filter_registrations,
       grpc_channel_stack_type type);
 
-  static std::vector<Filter> MergeFilters(absl::Span<Filter> filters,
-                                          std::vector<Filter>& fused_filters);
+  static bool MergeFilters(ChannelStackBuilder* builder,
+                           const std::vector<Filter>& filters,
+                           const std::vector<Filter>& fused_filters,
+                           bool is_terminal);
 
   static StackConfig BuildStackConfig(
       const std::vector<std::unique_ptr<FilterRegistration>>&
