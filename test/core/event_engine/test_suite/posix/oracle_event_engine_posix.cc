@@ -211,9 +211,12 @@ void PosixOracleEndpoint::Shutdown() {
   if (std::exchange(is_shutdown_, true)) {
     return;
   }
-  read_ops_channel_ = ReadOperation();
+  {
+    grpc_core::MutexLock lock(&mu_);
+    read_ops_channel_ = ReadOperation();
+    write_ops_channel_ = WriteOperation();
+  }
   read_op_signal_->Notify();
-  write_ops_channel_ = WriteOperation();
   write_op_signal_->Notify();
   read_ops_.Join();
   write_ops_.Join();
@@ -255,7 +258,11 @@ void PosixOracleEndpoint::ProcessReadOperations() {
   while (true) {
     read_op_signal_->WaitForNotification();
     read_op_signal_ = std::make_unique<grpc_core::Notification>();
-    auto read_op = std::exchange(read_ops_channel_, ReadOperation());
+    PosixOracleEndpoint::ReadOperation read_op;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      std::swap(read_op, read_ops_channel_);
+    }
     if (!read_op.IsValid()) {
       read_op(std::string(), absl::CancelledError("Closed"));
       break;
@@ -277,7 +284,11 @@ void PosixOracleEndpoint::ProcessWriteOperations() {
   while (true) {
     write_op_signal_->WaitForNotification();
     write_op_signal_ = std::make_unique<grpc_core::Notification>();
-    auto write_op = std::exchange(write_ops_channel_, WriteOperation());
+    PosixOracleEndpoint::WriteOperation write_op;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      std::swap(write_op, write_ops_channel_);
+    }
     if (!write_op.IsValid()) {
       write_op(absl::CancelledError("Closed"));
       break;

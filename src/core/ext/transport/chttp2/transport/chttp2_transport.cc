@@ -153,7 +153,7 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 static void write_action_begin_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
 static void write_action(grpc_chttp2_transport* t,
-                         std::vector<TcpCallTracerWrapper> tcp_call_tracers);
+                         std::vector<TcpCallTracerWithOffset> tcp_call_tracers);
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
                              grpc_error_handle error);
 static void write_action_end_locked(
@@ -1165,8 +1165,9 @@ static void write_action_begin_locked(
   }
 }
 
-static void write_action(grpc_chttp2_transport* t,
-                         std::vector<TcpCallTracerWrapper> tcp_call_tracers) {
+static void write_action(
+    grpc_chttp2_transport* t,
+    std::vector<TcpCallTracerWithOffset> tcp_call_tracers) {
   void* cl = t->context_list;
   if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and

@@ -763,7 +763,7 @@ struct grpc_chttp2_stream {
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason);
 
-struct TcpCallTracerWrapper {
+struct TcpCallTracerWithOffset {
   std::shared_ptr<grpc_core::TcpCallTracer> tcp_call_tracer;
   size_t byte_offset;
 };
@@ -776,7 +776,7 @@ struct grpc_chttp2_begin_write_result {
   /// did we queue any completions as part of beginning the write
   bool early_results_scheduled;
   /// Tcp Call Tracers if any
-  std::vector<TcpCallTracerWrapper> tcp_call_tracers;
+  std::vector<TcpCallTracerWithOffset> tcp_call_tracers;
 };
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);

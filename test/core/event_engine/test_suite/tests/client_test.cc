@@ -304,10 +304,10 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
 
 // Create a connection using the test EventEngine to a listener created by the
 // test EventEngine and exchange bi-di data over the connection. Each endpoint
-// gets resetted as soon as the write is done. This test checks that EventEngine
+// gets reset as soon as the write is done. This test checks that EventEngine
 // implementations handle lifetimes around endpoints correctly.
 
-TEST_F(EventEngineClientTest, WriteEventCallbackTest) {
+TEST_F(EventEngineClientTest, WriteEventCallbackEndpointValidityTest) {
   grpc_core::ExecCtx ctx;
   std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
   auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
