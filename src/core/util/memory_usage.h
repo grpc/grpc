@@ -211,10 +211,14 @@ size_t MemoryUsage(const T& x) {
       static_assert(padding >= 0);
       return MemoryUsage(v1) + padding;
     } else {
-      static_assert(false, "Unsupported type");
+      // Probably wrong, but we've not figured any better...
+      LOG(DFATAL) << "Unsupported type";
+      return sizeof(T);
     }
   } else {
-    static_assert(false, "Unsupported category");
+    // Probably wrong, but we've not figured any better...
+    LOG(DFATAL) << "Unsupported type";
+    return sizeof(T);
   }
 }
 
