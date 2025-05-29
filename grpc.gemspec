@@ -1942,6 +1942,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/matchers.cc )
   s.files += %w( src/core/util/matchers.h )
   s.files += %w( src/core/util/memory.h )
+  s.files += %w( src/core/util/memory_usage.h )
   s.files += %w( src/core/util/mpscq.cc )
   s.files += %w( src/core/util/mpscq.h )
   s.files += %w( src/core/util/msys/tmpfile.cc )
