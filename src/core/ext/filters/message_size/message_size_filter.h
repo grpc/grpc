@@ -82,7 +82,7 @@ class MessageSizeParser : public ServiceConfigParser::Parser {
 std::optional<uint32_t> GetMaxRecvSizeFromChannelArgs(const ChannelArgs& args);
 std::optional<uint32_t> GetMaxSendSizeFromChannelArgs(const ChannelArgs& args);
 
-class ServerMessageSizeFilter
+class ServerMessageSizeFilter final
     : public ImplementChannelFilter<ServerMessageSizeFilter> {
  public:
   static const grpc_channel_filter kFilter;
@@ -112,7 +112,7 @@ class ServerMessageSizeFilter
   const MessageSizeParsedConfig parsed_config_;
 };
 
-class ClientMessageSizeFilter
+class ClientMessageSizeFilter final
     : public ImplementChannelFilter<ClientMessageSizeFilter> {
  public:
   static const grpc_channel_filter kFilter;
