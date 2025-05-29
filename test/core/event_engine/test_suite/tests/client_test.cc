@@ -62,9 +62,18 @@ using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
+using WriteArgs =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs;
+using WriteEvent =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
+using WriteMetric =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
+using WriteEventSink =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 constexpr int kNumExchangedMessages = 100;
 
@@ -291,6 +300,111 @@ TEST_F(EventEngineClientTest, MultipleIPv6ConnectionsToOneOracleListenerTest) {
     t.join();
   }
   server_endpoint.reset();
+}
+
+// Create a connection using the test EventEngine to a listener created by the
+// test EventEngine and exchange bi-di data over the connection. Each endpoint
+// gets resetted as soon as the write is done. This test checks that EventEngine
+// implementations handle lifetimes around endpoints correctly.
+
+TEST_F(EventEngineClientTest, WriteEventCallbackTest) {
+  grpc_core::ExecCtx ctx;
+  std::shared_ptr<EventEngine> test_ee(this->NewEventEngine());
+  auto memory_quota = std::make_unique<grpc_core::MemoryQuota>("bar");
+  std::string target_addr = absl::StrCat(
+      "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
+  auto resolved_addr = URIToResolvedAddress(target_addr);
+  CHECK_OK(resolved_addr);
+  std::unique_ptr<EventEngine::Endpoint> client_endpoint;
+  std::unique_ptr<EventEngine::Endpoint> server_endpoint;
+  grpc_core::Notification client_signal;
+  grpc_core::Notification server_signal;
+
+  Listener::AcceptCallback accept_cb =
+      [&server_endpoint, &server_signal](
+          std::unique_ptr<Endpoint> ep,
+          grpc_core::MemoryAllocator /*memory_allocator*/) {
+        server_endpoint = std::move(ep);
+        server_signal.Notify();
+      };
+
+  grpc_core::ChannelArgs args;
+  auto quota = grpc_core::ResourceQuota::Default();
+  args = args.Set(GRPC_ARG_RESOURCE_QUOTA, quota);
+  ChannelArgsEndpointConfig config(args);
+  auto listener = *test_ee->CreateListener(
+      std::move(accept_cb),
+      [](absl::Status status) {
+        ASSERT_TRUE(status.ok()) << status.ToString();
+      },
+      config, std::make_unique<grpc_core::MemoryQuota>("foo"));
+
+  ASSERT_TRUE(listener->Bind(*resolved_addr).ok());
+  ASSERT_TRUE(listener->Start().ok());
+
+  test_ee->Connect(
+      [&client_endpoint,
+       &client_signal](absl::StatusOr<std::unique_ptr<Endpoint>> endpoint) {
+        ASSERT_TRUE(endpoint.ok());
+        client_endpoint = std::move(*endpoint);
+        client_signal.Notify();
+      },
+      *resolved_addr, config, memory_quota->CreateMemoryAllocator("conn-1"),
+      24h);
+
+  client_signal.WaitForNotification();
+  server_signal.WaitForNotification();
+  ASSERT_NE(client_endpoint.get(), nullptr);
+  ASSERT_NE(server_endpoint.get(), nullptr);
+
+  // Start writes with WriteEventCallbacks from the client endpoint and server
+  // endpoint and reset both endpoints immediately. It doesn't matter if the
+  // callbacks don't get invoked as long as there is no use-after-free behavior.
+  auto event_cb = [](EventEngine::Endpoint* ee_ep, WriteEvent /*event*/,
+                     absl::Time /*time*/,
+                     std::vector<WriteMetric> /*metrics*/) {
+    // some operation on the endpoint to ensure validity
+    ASSERT_NE(ee_ep->GetPeerAddress().address(), nullptr);
+  };
+  SliceBuffer client_write_slice_buf;
+  SliceBuffer server_write_slice_buf;
+  WriteArgs client_write_args;
+  client_write_args.set_metrics_sink(WriteEventSink(
+      client_endpoint->AllWriteMetrics(),
+      {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+       WriteEvent::kAcked, WriteEvent::kClosed},
+      event_cb));
+  WriteArgs server_write_args;
+  server_write_args.set_metrics_sink(WriteEventSink(
+      client_endpoint->AllWriteMetrics(),
+      {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+       WriteEvent::kAcked, WriteEvent::kClosed},
+      event_cb));
+  AppendStringToSliceBuffer(&client_write_slice_buf, GetNextSendMessage());
+  AppendStringToSliceBuffer(&server_write_slice_buf, GetNextSendMessage());
+  grpc_core::Notification client_write_signal;
+  grpc_core::Notification server_write_signal;
+  if (client_endpoint->Write(
+          [&](absl::Status status) {
+            CHECK_OK(status);
+            client_write_signal.Notify();
+          },
+          &client_write_slice_buf, std::move(client_write_args))) {
+    client_write_signal.Notify();
+  }
+  if (server_endpoint->Write(
+          [&](absl::Status status) {
+            CHECK_OK(status);
+            server_write_signal.Notify();
+          },
+          &server_write_slice_buf, std::move(server_write_args))) {
+    server_write_signal.Notify();
+  }
+  client_endpoint.reset();
+  server_endpoint.reset();
+  listener.reset();
+  client_write_signal.WaitForNotificationWithTimeout(absl::Seconds(5));
+  server_write_signal.WaitForNotificationWithTimeout(absl::Seconds(5));
 }
 
 // TODO(vigneshbabu): Add more tests which create listeners bound to a mix
