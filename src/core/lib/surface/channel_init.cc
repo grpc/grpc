@@ -273,7 +273,7 @@ bool ChannelInit::MergeFilters(
   for (const auto& filter : filters) {
     if (!is_terminal && SkipV2(filter.version)) continue;
     if (!filter.CheckPredicates(builder->channel_args())) continue;
-    filter_list.push_back({.curr = &filter, .next = ++i});
+    filter_list.push_back(FilterNode{&filter, ++i});
   }
   if (!filter_list.empty()) {
     filter_list.back().next = -1;
