@@ -385,14 +385,8 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesSmall) {
   ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
       fixture->server, &var->protected_sb, &frame_size));
   EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
-  // // Splits protected slice buffer into two: first one is staging_sb, and
-  // // second one is protected_sb.
-  // uint32_t staging_sb_size =
-  // gsec_test_bias_random_uint32(static_cast<uint32_t>(
-  //                                var->protected_sb.length - 1)) +
-  //                            1;
-  // grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
-  //                              &var->staging_sb);
+  alts_zero_copy_grpc_protector_test_var_destroy(var);
+  alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
 TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesLarge) {
@@ -411,6 +405,8 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeSuccesLarge) {
   ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
       fixture->server, &var->protected_sb, &frame_size));
   EXPECT_EQ(frame_size, kMaxProtectedFrameSize + 4);
+  alts_zero_copy_grpc_protector_test_var_destroy(var);
+  alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
 TEST(AltsZeroCopyFrameProtectorTest,
@@ -440,6 +436,8 @@ TEST(AltsZeroCopyFrameProtectorTest,
   ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
       fixture->server, &var->protected_sb, &frame_size));
   EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+  alts_zero_copy_grpc_protector_test_var_destroy(var);
+  alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
 TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeHeaderIsSplit) {
@@ -467,6 +465,8 @@ TEST(AltsZeroCopyFrameProtectorTest, ReadFrameSizeHeaderIsSplit) {
   ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
       fixture->server, &var->staging_sb, &frame_size));
   EXPECT_EQ(frame_size, kSmallBufferSize + kOverhead);
+  alts_zero_copy_grpc_protector_test_var_destroy(var);
+  alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
 int main(int argc, char** argv) {
