@@ -18616,6 +18616,7 @@ target_link_libraries(header_assembler_test
   absl::random_bit_gen_ref
   absl::random_distributions
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
