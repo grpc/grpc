@@ -250,7 +250,7 @@ class ChannelTrace {
     if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
       return absl::string_view(a);
     } else {
-      return std::forward<A>(a);
+      return RawA(a);
     }
   }
 
