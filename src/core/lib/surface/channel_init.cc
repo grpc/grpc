@@ -260,25 +260,25 @@ class ChannelInit::DependencyTracker {
   size_t nodes_taken_ = 0;
 };
 
-std::vector<ChannelInit::Filter> ChannelInit::MergeFilters(
-    absl::Span<ChannelInit::Filter> filters,
-    std::vector<ChannelInit::Filter>& fused_filters) {
+bool ChannelInit::MergeFilters(
+    ChannelStackBuilder* builder,
+    const std::vector<ChannelInit::Filter>& filters,
+    const std::vector<ChannelInit::Filter>& fused_filters, bool is_terminal) {
   std::vector<FilterNode> filter_list;
-  std::vector<Filter> output;
+  int filter_count = 0;
   int i = 0;
   int j = 0;
 
-  CHECK(!fused_filters.empty());
-
   // Create an in-place linked list of individual filters
-  filter_list.resize(filters.size());
-  for (i = 0; i < filter_list.size(); i++) {
-    filter_list[i].curr = &filters[i];
-    if (i + 1 < filter_list.size()) {
-      filter_list[i].next = i + 1;
-    } else {
-      filter_list[i].next = -1;
-    }
+  for (const auto& filter : filters) {
+    if (!is_terminal && SkipV2(filter.version)) continue;
+    if (!filter.CheckPredicates(builder->channel_args())) continue;
+    filter_list.push_back({.curr = &filter, .next = ++i});
+  }
+  if (!filter_list.empty()) {
+    filter_list.back().next = -1;
+  } else if (!is_terminal) {
+    return true;
   }
 
   // Iterate through fused filters (by size) and check if a given fused filter
@@ -302,11 +302,37 @@ std::vector<ChannelInit::Filter> ChannelInit::MergeFilters(
 
   // Collect all merged filters and return them.
   i = 0;
-  do {
-    output.push_back(std::move(*(filter_list[i].curr)));
+  while(i != -1 && !filter_list.empty()) {
+    builder->AppendFilter(filter_list[i].curr->filter);
     i = filter_list[i].next;
-  } while (i != -1);
-  return output;
+    ++filter_count;
+  };
+
+  if (!is_terminal || filter_count == 1) {
+    return true;
+  }
+
+  std::string error = absl::StrCat(
+      filter_count, " terminating filters found creating a channel of type ",
+      grpc_channel_stack_type_string(builder->channel_stack_type()),
+      " with arguments ", builder->channel_args().ToString(),
+      " (we insist upon one and only one terminating "
+      "filter)\n");
+  if (filters.empty()) {
+    absl::StrAppend(&error, "  No terminal filters were registered");
+  } else {
+    for (const auto& terminator : filters) {
+      absl::StrAppend(&error, "  ", terminator.name, " registered @ ",
+                      terminator.registration_source.file(), ":",
+                      terminator.registration_source.line(), ": enabled = ",
+                      terminator.CheckPredicates(builder->channel_args())
+                          ? "true"
+                          : "false",
+                      "\n");
+    }
+  }
+  LOG(ERROR) << error;
+  return false;
 }
 
 template <bool fused>
@@ -393,22 +419,12 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
-  if (!fused_filter_registrations.empty()) {
-    auto sorted_fused_filters = SortFilterRegistrationsByDependencies<true>(
-        fused_filter_registrations, type);
-    std::vector<Filter>& fused_filters = std::get<0>(sorted_fused_filters);
-    std::vector<Filter>& terminal_fused_filters =
-        std::get<1>(sorted_fused_filters);
-
-    if (!fused_filters.empty()) {
-      filters = MergeFilters(absl::MakeSpan(filters), fused_filters);
-    }
-
-    if (!terminal_fused_filters.empty()) {
-      terminal_filters = MergeFilters(absl::MakeSpan(terminal_filters),
-                                      terminal_fused_filters);
-    }
-  }
+  auto sorted_fused_filters = SortFilterRegistrationsByDependencies<true>(
+      fused_filter_registrations, type);
+  std::vector<Filter> fused_filters =
+      std::move(std::get<0>(sorted_fused_filters));
+  std::vector<Filter> terminal_fused_filters =
+      std::move(std::get<1>(sorted_fused_filters));
 
   // Check if there are no terminal filters: this would be an error.
   // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check
@@ -425,8 +441,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                   "CoreConfiguration, but will result in a "
                   "ChannelInit::CreateStack that never completes successfully.";
   }
-  return StackConfig{std::move(filters), std::move(terminal_filters),
-                     std::move(post_processor_functions)};
+  return StackConfig{
+      std::move(filters), std::move(fused_filters), std::move(terminal_filters),
+      std::move(terminal_fused_filters), std::move(post_processor_functions)};
 };
 
 template <bool fused>
@@ -544,39 +561,10 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
-  for (const auto& filter : stack_config.filters) {
-    if (SkipV2(filter.version)) continue;
-    if (!filter.CheckPredicates(builder->channel_args())) continue;
-    builder->AppendFilter(filter.filter);
-  }
-  int found_terminators = 0;
-  for (const auto& terminator : stack_config.terminators) {
-    if (!terminator.CheckPredicates(builder->channel_args())) continue;
-    builder->AppendFilter(terminator.filter);
-    ++found_terminators;
-  }
-  if (found_terminators != 1) {
-    std::string error = absl::StrCat(
-        found_terminators,
-        " terminating filters found creating a channel of type ",
-        grpc_channel_stack_type_string(builder->channel_stack_type()),
-        " with arguments ", builder->channel_args().ToString(),
-        " (we insist upon one and only one terminating "
-        "filter)\n");
-    if (stack_config.terminators.empty()) {
-      absl::StrAppend(&error, "  No terminal filters were registered");
-    } else {
-      for (const auto& terminator : stack_config.terminators) {
-        absl::StrAppend(&error, "  ", terminator.name, " registered @ ",
-                        terminator.registration_source.file(), ":",
-                        terminator.registration_source.line(), ": enabled = ",
-                        terminator.CheckPredicates(builder->channel_args())
-                            ? "true"
-                            : "false",
-                        "\n");
-      }
-    }
-    LOG(ERROR) << error;
+  if (!MergeFilters(builder, stack_config.filters, stack_config.fused_filters,
+                    false) ||
+      !MergeFilters(builder, stack_config.terminators,
+                    stack_config.terminal_fused_filters, true)) {
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {
