@@ -21,6 +21,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -42,14 +43,16 @@ constexpr bool kIsBraceConstructible =
     IsBraceConstructible<void, T, Args...>::value;
 
 template <typename T>
-constexpr bool kIsStdOptional = false;
+constexpr bool kAnyTypeConvertibleTo = true;
 template <typename T>
-constexpr bool kIsStdOptional<std::optional<T>> = true;
+constexpr bool kAnyTypeConvertibleTo<std::optional<T>> = false;
 
 struct AnyType {
-  template <typename T, std::enable_if_t<!kIsStdOptional<T>, int> = 0>
+  template <typename T, std::enable_if_t<kAnyTypeConvertibleTo<T>, int> = 0>
   // NOLINTNEXTLINE
-  constexpr operator T();
+  constexpr operator T() {
+    LOG(FATAL) << "unreachable";
+  }
 };
 
 enum class Category {

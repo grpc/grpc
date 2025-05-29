@@ -99,6 +99,7 @@ grpc_cc_library(
       "absl/status:statusor",
       "absl/time",
       "absl/strings:string_view",
+      "absl/log"
     ],
 )
 
