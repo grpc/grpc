@@ -984,7 +984,7 @@ class ClientChannelFilter::ClientChannelControlHelper final
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
     if (chand_->channelz_node_ != nullptr) {
-      chand_->channelz_node_->NewTraceNode(std::string(message))->Commit();
+      chand_->channelz_node_->NewTraceNode(std::string(message)).Commit();
     }
   }
 
@@ -1335,7 +1335,7 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
       channelz_node_
           ->NewTraceNode("Resolution event: ",
                          absl::StrJoin(trace_strings, ", "))
-          ->Commit();
+          .Commit();
     }
   }
 }
@@ -1555,14 +1555,14 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
           ->NewTraceNode(
               channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                   state))
-          ->Commit();
+          .Commit();
     } else {
       channelz_node_
           ->NewTraceNode(
               channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                   state),
               " status: ", status.ToString())
-          ->Commit();
+          .Commit();
     }
   }
 }

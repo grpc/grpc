@@ -500,7 +500,7 @@ class ClientChannel::ClientChannelControlHelper
     if (client_channel_->resolver_ == nullptr) return;  // Shutting down.
     if (client_channel_->channelz_node_ != nullptr) {
       client_channel_->channelz_node_->NewTraceNode(std::string(message))
-          ->Commit();
+          .Commit();
     }
   }
 
@@ -1159,7 +1159,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   if (!trace_strings.empty() && channelz_node_ != nullptr) {
     channelz_node_
         ->NewTraceNode("Resolution event: ", absl::StrJoin(trace_strings, ", "))
-        ->Commit();
+        .Commit();
   }
 }
 
@@ -1321,13 +1321,13 @@ void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
               channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                   state),
               " status: ", status)
-          ->Commit();
+          .Commit();
     } else {
       channelz_node_
           ->NewTraceNode(
               channelz::ChannelNode::GetChannelConnectivityStateChangeString(
                   state))
-          ->Commit();
+          .Commit();
     }
   }
 }

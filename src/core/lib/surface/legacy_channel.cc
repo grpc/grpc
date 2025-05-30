@@ -162,7 +162,7 @@ LegacyChannel::LegacyChannel(bool is_client, std::string target,
   }
   *channel_stack_->on_destroy = [node = std::move(node)]() {
     if (node != nullptr) {
-      node->NewTraceNode("Channel destroyed")->Commit();
+      node->NewTraceNode("Channel destroyed").Commit();
     }
     ShutdownInternally();
   };

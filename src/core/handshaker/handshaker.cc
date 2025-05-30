@@ -156,8 +156,8 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
     // Since there was a handshaking error, commit this node with the reason.
     // This will make it available for inspection after the handshaker
     // completes.
-    args_.trace_node->NewChild("Failed with error: ", error)->Commit();
-    args_.trace_node->Commit();
+    args_.trace_node.NewChild("Failed with error: ", error).Commit();
+    args_.trace_node.Commit();
     GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
                                      << ": handshaking complete -- scheduling "
                                         "on_handshake_done with error="
@@ -189,7 +189,7 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   // it's ephemeral and is cleaned up when refs to it are released.
   args_.trace_node =
       channelz_node.get() == nullptr
-          ? nullptr
+          ? channelz::ChannelTrace::Node()
           : channelz_node->NewTraceNode("Handshake: stage=",
                                         handshakers_[index_]->name());
   ++index_;

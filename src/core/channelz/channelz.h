@@ -175,7 +175,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
 
   const ChannelTrace& trace() const { return trace_; }
   template <typename... Args>
-  RefCountedPtr<ChannelTrace::Node> NewTraceNode(Args&&... args) {
+  ChannelTrace::Node NewTraceNode(Args&&... args) {
     return trace_.NewNode(std::forward<Args>(args)...);
   }
 

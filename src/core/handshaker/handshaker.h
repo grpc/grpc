@@ -80,7 +80,7 @@ struct HandshakerArgs {
   // migration?
   grpc_tcp_server_acceptor* acceptor = nullptr;
   // Channelz trace node for the current handshaker
-  RefCountedPtr<channelz::ChannelTrace::Node> trace_node;
+  channelz::ChannelTrace::Node trace_node;
 };
 
 ///

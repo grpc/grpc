@@ -26,7 +26,9 @@
 #include <stdint.h>
 #include <sys/types.h>
 
+#include <algorithm>
 #include <limits>
+#include <memory>
 #include <tuple>
 #include <type_traits>
 #include <variant>
@@ -40,6 +42,7 @@
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -54,12 +57,19 @@ class BaseNode;
 // channelz service:
 // https://github.com/grpc/proposal/blob/master/A14-channelz.md
 class ChannelTrace {
+  struct EntryRef {
+    uint16_t id;
+    uint16_t salt;
+    static EntryRef Sentinel() { return EntryRef{kSentinelId, 0}; }
+  };
+
  public:
-  explicit ChannelTrace(size_t max_nodes) : max_nodes_(max_nodes) {}
+  explicit ChannelTrace(size_t max_memory)
+      : max_memory_(std::min(max_memory, sizeof(Entry) * 32768)) {}
 
   class Renderer {
    public:
-    virtual ~Renderer();
+    virtual ~Renderer() = default;
     virtual std::string Render() const = 0;
     virtual size_t MemoryUsage() const = 0;
   };
@@ -71,114 +81,48 @@ class ChannelTrace {
     Error
   };
 
-  class Node final : public DualRefCounted<Node, NonPolymorphicRefCount> {
+  class Node final {
    public:
-    void Update(std::unique_ptr<Renderer> renderer) {
-      MutexLock lock(&mu_);
-      renderer.swap(renderer_);
+    Node() : trace_(nullptr), ref_(EntryRef::Sentinel()) {}
+    Node(const Node&) = delete;
+    Node& operator=(const Node&) = delete;
+    Node(Node&& other) noexcept
+        : trace_(std::exchange(other.trace_, nullptr)),
+          ref_(other.ref_),
+          committed_(other.committed_) {}
+    Node& operator=(Node&& other) noexcept {
+      std::swap(trace_, other.trace_);
+      std::swap(ref_, other.ref_);
+      std::swap(committed_, other.committed_);
+      return *this;
+    }
+    ~Node() {
+      if (trace_ != nullptr && !committed_) trace_->DropEntry(ref_);
     }
 
-    RefCountedPtr<Node> NewChild(
-        std::unique_ptr<Renderer> renderer,
-        size_t max_nodes = std::numeric_limits<size_t>::max()) {
-      auto when = gpr_now(GPR_CLOCK_REALTIME);
-      auto node = RefCountedPtr<Node>(
-          new Node(WeakRef(), std::move(renderer), max_nodes));
-      Entry removed_entry;
-      MutexLock lock(&mu_);
-      if (children_.size() == max_nodes_) {
-        removed_entry = std::move(*children_.begin());
-        children_.erase(children_.begin());
-      }
-      children_.push_back({when, node->WeakRef()});
-      return node;
+    [[nodiscard]] Node NewChild(std::unique_ptr<Renderer> renderer) {
+      if (trace_ == nullptr) return Node();
+      return Node(trace_, trace_->AppendEntry(ref_, std::move(renderer)));
     }
 
     template <typename... Args>
-    RefCountedPtr<Node> NewChild(Args&&... args) {
+    [[nodiscard]] Node NewChild(Args&&... args) {
       return NewChild(RendererFromConcatenation(std::forward<Args>(args)...));
     }
 
     // Commit this line to the parent trace forever (or until that trace is
     // expunged).
     // Uncommitted nodes will be erased from the trace upon orphaning.
-    void Commit() {
-      CHECK(parent_ != nullptr);
-      MutexLock lock(&parent_->mu_);
-      for (auto& child : parent_->children_) {
-        if (auto* p = std::get_if<WeakRefCountedPtr<Node>>(&child.value);
-            p != nullptr) {
-          child.value = Ref();
-          return;
-        }
-      }
-    }
-
-    void Orphaned() override {
-      if (parent_ == nullptr) return;
-      parent_->mu_.Lock();
-      parent_->children_.erase(
-          std::remove_if(
-              parent_->children_.begin(), parent_->children_.end(),
-              [this](const Entry& entry) {
-                if (std::holds_alternative<RefCountedPtr<Node>>(entry.value)) {
-                  return false;
-                }
-                return std::get<WeakRefCountedPtr<Node>>(entry.value).get() ==
-                       this;
-              }),
-          parent_->children_.end());
-      parent_->mu_.Unlock();
-      parent_.reset();
-    }
-
-    void ForEachTraceEvent(
-        absl::FunctionRef<void(gpr_timespec, int, absl::string_view)> output,
-        int indent) const {
-      mu_.Lock();
-      std::vector<Entry> children = children_;
-      mu_.Unlock();
-      for (auto& child : children) {
-        WeakRefCountedPtr<Node> n = child.weak_value();
-        if (n == nullptr) continue;
-        n->mu_.Lock();
-        if (n->renderer_ == nullptr) {
-          n->mu_.Unlock();
-        } else {
-          std::string text = n->renderer_->Render();
-          n->mu_.Unlock();
-          output(child.timestamp, indent, text);
-        }
-        n->ForEachTraceEvent(output, indent + 1);
-      }
-    }
+    void Commit() { committed_ = true; }
 
    private:
-    struct Entry {
-      gpr_timespec timestamp;
-      std::variant<RefCountedPtr<Node>, WeakRefCountedPtr<Node>> value;
-
-      WeakRefCountedPtr<Node> weak_value() {
-        if (auto* p = std::get_if<RefCountedPtr<Node>>(&value); p != nullptr) {
-          return (*p)->WeakRef();
-        }
-        return std::get<WeakRefCountedPtr<Node>>(value);
-      }
-    };
-
-    Node(WeakRefCountedPtr<Node> parent, std::unique_ptr<Renderer> renderer,
-         size_t max_nodes)
-        : parent_(std::move(parent)),
-          max_nodes_(max_nodes),
-          renderer_(std::move(renderer)) {}
-
     friend class ChannelTrace;
 
-    WeakRefCountedPtr<Node> parent_;
-    mutable Mutex mu_;
-    const size_t max_nodes_;
-    std::vector<Entry> children_ ABSL_GUARDED_BY(mu_);
-    std::unique_ptr<Renderer> renderer_ ABSL_GUARDED_BY(mu_);
+    Node(ChannelTrace* trace, EntryRef ref) : trace_(trace), ref_(ref) {}
+
+    ChannelTrace* trace_;
+    EntryRef ref_;
+    bool committed_ = false;
   };
 
   static const char* SeverityString(ChannelTrace::Severity severity) {
@@ -194,19 +138,12 @@ class ChannelTrace {
     }
   }
 
-  RefCountedPtr<Node> NewNode(std::unique_ptr<Renderer> render) {
-    if (max_nodes_ == 0) {
-      return RefCountedPtr<Node>(new Node(nullptr, std::move(render), 0));
-    }
-    return root_
-        .GetOrCreate([this]() {
-          return RefCountedPtr<Node>(new Node(nullptr, nullptr, max_nodes_));
-        })
-        ->NewChild(std::move(render));
+  [[nodiscard]] Node NewNode(std::unique_ptr<Renderer> render) {
+    return Node(this, AppendEntry(EntryRef::Sentinel(), std::move(render)));
   }
 
   template <typename... Args>
-  RefCountedPtr<Node> NewNode(Args&&... args) {
+  [[nodiscard]] Node NewNode(Args&&... args) {
     return NewNode(RendererFromConcatenation(std::forward<Args>(args)...));
   }
 
@@ -217,20 +154,32 @@ class ChannelTrace {
   void ForEachTraceEvent(
       absl::FunctionRef<void(gpr_timespec, Severity, std::string,
                              RefCountedPtr<BaseNode>)>
-          callback) const {
-    auto* node = root_.Get();
-    if (node == nullptr) return;
-    node->ForEachTraceEvent(
-        [callback](gpr_timespec timestamp, int indent, absl::string_view line) {
-          CHECK_GE(indent, 0);
-          callback(timestamp, Severity::Info,
-                   absl::StrCat(std::string(' ', indent), line), nullptr);
-        },
-        -1);
-  }
+          callback) const ABSL_LOCKS_EXCLUDED(mu_);
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
+
+  static constexpr uint16_t kSentinelId = 65535;
+
+  struct Entry {
+    Timestamp when;
+    uint16_t salt = 0;
+    uint16_t parent;
+    uint16_t first_child;
+    uint16_t last_child;
+    uint16_t prev_sibling;
+    uint16_t next_sibling;
+    uint16_t prev_chronologically;
+    uint16_t next_chronologically;
+    std::unique_ptr<Renderer> renderer;
+  };
+
+  EntryRef AppendEntry(EntryRef parent, std::unique_ptr<Renderer> renderer)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  EntryRef NewEntry(EntryRef parent, std::unique_ptr<Renderer> renderer)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void DropEntry(EntryRef entry) ABSL_LOCKS_EXCLUDED(mu_);
+  void DropEntryId(uint16_t id) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   template <typename T>
   static size_t MemoryUsageOf(const T& x) {
@@ -280,8 +229,19 @@ class ChannelTrace {
         AdaptForStorage<Args>(std::forward<Args>(args))...);
   }
 
-  const size_t max_nodes_;
-  SingleSetRefCountedPtr<Node> root_;
+  void RenderEntry(const Entry& entry,
+                   absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                                          RefCountedPtr<BaseNode>)>
+                       callback,
+                   int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  mutable Mutex mu_;
+  const uint32_t max_memory_;
+  uint32_t current_memory_ ABSL_GUARDED_BY(mu_) = 0;
+  uint16_t next_free_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;
+  uint16_t first_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;
+  uint16_t last_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;
+  std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace channelz
