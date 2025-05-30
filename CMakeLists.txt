@@ -16289,6 +16289,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
   )
@@ -23775,6 +23776,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/posix_event_engine_test.cc
     test/core/event_engine/test_suite/tests/client_test.cc
     test/core/event_engine/test_suite/tests/dns_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
@@ -30014,6 +30016,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/event_engine/test_suite/thready_posix_event_engine_test.cc

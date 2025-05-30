@@ -100,6 +100,19 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "endpoint",
+    testonly = True,
+    srcs = ["endpoint_test.cc"],
+    external_deps = ["absl/log:check"],
+    deps = [
+        "//src/core:channel_args",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/event_engine/test_suite:event_engine_test_framework",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "server",
     testonly = True,
     srcs = ["server_test.cc"],
