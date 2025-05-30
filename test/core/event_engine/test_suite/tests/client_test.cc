@@ -342,7 +342,7 @@ TEST_F(EventEngineClientTest, WriteEventCallbackEndpointValidityTest) {
   ASSERT_TRUE(listener->Start().ok());
 
   constexpr size_t n_iterations = 100;
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < n_iterations; ++i) {
     server_signal = std::make_unique<grpc_core::Notification>();
     grpc_core::Notification client_signal;
     test_ee->Connect(
