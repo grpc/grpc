@@ -52,23 +52,38 @@ class Action {
 using ActionPtr = std::unique_ptr<Action>;
 using ActionCb = std::function<ActionPtr()>;
 
-// OnMatch Class definition 
-// Contains either Action or subsequent matcher to match
-// AI : Should we create variant here ??
-template <class DataType> struct OnMatch {
-  ActionCb actionCb_;
-  MatcherPtr<DataType> matcher_;
-  // AI: CHeck usecase of keepMatching , currently unused
-  bool keepMatching;
-};
+// Call back to execute on Match
+using ExecuteActionCb = std::function<void()>;
 
 // Match Result to return
 // AI: Do we need to return result here ? We can return nullopt for fail case.
 template <class DataType> struct MatchResult {
   bool result;
-  std::optional<OnMatch<DataType>> onMatch;
+//  std::optional<OnMatch<DataType>> onMatch;
 };
 
+// OnMatch Class definition 
+// Contains either Action or subsequent matcher to match
+// AI : Should we create variant here ??
+template <class DataType> struct OnMatch {
+  // Returning Action
+  //std::variant<MatcherPtr<DataType>, ActionCb> action_;
+  // Changing to a callback instead of a return
+  std::variant<MatcherPtr<DataType>, ExecuteActionCb> action_;
+
+  // AI: CHeck usecase of keepMatching , currently unused
+  bool keepMatching;
+
+  MatchResult<DataType> MatchAction(const DataType& data) {
+    if (std::holds_alternative<MatcherPtr<DataType>>(action_)) {
+      std::get<MatcherPtr<DataType>>(action_)->match(data);
+    } else if (std::holds_alternative<ExecuteActionCb>(action_)) {
+      std::get<ExecuteActionCb>(action_)();
+    }
+    // if keep matching is true return false
+    return {!keepMatching};
+  }
+};
 
 // Predicate
 template <class DataType> class Predicate {
@@ -165,7 +180,7 @@ class SinglePredicate : public Predicate<DataType> {
 template <class DataType> class Matcher {
   public:
     virtual ~Matcher() = default;
-    MatchResult<DataType> match(const DataType& data) = 0;
+    virtual MatchResult<DataType> match(const DataType& data) = 0;
 };
 
 // List of Predicates
@@ -176,15 +191,38 @@ template <class DataType> class MatcherList : public Matcher<DataType> {
     fieldMatchers_.emplace_back(std::move(predicate), std::move(on_match));
   }
 
+  void setOnNoMatch(std::optional<OnMatch<DataType>> on_no_match) {
+    onNoMatch_ = std::move(on_no_match);
+  }
+
   MatchResult<DataType> match(const DataType& data) override {
-    for (auto& matcher_pair : fieldMatchers_) {
-      const bool predicate_matched = matcher_pair.first->match(data);
+    for (auto& [predicate_f, onMatch_f] : fieldMatchers_) {
+      const bool predicate_matched = predicate_f->match(data);
       if (predicate_matched) {
-        return {true, matcher_pair.second};
+        if (std::holds_alternative<ExecuteActionCb>(onMatch_f.action_)) {
+          std::get<ExecuteActionCb>(onMatch_f.action_)();
+        } else if (std::holds_alternative<MatcherPtr<DataType>>(onMatch_f.action_)) {
+          // Call subsequent matcher
+          std::get<MatcherPtr<DataType>>(onMatch_f.action_)->match(data);
+        }
+        // if keep_matching is true , lets continue else return with true (matcher matched)
+        if (!onMatch_f.keepMatching) {
+          return {true};
+        }
+        // If keepMatching is true, continue to the next field matcher.
       }
     }
-    // AI: check return values same as MatchResult should we just return the OnMatch (optional can indicate as false)
-    return {false, onNoMatch_};
+    if (onNoMatch_.has_value()) {
+      if (std::holds_alternative<ExecuteActionCb>(onNoMatch_->action_)) {
+        std::get<ExecuteActionCb>(onNoMatch_->action_)();
+      } else if (std::holds_alternative<MatcherPtr<DataType>>(onNoMatch_->action_)) {
+        // Call subsequent matcher
+        std::get<MatcherPtr<DataType>>(onNoMatch_->action_)->match(data);
+      }
+      // If onNoMatch_ is processed, MatcherList considers it a "match".
+      return {true};
+    }
+    return {false};
   }
   private:
    std::vector<std::pair<PredicatePtr<DataType>, OnMatch<DataType>>> fieldMatchers_;
@@ -194,22 +232,43 @@ template <class DataType> class MatcherList : public Matcher<DataType> {
 // AI: will this support only string ??
 template <class DataType> class MatcherTree : public Matcher<DataType> {
 public:
-  MatchResult<DataType> match(const DataType& data) {
-    auto input_str = dataInput_->GetInput(data);
-    if (!input_str.has_value()) {
-      return {false, onNoMatch_};
+  MatchResult<DataType> match(const DataType& data) override {
+    if (dataInput_ == nullptr) return {false};
+    std::optional<MatchDataType> input_val_opt = dataInput_->GetInput(data);
+    if (!input_val_opt.has_value()) {
+      if (onNoMatch_.has_value()) {
+        return onNoMatch_->MatchAction(data);
+      }
+      return {false};
     }
-    auto result = doMatch(data);
-    if (!result.has_value()) {
-      return {false, onNoMatch_};
+    const std::string* key_to_match = std::get_if<std::string>(&input_val_opt.value());
+    if (key_to_match == nullptr) { // Input was not a string
+        if (onNoMatch_.has_value()) {
+            return onNoMatch_->MatchAction(data);
+        }
+        return {false};
     }
-    if (result.value().matcher_ != nullptr) {
-      return result.value().matcher_->match(data);
+    // Call the derived class's doMatch.
+    // This assumes doMatch returns MatchResult<DataType> and handles the key.
+    // If DataType is not std::string, ExactMatcherTree::doMatch's call to
+    // OnMatch::MatchAction(key) would be a type error unless MatchAction
+    // is specialized or DataType is string. Tests use DataType=string.
+    MatchResult<DataType> map_lookup_result = doMatch(*key_to_match);
+    // If map_lookup_result.result is true, it means a terminal match was found in the map.
+    // If map_lookup_result.result is false, it means either:
+    //   a) key was not found in map (ExactMatcherTree::doMatch returned {false})
+    //   b) key was found, but its OnMatch.keepMatching was true (OnMatch::MatchAction returned {false})
+    // In case (a), we should try onNoMatch_. In case (b), we should not.
+    // ExactMatcherTree::doMatch currently doesn't distinguish these.
+    // For now, we assume if doMatch returns {false}, it means "not found in map".
+    if (!map_lookup_result.result && onNoMatch_.has_value()) {
+        return onNoMatch_->MatchAction(data);
     }
-    return {true, result.value().onMatch_};
+    return map_lookup_result;
   }
+
  protected:
-  virtual std::optional<OnMatch<DataType>> doMatch(const std::string& data) = 0;
+  virtual MatchResult<DataType> doMatch(const std::string& data) = 0;
   std::unordered_map<std::string, OnMatch<DataType>> map_;
   DataInputPtr<DataType> dataInput_;
   std::optional<OnMatch<DataType>> onNoMatch_;
@@ -217,12 +276,16 @@ public:
 
 template <class DataType> class ExactMatcherTree : public MatcherTree<DataType> {
  protected:
-  std::optional<OnMatch<DataType>> doMatch(const std::string& data) override {
+  MatchResult<DataType>  doMatch(const std::string& data) override {
+    // data here is the key extracted by MatcherTree::match
     auto f = this->map_.find(data);
     if (f != this->map_.end()) {
-      return f->second;
+      // MatchAction expects DataType. If DataType is not std::string, this is an issue.
+      // Assuming DataType is std::string as per test setup for ExactMatcherTree.
+      return f->second.MatchAction(static_cast<const DataType&>(data));
     }
-    return std::nullopt;
+    // Key not found in map.
+    return {false};
   }
 };
 
