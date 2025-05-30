@@ -81,39 +81,108 @@ class ChannelTrace {
     Error
   };
 
+  // Represents a node in the channel trace.
+  // Nodes form a tree structure, allowing for hierarchical tracing.
+  //
+  // A `Node` is created by calling `ChannelTrace::NewNode()` for a root-level
+  // event, or `Node::NewChild()` to create a child of an existing node.
+  //
+  // The `Node` object acts as a handle to an entry in the `ChannelTrace`.
+  // By default, a `Node` is temporary. If the `Node` object is destroyed
+  // (e.g., goes out of scope) without `Commit()` being called, the
+  // corresponding trace entry is removed from the `ChannelTrace`. This RAII
+  // behavior is useful for tracing events that might be cancelled or
+  // superseded.
+  //
+  // To make a trace entry permanent (until it's evicted by memory limits),
+  // call `Commit()` on the `Node` object. After `Commit()` is called, the
+  // `Node` object can be destroyed without affecting the trace entry.
+  //
+  // `Node` objects are move-only to ensure clear ownership of the trace entry
+  // handle.
+  //
+  // Example:
+  //   ChannelTrace tracer(max_memory);
+  //   // Create a root node
+  //   auto root_node = tracer.NewNode("Root event");
+  //   // Create a child node
+  //   auto child_node = root_node.NewChild("Child event: ", 123);
+  //   // If something goes wrong before committing:
+  //   if (error) {
+  //     // child_node and root_node go out of scope, entries are removed
+  //     return;
+  //   }
+  //   // Commit the nodes to make them permanent
+  //   child_node.Commit();
+  //   root_node.Commit();
   class Node final {
    public:
+    // Default constructor creates an invalid/sentinel Node.
+    // Operations on a default-constructed Node are no-ops or return
+    // invalid/sentinel results.
     Node() : trace_(nullptr), ref_(EntryRef::Sentinel()) {}
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
+    // Moves the trace entry handle from `other` to this `Node`.
+    // `other` becomes invalid (its trace_ pointer is nullified).
     Node(Node&& other) noexcept
         : trace_(std::exchange(other.trace_, nullptr)),
-          ref_(other.ref_),
-          committed_(other.committed_) {}
+          ref_(std::exchange(other.ref_, EntryRef::Sentinel())),
+          committed_(std::exchange(other.committed_, false)) {}
+    // Moves the trace entry handle from `other` to this `Node`.
+    // `other` becomes invalid. If this `Node` previously held an uncommitted
+    // trace entry, that entry is dropped.
     Node& operator=(Node&& other) noexcept {
-      std::swap(trace_, other.trace_);
-      std::swap(ref_, other.ref_);
-      std::swap(committed_, other.committed_);
+      if (this == &other) return *this;
+      // If `this` node was managing an uncommitted entry, drop it first.
+      if (trace_ != nullptr && !committed_ && ref_.id != kSentinelId) {
+        trace_->DropEntry(ref_);
+      }
+      trace_ = std::exchange(other.trace_, nullptr);
+      ref_ = std::exchange(other.ref_, EntryRef::Sentinel());
+      committed_ = std::exchange(other.committed_, false);
       return *this;
     }
+    // If the `Node` was not committed, its corresponding entry is removed
+    // from the `ChannelTrace`.
     ~Node() {
-      if (trace_ != nullptr && !committed_) trace_->DropEntry(ref_);
+      if (trace_ != nullptr && !committed_ && ref_.id != kSentinelId) {
+        trace_->DropEntry(ref_);
+      }
     }
 
+    // Creates a new child node associated with this node.
+    // The child node will use the provided `renderer` to generate its
+    // description.
+    // Returns a new `Node` object representing the child.
+    // If this node is invalid (e.g., default-constructed or moved-from),
+    // an invalid `Node` is returned.
     [[nodiscard]] Node NewChild(std::unique_ptr<Renderer> renderer) {
-      if (trace_ == nullptr) return Node();
+      if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
       return Node(trace_, trace_->AppendEntry(ref_, std::move(renderer)));
     }
 
+    // Creates a new child node associated with this node.
+    // The child node's description is formed by concatenating `args...`.
+    // Supported types for `args` are those compatible with `absl::StrCat`
+    // and `absl::string_view`.
+    // Returns a new `Node` object representing the child.
+    // If this node is invalid (e.g., default-constructed or moved-from),
+    // an invalid `Node` is returned.
     template <typename... Args>
     [[nodiscard]] Node NewChild(Args&&... args) {
+      if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
       return NewChild(RendererFromConcatenation(std::forward<Args>(args)...));
     }
 
-    // Commit this line to the parent trace forever (or until that trace is
-    // expunged).
-    // Uncommitted nodes will be erased from the trace upon orphaning.
-    void Commit() { committed_ = true; }
+    // Marks the trace entry associated with this `Node` as permanent.
+    // After `Commit()`, destroying this `Node` object will no longer remove
+    // the entry from the `ChannelTrace`.
+    // If the node is invalid, this is a no-op.
+    void Commit() {
+      if (trace_ == nullptr || ref_.id == kSentinelId) return;
+      committed_ = true;
+    }
 
    private:
     friend class ChannelTrace;
@@ -161,16 +230,39 @@ class ChannelTrace {
 
   static constexpr uint16_t kSentinelId = 65535;
 
+  // Internal representation of a trace entry.
+  // These entries are stored in a std::vector `entries_` within ChannelTrace.
+  // They form a tree structure (parent/child/sibling links) and also a
+  // doubly-linked chronological list.
+  //
+  // The size of this struct is critical for memory management.
+  // `ChannelTrace` uses `sizeof(Entry)` to estimate memory usage and enforce
+  // `max_memory_`. Avoid adding fields or changing types that would
+  // significantly increase its size. The `uint16_t` types for IDs are used
+  // to keep the struct compact, limiting the total number of active (including
+  // free-list) entries to 65535.
   struct Entry {
-    Timestamp when;
+    Timestamp when;  // Timestamp of the event.
+    // A counter incremented each time an entry at a particular index in
+    // `entries_` is reused. Used by `EntryRef` to validate if a
+    // reference is still pointing to the same logical entry.
     uint16_t salt = 0;
+    // Index of the parent entry in `entries_`, or `kSentinelId`.
     uint16_t parent;
+    // Index of the first child of this entry, or `kSentinelId`.
     uint16_t first_child;
+    // Index of the last child of this entry, or `kSentinelId`.
     uint16_t last_child;
+    // Index of the previous sibling, or `kSentinelId`.
     uint16_t prev_sibling;
+    // Index of the next sibling, or `kSentinelId`.
     uint16_t next_sibling;
+    // Index of the previous entry in chronological order, or `kSentinelId`.
     uint16_t prev_chronologically;
+    // Index of the next entry in chronological order, or `kSentinelId`.
     uint16_t next_chronologically;
+    // Pointer to a Renderer object that can generate the string
+    // description for this trace event.
     std::unique_ptr<Renderer> renderer;
   };
 
