@@ -1201,6 +1201,7 @@ _BUILD_EXTRA_METADATA = {
     "grpc++_alts": {"language": "c++", "build": "all", "baselib": True},
     "grpc++_error_details": {"language": "c++", "build": "all"},
     "grpc++_reflection": {"language": "c++", "build": "all"},
+    "grpc++_authorization_provider": {"language": "c++", "build": "all"},
     "grpc_authorization_provider": {"language": "c++", "build": "all"},
     "grpc++_unsecure": {
         "language": "c++",

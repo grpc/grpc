@@ -3961,6 +3961,17 @@ libs:
   deps:
   - grpc++
   baselib: true
+- name: grpc++_authorization_provider
+  build: all
+  language: c++
+  public_headers:
+  - include/grpcpp/security/authorization_policy_provider.h
+  headers: []
+  src:
+  - src/cpp/server/authorization_policy_provider.cc
+  deps:
+  - grpc++
+  - grpc_authorization_provider
 - name: grpc++_error_details
   build: all
   language: c++
@@ -5672,12 +5683,10 @@ targets:
   language: c++
   headers: []
   src:
-  - src/cpp/server/authorization_policy_provider.cc
   - test/cpp/server/authorization_policy_provider_test.cc
   deps:
   - gtest
-  - grpc++
-  - grpc_authorization_provider
+  - grpc++_authorization_provider
   - grpc_test_util
 - name: avl_test
   gtest: true
@@ -11462,13 +11471,12 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - src/cpp/server/authorization_policy_provider.cc
   - test/core/test_util/audit_logging_utils.cc
   - test/cpp/end2end/grpc_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - gtest
-  - grpc_authorization_provider
+  - grpc++_authorization_provider
   - grpc++_test_util
 - name: grpc_byte_buffer_reader_test
   gtest: true

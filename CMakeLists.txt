@@ -5038,6 +5038,77 @@ if(gRPC_INSTALL)
 endif()
 
 
+add_library(grpc++_authorization_provider
+  src/cpp/server/authorization_policy_provider.cc
+)
+
+target_compile_features(grpc++_authorization_provider PUBLIC cxx_std_17)
+
+set_target_properties(grpc++_authorization_provider PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(grpc++_authorization_provider PROPERTIES COMPILE_PDB_NAME "grpc++_authorization_provider"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(grpc++_authorization_provider
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+      "GRPCXX_DLL_IMPORTS"
+    )
+  endif()
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_authorization_provider.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(grpc++_authorization_provider
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    ${_gRPC_PROTO_GENS_DIR}
+)
+target_link_libraries(grpc++_authorization_provider
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++
+  grpc_authorization_provider
+)
+
+foreach(_hdr
+  include/grpcpp/security/authorization_policy_provider.h
+)
+  string(REPLACE "include/" "" _path ${_hdr})
+  get_filename_component(_path ${_path} PATH)
+  install(FILES ${_hdr}
+    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
+  )
+endforeach()
+
+
+if(gRPC_INSTALL)
+  install(TARGETS grpc++_authorization_provider EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    BUNDLE DESTINATION  ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
+
 add_library(grpc++_error_details
   src/cpp/util/error_details.cc
 )
@@ -8209,7 +8280,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_policy_provider_test
-  src/cpp/server/authorization_policy_provider.cc
   test/cpp/server/authorization_policy_provider_test.cc
 )
 if(WIN32 AND MSVC)
@@ -8245,8 +8315,7 @@ target_include_directories(authorization_policy_provider_test
 target_link_libraries(authorization_policy_provider_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc++
-  grpc_authorization_provider
+  grpc++_authorization_provider
   grpc_test_util
 )
 
@@ -16930,7 +16999,6 @@ add_executable(grpc_authz_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.pb.h
   ${_gRPC_PROTO_GENS_DIR}/xds/data/orca/v3/orca_load_report.grpc.pb.h
-  src/cpp/server/authorization_policy_provider.cc
   test/core/test_util/audit_logging_utils.cc
   test/cpp/end2end/grpc_authz_end2end_test.cc
   test/cpp/end2end/test_service_impl.cc
@@ -16968,7 +17036,7 @@ target_include_directories(grpc_authz_end2end_test
 target_link_libraries(grpc_authz_end2end_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  grpc_authorization_provider
+  grpc++_authorization_provider
   grpc++_test_util
 )
 
