@@ -79,8 +79,8 @@ bool XdsMatcherList::OrPredicate::Match(
 
 bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
                                      Result& result) const {
-  absl::string_view input = input_->GetValue(context);
-  auto it = map_.find(input);
+  auto input = input_->GetValue(context);
+  auto it = map_.find(input.value_or(""));
   if (it != map_.end()) {
     if (it->second.FindMatches(context, result)) return true;
   }

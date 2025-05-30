@@ -20002,6 +20002,19 @@ targets:
   - protoc
   - grpc_test_util
   uses_polling: false
+- name: xds_matcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/xds/grpc/xds_matcher.h
+  src:
+  - src/core/xds/grpc/xds_matcher.cc
+  - test/core/xds/xds_matcher_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  uses_polling: false
 - name: xds_metadata_test
   gtest: true
   build: test

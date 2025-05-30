@@ -38,8 +38,13 @@ namespace grpc_core {
 // Base class for xDS matchers.
 class XdsMatcher {
  public:
-  // An interface implemented by the caller to provide context about the
-  // data plane RPC.  Matcher inputs extract input data from here.
+  // An interface implemented by the caller to provide the context from
+  // which the inputs will extract data.  There can be different context
+  // implementations for different use cases -- for example, there will
+  // be an implementation that provides data about a data plane RPC for
+  // use in per-RPC matching decisions, but there could also be an
+  // implementation that provides data about incoming TCP connections
+  // for L4 routing decisions.
   class MatchContext {
    public:
     virtual ~MatchContext() = default;
@@ -84,10 +89,12 @@ class XdsMatcher {
     virtual UniqueTypeName context_type() const = 0;
 
     // Gets the value to be matched from context.
-    virtual T GetValue(const MatchContext& context) const = 0;
+    virtual std::optional<T> GetValue(const MatchContext& context) const = 0;
   };
 
   // An action to be returned if the conditions match.
+  // There will be one subclass for each proto type that we support in
+  // the action field.
   class Action {
    public:
     virtual ~Action() = default;
@@ -142,21 +149,26 @@ class XdsMatcherList : public XdsMatcher {
     virtual bool Match(const XdsMatcher::MatchContext& context) const = 0;
   };
 
-  // Predicate implementations -- see below.
+  // Interface for matching against an input value.
   template <typename T>
-  class SinglePredicate;
+  class InputMatcher {
+   public:
+    using ConsumedType = T;
 
-  class AndPredicate;
-  class OrPredicate;
-  class NotPredicate;
+    virtual ~InputMatcher() = default;
 
-  // Factory method for creating a SingleInput.
+    // Returns true if the matcher matches the input.
+    virtual bool Match(const std::optional<T>& input) const = 0;
+  };
+
+  class StringInputMatcher;
+
+  // Factory method for creating a SinglePredicate.
   template <typename InputType, typename MatcherType>
   static absl::enable_if_t<
       std::is_same<typename InputType::ProducedType,
                    typename MatcherType::ConsumedType>::value,
-      std::unique_ptr<
-          XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
+      std::unique_ptr<Predicate>>
   CreateSinglePredicate(std::unique_ptr<InputType> input,
                         std::unique_ptr<MatcherType> matcher) {
     return std::make_unique<
@@ -170,12 +182,16 @@ class XdsMatcherList : public XdsMatcher {
   static absl::enable_if_t<
       !std::is_same<typename InputType::ProducedType,
                     typename MatcherType::ConsumedType>::value,
-      std::unique_ptr<
-          XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
-  CreateSinglePredicate(std::unique_ptr<InputType> input,
-                        std::unique_ptr<MatcherType> matcher) {
+      std::unique_ptr<Predicate>>
+  CreateSinglePredicate(std::unique_ptr<InputType> /*input*/,
+                        std::unique_ptr<MatcherType> /*matcher*/) {
     return nullptr;
   }
+
+  // Predicate implementations -- see below.
+  class AndPredicate;
+  class OrPredicate;
+  class NotPredicate;
 
   struct FieldMatcher {
     FieldMatcher(std::unique_ptr<Predicate> predicate, OnMatch on_match)
@@ -192,6 +208,9 @@ class XdsMatcherList : public XdsMatcher {
   bool FindMatches(const MatchContext& context, Result& result) const override;
 
  private:
+  template <typename T>
+  class SinglePredicate;
+
   std::vector<FieldMatcher> matchers_;
   std::optional<OnMatch> on_no_match_;
 };
@@ -204,40 +223,29 @@ class XdsMatcherList : public XdsMatcher {
 template <typename T>
 class XdsMatcherList::SinglePredicate : public XdsMatcherList::Predicate {
  public:
-  // Interface for matching against an input value.
-  class InputMatcher {
-   public:
-    using ConsumedType = T;
-
-    virtual ~InputMatcher() = default;
-
-    // Returns true if the matcher matches the input.
-    virtual bool Match(const T& input) const = 0;
-  };
-
   SinglePredicate(std::unique_ptr<InputValue<T>> input,
-                  std::unique_ptr<InputMatcher> input_matcher)
+                  std::unique_ptr<InputMatcher<T>> input_matcher)
       : input_(std::move(input)), input_matcher_(std::move(input_matcher)) {}
 
   bool Match(const XdsMatcher::MatchContext& context) const override {
-    T input = input_->GetValue(context);
+    auto input = input_->GetValue(context);
     return input_matcher_->Match(input);
   }
 
  private:
   std::unique_ptr<InputValue<T>> input_;
-  std::unique_ptr<InputMatcher> input_matcher_;
+  std::unique_ptr<InputMatcher<T>> input_matcher_;
 };
 
 // Matches against a string.
-class StringInputMatcher
-    : public XdsMatcherList::SinglePredicate<absl::string_view>::InputMatcher {
+class XdsMatcherList::StringInputMatcher
+    : public XdsMatcherList::InputMatcher<absl::string_view> {
  public:
   explicit StringInputMatcher(StringMatcher matcher)
       : matcher_(std::move(matcher)) {}
 
-  bool Match(const absl::string_view& input) const override {
-    return matcher_.Match(input);
+  bool Match(const std::optional<absl::string_view>& input) const override {
+    return matcher_.Match(input.value_or(""));
   }
 
  private:
