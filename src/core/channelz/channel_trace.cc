@@ -42,6 +42,7 @@ namespace channelz {
 //
 
 Json ChannelTrace::RenderJson() const {
+  if (max_memory_ == 0) return Json();
   Json::Array array;
   ForEachTraceEvent([&array](gpr_timespec timestamp, Severity, std::string line,
                              RefCountedPtr<BaseNode>) {
