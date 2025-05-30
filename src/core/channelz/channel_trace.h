@@ -123,24 +123,14 @@ class ChannelTrace {
     Node() : trace_(nullptr), ref_(EntryRef::Sentinel()) {}
     Node(const Node&) = delete;
     Node& operator=(const Node&) = delete;
-    // Moves the trace entry handle from `other` to this `Node`.
-    // `other` becomes invalid (its trace_ pointer is nullified).
     Node(Node&& other) noexcept
         : trace_(std::exchange(other.trace_, nullptr)),
-          ref_(std::exchange(other.ref_, EntryRef::Sentinel())),
-          committed_(std::exchange(other.committed_, false)) {}
-    // Moves the trace entry handle from `other` to this `Node`.
-    // `other` becomes invalid. If this `Node` previously held an uncommitted
-    // trace entry, that entry is dropped.
+          ref_(other.ref_),
+          committed_(other.committed_) {}
     Node& operator=(Node&& other) noexcept {
-      if (this == &other) return *this;
-      // If `this` node was managing an uncommitted entry, drop it first.
-      if (trace_ != nullptr && !committed_ && ref_.id != kSentinelId) {
-        trace_->DropEntry(ref_);
-      }
-      trace_ = std::exchange(other.trace_, nullptr);
-      ref_ = std::exchange(other.ref_, EntryRef::Sentinel());
-      committed_ = std::exchange(other.committed_, false);
+      std::swap(trace_, other.trace_);
+      std::swap(ref_, other.ref_);
+      std::swap(committed_, other.committed_);
       return *this;
     }
     // If the `Node` was not committed, its corresponding entry is removed

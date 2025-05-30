@@ -77,6 +77,7 @@ ChannelTrace::EntryRef ChannelTrace::AppendEntry(
 ChannelTrace::EntryRef ChannelTrace::NewEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
   if (parent.id != kSentinelId) {
+    if (parent.id >= entries_.size()) return EntryRef::Sentinel();
     if (parent.salt != entries_[parent.id].salt) {
       // Parent no longer present: no point adding child
       return EntryRef::Sentinel();
@@ -132,6 +133,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
 void ChannelTrace::DropEntry(EntryRef entry) {
   if (entry.id == kSentinelId) return;
   MutexLock lock(&mu_);
+  if (entry.id >= entries_.size()) return;
   Entry& e = entries_[entry.id];
   if (e.salt != entry.salt) return;
   DropEntryId(entry.id);
