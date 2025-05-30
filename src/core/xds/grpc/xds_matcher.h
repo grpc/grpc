@@ -24,10 +24,10 @@
 #include <variant>
 #include <vector>
 
-#include "src/core/util/matchers.h"
-#include "src/core/util/unique_type_name.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
+#include "src/core/util/matchers.h"
+#include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
 
@@ -50,7 +50,7 @@ class XdsMatcher {
     virtual UniqueTypeName type() const = 0;
   };
 
-// FIXME: move this to another file
+  // FIXME: move this to another file
   class RpcMatchContext : public MatchContext {
    public:
     static UniqueTypeName Type() {
@@ -63,8 +63,7 @@ class XdsMatcher {
     // As special cases, binary headers return a value of std::nullopt, and
     // "content-type" header returns "application/grpc".
     std::optional<absl::string_view> GetHeaderValue(
-        absl::string_view header_name, std::string* concatenated_value)
-        const;
+        absl::string_view header_name, std::string* concatenated_value) const;
 
     // FIXME: add other methods here
   };
@@ -122,8 +121,8 @@ class XdsMatcher {
   // Note that if a match is found but has keep_matching=true, the
   // action will be added to result, but the match will not be
   // considered successful.
-  virtual bool FindMatches(const MatchContext& context, Result& result)
-      const = 0;
+  virtual bool FindMatches(const MatchContext& context,
+                           Result& result) const = 0;
 };
 
 //
@@ -151,31 +150,32 @@ class XdsMatcherList : public XdsMatcher {
   class OrPredicate;
   class NotPredicate;
 
-// Factory method for creating a SingleInput.
-template <typename InputType, typename MatcherType>
-static
-absl::enable_if_t<
-    std::is_same<typename InputType::ProducedType,
-                 typename MatcherType::ConsumedType>::value,
-    std::unique_ptr<XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
-CreateSinglePredicate(std::unique_ptr<InputType> input,
-                      std::unique_ptr<MatcherType> matcher) {
-  return std::make_unique<XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>(
-      std::move(input), std::move(matcher));
-}
+  // Factory method for creating a SingleInput.
+  template <typename InputType, typename MatcherType>
+  static absl::enable_if_t<
+      std::is_same<typename InputType::ProducedType,
+                   typename MatcherType::ConsumedType>::value,
+      std::unique_ptr<
+          XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
+  CreateSinglePredicate(std::unique_ptr<InputType> input,
+                        std::unique_ptr<MatcherType> matcher) {
+    return std::make_unique<
+        XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>(
+        std::move(input), std::move(matcher));
+  }
 
-// Alternative template specialization to return null in the case where
-// the input produces a different type than the matcher consumes.
-template <typename InputType, typename MatcherType>
-static
-absl::enable_if_t<
-    !std::is_same<typename InputType::ProducedType,
-                  typename MatcherType::ConsumedType>::value,
-    std::unique_ptr<XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
-CreateSinglePredicate(std::unique_ptr<InputType> input,
-                      std::unique_ptr<MatcherType> matcher) {
-  return nullptr;
-}
+  // Alternative template specialization to return null in the case where
+  // the input produces a different type than the matcher consumes.
+  template <typename InputType, typename MatcherType>
+  static absl::enable_if_t<
+      !std::is_same<typename InputType::ProducedType,
+                    typename MatcherType::ConsumedType>::value,
+      std::unique_ptr<
+          XdsMatcherList::SinglePredicate<typename InputType::ProducedType>>>
+  CreateSinglePredicate(std::unique_ptr<InputType> input,
+                        std::unique_ptr<MatcherType> matcher) {
+    return nullptr;
+  }
 
   struct FieldMatcher {
     FieldMatcher(std::unique_ptr<Predicate> predicate, OnMatch on_match)
@@ -248,8 +248,7 @@ class StringInputMatcher
 // all predicates are true.
 class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
  public:
-  explicit AndPredicate(
-      std::vector<std::unique_ptr<Predicate>> predicates)
+  explicit AndPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
       : predicates_(std::move(predicates)) {}
 
   bool Match(const XdsMatcher::MatchContext& context) const override;
@@ -262,8 +261,7 @@ class XdsMatcherList::AndPredicate : public XdsMatcherList::Predicate {
 // any one predicate is true.
 class XdsMatcherList::OrPredicate : public XdsMatcherList::Predicate {
  public:
-  explicit OrPredicate(
-      std::vector<std::unique_ptr<Predicate>> predicates)
+  explicit OrPredicate(std::vector<std::unique_ptr<Predicate>> predicates)
       : predicates_(std::move(predicates)) {}
 
   bool Match(const XdsMatcher::MatchContext& context) const override;
