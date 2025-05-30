@@ -86,4 +86,11 @@ TEST(MemoryUsageTest, EscapeHatch) {
   EXPECT_EQ(MemoryUsage(Foo()), 12345);
 }
 
+TEST(MemoryusageTest, UniquePtrInAStruct) {
+  struct Foo {
+    std::unique_ptr<int> a;
+  };
+  EXPECT_EQ(MemoryUsage(Foo()), sizeof(Foo));
+}
+
 }  // namespace grpc_core
