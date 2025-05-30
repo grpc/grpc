@@ -33,9 +33,8 @@ Duration BackOff::NextAttemptDelay() {
     current_backoff_ *= options_.multiplier();
   }
   current_backoff_ = std::min(current_backoff_, options_.max_backoff());
-  absl::InsecureBitGen g;
   const double jitter =
-      absl::Uniform(g, 1 - options_.jitter(), 1 + options_.jitter());
+      absl::Uniform(bitgen_, 1 - options_.jitter(), 1 + options_.jitter());
   return current_backoff_ * jitter;
 }
 
