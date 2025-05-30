@@ -686,18 +686,20 @@ XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
 
 void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     StartRdsWatch(RefCountedPtr<ListenerWatcher> listener_watcher) {
-  // Get the set of RDS resources to watch on. Also reverse the lists of
-  // HTTP filters, since received data moves *up* the stack in Core.
+  // Get the set of RDS resources to watch on. Also get the set of
+  // FilterChainData so that we can reverse the list of HTTP filters since
+  // received data moves *up* the stack in Core.
   std::set<std::string> resource_names;
+  std::set<XdsListenerResource::FilterChainData*> filter_chain_data_set;
   for (const auto& destination_ip : filter_chain_map_.destination_ip_vector) {
     for (const auto& source_type : destination_ip.source_types_array) {
       for (const auto& source_ip : source_type) {
         for (const auto& source_port_pair : source_ip.ports_map) {
           auto* filter_chain_data = source_port_pair.second.data.get();
-          auto& hcm = filter_chain_data->http_connection_manager;
-          const auto* rds_name = std::get_if<std::string>(&hcm.route_config);
+          const auto* rds_name = std::get_if<std::string>(
+              &filter_chain_data->http_connection_manager.route_config);
           if (rds_name != nullptr) resource_names.insert(*rds_name);
-          std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
+          filter_chain_data_set.insert(filter_chain_data);
         }
       }
     }
@@ -706,6 +708,11 @@ void XdsServerConfigFetcher::ListenerWatcher::FilterChainMatchManager::
     auto& hcm = default_filter_chain_->http_connection_manager;
     const auto* rds_name = std::get_if<std::string>(&hcm.route_config);
     if (rds_name != nullptr) resource_names.insert(*rds_name);
+    std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
+  }
+  // Reverse the lists of HTTP filters in all the filter chains
+  for (auto* filter_chain_data : filter_chain_data_set) {
+    auto& hcm = filter_chain_data->http_connection_manager;
     std::reverse(hcm.http_filters.begin(), hcm.http_filters.end());
   }
   // Start watching on referenced RDS resources
