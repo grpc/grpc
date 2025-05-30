@@ -19,28 +19,11 @@
 namespace grpc_core {
 
 //
-// Predicates
-//
-
-bool AndPredicate::Match() const {
-  for (const auto& predicate : predicates_) {
-    if (!predicate->Match()) return false;
-  }
-  return true;
-}
-
-bool OrPredicate::Match() const {
-  for (const auto& predicate : predicates_) {
-    if (predicate->Match()) return true;
-  }
-  return false;
-}
-
-//
 // XdsMatcher
 //
 
-bool XdsMatcher::OnMatch::FindMatches(Result& result) const {
+bool XdsMatcher::OnMatch::FindMatches(const MatchContext& context,
+                                      Result& result) const {
   // Confusingly, this Match() call has nothing to do with the
   // matching we're doing here -- it's the name of our utility
   // method for accessing fields of std::variant<>.
@@ -51,29 +34,56 @@ bool XdsMatcher::OnMatch::FindMatches(Result& result) const {
         return !keep_matching;
       },
       [&](const std::unique_ptr<XdsMatcher>& matcher) {
-        return matcher->FindMatches(result) && !keep_matching;
+        return matcher->FindMatches(context, result) && !keep_matching;
       });
 }
 
-bool MatcherList::FindMatches(Result& result) const {
+//
+// XdsMatcherList
+//
+
+bool XdsMatcherList::FindMatches(const MatchContext& context,
+                                 Result& result) const {
   for (const auto& [predicate, on_match] : matchers_) {
-    if (predicate->Match()) {
-      if (on_match.FindMatches(result)) return true;
+    if (predicate->Match(context)) {
+      if (on_match.FindMatches(context, result)) return true;
     }
   }
   if (on_no_match_.has_value()) {
-    if (on_no_match_->FindMatches(result)) return true;
+    if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
 }
 
-bool MatcherExactMap::FindMatches(Result& result) const {
-  auto it = map_.find(input_.value());
+bool XdsMatcherList::AndPredicate::Match(
+    const XdsMatcher::MatchContext& context) const {
+  for (const auto& predicate : predicates_) {
+    if (!predicate->Match(context)) return false;
+  }
+  return true;
+}
+
+bool XdsMatcherList::OrPredicate::Match(
+    const XdsMatcher::MatchContext& context) const {
+  for (const auto& predicate : predicates_) {
+    if (predicate->Match(context)) return true;
+  }
+  return false;
+}
+
+//
+// XdsMatcherExactMap
+//
+
+bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
+                                     Result& result) const {
+  auto input = input_selector_->GetInput(context);
+  auto it = map_.find(DownCast<StringInputValue&>(*input).value());
   if (it != map_.end()) {
-    if (it->second.FindMatches(result)) return true;
+    if (it->second.FindMatches(context, result)) return true;
   }
   if (on_no_match_.has_value()) {
-    if (on_no_match_->FindMatches(result)) return true;
+    if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
 }
