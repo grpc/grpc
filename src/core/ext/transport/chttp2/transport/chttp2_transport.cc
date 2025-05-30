@@ -1174,6 +1174,7 @@ static void write_action(grpc_chttp2_transport* t) {
   }
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1181,6 +1182,8 @@ static void write_action(grpc_chttp2_transport* t) {
   if (max_frame_size == 0) {
     max_frame_size = INT_MAX;
   }
+  args.set_max_frame_size(max_frame_size);
+  args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
   GRPC_TRACE_LOG(http2_ping, INFO)
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
@@ -1190,7 +1193,7 @@ static void write_action(grpc_chttp2_transport* t) {
   grpc_endpoint_write(t->ep.get(), t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
-                      cl, max_frame_size);
+                      std::move(args));
 }
 
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
