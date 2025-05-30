@@ -90,6 +90,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "memory_usage",
+    hdrs = [
+        "util/memory_usage.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+        "absl/strings:string_view",
+        "absl/log",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
@@ -9824,6 +9838,7 @@ grpc_cc_library(
     ],
     deps = [
         "json_writer",
+        "memory_usage",
         "single_set_ptr",
         "sync",
         "time",

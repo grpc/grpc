@@ -1194,6 +1194,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -2116,6 +2117,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -2746,6 +2748,7 @@ libs:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -3203,6 +3206,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -12276,6 +12280,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -12570,6 +12575,7 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -13700,6 +13706,22 @@ targets:
   - gtest
   - grpc_test_util_unsecure
   uses_polling: false
+- name: memory_usage_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/memory_usage.h
+  src:
+  - test/core/util/memory_usage_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/log:log
+  - absl/status:status
+  - absl/status:statusor
+  - absl/strings:string_view
+  - absl/time:time
 - name: message_allocator_end2end_test
   gtest: true
   build: test
