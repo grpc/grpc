@@ -4692,6 +4692,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -5003,6 +5004,7 @@ libs:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -6531,6 +6533,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -6808,6 +6811,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -10601,6 +10605,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -10878,6 +10883,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares

@@ -6035,6 +6035,7 @@ target_link_libraries(grpc_authorization_provider
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
@@ -9672,6 +9673,7 @@ target_link_libraries(call_utils_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
@@ -15720,6 +15722,7 @@ target_link_libraries(filter_fusion_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
