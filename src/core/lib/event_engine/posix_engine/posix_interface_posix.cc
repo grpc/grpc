@@ -611,31 +611,30 @@ PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Accept4(
     const FileDescriptor& sockfd,
     grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr,
     int nonblock, int cloexec) {
+  int flags;
   EventEngine::ResolvedAddress peer_addr;
   socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-  PosixErrorOr<FileDescriptor> fd =
-      Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
+  auto fd = Accept(sockfd, const_cast<sockaddr*>(peer_addr.address()), &len);
   if (!fd.ok()) {
     return fd;
   }
-  int flags;
   int raw_fd = fd->fd();
-  auto fail = [&]() {
-    auto error = PosixError::Error(errno);
-    Close(*fd);
-    return error;
-  };
-  if (nonblock || cloexec) {
+  if (nonblock) {
     flags = fcntl(raw_fd, F_GETFL, 0);
-    if (flags < 0) return fail();
-    if (nonblock) flags |= O_NONBLOCK;
-    if (cloexec) flags |= O_CLOEXEC;
-    if (fcntl(raw_fd, F_SETFD, flags | FD_CLOEXEC) != 0) {
-      return fail();
-    }
+    if (flags < 0) goto close_and_error;
+    if (fcntl(raw_fd, F_SETFL, flags | O_NONBLOCK) != 0) goto close_and_error;
+  }
+  if (cloexec) {
+    flags = fcntl(raw_fd, F_GETFD, 0);
+    if (flags < 0) goto close_and_error;
+    if (fcntl(raw_fd, F_SETFD, flags | FD_CLOEXEC) != 0) goto close_and_error;
   }
   addr = EventEngine::ResolvedAddress(peer_addr.address(), len);
   return fd;
+
+close_and_error:
+  Close(*fd);
+  return PosixError::Error(errno);
 }
 
 #else  // GRPC_POSIX_SOCKETUTILS

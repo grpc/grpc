@@ -135,6 +135,15 @@ class PosixErrorOr {
     return std::get<PosixError>(value_).StrError();
   }
 
+  template <typename Sink>
+  friend void AbslStringify(Sink& sink, PosixErrorOr<T> error) {
+    if (error.ok()) {
+      sink.Append(absl::StrCat(error.value()));
+    } else {
+      sink.Append(error.StrError());
+    }
+  }
+
  private:
   Payload value_;
 };
