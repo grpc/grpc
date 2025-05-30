@@ -18371,7 +18371,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -19353,7 +19352,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -19893,7 +19891,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -20032,7 +20029,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
