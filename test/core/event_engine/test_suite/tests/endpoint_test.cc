@@ -57,7 +57,6 @@ using WriteEventSink =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
-using ::grpc_event_engine::experimental::NotifyOnDelete;
 using ::grpc_event_engine::experimental::SliceBuffer;
 
 using namespace std::chrono_literals;
