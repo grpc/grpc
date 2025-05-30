@@ -509,25 +509,23 @@ auto Endpoint::WriteLoop(uint32_t id,
                 {EventEngine::Endpoint::WriteEvent::kSendMsg,
                  EventEngine::Endpoint::WriteEvent::kScheduled,
                  EventEngine::Endpoint::WriteEvent::kAcked},
-                [data_rate_metric, id, output_buffers, ztrace_collector,
-                 endpoint = endpoint.get()](
+                [data_rate_metric, id, output_buffers, ztrace_collector](
+                    EventEngine::Endpoint* ee_endpoint,
                     EventEngine::Endpoint::WriteEvent event,
                     absl::Time timestamp,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
-                  ztrace_collector->Append([event, timestamp, &metrics,
-                                            endpoint]() {
-                    EndpointWriteMetricsTrace trace{timestamp, event, {}};
-                    trace.metrics.reserve(metrics.size());
-                    for (const auto [id, value] : metrics) {
-                      if (auto name =
-                              endpoint->GetEventEngineEndpoint()->GetMetricName(
-                                  id);
-                          name.has_value()) {
-                        trace.metrics.push_back({*name, value});
-                      }
-                    }
-                    return trace;
-                  });
+                  ztrace_collector->Append(
+                      [event, timestamp, &metrics, ee_endpoint]() {
+                        EndpointWriteMetricsTrace trace{timestamp, event, {}};
+                        trace.metrics.reserve(metrics.size());
+                        for (const auto [id, value] : metrics) {
+                          if (auto name = ee_endpoint->GetMetricName(id);
+                              name.has_value()) {
+                            trace.metrics.push_back({*name, value});
+                          }
+                        }
+                        return trace;
+                      });
                   for (const auto& metric : metrics) {
                     if (metric.key == *data_rate_metric) {
                       output_buffers->UpdateSendRate(id, metric.value * 1e-9);

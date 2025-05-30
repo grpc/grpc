@@ -62,6 +62,14 @@ using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::URIToResolvedAddress;
 using Endpoint = ::grpc_event_engine::experimental::EventEngine::Endpoint;
+using WriteArgs =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs;
+using WriteEvent =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
+using WriteMetric =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
+using WriteEventSink =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
 using Listener = ::grpc_event_engine::experimental::EventEngine::Listener;
 using ::grpc_event_engine::experimental::GetNextSendMessage;
 using ::grpc_event_engine::experimental::NotifyOnDelete;

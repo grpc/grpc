@@ -117,14 +117,14 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   mutable grpc_core::Mutex mu_;
   bool is_shutdown_ = false;
   int socket_fd_;
-  ReadOperation read_ops_channel_;
-  WriteOperation write_ops_channel_;
-  std::unique_ptr<grpc_core::Notification> read_op_signal_{
+  ReadOperation read_ops_channel_ ABSL_GUARDED_BY(mu_);
+  WriteOperation write_ops_channel_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<grpc_core::Notification> read_op_signal_ ABSL_GUARDED_BY(mu_){
       new grpc_core::Notification()};
-  std::unique_ptr<grpc_core::Notification> write_op_signal_{
-      new grpc_core::Notification()};
-  grpc_core::Thread read_ops_ ABSL_GUARDED_BY(mu_);
-  grpc_core::Thread write_ops_ ABSL_GUARDED_BY(mu_);
+  std::unique_ptr<grpc_core::Notification> write_op_signal_
+      ABSL_GUARDED_BY(mu_){new grpc_core::Notification()};
+  grpc_core::Thread read_ops_;
+  grpc_core::Thread write_ops_;
 };
 
 class PosixOracleListener : public EventEngine::Listener {

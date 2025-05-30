@@ -436,12 +436,15 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
       for (const auto& r : it->second) {
         g_fuzzing_event_engine->RunAfterExactlyLocked(
             std::chrono::microseconds(r.delay_us()),
-            [r, write_event_callback]() {
+            [ee_ep = this, middle = middle_, index = my_index(), r,
+             write_event_callback]() {
+              grpc_core::MutexLock lock(&*mu_);
+              if (middle->closed[index]) return;
               std::vector<WriteMetric> metrics;
               for (const auto& m : r.returned_endpoint_metrics()) {
                 metrics.push_back(WriteMetric{m.key(), m.value()});
               }
-              (*write_event_callback)(static_cast<WriteEvent>(r.event()),
+              (*write_event_callback)(ee_ep, static_cast<WriteEvent>(r.event()),
                                       g_fuzzing_event_engine->NowAsAbslTime(),
                                       std::move(metrics));
             });

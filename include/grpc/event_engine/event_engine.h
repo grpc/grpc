@@ -240,8 +240,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       size_t key;
       int64_t value;
     };
+    // It is the responsibility of the caller of WriteEventCallback to make sure
+    // that the corresponding endpoint is still valid. HINT: Do NOT offload
+    // callbacks onto the EventEngine or other threads.
     using WriteEventCallback = absl::AnyInvocable<void(
-        WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
+        Endpoint*, WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
     // A bitmask of the events that the caller is interested in.
     // Each bit corresponds to an entry in WriteEvent.
     using WriteEventSet = std::bitset<static_cast<int>(WriteEvent::kCount)>;
@@ -273,6 +276,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
         return requested_events_mask_;
       }
 
+      /// Takes the callback. Ownership is transferred. It is illegal to destroy
+      /// the endpoint before this callback is invoked.
       WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
 
      private:
