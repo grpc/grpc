@@ -16,6 +16,8 @@
 
 #include "src/core/xds/grpc/xds_matcher.h"
 
+#include "src/core/util/match.h"
+
 namespace grpc_core {
 
 //
@@ -77,8 +79,8 @@ bool XdsMatcherList::OrPredicate::Match(
 
 bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
                                      Result& result) const {
-  auto input = input_selector_->GetInput(context);
-  auto it = map_.find(DownCast<StringInputValue&>(*input).value());
+  absl::string_view input = input_->GetValue(context);
+  auto it = map_.find(input);
   if (it != map_.end()) {
     if (it->second.FindMatches(context, result)) return true;
   }

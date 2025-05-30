@@ -5626,7 +5626,6 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "down_cast",
         "grpc_matchers",
         "match",
         "unique_type_name",
