@@ -35,11 +35,10 @@ size_t GetMaxPerRpcRetryBufferSize(const ChannelArgs& args) {
 
 namespace retry_detail {
 
-RetryState::RetryState(
-    const internal::RetryMethodConfig* retry_policy,
-    RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data)
+RetryState::RetryState(const internal::RetryMethodConfig* retry_policy,
+                       RefCountedPtr<internal::RetryThrottler> retry_throttler)
     : retry_policy_(retry_policy),
-      retry_throttle_data_(std::move(retry_throttle_data)),
+      retry_throttler_(std::move(retry_throttler)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(retry_policy_ == nullptr
@@ -67,8 +66,8 @@ std::optional<Duration> RetryState::ShouldRetry(
   const auto status = md.get(GrpcStatusMetadata());
   if (status.has_value()) {
     if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
-      if (retry_throttle_data_ != nullptr) {
-        retry_throttle_data_->RecordSuccess();
+      if (retry_throttler_ != nullptr) {
+        retry_throttler_->RecordSuccess();
       }
       GRPC_TRACE_LOG(retry, INFO)
           << lazy_attempt_debug_string() << " call succeeded";
@@ -89,8 +88,7 @@ std::optional<Duration> RetryState::ShouldRetry(
   // things like failures due to malformed requests (INVALID_ARGUMENT).
   // Conversely, it's important for this to come before the remaining
   // checks, so that we don't fail to record failures due to other factors.
-  if (retry_throttle_data_ != nullptr &&
-      !retry_throttle_data_->RecordFailure()) {
+  if (retry_throttler_ != nullptr && !retry_throttler_->RecordFailure()) {
     GRPC_TRACE_LOG(retry, INFO)
         << lazy_attempt_debug_string() << " retries throttled";
     return std::nullopt;
@@ -131,8 +129,8 @@ std::optional<Duration> RetryState::ShouldRetry(
   return next_attempt_timeout;
 }
 
-absl::StatusOr<RefCountedPtr<internal::ServerRetryThrottleData>>
-ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
+RefCountedPtr<internal::RetryThrottler> RetryThrottlerFromChannelArgs(
+    const ChannelArgs& args, const FilterArgs& filter_args) {
   // Get retry throttling parameters from service config.
   auto* service_config = args.GetObject<ServiceConfig>();
   if (service_config == nullptr) return nullptr;
@@ -140,21 +138,13 @@ ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
       service_config->GetGlobalParsedConfig(
           internal::RetryServiceConfigParser::ParserIndex()));
   if (config == nullptr) return nullptr;
-  // Get server name from target URI.
-  auto server_uri = args.GetString(GRPC_ARG_SERVER_URI);
-  if (!server_uri.has_value()) {
-    return GRPC_ERROR_CREATE(
-        "server URI channel arg missing or wrong type in client channel "
-        "filter");
-  }
-  absl::StatusOr<URI> uri = URI::Parse(*server_uri);
-  if (!uri.ok() || uri->path().empty()) {
-    return GRPC_ERROR_CREATE("could not extract server name from target URI");
-  }
-  std::string server_name(absl::StripPrefix(uri->path(), "/"));
-  // Get throttling config for server_name.
-  return internal::ServerRetryThrottleMap::Get()->GetDataForServer(
-      server_name, config->max_milli_tokens(), config->milli_token_ratio());
+  // Get throttle state.
+  return filter_args.GetOrCreateState<internal::RetryThrottler>(
+      "", [&](RefCountedPtr<internal::RetryThrottler> existing) {
+        return internal::RetryThrottler::Create(config->max_milli_tokens(),
+                                                config->milli_token_ratio(),
+                                                std::move(existing));
+      });
 }
 
 }  // namespace retry_detail
@@ -163,23 +153,19 @@ ServerRetryThrottleDataFromChannelArgs(const ChannelArgs& args) {
 // RetryInterceptor
 
 absl::StatusOr<RefCountedPtr<RetryInterceptor>> RetryInterceptor::Create(
-    const ChannelArgs& args, const FilterArgs&) {
-  auto retry_throttle_data =
-      retry_detail::ServerRetryThrottleDataFromChannelArgs(args);
-  if (!retry_throttle_data.ok()) {
-    return retry_throttle_data.status();
-  }
-  return MakeRefCounted<RetryInterceptor>(args,
-                                          std::move(*retry_throttle_data));
+    const ChannelArgs& args, const FilterArgs& filter_args) {
+  auto retry_throttler =
+      retry_detail::RetryThrottlerFromChannelArgs(args, filter_args);
+  return MakeRefCounted<RetryInterceptor>(args, std::move(retry_throttler));
 }
 
 RetryInterceptor::RetryInterceptor(
     const ChannelArgs& args,
-    RefCountedPtr<internal::ServerRetryThrottleData> retry_throttle_data)
+    RefCountedPtr<internal::RetryThrottler> retry_throttler)
     : per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
       service_config_parser_index_(
           internal::RetryServiceConfigParser::ParserIndex()),
-      retry_throttle_data_(std::move(retry_throttle_data)) {}
+      retry_throttler_(std::move(retry_throttler)) {}
 
 void RetryInterceptor::InterceptCall(
     UnstartedCallHandler unstarted_call_handler) {
@@ -206,7 +192,7 @@ RetryInterceptor::Call::Call(RefCountedPtr<RetryInterceptor> interceptor,
     : call_handler_(std::move(call_handler)),
       interceptor_(std::move(interceptor)),
       retry_state_(interceptor_->GetRetryPolicy(),
-                   interceptor_->retry_throttle_data_) {
+                   interceptor_->retry_throttler_) {
   GRPC_TRACE_LOG(retry, INFO)
       << DebugTag() << " retry call created: " << retry_state_;
 }

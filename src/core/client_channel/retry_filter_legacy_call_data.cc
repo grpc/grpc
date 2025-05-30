@@ -537,8 +537,8 @@ bool RetryFilter::LegacyCallData::CallAttempt::ShouldRetry(
   // Check status.
   if (status.has_value()) {
     if (GPR_LIKELY(*status == GRPC_STATUS_OK)) {
-      if (calld_->retry_throttle_data_ != nullptr) {
-        calld_->retry_throttle_data_->RecordSuccess();
+      if (calld_->retry_throttler_ != nullptr) {
+        calld_->retry_throttler_->RecordSuccess();
       }
       GRPC_TRACE_LOG(retry, INFO)
           << "chand=" << calld_->chand_ << " calld=" << calld_
@@ -562,8 +562,8 @@ bool RetryFilter::LegacyCallData::CallAttempt::ShouldRetry(
   // things like failures due to malformed requests (INVALID_ARGUMENT).
   // Conversely, it's important for this to come before the remaining
   // checks, so that we don't fail to record failures due to other factors.
-  if (calld_->retry_throttle_data_ != nullptr &&
-      !calld_->retry_throttle_data_->RecordFailure()) {
+  if (calld_->retry_throttler_ != nullptr &&
+      !calld_->retry_throttler_->RecordFailure()) {
     GRPC_TRACE_LOG(retry, INFO)
         << "chand=" << calld_->chand_ << " calld=" << calld_
         << " attempt=" << this << ": retries throttled";
@@ -1471,7 +1471,7 @@ void RetryFilter::LegacyCallData::SetPollent(grpc_call_element* elem,
 RetryFilter::LegacyCallData::LegacyCallData(RetryFilter* chand,
                                             const grpc_call_element_args& args)
     : chand_(chand),
-      retry_throttle_data_(chand->retry_throttle_data()),
+      retry_throttler_(chand->retry_throttler()),
       retry_policy_(chand->GetRetryPolicy(args.arena)),
       retry_backoff_(
           BackOff::Options()
