@@ -865,6 +865,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -1770,6 +1771,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
@@ -2461,6 +2463,7 @@ libs:
   - src/core/lib/event_engine/common_closures.h
   - src/core/lib/event_engine/default_event_engine.h
   - src/core/lib/event_engine/default_event_engine_factory.h
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.h
   - src/core/lib/event_engine/event_engine_context.h
   - src/core/lib/event_engine/extensions/blocking_dns.h
   - src/core/lib/event_engine/extensions/can_track_errors.h
@@ -2941,6 +2944,7 @@ libs:
   - src/core/lib/event_engine/channel_args_endpoint_config.cc
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
+  - src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
