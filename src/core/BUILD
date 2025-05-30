@@ -5613,6 +5613,27 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "down_cast",
+        "grpc_matchers",
+        "match",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     hdrs = [
         "xds/grpc/xds_http_filter.h",

@@ -1,5 +1,5 @@
 //
-// Copyright 2018 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,19 @@
 #ifndef GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_H
 #define GRPC_SRC_CORE_XDS_GRPC_XDS_MATCHER_H
 
+#include <memory>
+#include <optional>
+#include <string>
+#include <utility>
+#include <variant>
+#include <vector>
+
+#include "src/core/util/down_cast.h"
+#include "src/core/util/match.h"
 #include "src/core/util/matchers.h"
+#include "src/core/util/unique_type_name.h"
+#include "absl/container/flat_hash_map.h"
+#include "absl/container/inlined_vector.h"
 
 namespace grpc_core {
 
@@ -44,7 +56,7 @@ class StringInput : public InputBase {
   explicit StringInput(std::string value) : value_(std::move(value)) {}
 
   static UniqueTypeName Type() {
-    return UNIQUE_TYPE_NAME_HERE("string");
+    return GRPC_UNIQUE_TYPE_NAME_HERE("string");
   }
 
   UniqueTypeName type() const override { return Type(); }
@@ -56,13 +68,13 @@ class StringInput : public InputBase {
 };
 
 //
-// Matchers
+// InputMatchers
 //
 
 // Interface for matching against an input.
-class InputMatcherBase {
+class InputMatcher {
  public:
-  virtual ~InputMatcherBase() = default;
+  virtual ~InputMatcher() = default;
 
   // Indicates what input type is expected by this matcher.
   // When validating an xDS resource, if a matcher is specified with an
@@ -70,11 +82,11 @@ class InputMatcherBase {
   virtual UniqueTypeName input_type() const = 0;
 
   // Returns true if the matcher matches the input.
-  bool Match(const InputBase& input) const = 0;
-}
+  virtual bool Match(const InputBase& input) const = 0;
+};
 
 // Matches against a string.
-class StrinInputgMatcher : public InputMatcherBase {
+class StringInputMatcher : public InputMatcher {
  public:
   explicit StringInputMatcher(StringMatcher matcher)
       : matcher_(std::move(matcher)) {}
@@ -82,7 +94,7 @@ class StrinInputgMatcher : public InputMatcherBase {
   UniqueTypeName input_type() const override { return StringInput::Type(); }
 
   bool Match(const InputBase& input) const override {
-    return matcher_.Match(DownCast<StringInput&>(input).value());
+    return matcher_.Match(DownCast<const StringInput&>(input).value());
   }
 
  private:
@@ -106,16 +118,16 @@ class Predicate {
 class SinglePredicate : public Predicate {
  public:
   SinglePredicate(std::unique_ptr<InputBase> input,
-                  std::unique_ptr<InputMatcherBase> matcher)
-      : input_(std::move(input)), matcher_(std::move(matcher)) {
-    CHECK_EQ(input_->type(), matcher_->input_type());
+                  std::unique_ptr<InputMatcher> input_matcher)
+      : input_(std::move(input)), input_matcher_(std::move(input_matcher)) {
+    CHECK_EQ(input_->type(), input_matcher_->input_type());
   }
 
-  bool Match() const override { return matcher_->Match(*input_); }
+  bool Match() const override { return input_matcher_->Match(*input_); }
 
  private:
   std::unique_ptr<InputBase> input_;
-  std::unique_ptr<InputMatcherBase> matcher_;
+  std::unique_ptr<InputMatcher> input_matcher_;
 };
 
 // A predicate that evaluates a list of predicates, returning true if
@@ -126,12 +138,7 @@ class AndPredicate : public Predicate {
       std::vector<std::unique_ptr<Predicate>> predicates)
       : predicates_(std::move(predicates)) {}
 
-  bool Match() const override {
-    for (const auto& predicate : predicates_) {
-      if (!predicate.Match()) return false;
-    }
-    return true;
-  }
+  bool Match() const override;
 
  private:
   std::vector<std::unique_ptr<Predicate>> predicates_;
@@ -145,12 +152,7 @@ class OrPredicate : public Predicate {
       std::vector<std::unique_ptr<Predicate>> predicates)
       : predicates_(std::move(predicates)) {}
 
-  bool Match() const override {
-    for (const auto& predicate : predicates_) {
-      if (predicate.Match()) return true;
-    }
-    return false;
-  }
+  bool Match() const override;
 
  private:
   std::vector<std::unique_ptr<Predicate>> predicates_;
@@ -169,47 +171,91 @@ class NotPredicate : public Predicate {
 };
 
 //
-// Action
+// XdsMatcher
 //
 
-class Action {
+// Base class for xDS matchers.
+class XdsMatcher {
  public:
-  virtual ~Action() = default;
+  // An action to be returned if the conditions match.
+  class Action {
+   public:
+    virtual ~Action() = default;
 
-  virtual absl::string_view type_url() const = 0;
+    // The protobuf type of the action.  Implementations will down-cast
+    // appropriately based on this type, and subclasses can add whatever
+    // additional methods they want.
+    virtual absl::string_view type_url() const = 0;
+  };
+
+  // Actions found while executing the match.
+  using Result = absl::InlinedVector<Action*, 1>;
+
+  // What to do if a match is successful.
+  // If this contains an action, the action will be added to the set of
+  // actions to return.  If keep_matching is false, matching will return
+  // true without evaluating any further matches; otherwise, matching
+  // will continue to find a final match.
+  struct OnMatch {
+    std::variant<std::unique_ptr<Action>, std::unique_ptr<XdsMatcher>> action;
+    bool keep_matching = false;
+
+    bool FindMatches(Result& result) const;
+  };
+
+  virtual ~XdsMatcher() = default;
+
+  // Finds matching actions, which are added to result.
+  // Returns true if the match is successful, in which case result will
+  // contain at least one action.
+  // Note that if a match is found but has keep_matching=true, the
+  // action will be added to result, but the match will not be
+  // considered successful.
+// FIXME: need to specify some sort of input here, like the attributes
+// of a data plane RPC.  and we need a way for the Input objects to
+// extract data from that input.
+  virtual bool FindMatches(Result& result) const = 0;
 };
-
-//
-// MatcherList
-//
 
 // Evaluates a list of predicates and corresponding actions.
 // The first matching predicate wins.
-class MatcherList {
+class MatcherList : public XdsMatcher {
  public:
   struct FieldMatcher {
-    FieldMatcher(std::unique_ptr<Predicate> predicate,
-                 std::unique_ptr<Action> action)
-        : predicate_(std::move(predicate)), action_(std::move(action)) {}
+    FieldMatcher(std::unique_ptr<Predicate> predicate, OnMatch on_match)
+        : predicate(std::move(predicate)), on_match(std::move(on_match)) {}
 
     std::unique_ptr<Predicate> predicate;
-    std::unique_ptr<Action> action;
+    OnMatch on_match;
   };
 
-  explicit MatcherList(std::vector<FieldMatcher> matchers)
-      : matchers_(std::move(matchers)) {}
+  MatcherList(std::vector<FieldMatcher> matchers,
+              std::optional<OnMatch> on_no_match)
+      : matchers_(std::move(matchers)), on_no_match_(std::move(on_no_match)) {}
 
-  bool Match(absl::FunctionRef<void(const Action&, bool)> on_action) {
-    for (const auto& [predicate, action] : matchers_) {
-      if (predicate_->Match()) {
-        on_action(
-        return true;
-      }
-    }
-  }
+  bool FindMatches(Result& result) const override;
 
  private:
   std::vector<FieldMatcher> matchers_;
+  std::optional<OnMatch> on_no_match_;
+};
+
+// Exact map matcher.
+class MatcherExactMap : public XdsMatcher {
+ public:
+  MatcherExactMap(StringInput input,
+                  absl::flat_hash_map<std::string, OnMatch> map,
+                  std::optional<OnMatch> on_no_match)
+      : input_(std::move(input)),
+        map_(std::move(map)),
+        on_no_match_(std::move(on_no_match)) {}
+
+  bool FindMatches(Result& result) const override;
+
+ private:
+  StringInput input_;
+  absl::flat_hash_map<std::string, OnMatch> map_;
+  std::optional<OnMatch> on_no_match_;
 };
 
 }  // namespace grpc_core
