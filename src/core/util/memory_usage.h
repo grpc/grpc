@@ -131,9 +131,9 @@ size_t MemoryUsage(const T& x) {
   } else if constexpr (std::is_same_v<T, absl::string_view>) {
     // Assume that the string_view is not owning the string.
     return sizeof(T);
-  } else if constexpr (std::is_same_v<T, grpc_core::Timestamp>) {
+  } else if constexpr (std::is_same_v<T, Timestamp>) {
     return sizeof(T);
-  } else if constexpr (std::is_same_v<T, grpc_core::Duration>) {
+  } else if constexpr (std::is_same_v<T, Duration>) {
     return sizeof(T);
   } else if constexpr (category == Category::kSimple) {
     return sizeof(T);
