@@ -4210,17 +4210,13 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "tsi_ssl_credentials",
+    name = "ssl_transport_security_utils",
     srcs = [
-        "//src/core:credentials/transport/tls/ssl_utils.cc",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
-        "//src/core:tsi/ssl_transport_security.cc",
         "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
-        "//src/core:credentials/transport/tls/ssl_utils.h",
         "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
-        "//src/core:tsi/ssl_transport_security.h",
         "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
@@ -4244,6 +4240,54 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "transport_auth_context",
+        "tsi_base",
+        "tsi_ssl_session_cache",
+        "//src/core:channel_args",
+        "//src/core:env",
+        "//src/core:error",
+        "//src/core:grpc_transport_chttp2_alpn",
+        "//src/core:load_file",
+        "//src/core:ref_counted",
+        "//src/core:slice",
+        "//src/core:sync",
+        "//src/core:tsi_ssl_types",
+        "//src/core:useful",
+    ],
+)
+
+grpc_cc_library(
+    name = "tsi_ssl_credentials",
+    srcs = [
+        "//src/core:credentials/transport/tls/ssl_utils.cc",
+        "//src/core:tsi/ssl_transport_security.cc",
+    ],
+    hdrs = [
+        "//src/core:credentials/transport/tls/ssl_utils.h",
+        "//src/core:tsi/ssl_transport_security.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "channel_arg_names",
+        "config_vars",
+        "gpr",
+        "grpc_base",
+        "grpc_core_credentials_header",
+        "grpc_credentials_util",
+        "grpc_public_hdrs",
+        "grpc_security_base",
+        "ref_counted_ptr",
+        "ssl_transport_security_utils",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
