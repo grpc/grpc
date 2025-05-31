@@ -195,6 +195,23 @@ describe GRPC::RpcServer do
       end
       expect(&blk).to raise_error
     end
+
+    it 'can be created with arguments directly passed from environment' do
+     ENV.update(
+      'POOL_SIZE' => '50',
+      'MAX_WAITING_REQUESTS' => '5',
+      'POLL_PERIOD' => '10',
+      'POOL_KEEP_ALIVE' => '50',
+     )
+
+     args = {
+       pool_size: ENV['POOL_SIZE'],
+       max_waiting_requests: ENV['MAX_WAITING_REQUESTS'],
+       pool_period: ENV['POOL_PERIOD'],
+       pool_keep_alive: ENV['pool_keep_alive']
+     }
+     expect { new_rpc_server_for_testing(args) }.not_to raise_error
+    end 
   end
 
   describe '#stopped?' do
