@@ -22,6 +22,7 @@ from grpc import _common
 from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+from grpc._errors import InternalError
 
 from . import _base_call
 from . import _base_channel
@@ -434,7 +435,7 @@ class Channel(_base_channel.Channel):
                             continue
                     else:
                         # Unidentified Call object
-                        raise cygrpc.InternalError(
+                        raise InternalError(
                             f"Unrecognized call object: {candidate}"
                         )
 
