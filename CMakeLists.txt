@@ -20804,7 +20804,11 @@ if(gRPC_BUILD_TESTS)
 add_executable(loop_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/promise/activity.cc
+  src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20838,7 +20842,10 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::config
   absl::flat_hash_map
+  absl::function_ref
+  absl::hash
   absl::type_traits
   absl::statusor
   gpr

@@ -13484,25 +13484,44 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
+  - src/core/util/latent_see.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
