@@ -122,12 +122,13 @@ void HealthProducer::HealthChecker::NotifyWatchersLocked(
   GRPC_TRACE_LOG(health_check_client, INFO)
       << "HealthProducer " << producer_.get() << " HealthChecker " << this
       << ": reporting state " << ConnectivityStateName(state) << " to watchers";
-  work_serializer_->Run([self = Ref(), state, status = std::move(status)]() {
-    MutexLock lock(&self->producer_->mu_);
-    for (HealthWatcher* watcher : self->watchers_) {
-      watcher->Notify(state, status);
-    }
-  });
+  producer_->work_serializer_->Run(
+      [self = Ref(), state, status = std::move(status)]() {
+        MutexLock lock(&self->producer_->mu_);
+        for (HealthWatcher* watcher : self->watchers_) {
+          watcher->Notify(state, status);
+        }
+      });
 }
 
 void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
@@ -140,7 +141,7 @@ void HealthProducer::HealthChecker::OnHealthWatchStatusChange(
         status.code(), absl::StrCat(producer_->subchannel_->address(), ": ",
                                     status.message()));
   }
-  work_serializer_->Run(
+  producer_->work_serializer_->Run(
       [self = Ref(), state, status = std::move(use_status)]() mutable {
         MutexLock lock(&self->producer_->mu_);
         if (self->stream_client_ != nullptr) {
@@ -284,7 +285,9 @@ class HealthProducer::ConnectivityWatcher final
 
   void OnConnectivityStateChange(grpc_connectivity_state state,
                                  const absl::Status& status) override {
-    producer_->OnConnectivityStateChange(state, status);
+    producer_->work_serializer_->Run([producer = producer_, state, status]() {
+      producer->OnConnectivityStateChange(state, status);
+    });
   }
 
   grpc_pollset_set* interested_parties() override {
@@ -304,6 +307,7 @@ void HealthProducer::Start(RefCountedPtr<Subchannel> subchannel) {
       << "HealthProducer " << this << ": starting with subchannel "
       << subchannel.get();
   subchannel_ = std::move(subchannel);
+  work_serializer_.Init(subchannel_->event_engine());
   {
     MutexLock lock(&mu_);
     connected_subchannel_ = subchannel_->connected_subchannel();
