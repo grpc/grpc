@@ -62,6 +62,9 @@ class GrpcPolledFd {
   virtual ares_socket_t GetWrappedAresSocketLocked() = 0;
   // A unique name, for logging
   virtual const char* GetName() const = 0;
+  // Return if the FD is "current" - particularly, if it is of the same fork
+  // generation in case of Posix
+  virtual bool IsCurrent() const = 0;
 };
 
 // A GrpcPolledFdFactory is 1-to-1 with and owned by a GrpcAresRequest. It knows
@@ -80,6 +83,8 @@ class GrpcPolledFdFactory {
       ares_socket_t as) = 0;
   // Optionally configures the ares channel after creation
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
+  // Creates a new instance of the same class. This is used during the fork.
+  virtual std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const = 0;
 };
 
 }  // namespace grpc_event_engine::experimental
