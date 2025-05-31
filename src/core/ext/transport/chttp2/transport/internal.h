@@ -581,7 +581,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 
-  grpc_core::Http2StatsCollector http2_stats;
+  std::unique_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
