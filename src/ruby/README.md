@@ -39,7 +39,7 @@ git submodule update --init
 $ command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
 $ \curl -sSL https://get.rvm.io | bash -s stable --ruby=ruby-3
 $
-$ # follow the instructions to ensure that your're using the latest stable version of Ruby
+$ # follow the instructions to ensure that you're using the latest stable version of Ruby
 $ # and that the rvm command is installed
 ```
 - Make sure your run `source $HOME/.rvm/scripts/rvm` as instructed to complete the set up of RVM
