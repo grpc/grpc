@@ -49,8 +49,6 @@ template <typename T>
 constexpr bool kAnyTypeConvertibleTo = true;
 template <typename T>
 constexpr bool kAnyTypeConvertibleTo<std::optional<T>> = false;
-template <typename T>
-constexpr bool kAnyTypeConvertibleTo<std::unique_ptr<T>> = false;
 
 struct AnyType {
   template <typename T, std::enable_if_t<kAnyTypeConvertibleTo<T>, int> = 0>

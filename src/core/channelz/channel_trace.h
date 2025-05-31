@@ -254,6 +254,11 @@ class ChannelTrace {
     // Pointer to a Renderer object that can generate the string
     // description for this trace event.
     std::unique_ptr<Renderer> renderer;
+
+    size_t MemoryUsage() const {
+      if (renderer == nullptr) return sizeof(*this);
+      return MemoryUsageOf(*renderer) + sizeof(*this);
+    }
   };
 
   EntryRef AppendEntry(EntryRef parent, std::unique_ptr<Renderer> renderer)
