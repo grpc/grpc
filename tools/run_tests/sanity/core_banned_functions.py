@@ -113,6 +113,7 @@ BANNED_EXCEPT = {
     "std::make_pair": [],
     "std::make_tuple": [
         "src/core/call/filter_fusion.h",
+        "src/core/lib/surface/channel_init.cc",
     ],
 }
 

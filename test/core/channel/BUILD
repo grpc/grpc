@@ -76,6 +76,7 @@ grpc_cc_test(
     tags = [
         # channel stacks are allowed to be different internally
         "grpc:no-internal-poller",
+        "minimal_stack_test",
     ],
     uses_event_engine = False,
     uses_polling = False,
