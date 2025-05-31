@@ -26,6 +26,7 @@
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
@@ -223,6 +224,36 @@ Loop(F) -> Loop<F, false>;
 template <typename F>
 auto YieldingLoop(F f) {
   return Loop<F, true>(std::move(f));
+}
+
+template <typename N, typename PromiseFactory>
+auto NTimes(N times, PromiseFactory promise_factory) {
+  DCHECK_GT(times, 1);
+  return Loop([i = N(0), times,
+               promise_factory =
+                   promise_detail::RepeatedPromiseFactory<N, PromiseFactory>(
+                       std::move(promise_factory))]() mutable {
+    return Seq(promise_factory.Make(N(i)), [&i, times](auto result) {
+      using Result = decltype(result);
+      LoopCtl<Result> lc = std::move(result);
+      ++i;
+      if (i != times) lc = Continue{};
+      return lc;
+    });
+  });
+}
+
+template <typename PromiseFactory>
+auto WhilstSuccessful(PromiseFactory promise_factory) {
+  return Loop([promise_factory =
+                   promise_detail::RepeatedPromiseFactory<void, PromiseFactory>(
+                       std::move(promise_factory))]() mutable {
+    return Seq(promise_factory.Make(), [](auto result) {
+      using Result = decltype(result);
+      if (result.ok()) return LoopCtl<Result>(Continue());
+      return LoopCtl<Result>(std::move(result));
+    });
+  });
 }
 
 }  // namespace grpc_core

@@ -16,21 +16,55 @@
 
 #include <grpc/support/log.h>
 
+#include <cstdint>
 #include <memory>
 #include <optional>
 #include <string>
+#include <utility>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/status_flag.h"
 #include "test/core/promise/poll_matcher.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
+#include "fuzztest/fuzztest.h"
 
 using testing::Mock;
 using testing::StrictMock;
 
 namespace grpc_core {
 namespace {
+
+template <typename T>
+inline bool operator==(const MpscQueued<T>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return *a == b.first && a.tokens() == b.second;
+}
+
+template <typename T>
+inline bool operator!=(const MpscQueued<T>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return !operator==(a, b);
+}
+
+template <typename T>
+inline bool operator==(const ValueOrFailure<MpscQueued<T>>& a,
+                       const std::pair<T, uint32_t>& b) {
+  if (!a.ok()) return false;
+  return *a == b;
+}
+
+template <typename T>
+inline bool operator!=(const ValueOrFailure<MpscQueued<T>>& a,
+                       const std::pair<T, uint32_t>& b) {
+  return !operator==(a, b);
+}
+
+template <typename T>
+inline bool operator==(const ValueOrFailure<MpscQueued<T>>& a, Failure) {
+  return !a.ok();
+}
 
 class MockActivity : public Activity, public Wakeable {
  public:
@@ -145,11 +179,9 @@ TEST(MpscTest, SendingLotsOfThingsGivesPushback) {
   LockBasedMpscSender<Payload> sender = receiver.MakeSender();
 
   activity1.Activate();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
-  EXPECT_THAT(sender.Send(MakePayload(2))(), IsPending());
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
+  EXPECT_THAT(sender.Send(MakePayload(2), 1)(), IsPending());
   activity1.Deactivate();
-
-  EXPECT_CALL(activity1, WakeupRequested());
 }
 
 TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
@@ -159,17 +191,16 @@ TEST(MpscTest, ReceivingAfterBlockageWakesUp) {
   LockBasedMpscSender<Payload> sender = receiver.MakeSender();
 
   activity1.Activate();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Success{}));
-  auto send2 = sender.Send(MakePayload(2));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Success{}));
+  auto send2 = sender.Send(MakePayload(2), 1);
   EXPECT_THAT(send2(), IsPending());
   activity1.Deactivate();
 
   activity2.Activate();
   EXPECT_CALL(activity1, WakeupRequested());
-  EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(1)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(1), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(2), 1u)));
   Mock::VerifyAndClearExpectations(&activity1);
-  auto receive2 = receiver.Next();
-  EXPECT_THAT(receive2(), IsReady(MakePayload(2)));
   activity2.Deactivate();
 
   activity1.Activate();
@@ -183,18 +214,19 @@ TEST(MpscTest, BigBufferAllowsBurst) {
   LockBasedMpscSender<Payload> sender = receiver.MakeSender();
 
   for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(sender.Send(MakePayload(i))(), IsReady(Success{}));
+    EXPECT_THAT(sender.Send(MakePayload(i), 1)(), IsReady(Success{}));
   }
   for (int i = 0; i < 25; i++) {
-    EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(i)));
+    EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(i), 1u)));
   }
+  activity.Deactivate();
 }
 
 TEST(MpscTest, ClosureIsVisibleToSenders) {
   auto receiver = std::make_unique<LockBasedMpscReceiver<Payload>>(1);
   LockBasedMpscSender<Payload> sender = receiver->MakeSender();
   receiver.reset();
-  EXPECT_THAT(sender.Send(MakePayload(1))(), IsReady(Failure{}));
+  EXPECT_THAT(sender.Send(MakePayload(1), 1)(), IsReady(Failure{}));
 }
 
 TEST(MpscTest, ImmediateSendWorks) {
@@ -202,13 +234,71 @@ TEST(MpscTest, ImmediateSendWorks) {
   LockBasedMpscReceiver<Payload> receiver(1);
   LockBasedMpscSender<Payload> sender = receiver.MakeSender();
 
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6)), Success{});
-  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7)), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7), 1), Success{});
+
+  activity.Activate();
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(1), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(2), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(3), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(4), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(5), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(6), 1u)));
+  EXPECT_THAT(receiver.Next()(), IsReady(std::pair(MakePayload(7), 1u)));
+  auto receive2 = receiver.Next();
+  EXPECT_THAT(receive2(), IsPending());
+  activity.Deactivate();
+}
+
+TEST(MpscTest, NextBatchWorks) {
+  StrictMock<MockActivity> activity;
+  MpscReceiver<Payload> receiver(10);
+  MpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7), 1), Success{});
+
+  activity.Activate();
+  {
+    auto r = receiver.NextBatch(std::numeric_limits<size_t>::max())();
+    ASSERT_TRUE(r.ready());
+    ASSERT_TRUE(r.value().ok());
+    ASSERT_EQ(r.value()->size(), 7u);
+    EXPECT_EQ((*r.value())[0], MakePayload(1));
+    EXPECT_EQ((*r.value())[1], MakePayload(2));
+    EXPECT_EQ((*r.value())[2], MakePayload(3));
+    EXPECT_EQ((*r.value())[3], MakePayload(4));
+    EXPECT_EQ((*r.value())[4], MakePayload(5));
+    EXPECT_EQ((*r.value())[5], MakePayload(6));
+    EXPECT_EQ((*r.value())[6], MakePayload(7));
+    auto receive2 = receiver.NextBatch(std::numeric_limits<size_t>::max());
+    EXPECT_THAT(receive2(), IsPending());
+  }
+  activity.Deactivate();
+}
+
+TEST(MpscTest, NextBatchRespectsMaxBatchSize) {
+  StrictMock<MockActivity> activity;
+  LockBasedMpscReceiver<Payload> receiver(1);
+  LockBasedMpscSender<Payload> sender = receiver.MakeSender();
+
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(1), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(2), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(3), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(4), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(5), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(6), 1), Success{});
+  EXPECT_EQ(sender.UnbufferedImmediateSend(MakePayload(7), 1), Success{});
 
   activity.Activate();
   EXPECT_THAT(receiver.Next()(), IsReady(MakePayload(1)));
@@ -360,9 +450,3 @@ TEST(MpscTest, ManySendsBulkReceive) {
 
 }  // namespace
 }  // namespace grpc_core
-
-int main(int argc, char** argv) {
-  gpr_log_verbosity_init();
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
