@@ -5,3 +5,6 @@ indent_style = space
 indent_size = 2
 insert_final_newline = true
 tab_width = 8
+
+[*.php]
+indent_size = 4
