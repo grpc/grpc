@@ -83,6 +83,7 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
                                       size_t* num_alpn_protocols);
 
 // Initialize TSI SSL server/client handshaker factory.
+// TODO(gtcooke94) add spiffe bundle maps
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,

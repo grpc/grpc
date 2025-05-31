@@ -426,6 +426,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
+// TODO(gtcooke94) add spiffe bundle maps
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
@@ -436,7 +437,8 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
-  if (pem_root_certs == nullptr && !skip_server_certificate_verification) {
+  bool roots_are_configured = pem_root_certs != nullptr;
+  if (!roots_are_configured && !skip_server_certificate_verification) {
     GRPC_TRACE_LOG(tsi, INFO)
         << "No root certificates specified; use ones stored in system "
            "default locations instead";

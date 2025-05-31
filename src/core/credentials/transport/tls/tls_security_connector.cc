@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
+#include "absl/functional/overload.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -429,18 +430,32 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::optional<
+            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
+            root_certs,
+        std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
+  auto visitor = absl::Overload{
+      [&](const absl::string_view& pem_root_certs) {
+        // NOLINTNEXTLINE: The mutex is held when calling this.
+        security_connector_->pem_root_certs_ = pem_root_certs;
+      },
+      [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
+        // NOLINTNEXTLINE: The mutex is held when calling this.
+        security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
+      },
+  };
   MutexLock lock(&security_connector_->mu_);
   if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = root_certs;
+    std::visit(visitor, *root_certs);
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   const bool root_ready = !security_connector_->options_->watch_root_cert() ||
-                          security_connector_->pem_root_certs_.has_value();
+                          security_connector_->pem_root_certs_.has_value() ||
+                          security_connector_->spiffe_bundle_map_.has_value();
   const bool identity_ready =
       !security_connector_->options_->watch_identity_pair() ||
       security_connector_->pem_key_cert_pair_list_.has_value();
@@ -525,6 +540,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
+  // TODO(gtcooke94) Spiffe bundle maps - ALSO server side
   std::string pem_root_certs;
   if (pem_root_certs_.has_value()) {
     // TODO(ZhenLian): update the underlying TSI layer to use C++ types like
@@ -536,6 +552,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
     pem_key_cert_pair = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   }
   bool use_default_roots = !options_->watch_root_cert();
+  // TODO(gtcooke94) more roots here
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair,
       pem_root_certs.empty() || use_default_roots ? nullptr
@@ -689,18 +706,33 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(std::optional<absl::string_view> root_certs,
-                          std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(
+        std::optional<
+            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
+            roots,
+        std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
+
+  auto visitor = absl::Overload{
+      [&](const absl::string_view& pem_root_certs) {
+        // NOLINTNEXTLINE: The mutex is held when calling this.
+        security_connector_->pem_root_certs_ = pem_root_certs;
+      },
+      [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
+        // NOLINTNEXTLINE: The mutex is held when calling this.
+        security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
+        return;
+      },
+  };
   MutexLock lock(&security_connector_->mu_);
-  if (root_certs.has_value()) {
-    security_connector_->pem_root_certs_ = root_certs;
+  if (roots.has_value()) {
+    std::visit(visitor, *roots);
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched = security_connector_->options_->watch_root_cert();
-  bool root_has_value = security_connector_->pem_root_certs_.has_value();
+  bool root_has_value = security_connector_->pem_root_certs_.has_value() || security_connector_->spiffe_bundle_map_.has_value();
   bool identity_being_watched =
       security_connector_->options_->watch_identity_pair();
   bool identity_has_value =

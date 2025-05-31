@@ -45,12 +45,14 @@ class RootCertificatesWatcher final
       RefCountedPtr<grpc_tls_certificate_distributor> parent)
       : parent_(std::move(parent)) {}
 
-  void OnCertificatesChanged(std::optional<absl::string_view> root_certs,
-                             std::optional<PemKeyCertPairList>
-                             /* key_cert_pairs */) override {
-    if (root_certs.has_value()) {
-      parent_->SetKeyMaterials("", std::string(root_certs.value()),
-                               std::nullopt);
+  void OnCertificatesChanged(
+      std::optional<
+          std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
+          roots,
+      std::optional<PemKeyCertPairList>
+      /* key_cert_pairs */) override {
+    if (roots.has_value()) {
+      parent_->SetKeyMaterials("", roots, std::nullopt);
     }
   }
 
@@ -79,7 +81,9 @@ class IdentityCertificatesWatcher final
       : parent_(std::move(parent)) {}
 
   void OnCertificatesChanged(
-      std::optional<absl::string_view> /* root_certs */,
+      std::optional<
+          std::variant<absl::string_view,
+                       std::shared_ptr<SpiffeBundleMap>>> /* root_certs */,
       std::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (key_cert_pairs.has_value()) {
       parent_->SetKeyMaterials("", std::nullopt, key_cert_pairs);
