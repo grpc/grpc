@@ -992,12 +992,15 @@ class RubyLanguage(object):
                 "src/ruby/end2end/prefork_postfork_loop_test.rb",
                 "src/ruby/end2end/fork_test_repro_35489.rb",
             ]:
-                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
-                # is fixed. Otherwise we see too many flakes.
-                # After that's fixed, we should continue to skip on mac
-                # indefinitely, and on "dbg" builds until the Event Engine
-                # migration completes.
-                continue
+                if platform_string() == "mac":
+                    # Skip fork tests on mac, it's only supported on linux.
+                    continue
+                if self.config.build_config == "dbg":
+                    # There's a known issue with dbg builds that breaks fork
+                    # support: https://github.com/grpc/grpc/issues/31885.
+                    # TODO(apolcyn): unskip these tests on dbg builds after we
+                    # migrate to event engine and hence fix that issue.
+                    continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],

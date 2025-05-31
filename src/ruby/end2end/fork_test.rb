@@ -71,7 +71,8 @@ def main
   child_port = to_parent_r.gets.strip
   STDERR.puts "server running on port: #{child_port}"
   stub = Echo::EchoServer::Stub.new("localhost:#{child_port}", :this_channel_is_insecure)
-  2.times do
+  # TODO(apolcyn): set back to 2 before submitting
+  2000.times do
     run_client(stub)
   end
 end
