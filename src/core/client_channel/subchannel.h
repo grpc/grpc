@@ -158,7 +158,8 @@ class SubchannelCall final {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel final : public DualRefCounted<Subchannel> {
+class Subchannel final : public DualRefCounted<Subchannel>,
+                         public channelz::DataSource {
  public:
   // TODO(roth): Once we remove pollset_set, consider whether this can
   // just use the normal AsyncConnectivityStateWatcherInterface API.
@@ -274,6 +275,9 @@ class Subchannel final : public DualRefCounted<Subchannel> {
       const RefCountedPtr<SubchannelPoolInterface>& subchannel_pool,
       const std::string& channel_default_authority);
 
+  // Export additional channelz data.
+  void AddData(channelz::DataSink& sink) override;
+
  private:
   // Tears down any existing connection, and arranges for destruction
   void Orphaned() override ABSL_LOCKS_EXCLUDED(mu_);
@@ -335,8 +339,6 @@ class Subchannel final : public DualRefCounted<Subchannel> {
   ChannelArgs args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
-  // Channelz tracking.
-  RefCountedPtr<channelz::SubchannelNode> channelz_node_;
   // Minimum connection timeout.
   Duration min_connect_timeout_;
 

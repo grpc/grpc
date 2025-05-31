@@ -281,7 +281,7 @@ class DataSource {
 
  protected:
   ~DataSource();
-  RefCountedPtr<BaseNode> channelz_node() { return node_; }
+  BaseNode* referenced_channelz_node() { return node_.get(); }
 
   // This method must be called in the most derived class's destructor.
   // It removes this data source from the node's list of data sources.
