@@ -133,7 +133,13 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         # TODO(https://github.com/grpc/grpc/issues/22365) perform graceful shutdown
         grpc_completion_queue_shutdown(self._cq)
         while not self._shutdown:
-            self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
+            try:
+                self._poller_thread.join(timeout=_POLL_AWAKE_INTERVAL_S)
+            except PythonFinalizationError:
+                # At this point we can no longer join a thread because the interpreter
+                # is already shutting down.
+                # See https://github.com/grpc/grpc/issues/39520
+                pass
         grpc_completion_queue_destroy(self._cq)
 
         # Clean up socket resources
