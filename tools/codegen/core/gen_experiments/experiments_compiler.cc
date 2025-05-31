@@ -17,7 +17,10 @@
 #include <cctype>
 #include <cstddef>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <map>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -46,7 +49,7 @@ ExperimentDefinition::ExperimentDefinition(
     const std::string& name, const std::string& description,
     const std::string& owner, const std::string& expiry, bool uses_polling,
     bool allow_in_fuzzing_config, const std::vector<std::string>& test_tags,
-    const std::vector<std::string>& requirements)
+    const std::set<std::string>& requirements)
     : error_(false),
       name_(name),
       description_(description),
@@ -138,7 +141,7 @@ bool ExperimentDefinition::AddRolloutSpecification(
   }
   if (!rollout_attributes.requirements.empty()) {
     for (const auto& requirement : rollout_attributes.requirements) {
-      requires_.push_back(requirement);
+      requires_.insert(requirement);
     }
   }
   if (rollout_attributes.default_value.empty() &&
@@ -156,11 +159,10 @@ bool ExperimentDefinition::AddRolloutSpecification(
     } else {
       if (rollout_attributes.platform_value.find(platform.first) ==
           rollout_attributes.platform_value.end()) {
-        LOG(ERROR) << "ERROR: no value set for experiment "
-                   << rollout_attributes.name << " on platform "
-                   << platform.first;
-        error_ = true;
-        return false;
+        LOG(WARNING) << "WARNING: no value set for experiment "
+                     << rollout_attributes.name << " on platform "
+                     << platform.first;
+        default_value = "false";
       } else {
         std::string platform_value =
             rollout_attributes.platform_value.at(platform.first);
@@ -197,17 +199,23 @@ absl::StatusOr<ExperimentDefinition> CreateExperimentDefinition(
     return absl::InvalidArgumentError(absl::StrCat(
         "Experiment definition is missing expiry: ", YAML::Dump(value)));
   }
-  bool uses_polling =
-      value["uses_polling"].IsDefined() && value["uses_polling"].as<bool>();
-  bool allow_in_fuzzing_config = value["allow_in_fuzzing_config"].IsDefined() &&
-                                 value["allow_in_fuzzing_config"].as<bool>();
+  bool uses_polling = value["uses_polling"].IsDefined()
+                          ? value["uses_polling"].as<bool>()
+                          : false;
+  bool allow_in_fuzzing_config =
+      value["allow_in_fuzzing_config"].IsDefined()
+          ? value["allow_in_fuzzing_config"].as<bool>()
+          : true;
   std::vector<std::string> test_tags;
   if (value["test_tags"].IsDefined()) {
     test_tags = value["test_tags"].as<std::vector<std::string>>();
   }
-  std::vector<std::string> requirements;
-  if (value["requirements"].IsDefined()) {
-    requirements = value["requirements"].as<std::vector<std::string>>();
+  std::set<std::string> requirements;
+  if (value["requires"].IsDefined()) {
+    for (const auto& requirement :
+         value["requires"].as<std::vector<std::string>>()) {
+      requirements.insert(requirement);
+    }
   }
   ExperimentDefinition experiment_definition(
       value["name"].as<std::string>(), value["description"].as<std::string>(),
@@ -330,6 +338,25 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::PutBanner(
   }
 }
 
+std::string ExperimentsCompiler::ExperimentsOutputGenerator::ToAsciiCStr(
+    const std::string& s) {
+  std::ostringstream result_stream;
+  for (char ch_char : s) {
+    unsigned char c = static_cast<unsigned char>(ch_char);
+    // Check if character is printable ASCII (32 to 126 inclusive).
+    // AND not a backslash or double quote.
+    if ((c >= 32 && c <= 126) && c != '\\' && c != '"') {
+      result_stream << c;
+    } else {
+      // Escape with 3 digits, zero-padded, octal representation.
+      result_stream << "\\" << std::oct << std::setw(3) << std::setfill('0')
+                    << static_cast<int>(c);
+      result_stream << std::dec;
+    }
+  }
+  return result_stream.str();
+}
+
 std::string ExperimentsCompiler::ExperimentsOutputGenerator::SnakeToPascal(
     const std::string& snake_case) {
   std::stringstream pascal_case;
@@ -440,13 +467,13 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
     absl::StrAppend(
         &output, absl::StrFormat("const char* const description_%s = \"%s\";\n",
                                  experiment.second.name(),
-                                 experiment.second.description()));
+                                 ToAsciiCStr(experiment.second.description())));
     absl::StrAppend(
         &output,
         absl::StrFormat(
             "const char* const additional_constraints_%s = \"{%s}\";\n",
             experiment.second.name(),
-            experiment.second.additional_constraints(platform)));
+            ToAsciiCStr(experiment.second.additional_constraints(platform))));
     if (!experiment.second.requirements().empty()) {
       std::vector<std::string> required_experiments;
       for (const auto& requirement : experiment.second.requirements()) {
@@ -487,8 +514,8 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
         &output,
         absl::StrFormat(
             "  {\"%s\", description_%s, additional_constraints_%s, %s, %d, %s, "
-            "%s},",
-            experiment.second.name().c_str(), experiment.second.name(),
+            "%s},\n",
+            ToAsciiCStr(experiment.second.name()), experiment.second.name(),
             experiment.second.name(),
             experiment.second.requirements().empty()
                 ? "nullptr"
