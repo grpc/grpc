@@ -216,8 +216,7 @@ class ClientChannel : public Channel {
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(*work_serializer_);
-  RefCountedPtr<const Blackboard> blackboard_
-      ABSL_GUARDED_BY(*work_serializer_);
+  RefCountedPtr<Blackboard> blackboard_ ABSL_GUARDED_BY(*work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(*work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_

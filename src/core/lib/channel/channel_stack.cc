@@ -114,8 +114,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& channel_args, const char* name,
-    grpc_channel_stack* stack, const grpc_core::Blackboard* old_blackboard,
-    grpc_core::Blackboard* new_blackboard) {
+    grpc_channel_stack* stack, grpc_core::Blackboard* blackboard) {
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
     LOG(INFO) << "CHANNEL_STACK: init " << name;
     for (size_t i = 0; i < filter_count; i++) {
@@ -144,8 +143,7 @@ grpc_error_handle grpc_channel_stack_init(
                                              sizeof(grpc_channel_element));
 
   // init per-filter data
-  args.old_blackboard = old_blackboard;
-  args.new_blackboard = new_blackboard;
+  args.blackboard = blackboard;
   grpc_error_handle first_error;
   for (i = 0; i < filter_count; i++) {
     args.channel_stack = stack;
