@@ -495,13 +495,12 @@ class ClientChannel::ClientChannelControlHelper
     return *client_channel_->stats_plugin_group_;
   }
 
-  void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
+  void AddTraceEvent(TraceSeverity, absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     if (client_channel_->resolver_ == nullptr) return;  // Shutting down.
     if (client_channel_->channelz_node_ != nullptr) {
-      client_channel_->channelz_node_->AddTraceEvent(
-          ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_buffer(message.data(), message.size()));
+      client_channel_->channelz_node_->NewTraceNode(std::string(message))
+          .Commit();
     }
   }
 
@@ -1157,13 +1156,10 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     resolver_callback(std::move(resolver_result_status));
   }
   // Add channel trace event.
-  if (!trace_strings.empty()) {
-    std::string message =
-        absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
-    if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                    grpc_slice_from_cpp_string(message));
-    }
+  if (!trace_strings.empty() && channelz_node_ != nullptr) {
+    channelz_node_
+        ->NewTraceNode("Resolution event: ", absl::StrJoin(trace_strings, ", "))
+        .Commit();
   }
 }
 
@@ -1319,13 +1315,20 @@ void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    std::string trace =
-        channelz::ChannelNode::GetChannelConnectivityStateChangeString(state);
     if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      absl::StrAppend(&trace, " status:", status.ToString());
+      channelz_node_
+          ->NewTraceNode(
+              channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                  state),
+              " status: ", status)
+          .Commit();
+    } else {
+      channelz_node_
+          ->NewTraceNode(
+              channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                  state))
+          .Commit();
     }
-    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                  grpc_slice_from_cpp_string(std::move(trace)));
   }
 }
 

@@ -18,7 +18,9 @@
 #include <cstddef>
 #include <memory>
 #include <optional>
+#include <tuple>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "absl/log/log.h"
@@ -26,6 +28,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -128,9 +131,14 @@ size_t MemoryUsage(const T& x) {
   } else if constexpr (std::is_same_v<T, absl::string_view>) {
     // Assume that the string_view is not owning the string.
     return sizeof(T);
+  } else if constexpr (std::is_same_v<T, Timestamp>) {
+    return sizeof(T);
+  } else if constexpr (std::is_same_v<T, Duration>) {
+    return sizeof(T);
   } else if constexpr (category == Category::kSimple) {
     return sizeof(T);
   } else if constexpr (category == Category::kOwnedPointer) {
+    if (x == nullptr) return sizeof(T);
     return sizeof(T) + MemoryUsage(*x);
   } else if constexpr (category == Category::kVector) {
     size_t total = sizeof(T) + sizeof(*x.begin()) * (x.capacity() - x.size());
@@ -149,7 +157,32 @@ size_t MemoryUsage(const T& x) {
     // If you have more than 8 fields, you can add more cases here.
     // Keep sorted longest to shortest.
     if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType, AnyType,
-                                        AnyType, AnyType, AnyType, AnyType>) {
+                                        AnyType, AnyType, AnyType, AnyType,
+                                        AnyType, AnyType>) {
+      const auto& [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10] = x;
+      constexpr auto padding = sizeof(T) - sizeof(v1) - sizeof(v2) -
+                               sizeof(v3) - sizeof(v4) - sizeof(v5) -
+                               sizeof(v6) - sizeof(v7) - sizeof(v8) -
+                               sizeof(v9) - sizeof(v10);
+      static_assert(padding >= 0);
+      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
+             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
+             MemoryUsage(v7) + MemoryUsage(v8) + MemoryUsage(v9) +
+             MemoryUsage(v10) + padding;
+    } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
+                                               AnyType, AnyType, AnyType,
+                                               AnyType, AnyType, AnyType>) {
+      const auto& [v1, v2, v3, v4, v5, v6, v7, v8, v9] = x;
+      constexpr auto padding =
+          sizeof(T) - sizeof(v1) - sizeof(v2) - sizeof(v3) - sizeof(v4) -
+          sizeof(v5) - sizeof(v6) - sizeof(v7) - sizeof(v8) - sizeof(v9);
+      static_assert(padding >= 0);
+      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
+             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
+             MemoryUsage(v7) + MemoryUsage(v8) + MemoryUsage(v9) + padding;
+    } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
+                                               AnyType, AnyType, AnyType,
+                                               AnyType, AnyType>) {
       const auto& [v1, v2, v3, v4, v5, v6, v7, v8] = x;
       constexpr auto padding = sizeof(T) - sizeof(v1) - sizeof(v2) -
                                sizeof(v3) - sizeof(v4) - sizeof(v5) -
@@ -219,6 +252,12 @@ size_t MemoryUsage(const T& x) {
     LOG(DFATAL) << "Unsupported type";
     return sizeof(T);
   }
+}
+
+template <typename... Args>
+size_t MemoryUsage(const std::tuple<Args...>& t) {
+  return std::apply(
+      [](const auto&... args) { return (MemoryUsage(args) + ...); }, t);
 }
 
 }  // namespace grpc_core
