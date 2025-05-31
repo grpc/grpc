@@ -2837,7 +2837,6 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/log",
         "absl/log:check",
-        "absl/status",
         "absl/strings",
         "absl/strings:str_format",
     ],
