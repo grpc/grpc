@@ -255,6 +255,8 @@ class ChannelTrace {
     // description for this trace event.
     std::unique_ptr<Renderer> renderer;
 
+    // The basic MemoryUsage function doesn't work reliably cross platform for
+    // std::unique_ptr within a struct. Open-code that part here.
     size_t MemoryUsage() const {
       if (renderer == nullptr) return sizeof(*this);
       return MemoryUsageOf(*renderer) + sizeof(*this);
