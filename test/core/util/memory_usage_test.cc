@@ -14,7 +14,6 @@
 
 #include "src/core/util/memory_usage.h"
 
-#include "absl/memory/memory.h"
 #include "gtest/gtest.h"
 
 namespace grpc_core {
@@ -93,7 +92,7 @@ TEST(MemoryUsageTest, UniquePtrInAStruct) {
   };
   Foo x;
   EXPECT_EQ(MemoryUsage(x), sizeof(Foo));
-  x.a = absl::make_unique<int>(42);
+  x.a = std::make_unique<int>(42);
   EXPECT_EQ(MemoryUsage(x), sizeof(Foo) + sizeof(int));
 }
 
