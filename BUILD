@@ -3751,7 +3751,6 @@ grpc_cc_library(
         "//src/core:construct_destruct",
         "//src/core:context",
         "//src/core:dual_ref_counted",
-        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:exec_ctx_wakeup_scheduler",

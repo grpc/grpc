@@ -237,7 +237,7 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                             [](const ChannelArgs&, const ChannelArgs&) {
                               return std::make_unique<FdFixture>();
                             }},
-      CoreTestConfiguration{"Chttp2SimpleSslFullstack",
+      CoreTestConfiguration{"Chttp2FdSecureCredentials",
                             FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
                                 FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
