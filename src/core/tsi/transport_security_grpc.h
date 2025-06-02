@@ -96,8 +96,8 @@ struct tsi_zero_copy_grpc_protector_vtable {
   tsi_result (*max_frame_size)(tsi_zero_copy_grpc_protector* self,
                                size_t* max_frame_size);
   bool (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
-                                grpc_slice_buffer* protected_slices,
-                                uint32_t* frame_size);
+                          grpc_slice_buffer* protected_slices,
+                          uint32_t* frame_size);
 };
 
 struct tsi_zero_copy_grpc_protector {
