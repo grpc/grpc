@@ -27,7 +27,6 @@ RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A170
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 3.1
-RUN /bin/bash -l -c "rvm pkg install openssl"
 RUN /bin/bash -l -c "rvm install ruby-3.1.3"
 RUN /bin/bash -l -c "rvm use --default ruby-3.1.3"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
