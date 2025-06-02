@@ -148,19 +148,17 @@ class FdFixture : public CoreTestFixture {
   int fd_pair_[2];
 };
 
-template <typename FdFixtureImpl>
-class FdCredentialsFixture : public FdFixtureImpl {
+class FdCredentialsFixture : public SslTlsFixture1_3 {
  public:
-  FdCredentialsFixture() { create_sockets(fd_pair_); }
+  FdCredentialsFixture() { CreateSockets(fd_pair_); }
 
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) {
     ExecCtx exec_ctx;
     grpc_server* server = grpc_server_create(args.ToC().get(), nullptr);
-    grpc_server_credentials* creds =
-        FdFixtureImpl::MakeServerCreds(FdFixtureImpl::MutateServerArgs(args));
+    grpc_server_credentials* creds = MakeServerCreds(MutateServerArgs(args));
     auto passive_listener =
         std::make_shared<experimental::PassiveListenerImpl>();
     Server* core_server = Server::FromC(server);
@@ -173,16 +171,14 @@ class FdCredentialsFixture : public FdFixtureImpl {
     return server;
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args,
-                           grpc_completion_queue*) override {
-    grpc_channel_credentials* creds =
-        FdFixtureImpl::MakeClientCreds(FdFixtureImpl::MutateClientArgs(args));
+  grpc_channel* MakeClient(const ChannelArgs& args, grpc_completion_queue*) {
+    grpc_channel_credentials* creds = MakeClientCreds(MutateClientArgs(args));
     auto* channel =
         experimental::CreateChannelFromFd(fd_pair_[0], creds, args.ToC().get());
     return channel;
   }
 
-  static void create_sockets(int sv[2]) {
+  static void CreateSockets(int sv[2]) {
     int flags;
     grpc_create_socketpair_if_unix(sv);
     flags = fcntl(sv[0], F_GETFL, 0);
@@ -195,13 +191,6 @@ class FdCredentialsFixture : public FdFixtureImpl {
 
   int fd_pair_[2];
 };
-
-class FdInsecureCredentialsFixture final
-    : public FdCredentialsFixture<InsecureFixture> {
- public:
-  FdInsecureCredentialsFixture() : FdCredentialsFixture() {}
-};
-
 #endif
 
 #ifdef GRPC_POSIX_WAKEUP_FD
@@ -248,14 +237,16 @@ std::vector<CoreTestConfiguration> End2endTestConfigs() {
                             [](const ChannelArgs&, const ChannelArgs&) {
                               return std::make_unique<FdFixture>();
                             }},
-      CoreTestConfiguration{
-          "Chttp2FdInsecureCreds",
-          FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
-              FEATURE_MASK_EXCLUDE_FROM_EXPERIMENT_RUNS,
-          nullptr,
-          [](const ChannelArgs&, const ChannelArgs&) {
-            return std::make_unique<FdInsecureCredentialsFixture>();
-          }},
+      CoreTestConfiguration{"Chttp2SimpleSslFullstack",
+                            FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+                                FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+                                FEATURE_MASK_IS_CALL_V3 |
+                                FEATURE_MASK_DO_NOT_GTEST,
+                            "foo.test.google.fr",
+                            [](const ChannelArgs&, const ChannelArgs&) {
+                              return std::make_unique<FdCredentialsFixture>();
+                            }},
 #endif
 #ifdef GPR_LINUX
       CoreTestConfiguration{

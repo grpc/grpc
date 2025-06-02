@@ -84,7 +84,7 @@ class InsecureFixture : public SecureFixture {
  public:
   using SecureFixture::SecureFixture;
 
- protected:
+ private:
   grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs&) override {
     return grpc_insecure_credentials_create();

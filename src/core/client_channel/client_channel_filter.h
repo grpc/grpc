@@ -91,8 +91,6 @@
 
 namespace grpc_core {
 
-using grpc_event_engine::experimental::EventEngine;
-
 class ClientChannelFilter final {
  public:
   static const grpc_channel_filter kFilter;
