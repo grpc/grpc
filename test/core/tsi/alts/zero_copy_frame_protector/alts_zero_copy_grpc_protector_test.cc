@@ -244,17 +244,15 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                 kChannelMaxSize + 1 - kChannelMinSize)) +
                             static_cast<uint32_t>(kChannelMinSize);
     if (do_frame_size_read) {
-      // This while loop is reading data from a channel
+      // Read and build frames manually with read_frame_size
       grpc_slice_buffer_reset_and_unref(&var->staging_sb);
       // First read
       grpc_slice_buffer new_data;
       grpc_slice_buffer_init(&new_data);
       grpc_slice_buffer to_unprotect;
       grpc_slice_buffer_init(&to_unprotect);
+      // This while loop is reading data from a channel
       while (var->protected_sb.length > channel_size) {
-        // std::cout << "GREG: length at top of loop " <<
-        // var->protected_sb.length
-        //           << "\n";
         // Read data
         grpc_slice_buffer_reset_and_unref(&new_data);
         grpc_slice_buffer_reset_and_unref(&to_unprotect);
@@ -297,6 +295,7 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                     receiver, &var->staging_sb, &var->unprotected_sb, nullptr),
                 TSI_OK);
     } else {
+      // Don't build frames manually, just feed into unprotect
       while (var->protected_sb.length > channel_size) {
         grpc_slice_buffer_reset_and_unref(&var->staging_sb);
         grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
