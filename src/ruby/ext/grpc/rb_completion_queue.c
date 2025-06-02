@@ -34,7 +34,6 @@ typedef struct next_call_stack {
   grpc_event event;
   gpr_timespec timeout;
   void* tag;
-  const char* reason;
   volatile int interrupted;
 } next_call_stack;
 
@@ -67,7 +66,6 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
 static void unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
   next_call->interrupted = 1;
-  grpc_absl_log_str(GPR_DEBUG, "CQ unblock_func: ", next_call->reason);
 }
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
@@ -81,7 +79,6 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   next_call.timeout = deadline;
   next_call.tag = tag;
   next_call.event.type = GRPC_QUEUE_TIMEOUT;
-  next_call.reason = reason;
   /* Loop until we finish a pluck without an interruption. See
    * https://github.com/grpc/grpc/issues/38210 for an example of why
    * this is necessary. */
