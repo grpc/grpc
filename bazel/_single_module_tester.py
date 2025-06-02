@@ -35,7 +35,7 @@ class SingleLoader(object):
                         tests.append(loader.loadTestsFromModule(module))
                 
                 except Exception as e:
-                    print(f"Error loading module {module_name}: {e}")
+                    raise Exception(f"Error loading module {module_name}: {e}")
         if len(tests) != 1:            
             raise AssertionError("Expected only 1 test module. Found {}".format(tests))
         self.suite.addTest(tests[0])
