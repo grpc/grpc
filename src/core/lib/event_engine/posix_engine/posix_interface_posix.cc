@@ -18,11 +18,11 @@
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_WAKEUP_FD
+#if defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
 #include <fcntl.h>
 
 #include "src/core/util/strerror.h"
-#endif  // GRPC_POSIX_WAKEUP_FD
+#endif  // defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
 
 #ifdef GRPC_POSIX_SOCKET
 
