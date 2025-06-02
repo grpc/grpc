@@ -213,7 +213,7 @@ task 'gem:native', [:plat] do |t, args|
   # TODO(apolcyn): make debug symbols work on aarch64 linux.
   # Currently we hit "objcopy: Unable to recognise the format of the input file `grpc_c.so'"
   unix_platforms_without_debug_symbols = [
-    'x86_64-linux-musl', 'x86-linux-gnu', 'x86-linux-musl',
+    'x86_64-linux-musl', 'x86-linux-musl',
     'aarch64-linux-gnu', 'aarch64-linux-musl', 'x86_64-darwin',
     'arm64-darwin'
   ]
