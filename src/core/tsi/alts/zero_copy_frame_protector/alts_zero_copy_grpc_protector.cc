@@ -250,20 +250,10 @@ static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
 }
 
 static bool alts_zero_copy_grpc_protector_read_frame_size(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector* _, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size) {
-  if (self == nullptr || frame_size == nullptr) return TSI_INVALID_ARGUMENT;
-  alts_zero_copy_grpc_protector* protector =
-      reinterpret_cast<alts_zero_copy_grpc_protector*>(self);
-
-  if (protector->parsed_frame_size == 0) {
-    // We have not parsed frame size yet. Parses frame size.
-    if (!read_frame_size(protected_slices, &protector->parsed_frame_size)) {
-      return false;
-    }
-  }
-  *frame_size = protector->parsed_frame_size;
-  return true;
+  if (frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  return read_frame_size(protected_slices, frame_size);
 }
 
 static const tsi_zero_copy_grpc_protector_vtable
