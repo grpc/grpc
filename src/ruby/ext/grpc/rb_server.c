@@ -84,6 +84,8 @@ static void grpc_rb_server_maybe_destroy(grpc_rb_server* server) {
   if (!server->destroy_done) {
     server->destroy_done = 1;
     if (server->wrapped != NULL) {
+      // Maybe shutdown the server first in case we are in a garbage collector
+      // and haven't yet invoked shutdown.
       gpr_timespec deadline = gpr_time_add(
           gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(2, GPR_TIMESPAN));
       grpc_rb_server_maybe_shutdown_and_notify(server, deadline);
