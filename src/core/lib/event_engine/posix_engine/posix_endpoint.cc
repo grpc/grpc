@@ -950,7 +950,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
     // take a single ref on the zerocopy send record.
     tcp_zerocopy_send_ctx_->NoteSend(record);
     saved_errno = 0;
-    if (outgoing_buffer_arg_ != nullptr) {
+    if (outgoing_buffer_write_event_sink_.has_value()) {
       if (!ts_capable_ ||
           !WriteWithTimestamps(&msg, sending_length, &sent_length, &saved_errno,
                                MSG_ZEROCOPY)) {
@@ -1070,7 +1070,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     msg.msg_flags = 0;
     bool tried_sending_message = false;
     saved_errno = 0;
-    if (outgoing_buffer_arg_ != nullptr) {
+    if (outgoing_buffer_write_event_sink_.has_value()) {
       if (!ts_capable_ || !WriteWithTimestamps(&msg, sending_length,
                                                &sent_length, &saved_errno, 0)) {
         // We could not set socket options to collect Fathom timestamps.
@@ -1194,10 +1194,9 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_ = data;
     outgoing_byte_idx_ = 0;
   }
-  outgoing_buffer_arg_ =
-      args.GetDeprecatedAndDiscouragedGoogleSpecificPointer();
-  if (outgoing_buffer_arg_) {
+  if (args.has_metrics_sink()) {
     CHECK(poller_->CanTrackErrors());
+    outgoing_buffer_write_event_sink_ = args.TakeMetricsSink();
   }
 
   bool flush_result = zerocopy_send_record != nullptr

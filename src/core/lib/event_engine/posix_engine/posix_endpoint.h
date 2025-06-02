@@ -571,7 +571,9 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   grpc_core::MemoryOwner memory_owner_;
   grpc_core::MemoryAllocator::Reservation self_reservation_;
 
-  void* outgoing_buffer_arg_ = nullptr;
+  std::optional<
+      grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink>
+      outgoing_buffer_write_event_sink_;
 
   absl::AnyInvocable<void(absl::StatusOr<int>)> on_release_fd_ = nullptr;
 
