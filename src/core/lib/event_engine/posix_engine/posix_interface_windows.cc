@@ -50,11 +50,13 @@ PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(int domain,
       "unimplemented on this platform: EventEnginePosixInterface::Socket");
 }
 
+#ifndef GRPC_POSIX_WAKEUP_FD
 absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
 EventEnginePosixInterface::Pipe() {
   grpc_core::Crash(
       "unimplemented on this platform: EventEnginePosixInterface::Pipe");
 }
+#endif  // GRPC_POSIX_WAKEUP_FD
 
 PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
                                               const struct sockaddr* addr,
@@ -88,6 +90,7 @@ PosixErrorOr<int64_t> EventEnginePosixInterface::SetSockOpt(
       "unimplemented on this platform: EventEnginePosixInterface::SetSockOpt");
 }
 
+#ifndef GRPC_POSIX_WAKEUP_FD
 PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
                                                       absl::Span<char> buf) {
   grpc_core::Crash(
@@ -99,6 +102,7 @@ PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
   grpc_core::Crash(
       "unimplemented on this platform: EventEnginePosixInterface::Write");
 }
+#endif  // GRPC_POSIX_WAKEUP_FD
 
 PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
     const FileDescriptor& fd, struct msghdr* message, int flags) {
@@ -202,10 +206,12 @@ absl::StatusOr<std::string> EventEnginePosixInterface::PeerAddressString(
       "EventEnginePosixInterface::PeerAddressString");
 }
 
+#ifndef GRPC_POSIX_WAKEUP_FD
 void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
   grpc_core::Crash(
       "unimplemented on this platform: EventEnginePosixInterface::Close");
 }
+#endif  // GRPC_POSIX_WAKEUP_FD
 
 absl::StatusOr<FileDescriptor> EventEnginePosixInterface::CreateDualStackSocket(
     std::function<int(int, int, int)> socket_factory,

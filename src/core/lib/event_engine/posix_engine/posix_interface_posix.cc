@@ -18,6 +18,12 @@
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 
+#ifdef GRPC_POSIX_WAKEUP_FD
+#include <fcntl.h>
+
+#include "src/core/util/strerror.h"
+#endif  // GRPC_POSIX_WAKEUP_FD
+
 #ifdef GRPC_POSIX_SOCKET
 
 #include <sys/types.h>
@@ -37,7 +43,6 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
 #include "src/core/util/status_helper.h"
-#include "src/core/util/strerror.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 #include <arpa/inet.h>  // IWYU pragma: keep
@@ -47,7 +52,6 @@
 #include <netinet/in.h>  // IWYU pragma: keep
 #include <netinet/tcp.h>
 #endif  // GRPC_LINUX_TCP_H
-#include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -81,7 +85,48 @@
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 
+#endif  // GRPC_POSIX_SOCKET
+
 namespace grpc_event_engine::experimental {
+
+#if defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_POSIX_SOCKET)
+namespace {
+
+// Templated Fn to make it easier to compile on all platforms.
+template <typename Fn, typename... Args>
+PosixErrorOr<int64_t> Int64Wrap(bool correct_gen, int fd, const Fn& fn,
+                                Args&&... args) {
+  if (!correct_gen) return PosixError::WrongGeneration();
+  auto result = std::invoke(fn, fd, std::forward<Args>(args)...);
+  if (result < 0) return PosixError::Error(errno);
+  return result;
+}
+
+// Set a socket to non blocking mode
+absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
+  int oldflags = fcntl(fd, F_GETFL, 0);
+  if (oldflags < 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+
+  if (non_blocking) {
+    oldflags |= O_NONBLOCK;
+  } else {
+    oldflags &= ~O_NONBLOCK;
+  }
+
+  if (fcntl(fd, F_SETFL, oldflags) != 0) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
+  }
+  return absl::OkStatus();
+}
+
+}  // namespace
+#endif  // defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_POSIX_SOCKET)
+
+#ifdef GRPC_POSIX_SOCKET
 
 namespace {
 
@@ -174,27 +219,6 @@ int InitMaxAcceptQueueSize() {
 int GetMaxAcceptQueueSize() {
   static const int kMaxAcceptQueueSize = InitMaxAcceptQueueSize();
   return kMaxAcceptQueueSize;
-}
-
-// Set a socket to non blocking mode
-absl::Status SetSocketNonBlocking(int fd, int non_blocking) {
-  int oldflags = fcntl(fd, F_GETFL, 0);
-  if (oldflags < 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-
-  if (non_blocking) {
-    oldflags |= O_NONBLOCK;
-  } else {
-    oldflags &= ~O_NONBLOCK;
-  }
-
-  if (fcntl(fd, F_SETFL, oldflags) != 0) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("fcntl: ", grpc_core::StrError(errno)));
-  }
-  return absl::OkStatus();
 }
 
 // Set a socket to close on exec
@@ -417,16 +441,6 @@ absl::Status InternalApplySocketMutatorInOptions(
   return absl::OkStatus();
 }
 
-// Templated Fn to make it easier to compile on all platforms.
-template <typename Fn, typename... Args>
-PosixErrorOr<int64_t> Int64Wrap(bool correct_gen, int fd, const Fn& fn,
-                                Args&&... args) {
-  if (!correct_gen) return PosixError::WrongGeneration();
-  auto result = std::invoke(fn, fd, std::forward<Args>(args)...);
-  if (result < 0) return PosixError::Error(errno);
-  return result;
-}
-
 }  // namespace
 
 bool IsSocketReusePortSupported() {
@@ -470,12 +484,6 @@ void EventEnginePosixInterface::AdvanceGeneration() {
 
 FileDescriptor EventEnginePosixInterface::Adopt(int fd) {
   return descriptors_.Add(fd);
-}
-
-void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
-  if (descriptors_.Remove(fd)) {
-    close(fd.fd());
-  }
 }
 
 PosixErrorOr<int> EventEnginePosixInterface::GetFd(const FileDescriptor& fd) {
@@ -571,26 +579,6 @@ EventEnginePosixInterface::EpollCreateAndCloexec() {
 
 #endif  // GRPC_LINUX_EPOLL
 
-absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
-EventEnginePosixInterface::Pipe() {
-  int pipefd[2];
-  int r = pipe(pipefd);
-  if (0 != r) {
-    return absl::Status(absl::StatusCode::kInternal,
-                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
-  }
-  auto status = SetSocketNonBlocking(pipefd[0], 1);
-  if (status.ok()) {
-    status = SetSocketNonBlocking(pipefd[1], 1);
-  }
-  if (status.ok()) {
-    return std::pair(descriptors_.Add(pipefd[0]), descriptors_.Add(pipefd[1]));
-  }
-  close(pipefd[0]);
-  close(pipefd[1]);
-  return status;
-}
-
 PosixErrorOr<FileDescriptor> EventEnginePosixInterface::Socket(int domain,
                                                                int type,
                                                                int protocol) {
@@ -668,12 +656,6 @@ PosixError EventEnginePosixInterface::Connect(const FileDescriptor& sockfd,
       sockfd, [&](int sockfd) { return connect(sockfd, addr, addrlen); });
 }
 
-PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
-                                                      absl::Span<char> buf) {
-  return Int64Wrap(IsCorrectGeneration(fd), fd.fd(), read, buf.data(),
-                   buf.size());
-}
-
 PosixErrorOr<int64_t> EventEnginePosixInterface::RecvMsg(
     const FileDescriptor& fd, struct msghdr* message, int flags) {
   return Int64Wrap(IsCorrectGeneration(fd), fd.fd(), recvmsg, message, flags);
@@ -687,12 +669,6 @@ PosixErrorOr<int64_t> EventEnginePosixInterface::SendMsg(
 PosixError EventEnginePosixInterface::Shutdown(const FileDescriptor& fd,
                                                int how) {
   return PosixResultWrap(fd, [&](int fd) { return shutdown(fd, how); });
-}
-
-PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
-                                                       absl::Span<char> buf) {
-  return Int64Wrap(IsCorrectGeneration(fd), fd.fd(), write, buf.data(),
-                   buf.size());
 }
 
 absl::Status EventEnginePosixInterface::ApplySocketMutatorInOptions(
@@ -1041,6 +1017,24 @@ PosixError EventEnginePosixInterface::PosixResultWrap(
   return PosixError::Ok();
 }
 
+PosixErrorOr<FileDescriptor> EventEnginePosixInterface::RegisterPosixResult(
+    int result) {
+  if (result < 0) {
+    return PosixError::Error(errno);
+  }
+  return descriptors_.Add(result);
+}
+
+#endif  // GRPC_POSIX_SOCKET
+
+#if defined(GRPC_POSIX_WAKEUP_FD) || defined(GRPC_LINUX_EVENTFD)
+
+void EventEnginePosixInterface::Close(const FileDescriptor& fd) {
+  if (descriptors_.Remove(fd)) {
+    close(fd.fd());
+  }
+}
+
 bool EventEnginePosixInterface::IsCorrectGeneration(
     const FileDescriptor& fd) const {
   (void)fd;  // Always used now
@@ -1052,14 +1046,38 @@ bool EventEnginePosixInterface::IsCorrectGeneration(
   return true;
 }
 
-PosixErrorOr<FileDescriptor> EventEnginePosixInterface::RegisterPosixResult(
-    int result) {
-  if (result < 0) {
-    return PosixError::Error(errno);
+absl::StatusOr<std::pair<FileDescriptor, FileDescriptor> >
+EventEnginePosixInterface::Pipe() {
+  int pipefd[2];
+  int r = pipe(pipefd);
+  if (0 != r) {
+    return absl::Status(absl::StatusCode::kInternal,
+                        absl::StrCat("pipe: ", grpc_core::StrError(errno)));
   }
-  return descriptors_.Add(result);
+  auto status = SetSocketNonBlocking(pipefd[0], 1);
+  if (status.ok()) {
+    status = SetSocketNonBlocking(pipefd[1], 1);
+  }
+  if (status.ok()) {
+    return std::pair(descriptors_.Add(pipefd[0]), descriptors_.Add(pipefd[1]));
+  }
+  close(pipefd[0]);
+  close(pipefd[1]);
+  return status;
 }
 
-}  // namespace grpc_event_engine::experimental
+PosixErrorOr<int64_t> EventEnginePosixInterface::Read(const FileDescriptor& fd,
+                                                      absl::Span<char> buf) {
+  return Int64Wrap(IsCorrectGeneration(fd), fd.fd(), read, buf.data(),
+                   buf.size());
+}
 
-#endif  // GRPC_POSIX_SOCKET
+PosixErrorOr<int64_t> EventEnginePosixInterface::Write(const FileDescriptor& fd,
+                                                       absl::Span<char> buf) {
+  return Int64Wrap(IsCorrectGeneration(fd), fd.fd(), write, buf.data(),
+                   buf.size());
+}
+
+#endif  // defined (GRPC_POSIX_WAKEUP_FD) || defined (GRPC_LINUX_EVENTFD)
+
+}  // namespace grpc_event_engine::experimental
