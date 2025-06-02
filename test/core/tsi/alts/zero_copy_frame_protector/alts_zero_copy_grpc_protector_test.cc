@@ -244,10 +244,58 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
                                 kChannelMaxSize + 1 - kChannelMinSize)) +
                             static_cast<uint32_t>(kChannelMinSize);
     if (do_frame_size_read) {
-      // uint32_t frame_size;
-      // ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
-      //     receiver, &var->staging_sb, &frame_size));
-      // EXPECT_EQ(frame_size, kMaxProtectedFrameSize + 4);
+      // This while loop is reading data from a channel
+      grpc_slice_buffer_reset_and_unref(&var->staging_sb);
+      // First read
+      grpc_slice_buffer new_data;
+      grpc_slice_buffer_init(&new_data);
+      grpc_slice_buffer to_unprotect;
+      grpc_slice_buffer_init(&to_unprotect);
+      while (var->protected_sb.length > channel_size) {
+        // std::cout << "GREG: length at top of loop " <<
+        // var->protected_sb.length
+        //           << "\n";
+        // Read data
+        grpc_slice_buffer_reset_and_unref(&new_data);
+        grpc_slice_buffer_reset_and_unref(&to_unprotect);
+        grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
+                                     &new_data);
+        grpc_slice_buffer_move_into(&new_data, &var->staging_sb);
+        uint32_t frame_size;
+        while (!tsi_zero_copy_grpc_protector_read_frame_size(
+            receiver, &var->staging_sb, &frame_size)) {
+          grpc_slice_buffer_reset_and_unref(&new_data);
+          grpc_slice_buffer_move_first(&var->protected_sb, channel_size,
+                                       &new_data);
+          grpc_slice_buffer_move_into(&new_data, &var->staging_sb);
+        }
+        while (var->staging_sb.length < frame_size) {
+          // read more
+          grpc_slice_buffer_reset_and_unref(&new_data);
+          uint32_t amount_to_read;
+          if (channel_size < var->protected_sb.length) {
+            amount_to_read = channel_size;
+          } else {
+            amount_to_read = var->protected_sb.length;
+          }
+          grpc_slice_buffer_move_first(&var->protected_sb, amount_to_read,
+                                       &new_data);
+          grpc_slice_buffer_move_into(&new_data, &var->staging_sb);
+        }
+        EXPECT_EQ(frame_size, 1028);
+        // We have enough to unprotect, but can't obliterate the end in case we
+        // are crossing over a frame
+        grpc_slice_buffer_move_first(&var->staging_sb, frame_size,
+                                     &to_unprotect);
+        ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(
+                      receiver, &to_unprotect, &var->unprotected_sb, nullptr),
+                  TSI_OK);
+      }
+      // Unprotect whatever is left
+      grpc_slice_buffer_move_into(&var->protected_sb, &var->staging_sb);
+      ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(
+                    receiver, &var->staging_sb, &var->unprotected_sb, nullptr),
+                TSI_OK);
     } else {
       while (var->protected_sb.length > channel_size) {
         grpc_slice_buffer_reset_and_unref(&var->staging_sb);
@@ -262,9 +310,9 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
           tsi_zero_copy_grpc_protector_unprotect(receiver, &var->protected_sb,
                                                  &var->unprotected_sb, nullptr),
           TSI_OK);
-      ASSERT_TRUE(
-          are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     }
+    ASSERT_TRUE(
+        are_slice_buffers_equal(&var->unprotected_sb, &var->duplicate_sb));
     alts_zero_copy_grpc_protector_test_var_destroy(var);
   }
 }
