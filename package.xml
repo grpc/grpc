@@ -1926,6 +1926,7 @@
     <file baseinstalldir="/" name="src/core/util/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/memory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/memory_usage.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />

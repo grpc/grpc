@@ -455,8 +455,6 @@ TEST_P(XdsSecurityTest,
 }
 
 TEST_P(XdsSecurityTest, UseSystemRootCerts) {
-  grpc_core::testing::ScopedExperimentalEnvVar env1(
-      "GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   grpc_core::testing::ScopedEnvVar env2("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH",
                                         kCaCertPath);
   g_fake1_cert_data_map->Set({{"", {root_cert_, identity_pair_}}});
