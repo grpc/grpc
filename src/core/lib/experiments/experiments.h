@@ -97,6 +97,8 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -150,6 +152,8 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -203,6 +207,8 @@ inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
 inline bool IsRetryInCallv3Enabled() { return false; }
 inline bool IsRqFastRejectEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() { return true; }
 inline bool IsScheduleCancellationOverWriteEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeReadsEnabled() { return false; }
 inline bool IsSecureEndpointOffloadLargeWritesEnabled() { return false; }
@@ -245,6 +251,7 @@ enum ExperimentIds {
   kExperimentIdPromiseBasedInprocTransport,
   kExperimentIdRetryInCallv3,
   kExperimentIdRqFastReject,
+  kExperimentIdRstStreamFix,
   kExperimentIdScheduleCancellationOverWrite,
   kExperimentIdSecureEndpointOffloadLargeReads,
   kExperimentIdSecureEndpointOffloadLargeWrites,
@@ -364,6 +371,10 @@ inline bool IsRetryInCallv3Enabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_RQ_FAST_REJECT
 inline bool IsRqFastRejectEnabled() {
   return IsExperimentEnabled<kExperimentIdRqFastReject>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_RST_STREAM_FIX
+inline bool IsRstStreamFixEnabled() {
+  return IsExperimentEnabled<kExperimentIdRstStreamFix>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_SCHEDULE_CANCELLATION_OVER_WRITE
 inline bool IsScheduleCancellationOverWriteEnabled() {
