@@ -288,6 +288,8 @@ static void seal_unseal_large_buffer(tsi_zero_copy_grpc_protector* sender,
         ASSERT_EQ(tsi_zero_copy_grpc_protector_unprotect(
                       receiver, &to_unprotect, &var->unprotected_sb, nullptr),
                   TSI_OK);
+        grpc_slice_buffer_destroy(&to_unprotect);
+        grpc_slice_buffer_destroy(&new_data);
       }
       // Unprotect whatever is left
       grpc_slice_buffer_move_into(&var->protected_sb, &var->staging_sb);
