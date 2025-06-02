@@ -45,6 +45,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "memory_usage_test",
+    srcs = ["memory_usage_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:memory_usage",
+    ],
+)
+
+grpc_cc_test(
     name = "tdigest_test",
     srcs = ["tdigest_test.cc"],
     external_deps = [

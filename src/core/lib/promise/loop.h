@@ -23,6 +23,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
@@ -123,7 +124,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 
 }  // namespace promise_detail
 
-template <typename F>
+template <typename F, bool kYield>
 class Loop {
  private:
   static_assert(promise_detail::kIsRepeatedPromiseFactory<void, F>);
@@ -170,6 +171,13 @@ class Loop {
               << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
+          if constexpr (kYield) {
+            GRPC_TRACE_LOG(promise_primitives, INFO)
+                << "loop[" << this << "] iteration yield";
+            auto* activity = GetContext<Activity>();
+            activity->ForceImmediateRepoll(activity->CurrentParticipant());
+            return Pending();
+          }
           continue;
         }
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -185,6 +193,20 @@ class Loop {
     }
   }
 
+  Json ToJson() const {
+    Json::Object obj;
+    if constexpr (kYield) {
+      obj["loop_factory"] =
+          Json::FromString(absl::StrCat("yielding ", TypeName<Factory>()));
+    } else {
+      obj["loop_factory"] = Json::FromString(std::string(TypeName<Factory>()));
+    }
+    if (started_) {
+      obj["promise"] = PromiseAsJson(promise_);
+    }
+    return Json::FromObject(std::move(obj));
+  }
+
  private:
   GPR_NO_UNIQUE_ADDRESS Factory factory_;
   GPR_NO_UNIQUE_ADDRESS union {
@@ -194,7 +216,14 @@ class Loop {
 };
 
 template <typename F>
-Loop(F) -> Loop<F>;
+Loop(F) -> Loop<F, false>;
+
+// A version of Loop that yields the activity to another promise once per
+// iteration.
+template <typename F>
+auto YieldingLoop(F f) {
+  return Loop<F, true>(std::move(f));
+}
 
 }  // namespace grpc_core
 

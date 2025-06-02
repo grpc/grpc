@@ -282,11 +282,9 @@ class HealthProducer::ConnectivityWatcher final
   explicit ConnectivityWatcher(WeakRefCountedPtr<HealthProducer> producer)
       : producer_(std::move(producer)) {}
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status& status) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status) override {
     producer_->OnConnectivityStateChange(state, status);
-    self.reset();
   }
 
   grpc_pollset_set* interested_parties() override {

@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 3.0'
+  s.required_ruby_version = '>= 3.1'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -408,6 +408,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/internal.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/legacy_frame.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/parsing.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc )
@@ -1454,8 +1455,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/event_engine_shims/tcp_client.h )
   s.files += %w( src/core/lib/iomgr/exec_ctx.cc )
   s.files += %w( src/core/lib/iomgr/exec_ctx.h )
-  s.files += %w( src/core/lib/iomgr/executor.cc )
-  s.files += %w( src/core/lib/iomgr/executor.h )
   s.files += %w( src/core/lib/iomgr/fork_posix.cc )
   s.files += %w( src/core/lib/iomgr/fork_windows.cc )
   s.files += %w( src/core/lib/iomgr/internal_errqueue.cc )
@@ -1943,6 +1942,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/matchers.cc )
   s.files += %w( src/core/util/matchers.h )
   s.files += %w( src/core/util/memory.h )
+  s.files += %w( src/core/util/memory_usage.h )
   s.files += %w( src/core/util/mpscq.cc )
   s.files += %w( src/core/util/mpscq.h )
   s.files += %w( src/core/util/msys/tmpfile.cc )

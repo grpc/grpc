@@ -535,6 +535,7 @@ static void read_channel_args(grpc_chttp2_transport* t,
       channel_args.GetInt(GRPC_ARG_HTTP2_STREAM_LOOKAHEAD_BYTES).value_or(-1);
   if (value >= 0) {
     t->settings.mutable_local().SetInitialWindowSize(value);
+    t->flow_control.set_target_initial_window_size(value);
   }
   value = channel_args.GetInt(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY).value_or(-1);
   if (value >= 0) {
@@ -581,12 +582,13 @@ static void init_keepalive_pings_if_enabled_locked(
 }
 
 void grpc_chttp2_transport::ChannelzDataSource::AddData(
-    grpc_core::channelz::DataSink& sink) {
-  grpc_core::Notification n;
-  transport_->event_engine->Run([t = transport_->Ref(), &n, &sink]() {
+    grpc_core::channelz::DataSink sink) {
+  transport_->event_engine->Run([t = transport_->Ref(),
+                                 sink = std::move(sink)]() mutable {
     grpc_core::ExecCtx exec_ctx;
     t->combiner->Run(
-        grpc_core::NewClosure([t, &n, &sink](grpc_error_handle) {
+        grpc_core::NewClosure([t, sink = std::move(sink)](
+                                  grpc_error_handle) mutable {
           Json::Object http2_info;
           http2_info["flowControl"] =
               Json::FromObject(t->flow_control.stats().ToJsonObject());
@@ -654,11 +656,9 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
             children.push_back(stream->channelz_call_node);
           }
           sink.AddChildObjects(std::move(children));
-          n.Notify();
         }),
         absl::OkStatus());
   });
-  n.WaitForNotification();
 }
 
 std::unique_ptr<grpc_core::channelz::ZTrace>
@@ -1174,6 +1174,7 @@ static void write_action(grpc_chttp2_transport* t) {
   }
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1181,6 +1182,8 @@ static void write_action(grpc_chttp2_transport* t) {
   if (max_frame_size == 0) {
     max_frame_size = INT_MAX;
   }
+  args.set_max_frame_size(max_frame_size);
+  args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
   GRPC_TRACE_LOG(http2_ping, INFO)
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
@@ -1190,7 +1193,7 @@ static void write_action(grpc_chttp2_transport* t) {
   grpc_endpoint_write(t->ep.get(), t->outbuf.c_slice_buffer(),
                       grpc_core::InitTransportClosure<write_action_end>(
                           t->Ref(), &t->write_action_end_locked),
-                      cl, max_frame_size);
+                      std::move(args));
 }
 
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport> t,
