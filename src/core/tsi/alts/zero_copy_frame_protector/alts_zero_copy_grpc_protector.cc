@@ -250,7 +250,7 @@ static tsi_result alts_zero_copy_grpc_protector_max_frame_size(
 }
 
 static bool alts_zero_copy_grpc_protector_read_frame_size(
-    tsi_zero_copy_grpc_protector* _, grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector*, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size) {
   if (frame_size == nullptr) return TSI_INVALID_ARGUMENT;
   return read_frame_size(protected_slices, frame_size);
