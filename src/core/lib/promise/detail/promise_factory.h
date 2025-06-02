@@ -274,6 +274,14 @@ class RepeatedPromiseFactory {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(Arg&& a) {
     return PromiseFactoryImpl(RepeatableToken{}, f_, std::forward<Arg>(a));
   }
+  template <typename U>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(U&& u) const {
+    return PromiseFactoryImpl(RepeatableToken{}, f_, std::forward<U>(u));
+  }
+  template <typename U>
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Promise Make(U&& u) {
+    return PromiseFactoryImpl(RepeatableToken{}, f_, std::forward<U>(u));
+  }
 };
 
 template <typename F>

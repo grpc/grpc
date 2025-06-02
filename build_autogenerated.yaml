@@ -8283,6 +8283,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8414,6 +8415,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8633,6 +8635,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8760,6 +8763,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8887,6 +8891,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9102,6 +9107,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9317,6 +9323,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9444,6 +9451,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9659,6 +9667,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9786,6 +9795,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -11869,6 +11879,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -12720,6 +12731,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/ext/transport/chttp2/transport/keepalive.cc
   - src/core/ext/transport/chttp2/transport/ping_promise.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -12754,6 +12766,7 @@ targets:
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -13976,57 +13989,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: mpsc_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/debug/trace_flags.h
-  - src/core/lib/debug/trace_impl.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/util/atomic_utils.h
-  - src/core/util/down_cast.h
-  - src/core/util/dump_args.h
-  - src/core/util/function_signature.h
-  - src/core/util/glob.h
-  - src/core/util/json/json.h
-  - src/core/util/latent_see.h
-  - src/core/util/orphanable.h
-  - src/core/util/per_cpu.h
-  - src/core/util/ref_counted.h
-  - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
-  - test/core/promise/poll_matcher.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/util/dump_args.cc
-  - src/core/util/glob.cc
-  - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
-  - test/core/promise/mpsc_test.cc
-  deps:
-  - gtest
-  - absl/base:config
-  - absl/container:flat_hash_map
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
 - name: mpscq_test
   gtest: true
   build: test
@@ -14118,13 +14080,17 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -14492,12 +14458,18 @@ targets:
   headers:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/poll_matcher.h
   src:
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_mpsc_test.cc
   deps:
   - gtest
   - grpc_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: party_test
   gtest: true
@@ -15270,6 +15242,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -15376,6 +15349,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc

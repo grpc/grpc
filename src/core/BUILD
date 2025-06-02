@@ -976,6 +976,7 @@ grpc_cc_library(
         "construct_destruct",
         "poll",
         "promise_factory",
+        "seq",
         "//:gpr_platform",
         "//:grpc_trace",
     ],
@@ -1342,6 +1343,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "mpsc",
+    srcs = [
+        "lib/promise/mpsc.cc",
+    ],
     hdrs = [
         "lib/promise/mpsc.h",
     ],
@@ -1352,6 +1356,8 @@ grpc_cc_library(
     deps = [
         "activity",
         "dump_args",
+        "json",
+        "map",
         "poll",
         "ref_counted",
         "status_flag",
@@ -8391,6 +8397,9 @@ grpc_cc_library(
         "loop",
         "map",
         "metrics",
+        "mpsc",
+        "race",
+        "ref_counted",
         "seq",
         "seq_bit_set",
         "slice_buffer",
