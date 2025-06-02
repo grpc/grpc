@@ -67,6 +67,7 @@ void grpc_rb_completion_queue_destroy(grpc_completion_queue* cq) {
 static void unblock_func(void* param) {
   next_call_stack* const next_call = (next_call_stack*)param;
   next_call->interrupted = 1;
+  grpc_absl_log_str(GPR_DEBUG, "CQ unblock_func: ", next_call->reason);
 }
 
 /* Does the same thing as grpc_completion_queue_pluck, while properly releasing
@@ -84,6 +85,7 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
   /* Loop until we finish a pluck without an interruption. See
    * https://github.com/grpc/grpc/issues/38210 for an example of why
    * this is necessary. */
+  grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop begin: ", reason);
   do {
     next_call.interrupted = 0;
     rb_thread_call_without_gvl(grpc_rb_completion_queue_pluck_no_gil,
@@ -91,5 +93,6 @@ grpc_event rb_completion_queue_pluck(grpc_completion_queue* queue, void* tag,
                                (void*)&next_call);
     if (next_call.event.type != GRPC_QUEUE_TIMEOUT) break;
   } while (next_call.interrupted);
+  grpc_absl_log_str(GPR_DEBUG, "CQ pluck loop done: ", reason);
   return next_call.event;
 }
