@@ -155,7 +155,7 @@ class FdCredentialsFixture : public SslTlsFixture1_3 {
  private:
   grpc_server* MakeServer(
       const ChannelArgs& args, grpc_completion_queue* cq,
-      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) {
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
     ExecCtx exec_ctx;
     grpc_server* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_credentials* creds = MakeServerCreds(MutateServerArgs(args));
@@ -171,7 +171,8 @@ class FdCredentialsFixture : public SslTlsFixture1_3 {
     return server;
   }
 
-  grpc_channel* MakeClient(const ChannelArgs& args, grpc_completion_queue*) {
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue*) override {
     grpc_channel_credentials* creds = MakeClientCreds(MutateClientArgs(args));
     auto* channel =
         experimental::CreateChannelFromFd(fd_pair_[0], creds, args.ToC().get());
