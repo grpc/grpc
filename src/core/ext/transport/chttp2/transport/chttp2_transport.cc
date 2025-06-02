@@ -2439,8 +2439,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
             // sent headers yet (still in "idle" state). Note that since we have
             // marked the stream closed above, we won't be writing to it
             // anymore.
-            if (grpc_core::IsRstStreamFixEnabled() && t->is_client &&
-                !sent_initial_metadata) {
+            if (t->is_client && !sent_initial_metadata) {
               return;
             }
             grpc_chttp2_add_rst_stream_to_next_write(
