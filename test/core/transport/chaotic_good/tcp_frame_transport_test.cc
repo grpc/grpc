@@ -170,11 +170,11 @@ void CanSendFrames(size_t num_data_endpoints, uint32_t client_alignment,
                           server_sink);
   for (const auto& frame : send_on_client_frames) {
     client_sender.UnbufferedImmediateSend(
-        UntracedOutgoingFrame(CopyFrame(frame)));
+        UntracedOutgoingFrame(CopyFrame(frame)), 1);
   }
   for (const auto& frame : send_on_server_frames) {
     server_sender.UnbufferedImmediateSend(
-        UntracedOutgoingFrame(CopyFrame(frame)));
+        UntracedOutgoingFrame(CopyFrame(frame)), 1);
   }
   auto deadline = Timestamp::Now() + Duration::Hours(6);
   while (!client_sink->done() || !server_sink->done()) {

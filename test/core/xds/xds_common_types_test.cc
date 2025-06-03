@@ -50,7 +50,6 @@
 #include "src/core/xds/xds_client/xds_bootstrap.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "src/core/xds/xds_client/xds_resource_type.h"
-#include "test/core/test_util/scoped_env_var.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/util/config_grpc_cli.h"
 #include "udpa/type/v1/typed_struct.pb.h"
@@ -277,7 +276,6 @@ TEST_F(CommonTlsConfigTest, CaCertProviderInValidationContext) {
 }
 
 TEST_F(CommonTlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   common_tls_context_proto.mutable_validation_context()
@@ -299,7 +297,6 @@ TEST_F(CommonTlsConfigTest, SystemRootCerts) {
 }
 
 TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   // Construct proto.
   CommonTlsContextProto common_tls_context_proto;
   auto* cert_provider = common_tls_context_proto.mutable_validation_context()
@@ -320,26 +317,6 @@ TEST_F(CommonTlsConfigTest, CaCertProviderTakesPrecedenceOverSystemRootCerts) {
   ASSERT_NE(ca_cert_provider, nullptr);
   EXPECT_EQ(ca_cert_provider->instance_name, "provider1");
   EXPECT_EQ(ca_cert_provider->certificate_name, "cert_name");
-  EXPECT_THAT(common_tls_context->certificate_validation_context
-                  .match_subject_alt_names,
-              ::testing::ElementsAre());
-  EXPECT_TRUE(common_tls_context->tls_certificate_provider_instance.Empty())
-      << common_tls_context->tls_certificate_provider_instance.ToString();
-}
-
-TEST_F(CommonTlsConfigTest, SystemRootCertsIgnoredWithoutEnvVar) {
-  // Construct proto.
-  CommonTlsContextProto common_tls_context_proto;
-  common_tls_context_proto.mutable_validation_context()
-      ->mutable_system_root_certs();
-  // Convert to upb.
-  const auto* upb_proto = ConvertToUpb(common_tls_context_proto);
-  ASSERT_NE(upb_proto, nullptr);
-  // Run test.
-  auto common_tls_context = Parse(upb_proto);
-  ASSERT_TRUE(common_tls_context.ok()) << common_tls_context.status();
-  EXPECT_TRUE(std::holds_alternative<std::monostate>(
-      common_tls_context->certificate_validation_context.ca_certs));
   EXPECT_THAT(common_tls_context->certificate_validation_context
                   .match_subject_alt_names,
               ::testing::ElementsAre());

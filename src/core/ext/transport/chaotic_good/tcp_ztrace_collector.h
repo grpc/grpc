@@ -48,8 +48,6 @@ void MarkRead(bool read, Json::Object& object);
 struct ReadFrameHeaderTrace {
   TcpFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpFrameHeaderToJsonObject(header, object);
@@ -59,8 +57,6 @@ struct ReadFrameHeaderTrace {
 struct ReadDataHeaderTrace {
   TcpDataFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(header, object);
@@ -69,8 +65,6 @@ struct ReadDataHeaderTrace {
 
 struct WriteFrameHeaderTrace {
   TcpFrameHeader header;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
@@ -83,10 +77,6 @@ struct EndpointWriteMetricsTrace {
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent
       write_event;
   std::vector<std::pair<absl::string_view, int64_t>> metrics;
-
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(metrics[0]) * metrics.size();
-  }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString(absl::StrCat(
@@ -130,10 +120,6 @@ struct WriteLargeFrameHeaderTrace {
   size_t chosen_endpoint;
   std::vector<std::optional<LbDecision>> lb_decisions;
 
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(lb_decisions[0]) * lb_decisions.size();
-  }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(data_header,
@@ -155,8 +141,6 @@ struct NoEndpointForWriteTrace {
   size_t bytes;
   uint64_t payload_tag;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("NO_ENDPOINT_FOR_WRITE");
     object["payload_tag"] = Json::FromNumber(payload_tag);
@@ -168,8 +152,6 @@ struct WriteBytesToEndpointTrace {
   size_t bytes;
   size_t endpoint_id;
   bool trace;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("WRITE_BYTES");
@@ -185,12 +167,6 @@ struct FinishWriteBytesToEndpointTrace {
   size_t endpoint_id;
   absl::Status status;
 
-  size_t MemoryUsage() const {
-    size_t size = sizeof(*this);
-    if (!status.ok()) size += status.message().size();
-    return size;
-  }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("FINISH_WRITE");
     object["endpoint_id"] = Json::FromNumber(endpoint_id);
@@ -201,8 +177,6 @@ struct FinishWriteBytesToEndpointTrace {
 struct WriteBytesToControlChannelTrace {
   size_t bytes;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("WRITE_CTL_BYTES");
     object["bytes"] = Json::FromNumber(bytes);
@@ -211,8 +185,6 @@ struct WriteBytesToControlChannelTrace {
 
 struct FinishWriteBytesToControlChannelTrace {
   absl::Status status;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("FINISH_WRITE_CTL");
@@ -224,12 +196,6 @@ template <bool read>
 struct TransportError {
   absl::Status status;
 
-  size_t MemoryUsage() const {
-    size_t size = sizeof(*this);
-    if (!status.ok()) size += status.message().size();
-    return size;
-  }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] =
         Json::FromString(read ? "READ_ERROR" : "WRITE_ERROR");
@@ -238,8 +204,6 @@ struct TransportError {
 };
 
 struct OrphanTrace {
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("ORPHAN");
   }
@@ -247,8 +211,6 @@ struct OrphanTrace {
 
 struct EndpointCloseTrace {
   uint32_t id;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("ENDPOINT_CLOSE");

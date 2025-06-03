@@ -943,7 +943,7 @@ class RubyLanguage(object):
         ]:
             tests.append(
                 self.config.job_spec(
-                    ["rspec", test],
+                    ["bundle", "exec", "rspec", test],
                     shortname=test,
                     timeout_seconds=20 * 60,
                     environ=_FORCE_ENVIRON_FOR_WRAPPERS,
