@@ -17,8 +17,8 @@ python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi
 #### 1.72: Current broken
 
 ```sh
-python3.12 -m venv --upgrade-deps .venv-174
-source ./.venv-174/bin/activate
+python3.12 -m venv --upgrade-deps .venv-172
+source ./.venv-172/bin/activate
 pip install -r requirements.txt
 python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi_out=./protos/v6 --grpc_python_out=./protos/v6 ./protos/server.proto
 ```
