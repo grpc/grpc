@@ -26,6 +26,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time:time",
+        "absl/container:flat_hash_map",
         "yaml-cpp",
     ],
     visibility = ["//visibility:public"],
@@ -38,6 +39,7 @@ grpc_cc_test(
         "gtest",
         "absl/log:log",
         "absl/status",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         ":experiments_compiler",
