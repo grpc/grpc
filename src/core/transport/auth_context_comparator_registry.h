@@ -33,15 +33,15 @@ class AuthContextComparatorRegistry {
  public:
   class Builder {
    public:
-    void RegisterComparisonFunction(
+    void RegisterComparator(
         std::string name,
         std::unique_ptr<absl::AnyInvocable<bool(const grpc_auth_context*,
                                                 const grpc_auth_context*)>>
-            transport) {
+            comparator) {
       if (comparators_.find(name) != comparators_.end()) {
         LOG(FATAL) << "Duplicate comparator registration: " << name;
       }
-      comparators_[name] = std::move(transport);
+      comparators_[name] = std::move(comparator);
     }
 
     AuthContextComparatorRegistry Build() {

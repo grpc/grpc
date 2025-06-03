@@ -152,6 +152,10 @@ void grpc_auth_context::add_property(const char* name, const char* value,
   prop->value_length = value_length;
 }
 
+void grpc_auth_context::set_protocol(absl::string_view protocol) {
+  protocol_ = protocol;
+}
+
 void grpc_auth_context_add_property(grpc_auth_context* ctx, const char* name,
                                     const char* value, size_t value_length) {
   GRPC_TRACE_LOG(api, INFO) << absl::StrFormat(

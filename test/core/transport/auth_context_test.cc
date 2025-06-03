@@ -23,6 +23,7 @@
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
@@ -142,7 +143,8 @@ TEST(AuthContextTest, ContextWithExtension) {
 }
 
 TEST(AuthContextTest, CompareAuthContextEqualProps) {
-  // Setup two auth contexts with equal foo props
+  // Setup two auth contexts with the same protocol and equal foo props
+  constexpr absl::string_view kProtocol = "baz";
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
@@ -151,13 +153,26 @@ TEST(AuthContextTest, CompareAuthContextEqualProps) {
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx2, nullptr);
   grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "bar");
+  ctx->set_protocol(kProtocol);
+  ctx2->set_protocol(kProtocol);
   // Set a custom comparison function
-  ctx->set_compare_auth_context(
-      [](const grpc_auth_context* one, const grpc_auth_context* two) -> bool {
-        auto it1 = grpc_auth_context_find_properties_by_name(one, "foo");
-        auto it2 = grpc_auth_context_find_properties_by_name(two, "foo");
-        return strcmp(grpc_auth_property_iterator_next(&it1)->value,
-                      grpc_auth_property_iterator_next(&it2)->value) == 0;
+  grpc_core::CoreConfiguration::RegisterPersistentBuilder(
+      [&](grpc_core::CoreConfiguration::Builder* builder) {
+        builder->auth_context_comparator_registry()->RegisterComparator(
+            std::string(kProtocol),
+            std::make_unique<absl::AnyInvocable<bool(
+                const grpc_auth_context*, const grpc_auth_context*)>>(
+                [&](const grpc_auth_context* one,
+                    const grpc_auth_context* two) -> bool {
+                  auto it1 =
+                      grpc_auth_context_find_properties_by_name(one, "foo");
+                  auto it2 =
+                      grpc_auth_context_find_properties_by_name(two, "foo");
+                  return strcmp(
+                             grpc_auth_property_iterator_next(&it1)->value,
+                             grpc_auth_property_iterator_next(&it2)->value) ==
+                         0;
+                }));
       });
   EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(true));
   ctx.reset(DEBUG_LOCATION, "test");
@@ -198,6 +213,19 @@ TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
   ctx.reset(DEBUG_LOCATION, "test");
   ctx2.reset(DEBUG_LOCATION, "test");
 }
+
+// class AuthContextComparisonTest : public ::testing::Test {
+//  protected:
+//   AuthContextComparisonTest() {
+//     CoreConfiguration::RegisterPersistentBuilder(
+//         [](CoreConfiguration::Builder* builder) {
+//           builder->auth_context_comparator_registry()->RegisterComparator(
+//               "cg3", std::make_unique<ChaoticGoodEndpointTransport>());
+//         });
+//     CoreConfiguration::RegisterPersistentBuilder()
+//   }
+
+// }
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
