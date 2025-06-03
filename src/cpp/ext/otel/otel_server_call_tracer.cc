@@ -145,6 +145,9 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     // tracing systems active for the same call.
     grpc_core::SetContext<census_context>(
         reinterpret_cast<census_context*>(span_.get()));
+    if (IsSampled()) {
+      arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 

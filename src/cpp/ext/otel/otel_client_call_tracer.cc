@@ -181,6 +181,9 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
     opentelemetry::context::Context context;
     context = opentelemetry::trace::SetSpan(context, span_);
     parent_->otel_plugin_->text_map_propagator_->Inject(carrier, context);
+    if (IsSampled()) {
+      parent_->arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 
