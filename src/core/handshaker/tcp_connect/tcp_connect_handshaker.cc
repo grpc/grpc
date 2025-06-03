@@ -119,6 +119,9 @@ void TCPConnectHandshaker::Shutdown(absl::Status /*error*/) {
 void TCPConnectHandshaker::DoHandshake(
     HandshakerArgs* args,
     absl::AnyInvocable<void(absl::Status)> on_handshake_done) {
+  // If the endpoint already exists, skip the TCP connection step.
+  // In this case, the handshaker becomes a no-op, it simply completes the
+  // handshake successfully without performing any action.
   if (args->endpoint != nullptr) {
     InvokeOnHandshakeDone(args, std::move(on_handshake_done), absl::OkStatus());
     return;

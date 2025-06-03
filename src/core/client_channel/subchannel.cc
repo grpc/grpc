@@ -422,10 +422,17 @@ class Subchannel::ConnectedSubchannelStateWatcher final
         if (c->channelz_node() != nullptr) {
           c->channelz_node()->SetChildSocket(nullptr);
         }
-        // Even though we're reporting IDLE instead of TRANSIENT_FAILURE here,
-        // pass along the status from the transport, since it may have
-        // keepalive info attached to it that the channel needs.
-        // TODO(roth): Consider whether there's a cleaner way to do this.
+        // If the subchannel was created from an endpoint we report
+        // TRANSIENT_FAILURE so the channel surface can process the error and
+        // preserve any transport-provided status (e.g., for keepalive
+        // failures). In this case, the subchannel will remain in
+        // TRANSIENT_FAILURE permanently, since there's no mechanism to trigger
+        // reconnection. This is expected for endpoints created externally,
+        // which are not tied to resolver-based re-resolution. For other
+        // subchannels, we report IDLE to allow normal reconnection behavior
+        // through re-resolution and backoff.
+        // TODO(roth): Consider whether there's a cleaner or more unified way to
+        // handle this.
         c->SetConnectivityStateLocked(c->created_from_endpoint_
                                           ? GRPC_CHANNEL_TRANSIENT_FAILURE
                                           : GRPC_CHANNEL_IDLE,
@@ -583,6 +590,11 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   }
   c = MakeRefCounted<Subchannel>(std::move(key), std::move(connector), args);
   if (c->created_from_endpoint_) {
+    // We don't interact with the subchannel pool in this case.
+    // Instead, we unconditionally return the newly created subchannel.
+    // Before returning, we explicitly trigger a connection attempt
+    // by calling RequestConnection(), which sets the subchannel’s
+    // connectivity state to CONNECTING.
     c->RequestConnection();
     return c;
   }
