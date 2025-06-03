@@ -708,17 +708,23 @@ class SecureEndpoint final : public EventEngine::Endpoint {
           : wrapped_telemetry_info_(std::move(wrapped_telemetry_info)) {}
 
       std::vector<size_t> AllWriteMetrics() const override {
-        return wrapped_telemetry_info_->AllWriteMetrics();
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->AllWriteMetrics()
+                   : std::vector<size_t>{};
       }
 
       std::optional<absl::string_view> GetMetricName(
           size_t key) const override {
-        return wrapped_telemetry_info_->GetMetricName(key);
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricName(key)
+                   : std::nullopt;
       }
 
       std::optional<size_t> GetMetricKey(
           absl::string_view name) const override {
-        return wrapped_telemetry_info_->GetMetricKey(name);
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricKey(name)
+                   : std::nullopt;
       }
 
      private:
