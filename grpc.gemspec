@@ -1806,6 +1806,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/telemetry/tcp_tracer.h )
   s.files += %w( src/core/transport/auth_context.cc )
   s.files += %w( src/core/transport/auth_context.h )
+  s.files += %w( src/core/transport/auth_context_comparator_registry.h )
   s.files += %w( src/core/transport/endpoint_transport.h )
   s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.cc )
   s.files += %w( src/core/transport/endpoint_transport_client_channel_factory.h )
