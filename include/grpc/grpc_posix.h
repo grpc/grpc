@@ -24,11 +24,11 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include <memory>
-
 #ifdef __cplusplus
 
 #include <grpc/event_engine/event_engine.h>
+
+#include <memory>
 
 extern "C" {
 #endif
@@ -61,7 +61,6 @@ GRPCAPI void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 #ifdef __cplusplus
 }
-#endif
 
 namespace grpc_core::experimental {
 
@@ -97,5 +96,7 @@ grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
                                   const grpc_channel_args* args);
 
 }  // namespace grpc_core::experimental
+
+#endif  // __cplusplus
 
 #endif /* GRPC_GRPC_POSIX_H */
