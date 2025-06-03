@@ -55,7 +55,7 @@ class MyServer:
     def handle_sigint(self, signalnum: _SignalNum, frame: _SignalFrame) -> None:
         print(flush=True)
         if self._handling_sigint:
-            logging.info("Ctrl+C pressed twice, aborting the cleanup.")
+            logging.info("Ctrl+C pressed twice, exiting.")
         elif self.server is not None:
             delay_sec = 2
             logging.info(
