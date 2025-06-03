@@ -31,7 +31,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_parser.h"
-#include "src/core/transport/auth_context.h"
+#include "src/core/transport/auth_context_comparator_registry.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/debug_location.h"
 

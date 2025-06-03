@@ -2153,6 +2153,7 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "config",
         "debug_location",
         "exec_ctx",
         "gpr",
@@ -3067,6 +3068,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:auth_context_comparator_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
