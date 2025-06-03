@@ -980,6 +980,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/errors_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/logger_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb",
+            "src/ruby/end2end/shell_out_from_server_test.rb",
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
