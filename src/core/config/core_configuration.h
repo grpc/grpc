@@ -31,6 +31,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/service_config/service_config_parser.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/transport/endpoint_transport.h"
 #include "src/core/util/debug_location.h"
 
@@ -106,6 +107,10 @@ class GRPC_DLL CoreConfiguration {
       return &endpoint_transport_registry_;
     }
 
+    AuthContextComparatorRegistry::Builder* auth_context_comparator_registry() {
+      return &auth_context_comparator_registry_;
+    }
+
    private:
     friend class CoreConfiguration;
 
@@ -119,6 +124,7 @@ class GRPC_DLL CoreConfiguration {
     ProxyMapperRegistry::Builder proxy_mapper_registry_;
     CertificateProviderRegistry::Builder certificate_provider_registry_;
     EndpointTransportRegistry::Builder endpoint_transport_registry_;
+    AuthContextComparatorRegistry::Builder auth_context_comparator_registry_;
 
     Builder();
     CoreConfiguration* Build();
@@ -265,6 +271,11 @@ class GRPC_DLL CoreConfiguration {
     return endpoint_transport_registry_;
   }
 
+  const AuthContextComparatorRegistry& auth_context_comparator_registry()
+      const {
+    return auth_context_comparator_registry_;
+  }
+
   static void SetDefaultBuilder(void (*builder)(CoreConfiguration::Builder*)) {
     default_builder_ = builder;
   }
@@ -298,6 +309,7 @@ class GRPC_DLL CoreConfiguration {
   ProxyMapperRegistry proxy_mapper_registry_;
   CertificateProviderRegistry certificate_provider_registry_;
   EndpointTransportRegistry endpoint_transport_registry_;
+  AuthContextComparatorRegistry auth_context_comparator_registry_;
 };
 
 template <typename Sink>

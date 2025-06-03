@@ -120,6 +120,7 @@ struct grpc_auth_context
   void ensure_capacity();
   void add_property(const char* name, const char* value, size_t value_length);
   void add_cstring_property(const char* name, const char* value);
+  void set_protocol(absl::string_view protocol);
   void set_compare_auth_context(
       absl::AnyInvocable<bool(const grpc_auth_context*,
                               const grpc_auth_context*)>
@@ -138,6 +139,49 @@ struct grpc_auth_context
   grpc_core::OrphanablePtr<grpc_core::ConnectionContext> connection_context_;
   absl::AnyInvocable<bool(const grpc_auth_context*, const grpc_auth_context*)>
       compare_auth_context_;
+  std::string protocol_;
+};
+
+class AuthContextComparatorRegistry {
+ private:
+  using Compare = absl::AnyInvocable<bool(const grpc_auth_context*,
+                                          const grpc_auth_context*)>;
+  using ComparatorMap = std::map<std::string, std::unique_ptr<Compare>>;
+
+ public:
+  class Builder {
+   public:
+    void RegisterComparisonFunction(
+        std::string name,
+        std::unique_ptr<absl::AnyInvocable<bool(const grpc_auth_context*,
+                                                const grpc_auth_context*)>>
+            transport) {
+      if (comparators_.find(name) != comparators_.end()) {
+        LOG(FATAL) << "Duplicate comparator registration: " << name;
+      }
+      comparators_[name] = std::move(transport);
+    }
+
+    AuthContextComparatorRegistry Build() {
+      return AuthContextComparatorRegistry(std::move(comparators_));
+    }
+
+   private:
+    ComparatorMap comparators_;
+  };
+
+  Compare* GetComparator(absl::string_view name) const {
+    auto it = comparators_.find(std::string(name));
+    if (it == comparators_.end()) {
+      return nullptr;
+    }
+    return it->second.get();
+  }
+
+ private:
+  explicit AuthContextComparatorRegistry(ComparatorMap comparators)
+      : comparators_(std::move(comparators)) {}
+  ComparatorMap comparators_;
 };
 
 // --- Channel args for auth context ---

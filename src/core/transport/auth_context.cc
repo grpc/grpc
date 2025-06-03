@@ -27,6 +27,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -236,8 +237,15 @@ grpc_auth_context* grpc_find_auth_context_in_args(
 
 std::optional<bool> grpc_auth_context::CompareAuthContext(
     const grpc_auth_context* other) {
-  if (compare_auth_context_ == nullptr) {
+  if (protocol_.empty() || other->protocol_.empty() ||
+      protocol_ != other->protocol_) {
     return std::nullopt;
   }
-  return compare_auth_context_(this, other);
+  auto* comparator = grpc_core::CoreConfiguration::Get()
+                         .auth_context_comparator_registry()
+                         .GetComparator(protocol_);
+  if (comparator == nullptr) {
+    return std::nullopt;
+  }
+  return (*comparator)(this, other);
 }
