@@ -30,7 +30,6 @@
 #include <optional>
 #include <string>
 #include <tuple>
-#include <type_traits>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_endpoint.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_listener.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
@@ -80,16 +80,15 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
+  EventEnginePosixInterface& posix_interface = poller_->posix_interface();
+
   /// Check if this is a wildcard port, and if so, try to keep the port the same
   /// as some previously created listener socket.
   for (auto it = acceptors_.begin();
        requested_port == 0 && it != acceptors_.end(); it++) {
-    EventEngine::ResolvedAddress sockname_temp;
-    socklen_t len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
-    if (0 == getsockname((*it)->Socket().sock.Fd(),
-                         const_cast<sockaddr*>(sockname_temp.address()),
-                         &len)) {
-      int used_port = ResolvedAddressGetPort(sockname_temp);
+    auto sockname_temp = posix_interface.LocalAddress((*it)->Fd());
+    if (sockname_temp.ok()) {
+      int used_port = ResolvedAddressGetPort(*sockname_temp);
       if (used_port > 0) {
         requested_port = used_port;
         ResolvedAddressSetPort(res_addr, requested_port);
@@ -97,21 +96,21 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
       }
     }
   }
-
   auto used_port = MaybeGetWildcardPortFromAddress(res_addr);
   // Update the callback. Any subsequent new sockets created and added to
   // acceptors_ in this function will invoke the new callback.
   acceptors_.UpdateOnAppendCallback(std::move(on_bind_new_fd));
   if (used_port.has_value()) {
     requested_port = *used_port;
-    return ListenerContainerAddWildcardAddresses(acceptors_, options_,
-                                                 requested_port);
+    return ListenerContainerAddWildcardAddresses(&posix_interface, acceptors_,
+                                                 options_, requested_port);
   }
   if (ResolvedAddressToV4Mapped(res_addr, &addr6_v4mapped)) {
     res_addr = addr6_v4mapped;
   }
 
-  auto result = CreateAndPrepareListenerSocket(options_, res_addr);
+  auto result =
+      CreateAndPrepareListenerSocket(&posix_interface, options_, res_addr);
   GRPC_RETURN_IF_ERROR(result.status());
   acceptors_.Append(*result);
   return result->port;
@@ -136,22 +135,31 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
   for (;;) {
     EventEngine::ResolvedAddress addr;
     memset(const_cast<sockaddr*>(addr.address()), 0, addr.size());
+    auto& posix_interface = handle_->Poller()->posix_interface();
     // Note: If we ever decide to return this address to the user, remember to
     // strip off the ::ffff:0.0.0.0/96 prefix first.
-    int fd = Accept4(handle_->WrappedFd(), addr, 1, 1);
-    if (fd < 0) {
-      switch (errno) {
+    auto fd = posix_interface.Accept4(handle_->WrappedFd(), addr, 1, 1);
+    if (fd.IsWrongGenerationError()) {
+      LOG(ERROR) << "Closing acceptor. accept4 was called with fd from a wrong "
+                    "generation";
+      // Shutting down the acceptor. Unref the ref grabbed in
+      // AsyncConnectionAcceptor::Start().
+      Unref();
+      return;
+    }
+    if (fd.IsPosixError()) {
+      switch (*fd.errno_value()) {
         case EINTR:
           continue;
         case EMFILE:
-          // When the process runs out of fds, accept4() returns EMFILE. When
-          // this happens, the connection is left in the accept queue until
-          // either a read event triggers the on_read callback, or time has
-          // passed and the accept should be re-tried regardless. This callback
-          // is not cancelled, so a spurious wakeup may occur even when there's
-          // nothing to accept. This is not a performant code path, but if an fd
-          // limit has been reached, the system is likely in an unhappy state
-          // regardless.
+          // When the process runs out of posix_interface, accept4() returns
+          // EMFILE. When this happens, the connection is left in the accept
+          // queue until either a read event triggers the on_read callback, or
+          // time has passed and the accept should be re-tried regardless. This
+          // callback is not cancelled, so a spurious wakeup may occur even when
+          // there's nothing to accept. This is not a performant code path, but
+          // if an fd limit has been reached, the system is likely in an unhappy
+          // state regardless.
           LOG_EVERY_N_SEC(ERROR, 1)
               << "File descriptor limit reached. Retrying.";
           handle_->NotifyOnRead(notify_on_accept_);
@@ -186,8 +194,8 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     // For UNIX sockets, the accept call might not fill up the member
     // sun_path of sockaddr_un, so explicitly call getpeername to get it.
     if (addr.address()->sa_family == AF_UNIX) {
-      socklen_t len = EventEngine::ResolvedAddress::MAX_SIZE_BYTES;
-      if (getpeername(fd, const_cast<sockaddr*>(addr.address()), &len) < 0) {
+      auto peer_address = posix_interface.PeerAddress(fd.value());
+      if (!peer_address.ok()) {
         auto listener_addr_uri = ResolvedAddressToURI(socket_.addr);
         LOG(ERROR) << "Failed getpeername: " << grpc_core::StrError(errno)
                    << ". Dropping the connection, and continuing "
@@ -195,17 +203,16 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
                    << (listener_addr_uri.ok() ? *listener_addr_uri
                                               : "<unknown>")
                    << ":" << socket_.port;
-        close(fd);
+        posix_interface.Close(fd.value());
         handle_->NotifyOnRead(notify_on_accept_);
         return;
       }
-      addr = EventEngine::ResolvedAddress(addr.address(), len);
+      addr = std::move(peer_address).value();
     }
 
-    PosixSocketWrapper sock(fd);
-    (void)sock.SetSocketNoSigpipeIfPossible();
-    auto result = sock.ApplySocketMutatorInOptions(
-        GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
+    (void)posix_interface.SetSocketNoSigpipeIfPossible(fd.value());
+    auto result = posix_interface.ApplySocketMutatorInOptions(
+        fd.value(), GRPC_FD_SERVER_CONNECTION_USAGE, listener_->options_);
     if (!result.ok()) {
       LOG(ERROR) << "Closing acceptor. Failed to apply socket mutator: "
                  << result;
@@ -226,7 +233,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
     }
     auto endpoint = CreatePosixEndpoint(
         /*handle=*/listener_->poller_->CreateHandle(
-            fd, *peer_name, listener_->poller_->CanTrackErrors()),
+            fd.value(), *peer_name, listener_->poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/listener_->engine_,
         // allocator=
         listener_->memory_allocator_factory_->CreateMemoryAllocator(
@@ -238,7 +245,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::NotifyOnAccept(
       // Call on_accept_ and then resume accepting new connections
       // by continuing the parent for-loop.
       listener_->on_accept_(
-          /*listener_fd=*/handle_->WrappedFd(),
+          /*listener_fd=*/handle_->WrappedFd().fd(),
           /*endpoint=*/std::move(endpoint),
           /*is_external=*/false,
           /*memory_allocator=*/
@@ -260,18 +267,19 @@ absl::Status PosixEngineListenerImpl::HandleExternalConnection(
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: Invalid peer socket: ", fd));
   }
-  PosixSocketWrapper sock(fd);
-  (void)sock.SetSocketNoSigpipeIfPossible();
-  auto peer_name = sock.PeerAddressString();
+  auto& posix_interface = poller_->posix_interface();
+  FileDescriptor wrapped = posix_interface.Adopt(fd);
+  (void)posix_interface.SetSocketNoSigpipeIfPossible(wrapped);
+  auto peer_name = posix_interface.PeerAddressString(wrapped);
   if (!peer_name.ok()) {
     return absl::UnknownError(
         absl::StrCat("HandleExternalConnection: peer not connected: ",
                      peer_name.status().ToString()));
   }
   grpc_core::EnsureRunInExecCtx([this, peer_name = std::move(*peer_name),
-                                 pending_data, listener_fd, fd]() mutable {
+                                 pending_data, listener_fd, wrapped]() mutable {
     auto endpoint = CreatePosixEndpoint(
-        /*handle=*/poller_->CreateHandle(fd, peer_name,
+        /*handle=*/poller_->CreateHandle(wrapped, peer_name,
                                          poller_->CanTrackErrors()),
         /*on_shutdown=*/nullptr, /*engine=*/engine_,
         /*allocator=*/

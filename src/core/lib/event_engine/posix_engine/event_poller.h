@@ -22,9 +22,9 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
-#include "src/core/lib/event_engine/forkable.h"
 #include "src/core/lib/event_engine/poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 
 namespace grpc_event_engine::experimental {
 
@@ -39,14 +39,15 @@ class PosixEventPoller;
 
 class EventHandle {
  public:
-  virtual int WrappedFd() = 0;
+  virtual FileDescriptor WrappedFd() = 0;
   // Delete the handle and optionally close the underlying file descriptor if
   // release_fd != nullptr. The on_done closure is scheduled to be invoked
   // after the operation is complete. After this operation, NotifyXXX and SetXXX
   // operations cannot be performed on the handle. In general, this method
   // should only be called after ShutdownHandle and after all existing NotifyXXX
   // closures have run and there is no waiting NotifyXXX closure.
-  virtual void OrphanHandle(PosixEngineClosure* on_done, int* release_fd,
+  virtual void OrphanHandle(PosixEngineClosure* on_done,
+                            FileDescriptor* release_fd,
                             absl::string_view reason) = 0;
   // Shutdown a handle. If there is an attempt to call NotifyXXX operations
   // after Shutdown handle, those closures will be run immediately with the
@@ -84,24 +85,26 @@ class EventHandle {
   virtual ~EventHandle() = default;
 };
 
-class PosixEventPoller : public grpc_event_engine::experimental::Poller,
-                         public Forkable {
+class PosixEventPoller : public grpc_event_engine::experimental::Poller {
  public:
   // Return an opaque handle to perform actions on the provided file descriptor.
-  virtual EventHandle* CreateHandle(int fd, absl::string_view name,
+  virtual EventHandle* CreateHandle(FileDescriptor fd, absl::string_view name,
                                     bool track_err) = 0;
   virtual bool CanTrackErrors() const = 0;
   virtual std::string Name() = 0;
-  // Shuts down and deletes the poller. It is legal to call this function
-  // only when no other poller method is in progress. For instance, it is
-  // not safe to call this method, while a thread is blocked on Work(...).
-  // A graceful way to terminate the poller could be to:
-  // 1. First orphan all created handles.
-  // 2. Send a Kick() to the thread executing Work(...) and wait for the
-  //    thread to return.
-  // 3. Call Shutdown() on the poller.
-  virtual void Shutdown() = 0;
+#ifdef GRPC_ENABLE_FORK_SUPPORT
+  // Handles fork in the child process. It performs cleanups like closing file
+  // descriptors, resetting lingering state to make sure the child and parent
+  // processes do not interfere with each other and that the child process
+  // remains in valid state.
+  virtual void HandleForkInChild() = 0;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
+  virtual void ResetKickState() = 0;
+  EventEnginePosixInterface& posix_interface() { return posix_interface_; }
   ~PosixEventPoller() override = default;
+
+ private:
+  EventEnginePosixInterface posix_interface_;
 };
 
 }  // namespace grpc_event_engine::experimental
