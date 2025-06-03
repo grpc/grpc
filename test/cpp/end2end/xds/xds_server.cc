@@ -90,13 +90,14 @@ AdsServiceImpl::Reactor::Reactor(
     std::shared_ptr<AdsServiceImpl> ads_service_impl,
     CallbackServerContext* context)
     : ads_service_impl_(std::move(ads_service_impl)), context_(context) {
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-            << "]: reactor " << this << ": StreamAggregatedResources starts";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": StreamAggregatedResources starts";
   {
     grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
     if (ads_service_impl_->forced_ads_failure_.has_value()) {
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": StreamAggregatedResources forcing early failure "
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this
+                << ": StreamAggregatedResources forcing early failure "
                    "with status code: "
                 << ads_service_impl_->forced_ads_failure_->error_code()
                 << ", message: "
@@ -110,12 +111,14 @@ AdsServiceImpl::Reactor::Reactor(
 }
 
 void AdsServiceImpl::Reactor::OnDone() {
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor " << this << ": OnDone()";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnDone()";
   delete this;
 }
 
 void AdsServiceImpl::Reactor::OnCancel() {
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor " << this << ": OnCancel()";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnCancel()";
   // Clean up any subscriptions that were still active when the call
   // finished.
   {
@@ -144,10 +147,9 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     }
     seen_first_request_ = true;
   }
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-            << "]: reactor " << this << ": Received request for type "
-            << request_.type_url() << " with content "
-            << request_.DebugString();
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": Received request for type " << request_.type_url()
+            << " with content " << request_.DebugString();
   auto& type_state = type_state_map_[request_.type_url()];
   // Check the nonce sent by the client, if any.
   // (This will be absent on the first request on a stream.)
@@ -158,8 +160,8 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
                              &client_resource_type_version));
     }
     if (ads_service_impl_->check_version_callback_ != nullptr) {
-      ads_service_impl_->check_version_callback_(
-          request_.type_url(), client_resource_type_version);
+      ads_service_impl_->check_version_callback_(request_.type_url(),
+                                                 client_resource_type_version);
     }
   } else {
     int client_nonce;
@@ -168,8 +170,9 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     ResponseState response_state;
     if (!request_.has_error_detail()) {
       response_state.state = ResponseState::ACKED;
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": client ACKed resource_type=" << request_.type_url()
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this
+                << ": client ACKed resource_type=" << request_.type_url()
                 << " version=" << request_.version_info();
     } else {
       response_state.state = ResponseState::NACKED;
@@ -178,14 +181,14 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
             static_cast<absl::StatusCode>(request_.error_detail().code()));
       }
       response_state.error_message = request_.error_detail().message();
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": client NACKed resource_type=" << request_.type_url()
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this
+                << ": client NACKed resource_type=" << request_.type_url()
                 << " version=" << request_.version_info() << ": "
                 << response_state.error_message;
     }
     ads_service_impl_->resource_type_response_state_[request_.type_url()]
-        .emplace_back(
-            std::move(response_state));
+        .emplace_back(std::move(response_state));
     // Ignore requests with stale nonces.
     if (client_nonce < type_state.nonce) {
       request_.Clear();
@@ -210,9 +213,9 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     if (!type_state.subscriptions.contains(resource_name)) {
       type_state.subscriptions.emplace(resource_name, true);
       resource_state.subscriptions.emplace(this);
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": subscribe to resource type " << request_.type_url()
-                << " name " << resource_name;
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this << ": subscribe to resource type "
+                << request_.type_url() << " name " << resource_name;
     }
   }
   // Unsubscribe from any resource not present in the request.
@@ -225,8 +228,8 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
       ++it;
       continue;
     }
-    LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-              << "]: reactor " << this << ": Unsubscribe to type=" << request_.type_url()
+    LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+              << this << ": Unsubscribe to type=" << request_.type_url()
               << " name=" << resource_name;
     auto it2 = resource_name_map.find(resource_name);
     CHECK(it2 != resource_name_map.end()) << resource_name;
@@ -245,29 +248,29 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
 
 void AdsServiceImpl::Reactor::MaybeStartWrite(
     const std::string& resource_type) {
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-            << "]: reactor " << this << ": MaybeStartWrite(" << resource_type << ")";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": MaybeStartWrite(" << resource_type << ")";
   if (write_pending_) {
     response_needed_.insert(resource_type);
     return;
   }
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-            << "]: reactor " << this << ": Constructing response";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": Constructing response";
   auto& type_state = type_state_map_[resource_type];
   auto& resource_type_state = ads_service_impl_->resource_map_[resource_type];
   auto& resource_name_map = resource_type_state.resource_name_map;
   bool resource_needed_update = false;
   for (auto& [resource_name, new_subscription] : type_state.subscriptions) {
     auto& resource_state = resource_name_map[resource_name];
-    bool needs_update = new_subscription ||
-                        (type_state.resource_type_version <
-                             resource_type_state.resource_type_version &&
-                         resource_state.resource_type_version <=
-                             resource_type_state.resource_type_version);
+    bool needs_update =
+        new_subscription || (type_state.resource_type_version <
+                                 resource_type_state.resource_type_version &&
+                             resource_state.resource_type_version <=
+                                 resource_type_state.resource_type_version);
     new_subscription = false;
     if (needs_update) {
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": Sending update for: " << resource_name;
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this << ": Sending update for: " << resource_name;
       resource_needed_update = true;
     }
     if (resource_type == kLdsTypeUrl || resource_type == kCdsTypeUrl ||
@@ -282,13 +285,14 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
         }
       }
     } else {
-      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-                << "]: reactor " << this << ": client does not need update for: " << resource_name;
+      LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+                << this
+                << ": client does not need update for: " << resource_name;
     }
   }
   if (!resource_needed_update) {
-    LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-              << "]: reactor " << this << ": no resources to send for type=" << resource_type;
+    LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+              << this << ": no resources to send for type=" << resource_type;
     response_.Clear();
     MaybeStartNextWrite();
     return;
@@ -298,15 +302,15 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
   response_.set_version_info(
       std::to_string(resource_type_state.resource_type_version));
   type_state.resource_type_version = resource_type_state.resource_type_version;
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
-            << "]: reactor " << this << ": sending response: " << response_.DebugString();
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": sending response: " << response_.DebugString();
   write_pending_ = true;
   StartWrite(&response_);
 }
 
 void AdsServiceImpl::Reactor::OnWriteDone(bool ok) {
-  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor " << this << ": OnWriteDone("
-            << ok << ")";
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnWriteDone(" << ok << ")";
   grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   write_pending_ = false;
   response_.Clear();

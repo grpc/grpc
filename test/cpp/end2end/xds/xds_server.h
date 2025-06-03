@@ -57,8 +57,8 @@ constexpr char kEdsTypeUrl[] =
 
 // An ADS service implementation.
 class AdsServiceImpl
-    : public CountedService<
-          ::envoy::service::discovery::v3::AggregatedDiscoveryService::CallbackService>,
+    : public CountedService<::envoy::service::discovery::v3::
+                                AggregatedDiscoveryService::CallbackService>,
       public std::enable_shared_from_this<AdsServiceImpl> {
  public:
   using DiscoveryRequest = ::envoy::service::discovery::v3::DiscoveryRequest;
@@ -200,7 +200,8 @@ class AdsServiceImpl
       int nonce = 0;
       int resource_type_version = 0;
       absl::flat_hash_map<std::string /*resource_name*/,
-                          bool /*new_subscription*/> subscriptions;
+                          bool /*new_subscription*/>
+          subscriptions;
     };
 
     void OnReadDone(bool ok) override;
@@ -213,8 +214,6 @@ class AdsServiceImpl
 
     std::shared_ptr<AdsServiceImpl> ads_service_impl_;
     CallbackServerContext* context_;
-
-// FIXME: use our own lock
 
     std::map<std::string /*type_url*/, TypeState> type_state_map_
         ABSL_GUARDED_BY(&AdsServiceImpl::ads_mu_);
