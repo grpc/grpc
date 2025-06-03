@@ -17,25 +17,20 @@
 require_relative './end2end_common'
 
 def main
-  parent_controller_port = ''
-  server_port = ''
-  OptionParser.new do |opts|
-    opts.on('--parent_controller_port=P', String) do |p|
-      parent_controller_port = p
-    end
-    opts.on('--server_port=P', String) do |p|
-      server_port = p
-    end
-  end.parse!
-  report_controller_port_to_parent(parent_controller_port, 0)
-
-  ch = GRPC::Core::Channel.new("localhost:#{server_port}", {},
+  # point to a non-existant server on IPv6 discard prefix
+  ch = GRPC::Core::Channel.new("[0100::]:80", {},
                                :this_channel_is_insecure)
-
-  loop do
-    state = ch.connectivity_state
-    ch.watch_connectivity_state(state, Time.now + 360)
+  thr = Thread.new do
+    loop do
+      state = ch.connectivity_state
+      ch.watch_connectivity_state(state, Time.now + 360)
+    end
   end
+  # sleep to allow time to get into the middle of a
+  # connectivity state watch operation
+  sleep 0.1
+  thr.kill
+  thr.join
 end
 
 main
