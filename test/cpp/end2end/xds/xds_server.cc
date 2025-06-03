@@ -200,18 +200,13 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     StartRead(&request_);
     return;
   }
-  // Look at all the resource names in the request.
+  // Get the map of resources for this type.
   auto& resource_type_state =
       ads_service_impl_->resource_map_[request_.type_url()];
   auto& resource_name_map = resource_type_state.resource_name_map;
-  absl::flat_hash_set<std::string> resources_to_unsubscribe;
-  for (const auto& [resource_name, _] : type_state.subscriptions) {
-    resources_to_unsubscribe.emplace(resource_name);
-  }
+  // Subscribe to any new resource names in the request.
   for (const std::string& resource_name : request_.resource_names()) {
-    resources_to_unsubscribe.erase(resource_name);
     auto& resource_state = resource_name_map[resource_name];
-    // Check if it's a new subscription.
     if (!type_state.subscriptions.contains(resource_name)) {
       type_state.subscriptions.emplace(resource_name, true);
       resource_state.subscriptions.emplace(this);
@@ -220,20 +215,28 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
                 << " name " << resource_name;
     }
   }
-  // Anything left in resources_to_unsubscribe needs to be unsubscribed.
-  for (auto& resource_name : resources_to_unsubscribe) {
+  // Unsubscribe from any resource not present in the request.
+  const absl::flat_hash_set<absl::string_view> resources_in_request(
+      request_.resource_names().begin(), request_.resource_names().end());
+  for (auto it = type_state.subscriptions.begin();
+       it != type_state.subscriptions.end();) {
+    const std::string& resource_name = it->first;
+    if (resources_in_request.contains(resource_name)) {
+      ++it;
+      continue;
+    }
     LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
               << "]: reactor " << this << ": Unsubscribe to type=" << request_.type_url()
               << " name=" << resource_name;
-    auto it = resource_name_map.find(resource_name);
-    CHECK(it != resource_name_map.end()) << resource_name;
-    auto& resource_state = it->second;
+    auto it2 = resource_name_map.find(resource_name);
+    CHECK(it2 != resource_name_map.end()) << resource_name;
+    auto& resource_state = it2->second;
     resource_state.subscriptions.erase(this);
     if (resource_state.subscriptions.empty() &&
         !resource_state.resource.has_value()) {
-      resource_name_map.erase(it);
+      resource_name_map.erase(it2);
     }
-    type_state.subscriptions.erase(resource_name);
+    type_state.subscriptions.erase(it++);
   }
   MaybeStartWrite(request_.type_url());
   request_.Clear();
