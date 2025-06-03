@@ -137,13 +137,13 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
             << this << ": OnReadDone(" << ok << ")";
   if (!ok) return;
+  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   if (!seen_first_request_) {
     if (ads_service_impl_->check_first_request_ != nullptr) {
       ads_service_impl_->check_first_request_(request_);
     }
     seen_first_request_ = true;
   }
-  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_
             << "]: reactor " << this << ": Received request for type "
             << request_.type_url() << " with content "
@@ -204,7 +204,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
   auto& resource_type_state =
       ads_service_impl_->resource_map_[request_.type_url()];
   auto& resource_name_map = resource_type_state.resource_name_map;
-  absl::flat_hash_set<absl::string_view> resources_to_unsubscribe;
+  absl::flat_hash_set<std::string> resources_to_unsubscribe;
   for (const auto& [resource_name, _] : type_state.subscriptions) {
     resources_to_unsubscribe.emplace(resource_name);
   }
@@ -226,7 +226,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
               << "]: reactor " << this << ": Unsubscribe to type=" << request_.type_url()
               << " name=" << resource_name;
     auto it = resource_name_map.find(resource_name);
-    CHECK(it != resource_name_map.end());
+    CHECK(it != resource_name_map.end()) << resource_name;
     auto& resource_state = it->second;
     resource_state.subscriptions.erase(this);
     if (resource_state.subscriptions.empty() &&
@@ -304,6 +304,7 @@ void AdsServiceImpl::Reactor::MaybeStartWrite(
 void AdsServiceImpl::Reactor::OnWriteDone(bool ok) {
   LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor " << this << ": OnWriteDone("
             << ok << ")";
+  grpc_core::MutexLock lock(&ads_service_impl_->ads_mu_);
   write_pending_ = false;
   response_.Clear();
   if (!ok) return;
