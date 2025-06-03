@@ -29,6 +29,8 @@
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 
+constexpr absl::string_view kProtocol = "baz";
+
 TEST(AuthContextTest, EmptyContext) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
@@ -144,7 +146,6 @@ TEST(AuthContextTest, ContextWithExtension) {
 
 TEST(AuthContextTest, CompareAuthContextEqualProps) {
   // Setup two auth contexts with the same protocol and equal foo props
-  constexpr absl::string_view kProtocol = "baz";
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
@@ -155,25 +156,26 @@ TEST(AuthContextTest, CompareAuthContextEqualProps) {
   grpc_auth_context_add_cstring_property(ctx2.get(), "foo", "bar");
   ctx->set_protocol(kProtocol);
   ctx2->set_protocol(kProtocol);
-  // Set a custom comparison function
-  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
-      [&](grpc_core::CoreConfiguration::Builder* builder) {
-        builder->auth_context_comparator_registry()->RegisterComparator(
-            std::string(kProtocol),
-            std::make_unique<absl::AnyInvocable<bool(
-                const grpc_auth_context*, const grpc_auth_context*)>>(
-                [&](const grpc_auth_context* one,
-                    const grpc_auth_context* two) -> bool {
-                  auto it1 =
-                      grpc_auth_context_find_properties_by_name(one, "foo");
-                  auto it2 =
-                      grpc_auth_context_find_properties_by_name(two, "foo");
-                  return strcmp(
-                             grpc_auth_property_iterator_next(&it1)->value,
-                             grpc_auth_property_iterator_next(&it2)->value) ==
-                         0;
-                }));
-      });
+  // // Set a custom comparison function
+  // grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
+  //     [&](grpc_core::CoreConfiguration::Builder* builder) {
+  //       builder->auth_context_comparator_registry()->RegisterComparator(
+  //           std::string(kProtocol),
+  //           std::make_unique<absl::AnyInvocable<bool(
+  //               const grpc_auth_context*, const grpc_auth_context*)>>(
+  //               [&](const grpc_auth_context* one,
+  //                   const grpc_auth_context* two) -> bool {
+  //                 auto it1 =
+  //                     grpc_auth_context_find_properties_by_name(one, "foo");
+  //                 auto it2 =
+  //                     grpc_auth_context_find_properties_by_name(two, "foo");
+  //                 return strcmp(
+  //                            grpc_auth_property_iterator_next(&it1)->value,
+  //                            grpc_auth_property_iterator_next(&it2)->value)
+  //                            ==
+  //                        0;
+  //               }));
+  //     });
   EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(true));
   ctx.reset(DEBUG_LOCATION, "test");
   ctx2.reset(DEBUG_LOCATION, "test");
@@ -181,7 +183,6 @@ TEST(AuthContextTest, CompareAuthContextEqualProps) {
 
 TEST(AuthContextTest, CompareAuthContextUnequalProps) {
   // Setup two auth contexts with  unequal foo props
-  constexpr absl::string_view kProtocol = "baz";
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   ASSERT_NE(ctx, nullptr);
@@ -193,6 +194,41 @@ TEST(AuthContextTest, CompareAuthContextUnequalProps) {
   // Set a custom comparison function
   ctx->set_protocol(kProtocol);
   ctx2->set_protocol(kProtocol);
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(false));
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(AuthContextTest, CompareAuthContextNoProtocolReturnsOptional) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx2, nullptr);
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), std::nullopt);
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
+}
+
+TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx, nullptr);
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
+      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+  ASSERT_NE(ctx2, nullptr);
+  constexpr absl::string_view kMissingProtocol = "NO_COMPARATOR_SET";
+  ctx->set_protocol(kMissingProtocol);
+  ctx2->set_protocol(kMissingProtocol);
+  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), std::nullopt);
+  ctx.reset(DEBUG_LOCATION, "test");
+  ctx2.reset(DEBUG_LOCATION, "test");
+}
+
+int main(int argc, char** argv) {
+  grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   // Set a custom comparison function
   grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [&](grpc_core::CoreConfiguration::Builder* builder) {
@@ -212,25 +248,5 @@ TEST(AuthContextTest, CompareAuthContextUnequalProps) {
                          0;
                 }));
       });
-  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), ::testing::Optional(false));
-  ctx.reset(DEBUG_LOCATION, "test");
-  ctx2.reset(DEBUG_LOCATION, "test");
-}
-
-TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
-      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  ASSERT_NE(ctx, nullptr);
-  grpc_core::RefCountedPtr<grpc_auth_context> ctx2 =
-      grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
-  ASSERT_NE(ctx2, nullptr);
-  EXPECT_THAT(ctx->CompareAuthContext(ctx2.get()), std::nullopt);
-  ctx.reset(DEBUG_LOCATION, "test");
-  ctx2.reset(DEBUG_LOCATION, "test");
-}
-
-int main(int argc, char** argv) {
-  grpc::testing::TestEnvironment env(&argc, argv);
-  ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }
