@@ -43,8 +43,6 @@ struct H2DataTrace {
   bool end_stream;
   uint32_t payload_length;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
     json["frame_type"] = Json::FromString("DATA");
@@ -62,8 +60,6 @@ struct H2HeaderTrace {
   bool continuation;
   uint32_t payload_length;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
     json["frame_type"] = continuation ? Json::FromString("CONTINUATION")
@@ -80,8 +76,6 @@ struct H2RstStreamTrace {
   uint32_t stream_id;
   uint32_t error_code;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
     json["frame_type"] = Json::FromString("RST_STREAM");
@@ -94,11 +88,6 @@ template <bool kRead>
 struct H2SettingsTrace {
   bool ack;
   std::vector<Http2SettingsFrame::Setting> settings;
-
-  size_t MemoryUsage() const {
-    return sizeof(*this) +
-           sizeof(Http2SettingsFrame::Setting) * settings.size();
-  }
 
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
@@ -120,8 +109,6 @@ struct H2PingTrace {
   bool ack;
   uint64_t opaque;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
     json["frame_type"] = Json::FromString("PING");
@@ -135,8 +122,6 @@ struct H2GoAwayTrace {
   uint32_t last_stream_id;
   uint32_t error_code;
   std::string debug_data;
-
-  size_t MemoryUsage() const { return sizeof(*this) + debug_data.size(); }
 
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
@@ -152,8 +137,6 @@ struct H2WindowUpdateTrace {
   uint32_t stream_id;
   uint32_t window_size_increment;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
     json["frame_type"] = Json::FromString("WINDOW_UPDATE");
@@ -165,8 +148,6 @@ struct H2WindowUpdateTrace {
 template <bool kRead>
 struct H2SecurityTrace {
   uint32_t payload_length;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& json) const {
     json["read"] = Json::FromBool(kRead);
@@ -180,8 +161,6 @@ struct H2UnknownFrameTrace {
   uint8_t flags;
   uint32_t stream_id;
   uint32_t payload_length;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& json) const {
     json["frame_type"] = Json::FromString("UNKNOWN");
@@ -197,8 +176,6 @@ struct H2FlowControlStall {
   int64_t stream_window;
   uint32_t stream_id;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["metadata_type"] = Json::FromString("FLOW_CONTROL_STALL");
     json["transport_window"] = Json::FromNumber(transport_window);
@@ -210,8 +187,6 @@ struct H2FlowControlStall {
 struct H2BeginWriteCycle {
   uint32_t target_size;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["metadata_type"] = Json::FromString("BEGIN_WRITE_CYCLE");
     json["target_size"] = Json::FromNumber(target_size);
@@ -221,8 +196,6 @@ struct H2BeginWriteCycle {
 struct H2BeginEndpointWrite {
   uint32_t write_size;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["metadata_type"] = Json::FromString("BEGIN_ENDPOINT_WRITE");
     json["write_size"] = Json::FromNumber(write_size);
@@ -230,8 +203,6 @@ struct H2BeginEndpointWrite {
 };
 
 struct H2EndWriteCycle {
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& json) const {
     json["metadata_type"] = Json::FromString("END_WRITE_CYCLE");
   }

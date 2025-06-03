@@ -78,7 +78,7 @@ void Http2ClientTransport::Orphan() {
 
 void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
@@ -161,13 +161,12 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // ProcessFrame promises may return stream or connection failures. If
         // this does not turn out to be true, consider returning absl::Status
         // here.
-        return Map(self->EnqueueOutgoingFrame(Http2EmptyFrame{}),
-                   [](absl::Status status) {
-                     return (status.ok()) ? Http2Status::Ok()
-                                          : Http2Status::AbslConnectionError(
-                                                status.code(),
-                                                std::string(status.message()));
-                   });
+        return Map(self->TriggerWriteCycle(), [](absl::Status status) {
+          return (status.ok())
+                     ? Http2Status::Ok()
+                     : Http2Status::AbslConnectionError(
+                           status.code(), std::string(status.message()));
+        });
       }));
 }
 
@@ -175,7 +174,7 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Promise { "
                           "last_stream_id="
                        << frame.last_stream_id
@@ -214,7 +213,6 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  // TODO(tjagtap) : [PH2][P2] : This is not in the RFC. Understand usage.
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG
@@ -272,7 +270,7 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
   return AssertResultType<absl::Status>(TrySeq(
       // Fetch the first kFrameHeaderSize bytes of the Frame, these contain
       // the frame header.
-      endpoint_.ReadSlice(kFrameHeaderSize),
+      EndpointReadSlice(kFrameHeaderSize),
       // Parse the frame header.
       [](Slice header_bytes) -> Http2FrameHeader {
         HTTP2_CLIENT_DLOG
@@ -282,11 +280,10 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Read the payload of the frame.
       [this](Http2FrameHeader header) {
-        // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
         current_frame_header_ = header;
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            endpoint_.Read(header.length));
+            EndpointRead(header.length));
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
@@ -345,7 +342,7 @@ auto Http2ClientTransport::OnReadLoopEnded() {
 auto Http2ClientTransport::WriteFromQueue() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Factory";
   return TrySeq(
-      outgoing_frames_.NextBatch(),
+      outgoing_frames_.NextBatch(128),
       [self = RefAsSubclass<Http2ClientTransport>()](
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
@@ -422,6 +419,16 @@ Http2ClientTransport::Http2ClientTransport(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
               .value_or(Duration::Infinity()))),
+      // Keepalive timeout is only passed to the keepalive manager if it is less
+      // than the ping timeout. As keepalives use pings for health checks, if
+      // keepalive timeout is greater than ping timeout, we would always hit the
+      // ping timeout first.
+      keepalive_timeout_(std::max(
+          Duration::Zero(),
+          channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIMEOUT_MS)
+              .value_or(keepalive_time_ == Duration::Infinity()
+                            ? Duration::Infinity()
+                            : (Duration::Seconds(20))))),
       ping_timeout_(std::max(
           Duration::Zero(),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_PING_TIMEOUT_MS)
@@ -430,6 +437,11 @@ Http2ClientTransport::Http2ClientTransport(
                             : Duration::Minutes(1)))),
       ping_manager_(channel_args, PingSystemInterfaceImpl::Make(this),
                     event_engine),
+      keepalive_manager_(
+          KeepAliveInterfaceImpl::Make(this),
+          ((keepalive_timeout_ < ping_timeout_) ? keepalive_timeout_
+                                                : Duration::Infinity()),
+          keepalive_time_),
       keepalive_permit_without_calls_(false) {
   // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
   // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
@@ -445,6 +457,9 @@ Http2ClientTransport::Http2ClientTransport(
   // TODO(tjagtap) : [PH2][P2] Fix when needed.
   general_party_->Spawn("WriteLoop", WriteLoop(), OnWriteLoopEnded());
 
+  // The keepalive loop is only spawned if the keepalive time is not infinity.
+  keepalive_manager_.Spawn(general_party_.get());
+
   // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
@@ -457,7 +472,6 @@ Http2ClientTransport::Http2ClientTransport(
         },
         [](GRPC_UNUSED absl::Status status) {});
   }
-
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
@@ -486,12 +500,12 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                       const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  // TODO(tjagtap) : [PH2][P0] Validate implementation.
+  // TODO(tjagtap) : [PH2][P1] Validate implementation.
 
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
   // function is always called under the stream_id_mutex_. The issue is the
-  // OnDone needs to be synchronous and hence InterActivityMutex might not be an
-  // option to protect the stream_list_.
+  // OnDone needs to be synchronous and hence InterActivityMutex might not be
+  // an option to protect the stream_list_.
   MutexLock lock(&transport_mutex_);
   const bool on_done_added =
       call_handler.OnDone([self = RefAsSubclass<Http2ClientTransport>(),
@@ -546,11 +560,12 @@ auto Http2ClientTransport::CallOutboundLoop(
           EnqueueOutgoingFrame(std::move(frame)),
           [call_handler, send_message, lock = std::move(lock)]() {
             // The lock will be released once the promise is constructed from
-            // this factory. ForEach will be polled after the lock is released.
+            // this factory. ForEach will be polled after the lock is
+            // released.
             return ForEach(MessagesFrom(call_handler), send_message);
           },
-          // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay to
-          // send half close when the call is cancelled.
+          // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay
+          // to send half close when the call is cancelled.
           [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.

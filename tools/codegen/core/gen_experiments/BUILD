@@ -29,6 +29,9 @@ grpc_cc_library(
         "yaml-cpp",
     ],
     visibility = ["//visibility:public"],
+    deps = [
+        "//src/core:status_helper",
+    ],
 )
 
 grpc_cc_test(

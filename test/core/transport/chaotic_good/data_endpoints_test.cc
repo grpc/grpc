@@ -174,7 +174,10 @@ grpc_event_engine::experimental::Slice PaddingBytes(uint32_t padding) {
 
 DATA_ENDPOINTS_TEST(CanWrite) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info));
+  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(1));
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
@@ -199,10 +202,16 @@ DATA_ENDPOINTS_TEST(CanWrite) {
 
 DATA_ENDPOINTS_TEST(CanMultiWrite) {
   util::testing::MockPromiseEndpoint ep1(1234);
+  auto telemetry_info1 = std::make_shared<util::testing::MockTelemetryInfo>();
   util::testing::MockPromiseEndpoint ep2(1235);
-  EXPECT_CALL(*ep1.endpoint, GetMetricKey("delivery_rate"))
+  auto telemetry_info2 = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*ep1.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info1));
+  EXPECT_CALL(*telemetry_info1, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(1));
-  EXPECT_CALL(*ep2.endpoint, GetMetricKey("delivery_rate"))
+  EXPECT_CALL(*ep2.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info2));
+  EXPECT_CALL(*telemetry_info2, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(2));
   auto close_ep1 =
       ep1.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
@@ -252,7 +261,10 @@ DATA_ENDPOINTS_TEST(CanMultiWrite) {
 
 DATA_ENDPOINTS_TEST(CanRead) {
   util::testing::MockPromiseEndpoint ep(1234);
-  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info));
+  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(1));
   ep.ExpectRead({DataFrameHeader(64, 5, 1, 5)}, event_engine().get());
   ep.ExpectRead(
@@ -283,7 +295,10 @@ DATA_ENDPOINTS_TEST(CanWriteSecurityFrame) {
   absl::AnyInvocable<void(SliceBuffer*)> send_frame_callback;
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::SaveArgByMove<0>(&send_frame_callback));
-  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info));
+  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(1));
   auto close_ep =
       ep.ExpectDelayedReadClose(absl::OkStatus(), event_engine().get());
@@ -312,7 +327,10 @@ DATA_ENDPOINTS_TEST(CanReadSecurityFrame) {
   auto* transport_framing_endpoint_extension =
       ep.endpoint->AddExtension<::testing::StrictMock<
           util::testing::MockTransportFramingEndpointExtension>>();
-  EXPECT_CALL(*ep.endpoint, GetMetricKey("delivery_rate"))
+  auto telemetry_info = std::make_shared<util::testing::MockTelemetryInfo>();
+  EXPECT_CALL(*ep.endpoint, GetTelemetryInfo())
+      .WillOnce(::testing::Return(telemetry_info));
+  EXPECT_CALL(*telemetry_info, GetMetricKey("delivery_rate"))
       .WillOnce(::testing::Return(1));
   EXPECT_CALL(*transport_framing_endpoint_extension, SetSendFrameCallback)
       .WillOnce(::testing::Return());

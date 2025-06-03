@@ -25,6 +25,7 @@
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/memory_usage.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -168,7 +169,7 @@ class ZTraceCollector {
     };
     template <typename T>
     void Append(std::pair<gpr_cycle_counter, T> value) {
-      memory_used_ += value.second.MemoryUsage();
+      memory_used_ += MemoryUsage(value.second);
       while (memory_used_ > memory_cap_) RemoveMostRecent();
       std::get<Collection<T> >(data).push_back(std::move(value));
     }
@@ -187,7 +188,7 @@ class ZTraceCollector {
           collection.front().first < state->most_recent) {
         state->enact = +[](Instance* instance) {
           auto& collection = std::get<Collection<T> >(instance->data);
-          const size_t ent_usage = collection.front().second.MemoryUsage();
+          const size_t ent_usage = MemoryUsage(collection.front().second);
           CHECK_GE(instance->memory_used_, ent_usage);
           instance->memory_used_ -= ent_usage;
           collection.pop_front();
