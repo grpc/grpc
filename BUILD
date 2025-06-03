@@ -4238,10 +4238,10 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
+        "ssl_key_logging",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
-        "ssl_key_logging",
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
@@ -4300,7 +4300,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
@@ -4332,8 +4331,8 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_security_base",
         "ref_counted_ptr",
-        "ssl_transport_security_utils",
         "ssl_key_logging",
+        "ssl_transport_security_utils",
         "transport_auth_context",
         "tsi_base",
         "tsi_ssl_session_cache",
