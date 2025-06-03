@@ -54,6 +54,11 @@ config_setting(
     values = {"define": "GRPC_MAXIMIZE_THREADYNESS=1"},
 )
 
+config_setting(
+    name = "minimize_threadyness",
+    values = {"define": "GRPC_MINIMIZE_THREADYNESS=1"},
+)
+
 grpc_cc_library(
     name = "channel_fwd",
     hdrs = [
@@ -81,6 +86,20 @@ grpc_cc_library(
     name = "slice_cast",
     hdrs = [
         "//:include/grpc/event_engine/internal/slice_cast.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "memory_usage",
+    hdrs = [
+        "util/memory_usage.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/time",
+        "absl/strings:string_view",
+        "absl/log",
     ],
 )
 
@@ -724,6 +743,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/random",
+        "absl/functional:any_invocable",
         "absl/strings",
         "absl/strings:str_format",
     ],
@@ -734,6 +754,7 @@ grpc_cc_library(
         "construct_destruct",
         "context",
         "event_engine_context",
+        "json_writer",
         "latent_see",
         "poll",
         "promise_factory",
@@ -926,7 +947,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "race",
     public_hdrs = ["lib/promise/race.h"],
-    deps = ["//:gpr_platform"],
+    deps = [
+        "json",
+        "//:gpr_platform",
+    ],
 )
 
 grpc_cc_library(
@@ -948,9 +972,11 @@ grpc_cc_library(
         "lib/promise/loop.h",
     ],
     deps = [
+        "activity",
         "construct_destruct",
         "poll",
         "promise_factory",
+        "seq",
         "//:gpr_platform",
         "//:grpc_trace",
     ],
@@ -1317,8 +1343,35 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "mpsc",
+    srcs = [
+        "lib/promise/mpsc.cc",
+    ],
     hdrs = [
         "lib/promise/mpsc.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+    ],
+    deps = [
+        "activity",
+        "dump_args",
+        "json",
+        "map",
+        "poll",
+        "ref_counted",
+        "status_flag",
+        "sync",
+        "wait_set",
+        "//:gpr",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "lock_based_mpsc",
+    hdrs = [
+        "lib/promise/lock_based_mpsc.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -2782,6 +2835,11 @@ grpc_cc_library(
         "lib/event_engine/cf_engine/cftype_unique_ref.h",
         "lib/event_engine/cf_engine/dns_service_resolver.h",
     ],
+    defines = select({
+        ":maximize_threadyness": ["GRPC_CFSTREAM_MAX_THREADPOOL_SIZE=16u"],
+        ":minimize_threadyness": ["GRPC_CFSTREAM_MAX_THREADPOOL_SIZE=2u"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/container:flat_hash_map",
         "absl/log",
@@ -7702,10 +7760,12 @@ grpc_cc_library(
     deps = [
         "http2_status",
         "metadata_batch",
+        "shared_bit_gen",
         ":slice",
         ":slice_buffer",
         "//:chttp2_frame",
         "//:gpr_platform",
+        "//:hpack_encoder",
         "//:hpack_parser",
         "//:ref_counted_ptr",
     ],
@@ -7790,6 +7850,7 @@ grpc_cc_library(
         "http2_transport",
         "inter_activity_mutex",
         "internal_channel_arg_names",
+        "keepalive",
         "latent_see",
         "loop",
         "map",
@@ -8017,6 +8078,7 @@ grpc_cc_library(
         "event_engine_common",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "grpc_insecure_credentials",
@@ -8335,6 +8397,9 @@ grpc_cc_library(
         "loop",
         "map",
         "metrics",
+        "mpsc",
+        "race",
+        "ref_counted",
         "seq",
         "seq_bit_set",
         "slice_buffer",
@@ -8580,6 +8645,7 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "event_engine_wakeup_scheduler",
@@ -8858,9 +8924,9 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
+        "lock_based_mpsc",
         "loop",
         "match_promise",
-        "mpsc",
         "seq",
         "try_join",
         "try_seq",
@@ -8903,12 +8969,12 @@ grpc_cc_library(
         "grpc_promise_endpoint",
         "if",
         "inter_activity_pipe",
+        "lock_based_mpsc",
         "loop",
         "map",
         "memory_quota",
         "metadata_batch",
         "metrics",
-        "mpsc",
         "pipe",
         "poll",
         "resource_quota",
@@ -8964,11 +9030,11 @@ grpc_cc_library(
         "if",
         "inter_activity_latch",
         "inter_activity_pipe",
+        "lock_based_mpsc",
         "loop",
         "memory_quota",
         "metadata_batch",
         "metrics",
-        "mpsc",
         "pipe",
         "poll",
         "resource_quota",
@@ -9021,6 +9087,7 @@ grpc_cc_library(
         "event_engine_context",
         "event_engine_extensions",
         "event_engine_query_extensions",
+        "event_engine_shim",
         "event_engine_tcp_socket_utils",
         "event_engine_utils",
         "event_engine_wakeup_scheduler",
@@ -9781,6 +9848,7 @@ grpc_cc_library(
     ],
     deps = [
         "json_writer",
+        "memory_usage",
         "single_set_ptr",
         "sync",
         "time",

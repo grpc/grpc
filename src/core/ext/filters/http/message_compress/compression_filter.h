@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstddef>
 #include <optional>
 
 #include "absl/status/statusor.h"
@@ -96,8 +97,11 @@ class ChannelCompression {
     if (max_recv_size_.has_value()) {
       object["maxRecvSize"] = Json::FromNumber(*max_recv_size_);
     }
-    object["defaultCompressionAlgorithm"] = Json::FromString(
-        CompressionAlgorithmAsString(default_compression_algorithm_));
+    const char* algorithm =
+        CompressionAlgorithmAsString(default_compression_algorithm_);
+    if (algorithm != nullptr) {
+      object["defaultCompressionAlgorithm"] = Json::FromString(algorithm);
+    }
     object["enabledCompressionAlgorithms"] = Json::FromString(
         std::string(enabled_compression_algorithms_.ToString()));
     object["enableCompression"] = Json::FromBool(enable_compression_);
@@ -135,7 +139,7 @@ class ClientCompressionFilter final
         compression_engine_(args) {}
   ~ClientCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("clientCompressionFilter",
                            compression_engine_.ToJsonObject());
   }
@@ -185,7 +189,7 @@ class ServerCompressionFilter final
         compression_engine_(args) {}
   ~ServerCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("serverCompressionFilter",
                            compression_engine_.ToJsonObject());
   }

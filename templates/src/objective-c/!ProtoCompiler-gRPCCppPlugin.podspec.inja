@@ -114,6 +114,8 @@ Pod::Spec.new do |s|
   # and, if absent, compile the plugin from the local sources.
   s.prepare_command = <<-CMD
     set -e
-    #{bazel} build //src/compiler:grpc_cpp_plugin
+    if [ ! -f #{plugin} ]; then
+      #{bazel} build //src/compiler:grpc_cpp_plugin
+    fi
   CMD
 end

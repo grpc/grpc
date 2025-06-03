@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.73.0-dev'
+  version = '1.74.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -265,6 +265,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
+    ss.dependency 'abseil/strings/string_view', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
@@ -1292,6 +1293,7 @@ Pod::Spec.new do |s|
                       'src/core/util/match.h',
                       'src/core/util/matchers.h',
                       'src/core/util/memory.h',
+                      'src/core/util/memory_usage.h',
                       'src/core/util/mpscq.h',
                       'src/core/util/no_destruct.h',
                       'src/core/util/notification.h',
@@ -2610,6 +2612,7 @@ Pod::Spec.new do |s|
                               'src/core/util/match.h',
                               'src/core/util/matchers.h',
                               'src/core/util/memory.h',
+                              'src/core/util/memory_usage.h',
                               'src/core/util/mpscq.h',
                               'src/core/util/no_destruct.h',
                               'src/core/util/notification.h',
