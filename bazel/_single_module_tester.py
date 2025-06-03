@@ -33,7 +33,6 @@ class SingleLoader(object):
                         module = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(module)
                         tests.append(loader.loadTestsFromModule(module))
-                
                 except Exception as e:
                   raise AssertionError(f"Error loading module {module_name}: {e}")
 
