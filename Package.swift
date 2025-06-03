@@ -1940,6 +1940,7 @@ let package = Package(
         "src/core/util/matchers.cc",
         "src/core/util/matchers.h",
         "src/core/util/memory.h",
+        "src/core/util/memory_usage.h",
         "src/core/util/mpscq.cc",
         "src/core/util/mpscq.h",
         "src/core/util/msys/tmpfile.cc",

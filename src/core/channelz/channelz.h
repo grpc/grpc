@@ -468,7 +468,7 @@ class SubchannelNode final : public BaseNode {
   const std::string& target() const { return target_; }
   std::string connectivity_state() const;
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
-  RefCountedPtr<SocketNode> child_socket() const {
+  WeakRefCountedPtr<SocketNode> child_socket() const {
     MutexLock lock(&socket_mu_);
     return child_socket_;
   }
@@ -481,7 +481,7 @@ class SubchannelNode final : public BaseNode {
 
   std::atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
   mutable Mutex socket_mu_;
-  RefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
+  WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
@@ -526,9 +526,9 @@ class ServerNode final : public BaseNode {
 
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
 
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets()
+  std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>> child_listen_sockets()
       const;
-  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets() const;
+  std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
   const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
