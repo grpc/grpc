@@ -289,9 +289,10 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
             << header_bytes.as_string_view();
         return Http2FrameHeader::Parse(header_bytes.begin());
       },
-      // Read the payload of the frame.
+      // Validate the frame as per the current state of the transport
       [this](Http2FrameHeader header) {
-        if (incoming_header_in_progress_ && current_frame_header_.type != 9) {
+        if (incoming_header_in_progress_ &&
+            current_frame_header_.type != 9 /*Continuation*/) {
           return HandleError(Http2Status::Http2ConnectionError(
               Http2ErrorCode::kProtocolError,
               std::string(kAssemblerContiguousSequenceError)));
