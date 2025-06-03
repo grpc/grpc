@@ -12,11 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from concurrent import futures
 import logging
 import signal
 import time
+from concurrent import futures
 from types import FrameType
+
 import grpc
 
 import load_protos

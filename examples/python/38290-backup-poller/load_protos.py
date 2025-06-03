@@ -14,6 +14,7 @@
 
 import sys
 from pathlib import Path
+
 from google.protobuf import runtime_version
 
 
