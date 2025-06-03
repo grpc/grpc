@@ -1,0 +1,3 @@
+../../../dist/grpcio-1.74.0.dev0-cp312-cp312-linux_x86_64.whl
+grpcio-tools==1.72.1
+

@@ -1,11 +1,24 @@
 ### 38290-backup-poller repro
 
+#### master
+
+```sh
+# from repo root
+GRPC_PYTHON_BUILD_WITH_SYSTEMD=1 GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip wheel . -w dist
+
+cd examples/python/38290-backup-poller
+
+python3.12 -m venv --upgrade-deps .venv-174
+source ./.venv-174/bin/activate
+pip install -r requirements-174.txt
+python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi_out=./protos/v6 --grpc_python_out=./protos/v6 ./protos/server.proto
+```
 
 #### 1.72: Current broken
 
 ```sh
-python3.12 -m venv --upgrade-deps .venv
-source ./.venv/bin/activate
+python3.12 -m venv --upgrade-deps .venv-174
+source ./.venv-174/bin/activate
 pip install -r requirements.txt
 python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi_out=./protos/v6 --grpc_python_out=./protos/v6 ./protos/server.proto
 ```
