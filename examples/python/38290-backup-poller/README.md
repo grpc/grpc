@@ -6,6 +6,9 @@
 # from repo root
 GRPC_PYTHON_BUILD_WITH_SYSTEMD=1 GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip wheel . -w dist
 
+# mac
+GRPC_PYTHON_BUILD_SYSTEM_OPENSSL=1 GRPC_PYTHON_BUILD_WITH_CYTHON=1 pip wheel . -w dist --no-build-isolation
+
 cd examples/python/38290-backup-poller
 
 python3.12 -m venv --upgrade-deps .venv-174
