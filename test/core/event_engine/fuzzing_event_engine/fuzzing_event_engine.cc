@@ -477,8 +477,7 @@ class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
     return out;
   }
 
-  virtual std::optional<absl::string_view> GetMetricName(
-      size_t key) const override {
+  std::optional<absl::string_view> GetMetricName(size_t key) const override {
     auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
     if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
       return std::nullopt;
@@ -486,8 +485,7 @@ class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
     return it->second;
   }
 
-  virtual std::optional<size_t> GetMetricKey(
-      absl::string_view name) const override {
+  std::optional<size_t> GetMetricKey(absl::string_view name) const override {
     auto it = g_fuzzing_event_engine->endpoint_metrics_by_name_.find(
         std::string(name));
     if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {

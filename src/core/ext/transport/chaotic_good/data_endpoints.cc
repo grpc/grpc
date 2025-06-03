@@ -491,14 +491,14 @@ auto Endpoint::WriteLoop(uint32_t id,
                output_buffers = std::move(output_buffers),
                requested_metrics = std::move(requested_metrics),
                data_rate_metric, ztrace_collector,
-               telemetry_info = std::move(telemetry_info)]() {
+               telemetry_info = std::move(telemetry_info)]() mutable {
     return TrySeq(
         output_buffers->Next(id),
         [endpoint, id,
          requested_metrics = absl::Span<const size_t>(requested_metrics),
          data_rate_metric, output_buffers, ztrace_collector,
          telemetry_info = std::move(telemetry_info)](
-            data_endpoints_detail::NextWrite next_write) {
+            data_endpoints_detail::NextWrite next_write) mutable {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: " << output_buffers.get() << " "
               << ResolvedAddressToString(endpoint->GetPeerAddress())
@@ -519,8 +519,7 @@ auto Endpoint::WriteLoop(uint32_t id,
                     absl::Time timestamp,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
                   ztrace_collector->Append(
-                      [event, timestamp, &metrics,
-                       telemetry_info = std::move(telemetry_info)]() {
+                      [event, timestamp, &metrics, &telemetry_info]() {
                         EndpointWriteMetricsTrace trace{timestamp, event, {}};
                         trace.metrics.reserve(metrics.size());
                         for (const auto [id, value] : metrics) {

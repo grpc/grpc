@@ -702,8 +702,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
    public:
     class TelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
      public:
-      TelemetryInfo(std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
-                        wrapped_telemetry_info)
+      explicit TelemetryInfo(
+          std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+              wrapped_telemetry_info)
           : wrapped_telemetry_info_(std::move(wrapped_telemetry_info)) {}
 
       std::vector<size_t> AllWriteMetrics() const override {
