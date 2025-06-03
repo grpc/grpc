@@ -3372,7 +3372,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = [
+        "//bazel:alt_grpc_base_legacy",
+        "//bazel:client_channel",
+    ],
     deps = ["gpr"],
 )
 
