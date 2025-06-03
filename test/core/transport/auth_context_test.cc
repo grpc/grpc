@@ -229,19 +229,6 @@ TEST(AuthContextTest, CompareAuthContextUnsetReturnsOptional) {
   ctx2.reset(DEBUG_LOCATION, "test");
 }
 
-// class AuthContextComparisonTest : public ::testing::Test {
-//  protected:
-//   AuthContextComparisonTest() {
-//     CoreConfiguration::RegisterPersistentBuilder(
-//         [](CoreConfiguration::Builder* builder) {
-//           builder->auth_context_comparator_registry()->RegisterComparator(
-//               "cg3", std::make_unique<ChaoticGoodEndpointTransport>());
-//         });
-//     CoreConfiguration::RegisterPersistentBuilder()
-//   }
-
-// }
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
