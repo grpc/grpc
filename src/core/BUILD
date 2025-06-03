@@ -9643,7 +9643,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
     ],
-    visibility = ["//bazel:chaotic_good"],
+    visibility = ["//transport_auth_context:__subpackages__"],
     deps = [
         "channel_args",
         "//:grpc_public_hdrs",
