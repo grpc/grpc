@@ -207,7 +207,7 @@ def get_working_loop():
     except RuntimeError:
         # If no loop is running, try to get an existing or default loop
         # via the policy, handling version-specific behaviors.
-        _get_or_create_loop_via_policy()
+        return _get_or_create_loop_via_policy()
 
 def raise_if_not_valid_trailing_metadata(object metadata):
     if not hasattr(metadata, '__iter__') or isinstance(metadata, dict):
