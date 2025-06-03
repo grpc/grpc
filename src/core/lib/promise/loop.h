@@ -23,8 +23,10 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/util/construct_destruct.h"
 
 namespace grpc_core {
@@ -123,7 +125,7 @@ struct LoopTraits<absl::StatusOr<LoopCtl<absl::Status>>> {
 
 }  // namespace promise_detail
 
-template <typename F>
+template <typename F, bool kYield>
 class Loop {
  private:
   static_assert(promise_detail::kIsRepeatedPromiseFactory<void, F>);
@@ -170,6 +172,13 @@ class Loop {
               << "loop[" << this << "] iteration complete, continue";
           Destruct(&promise_);
           Construct(&promise_, factory_.Make());
+          if constexpr (kYield) {
+            GRPC_TRACE_LOG(promise_primitives, INFO)
+                << "loop[" << this << "] iteration yield";
+            auto* activity = GetContext<Activity>();
+            activity->ForceImmediateRepoll(activity->CurrentParticipant());
+            return Pending();
+          }
           continue;
         }
         GRPC_TRACE_LOG(promise_primitives, INFO)
@@ -187,7 +196,12 @@ class Loop {
 
   Json ToJson() const {
     Json::Object obj;
-    obj["loop_factory"] = Json::FromString(std::string(TypeName<Factory>()));
+    if constexpr (kYield) {
+      obj["loop_factory"] =
+          Json::FromString(absl::StrCat("yielding ", TypeName<Factory>()));
+    } else {
+      obj["loop_factory"] = Json::FromString(std::string(TypeName<Factory>()));
+    }
     if (started_) {
       obj["promise"] = PromiseAsJson(promise_);
     }
@@ -203,7 +217,45 @@ class Loop {
 };
 
 template <typename F>
-Loop(F) -> Loop<F>;
+Loop(F) -> Loop<F, false>;
+
+// A version of Loop that yields the activity to another promise once per
+// iteration.
+template <typename F>
+auto YieldingLoop(F f) {
+  return Loop<F, true>(std::move(f));
+}
+
+template <typename PromiseFactory>
+auto NTimes(size_t times, PromiseFactory promise_factory) {
+  DCHECK_GT(times, 1u);
+  return Loop(
+      [i = size_t{0}, times,
+       promise_factory =
+           promise_detail::RepeatedPromiseFactory<size_t, PromiseFactory>(
+               std::move(promise_factory))]() mutable {
+        return Seq(promise_factory.Make(i), [&i, times](auto result) {
+          using Result = decltype(result);
+          LoopCtl<Result> lc = std::move(result);
+          ++i;
+          if (i != times) lc = Continue{};
+          return lc;
+        });
+      });
+}
+
+template <typename PromiseFactory>
+auto WhilstSuccessful(PromiseFactory promise_factory) {
+  return Loop([promise_factory =
+                   promise_detail::RepeatedPromiseFactory<void, PromiseFactory>(
+                       std::move(promise_factory))]() mutable {
+    return Seq(promise_factory.Make(), [](auto result) {
+      using Result = decltype(result);
+      if (result.ok()) return LoopCtl<Result>(Continue());
+      return LoopCtl<Result>(std::move(result));
+    });
+  });
+}
 
 }  // namespace grpc_core
 

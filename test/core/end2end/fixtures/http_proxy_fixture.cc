@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -273,9 +274,10 @@ static void on_client_write_done_locked(void* arg, grpc_error_handle error) {
     conn->client_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
                       grpc_schedule_on_exec_ctx);
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+    args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+                        &conn->on_client_write_done, std::move(args));
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "write_done");
@@ -317,9 +319,10 @@ static void on_server_write_done_locked(void* arg, grpc_error_handle error) {
     conn->server_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
                       grpc_schedule_on_exec_ctx);
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+    args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+                        &conn->on_server_write_done, std::move(args));
   } else {
     // No more writes.  Unref the connection.
     proxy_connection_unref(conn, "server_write");
@@ -359,9 +362,10 @@ static void on_client_read_done_locked(void* arg, grpc_error_handle error) {
     conn->server_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
                       grpc_schedule_on_exec_ctx);
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+    args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(conn->server_endpoint, &conn->server_write_buffer,
-                        &conn->on_server_write_done, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+                        &conn->on_server_write_done, std::move(args));
   }
   if (conn->client_endpoint == nullptr) {
     proxy_connection_unref(conn, "client_read");
@@ -408,9 +412,10 @@ static void on_server_read_done_locked(void* arg, grpc_error_handle error) {
     conn->client_is_writing = true;
     GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
                       grpc_schedule_on_exec_ctx);
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+    args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                        &conn->on_client_write_done, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+                        &conn->on_client_write_done, std::move(args));
   }
   if (conn->server_endpoint == nullptr) {
     proxy_connection_unref(conn, "server_read");
@@ -490,9 +495,10 @@ static void on_server_connect_done_locked(void* arg, grpc_error_handle error) {
   conn->client_is_writing = true;
   GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done, conn,
                     grpc_schedule_on_exec_ctx);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
   grpc_endpoint_write(conn->client_endpoint, &conn->client_write_buffer,
-                      &conn->on_write_response_done, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+                      &conn->on_write_response_done, std::move(args));
 }
 
 static void on_server_connect_done(void* arg, grpc_error_handle error) {
@@ -586,7 +592,9 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   // Resolve address.
   grpc_resolved_address first_address;
   VLOG(2) << "proxy connecting to backend: " << conn->http_request.path;
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver = conn->proxy->combiner->event_engine->GetDNSResolver(
         grpc_event_engine::experimental::EventEngine::DNSResolver::
             ResolverOptions());

@@ -31,6 +31,7 @@
 #include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
@@ -131,7 +132,9 @@ void test_bind_server_to_addr(const char* host, bool secure) {
 }
 
 static bool external_dns_works(const char* host) {
-  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled()) {
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() ||
+      grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver =
         grpc_event_engine::experimental::GetDefaultEventEngine()
             ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
