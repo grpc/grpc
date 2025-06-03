@@ -24,6 +24,7 @@
 
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "gmock/gmock.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/util/notification.h"
@@ -132,8 +133,9 @@ TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   LOG(INFO) << "------------------------";
   ee->AfterFork(PosixEventEngine::OnForkRole::kChild);
   auto result = callback.result();
-  // Request is cancelled on fork
-  ASSERT_TRUE(absl::IsUnknown(result.status())) << result.status();
+  // Request is cancelled on fork. Can be one of several statuses, depending on
+  // event ordering.
+  ASSERT_TRUE(absl::IsCancelled(result.status())) << result.status();
   dns_server->SetIPv4Response({2, 2, 2, 2});
   LookupCallback cb2("DnsLookupAcrossForkInChild post-fork");
   resolver->get()->LookupHostname(cb2.lookup_hostname_callback(), kHost, "443");

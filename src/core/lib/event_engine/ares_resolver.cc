@@ -96,6 +96,9 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
       return absl::NotFoundError(error_msg);
     case ARES_ECONNREFUSED:
       return absl::UnavailableError(error_msg);
+    case ARES_EDESTRUCTION:
+      // Happens on fork and shutdown, means we cancel the requests
+      return absl::CancelledError(error_msg);
     default:
       return absl::UnknownError(error_msg);
   }
@@ -455,6 +458,9 @@ void AresResolver::LookupTXT(
 }
 
 void AresResolver::CheckSocketsLocked() {
+  if (channel_ == nullptr) {
+    return;
+  }
   FdNodeList new_list;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
@@ -579,7 +585,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
       << "; request: " << this << "; status: " << status;
   if (status.ok() && !shutting_down_) {
     ares_process_fd(channel_, fd_node->as, ARES_SOCKET_BAD);
-  } else if (fd_node->polled_fd->IsCurrent()) {
+  } else if (fd_node->polled_fd->IsCurrent() && channel_ != nullptr) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
@@ -601,7 +607,7 @@ void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
       << "; request:" << this << "; status: " << status;
   if (status.ok() && !shutting_down_) {
     ares_process_fd(channel_, ARES_SOCKET_BAD, fd_node->as);
-  } else {
+  } else if (channel_ != nullptr) {
     // If error is not absl::OkStatus() or the resolution was cancelled, it
     // means the fd has been shutdown or timed out. The pending lookups made
     // on this request will be cancelled by the following ares_cancel(). The
