@@ -19,7 +19,7 @@ python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi
 ```sh
 python3.12 -m venv --upgrade-deps .venv-172
 source ./.venv-172/bin/activate
-pip install -r requirements.txt
+pip install -r requirements-172.txt
 python -m grpc_tools.protoc --proto_path=./protos --python_out=./protos/v6 --pyi_out=./protos/v6 --grpc_python_out=./protos/v6 ./protos/server.proto
 ```
 
