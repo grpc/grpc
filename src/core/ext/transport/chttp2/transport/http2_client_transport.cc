@@ -107,6 +107,9 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << " }";
+  incoming_header_in_progress_ = !frame.end_stream;
+  incoming_header_stream_id_ = frame.stream_id;
+
   ping_manager_.ReceivedDataFrame();
   return Http2Status::Ok();
 }
@@ -208,6 +211,14 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", payload=" << frame.payload.JoinIntoString() << " }";
+  if (!incoming_header_in_progress_ ||
+      incoming_header_stream_id_ != frame.stream_id) {
+    return Http2Status::Http2ConnectionError(
+        Http2ErrorCode::kProtocolError,
+        std::string(kAssemblerContiguousSequenceError));
+  }
+
+  incoming_header_in_progress_ = !frame.end_headers;
   return Http2Status::Ok();
 }
 
