@@ -531,9 +531,9 @@ static bool fake_zero_copy_grpc_protector_read_frame_size(
       LOG(ERROR) << "Invalid frame size.";
       return false;
     }
-    }
-    *frame_size = parsed_frame_size;
-    return true;
+  }
+  *frame_size = parsed_frame_size;
+  return true;
 }
 
 static const tsi_zero_copy_grpc_protector_vtable
