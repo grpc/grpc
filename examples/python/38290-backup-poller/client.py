@@ -12,9 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
+import logging
 import time
-import traceback
 import grpc
 
 import load_protos
@@ -23,6 +22,10 @@ import server_pb2_grpc
 
 
 def main():
+    time_format = "%Y-%m-%d %H:%M:%S"
+    log_format = "%(asctime)s %(message)s"
+    logging.basicConfig(level=logging.INFO, format=log_format, datefmt=time_format)
+
     channel = grpc.insecure_channel("127.0.0.1:50051")
     stub = server_pb2_grpc.ServerStub(channel)
     i: int = 0
@@ -30,11 +33,9 @@ def main():
         try:
             i += 1
             resp = stub.Method(server_pb2.Message(id=str(i)))
-            print(f"Received Message: id={resp.id}")
-        except grpc.RpcError:
-            print(traceback.format_exc())
-        except Exception as e:
-            print(e)
+            logging.info(f"Received Message: id={resp.id}")
+        except grpc.RpcError as e:
+            logging.error(e)
 
         time.sleep(1)
 

@@ -17,7 +17,6 @@ import logging
 import signal
 import time
 from types import FrameType
-from typing import Any, Callable
 import grpc
 
 import load_protos
@@ -26,7 +25,6 @@ import server_pb2_grpc
 
 _SignalNum = int | signal.Signals
 _SignalFrame = FrameType | None
-# _SignalHandler = Callable[[int, _SignalFrame], Any] | _SignalNum | None
 
 
 class ServerSvc(server_pb2_grpc.ServerServicer):
