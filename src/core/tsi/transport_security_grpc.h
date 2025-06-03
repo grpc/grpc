@@ -64,14 +64,8 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
 tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
-// In general, I think we need to clarify the relationship more between this
-// method and unprotect. For example, if we call this method once and
-// frame_size returns 1k, then I think calling this method will continue to
-// return 1k until we have unprotected 1k bytes. It would be good to walk
-// through the basic CUJs like this.
-
 // A stateless methods that reads the frame size of the input slice buffer. Does
-// NOT consume any of the protected_slices does NOT modify the `self` input
+// NOT consume any of the protected_slices and does NOT modify the `self` input
 // argument in any way.
 // - protected_slices is the bytes of protected frames.
 // - frame_size is the output frame size.

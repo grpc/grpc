@@ -521,22 +521,19 @@ static tsi_result fake_zero_copy_grpc_protector_max_frame_size(
 }
 
 static bool fake_zero_copy_grpc_protector_read_frame_size(
-    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    tsi_zero_copy_grpc_protector*, grpc_slice_buffer* protected_slices,
     uint32_t* frame_size) {
-  if (self == nullptr || frame_size == nullptr) return TSI_INVALID_ARGUMENT;
-  tsi_fake_zero_copy_grpc_protector* impl =
-      reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
+  if (frame_size == nullptr) return false;
+  uint32_t parsed_frame_size = 0;
   while (protected_slices->length >= TSI_FAKE_FRAME_HEADER_SIZE) {
-    if (impl->parsed_frame_size == 0) {
-      impl->parsed_frame_size = read_frame_size(protected_slices);
-      if (impl->parsed_frame_size <= 4) {
-        LOG(ERROR) << "Invalid frame size.";
-        return false;
-      }
+    uint32_t parsed_frame_size = read_frame_size(protected_slices);
+    if (parsed_frame_size <= 4) {
+      LOG(ERROR) << "Invalid frame size.";
+      return false;
     }
-  }
-  *frame_size = impl->parsed_frame_size;
-  return true;
+    }
+    *frame_size = parsed_frame_size;
+    return true;
 }
 
 static const tsi_zero_copy_grpc_protector_vtable
