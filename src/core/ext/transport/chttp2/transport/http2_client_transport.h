@@ -326,7 +326,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   bool bytes_sent_in_last_write_;
   bool incoming_header_in_progress_;
-  bool incoming_header_stream_id_;
+  uint32_t incoming_header_stream_id_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
