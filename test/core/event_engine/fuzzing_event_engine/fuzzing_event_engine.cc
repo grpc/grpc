@@ -436,15 +436,14 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
       for (const auto& r : it->second) {
         g_fuzzing_event_engine->RunAfterExactlyLocked(
             std::chrono::microseconds(r.delay_us()),
-            [ee_ep = this, middle = middle_, index = my_index(), r,
-             write_event_callback]() {
+            [middle = middle_, index = my_index(), r, write_event_callback]() {
               grpc_core::MutexLock lock(&*mu_);
               if (middle->closed[index]) return;
               std::vector<WriteMetric> metrics;
               for (const auto& m : r.returned_endpoint_metrics()) {
                 metrics.push_back(WriteMetric{m.key(), m.value()});
               }
-              (*write_event_callback)(ee_ep, static_cast<WriteEvent>(r.event()),
+              (*write_event_callback)(static_cast<WriteEvent>(r.event()),
                                       g_fuzzing_event_engine->NowAsAbslTime(),
                                       std::move(metrics));
             });
@@ -466,32 +465,41 @@ absl::Time FuzzingEventEngine::NowAsAbslTime() {
              g_fuzzing_event_engine->now_.time_since_epoch().count());
 }
 
-std::vector<size_t> FuzzingEventEngine::FuzzingEndpoint::AllWriteMetrics() {
-  std::vector<size_t> out;
-  out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
-  for (const auto& [key, _] : g_fuzzing_event_engine->endpoint_metrics_by_id_) {
-    out.push_back(key);
+class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
+    : public EventEngine::Endpoint::TelemetryInfo {
+  std::vector<size_t> AllWriteMetrics() const override {
+    std::vector<size_t> out;
+    out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
+    for (const auto& [key, _] :
+         g_fuzzing_event_engine->endpoint_metrics_by_id_) {
+      out.push_back(key);
+    }
+    return out;
   }
-  return out;
-}
 
-std::optional<absl::string_view>
-FuzzingEventEngine::FuzzingEndpoint::GetMetricName(size_t key) {
-  auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
-  if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
-    return std::nullopt;
+  virtual std::optional<absl::string_view> GetMetricName(
+      size_t key) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
   }
-  return it->second;
-}
 
-std::optional<size_t> FuzzingEventEngine::FuzzingEndpoint::GetMetricKey(
-    absl::string_view name) {
-  auto it =
-      g_fuzzing_event_engine->endpoint_metrics_by_name_.find(std::string(name));
-  if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
-    return std::nullopt;
+  virtual std::optional<size_t> GetMetricKey(
+      absl::string_view name) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_name_.find(
+        std::string(name));
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
   }
-  return it->second;
+};
+
+std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+FuzzingEventEngine::FuzzingEndpoint::GetTelemetryInfo() const {
+  return std::make_shared<TelemetryInfo>();
 }
 
 void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(

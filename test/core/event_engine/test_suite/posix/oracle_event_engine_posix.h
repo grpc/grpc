@@ -54,12 +54,8 @@ class PosixOracleEndpoint : public EventEngine::Endpoint {
   EventEngine::ResolvedAddress& GetLocalAddress() const override {
     grpc_core::Crash("unimplemented");
   }
-  std::vector<size_t> AllWriteMetrics() override { return {}; }
-  std::optional<absl::string_view> GetMetricName(size_t) override {
-    return std::nullopt;
-  }
-  std::optional<size_t> GetMetricKey(absl::string_view) override {
-    return std::nullopt;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  private:

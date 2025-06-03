@@ -55,6 +55,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
@@ -106,6 +107,7 @@
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -234,10 +236,11 @@ using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 using grpc_core::http2::Http2ErrorCode;
 using WriteMetric =
-    grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
 using WriteEventSink =
-    grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
-using ::grpc_event_engine::experimental::internal::WriteEvent;
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
+using WriteEvent =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
 grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
@@ -1197,27 +1200,32 @@ static void write_action(
         grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
             t->ep.get());
     if (ee_ep != nullptr) {
-      args.set_metrics_sink(WriteEventSink(
-          {ee_ep->AllWriteMetrics()},
-          {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
-           WriteEvent::kAcked},
-          [tcp_call_tracers = std::move(tcp_call_tracers)](
-              EventEngine::Endpoint* ee_ep, WriteEvent event,
-              absl::Time timestamp, std::vector<WriteMetric> metrics) {
-            std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
-            tcp_metrics.reserve(metrics.size());
-            for (auto& metric : metrics) {
-              auto name = ee_ep->GetMetricName(metric.key);
-              if (name.has_value()) {
-                tcp_metrics.push_back(grpc_core::TcpCallTracer::TcpEventMetric{
-                    name.value(), metric.value});
+      auto telemetry_info = ee_ep->GetTelemetryInfo();
+      if (telemetry_info != nullptr) {
+        args.set_metrics_sink(WriteEventSink(
+            {telemetry_info->AllWriteMetrics()},
+            {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+             WriteEvent::kAcked},
+            [tcp_call_tracers = std::move(tcp_call_tracers),
+             telemetry_info = std::move(telemetry_info)](
+                WriteEvent event, absl::Time timestamp,
+                std::vector<WriteMetric> metrics) {
+              std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
+              tcp_metrics.reserve(metrics.size());
+              for (auto& metric : metrics) {
+                auto name = telemetry_info->GetMetricName(metric.key);
+                if (name.has_value()) {
+                  tcp_metrics.push_back(
+                      grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
+                                                               metric.value});
+                }
               }
-            }
-            for (auto& tracer : tcp_call_tracers) {
-              tracer.tcp_call_tracer->RecordEvent(
-                  event, timestamp, tracer.byte_offset, tcp_metrics);
-            }
-          }));
+              for (auto& tracer : tcp_call_tracers) {
+                tracer.tcp_call_tracer->RecordEvent(
+                    event, timestamp, tracer.byte_offset, tcp_metrics);
+              }
+            }));
+      }
     }
   }
   GRPC_TRACE_LOG(http2_ping, INFO)

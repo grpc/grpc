@@ -285,7 +285,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
   // We depend on the ep being available for the life of the transport in
-  // atleast one place - event callback in WriteEventSink. Hence, this should
+  // at least one place - event callback in WriteEventSink. Hence, this should
   // only be orphaned in the destructor.
   grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.

@@ -13,10 +13,10 @@
 // limitations under the License.
 
 #include <grpc/event_engine/event_engine.h>
-#include <grpc/event_engine/memory_allocator.h>
+#include <grpc/event_engine/slice_buffer.h>
 #include <grpc/impl/channel_arg_names.h>
 
-#include <chrono>
+#include <cstddef>
 #include <memory>
 #include <string>
 #include <utility>
@@ -123,23 +123,23 @@ TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
     // endpoint and reset both endpoints immediately. It doesn't matter if the
     // callbacks don't get invoked as long as there is no use-after-free
     // behavior.
-    auto event_cb = [](EventEngine::Endpoint* ee_ep, WriteEvent /*event*/,
-                       absl::Time /*time*/,
-                       std::vector<WriteMetric> /*metrics*/) {
-      // some operation on the endpoint to ensure validity
-      ASSERT_NE(ee_ep->GetPeerAddress().address(), nullptr);
-    };
+    auto event_cb = [](WriteEvent /*event*/, absl::Time /*time*/,
+                       std::vector<WriteMetric> /*metrics*/) {};
     SliceBuffer client_write_slice_buf;
     SliceBuffer server_write_slice_buf;
     WriteArgs client_write_args;
+    std::vector<size_t> client_write_metrics =
+        client_endpoint->GetTelemetryInfo()->AllWriteMetrics();
     client_write_args.set_metrics_sink(WriteEventSink(
-        client_endpoint->AllWriteMetrics(),
+        client_write_metrics,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
         event_cb));
     WriteArgs server_write_args;
+    std::vector<size_t> server_write_metrics =
+        server_endpoint->GetTelemetryInfo()->AllWriteMetrics();
     server_write_args.set_metrics_sink(WriteEventSink(
-        client_endpoint->AllWriteMetrics(),
+        server_write_metrics,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
         event_cb));

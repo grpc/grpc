@@ -68,6 +68,7 @@
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/match.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -715,19 +716,18 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
       s->byte_counter += static_cast<size_t>(num_stream_bytes);
       ++s->write_counter;
       if (s->traced && grpc_endpoint_can_track_err(t->ep.get())) {
-        // Old way of collecting TCP traces
         grpc_core::CopyContextFn copy_context_fn =
             grpc_core::GrpcHttp2GetCopyContextFn();
         if (copy_context_fn != nullptr &&
             grpc_core::GrpcHttp2GetWriteTimestampsCallback() != nullptr) {
+          // Old way of collecting TCP traces
           t->context_list->emplace_back(
               copy_context_fn(s->arena), outbuf_relative_start_pos,
               num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
-        }
-        // New way of collecting TCP traces
-        if (s->call_tracer != nullptr &&
-            grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
-                t->ep.get())) {
+        } else if (s->call_tracer != nullptr &&
+                   grpc_event_engine::experimental::
+                       grpc_is_event_engine_endpoint(t->ep.get())) {
+          // New way of collecting TCP traces
           ctx.AddTcpCallTracer(s->call_tracer->StartNewTcpTrace(),
                                s->byte_counter);
         }
