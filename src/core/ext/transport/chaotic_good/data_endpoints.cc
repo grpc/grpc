@@ -480,21 +480,25 @@ auto Endpoint::WriteLoop(uint32_t id,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector) {
   output_buffers->AddEndpoint(id);
   std::vector<size_t> requested_metrics;
+  auto telemetry_info = endpoint->GetEventEngineEndpoint()->GetTelemetryInfo();
   std::optional<size_t> data_rate_metric =
-      endpoint->GetEventEngineEndpoint()->GetMetricKey("delivery_rate");
+      telemetry_info ? telemetry_info->GetMetricKey("delivery_rate")
+                     : std::nullopt;
   if (data_rate_metric.has_value()) {
     requested_metrics.push_back(*data_rate_metric);
   }
   return Loop([id, endpoint = std::move(endpoint),
                output_buffers = std::move(output_buffers),
                requested_metrics = std::move(requested_metrics),
-               data_rate_metric, ztrace_collector]() {
+               data_rate_metric, ztrace_collector,
+               telemetry_info = std::move(telemetry_info)]() mutable {
     return TrySeq(
         output_buffers->Next(id),
         [endpoint, id,
          requested_metrics = absl::Span<const size_t>(requested_metrics),
-         data_rate_metric, output_buffers,
-         ztrace_collector](data_endpoints_detail::NextWrite next_write) {
+         data_rate_metric, output_buffers, ztrace_collector,
+         telemetry_info = std::move(telemetry_info)](
+            data_endpoints_detail::NextWrite next_write) mutable {
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: " << output_buffers.get() << " "
               << ResolvedAddressToString(endpoint->GetPeerAddress())
@@ -510,24 +514,22 @@ auto Endpoint::WriteLoop(uint32_t id,
                  EventEngine::Endpoint::WriteEvent::kScheduled,
                  EventEngine::Endpoint::WriteEvent::kAcked},
                 [data_rate_metric, id, output_buffers, ztrace_collector,
-                 endpoint = endpoint.get()](
+                 telemetry_info = std::move(telemetry_info)](
                     EventEngine::Endpoint::WriteEvent event,
                     absl::Time timestamp,
                     std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
-                  ztrace_collector->Append([event, timestamp, &metrics,
-                                            endpoint]() {
-                    EndpointWriteMetricsTrace trace{timestamp, event, {}};
-                    trace.metrics.reserve(metrics.size());
-                    for (const auto [id, value] : metrics) {
-                      if (auto name =
-                              endpoint->GetEventEngineEndpoint()->GetMetricName(
-                                  id);
-                          name.has_value()) {
-                        trace.metrics.push_back({*name, value});
-                      }
-                    }
-                    return trace;
-                  });
+                  ztrace_collector->Append(
+                      [event, timestamp, &metrics, &telemetry_info]() {
+                        EndpointWriteMetricsTrace trace{timestamp, event, {}};
+                        trace.metrics.reserve(metrics.size());
+                        for (const auto [id, value] : metrics) {
+                          if (auto name = telemetry_info->GetMetricName(id);
+                              name.has_value()) {
+                            trace.metrics.push_back({*name, value});
+                          }
+                        }
+                        return trace;
+                      });
                   for (const auto& metric : metrics) {
                     if (metric.key == *data_rate_metric) {
                       output_buffers->UpdateSendRate(id, metric.value * 1e-9);

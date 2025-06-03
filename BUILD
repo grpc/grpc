@@ -4400,6 +4400,7 @@ grpc_cc_library(
         "uri",
         "work_serializer",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:grpc_backend_metric_data",
@@ -4714,6 +4715,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/time",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [

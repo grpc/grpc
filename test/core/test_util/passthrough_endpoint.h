@@ -48,12 +48,8 @@ class PassthroughEndpoint final : public EventEngine::Endpoint {
   bool Write(absl::AnyInvocable<void(absl::Status)> on_write,
              SliceBuffer* buffer, WriteArgs args) override;
 
-  std::vector<size_t> AllWriteMetrics() override { return {}; }
-  std::optional<absl::string_view> GetMetricName(size_t) override {
-    return std::nullopt;
-  }
-  std::optional<size_t> GetMetricKey(absl::string_view) override {
-    return std::nullopt;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {

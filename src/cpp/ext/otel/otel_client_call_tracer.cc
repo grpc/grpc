@@ -29,6 +29,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
@@ -88,7 +89,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
                    absl::Time time, size_t byte_offset,
-                   std::vector<TcpEventMetric> metrics) override {
+                   const std::vector<TcpEventMetric>& metrics) override {
     call_attempt_tracer_->RecordAnnotation(
         absl::StrCat(
             "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
