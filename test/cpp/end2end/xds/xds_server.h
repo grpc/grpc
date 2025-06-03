@@ -294,8 +294,8 @@ class AdsServiceImpl
 
 // An LRS service implementation.
 class LrsServiceImpl
-    : public CountedService<
-          ::envoy::service::load_stats::v3::LoadReportingService::Service>,
+    : public CountedService<::envoy::service::load_stats::v3::
+                                LoadReportingService::CallbackService>,
       public std::enable_shared_from_this<LrsServiceImpl> {
  public:
   using LoadStatsRequest = ::envoy::service::load_stats::v3::LoadStatsRequest;
@@ -443,7 +443,7 @@ class LrsServiceImpl
     cluster_names_ = cluster_names;
   }
 
-  void Start() ABSL_LOCKS_EXCLUDED(lrs_mu_, load_report_mu_);
+  void Start() ABSL_LOCKS_EXCLUDED(load_report_mu_);
 
   void Shutdown();
 
@@ -454,9 +454,29 @@ class LrsServiceImpl
       absl::Duration timeout = absl::InfiniteDuration());
 
  private:
-  using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
+  class Reactor
+      : public ServerBidiReactor<LoadStatsRequest, LoadStatsResponse> {
+   public:
+    explicit Reactor(std::shared_ptr<LrsServiceImpl> lrs_service_impl);
 
-  Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override;
+   private:
+    void OnReadDone(bool ok) override;
+    void OnWriteDone(bool ok) override;
+    void OnDone() override;
+    void OnCancel() override;
+
+    std::shared_ptr<LrsServiceImpl> lrs_service_impl_;
+
+    std::atomic<bool> seen_first_request_{false};
+
+    LoadStatsRequest request_;
+    LoadStatsResponse response_;
+  };
+
+  ServerBidiReactor<LoadStatsRequest, LoadStatsResponse>* StreamLoadStats(
+      CallbackServerContext* /*context*/) override {
+    return new Reactor(shared_from_this());
+  }
 
   const int client_load_reporting_interval_seconds_;
   bool send_all_clusters_ = false;
@@ -464,10 +484,6 @@ class LrsServiceImpl
   std::function<void()> stream_started_callback_;
   std::function<void(const LoadStatsRequest& request)> check_first_request_;
   std::string debug_label_;
-
-  grpc_core::CondVar lrs_cv_;
-  grpc_core::Mutex lrs_mu_;
-  bool lrs_done_ ABSL_GUARDED_BY(lrs_mu_) = false;
 
   grpc_core::Mutex load_report_mu_;
   grpc_core::CondVar* load_report_cond_ ABSL_GUARDED_BY(load_report_mu_) =

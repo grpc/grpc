@@ -321,7 +321,7 @@ void AdsServiceImpl::Reactor::OnWriteDone(bool ok) {
 void AdsServiceImpl::Reactor::MaybeStartNextWrite() {
   auto it = response_needed_.begin();
   if (it == response_needed_.end()) return;
-  auto resource_type = std::move(*it);
+  std::string resource_type = *it;
   response_needed_.erase(it);
   MaybeStartWrite(resource_type);
 }
@@ -386,24 +386,11 @@ LrsServiceImpl::ClientStats& LrsServiceImpl::ClientStats::operator+=(
 //
 
 void LrsServiceImpl::Start() {
-  {
-    grpc_core::MutexLock lock(&lrs_mu_);
-    lrs_done_ = false;
-  }
-  {
-    grpc_core::MutexLock lock(&load_report_mu_);
-    result_queue_.clear();
-  }
+  grpc_core::MutexLock lock(&load_report_mu_);
+  result_queue_.clear();
 }
 
 void LrsServiceImpl::Shutdown() {
-  {
-    grpc_core::MutexLock lock(&lrs_mu_);
-    if (!lrs_done_) {
-      lrs_done_ = true;
-      lrs_cv_.SignalAll();
-    }
-  }
   LOG(INFO) << "LRS[" << debug_label_ << "]: shut down";
 }
 
@@ -427,55 +414,77 @@ std::vector<LrsServiceImpl::ClientStats> LrsServiceImpl::WaitForLoadReport(
   return result;
 }
 
-Status LrsServiceImpl::StreamLoadStats(ServerContext* /*context*/,
-                                       Stream* stream) {
-  LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats starts";
-  if (stream_started_callback_ != nullptr) stream_started_callback_();
-  // Take a reference of the LrsServiceImpl object, reference will go
-  // out of scope after this method exits.
-  std::shared_ptr<LrsServiceImpl> lrs_service_impl = shared_from_this();
-  // Read initial request.
-  LoadStatsRequest request;
-  if (stream->Read(&request)) {
-    IncreaseRequestCount();
-    if (check_first_request_ != nullptr) check_first_request_(request);
+//
+// LrsServiceImpl::Reactor
+//
+
+LrsServiceImpl::Reactor::Reactor(
+    std::shared_ptr<LrsServiceImpl> lrs_service_impl)
+    : lrs_service_impl_(std::move(lrs_service_impl)) {
+  LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+            << this << ": StreamLoadStats starts";
+  if (lrs_service_impl_->stream_started_callback_ != nullptr) {
+    lrs_service_impl_->stream_started_callback_();
+  }
+  StartRead(&request_);
+}
+
+void LrsServiceImpl::Reactor::OnReadDone(bool ok) {
+  if (!ok) return;
+  if (!seen_first_request_.exchange(true)) {
+    // Handle initial request.
+    LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+              << this << ": read initial request: " << request_.DebugString();
+    lrs_service_impl_->IncreaseRequestCount();
+    if (lrs_service_impl_->check_first_request_ != nullptr) {
+      lrs_service_impl_->check_first_request_(request_);
+    }
     // Send initial response.
-    LoadStatsResponse response;
-    if (send_all_clusters_) {
-      response.set_send_all_clusters(true);
+    if (lrs_service_impl_->send_all_clusters_) {
+      response_.set_send_all_clusters(true);
     } else {
-      for (const std::string& cluster_name : cluster_names_) {
-        response.add_clusters(cluster_name);
+      for (const std::string& cluster_name :
+           lrs_service_impl_->cluster_names_) {
+        response_.add_clusters(cluster_name);
       }
     }
-    response.mutable_load_reporting_interval()->set_seconds(
-        client_load_reporting_interval_seconds_ * grpc_test_slowdown_factor());
-    stream->Write(response);
-    IncreaseResponseCount();
-    // Wait for report.
-    request.Clear();
-    while (stream->Read(&request)) {
-      LOG(INFO) << "LRS[" << debug_label_
-                << "]: received client load report message: "
-                << request.DebugString();
-      std::vector<ClientStats> stats;
-      for (const auto& cluster_stats : request.cluster_stats()) {
-        stats.emplace_back(cluster_stats);
-      }
-      grpc_core::MutexLock lock(&load_report_mu_);
-      result_queue_.emplace_back(std::move(stats));
-      if (load_report_cond_ != nullptr) {
-        load_report_cond_->Signal();
-      }
+    response_.mutable_load_reporting_interval()->set_seconds(
+        lrs_service_impl_->client_load_reporting_interval_seconds_ *
+        grpc_test_slowdown_factor());
+    StartWrite(&response_);
+  } else {
+    // Handle load reports.
+    LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+              << this << ": received load report: " << request_.DebugString();
+    std::vector<ClientStats> stats;
+    for (const auto& cluster_stats : request_.cluster_stats()) {
+      stats.emplace_back(cluster_stats);
     }
-    // Wait until notified done.
-    grpc_core::MutexLock lock(&lrs_mu_);
-    while (!lrs_done_) {
-      lrs_cv_.Wait(&lrs_mu_);
+    grpc_core::MutexLock lock(&lrs_service_impl_->load_report_mu_);
+    lrs_service_impl_->result_queue_.emplace_back(std::move(stats));
+    if (lrs_service_impl_->load_report_cond_ != nullptr) {
+      lrs_service_impl_->load_report_cond_->Signal();
     }
   }
-  LOG(INFO) << "LRS[" << debug_label_ << "]: StreamLoadStats done";
-  return Status::OK;
+  StartRead(&request_);
+}
+
+void LrsServiceImpl::Reactor::OnWriteDone(bool /*ok*/) {
+  LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnWriteDone()";
+  lrs_service_impl_->IncreaseResponseCount();
+}
+
+void LrsServiceImpl::Reactor::OnDone() {
+  LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnDone()";
+  delete this;
+}
+
+void LrsServiceImpl::Reactor::OnCancel() {
+  LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
+            << this << ": OnCancel()";
+  Finish(Status::OK);
 }
 
 }  // namespace testing
