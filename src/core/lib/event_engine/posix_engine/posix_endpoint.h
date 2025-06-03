@@ -27,19 +27,16 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <new>
 #include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/hash/hash.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
-#include "src/core/lib/event_engine/extensions/supports_fd.h"
 #include "src/core/lib/event_engine/posix.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/posix_engine_closure.h"
@@ -488,7 +485,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  int GetWrappedFd() { return fd_; }
+  FileDescriptor GetWrappedFd() { return fd_; }
 
   bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
 
@@ -519,7 +516,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   void UnrefMaybePutZerocopySendRecord(TcpZerocopySendRecord* record);
   void ZerocopyDisableAndWaitForRemaining();
   bool WriteWithTimestamps(struct msghdr* msg, size_t sending_length,
-                           ssize_t* sent_length, int* saved_errno,
+                           PosixErrorOr<int64_t>* sent_length, int* saved_errno,
                            int additional_flags);
   absl::Status TcpAnnotateError(absl::Status src_error) const;
 #ifdef GRPC_LINUX_ERRQUEUE
@@ -530,14 +527,13 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  PosixSocketWrapper sock_;
-  int fd_;
+  FileDescriptor fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
   int min_read_chunk_size_;
   int max_read_chunk_size_;
-  int set_rcvlowat_ = 0;
+  int64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
   std::atomic<int> ref_count_{1};
 
@@ -640,7 +636,7 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->GetLocalAddress();
   }
 
-  int GetWrappedFd() override { return impl_->GetWrappedFd(); }
+  int GetWrappedFd() override { return impl_->GetWrappedFd().fd(); }
 
   bool CanTrackErrors() override { return impl_->CanTrackErrors(); }
 

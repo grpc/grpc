@@ -457,7 +457,7 @@ def targets():
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2204"),
+        PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
@@ -473,7 +473,7 @@ def targets():
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
         # Ruby
         RubyDistribTest(
             "linux-gnu",
