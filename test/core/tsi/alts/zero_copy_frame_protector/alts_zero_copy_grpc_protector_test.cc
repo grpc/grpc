@@ -197,7 +197,7 @@ static void seal_unseal_small_buffer(tsi_zero_copy_grpc_protector* sender,
         1;
     grpc_slice_buffer_move_first(&var->protected_sb, staging_sb_size,
                                  &var->staging_sb);
-    if (staging_sb_size >= kZeroCopyFrameLengthFieldSize {
+    if (staging_sb_size >= kZeroCopyFrameLengthFieldSize) {
       uint32_t frame_size;
       ASSERT_TRUE(tsi_zero_copy_grpc_protector_read_frame_size(
           receiver, &var->staging_sb, &frame_size));
