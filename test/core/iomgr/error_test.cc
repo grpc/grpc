@@ -54,7 +54,7 @@ TEST(ErrorTest, SetGetStr) {
   std::string str;
   EXPECT_TRUE(grpc_error_get_str(
       error, grpc_core::StatusStrProperty::kGrpcMessage, &str));
-  EXPECT_EQ(str, "longer message");
+  EXPECT_THAT(str, ::testing::StartsWith("longer message"));
 }
 
 TEST(ErrorTest, CopyAndUnRef) {

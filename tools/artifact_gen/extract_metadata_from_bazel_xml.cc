@@ -162,6 +162,11 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_mem_lib"
     },
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib"
+    },
     "@com_google_protobuf//upb:message": {
         "language": "c",
         "build": "all",
@@ -382,13 +387,6 @@ static const char* kBuildExtraMetadata = R"json({
         "run": true,
         "_TYPE": "target",
         "_RENAME": "grpc_cli"
-    },
-    "test/cpp/ext/otel:otel_plugin_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_plugin_test"
     }
     // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     // For now it's ok to disable them as these binaries aren't very useful anyway.
@@ -453,7 +451,7 @@ class ArtifactGen {
       bazel_rule.deps = {
           "@com_google_protobuf//upb:descriptor_upb_proto",
           "@com_google_protobuf//"
-          "upb:generated_code_support__only_for_generated_code_do_not_use__i_"
+          "upb:generated_code_support"
           "give_permission_to_break_me",
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers
@@ -542,6 +540,10 @@ class ArtifactGen {
       }
       if (absl::c_contains(bazel_rule.tags, "bazel_only")) {
         continue;
+      }
+      if (absl::StartsWith(test, "test/cpp/ext/otel")) {
+        test_dict["build"] = "plugin_test";
+        test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN";
       }
       // if any tags that restrict platform compatibility are present,
       // generate the "platforms" field accordingly
@@ -1148,6 +1150,7 @@ class ArtifactGen {
       {"@utf8_range//", "third_party/utf8_range"},
       {"@com_googlesource_code_re2//", "third_party/re2"},
       {"@com_google_googletest//", "third_party/googletest"},
+      {"@googletest//", "third_party/googletest"},
       {"@com_google_protobuf//upb", "third_party/upb/upb"},
       {"@com_google_protobuf//third_party/utf8_range",
        "third_party/utf8_range"},

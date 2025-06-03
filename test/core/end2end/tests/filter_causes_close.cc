@@ -83,9 +83,11 @@ const grpc_channel_filter TestFilter::kFilter =
     MakePromiseBasedFilter<TestFilter, FilterEndpoint::kServer>();
 
 CORE_END2END_TEST(CoreEnd2endTests, FilterCausesClose) {
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()->RegisterFilter<TestFilter>(GRPC_SERVER_CHANNEL);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()->RegisterFilter<TestFilter>(
+            GRPC_SERVER_CHANNEL);
+      });
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

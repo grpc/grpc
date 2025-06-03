@@ -77,7 +77,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang++
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
 
 VALID_CONFIG_asan-noleaks = 1
@@ -86,7 +86,7 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-noleaks = fsanitize=address
 
 VALID_CONFIG_asan-trace-cmp = 1
@@ -95,7 +95,7 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
-CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
 VALID_CONFIG_c++-compat = 1
@@ -156,7 +156,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -183,7 +183,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang++
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 46.0.0
-CPP_VERSION = 1.72.0-dev
+CORE_VERSION = 48.0.0
+CPP_VERSION = 1.74.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -46
+SHARED_VERSION_CORE = -48
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -781,6 +781,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/stateful_session/stateful_session_filter.cc \
     src/core/ext/filters/stateful_session/stateful_session_service_config_parser.cc \
     src/core/ext/transport/chttp2/alpn/alpn.cc \
+    src/core/ext/transport/chttp2/chttp2_plugin.cc \
     src/core/ext/transport/chttp2/client/chttp2_connector.cc \
     src/core/ext/transport/chttp2/server/chttp2_server.cc \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
@@ -1145,6 +1146,7 @@ LIBGRPC_SRC = \
     src/core/handshaker/http_connect/http_proxy_mapper.cc \
     src/core/handshaker/http_connect/xds_http_proxy_mapper.cc \
     src/core/handshaker/proxy_mapper_registry.cc \
+    src/core/handshaker/security/legacy_secure_endpoint.cc \
     src/core/handshaker/security/secure_endpoint.cc \
     src/core/handshaker/security/security_handshaker.cc \
     src/core/handshaker/tcp_connect/tcp_connect_handshaker.cc \
@@ -1232,7 +1234,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
@@ -1384,6 +1385,7 @@ LIBGRPC_SRC = \
     src/core/resolver/xds/xds_config.cc \
     src/core/resolver/xds/xds_dependency_manager.cc \
     src/core/resolver/xds/xds_resolver.cc \
+    src/core/server/add_port.cc \
     src/core/server/server.cc \
     src/core/server/server_call_tracer_filter.cc \
     src/core/server/server_config_selector_filter.cc \
@@ -1393,11 +1395,14 @@ LIBGRPC_SRC = \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
     src/core/telemetry/metrics.cc \
     src/core/telemetry/stats.cc \
     src/core/telemetry/stats_data.cc \
+    src/core/telemetry/tcp_tracer.cc \
     src/core/transport/auth_context.cc \
+    src/core/transport/endpoint_transport_client_channel_factory.cc \
     src/core/tsi/alts/crypt/aes_gcm.cc \
     src/core/tsi/alts/crypt/gsec.cc \
     src/core/tsi/alts/frame_protector/alts_counter.cc \
@@ -1472,6 +1477,7 @@ LIBGRPC_SRC = \
     src/core/util/posix/tmpfile.cc \
     src/core/util/random_early_detection.cc \
     src/core/util/ref_counted_string.cc \
+    src/core/util/shared_bit_gen.cc \
     src/core/util/status_helper.cc \
     src/core/util/strerror.cc \
     src/core/util/string.cc \
@@ -1539,6 +1545,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
     third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
     third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
+    third_party/abseil-cpp/absl/base/internal/tracing.cc \
     third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
     third_party/abseil-cpp/absl/base/log_severity.cc \
     third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
@@ -1560,6 +1567,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/debugging/internal/examine_stack.cc \
     third_party/abseil-cpp/absl/debugging/internal/utf8_for_code_point.cc \
     third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/leak_check.cc \
     third_party/abseil-cpp/absl/debugging/stacktrace.cc \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/flags/commandlineflag.cc \
@@ -1583,6 +1591,7 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/log_sink_set.cc \
     third_party/abseil-cpp/absl/log/internal/nullguard.cc \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
+    third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
     third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
@@ -1761,6 +1770,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/event_engine/extensible.h \
     include/grpc/event_engine/internal/memory_allocator_impl.h \
     include/grpc/event_engine/internal/slice_cast.h \
+    include/grpc/event_engine/internal/write_event.h \
     include/grpc/event_engine/memory_allocator.h \
     include/grpc/event_engine/memory_request.h \
     include/grpc/event_engine/port.h \
@@ -1830,8 +1840,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.46 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.46
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.48 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.48
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif
@@ -1850,6 +1860,7 @@ endif
 # deps: []
 # transitive_deps: []
 LIBBORINGSSL_SRC = \
+    third_party/boringssl-with-bazel/src/crypto/aes/aes.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bitstr.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_bool.cc \
     third_party/boringssl-with-bazel/src/crypto/asn1/a_d2i_fp.cc \
@@ -1892,6 +1903,9 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/blake2/blake2.cc \
     third_party/boringssl-with-bazel/src/crypto/bn/bn_asn1.cc \
     third_party/boringssl-with-bazel/src/crypto/bn/convert.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/div.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/exponentiation.cc \
+    third_party/boringssl-with-bazel/src/crypto/bn/sqrt.cc \
     third_party/boringssl-with-bazel/src/crypto/buf/buf.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/asn1_compat.cc \
     third_party/boringssl-with-bazel/src/crypto/bytestring/ber.cc \
@@ -1901,6 +1915,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/chacha/chacha.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/derive_key.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_aesctrhmac.cc \
+    third_party/boringssl-with-bazel/src/crypto/cipher/e_aeseax.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_aesgcmsiv.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_chacha20poly1305.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_des.cc \
@@ -1910,6 +1925,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/cipher/e_tls.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/get_cipher.cc \
     third_party/boringssl-with-bazel/src/crypto/cipher/tls_cbc.cc \
+    third_party/boringssl-with-bazel/src/crypto/cms/cms.cc \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_apple.cc \
     third_party/boringssl-with-bazel/src/crypto/cpu_aarch64_fuchsia.cc \
@@ -1959,6 +1975,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ex_data.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.cc \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.cc \
+    third_party/boringssl-with-bazel/src/crypto/fuzzer_mode.cc \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.cc \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.cc \
     third_party/boringssl-with-bazel/src/crypto/kyber/kyber.cc \

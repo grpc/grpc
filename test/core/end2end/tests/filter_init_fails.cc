@@ -87,7 +87,7 @@ const grpc_channel_filter test_filter = {
     GRPC_UNIQUE_TYPE_NAME_HERE("zzzzzz_filter_init_fails")};
 
 void RegisterFilter(grpc_channel_stack_type type) {
-  CoreConfiguration::RegisterBuilder(
+  CoreConfiguration::RegisterEphemeralBuilder(
       [type](CoreConfiguration::Builder* builder) {
         builder->channel_init()->RegisterFilter(type, &test_filter);
       });
@@ -162,7 +162,6 @@ CORE_END2END_TEST(CoreEnd2endTests, DISABLED_ClientFilterChannelInitFails) {
 CORE_END2END_TEST(CoreEnd2endTests, ClientFilterCallInitFails) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
-
   RegisterFilter(GRPC_CLIENT_CHANNEL);
   RegisterFilter(GRPC_CLIENT_DIRECT_CHANNEL);
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

@@ -112,9 +112,7 @@ class ReclamationSweep {
   // Explicit finish for users that wish to write it.
   // Just destroying the object is enough, but sometimes the additional
   // explicitness is warranted.
-  void Finish() {
-    [](ReclamationSweep) {}(std::move(*this));
-  }
+  void Finish();
 
  private:
   std::shared_ptr<BasicMemoryQuota> memory_quota_;

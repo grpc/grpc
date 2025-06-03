@@ -35,6 +35,9 @@ bool UseEventEngineListener();
 // may disable the poller in some builds.
 bool UsePollsetAlternative();
 
+// Returns true if GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER is defined.
+bool EventEngineExperimentDisabledForPython();
+
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_SHIM_H

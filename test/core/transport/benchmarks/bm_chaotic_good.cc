@@ -53,8 +53,8 @@ class ChaoticGoodTraits {
             client_config.MakeTcpFrameTransportOptions(),
             PromiseEndpoint(std::move(control.client), SliceBuffer()),
             client_config.TakePendingDataEndpoints(),
-            channel_args
-                .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+            MakeRefCounted<chaotic_good::TransportContext>(channel_args,
+                                                           nullptr)),
         client_config.MakeMessageChunker());
     auto server = MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
         channel_args,
@@ -62,8 +62,8 @@ class ChaoticGoodTraits {
             client_config.MakeTcpFrameTransportOptions(),
             PromiseEndpoint(std::move(control.server), SliceBuffer()),
             server_config.TakePendingDataEndpoints(),
-            channel_args
-                .GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
+            MakeRefCounted<chaotic_good::TransportContext>(channel_args,
+                                                           nullptr)),
         server_config.MakeMessageChunker());
     return {std::move(client), std::move(server)};
   }

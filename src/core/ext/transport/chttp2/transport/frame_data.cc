@@ -55,6 +55,7 @@ absl::Status grpc_chttp2_data_parser_begin_frame(uint8_t flags,
 void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
                              uint32_t write_bytes, int is_eof,
                              grpc_core::CallTracerInterface* call_tracer,
+                             grpc_core::Http2ZTraceCollector* ztrace_collector,
                              grpc_slice_buffer* outbuf) {
   grpc_slice hdr;
   uint8_t* p;
@@ -73,6 +74,9 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
   *p++ = static_cast<uint8_t>(id >> 8);
   *p++ = static_cast<uint8_t>(id);
   grpc_slice_buffer_add(outbuf, hdr);
+
+  ztrace_collector->Append(
+      grpc_core::H2DataTrace<false>{id, is_eof != 0, write_bytes});
 
   grpc_slice_buffer_move_first_no_ref(inbuf, write_bytes, outbuf);
 
@@ -148,6 +152,12 @@ grpc_error_handle grpc_chttp2_data_parser_parse(void* /*parser*/,
   grpc_slice_buffer_add(&s->frame_storage, slice);
   grpc_chttp2_maybe_complete_recv_message(t, s);
 
+  if (is_last) {
+    t->http2_ztrace_collector.Append(grpc_core::H2DataTrace<true>{
+        t->incoming_stream_id,
+        (t->incoming_frame_flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+        t->incoming_frame_size});
+  }
   if (is_last && s->received_last_frame) {
     grpc_chttp2_mark_stream_closed(
         t, s, true, false,

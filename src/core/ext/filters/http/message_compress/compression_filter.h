@@ -24,6 +24,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstddef>
 #include <optional>
 
 #include "absl/status/statusor.h"
@@ -91,6 +92,23 @@ class ChannelCompression {
       bool is_client, MessageHandle message, DecompressArgs args,
       CallTracerInterface* call_tracer) const;
 
+  Json::Object ToJsonObject() const {
+    Json::Object object;
+    if (max_recv_size_.has_value()) {
+      object["maxRecvSize"] = Json::FromNumber(*max_recv_size_);
+    }
+    const char* algorithm =
+        CompressionAlgorithmAsString(default_compression_algorithm_);
+    if (algorithm != nullptr) {
+      object["defaultCompressionAlgorithm"] = Json::FromString(algorithm);
+    }
+    object["enabledCompressionAlgorithms"] = Json::FromString(
+        std::string(enabled_compression_algorithms_.ToString()));
+    object["enableCompression"] = Json::FromBool(enable_compression_);
+    object["enableDecompression"] = Json::FromBool(enable_decompression_);
+    return object;
+  }
+
  private:
   // Max receive message length, if set.
   std::optional<uint32_t> max_recv_size_;
@@ -106,7 +124,8 @@ class ChannelCompression {
 };
 
 class ClientCompressionFilter final
-    : public ImplementChannelFilter<ClientCompressionFilter> {
+    : public ImplementChannelFilter<ClientCompressionFilter>,
+      public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -116,7 +135,14 @@ class ClientCompressionFilter final
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   explicit ClientCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
+      : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
+        compression_engine_(args) {}
+  ~ClientCompressionFilter() override { ResetDataSource(); }
+
+  void AddData(channelz::DataSink sink) override {
+    sink.AddAdditionalInfo("clientCompressionFilter",
+                           compression_engine_.ToJsonObject());
+  }
 
   // Construct a promise for one call.
   class Call {
@@ -148,7 +174,8 @@ class ClientCompressionFilter final
 };
 
 class ServerCompressionFilter final
-    : public ImplementChannelFilter<ServerCompressionFilter> {
+    : public ImplementChannelFilter<ServerCompressionFilter>,
+      public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -158,7 +185,14 @@ class ServerCompressionFilter final
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
   explicit ServerCompressionFilter(const ChannelArgs& args)
-      : compression_engine_(args) {}
+      : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
+        compression_engine_(args) {}
+  ~ServerCompressionFilter() override { ResetDataSource(); }
+
+  void AddData(channelz::DataSink sink) override {
+    sink.AddAdditionalInfo("serverCompressionFilter",
+                           compression_engine_.ToJsonObject());
+  }
 
   // Construct a promise for one call.
   class Call {

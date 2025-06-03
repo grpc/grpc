@@ -161,16 +161,16 @@ class GrpcXdsClient::MetricsReporter final : public XdsMetricsReporter {
                              absl::string_view resource_type,
                              uint64_t num_valid_resources,
                              uint64_t num_invalid_resources) override {
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricResourceUpdatesValid, num_valid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricResourceUpdatesInvalid, num_invalid_resources,
         {xds_client_.key_, xds_server, resource_type}, {});
   }
 
   void ReportServerFailure(absl::string_view xds_server) override {
-    xds_client_.stats_plugin_group_.AddCounter(
+    xds_client_.stats_plugin_group_->AddCounter(
         kMetricServerFailure, 1, {xds_client_.key_, xds_server}, {});
   }
 
@@ -225,7 +225,7 @@ absl::StatusOr<std::string> GetBootstrapContents(const char* fallback_config) {
       "not defined");
 }
 
-GlobalStatsPluginRegistry::StatsPluginGroup
+std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
 GetStatsPluginGroupForKeyAndChannelArgs(absl::string_view key,
                                         const ChannelArgs& channel_args) {
   if (key == GrpcXdsClient::kServerKey) {
@@ -309,7 +309,8 @@ GrpcXdsClient::GrpcXdsClient(
     absl::string_view key, std::shared_ptr<GrpcXdsBootstrap> bootstrap,
     const ChannelArgs& args,
     RefCountedPtr<XdsTransportFactory> transport_factory,
-    GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group)
+    std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+        stats_plugin_group)
     : XdsClient(
           bootstrap, transport_factory,
           grpc_event_engine::experimental::GetDefaultEventEngine(),
@@ -324,7 +325,7 @@ GrpcXdsClient::GrpcXdsClient(
           DownCast<const GrpcXdsBootstrap&>(this->bootstrap())
               .certificate_providers())),
       stats_plugin_group_(std::move(stats_plugin_group)),
-      registered_metric_callback_(stats_plugin_group_.RegisterCallback(
+      registered_metric_callback_(stats_plugin_group_->RegisterCallback(
           [this](CallbackMetricReporter& reporter) {
             ReportCallbackMetrics(reporter);
           },

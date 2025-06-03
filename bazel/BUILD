@@ -208,3 +208,9 @@ package_group(
     name = "latent_see",
     packages = [],
 )
+
+package_group(
+    name = "core_end2end_tests",
+    packages = [
+    ],
+)

@@ -452,10 +452,8 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& watcher : watchers_) {
-    subchannel_->work_serializer_.Run([watcher = watcher->Ref(), state,
-                                       status]() mutable {
-      auto* watcher_ptr = watcher.get();
-      watcher_ptr->OnConnectivityStateChange(std::move(watcher), state, status);
+    subchannel_->work_serializer_.Run([watcher, state, status]() {
+      watcher->OnConnectivityStateChange(state, status);
     });
   }
 }
@@ -551,6 +549,8 @@ Subchannel::Subchannel(SubchannelKey key,
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
+    channelz_node_->SetChannelArgs(args_);
+    args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
 }
 
@@ -612,10 +612,8 @@ void Subchannel::WatchConnectivityState(
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
   work_serializer_.Run(
-      [watcher = watcher->Ref(), state = state_, status = status_]() mutable {
-        auto* watcher_ptr = watcher.get();
-        watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
-                                               status);
+      [watcher, state = state_, status = status_]() {
+        watcher->OnConnectivityStateChange(state, status);
       },
       DEBUG_LOCATION);
   watcher_list_.AddWatcherLocked(std::move(watcher));
@@ -792,7 +790,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 }
 
 bool Subchannel::PublishTransportLocked() {
-  auto socket_node = std::move(connecting_result_.socket_node);
+  auto socket_node = connecting_result_.transport->GetSocketNode();
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.

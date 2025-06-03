@@ -46,6 +46,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
 #include "src/core/util/ref_counted_ptr.h"
 
 namespace grpc_core {
@@ -131,7 +132,7 @@ auto BooleanSuccessToTransportErrorCapturingInitiator(CallInitiator initiator) {
 }  // namespace
 
 auto ChaoticGoodServerTransport::SendFrame(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    ServerFrame frame, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
@@ -141,7 +142,7 @@ auto ChaoticGoodServerTransport::SendFrame(
 }
 
 auto ChaoticGoodServerTransport::SendFrameAcked(
-    ServerFrame frame, MpscSender<ServerFrame> outgoing_frames,
+    ServerFrame frame, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Capture the call_initiator to ensure the underlying call spine is alive
   // until the outgoing_frames.Send promise completes.
@@ -151,7 +152,7 @@ auto ChaoticGoodServerTransport::SendFrameAcked(
 }
 
 auto ChaoticGoodServerTransport::SendCallBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+    uint32_t stream_id, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   // Continuously send client frame with client to server messages.
   return ForEach(MessagesFrom(call_initiator),
@@ -165,7 +166,7 @@ auto ChaoticGoodServerTransport::SendCallBody(
 }
 
 auto ChaoticGoodServerTransport::SendCallInitialMetadataAndBody(
-    uint32_t stream_id, MpscSender<ServerFrame> outgoing_frames,
+    uint32_t stream_id, LockBasedMpscSender<ServerFrame> outgoing_frames,
     CallInitiator call_initiator) {
   return TrySeq(
       // Wait for initial metadata then send it out.
@@ -343,7 +344,9 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
       message_chunker_(config.MakeMessageChunker()) {
   auto transport = MakeRefCounted<ChaoticGoodTransport>(
       std::move(control_endpoint), config.TakePendingDataEndpoints(),
-      event_engine_, config.MakeTransportOptions(), false);
+      event_engine_,
+      args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>(),
+      config.MakeTransportOptions(), false);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       event_engine_.get());

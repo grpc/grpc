@@ -236,7 +236,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       break;
   }
   h.header.stream_id = frame.stream_id();
-  h.payload_connection_id = 0;
+  h.payload_tag = 0;
   h.header.payload_length = 0;
   auto proto_payload = [&](auto payload) {
     std::string temp = payload.SerializeAsString();
@@ -259,8 +259,7 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
           Slice::FromCopiedString(std::string(h.header.payload_length, 'a')));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadOtherConnectionId:
-      h.payload_connection_id =
-          frame.payload_other_connection_id().connection_id();
+      h.payload_tag = frame.payload_other_connection_id().connection_id();
       h.header.payload_length = std::min<uint32_t>(
           32 * 1024 * 1024, frame.payload_other_connection_id().length());
       break;
@@ -480,7 +479,8 @@ void ReadForever(std::shared_ptr<EventEngine::Endpoint> ep) {
           if (!status.ok()) return;
           ReadForever(std::move(ep));
         },
-        buffer_ptr, nullptr);
+        buffer_ptr,
+        grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs());
   } while (finished);
 }
 
@@ -521,7 +521,9 @@ void ScheduleWritesForReads(
                       ExecCtx exec_ctx;
                       FinishWrite(std::move(status));
                     },
-                    &writing_, nullptr)) {
+                    &writing_,
+                    grpc_event_engine::experimental::EventEngine::Endpoint::
+                        WriteArgs())) {
               FinishWrite(absl::OkStatus());
             }
           });

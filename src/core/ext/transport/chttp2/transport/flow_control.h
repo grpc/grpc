@@ -271,6 +271,11 @@ class TransportFlowControl final {
 
   FlowControlAction SetAckedInitialWindow(uint32_t value);
 
+  void set_target_initial_window_size(uint32_t value) {
+    target_initial_window_size_ =
+        std::min(value, Http2Settings::max_initial_window_size());
+  }
+
   // Getters
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }
@@ -302,6 +307,24 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
+    Json::Object ToJsonObject() {
+      Json::Object object;
+      object["targetWindow"] = Json::FromNumber(target_window);
+      object["targetFrameSize"] = Json::FromNumber(target_frame_size);
+      object["targetPreferredRxCryptoFrameSize"] =
+          Json::FromNumber(target_preferred_rx_crypto_frame_size);
+      object["ackedInitWindow"] = Json::FromNumber(acked_init_window);
+      object["queuedInitWindow"] = Json::FromNumber(queued_init_window);
+      object["sentInitWindow"] = Json::FromNumber(sent_init_window);
+      object["remoteWindow"] = Json::FromNumber(remote_window);
+      object["announcedWindow"] = Json::FromNumber(announced_window);
+      object["announcedStreamTotalOverIncomingWindow"] =
+          Json::FromNumber(announced_stream_total_over_incoming_window);
+      object["bdpAccumulator"] = Json::FromNumber(bdp_accumulator);
+      object["bdpEstimate"] = Json::FromNumber(bdp_estimate);
+      object["bdpBwEst"] = Json::FromNumber(bdp_bw_est);
+      return object;
+    }
   };
 
   Stats stats() const {

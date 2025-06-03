@@ -51,7 +51,7 @@ class ActiveConnectionTestPeer;
 class HandshakingStateTestPeer;
 }  // namespace testing
 
-// New ChttpServerListener used if experiment "server_listener" is enabled
+// New ChttpServerListener
 class NewChttp2ServerListener : public Server::ListenerInterface {
  public:
   using AcceptorPtr =
@@ -255,6 +255,10 @@ class PassiveListenerImpl final : public PassiveListener {
 };
 
 }  // namespace experimental
+
+absl::StatusOr<int> Chttp2ServerAddPort(Server* server, const char* addr,
+                                        const ChannelArgs& args);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_SERVER_CHTTP2_SERVER_H

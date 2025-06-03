@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.72.0-dev'
+  version = '1.74.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -232,7 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20240722.0'
+    abseil_version = '~> 1.20250127.1'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -240,6 +240,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/base/log_severity', abseil_version
     ss.dependency 'abseil/base/no_destructor', abseil_version
     ss.dependency 'abseil/cleanup/cleanup', abseil_version
+    ss.dependency 'abseil/container/btree', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -264,6 +265,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
+    ss.dependency 'abseil/strings/string_view', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
@@ -294,6 +296,7 @@ Pod::Spec.new do |s|
                       'src/core/channelz/channel_trace.h',
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.h',
+                      'src/core/channelz/ztrace_collector.h',
                       'src/core/client_channel/backup_poller.h',
                       'src/core/client_channel/client_channel.h',
                       'src/core/client_channel/client_channel_args.h',
@@ -393,7 +396,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                       'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                       'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                      'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                       'src/core/ext/transport/chttp2/transport/decode_huff.h',
                       'src/core/ext/transport/chttp2/transport/flow_control.h',
                       'src/core/ext/transport/chttp2/transport/frame.h',
@@ -411,8 +413,11 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http2_status.h',
+                      'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.h',
                       'src/core/ext/transport/chttp2/transport/internal.h',
+                      'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                       'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                       'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                       'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -950,7 +955,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/default_event_engine.h',
                       'src/core/lib/event_engine/default_event_engine_factory.h',
                       'src/core/lib/event_engine/event_engine_context.h',
+                      'src/core/lib/event_engine/extensions/blocking_dns.h',
                       'src/core/lib/event_engine/extensions/can_track_errors.h',
+                      'src/core/lib/event_engine/extensions/channelz.h',
                       'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                       'src/core/lib/event_engine/extensions/iomgr_compatible.h',
                       'src/core/lib/event_engine/extensions/supports_fd.h',
@@ -1028,7 +1035,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                       'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                       'src/core/lib/iomgr/exec_ctx.h',
-                      'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
                       'src/core/lib/iomgr/iocp_windows.h',
                       'src/core/lib/iomgr/iomgr.h',
@@ -1144,7 +1150,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/transport/call_final_info.h',
                       'src/core/lib/transport/connectivity_state.h',
                       'src/core/lib/transport/error_utils.h',
-                      'src/core/lib/transport/http2_errors.h',
                       'src/core/lib/transport/status_conversion.h',
                       'src/core/lib/transport/timeout_encoding.h',
                       'src/core/lib/transport/transport.h',
@@ -1205,12 +1210,16 @@ Pod::Spec.new do |s|
                       'src/core/service_config/service_config_impl.h',
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.h',
+                      'src/core/telemetry/context_list_entry.h',
+                      'src/core/telemetry/default_tcp_tracer.h',
                       'src/core/telemetry/histogram_view.h',
                       'src/core/telemetry/metrics.h',
                       'src/core/telemetry/stats.h',
                       'src/core/telemetry/stats_data.h',
                       'src/core/telemetry/tcp_tracer.h',
                       'src/core/transport/auth_context.h',
+                      'src/core/transport/endpoint_transport.h',
+                      'src/core/transport/endpoint_transport_client_channel_factory.h',
                       'src/core/tsi/alts/crypt/gsec.h',
                       'src/core/tsi/alts/frame_protector/alts_counter.h',
                       'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -1259,6 +1268,7 @@ Pod::Spec.new do |s|
                       'src/core/util/event_log.h',
                       'src/core/util/examine_stack.h',
                       'src/core/util/fork.h',
+                      'src/core/util/function_signature.h',
                       'src/core/util/gcp_metadata_query.h',
                       'src/core/util/gethostname.h',
                       'src/core/util/glob.h',
@@ -1283,6 +1293,7 @@ Pod::Spec.new do |s|
                       'src/core/util/match.h',
                       'src/core/util/matchers.h',
                       'src/core/util/memory.h',
+                      'src/core/util/memory_usage.h',
                       'src/core/util/mpscq.h',
                       'src/core/util/no_destruct.h',
                       'src/core/util/notification.h',
@@ -1295,6 +1306,7 @@ Pod::Spec.new do |s|
                       'src/core/util/ref_counted_ptr.h',
                       'src/core/util/ref_counted_string.h',
                       'src/core/util/ring_buffer.h',
+                      'src/core/util/shared_bit_gen.h',
                       'src/core/util/single_set_ptr.h',
                       'src/core/util/sorted_pack.h',
                       'src/core/util/spinlock.h',
@@ -1603,6 +1615,7 @@ Pod::Spec.new do |s|
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
+                              'src/core/channelz/ztrace_collector.h',
                               'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel.h',
                               'src/core/client_channel/client_channel_args.h',
@@ -1702,7 +1715,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/bin_encoder.h',
                               'src/core/ext/transport/chttp2/transport/call_tracer_wrapper.h',
                               'src/core/ext/transport/chttp2/transport/chttp2_transport.h',
-                              'src/core/ext/transport/chttp2/transport/context_list_entry.h',
                               'src/core/ext/transport/chttp2/transport/decode_huff.h',
                               'src/core/ext/transport/chttp2/transport/flow_control.h',
                               'src/core/ext/transport/chttp2/transport/frame.h',
@@ -1720,8 +1732,11 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http2_status.h',
+                              'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
                               'src/core/ext/transport/chttp2/transport/internal.h',
+                              'src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h',
                               'src/core/ext/transport/chttp2/transport/legacy_frame.h',
                               'src/core/ext/transport/chttp2/transport/ping_abuse_policy.h',
                               'src/core/ext/transport/chttp2/transport/ping_callbacks.h',
@@ -2259,7 +2274,9 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/default_event_engine.h',
                               'src/core/lib/event_engine/default_event_engine_factory.h',
                               'src/core/lib/event_engine/event_engine_context.h',
+                              'src/core/lib/event_engine/extensions/blocking_dns.h',
                               'src/core/lib/event_engine/extensions/can_track_errors.h',
+                              'src/core/lib/event_engine/extensions/channelz.h',
                               'src/core/lib/event_engine/extensions/chaotic_good_extension.h',
                               'src/core/lib/event_engine/extensions/iomgr_compatible.h',
                               'src/core/lib/event_engine/extensions/supports_fd.h',
@@ -2337,7 +2354,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/event_engine_shims/endpoint.h',
                               'src/core/lib/iomgr/event_engine_shims/tcp_client.h',
                               'src/core/lib/iomgr/exec_ctx.h',
-                              'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
                               'src/core/lib/iomgr/iocp_windows.h',
                               'src/core/lib/iomgr/iomgr.h',
@@ -2453,7 +2469,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/call_final_info.h',
                               'src/core/lib/transport/connectivity_state.h',
                               'src/core/lib/transport/error_utils.h',
-                              'src/core/lib/transport/http2_errors.h',
                               'src/core/lib/transport/status_conversion.h',
                               'src/core/lib/transport/timeout_encoding.h',
                               'src/core/lib/transport/transport.h',
@@ -2514,12 +2529,16 @@ Pod::Spec.new do |s|
                               'src/core/service_config/service_config_impl.h',
                               'src/core/service_config/service_config_parser.h',
                               'src/core/telemetry/call_tracer.h',
+                              'src/core/telemetry/context_list_entry.h',
+                              'src/core/telemetry/default_tcp_tracer.h',
                               'src/core/telemetry/histogram_view.h',
                               'src/core/telemetry/metrics.h',
                               'src/core/telemetry/stats.h',
                               'src/core/telemetry/stats_data.h',
                               'src/core/telemetry/tcp_tracer.h',
                               'src/core/transport/auth_context.h',
+                              'src/core/transport/endpoint_transport.h',
+                              'src/core/transport/endpoint_transport_client_channel_factory.h',
                               'src/core/tsi/alts/crypt/gsec.h',
                               'src/core/tsi/alts/frame_protector/alts_counter.h',
                               'src/core/tsi/alts/frame_protector/alts_crypter.h',
@@ -2568,6 +2587,7 @@ Pod::Spec.new do |s|
                               'src/core/util/event_log.h',
                               'src/core/util/examine_stack.h',
                               'src/core/util/fork.h',
+                              'src/core/util/function_signature.h',
                               'src/core/util/gcp_metadata_query.h',
                               'src/core/util/gethostname.h',
                               'src/core/util/glob.h',
@@ -2592,6 +2612,7 @@ Pod::Spec.new do |s|
                               'src/core/util/match.h',
                               'src/core/util/matchers.h',
                               'src/core/util/memory.h',
+                              'src/core/util/memory_usage.h',
                               'src/core/util/mpscq.h',
                               'src/core/util/no_destruct.h',
                               'src/core/util/notification.h',
@@ -2604,6 +2625,7 @@ Pod::Spec.new do |s|
                               'src/core/util/ref_counted_ptr.h',
                               'src/core/util/ref_counted_string.h',
                               'src/core/util/ring_buffer.h',
+                              'src/core/util/shared_bit_gen.h',
                               'src/core/util/single_set_ptr.h',
                               'src/core/util/sorted_pack.h',
                               'src/core/util/spinlock.h',

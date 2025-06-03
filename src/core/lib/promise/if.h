@@ -219,6 +219,19 @@ class If<bool, T, F> {
     }
   }
 
+  Json ToJson() const {
+    Json::Object json;
+    json["condition"] = Json::FromBool(condition_);
+    json["true"] = Json::FromString(std::string(TypeName<TruePromise>()));
+    json["false"] = Json::FromString(std::string(TypeName<FalsePromise>()));
+    if (condition_) {
+      json["promise"] = if_true_.ToJson();
+    } else {
+      json["promise"] = if_false_.ToJson();
+    }
+    return Json::FromObject(std::move(json));
+  }
+
  private:
   bool condition_;
   union {

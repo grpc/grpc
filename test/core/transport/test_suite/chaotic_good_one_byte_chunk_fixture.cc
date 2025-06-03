@@ -30,6 +30,10 @@ TRANSPORT_FIXTURE(ChaoticGoodOneByteChunks) {
   chaotic_good::Config server_config(channel_args);
   client_config.TestOnlySetChunkSizes(1);
   server_config.TestOnlySetChunkSizes(1);
+  auto client_socket_node = chaotic_good::TcpFrameTransport::MakeSocketNode(
+      channel_args, control_endpoints.client);
+  auto server_socket_node = chaotic_good::TcpFrameTransport::MakeSocketNode(
+      channel_args, control_endpoints.server);
   auto client_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodClientTransport>(
           channel_args,
@@ -37,8 +41,8 @@ TRANSPORT_FIXTURE(ChaoticGoodOneByteChunks) {
               client_config.MakeTcpFrameTransportOptions(),
               std::move(control_endpoints.client),
               client_config.TakePendingDataEndpoints(),
-              channel_args.GetObjectRef<
-                  grpc_event_engine::experimental::EventEngine>()),
+              MakeRefCounted<chaotic_good::TransportContext>(
+                  channel_args, std::move(client_socket_node))),
           client_config.MakeMessageChunker());
   auto server_transport =
       MakeOrphanable<chaotic_good::ChaoticGoodServerTransport>(
@@ -47,8 +51,8 @@ TRANSPORT_FIXTURE(ChaoticGoodOneByteChunks) {
               server_config.MakeTcpFrameTransportOptions(),
               std::move(control_endpoints.server),
               server_config.TakePendingDataEndpoints(),
-              channel_args.GetObjectRef<
-                  grpc_event_engine::experimental::EventEngine>()),
+              MakeRefCounted<chaotic_good::TransportContext>(
+                  channel_args, std::move(server_socket_node))),
           server_config.MakeMessageChunker());
   return ClientAndServerTransportPair{std::move(client_transport),
                                       std::move(server_transport), true};

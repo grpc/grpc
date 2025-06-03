@@ -31,9 +31,9 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
+#include "src/core/lib/promise/lock_based_mpsc.h"
 #include "src/core/lib/promise/loop.h"
 #include "src/core/lib/promise/match_promise.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -97,11 +97,13 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
       std::vector<PendingConnection> pending_data_endpoints,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine,
+      std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+          stats_plugin_group,
       Options options, bool enable_tracing)
       : event_engine_(std::move(event_engine)),
         control_endpoint_(std::move(control_endpoint), event_engine_.get()),
         data_endpoints_(std::move(pending_data_endpoints), event_engine_.get(),
-                        enable_tracing),
+                        std::move(stats_plugin_group), enable_tracing),
         options_(options) {}
 
   auto WriteFrame(const FrameInterface& frame) {
@@ -152,7 +154,7 @@ class ChaoticGoodTransport : public RefCounted<ChaoticGoodTransport> {
   // Common outbound loop for both client and server (these vary only over the
   // frame type).
   template <typename Frame>
-  auto TransportWriteLoop(MpscReceiver<Frame>& outgoing_frames) {
+  auto TransportWriteLoop(LockBasedMpscReceiver<Frame>& outgoing_frames) {
     return Loop([self = Ref(), &outgoing_frames] {
       return TrySeq(
           // Get next outgoing frame.

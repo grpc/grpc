@@ -15,17 +15,20 @@
 #include "metadata_for_wrapped_languages.h"
 
 #include <fstream>
+#include <initializer_list>
 #include <optional>
+#include <regex>
 #include <set>
 #include <vector>
-#include <regex>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_split.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "utils.h"
 
 namespace {
@@ -58,19 +61,19 @@ void AddCApis(nlohmann::json& config) {
       auto args = absl::StripAsciiWhitespace(args_and_close);
       auto last_space = type_and_name.rfind(' ');
       auto last_star = type_and_name.rfind('*');
-      auto type_end = last_space == std::string::npos ? last_star : (
-        last_star == std::string::npos ? last_space : std::max(last_space, last_star)
-      );
+      auto type_end = last_space == std::string::npos
+                          ? last_star
+                          : (last_star == std::string::npos
+                                 ? last_space
+                                 : std::max(last_space, last_star));
       auto return_type_unstripped = type_and_name.substr(0, type_end + 1);
       auto return_type = absl::StripAsciiWhitespace(return_type_unstripped);
       auto name_unstripped = type_and_name.substr(type_end + 1);
       auto name = absl::StripAsciiWhitespace(name_unstripped);
-      auto api = nlohmann::json{
-        {"name", name},
-        {"return_type", return_type},
-        {"arguments", args},
-        {"header", header}
-      };
+      auto api = nlohmann::json{{"name", name},
+                                {"return_type", return_type},
+                                {"arguments", args},
+                                {"header", header}};
       apis.push_back(api);
       auto first_slash = header.find('/');
       c_api_headers.insert(header.substr(first_slash + 1));
@@ -81,7 +84,8 @@ void AddCApis(nlohmann::json& config) {
   config["c_api_headers"] = c_api_headers;
 }
 
-void AddPhpConfig(nlohmann::json& config) {
+auto MakePhpConfig(const nlohmann::json& config,
+                   std::initializer_list<std::string> remove_libs) {
   std::set<std::string> srcs;
   for (const auto& src : config["php_config_m4"]["src"]) {
     srcs.insert(src);
@@ -101,9 +105,9 @@ void AddPhpConfig(nlohmann::json& config) {
       php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
     }
   }
-  php_full_deps.erase("z");
-  php_full_deps.erase("cares");
-  php_full_deps.erase("@zlib//:zlib");
+  for (const auto& lib : remove_libs) {
+    php_full_deps.erase(lib);
+  }
   for (const auto& dep : php_full_deps) {
     auto it = lib_maps.find(dep);
     if (it != lib_maps.end()) {
@@ -112,18 +116,45 @@ void AddPhpConfig(nlohmann::json& config) {
       srcs.insert(src.begin(), src.end());
     }
   }
-  config["php_config_m4"]["srcs"] = srcs;
-
   std::set<std::string> dirs;
   for (const auto& src : srcs) {
     dirs.insert(src.substr(0, src.rfind('/')));
   }
-  config["php_config_m4"]["dirs"] = dirs;
+  return std::pair(std::move(srcs), std::move(dirs));
 }
 
-void ExpandVersion(nlohmann::json& config) {
-  auto& settings = config["settings"];
-  std::string version_string = settings["version"];
+void AddPhpConfig(nlohmann::json& config) {
+  auto [srcs, dirs] = MakePhpConfig(config, {"z", "cares", "@zlib//:zlib"});
+  auto [w32_srcs, w32_dirs] = MakePhpConfig(config, {"cares"});
+
+  config["php_config_m4"]["srcs"] = srcs;
+  config["php_config_m4"]["dirs"] = dirs;
+
+  std::vector<std::string> windows_srcs;
+  for (const auto& src : w32_srcs) {
+    windows_srcs.emplace_back(absl::StrReplaceAll(src, {{"/", "\\\\"}}));
+  }
+  config["php_config_w32"]["srcs"] = windows_srcs;
+  std::set<std::string> windows_dirs;
+  for (const auto& dir : w32_dirs) {
+    std::vector<std::string> frags = absl::StrSplit(dir, '/');
+    for (size_t i = 0; i < frags.size(); ++i) {
+      windows_dirs.insert(
+          absl::StrJoin(frags.begin(), frags.begin() + i + 1, "\\\\"));
+    }
+  }
+  config["php_config_w32"]["dirs"] = windows_dirs;
+}
+
+struct Version {
+  int major;
+  int minor;
+  int patch;
+  std::optional<std::string> tag;
+};
+
+Version ExpandOneVersion(nlohmann::json& settings, const std::string& which) {
+  std::string version_string = settings[which];
   std::optional<std::string> tag;
   if (version_string.find("-") != std::string::npos) {
     tag = version_string.substr(version_string.find("-") + 1);
@@ -135,25 +166,76 @@ void ExpandVersion(nlohmann::json& config) {
   CHECK(absl::SimpleAtoi(version_parts[0], &major));
   CHECK(absl::SimpleAtoi(version_parts[1], &minor));
   CHECK(absl::SimpleAtoi(version_parts[2], &patch));
-  settings["version"] = nlohmann::json::object();
-  settings["version"]["string"] = version_string;
-  settings["version"]["major"] = major;
-  settings["version"]["minor"] = minor;
-  settings["version"]["patch"] = patch;
-  if (tag) {
-    settings["version"]["tag"] = *tag;
-  }
-  std::string php_version = absl::StrCat(major, ".", minor, ".", patch);
+  settings[which] = nlohmann::json::object();
+  settings[which]["string"] = version_string;
+  settings[which]["major"] = major;
+  settings[which]["minor"] = minor;
+  settings[which]["patch"] = patch;
   if (tag.has_value()) {
-    if (tag == "dev") {
+    settings[which]["tag"] = *tag;
+    settings[which]["string"] = absl::StrCat(version_string, "-", *tag);
+  }
+  return Version{major, minor, patch, tag};
+}
+
+void ExpandVersion(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  auto version = ExpandOneVersion(settings, "version");
+  std::string php_version =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  std::string php_composer = php_version;
+  if (version.tag.has_value()) {
+    if (version.tag == "dev") {
       php_version += "dev";
-    } else if (tag->size() >= 3 && tag->substr(0, 3) == "pre") {
-      php_version += "RC" + tag->substr(3);
+    } else if (version.tag->size() >= 3 && version.tag->substr(0, 3) == "pre") {
+      php_version += "RC" + version.tag->substr(3);
     } else {
-      LOG(FATAL) << "Unknown tag: " << *tag;
+      LOG(FATAL) << "Unknown tag: " << *version.tag;
     }
   }
+  std::string ruby_version =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    ruby_version += "." + *version.tag;
+  }
+  std::string pep440 =
+      absl::StrCat(version.major, ".", version.minor, ".", version.patch);
+  if (version.tag.has_value()) {
+    if (*version.tag == "dev") {
+      pep440 += ".dev0";
+    } else if (absl::StartsWith(*version.tag, "pre")) {
+      pep440 += absl::StrCat("rc", version.tag->substr(3));
+    } else {
+      LOG(FATAL) << "Don\'t know how to translate version tag " << *version.tag
+                 << " to pep440";
+    }
+  }
+  for (std::string language :
+       {"cpp", "csharp", "node", "objc", "php", "python", "ruby"}) {
+    std::string version_tag = absl::StrCat(language, "_version");
+    Version v = version;
+    if (auto override_major =
+            settings.find(absl::StrCat(language, "_major_version"));
+        override_major != settings.end()) {
+      std::string override_value = *override_major;
+      CHECK(absl::SimpleAtoi(override_value, &v.major));
+    }
+    settings[version_tag] = nlohmann::json::object();
+    settings[version_tag]["string"] =
+        absl::StrCat(v.major, ".", v.minor, ".", v.patch,
+                     v.tag.has_value() ? absl::StrCat("-", *v.tag) : "");
+    settings[version_tag]["major"] = v.major;
+    settings[version_tag]["minor"] = v.minor;
+    settings[version_tag]["patch"] = v.patch;
+    settings[version_tag]["tag_or_empty"] = v.tag.value_or("");
+  }
   settings["version"]["php"] = php_version;
+  ExpandOneVersion(settings, "core_version");
+  settings["php_version"]["php_current_version"] = "8.1";
+  settings["php_version"]["php_debian_version"] = "buster";
+  settings["php_version"]["php_composer"] = php_composer;
+  settings["python_version"]["pep440"] = pep440;
+  settings["ruby_version"]["ruby_version"] = ruby_version;
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
@@ -240,7 +322,7 @@ void AddAbseilMetadata(nlohmann::json& config) {
 }
 
 class TransitiveDepsCalculator {
-public:
+ public:
   void DeclareDeps(std::string name, std::set<std::string> deps) {
     auto& dst = deps_[name];
     for (const auto& dep : deps) dst.insert(dep);
@@ -252,7 +334,7 @@ public:
     return deps;
   }
 
-private:
+ private:
   void Fill(std::string which, std::set<std::string>* out) {
     auto it = deps_.find(which);
     if (it == deps_.end()) return;
@@ -287,6 +369,26 @@ void ExpandTransitiveDeps(nlohmann::json& config) {
     lib["transitive_deps"] = calc.Calculate(lib["name"]);
   }
 }
+
+void AddSupportedBazelVersions(nlohmann::json& config) {
+  std::ifstream file("../../bazel/supported_versions.txt");
+  std::string line;
+  std::vector<std::string> versions;
+  while (std::getline(file, line)) {
+    line = absl::StripAsciiWhitespace(line);
+    if (line.empty()) continue;
+    versions.push_back(line);
+  }
+  config["supported_bazel_versions"] = versions;
+  config["primary_bazel_version"] = versions.front();
+}
+
+void ExpandSupportedPythonVersions(nlohmann::json& config) {
+  auto& settings = config["settings"];
+  const auto& supported_python_versions = settings["supported_python_versions"];
+  settings["min_python_version"] = supported_python_versions.front();
+  settings["max_python_version"] = supported_python_versions.back();
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -296,4 +398,6 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   ExpandTransitiveDeps(config);
   AddPhpConfig(config);
   ExpandVersion(config);
+  AddSupportedBazelVersions(config);
+  ExpandSupportedPythonVersions(config);
 }

@@ -49,6 +49,7 @@
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -62,6 +63,7 @@
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
@@ -550,9 +552,6 @@ class CoreEnd2endTest {
 
   bool fuzzing() const { return fuzzing_; }
 
- private:
-  void ForceInitialized();
-
   CoreTestFixture& fixture() {
     if (fixture_ == nullptr) {
       grpc_init();
@@ -562,6 +561,9 @@ class CoreEnd2endTest {
     }
     return *fixture_;
   }
+
+ private:
+  void ForceInitialized();
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
@@ -582,6 +584,7 @@ class CoreEnd2endTest {
     return *cq_verifier_;
   }
 
+  PostMortem post_mortem_;
   const CoreTestConfiguration* const test_config_;
   const bool fuzzing_;
   std::unique_ptr<CoreTestFixture> fixture_;
@@ -745,7 +748,9 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::                                     \
+            EventEngineExperimentDisabledForPython()) {                        \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \

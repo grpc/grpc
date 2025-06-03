@@ -142,9 +142,9 @@ class DelegatingClientCallTracer : public ClientCallTracer {
                                                transport_stream_stats);
       }
     }
-    void RecordEnd(const gpr_timespec& latency) override {
+    void RecordEnd() override {
       for (auto* tracer : tracers_) {
-        tracer->RecordEnd(latency);
+        tracer->RecordEnd();
       }
     }
     void RecordIncomingBytes(
@@ -169,7 +169,7 @@ class DelegatingClientCallTracer : public ClientCallTracer {
         tracer->RecordAnnotation(annotation);
       }
     }
-    std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
+    std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
     void SetOptionalLabel(OptionalLabelKey key,
@@ -313,9 +313,7 @@ class DelegatingServerCallTracer : public ServerCallTracer {
       tracer->RecordAnnotation(annotation);
     }
   }
-  std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() override {
-    return nullptr;
-  }
+  std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override { return nullptr; }
   std::string TraceId() override { return tracers_[0]->TraceId(); }
   std::string SpanId() override { return tracers_[0]->SpanId(); }
   bool IsSampled() override { return tracers_[0]->IsSampled(); }

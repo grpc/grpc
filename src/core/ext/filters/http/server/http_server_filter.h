@@ -31,7 +31,8 @@
 namespace grpc_core {
 
 // Processes metadata on the server side for HTTP2 transports
-class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter> {
+class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
+                         public channelz::DataSource {
  public:
   static const grpc_channel_filter kFilter;
 
@@ -40,9 +41,19 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter> {
   static absl::StatusOr<std::unique_ptr<HttpServerFilter>> Create(
       const ChannelArgs& args, ChannelFilter::Args filter_args);
 
-  HttpServerFilter(bool surface_user_agent, bool allow_put_requests)
-      : surface_user_agent_(surface_user_agent),
+  HttpServerFilter(const ChannelArgs& args, bool surface_user_agent,
+                   bool allow_put_requests)
+      : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
+        surface_user_agent_(surface_user_agent),
         allow_put_requests_(allow_put_requests) {}
+  ~HttpServerFilter() override { ResetDataSource(); }
+
+  void AddData(channelz::DataSink sink) override {
+    Json::Object object;
+    object["surfaceUserAgent"] = Json::FromBool(surface_user_agent_);
+    object["allowPutRequests"] = Json::FromBool(allow_put_requests_);
+    sink.AddAdditionalInfo("httpServerFilter", object);
+  }
 
   class Call {
    public:

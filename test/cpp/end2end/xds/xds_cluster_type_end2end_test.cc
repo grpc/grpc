@@ -173,8 +173,6 @@ TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
 }
 
 TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -219,51 +217,7 @@ TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
   EXPECT_EQ(response.param().host(), absl::StrCat(kDnsName, ":443"));
 }
 
-TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteWithoutEnvVar) {
-  constexpr char kDnsName[] = "dns.example.com";
-  // Set auto_host_rewrite in the RouteConfig.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_auto_host_rewrite()
-      ->set_value(true);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = cluster.mutable_load_assignment()
-                      ->add_endpoints()
-                      ->add_lb_endpoints()
-                      ->mutable_endpoint()
-                      ->mutable_address()
-                      ->mutable_socket_address();
-  address->set_address(kDnsName);
-  address->set_port_value(443);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Create client and server.
-  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
-  CreateAndStartBackends(1);
-  // Set Logical DNS result
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
-        std::move(result));
-  }
-  // Send RPC and verify the authority seen by the server.
-  EchoResponse response;
-  Status status = SendRpc(
-      RpcOptions().set_echo_host_from_authority_header(true), &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(response.param().host(), kServerName);
-}
-
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -306,8 +260,6 @@ TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
 }
 
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfNotEnabledInRoute) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;

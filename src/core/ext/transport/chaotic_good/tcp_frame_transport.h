@@ -19,37 +19,15 @@
 
 #include "src/core/ext/transport/chaotic_good/control_endpoint.h"
 #include "src/core/ext/transport/chaotic_good/data_endpoints.h"
-#include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
+#include "src/core/ext/transport/chaotic_good/transport_context.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 
 namespace grpc_core {
 namespace chaotic_good {
-
-struct TcpFrameHeader {
-  // Frame header size is fixed to 12 bytes.
-  enum { kFrameHeaderSize = 12 };
-
-  FrameHeader header;
-  uint32_t payload_connection_id = 0;
-
-  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
-  static absl::StatusOr<TcpFrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 12 bytes.
-  void Serialize(uint8_t* data) const;
-
-  // Report contents as a string
-  std::string ToString() const;
-
-  bool operator==(const TcpFrameHeader& h) const {
-    return header == h.header &&
-           payload_connection_id == h.payload_connection_id;
-  }
-
-  // Required padding to maintain alignment.
-  uint32_t Padding(uint32_t alignment) const;
-};
 
 inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
   std::vector<PromiseEndpoint> ep;
@@ -57,7 +35,8 @@ inline std::vector<PromiseEndpoint> OneDataEndpoint(PromiseEndpoint endpoint) {
   return ep;
 }
 
-class TcpFrameTransport final : public FrameTransport {
+class TcpFrameTransport final : public FrameTransport,
+                                public channelz::DataSource {
  public:
   struct Options {
     uint32_t encode_alignment = 64;
@@ -66,29 +45,44 @@ class TcpFrameTransport final : public FrameTransport {
     bool enable_tracing = false;
   };
 
-  TcpFrameTransport(
-      Options options, PromiseEndpoint control_endpoint,
-      std::vector<PendingConnection> pending_data_endpoints,
-      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+  TcpFrameTransport(Options options, PromiseEndpoint control_endpoint,
+                    std::vector<PendingConnection> pending_data_endpoints,
+                    TransportContextPtr ctx);
+  ~TcpFrameTransport() override { ResetDataSource(); }
 
-  void Start(Party* party, MpscReceiver<Frame> outgoing_frames,
+  static RefCountedPtr<channelz::SocketNode> MakeSocketNode(
+      const ChannelArgs& args, const PromiseEndpoint& endpoint);
+
+  void Start(Party* party, MpscReceiver<OutgoingFrame> outgoing_frames,
              RefCountedPtr<FrameTransportSink> sink) override;
   void Orphan() override;
+  TransportContextPtr ctx() override { return ctx_; }
+  std::unique_ptr<channelz::ZTrace> GetZTrace(absl::string_view name) override {
+    if (name == "transport_frames") {
+      return ztrace_collector_->MakeZTrace();
+    }
+    return DataSource::GetZTrace(name);
+  }
+  void AddData(channelz::DataSink sink) override;
 
  private:
-  auto WriteFrame(const FrameInterface& frame);
-  auto WriteLoop(MpscReceiver<Frame> frames);
+  auto WriteFrame(const FrameInterface& frame,
+                  std::shared_ptr<TcpCallTracer> call_tracer);
+  auto WriteLoop(MpscReceiver<OutgoingFrame> frames);
   // Read frame header and payloads for control and data portions of one frame.
   // Resolves to StatusOr<IncomingFrame>.
   auto ReadFrameBytes();
   template <typename Promise>
   auto UntilClosed(Promise promise);
 
+  const TransportContextPtr ctx_;
+  std::shared_ptr<TcpZTraceCollector> ztrace_collector_ =
+      std::make_shared<TcpZTraceCollector>();
   ControlEndpoint control_endpoint_;
   DataEndpoints data_endpoints_;
   const Options options_;
   InterActivityLatch<void> closed_;
+  uint64_t next_payload_tag_ = 1;
 };
 
 }  // namespace chaotic_good

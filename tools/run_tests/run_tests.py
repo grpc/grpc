@@ -593,9 +593,9 @@ class CLanguage(object):
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang7":
+        elif compiler == "clang11":
             return (
-                "clang_7",
+                "clang_11",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -943,7 +943,7 @@ class RubyLanguage(object):
         ]:
             tests.append(
                 self.config.job_spec(
-                    ["rspec", test],
+                    ["bundle", "exec", "rspec", test],
                     shortname=test,
                     timeout_seconds=20 * 60,
                     environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -1181,18 +1181,20 @@ class ObjCLanguage(object):
                 },
             )
         )
-        out.append(
-            self.config.job_spec(
-                ["src/objective-c/tests/build_one_example.sh"],
-                timeout_seconds=120 * 60,
-                shortname="ios-buildtest-example-switft-package",
-                cpu_cost=1e6,
-                environ={
-                    "SCHEME": "gRPC-Package",
-                    "EXAMPLE_PATH": ".",
-                },
-            )
-        )
+
+        # TODO: re-enable after abseil fixes
+        # out.append(
+        #     self.config.job_spec(
+        #         ["src/objective-c/tests/build_one_example.sh"],
+        #         timeout_seconds=120 * 60,
+        #         shortname="ios-buildtest-example-switft-package",
+        #         cpu_cost=1e6,
+        #         environ={
+        #             "SCHEME": "gRPC-Package",
+        #             "EXAMPLE_PATH": ".",
+        #         },
+        #     )
+        # )
 
         # Disabled due to #20258
         # TODO (mxyan): Reenable this test when #20258 is resolved.
@@ -1719,7 +1721,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang7",
+        "clang11",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.9",
