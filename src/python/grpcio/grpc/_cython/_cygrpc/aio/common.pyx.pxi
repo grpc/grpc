@@ -173,41 +173,41 @@ async def generator_to_async_generator(object gen, object loop, object thread_po
     await future
 
 
-if PY_MAJOR_VERSION >= 3 and PY_MINOR_VERSION >= 7:
-    def get_working_loop():
-        """Returns a running event loop.
+def _get_or_create_loop_via_policy():
+    """
+    Attempts to get an event loop using `asyncio.get_event_loop_policy().get_event_loop()`.
+    Handles deprecation warnings (Python 3.12+) and `RuntimeError` (Python 3.14+)
+    by falling back to creating a new loop.
+    """
 
-        Due to a defect of asyncio.get_event_loop, its returned event loop might
-        not be set as the default event loop for the main thread.
-        """
-        try:
-            return asyncio.get_running_loop()
-        except RuntimeError:
-                try:
-                    with warnings.catch_warnings():
-                        # For `asyncio.get_event_loop_policy().get_event_loop()`:
-                        #
-                        # - Since Python 3.12, `DeprecationWarning` is emitted if there
-                        #   is no current event loop.
-                        # - Since Python 3.14, `DeprecationWarning` for
-                        #   `asyncio.get_event_loop_policy()` also appears.
-                        #
-                        # In the interim, silence all `DeprecationWarning` for
-                        # `asyncio.get_event_loop_policy().get_event_loop()`
-                        warnings.simplefilter("ignore", category=DeprecationWarning)
-                        return asyncio.get_event_loop_policy().get_event_loop()
-                # Since version 3.14, `RuntimeError` is emitted if there is no
-                # current event loop.
-                except RuntimeError:
-                    # TODO(https://github.com/grpc/grpc/issues/39518):
-                    # Migrate off of `asyncio.get_event_loop_policy()`
-                    # prior to official launch of Python 3.14.
-                    return asyncio.get_event_loop_policy().new_event_loop()
-else:
-    def get_working_loop():
-        """Returns a running event loop."""
-        return asyncio.get_event_loop()
+    try:
+        with warnings.catch_warnings():
+            # Suppress DeprecationWarning for `get_event_loop_policy().get_event_loop()`
+            # emitted in Python 3.12+ (no current loop) and 3.14+ (policy itself).
+            warnings.simplefilter("ignore", category=DeprecationWarning)
+            return asyncio.get_event_loop_policy().get_event_loop()
+    except RuntimeError:
+        # In Python 3.14+, `get_event_loop_policy().get_event_loop()` now raises
+        # `RuntimeError` if no loop is set. As a last resort, create a new event loop.
+        # TODO(https://github.com/grpc/grpc/issues/39518):
+        # Migrate off of `asyncio.get_event_loop_policy()`
+        # prior to official launch of Python 3.14.
+        return asyncio.get_event_loop_policy().new_event_loop()
 
+
+def get_working_loop():
+    """Returns a running event loop.
+
+    Due to a defect of asyncio.get_event_loop, its returned event loop might
+    not be set as the default event loop for the main thread.
+    """
+
+    try:
+        return asyncio.get_running_loop()
+    except RuntimeError:
+        # If no loop is running, try to get an existing or default loop
+        # via the policy, handling version-specific behaviors.
+        _get_or_create_loop_via_policy()
 
 def raise_if_not_valid_trailing_metadata(object metadata):
     if not hasattr(metadata, '__iter__') or isinstance(metadata, dict):
