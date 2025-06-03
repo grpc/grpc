@@ -280,10 +280,19 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       },
       // Read the payload of the frame.
       [this](Http2FrameHeader header) {
-        HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
+        if (incoming_header_in_progress_ && current_frame_header_.type != 9) {
+          return HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kProtocolError,
+              std::string(kAssemblerContiguousSequenceError)));
+        }
         current_frame_header_ = header;
+        return absl::OkStatus();
+      },
+      // Read the payload of the frame.
+      [this]() {
+        HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame Read";
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            EndpointRead(header.length));
+            EndpointRead(current_frame_header_.length));
       },
       // Parse the payload of the frame based on frame type.
       [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
@@ -415,6 +424,8 @@ Http2ClientTransport::Http2ClientTransport(
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
       bytes_sent_in_last_write_(false),
+      incoming_header_in_progress_(false),
+      incoming_header_stream_id_(0),
       keepalive_time_(std::max(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)

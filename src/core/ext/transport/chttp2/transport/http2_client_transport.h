@@ -312,17 +312,21 @@ class Http2ClientTransport final : public ClientTransport {
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      LOG(ERROR) << "Stream Error: " << status.DebugString();
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      LOG(ERROR) << "Connection Error: " << status.DebugString();
       CloseTransport(status, whence);
       return status.GetAbslConnectionError();
     }
-
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
+
   bool bytes_sent_in_last_write_;
+  bool incoming_header_in_progress_;
+  bool incoming_header_stream_id_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
