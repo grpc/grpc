@@ -73,9 +73,9 @@ std::string ChannelTrace::creation_timestamp() const {
 
 ChannelTrace::EntryRef ChannelTrace::AppendEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
+  if (max_memory_ == 0) return EntryRef::Sentinel();
   MutexLock lock(&mu_);
   ++num_events_logged_;
-  if (max_memory_ == 0) return EntryRef::Sentinel();
   const auto ref = NewEntry(parent, std::move(renderer));
   while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
     DropEntryId(first_entry_);
