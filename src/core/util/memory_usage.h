@@ -113,7 +113,7 @@ constexpr bool kHasMemoryUsageMethod<
 // that need to roughly bound memory usage of a collection of elements.
 
 template <typename T>
-size_t MemoryUsage(const T& x) {
+size_t MemoryUsageOf(const T& x) {
   using memory_usage_detail::AnyType;
   using memory_usage_detail::Category;
   using memory_usage_detail::kHasMemoryUsageMethod;
@@ -139,19 +139,19 @@ size_t MemoryUsage(const T& x) {
     return sizeof(T);
   } else if constexpr (category == Category::kOwnedPointer) {
     if (x == nullptr) return sizeof(T);
-    return sizeof(T) + MemoryUsage(*x);
+    return sizeof(T) + MemoryUsageOf(*x);
   } else if constexpr (category == Category::kVector) {
     size_t total = sizeof(T) + sizeof(*x.begin()) * (x.capacity() - x.size());
     for (const auto& e : x) {
-      total += MemoryUsage(e);
+      total += MemoryUsageOf(e);
     }
     return total;
   } else if constexpr (category == Category::kOptional) {
-    if (x.has_value()) return MemoryUsage(*x) + sizeof(T) - sizeof(*x);
+    if (x.has_value()) return MemoryUsageOf(*x) + sizeof(T) - sizeof(*x);
     return sizeof(T);
   } else if constexpr (category == Category::kAbslStatusOr) {
-    if (x.ok()) return MemoryUsage(*x) + sizeof(absl::Status);
-    return MemoryUsage(x.status()) + sizeof(T);
+    if (x.ok()) return MemoryUsageOf(*x) + sizeof(absl::Status);
+    return MemoryUsageOf(x.status()) + sizeof(T);
   } else if constexpr (category == Category::kUncategorized) {
     // Structs!
     // If you have more than 8 fields, you can add more cases here.
@@ -165,10 +165,10 @@ size_t MemoryUsage(const T& x) {
                                sizeof(v6) - sizeof(v7) - sizeof(v8) -
                                sizeof(v9) - sizeof(v10);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
-             MemoryUsage(v7) + MemoryUsage(v8) + MemoryUsage(v9) +
-             MemoryUsage(v10) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + MemoryUsageOf(v6) +
+             MemoryUsageOf(v7) + MemoryUsageOf(v8) + MemoryUsageOf(v9) +
+             MemoryUsageOf(v10) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType>) {
@@ -177,9 +177,10 @@ size_t MemoryUsage(const T& x) {
           sizeof(T) - sizeof(v1) - sizeof(v2) - sizeof(v3) - sizeof(v4) -
           sizeof(v5) - sizeof(v6) - sizeof(v7) - sizeof(v8) - sizeof(v9);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
-             MemoryUsage(v7) + MemoryUsage(v8) + MemoryUsage(v9) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + MemoryUsageOf(v6) +
+             MemoryUsageOf(v7) + MemoryUsageOf(v8) + MemoryUsageOf(v9) +
+             padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType,
                                                AnyType, AnyType>) {
@@ -188,9 +189,9 @@ size_t MemoryUsage(const T& x) {
                                sizeof(v3) - sizeof(v4) - sizeof(v5) -
                                sizeof(v6) - sizeof(v7) - sizeof(v8);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
-             MemoryUsage(v7) + MemoryUsage(v8) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + MemoryUsageOf(v6) +
+             MemoryUsageOf(v7) + MemoryUsageOf(v8) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType,
                                                AnyType>) {
@@ -199,9 +200,9 @@ size_t MemoryUsage(const T& x) {
                                sizeof(v3) - sizeof(v4) - sizeof(v5) -
                                sizeof(v6) - sizeof(v7);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) +
-             MemoryUsage(v7) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + MemoryUsageOf(v6) +
+             MemoryUsageOf(v7) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType, AnyType>) {
       const auto& [v1, v2, v3, v4, v5, v6] = x;
@@ -209,39 +210,41 @@ size_t MemoryUsage(const T& x) {
                                sizeof(v3) - sizeof(v4) - sizeof(v5) -
                                sizeof(v6);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + MemoryUsage(v6) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + MemoryUsageOf(v6) +
+             padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType, AnyType>) {
       const auto& [v1, v2, v3, v4, v5] = x;
       constexpr auto padding = sizeof(T) - sizeof(v1) - sizeof(v2) -
                                sizeof(v3) - sizeof(v4) - sizeof(v5);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + MemoryUsage(v5) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + MemoryUsageOf(v5) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType,
                                                AnyType>) {
       const auto& [v1, v2, v3, v4] = x;
       constexpr auto padding =
           sizeof(T) - sizeof(v1) - sizeof(v2) - sizeof(v3) - sizeof(v4);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) +
-             MemoryUsage(v4) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             MemoryUsageOf(v4) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType, AnyType>) {
       const auto& [v1, v2, v3] = x;
       constexpr auto padding = sizeof(T) - sizeof(v1) - sizeof(v2) - sizeof(v3);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + MemoryUsage(v3) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + MemoryUsageOf(v3) +
+             padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType, AnyType>) {
       const auto& [v1, v2] = x;
       constexpr auto padding = sizeof(T) - sizeof(v1) - sizeof(v2);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + MemoryUsage(v2) + padding;
+      return MemoryUsageOf(v1) + MemoryUsageOf(v2) + padding;
     } else if constexpr (kIsBraceConstructible<T, AnyType>) {
       const auto& [v1] = x;
       constexpr auto padding = sizeof(T) - sizeof(v1);
       static_assert(padding >= 0);
-      return MemoryUsage(v1) + padding;
+      return MemoryUsageOf(v1) + padding;
     } else {
       // Probably wrong, but we've not figured any better...
       LOG(DFATAL) << "Unsupported type";
@@ -255,9 +258,9 @@ size_t MemoryUsage(const T& x) {
 }
 
 template <typename... Args>
-size_t MemoryUsage(const std::tuple<Args...>& t) {
+size_t MemoryUsageOf(const std::tuple<Args...>& t) {
   return std::apply(
-      [](const auto&... args) { return (MemoryUsage(args) + ...); }, t);
+      [](const auto&... args) { return (MemoryUsageOf(args) + ...); }, t);
 }
 
 }  // namespace grpc_core

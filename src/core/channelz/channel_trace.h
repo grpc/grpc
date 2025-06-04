@@ -270,11 +270,6 @@ class ChannelTrace {
   void DropEntry(EntryRef entry) ABSL_LOCKS_EXCLUDED(mu_);
   void DropEntryId(uint16_t id) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  template <typename T>
-  static size_t MemoryUsageOf(const T& x) {
-    return MemoryUsage(x);
-  }
-
   struct StrCatFn {
     template <typename... Arg>
     std::string operator()(const Arg&... args) {
@@ -325,6 +320,7 @@ class ChannelTrace {
                    int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   mutable Mutex mu_;
+  const Timestamp time_created_ = Timestamp::Now();
   const uint32_t max_memory_;
   uint32_t current_memory_ ABSL_GUARDED_BY(mu_) = 0;
   uint16_t next_free_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;

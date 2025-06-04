@@ -54,6 +54,8 @@ Json ChannelTrace::RenderJson() const {
     array.push_back(Json::FromObject(std::move(object)));
   });
   Json::Object object;
+  object["creationTimestamp"] = Json::FromString(
+      gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME)));
   if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
   }
@@ -70,7 +72,7 @@ ChannelTrace::EntryRef ChannelTrace::AppendEntry(
   }
   if (GPR_UNLIKELY(current_memory_ > max_memory_)) {
     entries_.shrink_to_fit();
-    current_memory_ = MemoryUsage(entries_);
+    current_memory_ = MemoryUsageOf(entries_);
   }
   return ref;
 }
@@ -92,7 +94,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
     id = entries_.size();
     DCHECK_NE(id, kSentinelId);
     entries_.emplace_back();
-    current_memory_ = MemoryUsage(entries_);
+    current_memory_ = MemoryUsageOf(entries_);
   }
   Entry& e = entries_[id];
   e.when = Timestamp::Now();
@@ -127,7 +129,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
     p.last_child = id;
   }
   current_memory_ += e.renderer->MemoryUsage();
-  DCHECK_EQ(MemoryUsage(entries_), current_memory_);
+  DCHECK_EQ(MemoryUsageOf(entries_), current_memory_);
   return EntryRef{id, e.salt};
 }
 
@@ -184,7 +186,7 @@ void ChannelTrace::DropEntryId(uint16_t id) {
   e.next_chronologically = next_free_entry_;
   current_memory_ -= e.renderer->MemoryUsage();
   e.renderer.reset();
-  DCHECK_EQ(current_memory_, MemoryUsage(entries_));
+  DCHECK_EQ(current_memory_, MemoryUsageOf(entries_));
   next_free_entry_ = id;
 }
 

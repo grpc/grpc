@@ -124,24 +124,19 @@ MATCHER_P3(IsTraceEventWithSubchannelRef, description, severity, subchannel_ref,
 }
 
 MATCHER(IsEmptyChannelTrace, "is empty channel trace") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::IsEmpty()),  // New: empty trace is just {}
-      arg, result_listener);
+  return ::testing::ExplainMatchResult(IsJsonObject(::testing::IsEmpty()), arg,
+                                       result_listener);
 }
 
 MATCHER_P(IsChannelTraceWithEvents, events_matcher, "is channel trace") {
   return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(::testing::Pair(
-          "events", IsJsonArray(events_matcher)))),  // New: only events
+      IsJsonObject(::testing::ElementsAre(
+          ::testing::Pair("events", IsJsonArray(events_matcher)))),
       arg, result_listener);
 }
 
 void ValidateJsonProtoTranslation(const Json& json) {
   std::string json_str = JsonDump(json);
-  // This validation might be affected as ChannelTrace::RenderJson()
-  // no longer produces num_events_logged or creation_timestamp directly.
-  // However, the grpc.channelz.v1.ChannelTrace proto message itself
-  // still defines these fields. The test helper might be lenient.
   grpc::testing::ValidateChannelTraceProtoJsonTranslation(json_str);
 }
 
