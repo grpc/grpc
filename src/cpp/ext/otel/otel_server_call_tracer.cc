@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
@@ -71,7 +72,7 @@ class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
                    absl::Time time, size_t byte_offset,
-                   std::vector<TcpEventMetric> metrics) override {
+                   const std::vector<TcpEventMetric>& metrics) override {
     server_call_tracer_->RecordAnnotation(
         absl::StrCat(
             "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),

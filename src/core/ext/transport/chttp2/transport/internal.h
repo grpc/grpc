@@ -76,6 +76,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -283,6 +284,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void WriteSecurityFrame(grpc_core::SliceBuffer* data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
+  // We depend on the ep being available for the life of the transport in
+  // at least one place - event callback in WriteEventSink. Hence, this should
+  // only be orphaned in the destructor.
   grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
@@ -759,6 +763,11 @@ struct grpc_chttp2_stream {
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason);
 
+struct TcpCallTracerWithOffset {
+  std::shared_ptr<grpc_core::TcpCallTracer> tcp_call_tracer;
+  size_t byte_offset;
+};
+
 struct grpc_chttp2_begin_write_result {
   /// are we writing?
   bool writing;
@@ -766,6 +775,8 @@ struct grpc_chttp2_begin_write_result {
   bool partial;
   /// did we queue any completions as part of beginning the write
   bool early_results_scheduled;
+  /// Tcp Call Tracers if any
+  std::vector<TcpCallTracerWithOffset> tcp_call_tracers;
 };
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);

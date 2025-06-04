@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 3.0'
+  s.required_ruby_version = '>= 3.1'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -1321,8 +1321,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/extensions/supports_fd.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_win_sockets.h )
   s.files += %w( src/core/lib/event_engine/extensions/tcp_trace.h )
-  s.files += %w( src/core/lib/event_engine/forkable.cc )
-  s.files += %w( src/core/lib/event_engine/forkable.h )
   s.files += %w( src/core/lib/event_engine/grpc_polled_fd.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator_factory.h )
@@ -1336,6 +1334,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptor_collection.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.h )
@@ -1352,6 +1352,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_posix.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_windows.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.h )
@@ -1942,6 +1945,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/matchers.cc )
   s.files += %w( src/core/util/matchers.h )
   s.files += %w( src/core/util/memory.h )
+  s.files += %w( src/core/util/memory_usage.h )
   s.files += %w( src/core/util/mpscq.cc )
   s.files += %w( src/core/util/mpscq.h )
   s.files += %w( src/core/util/msys/tmpfile.cc )

@@ -90,9 +90,7 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpFaultFilter>());
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
-    if (XdsGcpAuthFilterEnabled()) {
-      RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
-    }
+    RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
   }
 }
 

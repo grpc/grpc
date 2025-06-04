@@ -457,7 +457,7 @@ def targets():
         PythonDistribTest("linux", "x64", "fedora40"),
         PythonDistribTest("linux", "x64", "arch"),
         PythonDistribTest("linux", "x64", "alpine"),
-        PythonDistribTest("linux", "x64", "ubuntu2204"),
+        PythonDistribTest("linux", "x64", "ubuntu2404"),
         PythonDistribTest(
             "linux", "aarch64", "python39_buster", presubmit=True
         ),
@@ -473,7 +473,7 @@ def targets():
         ),
         PythonDistribTest("linux", "x64", "fedora40", source=True),
         PythonDistribTest("linux", "x64", "arch", source=True),
-        PythonDistribTest("linux", "x64", "ubuntu2204", source=True),
+        PythonDistribTest("linux", "x64", "ubuntu2404", source=True),
         # Ruby
         RubyDistribTest(
             "linux",
@@ -482,9 +482,6 @@ def targets():
             ruby_version="ruby_3_2",
             source=True,
             presubmit=True,
-        ),
-        RubyDistribTest(
-            "linux", "x64", "debian11", ruby_version="ruby_3_0", presubmit=True
         ),
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_1", presubmit=True
@@ -506,8 +503,8 @@ def targets():
         RubyDistribTest(
             "linux", "x64", "debian11", ruby_version="ruby_3_4", presubmit=True
         ),
-        RubyDistribTest("linux", "x64", "ubuntu2004"),
-        RubyDistribTest("linux", "x64", "ubuntu2204", presubmit=True),
+        RubyDistribTest("linux", "x64", "ubuntu2204"),
+        RubyDistribTest("linux", "x64", "ubuntu2404", presubmit=True),
         # PHP8
         PHP8DistribTest("linux", "x64", "debian12", presubmit=True),
         PHP8DistribTest("macos", "x64", presubmit=True),
