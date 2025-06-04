@@ -429,6 +429,7 @@ class Party : public Activity, private Wakeable {
     }
 
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       if (!started_) {
         auto p = factory_.Make();
         Destruct(&factory_);
@@ -498,6 +499,7 @@ class Party : public Activity, private Wakeable {
 
     // Inside party poll: drive from factory -> promise -> result
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       switch (state_.load(std::memory_order_relaxed)) {
         case State::kFactory: {
           auto p = factory_.Make();
@@ -633,7 +635,7 @@ class Party : public Activity, private Wakeable {
         // If the party is locked, we need to set the wakeup bits, and then
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
-        if (kReffed) {
+        if constexpr (kReffed) {
           DCHECK_GT(cur_state & kRefMask, kOneRef);
         } else {
           DCHECK_GE(cur_state & kRefMask, kOneRef);
