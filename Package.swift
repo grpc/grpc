@@ -1804,6 +1804,7 @@ let package = Package(
         "src/core/telemetry/tcp_tracer.h",
         "src/core/transport/auth_context.cc",
         "src/core/transport/auth_context.h",
+        "src/core/transport/auth_context_comparator_registry.h",
         "src/core/transport/endpoint_transport.h",
         "src/core/transport/endpoint_transport_client_channel_factory.cc",
         "src/core/transport/endpoint_transport_client_channel_factory.h",
