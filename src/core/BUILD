@@ -9838,8 +9838,8 @@ grpc_cc_library(
         "json_object_loader",
         "json_reader",
         "load_file",
-        "status_helper",
         "ssl_transport_security_utils",
+        "status_helper",
     ],
 )
 
@@ -9896,6 +9896,17 @@ grpc_cc_library(
         "libssl",
     ],
     deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "ssl_key_logging",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
         "//:channel_arg_names",
         "//:config_vars",
         "//:gpr",
@@ -9908,17 +9919,6 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_session_cache",
-        "channel_args",
-        "env",
-        "error",
-        "grpc_transport_chttp2_alpn",
-        "load_file",
-        "ref_counted",
-        "slice",
-        "ssl_key_logging",
-        "sync",
-        "tsi_ssl_types",
-        "useful",
     ],
 )
 
@@ -9942,6 +9942,16 @@ grpc_cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
         "//:channel_arg_names",
         "//:config_vars",
         "//:gpr",
@@ -9954,19 +9964,8 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_session_cache",
-        "channel_args",
-        "env",
-        "error",
-        "grpc_transport_chttp2_alpn",
-        "load_file",
-        "ref_counted",
-        "slice",
-        "sync",
-        "tsi_ssl_types",
-        "useful",
     ],
 )
-
 
 ### UPB Targets
 
