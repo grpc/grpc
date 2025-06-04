@@ -107,7 +107,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << " }";
-  incoming_header_in_progress_ = !frame.end_stream;
+  incoming_header_in_progress_ = !frame.end_headers;
   incoming_header_stream_id_ = frame.stream_id;
 
   ping_manager_.ReceivedDataFrame();
