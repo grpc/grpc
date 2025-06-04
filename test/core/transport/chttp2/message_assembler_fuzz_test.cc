@@ -88,21 +88,25 @@ void AssemblerFuzzer(
                 << ", Number of extracts: " << static_cast<int>(num_msgs)
                 << " }";
       for (uint8_t count_msgs = 0; count_msgs < num_msgs; count_msgs++) {
-        absl::StatusOr<MessageHandle> result = assembler.ExtractMessage();
-        if (!result.ok()) {
+        ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+        if (!result.IsOk()) {
           // The fuzzing input did not have the right amount of bytes.
           // While this would be a bug for real transport code, for a fuzz test
           // getting an error is expected.
-          LOG(INFO) << "    AssemblerFuzzer Extract Error: " << result.status();
-          break;
-        } else if (*result == nullptr) {
-          // It is rare to reach this point when running with a fuzzer.
-          // We reach here if there is no more data to extract.
-          LOG(INFO) << "    AssemblerFuzzer Extract : No more data";
+          LOG(INFO) << "    AssemblerFuzzer Extract Error: "
+                    << result.DebugString();
           break;
         } else {
-          LOG(INFO) << "    AssemblerFuzzer Extracted "
-                    << (*result)->payload()->Length() << " Bytes";
+          MessageHandle message = TakeValue(std::move(result));
+          if (message == nullptr) {
+            // It is rare to reach this point when running with a fuzzer.
+            // We reach here if there is no more data to extract.
+            LOG(INFO) << "    AssemblerFuzzer Extract : No more data";
+            break;
+          } else {
+            LOG(INFO) << "    AssemblerFuzzer Extracted "
+                      << message->payload()->Length() << " Bytes";
+          }
         }
       }
     }
