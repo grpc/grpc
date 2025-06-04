@@ -73,7 +73,7 @@ class GrpcMessageAssembler {
   // Returns a valid MessageHandle if it has a complete message.
   // Returns a nullptr if it does not have a complete message.
   // Returns an error if an incomplete message is received and the stream ends.
-  absl::StatusOr<MessageHandle> ExtractMessage() {
+  ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
       return ReturnNullOrError();
@@ -81,9 +81,8 @@ class GrpcMessageAssembler {
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);
     if constexpr (sizeof(size_t) == 4) {
       if (GPR_UNLIKELY(header.length > kOneGb)) {
-        // STREAM_ERROR
-        return absl::Status(
-            absl::StatusCode::kInternal,
+        return Http2Status::Http2StreamError(
+            Http2ErrorCode::kInternalError,
             "Stream Error: SliceBuffer overflow for 32 bit platforms.");
       }
     }
@@ -107,12 +106,12 @@ class GrpcMessageAssembler {
   }
 
  private:
-  absl::StatusOr<MessageHandle> ReturnNullOrError() {
-    // TODO(tjagtap) : [PH2][P1] Replace with Http2StatusOr when that PR lands
+  ValueOrHttp2Status<MessageHandle> ReturnNullOrError() {
     if (GPR_UNLIKELY(is_end_stream_ && message_buffer_.Length() > 0)) {
-      return absl::InternalError("Incomplete gRPC frame received");
+      return Http2Status::Http2StreamError(Http2ErrorCode::kInternalError,
+                                           "Incomplete gRPC frame received");
     }
-    return nullptr;
+    return ValueOrHttp2Status<MessageHandle>(nullptr);
   }
   bool is_end_stream_ = false;
   SliceBuffer message_buffer_;
