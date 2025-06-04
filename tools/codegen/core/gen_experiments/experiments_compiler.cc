@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "src/core/util/status_helper.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -348,7 +347,7 @@ absl::Status ExperimentsCompiler::FinalizeExperiments() {
 
 absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
     const std::string& output_file, ExperimentsOutputGenerator& generator) {
-  GRPC_RETURN_IF_ERROR(FinalizeExperiments());
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateHeader(output);
   absl::Status status = WriteToFile(output_file, output);
@@ -363,7 +362,7 @@ absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
 absl::Status ExperimentsCompiler::GenerateExperimentsSrc(
     const std::string& output_file, const std::string& header_file_path,
     ExperimentsCompiler::ExperimentsOutputGenerator& generator) {
-  GRPC_RETURN_IF_ERROR(FinalizeExperiments());
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateSource(output);
   absl::Status status = WriteToFile(output_file, output);
