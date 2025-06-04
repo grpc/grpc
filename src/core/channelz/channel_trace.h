@@ -224,6 +224,11 @@ class ChannelTrace {
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
 
+  void ForEachTraceEventLocked(
+      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                             RefCountedPtr<BaseNode>)>
+          callback) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
   static constexpr uint16_t kSentinelId = 65535;
 
   // Internal representation of a trace entry.
@@ -327,7 +332,7 @@ class ChannelTrace {
 
   mutable Mutex mu_;
   const Timestamp time_created_ = Timestamp::Now();
-  std::atomic<uint64_t> num_events_logged_ = 0;
+  uint64_t num_events_logged_ ABSL_GUARDED_BY(mu_) = 0;
   const uint32_t max_memory_;
   uint32_t current_memory_ ABSL_GUARDED_BY(mu_) = 0;
   uint16_t next_free_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;

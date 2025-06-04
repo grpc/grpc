@@ -45,8 +45,9 @@ namespace channelz {
 Json ChannelTrace::RenderJson() const {
   if (max_memory_ == 0) return Json();
   Json::Array array;
-  ForEachTraceEvent([&array](gpr_timespec timestamp, Severity, std::string line,
-                             RefCountedPtr<BaseNode>) {
+  MutexLock lock(&mu_);
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity,
+                                   std::string line, RefCountedPtr<BaseNode>) {
     Json::Object object = {
         {"severity", Json::FromString("CT_INFO")},
         {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
@@ -56,11 +57,9 @@ Json ChannelTrace::RenderJson() const {
   });
   Json::Object object;
   object["creationTimestamp"] = Json::FromString(creation_timestamp());
-  if (auto num_events_logged =
-          num_events_logged_.load(std::memory_order_relaxed);
-      num_events_logged > 0) {
+  if (num_events_logged_ > 0) {
     object["numEventsLogged"] =
-        Json::FromString(absl::StrCat(num_events_logged));
+        Json::FromString(absl::StrCat(num_events_logged_));
   }
   if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
@@ -74,9 +73,9 @@ std::string ChannelTrace::creation_timestamp() const {
 
 ChannelTrace::EntryRef ChannelTrace::AppendEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
-  if (max_memory_ == 0) return EntryRef::Sentinel();
-  num_events_logged_.fetch_add(1, std::memory_order_relaxed);
   MutexLock lock(&mu_);
+  ++num_events_logged_;
+  if (max_memory_ == 0) return EntryRef::Sentinel();
   const auto ref = NewEntry(parent, std::move(renderer));
   while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
     DropEntryId(first_entry_);
@@ -206,6 +205,13 @@ void ChannelTrace::ForEachTraceEvent(
                            RefCountedPtr<BaseNode>)>
         callback) const {
   MutexLock lock(&mu_);
+  ForEachTraceEventLocked(callback);
+}
+
+void ChannelTrace::ForEachTraceEventLocked(
+    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                           RefCountedPtr<BaseNode>)>
+        callback) const {
   uint16_t id = first_entry_;
   while (id != kSentinelId) {
     const Entry& e = entries_[id];
