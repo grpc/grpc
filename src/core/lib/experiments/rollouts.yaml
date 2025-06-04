@@ -82,8 +82,6 @@
   default: false
 - name: promise_based_http2_server_transport
   default: false
-- name: rst_stream_fix
-  default: true
 - name: schedule_cancellation_over_write
   default: false
 - name: server_global_callbacks_ownership
