@@ -131,7 +131,7 @@ class LegacyClientAuthFilter final : public ChannelFilter {
  public:
   static const grpc_channel_filter kFilter;
 
-  static absl::string_view TypeName() { return "client-auth-filter"; }
+  static absl::string_view TypeName() { return "legacy-client-auth-filter"; }
 
   LegacyClientAuthFilter(
       RefCountedPtr<grpc_channel_security_connector> security_connector,
