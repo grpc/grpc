@@ -102,7 +102,7 @@ AdsServiceImpl::Reactor::Reactor(
                 << ads_service_impl_->forced_ads_failure_->error_code()
                 << ", message: "
                 << ads_service_impl_->forced_ads_failure_->error_message();
-      Finish(*ads_service_impl_->forced_ads_failure_);
+      MaybeFinish(*ads_service_impl_->forced_ads_failure_);
       return;
     }
   }
@@ -133,7 +133,7 @@ void AdsServiceImpl::Reactor::OnCancel() {
     }
   }
   ads_service_impl_->RemoveClient(context_->peer());
-  Finish(Status::OK);
+  MaybeFinish(Status::OK);
 }
 
 void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
@@ -324,6 +324,13 @@ void AdsServiceImpl::Reactor::MaybeStartNextWrite() {
   std::string resource_type = *it;
   response_needed_.erase(it);
   MaybeStartWrite(resource_type);
+}
+
+void AdsServiceImpl::Reactor::MaybeFinish(const grpc::Status& status) {
+  if (called_finish_.exchange(true)) return;
+  LOG(INFO) << "ADS[" << ads_service_impl_->debug_label_ << "]: reactor "
+            << this << ": calling Finish()";
+  Finish(status);
 }
 
 //

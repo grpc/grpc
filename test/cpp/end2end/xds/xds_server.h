@@ -19,6 +19,7 @@
 
 #include <grpcpp/support/status.h>
 
+#include <atomic>
 #include <deque>
 #include <optional>
 #include <set>
@@ -212,6 +213,8 @@ class AdsServiceImpl
     void MaybeStartNextWrite()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&AdsServiceImpl::ads_mu_);
 
+    void MaybeFinish(const grpc::Status& status);
+
     std::shared_ptr<AdsServiceImpl> ads_service_impl_;
     CallbackServerContext* context_;
 
@@ -224,6 +227,8 @@ class AdsServiceImpl
 
     DiscoveryRequest request_;
     DiscoveryResponse response_;
+
+    std::atomic<bool> called_finish_{false};
   };
 
   // A struct representing the current state for an individual resource.
