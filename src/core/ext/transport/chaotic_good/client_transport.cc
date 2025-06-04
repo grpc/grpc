@@ -120,9 +120,10 @@ void ChaoticGoodClientTransport::StreamDispatch::DispatchFrame(
   auto stream = LookupStream(incoming_frame.header().stream_id);
   if (stream == nullptr) return;
   auto dispatcher = stream->frame_dispatch_serializer;
-  dispatcher->Spawn([stream = std::move(stream),
+  dispatcher->Spawn([stream,
                      incoming_frame = std::move(incoming_frame)]() mutable {
-    return Map(stream->call.CancelIfFails(TrySeq(
+    auto& call = stream->call;
+    return Map(call.CancelIfFails(TrySeq(
                    incoming_frame.Payload(),
                    [stream = std::move(stream)](Frame frame) mutable {
                      auto& call = stream->call;
@@ -221,7 +222,8 @@ void ChaoticGoodClientTransport::StreamDispatch::StopConnectivityWatch(
 ChaoticGoodClientTransport::ChaoticGoodClientTransport(
     const ChannelArgs& args, OrphanablePtr<FrameTransport> frame_transport,
     MessageChunker message_chunker)
-    : ctx_(frame_transport->ctx()),
+    : channelz::DataSource(frame_transport->ctx()->socket_node),
+      ctx_(frame_transport->ctx()),
       allocator_(args.GetObject<ResourceQuota>()
                      ->memory_quota()
                      ->CreateMemoryAllocator("chaotic-good")),
@@ -232,7 +234,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
-  MpscReceiver<OutgoingFrame> outgoing_frames{8};
+  MpscReceiver<OutgoingFrame> outgoing_frames{256 * 1024 * 1024};
   outgoing_frames_ = outgoing_frames.MakeSender();
   stream_dispatch_ =
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
@@ -240,7 +242,10 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                           stream_dispatch_);
 }
 
-ChaoticGoodClientTransport::~ChaoticGoodClientTransport() { party_.reset(); }
+ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
+  ResetDataSource();
+  party_.reset();
+}
 
 void ChaoticGoodClientTransport::Orphan() {
   stream_dispatch_->OnFrameTransportClosed(
@@ -248,6 +253,13 @@ void ChaoticGoodClientTransport::Orphan() {
   party_.reset();
   frame_transport_.reset();
   Unref();
+}
+
+void ChaoticGoodClientTransport::AddData(channelz::DataSink sink) {
+  // TODO(ctiller): add calls in stream dispatch
+  party_->ToJson([sink = std::move(sink)](Json::Object obj) mutable {
+    sink.AddAdditionalInfo("transportParty", std::move(obj));
+  });
 }
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
@@ -260,8 +272,9 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   }
   auto send_fragment = [this, call_tracer, stream_id](auto frame) mutable {
     frame.stream_id = stream_id;
+    auto tokens = FrameMpscTokens(frame);
     return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer},
-                                 1);
+                                 tokens);
   };
   auto send_message = [this, stream_id, call_tracer,
                        message_chunker =

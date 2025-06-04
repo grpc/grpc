@@ -93,7 +93,10 @@ class ControlEndpoint {
 
   // Write some data to the control endpoint; returns a promise that resolves
   // to Empty{} -- it's not possible to see errors from this api.
-  auto Write(SliceBuffer&& bytes) { return buffer_->Queue(std::move(bytes)); }
+  auto Write(SliceBuffer&& bytes) {
+    return GRPC_LATENT_SEE_PROMISE("CtlEndpointEnqueueWrite",
+                                   buffer_->Queue(std::move(bytes)));
+  }
 
   // Read operations are simply passthroughs to the underlying promise endpoint.
   auto ReadSlice(size_t length) {
