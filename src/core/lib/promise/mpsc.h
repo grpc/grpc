@@ -344,7 +344,7 @@ class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
                    result.emplace_back(std::move(DownCast<Node*>(next)->value));
                    mpsc_.ReleaseTokens(next);
                  }
-                 return result;
+                 return std::move(result);
                });
   }
 
