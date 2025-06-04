@@ -238,7 +238,6 @@ TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrameMiddleMessageEmpty) {
   ExpectMessagePayload(std::move(result2), 0, kFlags0);
 
   ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.IsOk());
   ExpectMessagePayload(std::move(result3), kString3.size(), kFlags0, kString3);
 
   ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
