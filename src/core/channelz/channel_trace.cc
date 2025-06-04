@@ -22,6 +22,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -54,17 +55,27 @@ Json ChannelTrace::RenderJson() const {
     array.push_back(Json::FromObject(std::move(object)));
   });
   Json::Object object;
-  object["creationTimestamp"] = Json::FromString(
-      gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME)));
+  object["creationTimestamp"] = Json::FromString(creation_timestamp());
+  if (auto num_events_logged =
+          num_events_logged_.load(std::memory_order_relaxed);
+      num_events_logged > 0) {
+    object["numEventsLogged"] =
+        Json::FromString(absl::StrCat(num_events_logged));
+  }
   if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
   }
   return Json::FromObject(std::move(object));
 }
 
+std::string ChannelTrace::creation_timestamp() const {
+  return gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME));
+}
+
 ChannelTrace::EntryRef ChannelTrace::AppendEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
   if (max_memory_ == 0) return EntryRef::Sentinel();
+  num_events_logged_.fetch_add(1, std::memory_order_relaxed);
   MutexLock lock(&mu_);
   const auto ref = NewEntry(parent, std::move(renderer));
   while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
