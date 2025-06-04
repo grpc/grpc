@@ -51,6 +51,97 @@ namespace testing {
 size_t GetSizeofTraceEvent(void);
 }
 
+namespace detail {
+
+template <typename T>
+static size_t MemoryUsageOf(const T& x) {
+  return MemoryUsage(x);
+}
+
+class Renderer {
+ public:
+  virtual ~Renderer() = default;
+  virtual std::string Render() const = 0;
+  virtual size_t MemoryUsage() const = 0;
+};
+
+struct StrCatFn {
+  template <typename... Arg>
+  std::string operator()(const Arg&... args) {
+    return absl::StrCat(args...);
+  }
+};
+
+template <typename A>
+auto AdaptForStorage(A&& a) {
+  using RawA = std::remove_reference_t<A>;
+  if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
+    return absl::string_view(a);
+  } else {
+    return RawA(a);
+  }
+}
+
+template <typename... Args>
+std::unique_ptr<Renderer> RendererFromConcatenationInner(Args&&... args) {
+  class R final : public Renderer {
+   public:
+    explicit R(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+    std::string Render() const override {
+      return std::apply(StrCatFn(), args_);
+    }
+    size_t MemoryUsage() const override {
+      return MemoryUsageOf(args_) + sizeof(Renderer);
+    }
+
+   private:
+    std::tuple<Args...> args_;
+  };
+  return std::make_unique<R>(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+std::unique_ptr<Renderer> RendererFromConcatenation(Args&&... args) {
+  return RendererFromConcatenationInner(
+      AdaptForStorage<Args>(std::forward<Args>(args))...);
+}
+
+struct RendererFromConcatenationFn {
+  template <typename... Args>
+  auto operator()(Args&&... args) {
+    return RendererFromConcatenation(std::forward<Args>(args)...);
+  }
+};
+
+template <typename N, typename... T>
+class LogExpr {
+ public:
+  explicit LogExpr(N* node, T&&... values)
+      : out_(node), values_(std::forward<T>(values)...) {}
+
+  ~LogExpr() {
+    if (out_ != nullptr) {
+      out_->NewNode(std::apply(RendererFromConcatenationFn(), values_))
+          .Commit();
+    }
+  }
+
+  template <typename U>
+  friend LogExpr<N, T..., U> operator<<(LogExpr<N, T...>&& x, U&& u) {
+    auto mk = [out = std::exchange(x.out_, nullptr), &u](T&&... ts) {
+      return LogExpr<N, T..., U>(out, std::forward<T>(ts)...,
+                                 std::forward<U>(u));
+    };
+    return std::apply(mk, x.values_);
+  }
+
+ private:
+  N* out_;
+  std::tuple<T&&...> values_;
+};
+}  // namespace detail
+
 class BaseNode;
 
 // Object used to hold live data for a channel. This data is exposed via the
@@ -67,12 +158,7 @@ class ChannelTrace {
   explicit ChannelTrace(size_t max_memory)
       : max_memory_(std::min(max_memory, sizeof(Entry) * 32768)) {}
 
-  class Renderer {
-   public:
-    virtual ~Renderer() = default;
-    virtual std::string Render() const = 0;
-    virtual size_t MemoryUsage() const = 0;
-  };
+  using Renderer = detail::Renderer;
 
   enum Severity {
     Unset = 0,  // never to be used
@@ -147,7 +233,7 @@ class ChannelTrace {
     // Returns a new `Node` object representing the child.
     // If this node is invalid (e.g., default-constructed or moved-from),
     // an invalid `Node` is returned.
-    [[nodiscard]] Node NewChild(std::unique_ptr<Renderer> renderer) {
+    [[nodiscard]] Node NewNode(std::unique_ptr<Renderer> renderer) {
       if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
       return Node(trace_, trace_->AppendEntry(ref_, std::move(renderer)));
     }
@@ -160,9 +246,10 @@ class ChannelTrace {
     // If this node is invalid (e.g., default-constructed or moved-from),
     // an invalid `Node` is returned.
     template <typename... Args>
-    [[nodiscard]] Node NewChild(Args&&... args) {
+    [[nodiscard]] Node NewNode(Args&&... args) {
       if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
-      return NewChild(RendererFromConcatenation(std::forward<Args>(args)...));
+      return NewNode(
+          detail::RendererFromConcatenation(std::forward<Args>(args)...));
     }
 
     // Marks the trace entry associated with this `Node` as permanent.
@@ -173,6 +260,8 @@ class ChannelTrace {
       if (trace_ == nullptr || ref_.id == kSentinelId) return;
       committed_ = true;
     }
+
+    bool ProducesOutput() const { return ref_.id != kSentinelId; }
 
    private:
     friend class ChannelTrace;
@@ -203,7 +292,8 @@ class ChannelTrace {
 
   template <typename... Args>
   [[nodiscard]] Node NewNode(Args&&... args) {
-    return NewNode(RendererFromConcatenation(std::forward<Args>(args)...));
+    return NewNode(
+        detail::RendererFromConcatenation(std::forward<Args>(args)...));
   }
 
   // Creates and returns the raw Json object, so a parent channelz
@@ -214,6 +304,8 @@ class ChannelTrace {
       absl::FunctionRef<void(gpr_timespec, Severity, std::string,
                              RefCountedPtr<BaseNode>)>
           callback) const ABSL_LOCKS_EXCLUDED(mu_);
+
+  bool ProducesOutput() const { return max_memory_ > 0; }
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
@@ -259,7 +351,7 @@ class ChannelTrace {
     // std::unique_ptr within a struct. Open-code that part here.
     size_t MemoryUsage() const {
       if (renderer == nullptr) return sizeof(*this);
-      return MemoryUsageOf(*renderer) + sizeof(*this);
+      return detail::MemoryUsageOf(*renderer) + sizeof(*this);
     }
   };
 
@@ -269,54 +361,6 @@ class ChannelTrace {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   void DropEntry(EntryRef entry) ABSL_LOCKS_EXCLUDED(mu_);
   void DropEntryId(uint16_t id) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
-  template <typename T>
-  static size_t MemoryUsageOf(const T& x) {
-    return MemoryUsage(x);
-  }
-
-  struct StrCatFn {
-    template <typename... Arg>
-    std::string operator()(const Arg&... args) {
-      return absl::StrCat(args...);
-    }
-  };
-
-  template <typename A>
-  static auto AdaptForStorage(A&& a) {
-    using RawA = std::remove_reference_t<A>;
-    if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
-      return absl::string_view(a);
-    } else {
-      return RawA(a);
-    }
-  }
-
-  template <typename... Args>
-  static std::unique_ptr<Renderer> RendererFromConcatenationInner(
-      Args&&... args) {
-    class R final : public Renderer {
-     public:
-      explicit R(Args&&... args) : args_(std::forward<Args>(args)...) {}
-
-      std::string Render() const override {
-        return std::apply(StrCatFn(), args_);
-      }
-      size_t MemoryUsage() const override {
-        return MemoryUsageOf(args_) + sizeof(Renderer);
-      }
-
-     private:
-      std::tuple<Args...> args_;
-    };
-    return std::make_unique<R>(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  static std::unique_ptr<Renderer> RendererFromConcatenation(Args&&... args) {
-    return RendererFromConcatenationInner(
-        AdaptForStorage<Args>(std::forward<Args>(args))...);
-  }
 
   void RenderEntry(const Entry& entry,
                    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
@@ -333,7 +377,25 @@ class ChannelTrace {
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
 };
 
+namespace detail {
+inline ChannelTrace* LogOutputFrom(ChannelTrace& t) {
+  if (!t.ProducesOutput()) return nullptr;
+  return &t;
+}
+
+inline ChannelTrace::Node* LogOutputFrom(ChannelTrace::Node& n) {
+  if (!n.ProducesOutput()) return nullptr;
+  return &n;
+}
+}  // namespace detail
+
 }  // namespace channelz
 }  // namespace grpc_core
+
+#define GRPC_CHANNELZ_LOG(output)                                        \
+  for (auto* out = ::grpc_core::channelz::detail::LogOutputFrom(output); \
+       out != nullptr; out = nullptr)                                    \
+  ::grpc_core::channelz::detail::LogExpr<                                \
+      std::remove_reference_t<decltype(*out)>>(out)
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H

@@ -260,6 +260,10 @@ size_t MemoryUsage(const std::tuple<Args...>& t) {
       [](const auto&... args) { return (MemoryUsage(args) + ...); }, t);
 }
 
+inline size_t MemoryUsage(const std::tuple<>& t) {
+  return sizeof(std::tuple<>);
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_UTIL_MEMORY_USAGE_H

@@ -178,6 +178,33 @@ TEST(ChannelTracerTest, BasicTest) {
       << JsonDump(json);
 }
 
+TEST(ChannelTracerTest, StreamingOutputTest) {
+  ChannelTrace tracer(kEventListMemoryLimit);
+  GRPC_CHANNELZ_LOG(tracer) << "one";
+  GRPC_CHANNELZ_LOG(tracer) << "two";
+  GRPC_CHANNELZ_LOG(tracer) << "three";
+  GRPC_CHANNELZ_LOG(tracer) << "four";
+  Json json = tracer.RenderJson();
+  ValidateJsonProtoTranslation(json);
+  EXPECT_THAT(
+      json,
+      IsChannelTraceWithEvents(::testing::ElementsAre(
+          IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
+          IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"))))
+      << JsonDump(json);
+  tracer.NewNode("five").Commit();
+  tracer.NewNode("six").Commit();
+  json = tracer.RenderJson();
+  ValidateJsonProtoTranslation(json);
+  EXPECT_THAT(
+      json,
+      IsChannelTraceWithEvents(::testing::ElementsAre(
+          IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
+          IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
+          IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
+      << JsonDump(json);
+}
+
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
   // Doesn't make sense in practice, but serves a testing purpose for the
   // channel tracing bookkeeping. All tracing events added should get

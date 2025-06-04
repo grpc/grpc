@@ -156,7 +156,7 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
     // Since there was a handshaking error, commit this node with the reason.
     // This will make it available for inspection after the handshaker
     // completes.
-    args_.trace_node.NewChild("Failed with error: ", error).Commit();
+    GRPC_CHANNELZ_LOG(args_.trace_node) << "Failed with error: " << error;
     args_.trace_node.Commit();
     GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
                                      << ": handshaking complete -- scheduling "
