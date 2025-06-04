@@ -41,6 +41,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
@@ -66,6 +67,7 @@ class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
   }
 
   ~TcpCallTracer() override {
+    grpc_core::ExecCtx exec_ctx;
     auto* arena = server_call_tracer_->arena_;
     // The ServerCallTracer is allocated on the arena and hence needs to be
     // reset before unreffing the call.
@@ -149,6 +151,9 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     // tracing systems active for the same call.
     grpc_core::SetContext<census_context>(
         reinterpret_cast<census_context*>(span_.get()));
+    if (IsSampled()) {
+      arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 
