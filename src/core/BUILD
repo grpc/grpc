@@ -83,6 +83,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "trie_lookup",
+    srcs = [
+        "util/trie_lookup.cc",
+    ],
+    hdrs = [
+        "util/trie_lookup.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/types:optional",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_cast",
     hdrs = [
         "//:include/grpc/event_engine/internal/slice_cast.h",
@@ -5624,6 +5638,27 @@ grpc_cc_library(
         "json",
         "match",
         "validation_errors",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
     ],
 )
 

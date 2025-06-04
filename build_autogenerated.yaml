@@ -17258,6 +17258,19 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: trie_lookup_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/trie_lookup.h
+  src:
+  - src/core/util/trie_lookup.cc
+  - test/core/util/trie_lookup_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
 - name: try_join_test
   gtest: true
   build: test
@@ -20041,6 +20054,21 @@ targets:
   - gtest
   - grpc++
   - protoc
+  - grpc_test_util
+  uses_polling: false
+- name: xds_matcher_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/trie_lookup.h
+  - src/core/xds/grpc/xds_matcher.h
+  src:
+  - src/core/util/trie_lookup.cc
+  - src/core/xds/grpc/xds_matcher.cc
+  - test/core/xds/xds_matcher_test.cc
+  deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: xds_metadata_test

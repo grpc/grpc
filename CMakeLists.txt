@@ -1819,6 +1819,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx transport_security_common_api_test)
   add_dependencies(buildtests_cxx transport_security_test)
+  add_dependencies(buildtests_cxx trie_lookup_test)
   add_dependencies(buildtests_cxx try_join_test)
   add_dependencies(buildtests_cxx try_seq_metadata_test)
   add_dependencies(buildtests_cxx try_seq_test)
@@ -1890,6 +1891,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx xds_http_filters_test)
   add_dependencies(buildtests_cxx xds_lb_policy_registry_test)
   add_dependencies(buildtests_cxx xds_listener_resource_type_test)
+  add_dependencies(buildtests_cxx xds_matcher_test)
   add_dependencies(buildtests_cxx xds_metadata_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx xds_outlier_detection_end2end_test)
@@ -30748,6 +30750,41 @@ target_link_libraries(transport_security_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(trie_lookup_test
+  src/core/util/trie_lookup.cc
+  test/core/util/trie_lookup_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+target_compile_features(trie_lookup_test PUBLIC cxx_std_17)
+target_include_directories(trie_lookup_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(trie_lookup_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::flat_hash_map
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(try_join_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
@@ -40342,6 +40379,50 @@ target_link_libraries(xds_listener_resource_type_test
   gtest
   grpc++
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(xds_matcher_test
+  src/core/util/trie_lookup.cc
+  src/core/xds/grpc/xds_matcher.cc
+  test/core/xds/xds_matcher_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(xds_matcher_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(xds_matcher_test PUBLIC cxx_std_17)
+target_include_directories(xds_matcher_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_matcher_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   grpc_test_util
 )
 
