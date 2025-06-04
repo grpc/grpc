@@ -9641,6 +9641,7 @@ grpc_cc_library(
         "transport/auth_context_comparator_registry.h",
     ],
     external_deps = [
+        "absl/functional:any_invocable",
         "absl/strings",
     ],
     visibility = ["//transport_auth_context:__subpackages__"],
