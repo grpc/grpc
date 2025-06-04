@@ -78,7 +78,7 @@ auto AdaptForStorage(A&& a) {
   if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
     return absl::string_view(a);
   } else {
-    return RawA(a);
+    return RawA(std::forward<A>(a));
   }
 }
 
@@ -122,23 +122,26 @@ class LogExpr {
 
   ~LogExpr() {
     if (out_ != nullptr) {
-      out_->NewNode(std::apply(RendererFromConcatenationFn(), values_))
+      out_->NewNode(std::apply(detail::RendererFromConcatenationFn(),
+                               std::move(values_)))
           .Commit();
     }
   }
 
   template <typename U>
-  friend LogExpr<N, T..., U> operator<<(LogExpr<N, T...>&& x, U&& u) {
-    auto mk = [out = std::exchange(x.out_, nullptr), &u](T&&... ts) {
-      return LogExpr<N, T..., U>(out, std::forward<T>(ts)...,
-                                 std::forward<U>(u));
+  friend auto operator<<(LogExpr<N, T...>&& x, U&& u) {
+    auto mk = [out = std::exchange(x.out_, nullptr),
+               u = AdaptForStorage(std::forward<U>(u))](
+                  T&&... existing_values) mutable {
+      return LogExpr<N, T..., decltype(u)>(
+          out, std::forward<T>(existing_values)..., std::move(u));
     };
-    return std::apply(mk, x.values_);
+    return std::apply(mk, std::move(x.values_));
   }
 
  private:
   N* out_;
-  std::tuple<T&&...> values_;
+  std::tuple<T...> values_;
 };
 }  // namespace detail
 
