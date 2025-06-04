@@ -339,7 +339,7 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     EventEnginePosixInterface& posix_interface = poller_->posix_interface();
     do {
       grpc_core::global_stats().IncrementSyscallRead();
-      res = posix_interface.RecvMsg(fd_, &msg, 0);
+      res = posix_interface.RecvMsg(handle_->WrappedFd(), &msg, 0);
     } while (res.IsPosixError(EINTR));
 
     if (res.IsPosixError(EAGAIN)) {
@@ -521,8 +521,8 @@ void PosixEndpointImpl::UpdateRcvLowat() {
   // the socket before generating an interrupt for packet receive. If the call
   // succeeds, it returns the number of bytes (wait threshold) that was actually
   // set.
-  auto result = poller_->posix_interface().SetSockOpt(fd_, SOL_SOCKET,
-                                                      SO_RCVLOWAT, remaining);
+  auto result = poller_->posix_interface().SetSockOpt(
+      handle_->WrappedFd(), SOL_SOCKET, SO_RCVLOWAT, remaining);
   if (result.ok()) {
     set_rcvlowat_ = *result;
   } else {
@@ -724,7 +724,7 @@ bool PosixEndpointImpl::ProcessErrors() {
   while (true) {
     msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
-      r = posix_interface.RecvMsg(fd_, &msg, MSG_ERRQUEUE);
+      r = posix_interface.RecvMsg(handle_->WrappedFd(), &msg, MSG_ERRQUEUE);
     } while (r.IsPosixError(EINTR));
 
     if (r.IsPosixError(EAGAIN)) {
@@ -862,7 +862,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   auto& posix_interface = poller_->posix_interface();
   if (!socket_ts_enabled_) {
     if (!posix_interface
-             .SetSockOpt(fd_, SOL_SOCKET, SO_TIMESTAMPING,
+             .SetSockOpt(handle_->WrappedFd(), SOL_SOCKET, SO_TIMESTAMPING,
                          kTimestampingSocketOptions)
              .ok()) {
       return false;
@@ -885,8 +885,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
 
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
-  PosixErrorOr<int64_t> length =
-      TcpSend(&posix_interface, fd_, msg, saved_errno, additional_flags);
+  PosixErrorOr<int64_t> length = TcpSend(&posix_interface, handle_->WrappedFd(),
+                                         msg, saved_errno, additional_flags);
   if (!length.ok()) {
     return false;
   }
@@ -894,8 +894,8 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(*length)) {
     traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + *length),
-                                &poller_->posix_interface(), fd_,
-                                outgoing_buffer_arg_);
+                                &poller_->posix_interface(),
+                                handle_->WrappedFd(), outgoing_buffer_arg_);
     outgoing_buffer_arg_ = nullptr;
   }
   return true;
@@ -987,8 +987,8 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      send_status = TcpSend(&poller_->posix_interface(), fd_, &msg,
-                            &saved_errno, MSG_ZEROCOPY);
+      send_status = TcpSend(&poller_->posix_interface(), handle_->WrappedFd(),
+                            &msg, &saved_errno, MSG_ZEROCOPY);
     }
     if (tcp_zerocopy_send_ctx_->UpdateZeroCopyOptMemStateAfterSend(
             saved_errno == ENOBUFS, constrained) ||
@@ -1108,8 +1108,8 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       msg.msg_controllen = 0;
       grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
       grpc_core::global_stats().IncrementTcpWriteIovSize(iov_size);
-      send_result =
-          TcpSend(&poller_->posix_interface(), fd_, &msg, &saved_errno);
+      send_result = TcpSend(&poller_->posix_interface(), handle_->WrappedFd(),
+                            &msg, &saved_errno);
     }
 
     if (!send_result.ok()) {
@@ -1293,18 +1293,18 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       handle_(handle),
       poller_(handle->Poller()),
       engine_(engine) {
-  fd_ = handle_->WrappedFd();
+  FileDescriptor fd = handle_->WrappedFd();
   CHECK(options.resource_quota != nullptr);
   auto& posix_interface = poller_->posix_interface();
-  auto peer_addr_string = posix_interface.PeerAddressString(fd_);
+  auto peer_addr_string = posix_interface.PeerAddressString(fd);
   mem_quota_ = options.resource_quota->memory_quota();
   memory_owner_ = mem_quota_->CreateMemoryOwner();
   self_reservation_ = memory_owner_.MakeReservation(sizeof(PosixEndpointImpl));
-  auto local_address = posix_interface.LocalAddress(fd_);
+  auto local_address = posix_interface.LocalAddress(fd);
   if (local_address.ok()) {
     local_address_ = *local_address;
   }
-  auto peer_address = posix_interface.PeerAddress(fd_);
+  auto peer_address = posix_interface.PeerAddress(fd);
   if (peer_address.ok()) {
     peer_address_ = *peer_address;
   }
@@ -1327,12 +1327,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
                  << "ulimit value is not set. Use ulimit -l <value> to set its "
                  << "value.";
     } else {
-      if (posix_interface.SetSockOpt(fd_, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
+      if (posix_interface.SetSockOpt(fd, SOL_SOCKET, SO_ZEROCOPY, 1).ok()) {
         zerocopy_enabled = false;
         LOG(ERROR) << "Failed to set zerocopy options on the socket.";
       }
     }
-
     if (zerocopy_enabled) {
       VLOG(2) << "Tx-zero copy enabled for gRPC sends. RLIMIT_MEMLOCK value "
               << "=" << GetRLimitMemLockMax()
@@ -1344,11 +1343,11 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
       zerocopy_enabled, options.tcp_tx_zerocopy_max_simultaneous_sends,
       options.tcp_tx_zerocopy_send_bytes_threshold);
 #ifdef GRPC_HAVE_TCP_INQ
-  auto result = posix_interface.SetSockOpt(fd_, SOL_TCP, TCP_INQ, 1);
+  auto result = posix_interface.SetSockOpt(fd, SOL_TCP, TCP_INQ, 1);
   if (result.ok()) {
     inq_capable_ = true;
   } else {
-    VLOG(2) << "cannot set inq fd=" << fd_ << " error=" << result.StrError();
+    VLOG(2) << "cannot set inq fd=" << fd << " error=" << result.StrError();
     inq_capable_ = false;
   }
 #else
