@@ -1794,6 +1794,7 @@ let package = Package(
         "src/core/service_config/service_config_parser.h",
         "src/core/telemetry/call_tracer.cc",
         "src/core/telemetry/call_tracer.h",
+        "src/core/telemetry/context_list_entry.cc",
         "src/core/telemetry/context_list_entry.h",
         "src/core/telemetry/default_tcp_tracer.cc",
         "src/core/telemetry/default_tcp_tracer.h",
