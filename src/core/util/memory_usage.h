@@ -260,11 +260,7 @@ size_t MemoryUsageOf(const T& x) {
 template <typename... Args>
 size_t MemoryUsageOf(const std::tuple<Args...>& t) {
   return std::apply(
-      [](const auto&... args) { return (MemoryUsageOf(args) + ...); }, t);
-}
-
-inline size_t MemoryUsage(const std::tuple<>& t) {
-  return sizeof(std::tuple<>);
+      [](const auto&... args) { return (MemoryUsageOf(args) + ... + 0); }, t);
 }
 
 }  // namespace grpc_core
