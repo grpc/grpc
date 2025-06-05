@@ -82,6 +82,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
     src/core/config/load_config.cc \
+    src/core/credentials/call/call_creds_registry_init.cc \
     src/core/credentials/call/call_creds_util.cc \
     src/core/credentials/call/composite/composite_call_credentials.cc \
     src/core/credentials/call/external/aws_external_account_credentials.cc \
@@ -95,6 +96,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/jwt/json_token.cc \
     src/core/credentials/call/jwt/jwt_credentials.cc \
     src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc \
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
@@ -1445,6 +1447,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gcp_service_account_identity)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/iam)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/jwt_token_file)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/oauth2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/plugin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/token_fetcher)

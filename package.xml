@@ -201,6 +201,8 @@
     <file baseinstalldir="/" name="src/core/config/load_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/config/load_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_credentials.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/call_creds_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/call_creds_registry_init.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_creds_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/call_creds_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/composite/composite_call_credentials.cc" role="src" />
@@ -227,6 +229,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.cc" role="src" />

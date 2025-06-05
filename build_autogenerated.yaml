@@ -236,6 +236,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
   - src/core/credentials/call/external/aws_external_account_credentials.h
@@ -249,6 +250,7 @@ libs:
   - src/core/credentials/call/jwt/json_token.h
   - src/core/credentials/call/jwt/jwt_credentials.h
   - src/core/credentials/call/jwt/jwt_verifier.h
+  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h
   - src/core/credentials/call/jwt_util.h
   - src/core/credentials/call/oauth2/oauth2_credentials.h
   - src/core/credentials/call/plugin/plugin_credentials.h
@@ -1310,6 +1312,7 @@ libs:
   - src/core/client_channel/subchannel_pool_interface.cc
   - src/core/client_channel/subchannel_stream_client.cc
   - src/core/config/core_configuration.cc
+  - src/core/credentials/call/call_creds_registry_init.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
   - src/core/credentials/call/external/aws_external_account_credentials.cc
@@ -1323,6 +1326,7 @@ libs:
   - src/core/credentials/call/jwt/json_token.cc
   - src/core/credentials/call/jwt/jwt_credentials.cc
   - src/core/credentials/call/jwt/jwt_verifier.cc
+  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   - src/core/credentials/call/jwt_util.cc
   - src/core/credentials/call/oauth2/oauth2_credentials.cc
   - src/core/credentials/call/plugin/plugin_credentials.cc
@@ -2325,6 +2329,7 @@ libs:
   - src/core/client_channel/subchannel_stream_client.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
   - src/core/credentials/call/json_util.h
@@ -4398,6 +4403,7 @@ libs:
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
   - src/core/credentials/call/json_util.h
@@ -6008,13 +6014,11 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -6022,6 +6026,18 @@ targets:
   deps:
   - gtest
   - protobuf
+  - grpc_test_util
+- name: call_creds_registry_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_call_creds.h
+  src:
+  - test/core/credentials/call/call_creds_registry_test.cc
+  - test/core/test_util/test_call_creds.cc
+  deps:
+  - gtest
   - grpc_test_util
 - name: call_filters_test
   gtest: true
@@ -6276,6 +6292,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -10392,6 +10409,7 @@ targets:
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
   - src/core/config/core_configuration.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -12043,6 +12061,7 @@ targets:
   - src/core/channelz/channelz_registry.h
   - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
+  - src/core/credentials/call/call_creds_registry.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
@@ -17821,7 +17840,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
