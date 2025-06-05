@@ -25,6 +25,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/sync.h"
 
@@ -200,14 +201,16 @@ bool TracedBufferList::TracedBuffer::Finished(gpr_timespec ts) {
          kGrpcMaxPendingAckTimeMillis;
 }
 
-void TracedBufferList::AddNewEntry(int32_t seq_no, int fd, void* arg) {
+void TracedBufferList::AddNewEntry(int32_t seq_no,
+                                   EventEnginePosixInterface* posix_interface,
+                                   const FileDescriptor& fd, void* arg) {
   TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   // Store the current time as the sendmsg time.
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.sent_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
   new_elem->ts_.acked_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
-  if (GetSocketTcpInfo(&(new_elem->ts_.info), fd) == 0) {
+  if (GetSocketTcpInfo(&(new_elem->ts_.info), posix_interface, fd).ok()) {
     ExtractOptStatsFromTcpInfo(&(new_elem->ts_.sendmsg_time.metrics),
                                &(new_elem->ts_.info));
   }

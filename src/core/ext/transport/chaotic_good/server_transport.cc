@@ -140,7 +140,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
               frame.stream_id = stream_id;
               return TrySeq(
                   outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}),
+                      OutgoingFrame{std::move(frame), call_tracer}, 1),
                   SendCallBody(stream_id, call_initiator, call_tracer));
             },
             []() { return StatusFlag(true); });
@@ -171,7 +171,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer});
+                OutgoingFrame{std::move(frame), call_tracer}, 1);
           }));
 }
 

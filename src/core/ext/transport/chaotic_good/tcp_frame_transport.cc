@@ -115,10 +115,10 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
         // Get next outgoing frame.
         frames.Next(),
         // Serialize and write it out.
-        [self = self.get()](OutgoingFrame outgoing_frame) {
+        [self = self.get()](MpscQueued<OutgoingFrame> outgoing_frame) {
           return self->WriteFrame(
-              absl::ConvertVariantTo<FrameInterface&>(outgoing_frame.payload),
-              std::move(outgoing_frame.call_tracer));
+              absl::ConvertVariantTo<FrameInterface&>(outgoing_frame->payload),
+              std::move(outgoing_frame->call_tracer));
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit
