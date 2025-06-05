@@ -422,17 +422,17 @@ class Subchannel::ConnectedSubchannelStateWatcher final
         if (c->channelz_node() != nullptr) {
           c->channelz_node()->SetChildSocket(nullptr);
         }
-        // If the subchannel was created from an endpoint we report
-        // TRANSIENT_FAILURE so the channel surface can process the error and
-        // preserve any transport-provided status (e.g., for keepalive
-        // failures). In this case, the subchannel will remain in
-        // TRANSIENT_FAILURE permanently, since there's no mechanism to trigger
-        // reconnection. This is expected for endpoints created externally,
-        // which are not tied to resolver-based re-resolution. For other
-        // subchannels, we report IDLE to allow normal reconnection behavior
-        // through re-resolution and backoff.
-        // TODO(roth): Consider whether there's a cleaner or more unified way to
-        // handle this.
+        // If the subchannel was created from an endpoint, then we report
+        // TRANSIENT_FAILURE here instead of IDLE. The subchannel will never
+        // leave TRANSIENT_FAILURE state, because there is no way for us to
+        // establish a new connection.
+        //
+        // Otherwise, we report IDLE here. Note that even though we're not
+        // reporting TRANSIENT_FAILURE, we pass along the status from the
+        // transport, since it may have keepalive info attached to it that the
+        // channel needs.
+        // TODO(roth): Consider whether there's a cleaner way to propagate the
+        // keepalive info.
         c->SetConnectivityStateLocked(c->created_from_endpoint_
                                           ? GRPC_CHANNEL_TRANSIENT_FAILURE
                                           : GRPC_CHANNEL_IDLE,

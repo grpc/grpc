@@ -49,6 +49,7 @@
 #include "src/core/ext/transport/chttp2/server/chttp2_server.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/port.h"
@@ -194,6 +195,155 @@ class FdCredentialsFixture : public SslTlsFixture1_3 {
 };
 #endif
 
+namespace {
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::SliceBuffer;
+using grpc_event_engine::experimental::URIToResolvedAddress;
+
+class MockEndpoint;
+
+// Controller class that simulates full-duplex communication between two
+// endpoints.
+class MockEndpointController {
+ public:
+  // Connects two endpoints to each other.
+  void Connect(MockEndpoint* a, MockEndpoint* b) {
+    ep1_ = a;
+    ep2_ = b;
+  }
+
+  // Simulates sending data from one endpoint to the other.
+  void Send(MockEndpoint* from, SliceBuffer* buffer);
+
+ private:
+  MockEndpoint* ep1_ = nullptr;
+  MockEndpoint* ep2_ = nullptr;
+};
+
+// Mock implementation of an EventEngine::Endpoint.
+class MockEndpoint : public EventEngine::Endpoint {
+ public:
+  explicit MockEndpoint(MockEndpointController* controller)
+      : controller_(controller),
+        peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
+        local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()) {}
+
+  ~MockEndpoint() override = default;
+
+  // Stores the read callback and buffer; completes later via Deliver().
+  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
+            ReadArgs /*args*/) override {
+    pending_read_ = std::move(on_read);
+    pending_read_buffer_ = buffer;
+    return true;
+  }
+
+  // Forwards the written data to the connected endpoint.
+  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+             SliceBuffer* data, WriteArgs /*args*/) override {
+    controller_->Send(this, data);
+    on_writable(absl::OkStatus());
+    return true;
+  }
+
+  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
+    return peer_addr_;
+  }
+
+  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
+    return local_addr_;
+  }
+
+  std::vector<size_t> AllWriteMetrics() override { return {}; }
+
+  std::optional<absl::string_view> GetMetricName(size_t) override {
+    return std::nullopt;
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view) override {
+    return std::nullopt;
+  }
+
+  // Called by the peer endpoint to deliver data from Write.
+  void Deliver(SliceBuffer* buffer) {
+    if (pending_read_ && pending_read_buffer_ != nullptr) {
+      while (buffer->Count() > 0) {
+        pending_read_buffer_->Append(buffer->TakeFirst());
+      }
+      pending_read_(absl::OkStatus());
+      pending_read_ = nullptr;
+      pending_read_buffer_ = nullptr;
+    }
+  }
+
+ private:
+  MockEndpointController* controller_;  // Not owned
+  EventEngine::ResolvedAddress peer_addr_;
+  EventEngine::ResolvedAddress local_addr_;
+  absl::AnyInvocable<void(absl::Status)> pending_read_;
+  SliceBuffer* pending_read_buffer_ = nullptr;
+};
+
+// Implementation of Send that forwards the buffer to the connected peer.
+void MockEndpointController::Send(MockEndpoint* from, SliceBuffer* buffer) {
+  if (from == ep1_) {
+    ep2_->Deliver(buffer);
+  } else {
+    ep1_->Deliver(buffer);
+  }
+}
+
+// Factory function to create two connected MockEndpoints.
+std::pair<std::unique_ptr<EventEngine::Endpoint>,
+          std::unique_ptr<EventEngine::Endpoint>>
+CreatePassthroughEndpoints() {
+  auto controller = std::make_shared<MockEndpointController>();
+  auto ep1 = std::make_unique<MockEndpoint>(controller.get());
+  auto ep2 = std::make_unique<MockEndpoint>(controller.get());
+  controller->Connect(ep1.get(), ep2.get());
+  return {std::move(ep1), std::move(ep2)};
+}
+
+}  // namespace
+
+class EndpointCredentialsFixture : public SslTlsFixture1_3 {
+ public:
+  EndpointCredentialsFixture() : endpoint_pair_(CreatePassthroughEndpoints()) {}
+
+ private:
+  grpc_server* MakeServer(
+      const ChannelArgs& args, grpc_completion_queue* cq,
+      absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
+    ExecCtx exec_ctx;
+    grpc_server* server = grpc_server_create(args.ToC().get(), nullptr);
+    grpc_server_credentials* creds = MakeServerCreds(MutateServerArgs(args));
+    auto passive_listener =
+        std::make_shared<experimental::PassiveListenerImpl>();
+    Server* core_server = Server::FromC(server);
+    auto success =
+        grpc_server_add_passive_listener(core_server, creds, passive_listener);
+    grpc_server_register_completion_queue(server, cq, nullptr);
+    pre_server_start(server);
+    grpc_server_start(server);
+    auto status = passive_listener->AcceptConnectedEndpoint(
+        std::move(endpoint_pair_.second));
+    return server;
+  }
+
+  grpc_channel* MakeClient(const ChannelArgs& args,
+                           grpc_completion_queue*) override {
+    grpc_channel_credentials* creds = MakeClientCreds(MutateClientArgs(args));
+    auto* channel = experimental::CreateChannelFromEndpoint(
+        std::move(endpoint_pair_.first), creds, args.ToC().get());
+    return channel;
+  }
+
+  std::pair<std::unique_ptr<EventEngine::Endpoint>,
+            std::unique_ptr<EventEngine::Endpoint>>
+      endpoint_pair_;
+};
+
 #ifdef GRPC_POSIX_WAKEUP_FD
 class InsecureFixtureWithPipeForWakeupFd : public InsecureFixture {
  public:
@@ -230,6 +380,16 @@ const std::string temp_dir = GetTempDir();
 
 std::vector<CoreTestConfiguration> End2endTestConfigs() {
   return std::vector<CoreTestConfiguration>{
+      CoreTestConfiguration{
+          "Chttp2EndpointSecureCredentials",
+          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+              FEATURE_MASK_DOES_NOT_SUPPORT_RETRY |
+              FEATURE_MASK_DOES_NOT_SUPPORT_WRITE_BUFFERING |
+              FEATURE_MASK_IS_CALL_V3 | FEATURE_MASK_DO_NOT_GTEST,
+          "foo.test.google.fr",
+          [](const ChannelArgs&, const ChannelArgs&) {
+            return std::make_unique<EndpointCredentialsFixture>();
+          }},
 #ifdef GRPC_POSIX_SOCKET
       CoreTestConfiguration{"Chttp2Fd",
                             FEATURE_MASK_IS_HTTP2 | FEATURE_MASK_DO_NOT_FUZZ |
