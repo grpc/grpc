@@ -222,11 +222,6 @@
   expiry: 2025/06/06
   owner: ctiller@google.com
   test_tags: []
-- name: rst_stream_fix
-  description: Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
-  expiry: 2025/06/06
-  owner: yashkt@google.com
-  test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2025/10/01

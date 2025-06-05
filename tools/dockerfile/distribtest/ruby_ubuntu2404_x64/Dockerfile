@@ -1,4 +1,4 @@
-# Copyright 2020 the gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:20.04
+FROM ubuntu:24.04
 
 # Install Git and basic packages.
 RUN apt-get update -y && apt-get install -y \
-  curl \
-  gnupg2 \
+  curl gnupg2 \
   gcc && apt-get clean
+
+#==================
+# Ruby dependencies
 
 # Install rvm
 RUN gpg --keyserver hkp://keyserver.ubuntu.com --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB

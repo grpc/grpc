@@ -36,8 +36,8 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 # --- end runfiles.bash initialization v3 ---
 
 # protoc and grpc_csharp_plugin binaries are supplied as "data" in bazel
-PROTOC=$(rlocation com_google_protobuf/protoc)
-PLUGIN=$(rlocation com_github_grpc_grpc/src/compiler/grpc_csharp_plugin)
+PROTOC=$(rlocation "$RLOCATIONPATH_PROTOC")
+PLUGIN=$(rlocation "$RLOCATIONPATH_PLUGIN")
 
 # where to find the test data
 DATA_DIR=./test/csharp/codegen/${TESTNAME}

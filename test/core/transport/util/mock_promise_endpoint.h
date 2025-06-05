@@ -51,11 +51,8 @@ class MockEndpoint
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const, override));
 
-  MOCK_METHOD(std::vector<size_t>, AllWriteMetrics, (), (override));
-  MOCK_METHOD(std::optional<absl::string_view>, GetMetricName, (size_t key),
-              (override));
-  MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
-              (override));
+  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
+              (const, override));
 
   void* QueryExtension(absl::string_view name) override {
     for (const auto& extension : added_extensions_) {
@@ -97,6 +94,16 @@ class MockEndpoint
   };
 
   std::vector<std::unique_ptr<AddedExtension>> added_extensions_;
+};
+
+class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
+                              Endpoint::TelemetryInfo {
+ public:
+  MOCK_METHOD(std::vector<size_t>, AllWriteMetrics, (), (const override));
+  MOCK_METHOD(std::optional<absl::string_view>, GetMetricName, (size_t key),
+              (const override));
+  MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
+              (const override));
 };
 
 struct MockTransportFramingEndpointExtension
