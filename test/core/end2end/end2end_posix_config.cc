@@ -255,14 +255,8 @@ class MockEndpoint : public EventEngine::Endpoint {
     return local_addr_;
   }
 
-  std::vector<size_t> AllWriteMetrics() override { return {}; }
-
-  std::optional<absl::string_view> GetMetricName(size_t) override {
-    return std::nullopt;
-  }
-
-  std::optional<size_t> GetMetricKey(absl::string_view) override {
-    return std::nullopt;
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
   // Called by the peer endpoint to deliver data from Write.
