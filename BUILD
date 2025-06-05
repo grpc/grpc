@@ -596,7 +596,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
@@ -692,7 +691,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -3375,7 +3373,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = [
+        "//bazel:alt_grpc_base_legacy",
+        "//bazel:client_channel",
+    ],
     deps = ["gpr"],
 )
 
@@ -4405,6 +4406,7 @@ grpc_cc_library(
         "uri",
         "work_serializer",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:grpc_backend_metric_data",
@@ -4719,6 +4721,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/time",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [

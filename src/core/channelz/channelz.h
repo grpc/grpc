@@ -125,7 +125,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
 
  protected:
-  BaseNode(EntityType type, size_t max_trace_length, std::string name);
+  BaseNode(EntityType type, size_t max_trace_memory, std::string name);
 
  public:
   void Orphaned() override;
@@ -386,7 +386,7 @@ class PerCpuCallCountingHelper final {
 // Handles channelz bookkeeping for channels
 class ChannelNode final : public BaseNode {
  public:
-  ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+  ChannelNode(std::string target, size_t max_trace_memory,
               bool is_internal_channel);
 
   void Orphaned() override {
@@ -441,7 +441,7 @@ class ChannelNode final : public BaseNode {
 // Handles channelz bookkeeping for subchannels
 class SubchannelNode final : public BaseNode {
  public:
-  SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
+  SubchannelNode(std::string target_address, size_t max_trace_memory);
   ~SubchannelNode() override;
 
   void Orphaned() override {
@@ -493,7 +493,7 @@ class SubchannelNode final : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode final : public BaseNode {
  public:
-  explicit ServerNode(size_t channel_tracer_max_nodes);
+  explicit ServerNode(size_t max_trace_memory);
 
   ~ServerNode() override;
 

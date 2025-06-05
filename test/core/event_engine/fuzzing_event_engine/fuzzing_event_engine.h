@@ -266,6 +266,8 @@ class FuzzingEventEngine : public EventEngine {
   // other index 1, both pointing to the same EndpointMiddle.
   class FuzzingEndpoint final : public Endpoint {
    public:
+    class TelemetryInfo;
+
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}
     ~FuzzingEndpoint() override;
@@ -280,9 +282,7 @@ class FuzzingEventEngine : public EventEngine {
     const ResolvedAddress& GetLocalAddress() const override {
       return middle_->addrs[my_index()];
     }
-    std::vector<size_t> AllWriteMetrics() override;
-    std::optional<absl::string_view> GetMetricName(size_t key) override;
-    std::optional<size_t> GetMetricKey(absl::string_view name) override;
+    std::shared_ptr<Endpoint::TelemetryInfo> GetTelemetryInfo() const override;
 
    private:
     int my_index() const { return index_; }

@@ -310,8 +310,19 @@ class ChannelTrace {
 
   bool ProducesOutput() const { return max_memory_ > 0; }
 
+  std::string creation_timestamp() const;
+  uint64_t num_events_logged() const {
+    MutexLock lock(&mu_);
+    return num_events_logged_;
+  }
+
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
+
+  void ForEachTraceEventLocked(
+      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                             RefCountedPtr<BaseNode>)>
+          callback) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static constexpr uint16_t kSentinelId = 65535;
 
@@ -372,6 +383,8 @@ class ChannelTrace {
                    int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   mutable Mutex mu_;
+  const Timestamp time_created_ = Timestamp::Now();
+  uint64_t num_events_logged_ ABSL_GUARDED_BY(mu_) = 0;
   const uint32_t max_memory_;
   uint32_t current_memory_ ABSL_GUARDED_BY(mu_) = 0;
   uint16_t next_free_entry_ ABSL_GUARDED_BY(mu_) = kSentinelId;

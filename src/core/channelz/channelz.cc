@@ -122,8 +122,8 @@ void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
 // BaseNode
 //
 
-BaseNode::BaseNode(EntityType type, size_t max_trace_length, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_length) {
+BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
+    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_memory) {
   // The registry will set uuid_ under its lock.
   ChannelzRegistry::Register(this);
 }
@@ -298,11 +298,11 @@ CallCounts PerCpuCallCountingHelper::GetCallCounts() const {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+ChannelNode::ChannelNode(std::string target, size_t max_trace_memory,
                          bool is_internal_channel)
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
-               channel_tracer_max_nodes, target),
+               max_trace_memory, target),
       target_(std::move(target)) {}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
@@ -421,9 +421,8 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 //
 
 SubchannelNode::SubchannelNode(std::string target_address,
-                               size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel, channel_tracer_max_nodes,
-               target_address),
+                               size_t max_trace_memory)
+    : BaseNode(EntityType::kSubchannel, max_trace_memory, target_address),
       target_(std::move(target_address)) {}
 
 SubchannelNode::~SubchannelNode() {}
@@ -488,8 +487,8 @@ Json SubchannelNode::RenderJson() {
 // ServerNode
 //
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer, channel_tracer_max_nodes, "") {}
+ServerNode::ServerNode(size_t max_trace_memory)
+    : BaseNode(EntityType::kServer, max_trace_memory, "") {}
 
 ServerNode::~ServerNode() {}
 

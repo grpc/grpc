@@ -37,7 +37,7 @@ struct AddTop {
   std::string message;
 };
 
-using Op = std::variant<Commit, AddChild, AddTop>;
+using Op = std::variant<Commit, AddChild, AddTop, Drop>;
 
 void FuzzChannelTrace(std::vector<Op> ops, size_t memory_limit) {
   channelz::ChannelTrace trace(memory_limit);

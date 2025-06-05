@@ -72,11 +72,8 @@ class MockEndpoint
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const, override));
 
-  MOCK_METHOD(std::vector<size_t>, AllWriteMetrics, (), (override));
-  MOCK_METHOD(std::optional<absl::string_view>, GetMetricName, (size_t key),
-              (override));
-  MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
-              (override));
+  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
+              (const, override));
 };
 
 class MockActivity : public Activity, public Wakeable {

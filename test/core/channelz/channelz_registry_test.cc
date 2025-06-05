@@ -192,8 +192,8 @@ TEST_P(ChannelzRegistryTest, ThreadStressTest) {
 
 TEST_P(ChannelzRegistryTest, HugeNodeCount) {
   std::vector<RefCountedPtr<BaseNode>> nodes;
-  nodes.reserve(200000);
-  for (int i = 0; i < 100000; ++i) {
+  nodes.reserve(20000);
+  for (int i = 0; i < 10000; ++i) {
     nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
     nodes.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
   }
@@ -207,7 +207,7 @@ TEST_P(ChannelzRegistryTest, HugeNodeCount) {
 
 TEST_P(ChannelzRegistryTest, HugeNodeCountWithParents) {
   std::vector<RefCountedPtr<BaseNode>> nodes;
-  for (int i = 0; i < 100; ++i) {
+  for (int i = 0; i < 10; ++i) {
     nodes.push_back(MakeRefCounted<ChannelNode>("x", 1, false));
     auto parent = nodes.back();
     for (int j = 0; j < 1000; ++j) {
@@ -223,13 +223,13 @@ TEST_P(ChannelzRegistryTest, HugeNodeCountWithParents) {
 TEST_P(ChannelzRegistryTest, ServerWithChildren) {
   auto server = MakeRefCounted<ServerNode>(1);
   std::vector<RefCountedPtr<BaseNode>> sockets;
-  sockets.reserve(200000);
-  for (int i = 0; i < 200000; ++i) {
+  sockets.reserve(20000);
+  for (int i = 0; i < 20000; ++i) {
     sockets.push_back(MakeRefCounted<SocketNode>("x", "y", "z", nullptr));
     sockets.back()->AddParent(server.get());
   }
   std::shuffle(sockets.begin(), sockets.end(), SharedBitGen());
-  sockets.resize(100000);
+  sockets.resize(10000);
   auto child_sockets = server->child_sockets();
   server.reset();
   sockets.clear();

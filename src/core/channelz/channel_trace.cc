@@ -22,6 +22,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -44,8 +45,9 @@ namespace channelz {
 Json ChannelTrace::RenderJson() const {
   if (max_memory_ == 0) return Json();
   Json::Array array;
-  ForEachTraceEvent([&array](gpr_timespec timestamp, Severity, std::string line,
-                             RefCountedPtr<BaseNode>) {
+  MutexLock lock(&mu_);
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity,
+                                   std::string line, RefCountedPtr<BaseNode>) {
     Json::Object object = {
         {"severity", Json::FromString("CT_INFO")},
         {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
@@ -54,23 +56,33 @@ Json ChannelTrace::RenderJson() const {
     array.push_back(Json::FromObject(std::move(object)));
   });
   Json::Object object;
+  object["creationTimestamp"] = Json::FromString(creation_timestamp());
+  if (num_events_logged_ > 0) {
+    object["numEventsLogged"] =
+        Json::FromString(absl::StrCat(num_events_logged_));
+  }
   if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
   }
   return Json::FromObject(std::move(object));
 }
 
+std::string ChannelTrace::creation_timestamp() const {
+  return gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME));
+}
+
 ChannelTrace::EntryRef ChannelTrace::AppendEntry(
     EntryRef parent, std::unique_ptr<Renderer> renderer) {
   if (max_memory_ == 0) return EntryRef::Sentinel();
   MutexLock lock(&mu_);
+  ++num_events_logged_;
   const auto ref = NewEntry(parent, std::move(renderer));
   while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
     DropEntryId(first_entry_);
   }
   if (GPR_UNLIKELY(current_memory_ > max_memory_)) {
     entries_.shrink_to_fit();
-    current_memory_ = MemoryUsage(entries_);
+    current_memory_ = MemoryUsageOf(entries_);
   }
   return ref;
 }
@@ -92,7 +104,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
     id = entries_.size();
     DCHECK_NE(id, kSentinelId);
     entries_.emplace_back();
-    current_memory_ = MemoryUsage(entries_);
+    current_memory_ = MemoryUsageOf(entries_);
   }
   Entry& e = entries_[id];
   e.when = Timestamp::Now();
@@ -127,7 +139,7 @@ ChannelTrace::EntryRef ChannelTrace::NewEntry(
     p.last_child = id;
   }
   current_memory_ += e.renderer->MemoryUsage();
-  DCHECK_EQ(MemoryUsage(entries_), current_memory_);
+  DCHECK_EQ(MemoryUsageOf(entries_), current_memory_);
   return EntryRef{id, e.salt};
 }
 
@@ -184,7 +196,7 @@ void ChannelTrace::DropEntryId(uint16_t id) {
   e.next_chronologically = next_free_entry_;
   current_memory_ -= e.renderer->MemoryUsage();
   e.renderer.reset();
-  DCHECK_EQ(current_memory_, MemoryUsage(entries_));
+  DCHECK_EQ(current_memory_, MemoryUsageOf(entries_));
   next_free_entry_ = id;
 }
 
@@ -193,6 +205,13 @@ void ChannelTrace::ForEachTraceEvent(
                            RefCountedPtr<BaseNode>)>
         callback) const {
   MutexLock lock(&mu_);
+  ForEachTraceEventLocked(callback);
+}
+
+void ChannelTrace::ForEachTraceEventLocked(
+    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
+                           RefCountedPtr<BaseNode>)>
+        callback) const {
   uint16_t id = first_entry_;
   while (id != kSentinelId) {
     const Entry& e = entries_[id];

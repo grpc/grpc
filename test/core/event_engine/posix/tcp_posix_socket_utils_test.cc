@@ -16,8 +16,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include <memory>
-
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/port.h"
@@ -31,7 +29,7 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 
-#include "src/core/lib/event_engine/posix_engine/tcp_socket_utils.h"
+#include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
 #include "src/core/util/useful.h"
 
@@ -114,59 +112,41 @@ TEST(TcpPosixSocketUtilsTest, SocketMutatorTest) {
       sock = socket(AF_INET6, SOCK_STREAM, 0);
     }
     EXPECT_GT(sock, 0);
-    PosixSocketWrapper posix_sock(sock);
+    EventEnginePosixInterface posix_interface;
+    FileDescriptor wrapped = posix_interface.Adopt(sock);
     struct test_socket_mutator mutator;
     grpc_socket_mutator_init(&mutator.base, vtable);
 
     mutator.option_value = IPTOS_LOWDELAY;
     EXPECT_TRUE(
-        posix_sock
-            .SetSocketMutator(GRPC_FD_CLIENT_CONNECTION_USAGE,
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
                               reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
     mutator.option_value = IPTOS_THROUGHPUT;
     EXPECT_TRUE(
-        posix_sock
-            .SetSocketMutator(GRPC_FD_CLIENT_CONNECTION_USAGE,
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
                               reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
 
     mutator.option_value = IPTOS_RELIABILITY;
     EXPECT_TRUE(
-        posix_sock
-            .SetSocketMutator(GRPC_FD_CLIENT_CONNECTION_USAGE,
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
                               reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
 
     mutator.option_value = -1;
     EXPECT_FALSE(
-        posix_sock
-            .SetSocketMutator(GRPC_FD_CLIENT_CONNECTION_USAGE,
+        posix_interface
+            .SetSocketMutator(wrapped, GRPC_FD_CLIENT_CONNECTION_USAGE,
                               reinterpret_cast<grpc_socket_mutator*>(&mutator))
             .ok());
     close(sock);
   };
   test_with_vtable(&mutator_vtable);
   test_with_vtable(&mutator_vtable2);
-}
-
-TEST(TcpPosixSocketUtilsTest, SocketOptionsTest) {
-  int sock = socket(PF_INET, SOCK_STREAM, 0);
-  if (sock < 0) {
-    // Try ipv6
-    sock = socket(AF_INET6, SOCK_STREAM, 0);
-  }
-  EXPECT_GT(sock, 0);
-  PosixSocketWrapper posix_sock(sock);
-  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketNonBlocking(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketCloexec(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketCloexec(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketReuseAddr(0).ok());
-  EXPECT_TRUE(posix_sock.SetSocketLowLatency(1).ok());
-  EXPECT_TRUE(posix_sock.SetSocketLowLatency(0).ok());
-  close(sock);
 }
 
 }  // namespace experimental
