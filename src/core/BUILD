@@ -4519,6 +4519,7 @@ grpc_cc_library(
         "grpc_dual_credentials",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
+        "grpc_dual_credentials",
         "grpc_oauth2_credentials",
         "grpc_ssl_credentials",
         "iomgr_fwd",
