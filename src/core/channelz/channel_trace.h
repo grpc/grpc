@@ -53,11 +53,6 @@ size_t GetSizeofTraceEvent(void);
 
 namespace detail {
 
-template <typename T>
-static size_t MemoryUsageOf(const T& x) {
-  return MemoryUsage(x);
-}
-
 class Renderer {
  public:
   virtual ~Renderer() = default;
@@ -365,7 +360,7 @@ class ChannelTrace {
     // std::unique_ptr within a struct. Open-code that part here.
     size_t MemoryUsage() const {
       if (renderer == nullptr) return sizeof(*this);
-      return detail::MemoryUsageOf(*renderer) + sizeof(*this);
+      return MemoryUsageOf(*renderer) + sizeof(*this);
     }
   };
 
