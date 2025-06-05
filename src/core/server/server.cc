@@ -1150,7 +1150,7 @@ auto Server::MatchAndPublishCall(CallHandler call_handler) {
 
 absl::StatusOr<RefCountedPtr<UnstartedCallDestination>>
 Server::MakeCallDestination(const ChannelArgs& args) {
-  InterceptionChainBuilder builder(args);
+  InterceptionChainBuilder builder(args, blackboard_.get());
   // TODO(ctiller): find a way to avoid adding a server ref per call
   builder.AddOnClientInitialMetadata([self = Ref()](ClientMetadata& md) {
     self->SetRegisteredMethodOnMetadata(md);
@@ -1167,6 +1167,7 @@ Server::Server(const ChannelArgs& args)
     : channel_args_(args),
       channelz_node_(CreateChannelzNode(args)),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
+      blackboard_(MakeRefCounted<Blackboard>()),
       compression_options_(CompressionOptionsFromChannelArgs(args)),
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
@@ -1273,7 +1274,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
         "",
         args.SetObject(transport).SetObject<channelz::BaseNode>(
             transport->GetSocketNode()),
-        GRPC_SERVER_CHANNEL);
+        GRPC_SERVER_CHANNEL, blackboard_.get());
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
