@@ -90,6 +90,9 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   const char* GetName() const override { return name_.c_str(); }
 
   bool IsCurrent() const override {
+    LOG(INFO) << this << " "
+              << handle_->Poller()->posix_interface().generation() << " "
+              << handle_->WrappedFd().generation();
     return handle_->Poller()->posix_interface().generation() ==
            handle_->WrappedFd().generation();
   }
