@@ -152,6 +152,7 @@ EXPORTS
     grpc_resource_quota_unref
     grpc_resource_quota_resize
     grpc_resource_quota_set_max_threads
+    grpc_resource_quota_set_max_outstanding_streams
     grpc_dump_xds_configs
     grpc_resource_quota_arg_vtable
     grpc_channelz_get_top_channels

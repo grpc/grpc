@@ -175,6 +175,7 @@ grpc_resource_quota_ref_type grpc_resource_quota_ref_import;
 grpc_resource_quota_unref_type grpc_resource_quota_unref_import;
 grpc_resource_quota_resize_type grpc_resource_quota_resize_import;
 grpc_resource_quota_set_max_threads_type grpc_resource_quota_set_max_threads_import;
+grpc_resource_quota_set_max_outstanding_streams_type grpc_resource_quota_set_max_outstanding_streams_import;
 grpc_dump_xds_configs_type grpc_dump_xds_configs_import;
 grpc_resource_quota_arg_vtable_type grpc_resource_quota_arg_vtable_import;
 grpc_channelz_get_top_channels_type grpc_channelz_get_top_channels_import;
@@ -461,6 +462,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_resource_quota_unref_import = (grpc_resource_quota_unref_type) GetProcAddress(library, "grpc_resource_quota_unref");
   grpc_resource_quota_resize_import = (grpc_resource_quota_resize_type) GetProcAddress(library, "grpc_resource_quota_resize");
   grpc_resource_quota_set_max_threads_import = (grpc_resource_quota_set_max_threads_type) GetProcAddress(library, "grpc_resource_quota_set_max_threads");
+  grpc_resource_quota_set_max_outstanding_streams_import = (grpc_resource_quota_set_max_outstanding_streams_type) GetProcAddress(library, "grpc_resource_quota_set_max_outstanding_streams");
   grpc_dump_xds_configs_import = (grpc_dump_xds_configs_type) GetProcAddress(library, "grpc_dump_xds_configs");
   grpc_resource_quota_arg_vtable_import = (grpc_resource_quota_arg_vtable_type) GetProcAddress(library, "grpc_resource_quota_arg_vtable");
   grpc_channelz_get_top_channels_import = (grpc_channelz_get_top_channels_type) GetProcAddress(library, "grpc_channelz_get_top_channels");

@@ -1022,6 +1022,7 @@ class Server::TransportConnectivityWatcher
     MutexLock lock(&server_->mu_global_);
     server_->connections_.erase(transport_.get());
     --server_->connections_open_;
+    server_->stream_quota_->DecrementOpenChannels();
     server_->MaybeFinishShutdown();
   }
 
@@ -1171,7 +1172,8 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {}
+              .value_or(30))),
+      stream_quota_(channel_args_.GetObject<ResourceQuota>()->stream_quota()) {}
 
 Server::~Server() {
   // Remove the cq pollsets from the config_fetcher.
@@ -1267,6 +1269,7 @@ grpc_error_handle Server::SetupTransport(Transport* transport,
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
+    stream_quota_->IncrementOpenChannels();
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
@@ -1670,6 +1673,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
     server_->channels_.push_front(this);
     list_position_ = server_->channels_.begin();
   }
+
   // Start accept_stream transport op.
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   CHECK(transport->filter_stack_transport() != nullptr);
@@ -1807,12 +1811,18 @@ Server::CallData::CallData(grpc_call_element* elem,
                     elem, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_, RecvTrailingMetadataReady,
                     elem, grpc_schedule_on_exec_ctx);
+
+  server_->stream_quota_->IncrementOutstandingRequests();
 }
 
 Server::CallData::~CallData() {
   CHECK(state_.load(std::memory_order_relaxed) != CallState::PENDING);
   grpc_metadata_array_destroy(&initial_metadata_);
   grpc_byte_buffer_destroy(payload_);
+
+  if (server_ != nullptr) {
+    server_->stream_quota_->DecrementOutstandingRequests();
+  }
 }
 
 void Server::CallData::SetState(CallState state) {
