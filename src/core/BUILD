@@ -101,6 +101,9 @@ grpc_cc_library(
         "absl/strings:string_view",
         "absl/log",
     ],
+    deps = [
+        "//src/core:time",
+    ],
 )
 
 grpc_cc_library(
