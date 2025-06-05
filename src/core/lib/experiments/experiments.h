@@ -59,7 +59,6 @@ namespace grpc_core {
 #if defined(GRPC_CFSTREAM)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -112,7 +111,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #elif defined(GPR_WINDOWS)
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -165,7 +163,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() { return true; }
-inline bool IsCallv3ClientAuthFilterEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() { return true; }
 inline bool IsChttp2BoundWriteSizeEnabled() { return false; }
@@ -219,7 +216,6 @@ inline bool IsUnconstrainedMaxQuotaBufferSizeEnabled() { return false; }
 #else
 enum ExperimentIds {
   kExperimentIdCallTracerInTransport,
-  kExperimentIdCallv3ClientAuthFilter,
   kExperimentIdChaoticGoodFramingLayer,
   kExperimentIdChttp2BoundWriteSize,
   kExperimentIdErrorFlatten,
@@ -260,10 +256,6 @@ enum ExperimentIds {
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
 inline bool IsCallTracerInTransportEnabled() {
   return IsExperimentEnabled<kExperimentIdCallTracerInTransport>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALLV3_CLIENT_AUTH_FILTER
-inline bool IsCallv3ClientAuthFilterEnabled() {
-  return IsExperimentEnabled<kExperimentIdCallv3ClientAuthFilter>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CHAOTIC_GOOD_FRAMING_LAYER
 inline bool IsChaoticGoodFramingLayerEnabled() {

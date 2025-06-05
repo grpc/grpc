@@ -18,7 +18,6 @@
 
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -72,7 +71,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -147,7 +145,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -222,7 +219,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",

@@ -127,31 +127,6 @@ class ClientAuthFilter final : public ImplementChannelFilter<ClientAuthFilter> {
   grpc_call_credentials::GetRequestMetadataArgs args_;
 };
 
-class LegacyClientAuthFilter final : public ChannelFilter {
- public:
-  static const grpc_channel_filter kFilter;
-
-  static absl::string_view TypeName() { return "client-auth-filter"; }
-
-  LegacyClientAuthFilter(
-      RefCountedPtr<grpc_channel_security_connector> security_connector,
-      RefCountedPtr<grpc_auth_context> auth_context);
-
-  static absl::StatusOr<std::unique_ptr<ClientAuthFilter>> Create(
-      const ChannelArgs& args, ChannelFilter::Args);
-
-  // Construct a promise for one call.
-  ArenaPromise<ServerMetadataHandle> MakeCallPromise(
-      CallArgs call_args, NextPromiseFactory next_promise_factory) override;
-
- private:
-  ArenaPromise<absl::StatusOr<CallArgs>> GetCallCredsMetadata(
-      CallArgs call_args);
-
-  // Contains refs to security connector and auth context.
-  grpc_call_credentials::GetRequestMetadataArgs args_;
-};
-
 class ServerAuthFilter final : public ImplementChannelFilter<ServerAuthFilter> {
  private:
   class RunApplicationCode {
