@@ -83,7 +83,7 @@ TEST(MemoryUsageTest, Regression1) {
 
 TEST(MemoryUsageTest, EscapeHatch) {
   struct Foo {
-    size_t MemoryUsageOf() const { return 12345; }
+    size_t MemoryUsage() const { return 12345; }
   };
   EXPECT_EQ(MemoryUsageOf(Foo()), 12345);
 }
