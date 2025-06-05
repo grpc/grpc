@@ -27,7 +27,6 @@
 #include <atomic>
 #include <cstdint>
 #include <memory>
-#include <optional>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -485,7 +484,7 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
     return local_address_;
   }
 
-  FileDescriptor GetWrappedFd() { return fd_; }
+  FileDescriptor GetWrappedFd() { return handle_->WrappedFd(); }
 
   bool CanTrackErrors() const { return poller_->CanTrackErrors(); }
 
@@ -527,7 +526,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   struct cmsghdr* ProcessTimestamp(msghdr* msg, struct cmsghdr* cmsg);
 #endif  // GRPC_LINUX_ERRQUEUE
   grpc_core::Mutex read_mu_;
-  FileDescriptor fd_;
   bool is_first_read_ = true;
   bool has_posted_reclaimer_ ABSL_GUARDED_BY(read_mu_) = false;
   double target_length_;
@@ -535,7 +533,6 @@ class PosixEndpointImpl : public grpc_core::RefCounted<PosixEndpointImpl> {
   int max_read_chunk_size_;
   int64_t set_rcvlowat_ = 0;
   double bytes_read_this_round_ = 0;
-  std::atomic<int> ref_count_{1};
 
   // garbage after the last read.
   grpc_event_engine::experimental::SliceBuffer last_read_buffer_;
