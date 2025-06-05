@@ -128,6 +128,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
       stream->call.SpawnPushMessage(std::move(message));
       continue;
     }
+    break;
   }
 
   // TODO(tjagtap) : [PH2][P1] : List of Tests:
