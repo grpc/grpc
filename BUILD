@@ -622,6 +622,7 @@ GRPC_XDS_TARGETS = [
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
+    "//src/core:call_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -3065,6 +3066,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",

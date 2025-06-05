@@ -1600,6 +1600,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_creds_registry",
+    hdrs = [
+        "credentials/call/call_creds_registry.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "json",
+        "json_args",
+        "ref_counted",
+        "validation_errors",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_memory_allocator",
     hdrs = [
         "//:include/grpc/event_engine/internal/memory_allocator_impl.h",
@@ -5842,6 +5858,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
     deps = [
+        "call_creds_registry",
         "channel_creds_registry",
         "//:ref_counted_ptr",
         "//:xds_client",
@@ -5861,8 +5878,10 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "call_creds_registry",
         "channel_creds_registry",
         "down_cast",
+        "env",
         "json",
         "json_args",
         "json_object_loader",
@@ -6212,6 +6231,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
     deps = [
+        "call_creds_registry",
         "channel_args",
         "channel_creds_registry",
         "channel_fwd",
@@ -6357,6 +6377,30 @@ grpc_cc_library(
         "//:grpc_security_base",
         "//:ref_counted_ptr",
         "//:transport_auth_context",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_creds_registry_init",
+    srcs = [
+        "credentials/call/call_creds_registry_init.cc",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "down_cast",
+        "call_creds_registry",
+        "jwt_token_file_call_credentials",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "time",
+        "validation_errors",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
     ],
 )
 

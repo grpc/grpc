@@ -35,7 +35,9 @@
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
+#include "src/core/credentials/call/composite/composite_call_credentials.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
+#include "src/core/credentials/transport/composite/composite_channel_credentials.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
@@ -255,6 +257,22 @@ RefCountedPtr<Channel> CreateXdsChannel(const ChannelArgs& args,
   RefCountedPtr<grpc_channel_credentials> channel_creds =
       CoreConfiguration::Get().channel_creds_registry().CreateChannelCreds(
           server.channel_creds_config());
+  RefCountedPtr<grpc_call_credentials> call_creds;
+  for (const auto& call_creds_config : server.call_creds_configs()) {
+    RefCountedPtr<grpc_call_credentials> creds =
+        CoreConfiguration::Get().call_creds_registry().CreateCallCreds(
+            call_creds_config);
+    if (call_creds == nullptr) {
+      call_creds = std::move(creds);
+    } else {
+      call_creds = MakeRefCounted<grpc_composite_call_credentials>(
+          std::move(call_creds), std::move(creds));
+    }
+  }
+  if (call_creds != nullptr) {
+    channel_creds = MakeRefCounted<grpc_composite_channel_credentials>(
+        std::move(channel_creds), std::move(call_creds));
+  }
   return RefCountedPtr<Channel>(Channel::FromC(grpc_channel_create(
       server.server_uri().c_str(), channel_creds.get(), args.ToC().get())));
 }

@@ -22,6 +22,7 @@
 
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
+#include "src/core/credentials/call/call_creds_registry.h"
 #include "src/core/credentials/transport/channel_creds_registry.h"
 #include "src/core/credentials/transport/tls/certificate_provider_registry.h"
 #include "src/core/handshaker/handshaker_registry.h"
@@ -82,6 +83,10 @@ class GRPC_DLL CoreConfiguration {
       return &channel_creds_registry_;
     }
 
+    CallCredsRegistry<>::Builder* call_creds_registry() {
+      return &call_creds_registry_;
+    }
+
     ServiceConfigParser::Builder* service_config_parser() {
       return &service_config_parser_;
     }
@@ -113,6 +118,7 @@ class GRPC_DLL CoreConfiguration {
     ChannelInit::Builder channel_init_;
     HandshakerRegistry::Builder handshaker_registry_;
     ChannelCredsRegistry<>::Builder channel_creds_registry_;
+    CallCredsRegistry<>::Builder call_creds_registry_;
     ServiceConfigParser::Builder service_config_parser_;
     ResolverRegistry::Builder resolver_registry_;
     LoadBalancingPolicyRegistry::Builder lb_policy_registry_;
@@ -241,6 +247,10 @@ class GRPC_DLL CoreConfiguration {
     return channel_creds_registry_;
   }
 
+  const CallCredsRegistry<>& call_creds_registry() const {
+    return call_creds_registry_;
+  }
+
   const ServiceConfigParser& service_config_parser() const {
     return service_config_parser_;
   }
@@ -292,6 +302,7 @@ class GRPC_DLL CoreConfiguration {
   ChannelInit channel_init_;
   HandshakerRegistry handshaker_registry_;
   ChannelCredsRegistry<> channel_creds_registry_;
+  CallCredsRegistry<> call_creds_registry_;
   ServiceConfigParser service_config_parser_;
   ResolverRegistry resolver_registry_;
   LoadBalancingPolicyRegistry lb_policy_registry_;
