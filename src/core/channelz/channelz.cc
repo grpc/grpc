@@ -122,8 +122,8 @@ void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
 // BaseNode
 //
 
-BaseNode::BaseNode(EntityType type, size_t max_trace_length, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_length) {
+BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
+    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_memory) {
   // The registry will set uuid_ under its lock.
   ChannelzRegistry::Register(this);
 }
