@@ -622,7 +622,6 @@ GRPC_XDS_TARGETS = [
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
-    "//src/core:jwt_token_file_call_credentials",
 ]
 
 grpc_cc_library(

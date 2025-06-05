@@ -31,8 +31,10 @@ class JwtTokenFileCallCredentials::FileReader final
                  absl::StatusOr<RefCountedPtr<TokenFetcherCredentials::Token>>)>
                  on_done)
       : creds_(creds), on_done_(std::move(on_done)) {
-    creds->event_engine().Run(
-        [self = RefAsSubclass<FileReader>()]() { self->ReadFile(); });
+    creds->event_engine().Run([self = RefAsSubclass<FileReader>()]() {
+      ExecCtx exec_ctx;
+      self->ReadFile();
+    });
   }
 
   void Orphan() override {
@@ -44,7 +46,7 @@ class JwtTokenFileCallCredentials::FileReader final
   void ReadFile() {
     auto contents = LoadFile(creds_->path_, /*add_null_terminator=*/false);
     if (!contents.ok()) {
-      on_done_(contents.status());
+      on_done_(absl::UnavailableError(contents.status().message()));
       return;
     }
     absl::string_view body = contents->as_string_view();

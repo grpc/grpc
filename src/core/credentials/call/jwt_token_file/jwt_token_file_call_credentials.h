@@ -38,7 +38,11 @@ namespace grpc_core {
 // See gRFC A97 (https://github.com/grpc/proposal/pull/492).
 class JwtTokenFileCallCredentials : public TokenFetcherCredentials {
  public:
-  explicit JwtTokenFileCallCredentials(absl::string_view path) : path_(path) {}
+  explicit JwtTokenFileCallCredentials(
+      absl::string_view path,
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine = nullptr)
+      : TokenFetcherCredentials(std::move(event_engine)), path_(path) {}
 
   std::string debug_string() override;
 
