@@ -294,6 +294,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
     return MutableSlice(NoCheck{}, grpc_slice_split_head(c_slice_ptr(), n));
   }
 
+  MutableSlice TakeFirstNoInline(size_t n) {
+    return MutableSlice(NoCheck{},
+                        grpc_slice_split_head_no_inline(c_slice_ptr(), n));
+  }
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
