@@ -76,15 +76,6 @@ class JwtTokenFileCallCredsFactory : public CallCredsFactory<> {
       return loader;
     }
 
-    void JsonPostLoad(const Json& json, const JsonArgs& /*args*/,
-                      ValidationErrors* errors) {
-      if (json.object().find("jwt_token_file") != json.object().end() &&
-          path_.empty()) {
-        ValidationErrors::ScopedField field(errors, "jwt_token_file");
-        errors->AddError("must be non-empty");
-      }
-    }
-
    private:
     std::string path_;
   };
