@@ -13481,6 +13481,21 @@ targets:
   - absl/status:statusor
   - gpr
   uses_polling: false
+- name: latent_see_service_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/latent_see/latent_see_client.h
+  - src/cpp/latent_see/latent_see_service.h
+  src:
+  - src/proto/grpc/latent_see/latent_see.proto
+  - src/cpp/latent_see/latent_see_client.cc
+  - src/cpp/latent_see/latent_see_service.cc
+  - test/cpp/end2end/latent_see_service_test.cc
+  deps:
+  - gtest
+  - grpc++_test_util
 - name: latent_see_test
   gtest: true
   build: test
