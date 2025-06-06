@@ -34,7 +34,6 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
-    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
