@@ -259,9 +259,11 @@ class RubyArtifact:
 
     def __init__(self, platform, gem_platform, presubmit=False):
         self.name = "ruby_native_gem_%s_%s" % (platform, gem_platform)
-        self.platform = platform
         self.gem_platform = gem_platform
-        self.labels = ["artifact", "ruby", platform, gem_platform]
+        platform_label = self.platform
+        if platform_label.startswith('linux'):
+            platform_label = 'linux'
+        self.labels = ["artifact", "ruby", platform_label, gem_platform]
         if presubmit:
             self.labels.append("presubmit")
 
