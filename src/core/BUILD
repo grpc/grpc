@@ -101,6 +101,9 @@ grpc_cc_library(
         "absl/strings:string_view",
         "absl/log",
     ],
+    deps = [
+        "//src/core:time",
+    ],
 )
 
 grpc_cc_library(
@@ -4434,6 +4437,7 @@ grpc_cc_library(
         "closure",
         "error",
         "iomgr_fwd",
+        "ssl_transport_security_utils",
         "sync",
         "unique_type_name",
         "useful",
@@ -4569,6 +4573,8 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "slice_refcount",
+        "ssl_key_logging",
+        "ssl_transport_security_utils",
         "status_helper",
         "sync",
         "unique_type_name",
@@ -4832,6 +4838,8 @@ grpc_cc_library(
         "closure",
         "error",
         "iomgr_fwd",
+        "ssl_key_logging",
+        "ssl_transport_security_utils",
         "unique_type_name",
         "//:channel_arg_names",
         "//:debug_location",
@@ -5571,6 +5579,7 @@ grpc_cc_library(
         "error",
         "grpc_matchers",
         "grpc_tls_credentials",
+        "ssl_transport_security_utils",
         "sync",
         "unique_type_name",
         "useful",
@@ -6095,6 +6104,7 @@ grpc_cc_library(
         "rls_config_upbdefs",
         "slice",
         "slice_refcount",
+        "ssl_transport_security_utils",
         "status_conversion",
         "status_helper",
         "sync",
@@ -7986,6 +7996,21 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_stats_collector",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.h",
+    ],
+    deps = [
+        "stats_data",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -9896,8 +9921,8 @@ grpc_cc_library(
         "json_object_loader",
         "json_reader",
         "load_file",
+        "ssl_transport_security_utils",
         "status_helper",
-        "//:tsi_ssl_credentials",
     ],
 )
 
@@ -9932,6 +9957,96 @@ grpc_cc_library(
     deps = [
         "ztrace_collector",
         "//:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
+    name = "ssl_transport_security_utils",
+    srcs = [
+        "//src/core:tsi/ssl_transport_security_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_transport_security_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "ssl_key_logging",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_session_cache",
+    ],
+)
+
+grpc_cc_library(
+    name = "ssl_key_logging",
+    srcs = [
+        "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_session_cache",
     ],
 )
 

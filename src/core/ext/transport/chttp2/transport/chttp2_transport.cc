@@ -16,6 +16,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -55,6 +56,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/call/metadata_info.h"
 #include "src/core/config/config_vars.h"
@@ -66,6 +68,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -106,6 +109,8 @@
 #include "src/core/telemetry/default_tcp_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -152,7 +157,8 @@ static bool g_default_server_keepalive_permit_without_calls = false;
 // forward declarations of various callbacks that we'll build closures around
 static void write_action_begin_locked(
     grpc_core::RefCountedPtr<grpc_chttp2_transport>, grpc_error_handle error);
-static void write_action(grpc_chttp2_transport* t);
+static void write_action(grpc_chttp2_transport* t,
+                         std::vector<TcpCallTracerWithOffset> tcp_call_tracers);
 static void write_action_end(grpc_core::RefCountedPtr<grpc_chttp2_transport>,
                              grpc_error_handle error);
 static void write_action_end_locked(
@@ -232,6 +238,12 @@ namespace {
 using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 using grpc_core::http2::Http2ErrorCode;
+using WriteMetric =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric;
+using WriteEventSink =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink;
+using WriteEvent =
+    ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
 grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
@@ -798,6 +810,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
     grpc_core::test_only_init_callback();
   }
 
+  grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
+  http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =
       grpc_event_engine_run_in_background() &&
@@ -1140,7 +1155,7 @@ static void write_action_begin_locked(
                     r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
                               : GRPC_CHTTP2_WRITE_STATE_WRITING,
                     begin_writing_desc(r.partial));
-    write_action(t.get());
+    write_action(t.get(), std::move(r.tcp_call_tracers));
     if (t->reading_paused_on_pending_induced_frames) {
       CHECK_EQ(t->num_pending_induced_frames, 0u);
       // We had paused reading, because we had many induced frames (SETTINGS
@@ -1159,7 +1174,9 @@ static void write_action_begin_locked(
   }
 }
 
-static void write_action(grpc_chttp2_transport* t) {
+static void write_action(
+    grpc_chttp2_transport* t,
+    std::vector<TcpCallTracerWithOffset> tcp_call_tracers) {
   void* cl = t->context_list;
   if (!t->context_list->empty()) {
     // Transfer the ownership of the context list to the endpoint and create and
@@ -1175,6 +1192,7 @@ static void write_action(grpc_chttp2_transport* t) {
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  std::vector<size_t> write_metrics;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1184,6 +1202,40 @@ static void write_action(grpc_chttp2_transport* t) {
   }
   args.set_max_frame_size(max_frame_size);
   args.SetDeprecatedAndDiscouragedGoogleSpecificPointer(cl);
+  if (!tcp_call_tracers.empty()) {
+    EventEngine::Endpoint* ee_ep =
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            t->ep.get());
+    if (ee_ep != nullptr) {
+      auto telemetry_info = ee_ep->GetTelemetryInfo();
+      if (telemetry_info != nullptr) {
+        write_metrics = telemetry_info->AllWriteMetrics();
+        args.set_metrics_sink(WriteEventSink(
+            write_metrics,
+            {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
+             WriteEvent::kAcked},
+            [tcp_call_tracers = std::move(tcp_call_tracers),
+             telemetry_info = std::move(telemetry_info)](
+                WriteEvent event, absl::Time timestamp,
+                std::vector<WriteMetric> metrics) {
+              std::vector<grpc_core::TcpCallTracer::TcpEventMetric> tcp_metrics;
+              tcp_metrics.reserve(metrics.size());
+              for (auto& metric : metrics) {
+                auto name = telemetry_info->GetMetricName(metric.key);
+                if (name.has_value()) {
+                  tcp_metrics.push_back(
+                      grpc_core::TcpCallTracer::TcpEventMetric{name.value(),
+                                                               metric.value});
+                }
+              }
+              for (auto& tracer : tcp_call_tracers) {
+                tracer.tcp_call_tracer->RecordEvent(
+                    event, timestamp, tracer.byte_offset, tcp_metrics);
+              }
+            }));
+      }
+    }
+  }
   GRPC_TRACE_LOG(http2_ping, INFO)
       << (t->is_client ? "CLIENT" : "SERVER") << "[" << t << "]: Write "
       << t->outbuf.Length() << " bytes";
@@ -1563,7 +1615,7 @@ static void send_message_locked(
     grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t, grpc_closure* on_complete) {
   t->num_messages_in_next_write++;
-  grpc_core::global_stats().IncrementHttp2SendMessageSize(
+  t->http2_stats->IncrementHttp2SendMessageSize(
       op->payload->send_message.send_message->Length());
   on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
   s->send_message_finished = add_closure_barrier(op->on_complete);
@@ -2403,8 +2455,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
             // sent headers yet (still in "idle" state). Note that since we have
             // marked the stream closed above, we won't be writing to it
             // anymore.
-            if (grpc_core::IsRstStreamFixEnabled() && t->is_client &&
-                !sent_initial_metadata) {
+            if (t->is_client && !sent_initial_metadata) {
               return;
             }
             grpc_chttp2_add_rst_stream_to_next_write(

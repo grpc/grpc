@@ -140,9 +140,10 @@ class PromiseEndpoint {
     // Assert previous read finishes.
     CHECK(!read_state_->complete.load(std::memory_order_relaxed));
     // Should not have pending reads.
-    CHECK(read_state_->pending_buffer.Count() == 0u);
+    CHECK_EQ(read_state_->pending_buffer.Count(), 0u);
     bool complete = true;
     while (read_state_->buffer.Length() < num_bytes) {
+      GRPC_LATENT_SEE_INNER_SCOPE("GRPC:Read:Loop");
       // Set read args with hinted bytes.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs
           read_args;
@@ -160,7 +161,7 @@ class PromiseEndpoint {
         read_state_->waker = Waker();
         read_state_->pending_buffer.MoveFirstNBytesIntoSliceBuffer(
             read_state_->pending_buffer.Length(), read_state_->buffer);
-        DCHECK(read_state_->pending_buffer.Count() == 0u);
+        DCHECK_EQ(read_state_->pending_buffer.Count(), 0u);
       } else {
         complete = false;
         break;

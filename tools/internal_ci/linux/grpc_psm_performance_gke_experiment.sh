@@ -54,7 +54,7 @@ gcloud auth configure-docker "${PREBUILT_IMAGE_PREFIX%%/*}" --quiet
 
 # Connect to benchmarks-prod2 cluster.
 gcloud config set project grpc-testing
-gcloud container clusters get-credentials psm-benchmarks-performance \
+gcloud container clusters get-credentials benchmarks-prod2 \
   --zone us-central1-b --project grpc-testing
 
 # Clone test-infra repository and build all tools.

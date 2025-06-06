@@ -2292,6 +2292,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -3371,6 +3372,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
+  src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -6050,6 +6052,7 @@ target_link_libraries(grpc_authorization_provider
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
@@ -9689,6 +9692,7 @@ target_link_libraries(call_utils_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
@@ -15840,6 +15844,7 @@ target_link_libraries(filter_fusion_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   ${_gRPC_CARES_LIBRARIES}
@@ -16365,6 +16370,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
   )
@@ -21247,9 +21253,18 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(memory_usage_test
+  src/core/util/time.cc
   test/core/util/memory_usage_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
 )
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(memory_usage_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
 target_compile_features(memory_usage_test PUBLIC cxx_std_17)
 target_include_directories(memory_usage_test
   PRIVATE
@@ -21273,11 +21288,9 @@ target_include_directories(memory_usage_test
 target_link_libraries(memory_usage_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::log
-  absl::status
   absl::statusor
   absl::string_view
-  absl::time
+  gpr
 )
 
 
@@ -23898,6 +23911,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/posix_event_engine_test.cc
     test/core/event_engine/test_suite/tests/client_test.cc
     test/core/event_engine/test_suite/tests/dns_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/test_util/fake_udp_and_tcp_server.cc
@@ -30139,6 +30153,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/event_engine/test_suite/event_engine_test_framework.cc
     test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
     test/core/event_engine/test_suite/tests/client_test.cc
+    test/core/event_engine/test_suite/tests/endpoint_test.cc
     test/core/event_engine/test_suite/tests/server_test.cc
     test/core/event_engine/test_suite/tests/timer_test.cc
     test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
