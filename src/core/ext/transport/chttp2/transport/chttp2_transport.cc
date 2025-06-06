@@ -233,16 +233,6 @@ using EventEngine = ::grpc_event_engine::experimental::EventEngine;
 using TaskHandle = ::grpc_event_engine::experimental::EventEngine::TaskHandle;
 using grpc_core::http2::Http2ErrorCode;
 
-grpc_core::CallTracerAnnotationInterface* ParentCallTracerIfSampled(
-    grpc_chttp2_stream* s) {
-  auto* parent_call_tracer =
-      s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
-  if (parent_call_tracer == nullptr || !parent_call_tracer->IsSampled()) {
-    return nullptr;
-  }
-  return parent_call_tracer;
-}
-
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
 grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace

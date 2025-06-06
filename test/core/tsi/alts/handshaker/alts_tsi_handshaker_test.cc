@@ -374,24 +374,16 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                    local_account.size),
             0);
-
-  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-  // v30.0.
-  const upb_Map* ctx_upb_map =
-      _grpc_gcp_AltsContext_peer_attributes_upb_map(ctx);
-  if (ctx_upb_map) {
-    size_t iter = kUpb_Map_Begin;
-    upb_MessageValue k, v;
-    while (upb_Map_Next(ctx_upb_map, &k, &v, &iter)) {
-      upb_StringView key = k.str_val;
-      upb_StringView val = v.str_val;
-      ASSERT_TRUE(upb_StringView_IsEqual(
-          key, upb_StringView_FromString(
-                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
-      ASSERT_TRUE(upb_StringView_IsEqual(
-          val, upb_StringView_FromString(
-                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
-    }
+  size_t iter = kUpb_Map_Begin;
+  upb_StringView key;
+  upb_StringView val;
+  while (grpc_gcp_AltsContext_peer_attributes_next(ctx, &key, &val, &iter)) {
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
   }
 
   // Validate security level.
@@ -477,24 +469,16 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   ASSERT_EQ(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                    local_account.size),
             0);
-
-  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-  // v30.0.
-  const upb_Map* ctx_upb_map =
-      _grpc_gcp_AltsContext_peer_attributes_upb_map(ctx);
-  if (ctx_upb_map) {
-    size_t iter = kUpb_Map_Begin;
-    upb_MessageValue k, v;
-    while (upb_Map_Next(ctx_upb_map, &k, &v, &iter)) {
-      upb_StringView key = k.str_val;
-      upb_StringView val = v.str_val;
-      ASSERT_TRUE(upb_StringView_IsEqual(
-          key, upb_StringView_FromString(
-                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
-      ASSERT_TRUE(upb_StringView_IsEqual(
-          val, upb_StringView_FromString(
-                   ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
-    }
+  size_t iter = kUpb_Map_Begin;
+  upb_StringView key;
+  upb_StringView val;
+  while (grpc_gcp_AltsContext_peer_attributes_next(ctx, &key, &val, &iter)) {
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        key, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_KEY)));
+    ASSERT_TRUE(upb_StringView_IsEqual(
+        val, upb_StringView_FromString(
+                 ALTS_TSI_HANDSHAKER_TEST_PEER_ATTRIBUTES_VALUE)));
   }
 
   // Check security level.

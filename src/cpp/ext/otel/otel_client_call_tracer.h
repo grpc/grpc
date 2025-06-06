@@ -91,13 +91,16 @@ class OpenTelemetryPluginImpl::ClientCallTracer
         const TransportByteSize& transport_byte_size) override;
     void RecordCancel(grpc_error_handle cancel_error) override;
     void RecordEnd() override;
-    void RecordAnnotation(absl::string_view /*annotation*/) override;
+    void RecordAnnotation(absl::string_view annotation) override;
     void RecordAnnotation(const Annotation& /*annotation*/) override;
+    void RecordAnnotation(absl::string_view annotation, absl::Time time);
     std::shared_ptr<grpc_core::TcpCallTracer> StartNewTcpTrace() override;
     void SetOptionalLabel(OptionalLabelKey key,
                           grpc_core::RefCountedStringValue value) override;
 
    private:
+    class TcpCallTracer;
+
     void PopulateLabelInjectors(grpc_metadata_batch* metadata);
 
     const ClientCallTracer* parent_;
@@ -145,7 +148,7 @@ class OpenTelemetryPluginImpl::ClientCallTracer
   }
 
   CallAttemptTracer* StartNewAttempt(bool is_transparent_retry) override;
-  void RecordAnnotation(absl::string_view /*annotation*/) override;
+  void RecordAnnotation(absl::string_view annotation) override;
   void RecordAnnotation(const Annotation& /*annotation*/) override;
 
  private:
