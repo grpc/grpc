@@ -167,10 +167,15 @@ class Appender {
   void Append(const Metadata* metadata, int64_t timestamp_begin,
               int64_t timestamp_end) {
     DCHECK(Enabled());
+    DCHECK_NE(metadata, nullptr);
     if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
     if (GPR_UNLIKELY(bin_->Append(metadata, timestamp_begin, timestamp_end))) {
       sink_->Append(std::move(bin_));
     }
+  }
+
+  void Flush() {
+    if (GPR_UNLIKELY(bin_ != nullptr)) sink_->Append(std::move(bin_));
   }
 
  private:
@@ -183,6 +188,12 @@ class Appender {
   static inline thread_local std::unique_ptr<Bin> bin_;
   static inline std::atomic<Sink*> active_sink_;
 };
+
+inline void Flush() {
+  Appender appender;
+  if (GPR_UNLIKELY(!appender.Enabled())) return;
+  appender.Flush();
+}
 
 class Scope final {
  public:
@@ -237,7 +248,7 @@ class Flow {
   Flow(const Flow&) = delete;
   Flow& operator=(const Flow&) = delete;
   Flow(Flow&& other) noexcept
-      : metadata_(std::exchange(other.metadata_, nullptr)), id_(other.id_) {}
+      : metadata_(other.metadata_), id_(std::exchange(other.id_, 0)) {}
   Flow& operator=(Flow&& other) noexcept {
     if (id_ != 0) {
       Appender appender;

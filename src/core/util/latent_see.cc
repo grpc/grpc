@@ -183,7 +183,7 @@ void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
     size_t displayed_thread_id;
     auto it = thread_id_map.find(bin->thd_id);
     if (it == thread_id_map.end()) {
-      displayed_thread_id = thread_id_map.size();
+      displayed_thread_id = thread_id_map.size() + 1;
       thread_id_map[bin->thd_id] = displayed_thread_id;
     } else {
       displayed_thread_id = it->second;
