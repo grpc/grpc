@@ -943,7 +943,7 @@ class RubyLanguage(object):
         ]:
             tests.append(
                 self.config.job_spec(
-                    ["rspec", test],
+                    ["bundle", "exec", "rspec", test],
                     shortname=test,
                     timeout_seconds=20 * 60,
                     environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -953,7 +953,6 @@ class RubyLanguage(object):
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
         # after dropping support for ruby 2.5:
-        #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         # TODO(apolcyn): the following test is skipped because it sometimes
         # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
@@ -963,6 +962,7 @@ class RubyLanguage(object):
         #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
+            "src/ruby/end2end/connectivity_watch_interrupted_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/prefork_without_using_grpc_test.rb",
             "src/ruby/end2end/prefork_postfork_loop_test.rb",
@@ -980,6 +980,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/errors_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/logger_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb",
+            "src/ruby/end2end/shell_out_from_server_test.rb",
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:

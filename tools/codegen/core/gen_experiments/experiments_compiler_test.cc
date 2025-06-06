@@ -35,6 +35,10 @@ class ExperimentsCompilerTest : public ::testing::Test {
   absl::Status AddExperimentDefinition() {
     return compiler_.AddExperimentDefinition(experiments_defs_content_);
   }
+  absl::Status AddExperimentDefinitionWithCircularDependency() {
+    return compiler_.AddExperimentDefinition(
+        experiments_defs_content_with_circular_dependency_);
+  }
   absl::Status AddRolloutSpecification() {
     return compiler_.AddRolloutSpecification(experiments_rollout_yaml_content_);
   }
@@ -109,17 +113,39 @@ class ExperimentsCompilerTest : public ::testing::Test {
       expiry: 2025/05/01
       owner: roth@google.com
       test_tags: []
+      requires: [call_tracer_in_transport]
     - name: call_tracer_in_transport
       description: Transport directly passes byte counts to CallTracer.
       expiry: 2025/06/01
       owner: roth@google.com
       test_tags: []
       allow_in_fuzzing_config: false
+      requires: [call_tracer_transport_fix]
     - name: call_tracer_transport_fix
       description: Use the correct call tracer in transport
       expiry: 2025/06/01
       owner: yashkt@google.com
       test_tags: []
+    )";
+  const std::string experiments_defs_content_with_circular_dependency_ = R"(
+    - name: backoff_cap_initial_at_max
+      description: Backoff library applies max_backoff even on initial_backoff.
+      expiry: 2025/05/01
+      owner: roth@google.com
+      test_tags: []
+      requires: [call_tracer_in_transport]
+    - name: call_tracer_in_transport
+      description: Transport directly passes byte counts to CallTracer.
+      expiry: 2025/06/01
+      owner: roth@google.com
+      test_tags: []
+      requires: [call_tracer_transport_fix]
+    - name: call_tracer_transport_fix
+      description: Use the correct call tracer in transport
+      expiry: 2025/06/01
+      owner: yashkt@google.com
+      test_tags: []
+      requires: [backoff_cap_initial_at_max]
     )";
   const std::string experiments_rollout_yaml_content_ = R"(
     - name: backoff_cap_initial_at_max
@@ -184,6 +210,7 @@ TEST_F(ExperimentsCompilerTest, GenerateGrpcOssProductionExperimentsOutput) {
 // If you are using the Bazel build system, that macro can be configured with
 // --define=grpc_experiments_are_final=true.
 
+
 #ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
 #define GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
 
@@ -196,21 +223,18 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+inline bool IsCallTracerTransportFixEnabled() { return false; }
+inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
-inline bool IsCallTracerTransportFixEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
+inline bool IsCallTracerTransportFixEnabled() { return false; }
+inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
-inline bool IsCallTracerTransportFixEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 
@@ -222,21 +246,24 @@ return false;
 return true;
 #endif
  }
+inline bool IsCallTracerInTransportEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #endif
 
 #else
- enum ExperimentIds {
-  kExperimentIdBackoffCapInitialAtMax,
-  kExperimentIdCallTracerInTransport,
+enum ExperimentIds {
   kExperimentIdCallTracerTransportFix,
+  kExperimentIdCallTracerInTransport,
+  kExperimentIdBackoffCapInitialAtMax,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>(); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
-inline bool IsCallTracerInTransportEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerInTransport>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerTransportFix>(); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
+inline bool IsCallTracerInTransportEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerInTransport>(); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>(); }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
@@ -248,9 +275,11 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
   std::string expected_src_output =
       grpc_core::GetCopyright() +
       "// Auto generated by "
-      "tools/codegen/core/gen_experiments_grpc_oss.cc\n" +
+      "tools/codegen/core/gen_experiments_grpc_oss.cc\n\n" +
       R"(
 #include <grpc/support/port_platform.h>
+
+#include <stdint.h>
 
 #include "/tmp/experiments.h"
 
@@ -258,46 +287,58 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 
 #else
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -308,7 +349,10 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 #endif
@@ -371,6 +415,7 @@ TEST_F(ExperimentsCompilerTest, GenerateGrpcOssTestExperimentsOutput) {
 // If you are using the Bazel build system, that macro can be configured with
 // --define=grpc_experiments_are_final=true.
 
+
 #ifndef GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
 #define GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H
 
@@ -383,21 +428,18 @@ namespace grpc_core {
 #ifdef GRPC_EXPERIMENTS_ARE_FINAL
 
 #if defined(GRPC_CFSTREAM)
+inline bool IsCallTracerTransportFixEnabled() { return false; }
+inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
-inline bool IsCallTracerTransportFixEnabled() { return false; }
 
 #elif defined(GPR_WINDOWS)
+inline bool IsCallTracerTransportFixEnabled() { return false; }
+inline bool IsCallTracerInTransportEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
 inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
-inline bool IsCallTracerTransportFixEnabled() { return false; }
 
 #else
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
-inline bool IsCallTracerInTransportEnabled() { return false; }
 #ifndef NDEBUG
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 
@@ -409,21 +451,24 @@ return false;
 return true;
 #endif
  }
+inline bool IsCallTracerInTransportEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return true; }
 #endif
 
 #else
- enum ExperimentIds {
-  kExperimentIdBackoffCapInitialAtMax,
-  kExperimentIdCallTracerInTransport,
+enum ExperimentIds {
   kExperimentIdCallTracerTransportFix,
+  kExperimentIdCallTracerInTransport,
+  kExperimentIdBackoffCapInitialAtMax,
   kNumExperiments
 };
-#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
-inline bool IsBackoffCapInitialAtMaxEnabled() { return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>(); }
-#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
-inline bool IsCallTracerInTransportEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerInTransport>(); }
 #define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_TRANSPORT_FIX
 inline bool IsCallTracerTransportFixEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerTransportFix>(); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_CALL_TRACER_IN_TRANSPORT
+inline bool IsCallTracerInTransportEnabled() { return IsExperimentEnabled<kExperimentIdCallTracerInTransport>(); }
+#define GRPC_EXPERIMENT_IS_INCLUDED_BACKOFF_CAP_INITIAL_AT_MAX
+inline bool IsBackoffCapInitialAtMaxEnabled() { return IsExperimentEnabled<kExperimentIdBackoffCapInitialAtMax>(); }
 
 extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
@@ -435,9 +480,11 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
   std::string expected_src_output =
       grpc_core::GetCopyright() +
       "// Auto generated by "
-      "tools/codegen/core/gen_experiments_grpc_oss.cc\n" +
+      "tools/codegen/core/gen_experiments_grpc_oss.cc\n\n" +
       R"(
 #include <grpc/support/port_platform.h>
+
+#include <stdint.h>
 
 #include "/tmp/experiments.h"
 
@@ -445,46 +492,58 @@ extern const ExperimentMetadata g_experiment_metadata[kNumExperiments];
 
 #if defined(GRPC_CFSTREAM)
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 
 #elif defined(GPR_WINDOWS)
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 }  // namespace
 
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, false, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 
 #else
 namespace {
-const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
-const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
-const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
-const char* const additional_constraints_call_tracer_in_transport = "{}";
 const char* const description_call_tracer_transport_fix = "Use the correct call tracer in transport";
 const char* const additional_constraints_call_tracer_transport_fix = "{}";
+const char* const description_call_tracer_in_transport = "Transport directly passes byte counts to CallTracer.";
+const char* const additional_constraints_call_tracer_in_transport = "{}";
+const uint8_t required_experiments_call_tracer_in_transport[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerTransportFix)};
+const char* const description_backoff_cap_initial_at_max = "Backoff library applies max_backoff even on initial_backoff.";
+const char* const additional_constraints_backoff_cap_initial_at_max = "{}";
+const uint8_t required_experiments_backoff_cap_initial_at_max[] = {static_cast<uint8_t>(grpc_core::kExperimentIdCallTracerInTransport)};
 #ifdef NDEBUG
 const bool kDefaultForDebugOnly = false;
 #else
@@ -495,7 +554,10 @@ const bool kDefaultForDebugOnly = true;
 namespace grpc_core {
 
 const ExperimentMetadata g_test_experiment_metadata[] = {
-  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, nullptr, 0, true, false},  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, nullptr, 0, false, false},  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, false},};
+  {"call_tracer_transport_fix", description_call_tracer_transport_fix, additional_constraints_call_tracer_transport_fix, nullptr, 0, kDefaultForDebugOnly, true},
+  {"call_tracer_in_transport", description_call_tracer_in_transport, additional_constraints_call_tracer_in_transport, required_experiments_call_tracer_in_transport, 1, false, false},
+  {"backoff_cap_initial_at_max", description_backoff_cap_initial_at_max, additional_constraints_backoff_cap_initial_at_max, required_experiments_backoff_cap_initial_at_max, 1, true, true},
+};
 
 }  // namespace grpc_core
 #endif
@@ -503,6 +565,21 @@ const ExperimentMetadata g_test_experiment_metadata[] = {
 )";
   EXPECT_EQ(expected_hdr_output, hdr_output);
   EXPECT_EQ(expected_src_output, src_output);
+}
+
+TEST_F(ExperimentsCompilerTest, CheckCircularDependency) {
+  EXPECT_OK(AddExperimentDefinitionWithCircularDependency());
+  EXPECT_OK(AddRolloutSpecification());
+  std::string hdr_filename = "/tmp/experiments.github.h";
+  std::string src_filename = "/tmp/experiments.github.cc";
+  EXPECT_THAT(GenerateExperimentsHdr(hdr_filename, "test"),
+              ::testing::status::StatusIs(
+                  absl::StatusCode::kInvalidArgument,
+                  "Circular dependency found in experiment dependencies."));
+  EXPECT_THAT(GenerateExperimentsSrc(src_filename, hdr_filename, "test"),
+              ::testing::status::StatusIs(
+                  absl::StatusCode::kInvalidArgument,
+                  "Circular dependency found in experiment dependencies."));
 }
 }  // namespace testing
 }  // namespace grpc
