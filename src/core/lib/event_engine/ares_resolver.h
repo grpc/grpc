@@ -23,8 +23,10 @@
 
 #if GRPC_ARES == 1
 
-#include <ares.h>
 #include <grpc/event_engine/event_engine.h>
+// ares.h is not self-contained w.r.t. windows headers so pull in
+// event_engine.h first
+#include <ares.h>
 
 #include <list>
 #include <memory>
