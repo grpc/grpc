@@ -219,7 +219,7 @@ g_stands_for = "gradient"  # @unused
 
 core_version = "48.0.0"  # @unused
 
-version = "1.73.0-pre2"  # @unused
+version = "1.73.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
