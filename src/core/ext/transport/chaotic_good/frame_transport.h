@@ -74,6 +74,10 @@ struct OutgoingFrame {
   std::shared_ptr<TcpCallTracer> call_tracer;
 };
 
+inline uint32_t FrameMpscTokens(OutgoingFrame frame) {
+  return FrameMpscTokens(frame.payload);
+}
+
 inline OutgoingFrame UntracedOutgoingFrame(Frame frame) {
   return OutgoingFrame{std::move(frame), nullptr};
 }
