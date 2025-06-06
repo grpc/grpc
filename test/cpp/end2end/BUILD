@@ -156,6 +156,25 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "latent_see_service_test",
+    srcs = ["latent_see_service_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/latent_see:latent_see_proto",
+        "//:grpcpp_latent_see_service",
+        "//:grpcpp_latent_see_client",
+        "//test/core/test_util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "client_crash_test",
     srcs = ["client_crash_test.cc"],
     data = [
