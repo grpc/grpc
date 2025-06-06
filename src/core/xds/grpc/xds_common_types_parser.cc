@@ -113,14 +113,6 @@ std::optional<grpc_resolved_address> ParseXdsAddress(
 
 namespace {
 
-bool XdsSystemRootCertsEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 // CertificateProviderInstance is deprecated but we are still supporting it for
 // backward compatibility reasons. Note that we still parse the data into the
 // same CertificateProviderPluginInstance struct since the fields are the same.
@@ -250,7 +242,7 @@ CertificateValidationContextParse(
     certificate_validation_context.ca_certs =
         CertificateProviderPluginInstanceParse(
             context, ca_certificate_provider_instance, errors);
-  } else if (XdsSystemRootCertsEnabled()) {
+  } else {
     auto* system_root_certs =
         envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_system_root_certs(
             certificate_validation_context_proto);

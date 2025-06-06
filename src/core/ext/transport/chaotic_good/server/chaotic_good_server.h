@@ -206,11 +206,11 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
         << (status.has_value() ? status->ToString() : "no status");
     auto* server_node = server_->channelz_node();
     if (server_node != nullptr) {
-      server_node->AddTraceEvent(
-          channelz::ChannelTrace::Severity::Error,
-          grpc_slice_from_cpp_string(absl::StrCat(
-              what, ": ",
-              status.has_value() ? status->ToString() : "no status")));
+      if (status.has_value()) {
+        server_node->NewTraceNode(what, ": ", *status).Commit();
+      } else {
+        server_node->NewTraceNode(what).Commit();
+      }
     }
   }
   Server* const server_;

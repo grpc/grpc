@@ -264,9 +264,9 @@ absl::Status OpenTelemetryPluginBuilderImpl::BuildAndRegisterGlobal() {
 
 absl::StatusOr<std::shared_ptr<grpc::experimental::OpenTelemetryPlugin>>
 OpenTelemetryPluginBuilderImpl::Build() {
-  if (meter_provider_ == nullptr) {
+  if (meter_provider_ == nullptr && tracer_provider_ == nullptr) {
     return absl::InvalidArgumentError(
-        "Need to configure a valid meter provider.");
+        "Need to configure a valid meter provider or tracer provider.");
   }
   return std::make_shared<OpenTelemetryPluginImpl>(
       metrics_, meter_provider_, std::move(target_attribute_filter_),
@@ -1052,11 +1052,13 @@ grpc_core::ClientCallTracer* OpenTelemetryPluginImpl::GetClientCallTracer(
 
 grpc_core::ServerCallTracer* OpenTelemetryPluginImpl::GetServerCallTracer(
     std::shared_ptr<grpc_core::StatsPlugin::ScopeConfig> scope_config) {
-  return grpc_core::GetContext<grpc_core::Arena>()
-      ->ManagedNew<ServerCallTracer>(
-          this,
+  auto arena = grpc_core::GetContext<grpc_core::Arena>();
+  return arena
+      ->MakeRefCounted<ServerCallTracer>(
+          this, arena,
           std::static_pointer_cast<OpenTelemetryPluginImpl::ServerScopeConfig>(
-              scope_config));
+              scope_config))
+      .release();
 }
 
 bool OpenTelemetryPluginImpl::IsInstrumentEnabled(
