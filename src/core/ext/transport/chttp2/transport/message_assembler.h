@@ -100,7 +100,7 @@ class GrpcMessageAssembler {
           header.length, *(grpc_message->payload()));
       uint32_t& flag = grpc_message->mutable_flags();
       flag = header.flags;
-      return grpc_message;
+      return std::move(grpc_message);
     }
     return ReturnNullOrError();
   }
