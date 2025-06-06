@@ -1239,7 +1239,7 @@ void Server::Start() {
 grpc_error_handle Server::SetupTransport(Transport* transport,
                                          grpc_pollset* accepting_pollset,
                                          const ChannelArgs& args) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
+  GRPC_LATENT_SEE_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
   // Set up channelz node.

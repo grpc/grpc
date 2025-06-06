@@ -270,6 +270,16 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<T> poll_cast(U poll) {
   return PollCastImpl<T, U>::Cast(std::move(poll));
 }
 
+template <typename T>
+bool IsPending(const T& value) {
+  return false;
+}
+
+template <typename T>
+bool IsPending(const Poll<T>& poll) {
+  return poll.pending();
+}
+
 // Convert a poll to a string
 template <typename T, typename F>
 std::string PollToString(

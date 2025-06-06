@@ -34,7 +34,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const std::string& qps_server_target_override,
     const std::string& credential_type,
     const std::map<std::string, std::string>& per_worker_credential_types,
-    bool run_inproc, int32_t median_latency_collection_interval_millis);
+    bool run_inproc, int32_t median_latency_collection_interval_millis,
+    const std::optional<std::string>& latent_see_directory);
 
 bool RunQuit(
     const std::string& credential_type,

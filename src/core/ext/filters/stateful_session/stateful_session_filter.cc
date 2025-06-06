@@ -213,8 +213,7 @@ bool IsConfiguredPath(absl::string_view configured_path,
 
 void StatefulSessionFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, StatefulSessionFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "StatefulSessionFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnClientInitialMetadata");
   // Get config.
   auto* service_config_call_data = GetContext<ServiceConfigCallData>();
   CHECK_NE(service_config_call_data, nullptr);
@@ -254,8 +253,7 @@ void StatefulSessionFilter::Call::OnClientInitialMetadata(
 }
 
 void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "StatefulSessionFilter::Call::OnServerInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("StatefulSessionFilter::Call::OnServerInitialMetadata");
   if (!perform_filtering_) return;
   // Add cookie to server initial metadata if needed.
   MaybeUpdateServerInitialMetadata(cookie_config_, cluster_changed_,
@@ -264,7 +262,7 @@ void StatefulSessionFilter::Call::OnServerInitialMetadata(ServerMetadata& md) {
 }
 
 void StatefulSessionFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "StatefulSessionFilter::Call::OnServerTrailingMetadata");
   if (!perform_filtering_) return;
   // If we got a Trailers-Only response, then add the

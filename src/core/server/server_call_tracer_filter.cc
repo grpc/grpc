@@ -57,7 +57,7 @@ class ServerCallTracerFilter
   class Call {
    public:
     void OnClientInitialMetadata(ClientMetadata& client_initial_metadata) {
-      GRPC_LATENT_SEE_INNER_SCOPE(
+      GRPC_LATENT_SEE_SCOPE(
           "ServerCallTracerFilter::Call::OnClientInitialMetadata");
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
@@ -65,7 +65,7 @@ class ServerCallTracerFilter
     }
 
     void OnServerInitialMetadata(ServerMetadata& server_initial_metadata) {
-      GRPC_LATENT_SEE_INNER_SCOPE(
+      GRPC_LATENT_SEE_SCOPE(
           "ServerCallTracerFilter::Call::OnServerInitialMetadata");
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
@@ -73,14 +73,14 @@ class ServerCallTracerFilter
     }
 
     void OnFinalize(const grpc_call_final_info* final_info) {
-      GRPC_LATENT_SEE_INNER_SCOPE("ServerCallTracerFilter::Call::OnFinalize");
+      GRPC_LATENT_SEE_SCOPE("ServerCallTracerFilter::Call::OnFinalize");
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;
       call_tracer->RecordEnd(final_info);
     }
 
     void OnServerTrailingMetadata(ServerMetadata& server_trailing_metadata) {
-      GRPC_LATENT_SEE_INNER_SCOPE(
+      GRPC_LATENT_SEE_SCOPE(
           "ServerCallTracerFilter::Call::OnServerTrailingMetadata");
       auto* call_tracer = MaybeGetContext<ServerCallTracer>();
       if (call_tracer == nullptr) return;

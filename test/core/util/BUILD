@@ -83,6 +83,17 @@ grpc_cc_benchmark(
     ],
 )
 
+grpc_cc_benchmark(
+    name = "bm_latent_see",
+    srcs = ["bm_latent_see.cc"],
+    external_deps = [
+    ],
+    monitoring = HISTORY,
+    deps = [
+        "//src/core:latent_see",
+    ],
+)
+
 grpc_cc_test(
     name = "examine_stack_test",
     srcs = ["examine_stack_test.cc"],

@@ -242,8 +242,7 @@ void BaseCallData::CapturedBatch::CancelWith(grpc_error_handle error,
 ///////////////////////////////////////////////////////////////////////////////
 // BaseCallData::Flusher
 
-BaseCallData::Flusher::Flusher(BaseCallData* call, latent_see::Metadata* desc)
-    : latent_see::InnerScope(desc), call_(call) {
+BaseCallData::Flusher::Flusher(BaseCallData* call) : call_(call) {
   GRPC_CALL_STACK_REF(call_->call_stack(), "flusher");
 }
 
@@ -395,7 +394,7 @@ bool BaseCallData::SendMessage::IsIdle() const {
 }
 
 void BaseCallData::SendMessage::OnComplete(absl::Status status) {
-  Flusher flusher(base_, GRPC_LATENT_SEE_METADATA("SendMessage::OnComplete"));
+  Flusher flusher(base_);
   GRPC_TRACE_LOG(channel, INFO)
       << base_->LogTag() << " SendMessage.OnComplete st=" << StateString(state_)
       << " status=" << status;
@@ -705,8 +704,7 @@ void BaseCallData::ReceiveMessage::OnComplete(absl::Status status) {
       break;
   }
   completed_status_ = status;
-  Flusher flusher(base_,
-                  GRPC_LATENT_SEE_METADATA("ReceiveMessage::OnComplete"));
+  Flusher flusher(base_);
   ScopedContext ctx(base_);
   base_->WakeInsideCombiner(&flusher);
 }
@@ -1220,9 +1218,7 @@ class ClientCallData::PollContext {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
           ScopedContext ctx(next_poll->call_data);
-          Flusher flusher(next_poll->call_data,
-                          GRPC_LATENT_SEE_METADATA(
-                              "ClientCallData::PollContext::~PollContext"));
+          Flusher flusher(next_poll->call_data);
           next_poll->call_data->WakeInsideCombiner(&flusher);
         }
         GRPC_CALL_STACK_UNREF(next_poll->call_stack, "re-poll");
@@ -1351,7 +1347,7 @@ void ClientCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // Fake out the activity based context.
   ScopedContext context(this);
   CapturedBatch batch(b);
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA("ClientCallData::StartBatch"));
+  Flusher flusher(this);
 
   GRPC_TRACE_LOG(channel, INFO) << LogTag() << " StartBatch " << DebugString();
 
@@ -1557,8 +1553,7 @@ void ClientCallData::RecvInitialMetadataReady(grpc_error_handle error) {
       << DebugString() << " error:" << error.ToString()
       << " md:" << recv_initial_metadata_->metadata->DebugString();
   ScopedContext context(this);
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA(
-                            "ClientCallData::RecvInitialMetadataReady"));
+  Flusher flusher(this);
   if (!error.ok()) {
     switch (recv_initial_metadata_->state) {
       case RecvInitialMetadata::kHookedWaitingForPipe:
@@ -1744,8 +1739,7 @@ void ClientCallData::RecvTrailingMetadataReadyCallback(
 }
 
 void ClientCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA(
-                            "ClientCallData::RecvTrailingMetadataReady"));
+  Flusher flusher(this);
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << " ClientCallData.RecvTrailingMetadataReady "
       << "recv_trailing_state=" << StateString(recv_trailing_state_)
@@ -1796,12 +1790,12 @@ void ClientCallData::SetStatusFromError(grpc_metadata_batch* metadata,
 
 // Wakeup and poll the promise if appropriate.
 void ClientCallData::WakeInsideCombiner(Flusher* flusher) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ClientCallData::WakeInsideCombiner");
+  GRPC_LATENT_SEE_SCOPE("ClientCallData::WakeInsideCombiner");
   PollContext(this, flusher).Run();
 }
 
 void ClientCallData::OnWakeup() {
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA("ClientCallData::OnWakeup"));
+  Flusher flusher(this);
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);
 }
@@ -1877,9 +1871,7 @@ class ServerCallData::PollContext {
       auto run = [](void* p, grpc_error_handle) {
         auto* next_poll = static_cast<NextPoll*>(p);
         {
-          Flusher flusher(next_poll->call_data,
-                          GRPC_LATENT_SEE_METADATA(
-                              "ServerCallData::PollContext::~PollContext"));
+          Flusher flusher(next_poll->call_data);
           ScopedContext context(next_poll->call_data);
           next_poll->call_data->WakeInsideCombiner(&flusher);
         }
@@ -1983,7 +1975,7 @@ void ServerCallData::StartBatch(grpc_transport_stream_op_batch* b) {
   // Fake out the activity based context.
   ScopedContext context(this);
   CapturedBatch batch(b);
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA("ServerCallData::StartBatch"));
+  Flusher flusher(this);
   bool wake = false;
 
   GRPC_TRACE_LOG(channel, INFO) << LogTag() << " StartBatch: " << DebugString();
@@ -2272,8 +2264,7 @@ void ServerCallData::RecvTrailingMetadataReady(grpc_error_handle error) {
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << ": RecvTrailingMetadataReady error=" << error
       << " md=" << recv_trailing_metadata_->DebugString();
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA(
-                            "ServerCallData::RecvTrailingMetadataReady"));
+  Flusher flusher(this);
   PollContext poll_ctx(this, &flusher);
   Completed(error, recv_trailing_metadata_->get(GrpcTarPit()).has_value(),
             &flusher);
@@ -2287,8 +2278,7 @@ void ServerCallData::RecvInitialMetadataReadyCallback(void* arg,
 }
 
 void ServerCallData::RecvInitialMetadataReady(grpc_error_handle error) {
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA(
-                            "ServerCallData::RecvInitialMetadataReady"));
+  Flusher flusher(this);
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << ": RecvInitialMetadataReady " << error;
   CHECK(recv_initial_state_ == RecvInitialState::kForwarded);
@@ -2351,7 +2341,7 @@ std::string ServerCallData::DebugString() const {
 
 // Wakeup and poll the promise if appropriate.
 void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ServerCallData::WakeInsideCombiner");
+  GRPC_LATENT_SEE_SCOPE("ServerCallData::WakeInsideCombiner");
   PollContext poll_ctx(this, flusher);
   GRPC_TRACE_LOG(channel, INFO)
       << LogTag() << ": WakeInsideCombiner " << DebugString();
@@ -2503,7 +2493,7 @@ void ServerCallData::WakeInsideCombiner(Flusher* flusher) {
 }
 
 void ServerCallData::OnWakeup() {
-  Flusher flusher(this, GRPC_LATENT_SEE_METADATA("ServerCallData::OnWakeup"));
+  Flusher flusher(this);
   ScopedContext context(this);
   WakeInsideCombiner(&flusher);
 }

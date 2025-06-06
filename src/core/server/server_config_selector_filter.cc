@@ -144,7 +144,7 @@ void ServerConfigSelectorFilter::Orphan() {
 
 absl::Status ServerConfigSelectorFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerConfigSelectorFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerConfigSelectorFilter::Call::OnClientInitialMetadata");
   auto sel = filter->config_selector();
   if (!sel.ok()) return sel.status();

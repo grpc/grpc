@@ -737,7 +737,7 @@ void FilterStackCall::BatchControl::FinishBatch(grpc_error_handle error) {
 grpc_call_error FilterStackCall::StartBatch(const grpc_op* ops, size_t nops,
                                             void* notify_tag,
                                             bool is_notify_tag_closure) {
-  GRPC_LATENT_SEE_INNER_SCOPE("FilterStackCall::StartBatch");
+  GRPC_LATENT_SEE_SCOPE("FilterStackCall::StartBatch");
 
   size_t i;
   const grpc_op* op;

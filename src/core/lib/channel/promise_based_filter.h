@@ -1304,11 +1304,9 @@ class BaseCallData : public Activity, private Wakeable {
     }
   };
 
-  class Flusher : public latent_see::InnerScope {
+  class Flusher {
    public:
-    explicit Flusher(BaseCallData* call,
-                     latent_see::Metadata* desc = GRPC_LATENT_SEE_METADATA(
-                         "PromiseBasedFilter::Flusher"));
+    explicit Flusher(BaseCallData* call);
     // Calls closures, schedules batches, relinquishes call combiner.
     ~Flusher();
 

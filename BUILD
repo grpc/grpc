@@ -2704,6 +2704,56 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_latent_see_service",
+    srcs = [
+        "src/cpp/latent_see/latent_see_service.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_service.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "//src/core:latent_see",
+        "grpc++_config_proto",
+        "//src/proto/grpc/latent_see:latent_see_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_latent_see_client",
+    srcs = [
+        "src/cpp/latent_see/latent_see_client.cc",
+    ],
+    hdrs = [
+        "src/cpp/latent_see/latent_see_client.h",
+    ],
+    external_deps = [
+        "protobuf_headers",
+        "absl/log",
+    ],
+    tags = ["nofixdeps"],
+    visibility = ["//bazel:latent_see"],
+    deps = [
+        "gpr",
+        "grpc",
+        "grpc++",
+        "//src/core:latent_see",
+        "grpc++_config_proto",
+        "//src/proto/grpc/latent_see:latent_see_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",

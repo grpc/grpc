@@ -1,0 +1,58 @@
+// Copyright 2025 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+// This file defines an interface for exporting monitoring information
+// out of gRPC servers.  See the full design at
+// https://github.com/grpc/proposal/blob/master/A14-channelz.md
+//
+// The canonical version of this proto can be found at
+// https://github.com/grpc/grpc-proto/blob/master/grpc/channelz/v1/channelz.proto
+
+syntax = "proto3";
+
+package grpc.latent_see.v1;
+
+message LatentSeeTrace {
+  message FlowBegin {
+    int64 id = 1;
+  }
+  message FlowEnd {
+    int64 id = 1;
+  }
+  message Mark {}
+  message Span {
+    int64 duration = 1;
+  }
+
+  string name = 1;
+  int64 tid = 2;
+  int64 timestamp = 3;
+  oneof kind {
+    FlowBegin flow_begin = 4;
+    FlowEnd flow_end = 5;
+    Mark mark = 6;
+    Span span = 7;
+  }
+}
+
+message GetTraceRequest {
+  double sample_time = 1;
+}
+
+// LatentSee is a service exposed by gRPC servers that provides high fidelity trace information.
+service LatentSee {
+  // Query for a trace. Note that no traces will be returned until sample_time expires, and so the
+  // deadline for this request must be greater than that.
+  rpc GetTrace(GetTraceRequest) returns (stream LatentSeeTrace);
+}

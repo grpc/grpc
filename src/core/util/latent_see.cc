@@ -14,174 +14,201 @@
 
 #include "src/core/util/latent_see.h"
 
-#ifdef GRPC_ENABLE_LATENT_SEE
 #include <atomic>
-#include <chrono>
 #include <cstdint>
-#include <optional>
+#include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
-#include "absl/strings/str_format.h"
-#include "absl/strings/string_view.h"
-#include "src/core/util/ring_buffer.h"
+#include "src/core/util/backoff.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
+
+namespace grpc_core::latent_see {
+std::string JsonOutput::MicrosString(int64_t nanos) {
+  CHECK_GE(nanos, 0);
+  const auto micros = nanos / 1000;
+  const auto remainder = nanos % 1000;
+  return absl::StrFormat("%d.%03d", micros, remainder);
+}
+
+void JsonOutput::Mark(absl::string_view name, int64_t tid, int64_t timestamp) {
+  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
+                       "\",\"ph\":\"i\",\"ts\":", MicrosString(timestamp),
+                       ",\"pid\":0,\"tid\":", tid, "}");
+  sep_ = ",\n";
+}
+
+void JsonOutput::FlowBegin(absl::string_view name, int64_t tid,
+                           int64_t timestamp, int64_t flow_id) {
+  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
+                       "\",\"ph\":\"s\",\"ts\":", MicrosString(timestamp),
+                       ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
+  sep_ = ",\n";
+}
+
+void JsonOutput::FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
+                         int64_t flow_id) {
+  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
+                       "\",\"ph\":\"f\",\"ts\":", MicrosString(timestamp),
+                       ",\"pid\":0,\"tid\":", tid, ",\"id\":", flow_id, "}");
+  sep_ = ",\n";
+}
+
+void JsonOutput::Span(absl::string_view name, int64_t tid,
+                      int64_t timestamp_begin, int64_t duration) {
+  out_ << absl::StrCat(sep_, "{\"name\":\"", name,
+                       "\",\"ph\":\"X\",\"ts\":", MicrosString(timestamp_begin),
+                       ",\"pid\":0,\"tid\":", tid,
+                       ",\"dur\":", MicrosString(duration), "}");
+  sep_ = ",\n";
+}
+
+void JsonOutput::Finish() { out_ << "\n]"; }
+}  // namespace grpc_core::latent_see
+
+#ifndef GRPC_DISABLE_LATENT_SEE
 
 namespace grpc_core {
 namespace latent_see {
 
-thread_local uint64_t Log::thread_id_ = Log::Get().next_thread_id_.fetch_add(1);
-thread_local Bin* Log::bin_ = nullptr;
-thread_local void* Log::bin_owner_ = nullptr;
-std::atomic<uint64_t> Flow::next_flow_id_{1};
-std::atomic<uintptr_t> Log::free_bins_{0};
-const std::chrono::steady_clock::time_point start_time =
-    std::chrono::steady_clock::now();
-
-void Log::InstallAtExitHandler() {
-  atexit([] {
-    auto& log = Log::Get();
-    auto json = log.TryGenerateJson();
-    if (!json.has_value()) {
-      LOG(INFO) << "Failed to generate latent_see.json (contention with "
-                   "another writer)";
-      return;
-    }
-    if (log.stats_flusher_ != nullptr) {
-      log.stats_flusher_(*json);
-      return;
-    }
-    LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
-    FILE* f = fopen("latent_see.json", "w");
-    if (f == nullptr) return;
-    fprintf(f, "%s", json->c_str());
-    fclose(f);
-  });
+namespace {
+const Duration kMaxBackoff = Duration::Milliseconds(300);
 }
 
-void Log::TryPullEventsAndFlush(
-    absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback) {
-  // Try to lock... if we fail then clear the active events.
-  // This guarantees freeing up memory even if we're still serializing the
-  // previous pull.
-  if (!mu_flushing_.TryLock()) {
-    for (auto& fragment : fragments_) {
-      MutexLock lock(&fragment.mu_active);
-      fragment.active.clear();
-    }
-    return;
-  }
-  // Now we hold the lock; swap all active fragments to flushing.
-  // This is relatively quick and ensures that we don't stall capture for
-  // long.
-  for (auto& fragment : fragments_) {
-    CHECK_EQ(fragment.flushing.size(), 0);
-    MutexLock lock(&fragment.mu_active);
-    fragment.flushing.swap(fragment.active);
-  }
-  // Now we've swapped out, call the callback repeatedly with each fragment.
-  // This is the slow part - there's a lot of copying and transformation that
-  // happens here.
-  // We keep the mu_flushing_ held so that we can guarantee only one thread is
-  // consumed by this at a time.
-  // Once we've called the callback for each fragment we can clear it, so that
-  // when we next swap it with the active fragment it will be empty.
-  // This also retains the memory, so if we're serializing with a regular
-  // cadence we'll tend to stabilize memory usage for latent_see relatively
-  // quickly.
-  for (auto& fragment : fragments_) {
-    callback(fragment.flushing);
-    fragment.flushing.clear();
-  }
-  mu_flushing_.Unlock();
+void Appender::Enable(Sink* sink) {
+  active_sink_.store(sink, std::memory_order_release);
 }
 
-std::optional<std::string> Log::TryGenerateJson() {
-  using Nanos = std::chrono::duration<unsigned long long, std::nano>;
-  std::string json = "[\n";
-  bool first = true;
-  int callbacks = 0;
-  TryPullEventsAndFlush([&](absl::Span<const RecordedEvent> events) {
-    ++callbacks;
-    for (const auto& event : events) {
-      absl::string_view phase;
-      bool has_id;
-      switch (event.event.type) {
-        case EventType::kBegin:
-          phase = "B";
-          has_id = false;
-          break;
-        case EventType::kEnd:
-          phase = "E";
-          has_id = false;
-          break;
-        case EventType::kFlowStart:
-          phase = "s";
-          has_id = true;
-          break;
-        case EventType::kFlowEnd:
-          phase = "f";
-          has_id = true;
-          break;
-        case EventType::kMark:
-          phase = "i";
-          has_id = false;
-          break;
-      }
-      if (!first) {
-        absl::StrAppend(&json, ",\n");
-      }
-      first = false;
-      if (event.event.metadata->name[0] != '"') {
-        absl::StrAppend(
-            &json, "{\"name\": \"", event.event.metadata->name,
-            "\", \"ph\": \"", phase, "\", \"ts\": ",
-            absl::StrFormat(
-                "%.12g",
-                Nanos(event.event.timestamp - start_time).count() / 1000.0),
-            ", \"pid\": 0, \"tid\": ", event.thread_id);
+void Appender::Disable() {
+  active_sink_.store(nullptr, std::memory_order_relaxed);
+}
+
+Sink::Sink() : gatherer_("grpc_latent_see_gatherer", [this]() { Gather(); }) {
+  gatherer_.Start();
+}
+
+void Sink::Append(std::unique_ptr<Bin> bin) { appending_.Push(bin.release()); }
+
+void Sink::Gather() {
+  BackOff backoff(BackOff::Options()
+                      .set_initial_backoff(Duration::Milliseconds(1))
+                      .set_multiplier(1.1)
+                      .set_jitter(0.05)
+                      .set_max_backoff(kMaxBackoff));
+  while (true) {
+    std::unique_ptr<Bin> bin(static_cast<Bin*>(appending_.Pop()));
+    if (bin == nullptr) {
+      absl::SleepFor(absl::Milliseconds(backoff.NextAttemptDelay().millis()));
+      continue;
+    }
+    backoff.Reset();
+    Record(std::move(bin));
+  }
+}
+
+void Sink::Start(size_t max_bins) {
+  auto events = std::make_unique<EventDump>();
+  MutexLock lock(&mu_);
+  max_bins_ = max_bins;
+  events_ = std::move(events);
+}
+
+std::unique_ptr<Sink::EventDump> Sink::Stop() {
+  MutexLock lock(&mu_);
+  auto events = std::move(events_);
+  events_ = nullptr;
+  return events;
+}
+
+void Sink::Record(std::unique_ptr<Bin> bin) {
+  MutexLock lock(&mu_);
+  if (events_ == nullptr) return;
+  CHECK_LE(bin->num_events, Bin::kEventsPerBin);
+  events_->emplace_back(std::move(bin));
+  if (events_->size() > max_bins_) events_->pop_front();
+}
+
+void Collect(Notification* n, absl::Duration timeout, size_t memory_limit,
+             Output* output) {
+  static Sink* sink = new Sink;
+  static Mutex* mu = new Mutex;
+
+  // Collection phase - under a mutex to prevent multiple collections at once.
+  mu->Lock();
+  // First we enable the appender and then wait for a short time to clear out
+  // any backoff
+  LOG(INFO) << "Latent-see collection enabling";
+  Appender::Enable(sink);
+  absl::SleepFor(2 * absl::Milliseconds(kMaxBackoff.millis()));
+  // Now we start the collection
+  LOG(INFO) << "Latent-see collection recording";
+  sink->Start(memory_limit / sizeof(Bin) + 1);
+  // If we got a Notification object, use that to sleep until we're notified;
+  // if not just sleep.
+  if (n == nullptr) {
+    absl::SleepFor(timeout);
+  } else {
+    n->WaitForNotificationWithTimeout(timeout);
+  }
+  // Grab all events
+  LOG(INFO) << "Latent-see collection stopping";
+  auto events = sink->Stop();
+  // Disable the sink
+  Appender::Disable();
+  mu->Unlock();
+  LOG(INFO) << "Latent-see collection stopped: processing " << events->size()
+            << " bins";
+
+  // Next: find the earliest timestamp
+  // We save a lot of bytes by subtracting that out
+  int64_t earliest_timestamp = std::numeric_limits<int64_t>::max();
+  for (const auto& bin : *events) {
+    for (const auto& event : *bin) {
+      // Exclude negative timestamps as they're used for event type markers
+      if (event.timestamp_begin > 0) {
+        earliest_timestamp = std::min(
+            {earliest_timestamp, event.timestamp_begin, event.timestamp_end});
       } else {
-        absl::StrAppend(
-            &json, "{\"name\": ", event.event.metadata->name, ", \"ph\": \"",
-            phase, "\", \"ts\": ",
-            absl::StrFormat(
-                "%.12g",
-                Nanos(event.event.timestamp - start_time).count() / 1000.0),
-            ", \"pid\": 0, \"tid\": ", event.thread_id);
+        earliest_timestamp = std::min(earliest_timestamp, -event.timestamp_end);
       }
-
-      if (has_id) {
-        absl::StrAppend(&json, ", \"id\": ", event.event.id);
-      }
-      if (event.event.type == EventType::kFlowEnd) {
-        absl::StrAppend(&json, ", \"bp\": \"e\"");
-      }
-      absl::StrAppend(&json, ", \"args\": {\"file\": \"",
-                      event.event.metadata->file,
-                      "\", \"line\": ", event.event.metadata->line,
-                      ", \"batch\": ", event.batch_id, "}}");
-    }
-  });
-  if (callbacks == 0) return std::nullopt;
-  absl::StrAppend(&json, "\n]");
-  return json;
-}
-
-void Log::FlushBin(Bin* bin) {
-  if (bin->events.empty()) return;
-  auto& log = Get();
-  const auto batch_id =
-      log.next_batch_id_.fetch_add(1, std::memory_order_relaxed);
-  auto& fragment = log.fragments_.this_cpu();
-  const auto thread_id = thread_id_;
-  {
-    MutexLock lock(&fragment.mu_active);
-    for (auto event : bin->events) {
-      fragment.active.push_back(RecordedEvent{thread_id, batch_id, event});
     }
   }
-  bin->events.clear();
+  std::string json = "[\n";
+  // TODO(ctiller): Fuschia Trace Format backend
+  absl::flat_hash_map<gpr_thd_id, size_t> thread_id_map;
+  for (const auto& bin : *events) {
+    size_t displayed_thread_id;
+    auto it = thread_id_map.find(bin->thd_id);
+    if (it == thread_id_map.end()) {
+      displayed_thread_id = thread_id_map.size();
+      thread_id_map[bin->thd_id] = displayed_thread_id;
+    } else {
+      displayed_thread_id = it->second;
+    }
+    for (const auto& event : *bin) {
+      if (event.timestamp_begin == event.timestamp_end) {
+        output->Mark(event.metadata->name, displayed_thread_id,
+                     event.timestamp_begin - earliest_timestamp);
+      } else if (event.timestamp_begin < 0 && event.timestamp_end > 0) {
+        output->FlowBegin(event.metadata->name, displayed_thread_id,
+                          event.timestamp_end - earliest_timestamp,
+                          -event.timestamp_begin);
+      } else if (event.timestamp_begin < 0) {
+        output->FlowEnd(event.metadata->name, displayed_thread_id,
+                        -event.timestamp_end - earliest_timestamp,
+                        -event.timestamp_begin);
+      } else {
+        output->Span(event.metadata->name, displayed_thread_id,
+                     event.timestamp_begin - earliest_timestamp,
+                     event.timestamp_end - event.timestamp_begin);
+      }
+    }
+  }
+  output->Finish();
+  LOG(INFO) << "Latent-see collection complete";
 }
 
 }  // namespace latent_see

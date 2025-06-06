@@ -16,30 +16,75 @@
 #define GRPC_SRC_CORE_UTIL_LATENT_SEE_H
 
 #include <grpc/support/port_platform.h>
-
-#ifdef GRPC_ENABLE_LATENT_SEE
+#include <grpc/support/thd_id.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 
 #include <atomic>
-#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <optional>
-#include <string>
+#include <memory>
 #include <utility>
-#include <vector>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/functional/any_invocable.h"
-#include "absl/functional/function_ref.h"
-#include "absl/log/log.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/per_cpu.h"
-#include "src/core/util/sync.h"
+#include "absl/time/clock.h"
+#include "src/core/util/mpscq.h"
+#include "src/core/util/notification.h"
+#include "src/core/util/thd.h"
 
-#define TAGGED_POINTER_SIZE_BITS 48
+namespace grpc_core {
+namespace latent_see {
+
+class Output {
+ public:
+  virtual void Mark(absl::string_view name, int64_t tid, int64_t timestamp) = 0;
+  virtual void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,
+                         int64_t flow_id) = 0;
+  virtual void FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
+                       int64_t flow_id) = 0;
+  virtual void Span(absl::string_view name, int64_t tid,
+                    int64_t timestamp_begin, int64_t duration) = 0;
+  virtual void Finish() = 0;
+};
+
+class DiscardOutput final : public Output {
+ public:
+  void Mark(absl::string_view name, int64_t tid, int64_t timestamp) override {}
+  void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,
+                 int64_t flow_id) override {}
+  void FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
+               int64_t flow_id) override {}
+  void Span(absl::string_view name, int64_t tid, int64_t timestamp_begin,
+            int64_t duration) override {}
+  void Finish() override {}
+};
+
+class JsonOutput final : public Output {
+ public:
+  explicit JsonOutput(std::ostream& out) : out_(out) { out_ << "[\n"; }
+
+  void Mark(absl::string_view name, int64_t tid, int64_t timestamp) override;
+  void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,
+                 int64_t flow_id) override;
+  void FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
+               int64_t flow_id) override;
+  void Span(absl::string_view name, int64_t tid, int64_t timestamp_begin,
+            int64_t duration) override;
+  void Finish() override;
+
+ private:
+  static std::string MicrosString(int64_t nanos);
+
+  std::ostream& out_;
+  const char* sep_ = "";
+};
+
+}  // namespace latent_see
+}  // namespace grpc_core
+
+#ifndef GRPC_DISABLE_LATENT_SEE
 
 namespace grpc_core {
 namespace latent_see {
@@ -50,155 +95,143 @@ struct Metadata {
   absl::string_view name;
 };
 
-enum class EventType : uint8_t { kBegin, kEnd, kFlowStart, kFlowEnd, kMark };
-
 // A bin collects all events that occur within a parent scope.
-struct Bin {
+struct Bin : public MultiProducerSingleConsumerQueue::Node {
   struct Event {
     const Metadata* metadata;
-    std::chrono::steady_clock::time_point timestamp;
-    uint64_t id;
-    EventType type;
+    int64_t timestamp_begin;
+    int64_t timestamp_end;
+
+    static constexpr uint64_t kSpan = 0;
+    static constexpr uint64_t kFlow = 1;
   };
 
-  void Append(const Metadata* metadata, EventType type, uint64_t id) {
-    events.push_back(
-        Event{metadata, std::chrono::steady_clock::now(), id, type});
+  bool Append(const Metadata* metadata, int64_t timestamp_begin,
+              int64_t timestamp_end) {
+    Event* ev = &events[num_events];
+    ++num_events;
+    ev->metadata = metadata;
+    ev->timestamp_begin = timestamp_begin;
+    ev->timestamp_end = timestamp_end;
+    return num_events == kEventsPerBin;
   }
 
-  std::vector<Event> events;
-  uintptr_t next_free = 0;
+  const Event* begin() const { return events.begin(); }
+  const Event* end() const { return events.begin() + num_events; }
+
+  static constexpr size_t kEventsPerBin = 8192 / sizeof(Event) - 1;
+  size_t num_events = 0;
+  gpr_thd_id thd_id = gpr_thd_currentid();
+  std::array<Event, kEventsPerBin> events;
 };
 
-class Log {
+void Collect(Notification* notification, absl::Duration timeout,
+             size_t memory_limit, Output* output);
+
+class Sink {
  public:
-  static constexpr uintptr_t kTagMask = (1ULL << TAGGED_POINTER_SIZE_BITS) - 1;
+  using EventDump = std::deque<std::unique_ptr<Bin>>;
 
-  struct RecordedEvent {
-    uint64_t thread_id;
-    uint64_t batch_id;
-    Bin::Event event;
-  };
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static uintptr_t IncrementTag(
-      uintptr_t input) {
-    return input + (1UL << TAGGED_POINTER_SIZE_BITS);
-  }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Bin* ToBin(uintptr_t ptr) {
-    return reinterpret_cast<Bin*>(ptr & kTagMask);
-  }
-
-  static uintptr_t StartBin(void* owner) {
-    uintptr_t bin_descriptor = free_bins_.load(std::memory_order_acquire);
-    Bin* bin;
-    do {
-      if (bin_descriptor == 0) {
-        bin = new Bin();
-        break;
-      }
-      bin = ToBin(bin_descriptor);
-    } while (!free_bins_.compare_exchange_strong(bin_descriptor, bin->next_free,
-                                                 std::memory_order_acq_rel));
-    bin_ = bin;
-    bin_owner_ = owner;
-    return reinterpret_cast<uintptr_t>(bin);
-  }
-
-  static void EndBin(uintptr_t bin_descriptor, void* owner) {
-    if (bin_owner_ != owner || bin_descriptor == 0) return;
-    FlushBin(ToBin(bin_descriptor));
-    uintptr_t next_free = free_bins_.load(std::memory_order_acquire);
-    while (!free_bins_.compare_exchange_strong(
-        next_free, IncrementTag(bin_descriptor), std::memory_order_acq_rel)) {
-    }
-    bin_ = nullptr;
-    bin_owner_ = nullptr;
-  }
-
-  static Bin* CurrentThreadBin() { return bin_; }
-
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static Log& Get() {
-    static Log* log = new Log();
-    return *log;
-  }
-
-  void TryPullEventsAndFlush(
-      absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback);
-  std::optional<std::string> TryGenerateJson();
-
-  void OverrideStatsFlusher(
-      absl::AnyInvocable<void(absl::string_view)> stats_exporter) {
-    stats_flusher_ = std::move(stats_exporter);
-  }
-
-  // Install an atexit callback that will log to latent_see.json in the working
-  // directory
-  static void InstallAtExitHandler();
+  Sink();
+  ~Sink() = delete;
+  void Append(std::unique_ptr<Bin> bin);
 
  private:
-  Log() = default;
+  friend void Collect(Notification*, absl::Duration, size_t, Output*);
 
-  static void FlushBin(Bin* bin);
+  void Gather();
+  void Record(std::unique_ptr<Bin> bin);
 
-  std::atomic<uint64_t> next_thread_id_{1};
-  std::atomic<uint64_t> next_batch_id_{1};
-  static thread_local uint64_t thread_id_;
-  static thread_local Bin* bin_;
-  static thread_local void* bin_owner_;
-  static std::atomic<uintptr_t> free_bins_;
-  absl::AnyInvocable<void(absl::string_view)> stats_flusher_ = nullptr;
-  Mutex mu_flushing_;
-  struct Fragment {
-    Mutex mu_active ABSL_ACQUIRED_AFTER(mu_flushing_);
-    std::vector<RecordedEvent> active ABSL_GUARDED_BY(mu_active);
-    std::vector<RecordedEvent> flushing ABSL_GUARDED_BY(&Log::mu_flushing_);
-  };
-  PerCpu<Fragment> fragments_{PerCpuOptions()};
+  void Start(size_t max_bins);
+  std::unique_ptr<EventDump> Stop();
+
+  MultiProducerSingleConsumerQueue appending_;
+  Thread gatherer_;
+  Mutex mu_;
+  std::unique_ptr<EventDump> events_ ABSL_GUARDED_BY(mu_);
+  size_t max_bins_ ABSL_GUARDED_BY(mu_);
 };
 
-template <bool kParent>
-class Scope {
+class Appender {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Scope(const Metadata* metadata)
-      : metadata_(metadata) {
-    bin_ = Log::CurrentThreadBin();
-    if (kParent && bin_ == nullptr) {
-      bin_descriptor_ = Log::StartBin(this);
-      bin_ = Log::ToBin(bin_descriptor_);
-    }
-    CHECK_NE(bin_, nullptr);
-    bin_->Append(metadata_, EventType::kBegin, 0);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Appender()
+      : Appender(active_sink_.load(std::memory_order_acquire)) {};
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Appender(Sink* sink)
+      : sink_(sink) {}
+  Appender(const Appender&) = delete;
+  Appender& operator=(const Appender&) = delete;
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool Enabled() const {
+    return sink_ != nullptr;
   }
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Scope() {
-    bin_->Append(metadata_, EventType::kEnd, 0);
-    if (kParent) Log::EndBin(bin_descriptor_, this);
+  void Append(const Metadata* metadata, int64_t timestamp_begin,
+              int64_t timestamp_end) {
+    DCHECK(Enabled());
+    if (GPR_UNLIKELY(bin_ == nullptr)) bin_ = std::make_unique<Bin>();
+    if (GPR_UNLIKELY(bin_->Append(metadata, timestamp_begin, timestamp_end))) {
+      sink_->Append(std::move(bin_));
+    }
   }
 
+ private:
+  friend void Collect(Notification*, absl::Duration, size_t, Output*);
+
+  static void Enable(Sink* sink);
+  static void Disable();
+
+  Sink* sink_;
+  static inline thread_local std::unique_ptr<Bin> bin_;
+  static inline std::atomic<Sink*> active_sink_;
+};
+
+class Scope final {
+ public:
   Scope(const Scope&) = delete;
   Scope& operator=(const Scope&) = delete;
 
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Scope(
+      const Metadata* metadata) {
+    if (GPR_LIKELY(!appender_.Enabled())) return;
+    metadata_ = metadata;
+    timestamp_begin_ = absl::GetCurrentTimeNanos();
+  }
+
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Scope() {
+    if (GPR_LIKELY(!appender_.Enabled())) return;
+    appender_.Append(metadata_, timestamp_begin_, absl::GetCurrentTimeNanos());
+  }
+
  private:
-  const Metadata* const metadata_;
-  uintptr_t bin_descriptor_ = 0;
-  Bin* bin_ = nullptr;
+  Appender appender_;
+  int64_t timestamp_begin_;
+  const Metadata* metadata_;
 };
 
-using ParentScope = Scope<true>;
-using InnerScope = Scope<false>;
+GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static inline void Mark(
+    const Metadata* metadata) {
+  Appender appender;
+  if (GPR_LIKELY(!appender.Enabled())) return;
+  const auto ts = absl::GetCurrentTimeNanos();
+  appender.Append(metadata, ts, ts);
+}
 
 class Flow {
  public:
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : metadata_(nullptr) {}
-  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata)
-      : metadata_(metadata),
-        id_(next_flow_id_.fetch_add(1, std::memory_order_relaxed)) {
-    Log::CurrentThreadBin()->Append(metadata_, EventType::kFlowStart, id_);
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Flow() : id_(0) {}
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION explicit Flow(const Metadata* metadata) {
+    Appender appender;
+    if (GPR_LIKELY(!appender.Enabled())) {
+      id_ = 0;
+      return;
+    }
+    metadata_ = metadata;
+    AppendBegin(appender);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION ~Flow() {
-    if (metadata_ != nullptr) {
-      Log::CurrentThreadBin()->Append(metadata_, EventType::kFlowEnd, id_);
-    }
+    if (GPR_LIKELY(id_ == 0)) return;
+    Appender appender;
+    if (GPR_LIKELY(!appender.Enabled())) return;
+    AppendEnd(appender);
   }
 
   Flow(const Flow&) = delete;
@@ -206,55 +239,61 @@ class Flow {
   Flow(Flow&& other) noexcept
       : metadata_(std::exchange(other.metadata_, nullptr)), id_(other.id_) {}
   Flow& operator=(Flow&& other) noexcept {
-    if (metadata_ != nullptr) {
-      Log::CurrentThreadBin()->Append(metadata_, EventType::kFlowEnd, id_);
+    if (id_ != 0) {
+      Appender appender;
+      if (GPR_LIKELY(!appender.Enabled())) AppendEnd(appender);
     }
-    metadata_ = std::exchange(other.metadata_, nullptr);
-    id_ = other.id_;
+    metadata_ = other.metadata_;
+    id_ = std::exchange(other.id_, 0);
     return *this;
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool is_active() const {
-    return metadata_ != nullptr;
+    return id_ != 0;
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {
-    if (metadata_ == nullptr) return;
-    Log::CurrentThreadBin()->Append(metadata_, EventType::kFlowEnd, id_);
-    metadata_ = nullptr;
+    if (GPR_LIKELY(id_ == 0)) return;
+    Appender appender;
+    if (GPR_LIKELY(!appender.Enabled())) return;
+    AppendEnd(appender);
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(const Metadata* metadata) {
-    auto* bin = Log::CurrentThreadBin();
-    if (metadata_ != nullptr) {
-      bin->Append(metadata_, EventType::kFlowEnd, id_);
-    }
+    Appender appender;
+    if (GPR_LIKELY(!appender.Enabled())) return;
+    if (id_ != 0) AppendEnd(appender);
     metadata_ = metadata;
-    if (metadata_ == nullptr) return;
-    id_ = next_flow_id_.fetch_add(1, std::memory_order_relaxed);
-    bin->Append(metadata_, EventType::kFlowStart, id_);
+    AppendBegin(appender);
   }
+  GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin() { Begin(metadata_); }
 
  private:
+  void AppendBegin(Appender& appender) {
+    DCHECK_EQ(id_, 0);
+    id_ = next_id_.fetch_add(1, std::memory_order_relaxed);
+    appender.Append(metadata_, -id_, absl::GetCurrentTimeNanos());
+  }
+  void AppendEnd(Appender& appender) {
+    DCHECK_NE(id_, 0);
+    appender.Append(metadata_, -id_, -absl::GetCurrentTimeNanos());
+    id_ = 0;
+  }
   const Metadata* metadata_;
-  uint64_t id_;
-  static std::atomic<uint64_t> next_flow_id_;
+  static inline std::atomic<int64_t> next_id_{1};
+  int64_t id_;
 };
-
-GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline void Mark(const Metadata* md) {
-  Log::CurrentThreadBin()->Append(md, EventType::kMark, 0);
-}
 
 template <typename P>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
                                                   const Metadata* md_flow,
                                                   P promise) {
-  return [md_poll, md_flow, promise = std::move(promise),
-          flow = Flow(md_flow)]() mutable {
-    InnerScope scope(md_poll);
-    flow.End();
-    auto r = promise();
-    flow.Begin(md_flow);
-    return r;
-  };
+  return
+      [md_poll, promise = std::move(promise), flow = Flow(md_flow)]() mutable {
+        Scope scope(md_poll);
+        flow.End();
+        auto r = promise();
+        if (IsPending(r)) flow.Begin();
+        return r;
+      };
 }
 
 }  // namespace latent_see
@@ -268,30 +307,35 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
                                                        name};              \
     return &metadata;                                                      \
   }()
-// Parent scope: logs a begin and end event, and flushes the thread log on scope
-// exit. Because the flush takes some time it's better to place one parent scope
-// at the top of the stack, and use lighter weight scopes within it.
-#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                                     \
-  grpc_core::latent_see::ParentScope GRPC_LATENT_SEE_SYMBOL(latent_see_scope)( \
-      GRPC_LATENT_SEE_METADATA(name))
-// Inner scope: logs a begin and end event. Lighter weight than parent scope,
-// but does not flush the thread state - so should only be enclosed by a parent
-// scope.
-#define GRPC_LATENT_SEE_INNER_SCOPE(name)                                     \
-  grpc_core::latent_see::InnerScope GRPC_LATENT_SEE_SYMBOL(latent_see_scope)( \
+// Scope: marks a begin/end event in the log.
+#define GRPC_LATENT_SEE_ALWAYS_ON_SCOPE(name)                            \
+  grpc_core::latent_see::Scope GRPC_LATENT_SEE_SYMBOL(latent_see_scope)( \
       GRPC_LATENT_SEE_METADATA(name))
 // Mark: logs a single event.
-// This is not flushed automatically, and so should only be used within a parent
-// scope.
-#define GRPC_LATENT_SEE_MARK(name) \
+#define GRPC_LATENT_SEE_ALWAYS_ON_MARK(name) \
   grpc_core::latent_see::Mark(GRPC_LATENT_SEE_METADATA(name))
-#define GRPC_LATENT_SEE_PROMISE(name, promise)                                 \
-  grpc_core::latent_see::Promise(GRPC_LATENT_SEE_METADATA("Poll:" name),       \
-                                 GRPC_LATENT_SEE_METADATA(name), [&]() {       \
-                                   GRPC_LATENT_SEE_INNER_SCOPE("Setup:" name); \
-                                   return promise;                             \
-                                 }())
-#else  // !def(GRPC_ENABLE_LATENT_SEE)
+#define GRPC_LATENT_SEE_ALWAYS_ON_PROMISE(name, promise)                      \
+  grpc_core::latent_see::Promise(                                             \
+      GRPC_LATENT_SEE_METADATA("Poll:" name), GRPC_LATENT_SEE_METADATA(name), \
+      [&]() {                                                                 \
+        GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("Setup:" name);                       \
+        return promise;                                                       \
+      }())
+#ifdef GRPC_EXTRA_LATENT_SEE
+#define GRPC_LATENT_SEE_SCOPE(name) GRPC_LATENT_SEE_ALWAYS_ON_SCOPE(name)
+#define GRPC_LATENT_SEE_MARK(name) GRPC_LATENT_SEE_ALWAYS_ON_MARK(name)
+#define GRPC_LATENT_SEE_PROMISE(name, promise) \
+  GRPC_LATENT_SEE_ALWAYS_ON_PROMISE(name, promise)
+#else
+#define GRPC_LATENT_SEE_SCOPE(name) \
+  do {                              \
+  } while (0)
+#define GRPC_LATENT_SEE_MARK(name) \
+  do {                             \
+  } while (0)
+#define GRPC_LATENT_SEE_PROMISE(name, promise) promise
+#endif
+#else  // def(GRPC_DISABLE_LATENT_SEE)
 namespace grpc_core {
 namespace latent_see {
 struct Metadata {};
@@ -300,26 +344,31 @@ struct Flow {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void End() {}
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void Begin(Metadata*) {}
 };
-struct ParentScope {
-  explicit ParentScope(Metadata*) {}
+struct Scope {
+  explicit Scope(Metadata*) {}
 };
-struct InnerScope {
-  explicit InnerScope(Metadata*) {}
-};
+
+inline void Collect(Notification*, absl::Duration, size_t, Output* output) {
+  output->Finish();
+}
 }  // namespace latent_see
 }  // namespace grpc_core
 #define GRPC_LATENT_SEE_METADATA(name) nullptr
 #define GRPC_LATENT_SEE_METADATA_RAW(name) nullptr
-#define GRPC_LATENT_SEE_PARENT_SCOPE(name) \
-  do {                                     \
+#define GRPC_LATENT_SEE_ALWAYS_ON_SCOPE(name) \
+  do {                                        \
   } while (0)
-#define GRPC_LATENT_SEE_INNER_SCOPE(name) \
-  do {                                    \
+#define GRPC_LATENT_SEE_ALWAYS_ON_MARK(name) \
+  do {                                       \
+  } while (0)
+#define GRPC_LATENT_SEE_ALWAYS_ON_PROMISE(name, promise) promise
+#define GRPC_LATENT_SEE_SCOPE(name) \
+  do {                              \
   } while (0)
 #define GRPC_LATENT_SEE_MARK(name) \
   do {                             \
   } while (0)
 #define GRPC_LATENT_SEE_PROMISE(name, promise) promise
-#endif  // GRPC_ENABLE_LATENT_SEE
+#endif  // GRPC_DISABLE_LATENT_SEE
 
 #endif  // GRPC_SRC_CORE_UTIL_LATENT_SEE_H

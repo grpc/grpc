@@ -83,6 +83,8 @@ ABSL_FLAG(
     "Specifies the period between gathering latency medians in "
     "milliseconds. The medians will be logged out on the client at the "
     "end of the benchmark run. If 0, this periodic collection is disabled.");
+ABSL_FLAG(std::optional<std::string>, gather_latent_see_dir, std::nullopt,
+          "Enable latent-see collection and output to this directory.");
 
 namespace grpc {
 namespace testing {
@@ -132,7 +134,8 @@ static std::unique_ptr<ScenarioResult> RunAndReport(
       absl::GetFlag(FLAGS_qps_server_target_override),
       absl::GetFlag(FLAGS_credential_type), per_worker_credential_types,
       absl::GetFlag(FLAGS_run_inproc),
-      absl::GetFlag(FLAGS_median_latency_collection_interval_millis));
+      absl::GetFlag(FLAGS_median_latency_collection_interval_millis),
+      absl::GetFlag(FLAGS_gather_latent_see_dir));
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.

@@ -212,7 +212,7 @@ std::string FrameTypeString(uint8_t frame_type, uint8_t flags) {
 std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
     grpc_chttp2_transport* t, const grpc_slice& slice,
     size_t& requests_started) {
-  GRPC_LATENT_SEE_INNER_SCOPE("grpc_chttp2_perform_read");
+  GRPC_LATENT_SEE_SCOPE("grpc_chttp2_perform_read");
 
   const uint8_t* beg = GRPC_SLICE_START_PTR(slice);
   const uint8_t* end = GRPC_SLICE_END_PTR(slice);

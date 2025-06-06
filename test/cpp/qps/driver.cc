@@ -26,7 +26,9 @@
 
 #include <cinttypes>
 #include <deque>
+#include <fstream>
 #include <list>
+#include <memory>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -37,6 +39,8 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
+#include "src/cpp/latent_see/latent_see_client.h"
+#include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -225,11 +229,13 @@ static void postprocess_scenario_result(ScenarioResult* result) {
 }
 
 struct ClientData {
+  unique_ptr<latent_see::v1::LatentSee::Stub> latent_see_stub;
   unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
 
 struct ServerData {
+  unique_ptr<latent_see::v1::LatentSee::Stub> latent_see_stub;
   unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
 };
@@ -358,7 +364,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const std::string& qps_server_target_override,
     const std::string& credential_type,
     const std::map<std::string, std::string>& per_worker_credential_types,
-    bool run_inproc, int32_t median_latency_collection_interval_millis) {
+    bool run_inproc, int32_t median_latency_collection_interval_millis,
+    const std::optional<std::string>& latent_see_directory) {
   if (run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
@@ -429,15 +436,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     LOG(INFO) << "Starting server on " << workers[i] << " (worker #" << i
               << ")";
+    std::shared_ptr<Channel> channel;
     if (!run_inproc) {
-      servers[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
+      channel = grpc::CreateTestChannel(
           workers[i],
           GetCredType(workers[i], per_worker_credential_types, credential_type),
-          nullptr /* call creds */, {} /* interceptor creators */));
+          nullptr /* call creds */, {} /* interceptor creators */);
     } else {
-      servers[i].stub = WorkerService::NewStub(
-          local_workers[i]->InProcessChannel(channel_args));
+      channel = local_workers[i]->InProcessChannel(channel_args);
     }
+    servers[i].stub = WorkerService::NewStub(channel);
+    servers[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
 
     const ServerConfig& server_config = initial_server_config;
     if (server_config.core_limit() != 0) {
@@ -486,15 +495,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
     const auto& worker = workers[i + num_servers];
     LOG(INFO) << "Starting client on " << worker << " (worker #"
               << i + num_servers << ")";
+    std::shared_ptr<Channel> channel;
     if (!run_inproc) {
-      clients[i].stub = WorkerService::NewStub(grpc::CreateTestChannel(
+      channel = grpc::CreateTestChannel(
           worker,
           GetCredType(worker, per_worker_credential_types, credential_type),
-          nullptr /* call creds */, {} /* interceptor creators */));
+          nullptr /* call creds */, {} /* interceptor creators */);
     } else {
-      clients[i].stub = WorkerService::NewStub(
-          local_workers[i + num_servers]->InProcessChannel(channel_args));
+      channel = local_workers[i + num_servers]->InProcessChannel(channel_args);
     }
+    clients[i].stub = WorkerService::NewStub(channel);
+    clients[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
     ClientConfig per_client_config = client_config;
 
     if (initial_client_config.core_limit() != 0) {
@@ -557,6 +568,63 @@ std::unique_ptr<ScenarioResult> RunScenario(
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
   gpr_sleep_until(
       gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
+
+  if (latent_see_directory.has_value()) {
+    LOG(INFO) << "Collecting latent-see";
+
+    client_mark.mutable_mark()->set_name("latent-see");
+    server_mark.mutable_mark()->set_name("latent-see");
+
+    for (size_t i = 0; i < num_servers; i++) {
+      auto server = &servers[i];
+      if (!server->stream->Write(server_mark)) {
+        grpc_core::Crash(
+            absl::StrFormat("Couldn't write mark to server %zu", i));
+      }
+    }
+    for (size_t i = 0; i < num_clients; i++) {
+      auto client = &clients[i];
+      if (!client->stream->Write(client_mark)) {
+        grpc_core::Crash(
+            absl::StrFormat("Couldn't write mark to client %zu", i));
+      }
+    }
+    for (size_t i = 0; i < num_servers; i++) {
+      auto server = &servers[i];
+      if (!server->stream->Read(&server_status)) {
+        grpc_core::Crash(
+            absl::StrFormat("Couldn't get status from server %zu", i));
+      }
+    }
+    for (size_t i = 0; i < num_clients; i++) {
+      auto client = &clients[i];
+      if (!client->stream->Read(&client_status)) {
+        grpc_core::Crash(
+            absl::StrFormat("Couldn't get status from client %zu", i));
+      }
+    }
+
+    std::vector<std::thread> threads;
+    for (size_t i = 0; i < num_servers; i++) {
+      threads.emplace_back(std::thread([&latent_see_directory, &servers, i]() {
+        std::ofstream out(
+            absl::StrCat(*latent_see_directory, "/server", i, ".json"));
+        grpc_core::latent_see::JsonOutput json_out(out);
+        FetchLatentSee(servers[i].latent_see_stub.get(), 1.0, &json_out);
+      }));
+    }
+    for (size_t i = 0; i < num_clients; i++) {
+      threads.emplace_back(std::thread([&latent_see_directory, &clients, i]() {
+        std::ofstream out(
+            absl::StrCat(*latent_see_directory, "/client", i, ".json"));
+        grpc_core::latent_see::JsonOutput json_out(out);
+        FetchLatentSee(clients[i].latent_see_stub.get(), 1.0, &json_out);
+      }));
+    }
+    for (auto& t : threads) {
+      t.join();
+    }
+  }
 
   // Start a run
   LOG(INFO) << "Starting";
