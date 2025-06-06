@@ -44,6 +44,7 @@
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -133,7 +134,9 @@ class Client {
   void Connect() {
     ExecCtx exec_ctx;
     grpc_resolved_address addr;
-    if (IsEventEngineDnsNonClientChannelEnabled()) {
+    if (IsEventEngineDnsNonClientChannelEnabled() &&
+        !grpc_event_engine::experimental::
+            EventEngineExperimentDisabledForPython()) {
       auto resolver =
           grpc_event_engine::experimental::GetDefaultEventEngine()
               ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::

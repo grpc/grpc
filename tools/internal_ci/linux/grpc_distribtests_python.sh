@@ -49,12 +49,14 @@ mkdir -p input_artifacts
 cp -r artifacts/* input_artifacts/ || true
 
 # This step simply collects python artifacts from subdirectories of input_artifacts/ and copies them to artifacts/
-if [[ "${IS_AARCH64_MUSL}" == "True" ]]; then
-  # Not using TASK_RUNNER_EXTRA_FILTERS since we don't have a target with presubmit tag.
-  tools/run_tests/task_runner.py -f package linux python musllinux_1_1 aarch64 -x build_packages/sponge_log.xml || FAILED="true"
-else
-  tools/run_tests/task_runner.py -f package linux python -x build_packages/sponge_log.xml || FAILED="true"
-fi
+
+# PythonPackage targets do not support the `presubmit` label.
+# For this reason we remove `presubmit` label selector from TASK_RUNNER_EXTRA_FILTERS,
+# which looks like TASK_RUNNER_EXTRA_FILTERS="presubmit -e aarch64 musllinux_1_1"
+# for a presubmit with an exclude filter.
+PACKAGE_TASK_RUNNER_EXTRA_FILTERS="${TASK_RUNNER_EXTRA_FILTERS//presubmit /}"
+
+tools/run_tests/task_runner.py -f package linux python ${PACKAGE_TASK_RUNNER_EXTRA_FILTERS} -x build_packages/sponge_log.xml || FAILED="true"
 
 # the next step expects to find the artifacts from the previous step in the "input_artifacts" folder.
 # in addition to that, preserve the contents of "artifacts" directory since we want kokoro
@@ -66,12 +68,11 @@ cp -r artifacts/* input_artifacts/ || true
 # Run all python linux distribtests
 # We run the distribtests even if some of the artifacts have failed to build, since that gives
 # a better signal about which distribtest are affected by the currently broken artifact builds.
-if [[ "${IS_AARCH64_MUSL}" == "True" ]]; then
-  # We're using alpine as tag in distribtest targets.
-  tools/run_tests/task_runner.py -f distribtest linux python aarch64 alpine -j 12 -x distribtests/sponge_log.xml || FAILED="true"
-else
-  tools/run_tests/task_runner.py -f distribtest linux python ${TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
-fi
+
+# We're using alpine as tag in distribtest targets for musllinux_1_1 artifacts, so exclude filters must use this tag 
+DISTRIB_TASK_RUNNER_EXTRA_FILTERS="${TASK_RUNNER_EXTRA_FILTERS//musllinux_1_1/alpine}"
+
+tools/run_tests/task_runner.py -f distribtest linux python ${DISTRIB_TASK_RUNNER_EXTRA_FILTERS} -j 12 -x distribtests/sponge_log.xml || FAILED="true"
 
 # This step checks if any of the artifacts exceeds a per-file size limit.
 tools/internal_ci/helper_scripts/check_python_artifacts_size.sh

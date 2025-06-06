@@ -19,21 +19,18 @@
 #include <stddef.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdint>
-#include <limits>
 #include <utility>
-#include <vector>
 
-#include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
-#include "src/core/lib/promise/wait_set.h"
-#include "src/core/util/dump_args.h"
+#include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/sync.h"
 
 namespace grpc_core {
 
@@ -45,103 +42,324 @@ namespace mpscpipe_detail {
 // The communication consists of one or more MpscSender objects and one
 // MpscReceiver.
 
+// Base MPSC class.
+//
+// The templates below wrap this and provide a more user friendly API.
+// This class provides queuing of nodes, blocking those sends if there are too
+// many tokens in the queue, a way of dequeuing nodes in order, and a way of
+// lazily returning tokens to the queue after a node is dequeued.
+//
+// Notes:
+//
+// We split the queue in two.
+//
+// The first is an unbounded MPSC that we queue all prospective nodes into.
+// Since the nodes exist, there's no reason not to keep track of them, but we
+// do signal that nodes above the max_queued_ are blocked and refused to
+// complete the send promise until they become accepted. The unbounded mpsc
+// is derived from the same algorithm in mpscq.h, and consequently from
+// http://www.1024cores.net/home/lock-free-algorithms/queues/intrusive-mpsc-node-based-queue
+//
+// That implementation is modified to allow a Waker object to be CAS-d in
+// whenever we'd otherwise return nullptr to signify no ready node yet. This
+// allows us to then wake up the stalled actor using the Activity wakeup system
+// without needing any backoff/manual retry loop that's traditionally plagued
+// usage of mpscq.h. If there are bugs, it's probably in those modifications.
+//
+// The second queue is an spsc queue that tracks nodes that have been accepted,
+// that is that could be returned by Next() but have not yet been returned.
+// We cheat a little here and allow (max_queued_ - 1) + (one node) to be
+// accepted because it makes the logic much simpler - by decoupling the
+// acceptance check and the dequeue operation.
+//
+// The second queue is entirely maintained by the single consumer.
+class Mpsc {
+ public:
+  explicit Mpsc(size_t max_queued) : max_queued_(max_queued) {}
+  ~Mpsc();
+
+  // Base class for nodes in the queue.
+  // Center<T>::Node extends this for various types.
+  class Node {
+   public:
+    // One ref for blocking, one ref for releasing tokens. If there are no
+    // tokens this is an immediate send, and so we don't need the ref for
+    // blocking.
+    explicit Node(uint32_t tokens) : tokens_(tokens) {}
+    virtual ~Node() = default;
+
+    uint32_t tokens() const { return tokens_; }
+
+   private:
+    friend class Mpsc;
+    static constexpr uintptr_t kWakerPtr = 1;
+    static constexpr uint8_t kBlockedState = 128;
+    static constexpr uint8_t kClosedState = 64;
+    static constexpr uint8_t kRefMask = 3;
+
+    void Unref() {
+      if ((state_.fetch_sub(1, std::memory_order_acq_rel) & kRefMask) == 1) {
+        delete this;
+      }
+    }
+
+    Json ToJson() const {
+      auto state = state_.load(std::memory_order_relaxed);
+      Json::Object obj;
+      obj["blocked"] = Json::FromBool(state & Node::kBlockedState);
+      obj["closed"] = Json::FromBool(state & Node::kClosedState);
+      obj["refs"] = Json::FromNumber(state & Node::kRefMask);
+      return Json::FromObject(std::move(obj));
+    }
+
+    const uint32_t tokens_;
+    // All following fields are maintained by the Mpsc class.
+    std::atomic<uint8_t> state_;
+    Waker waker_;
+    union {
+      std::atomic<uintptr_t> next_{0};
+      Node* spsc_next_;
+    };
+  };
+
+ private:
+  class SendPoller {
+   public:
+    explicit SendPoller(Node* node) : node_(node) {}
+    ~SendPoller() {
+      if (node_ != nullptr) node_->Unref();
+    }
+    SendPoller(const SendPoller&) = delete;
+    SendPoller& operator=(const SendPoller&) = delete;
+    SendPoller(SendPoller&& other) noexcept
+        : node_(std::exchange(other.node_, nullptr)) {}
+    SendPoller& operator=(SendPoller&& other) noexcept {
+      std::swap(node_, other.node_);
+      return *this;
+    }
+    Poll<StatusFlag> operator()() {
+      auto state = node_->state_.load(std::memory_order_relaxed);
+      if (state & Node::kClosedState) {
+        node_->Unref();
+        node_ = nullptr;
+        return Failure{};
+      }
+      if (state & Node::kBlockedState) {
+        return Pending{};
+      }
+      node_->Unref();
+      node_ = nullptr;
+      return Success{};
+    }
+
+    Json ToJson() const {
+      return Json::FromObject({{"mpsc_send_poller", node_->ToJson()}});
+    }
+
+   private:
+    Node* node_;
+  };
+
+  class NextPoller {
+   public:
+    explicit NextPoller(Mpsc* mpsc) : mpsc_(mpsc) {}
+    NextPoller(const NextPoller&) = delete;
+    NextPoller& operator=(const NextPoller&) = delete;
+    NextPoller(NextPoller&& other) noexcept
+        : mpsc_(std::exchange(other.mpsc_, nullptr)) {}
+    NextPoller& operator=(NextPoller&& other) noexcept {
+      std::swap(mpsc_, other.mpsc_);
+      return *this;
+    }
+    Poll<ValueOrFailure<Node*>> operator()() { return mpsc_->PollNext(); }
+    Json ToJson() const { return mpsc_->PollNextJson(); }
+
+   private:
+    Mpsc* mpsc_;
+  };
+
+ public:
+  auto Send(Node* node) {
+    DCHECK(node->waker_.is_unwakeable());
+    // Enqueue the node immediately; this means that Send() must be called
+    // from the same activity that will poll the result.
+    Enqueue(node);
+    return SendPoller(node);
+  }
+
+  StatusFlag UnbufferedImmediateSend(Node* node);
+
+  auto Next() { return NextPoller(this); }
+  Node* ImmediateNext() {
+    Node* accepted_head = accepted_head_;
+    if (accepted_head != nullptr) {
+      accepted_head_ = reinterpret_cast<Node*>(
+          accepted_head->next_.load(std::memory_order_relaxed));
+    }
+    return accepted_head;
+  }
+  void ReleaseTokens(Node* node);
+
+  void Close(bool wake_reader);
+
+  Json::Object ToJson() const;
+
+ private:
+  void Enqueue(Node* node);
+  void ReleaseTokensAndClose(Node* node);
+  Poll<Node*> Dequeue();
+  Node* DequeueImmediate();
+  Node* DequeueForDrain();
+  // Returns true if we can accept more nodes.
+  bool AcceptNode(Node* node);
+  // Returns true if we can accept more nodes.
+  // If it returns false, ensures a waker is set for the next enqueue.
+  bool CheckActiveTokens();
+  void DrainMpsc();
+  void PushStub();
+  void ReleaseActiveTokens(bool wake_reader, uint64_t tokens);
+  Poll<ValueOrFailure<Node*>> PollNext();
+  Json PollNextJson() const;
+
+  // Top two bits of active tokens is used for synchronization of
+  // the waker.
+  // When we see we need to pause because active tokens exceeds max queued,
+  // we first store a waker in active_tokens_waker_, then set active_tokens_ to
+  // hold kActiveTokensWakerBit.
+  // A token releaser to see active tokens less than max queued whilst the waker
+  // bit is set will try to transition it to having just the /waking/ bit set.
+  // If it succeeds, it holds the waker lock, and moves the waker out to a local
+  // variable.
+  // Next, it clears the top bits of active tokens, to indicate a waker can once
+  // again be installed.
+  // Finally, it executes the wakeup it's stored locally.
+  static constexpr uint64_t kActiveTokensWakerBit = 1ull << 63;
+  static constexpr uint64_t kActiveTokensWakingBit = 1ull << 62;
+  static constexpr uint64_t kActiveTokensMask = kActiveTokensWakingBit - 1;
+  const uint64_t max_queued_;
+
+  // Each active enqueue is one actor, and the reader is an actor.
+  // Once we close, we drop the reader actor, allowing each enqueuer to see
+  // if it's the last enqueuer.
+  // The last actor must drain the queue.
+  std::atomic<uint64_t> actors_{1};
+  std::atomic<uint64_t> queued_tokens_{0};
+  Waker active_tokens_waker_;
+  std::atomic<Node*> head_ = &stub_;
+  alignas(GPR_CACHELINE_SIZE) Node* tail_ = &stub_;
+  Node* accepted_head_ = nullptr;
+  std::atomic<uint64_t> active_tokens_{0};
+  Node stub_{0};
+#ifndef NDEBUG
+  bool drained = false;
+#endif
+};
+
 // "Center" of the communication pipe.
 // Contains sent but not received messages, and open/close state.
 template <typename T>
-class Center : public RefCounted<Center<T>> {
+class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
+ private:
+  struct Node final : public Mpsc::Node {
+    explicit Node(uint32_t tokens, T value)
+        : Mpsc::Node(tokens), value(std::move(value)) {}
+    T value;
+  };
+
  public:
   // Construct the center with a maximum queue size.
-  explicit Center(size_t max_queued) : max_queued_(max_queued) {}
+  explicit Center(size_t max_queued) : mpsc_(max_queued) {}
 
-  static constexpr const uint64_t kClosedBatch =
-      std::numeric_limits<uint64_t>::max();
+  ~Center() {}
 
-  // Poll for new items.
-  // - Returns true if new items were obtained, in which case they are contained
-  //   in dest in the order they were added. Wakes up all pending senders since
-  //   there will now be space to send.
-  // - If receives have been closed, returns false.
-  // - If no new items are available, returns
-  //   Pending and sets up a waker to be awoken when more items are available.
-  // TODO(ctiller): consider the problem of thundering herds here. There may be
-  // more senders than there are queue spots, and so the strategy of waking up
-  // all senders is ill-advised.
-  // That said, some senders may have been cancelled by the time we wake them,
-  // and so waking a subset could cause starvation.
-  Poll<bool> PollReceiveBatch(std::vector<T>& dest) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::PollReceiveBatch: "
-        << GRPC_DUMP_ARGS(this, batch_, queue_.size());
-    if (queue_.empty()) {
-      if (batch_ == kClosedBatch) return false;
-      receive_waker_ = GetContext<Activity>()->MakeNonOwningWaker();
-      return Pending{};
+  class Queued {
+   public:
+    Queued() : node_(nullptr) {}
+    Queued(Node* node, RefCountedPtr<Center<T>> center)
+        : node_(node), center_(std::move(center)) {}
+    ~Queued() {
+      if (node_ != nullptr) center_->mpsc_.ReleaseTokens(node_);
     }
-    dest.swap(queue_);
-    queue_.clear();
-    if (batch_ != kClosedBatch) ++batch_;
-    auto wakeups = send_wakers_.TakeWakeupSet();
-    lock.Release();
-    wakeups.Wakeup();
-    return true;
+    Queued(const Queued&) = delete;
+    Queued& operator=(const Queued&) = delete;
+    Queued(Queued&& q) noexcept
+        : node_(std::exchange(q.node_, nullptr)),
+          center_(std::move(q.center_)) {}
+    Queued& operator=(Queued&& q) noexcept {
+      std::swap(node_, q.node_);
+      std::swap(center_, q.center_);
+      return *this;
+    }
+
+    template <typename Sink>
+    friend void AbslStringify(Sink& sink, const Queued& q) {
+      absl::Format(&sink, "Queued{%s, tokens=%d}", absl::StrCat(q.node_->value),
+                   q.node_->tokens());
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Queued& q) {
+      return os << absl::StrCat(q);
+    }
+
+    T& operator*() { return node_->value; }
+    const T& operator*() const { return node_->value; }
+    T* operator->() { return &node_->value; }
+    const T* operator->() const { return &node_->value; }
+
+    uint32_t tokens() const { return node_->tokens(); }
+
+   private:
+    Node* node_;
+    RefCountedPtr<Center<T>> center_;
+  };
+
+  auto Send(T value, uint32_t tokens) {
+    return mpsc_.Send(new Node(tokens, std::move(value)));
   }
 
-  // Return value:
-  //  - if the pipe is closed, returns kClosedBatch
-  //  - if await_receipt is false, returns the batch number the item was sent
-  //  in.
-  //  - if await_receipt is true, returns the first sending batch number that
-  //  guarantees the item has been received.
-  template <bool kAwaitReceipt>
-  uint64_t Send(T t) {
-    ReleasableMutexLock lock(&mu_);
-    if (batch_ == kClosedBatch) return kClosedBatch;
-    queue_.push_back(std::move(t));
-    auto receive_waker = std::move(receive_waker_);
-    const uint64_t batch =
-        (!kAwaitReceipt && queue_.size() <= max_queued_) ? batch_ : batch_ + 1;
-    lock.Release();
-    receive_waker.Wakeup();
-    return batch;
+  StatusFlag UnbufferedImmediateSend(T value, uint32_t tokens) {
+    return mpsc_.UnbufferedImmediateSend(new Node(tokens, std::move(value)));
   }
 
-  // Poll until a particular batch number is received.
-  Poll<Empty> PollReceiveBatch(uint64_t batch) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::PollReceiveBatch: " << GRPC_DUMP_ARGS(this, batch_, batch);
-    if (batch_ >= batch) return Empty{};
-    send_wakers_.AddPending(GetContext<Activity>()->MakeNonOwningWaker());
-    return Pending{};
+  auto Next() {
+    return Map(mpsc_.Next(),
+               [this](ValueOrFailure<Mpsc::Node*> x) -> ValueOrFailure<Queued> {
+                 if (!x.ok()) return Failure{};
+                 return Queued(DownCast<Node*>(*x), this->Ref());
+               });
   }
 
-  // Mark that the receiver is closed.
-  void ReceiverClosed(bool wake_receiver) {
-    ReleasableMutexLock lock(&mu_);
-    GRPC_TRACE_LOG(promise_primitives, INFO)
-        << "MPSC::ReceiverClosed: " << GRPC_DUMP_ARGS(this, batch_);
-    if (batch_ == kClosedBatch) return;
-    batch_ = kClosedBatch;
-    auto wakeups = send_wakers_.TakeWakeupSet();
-    auto receive_waker = std::move(receive_waker_);
-    lock.Release();
-    if (wake_receiver) receive_waker.Wakeup();
-    wakeups.Wakeup();
+  auto NextBatch(size_t max_batch_size) {
+    // Does not support delayed returning of tokens.
+    return Map(mpsc_.Next(),
+               [this, max_batch_size](ValueOrFailure<Mpsc::Node*> x)
+                   -> ValueOrFailure<std::vector<T>> {
+                 if (!x.ok()) return Failure{};
+                 std::vector<T> result;
+                 result.emplace_back(std::move(DownCast<Node*>(*x)->value));
+                 mpsc_.ReleaseTokens(*x);
+                 while (result.size() < max_batch_size) {
+                   auto next = mpsc_.ImmediateNext();
+                   if (next == nullptr) break;
+                   result.emplace_back(std::move(DownCast<Node*>(next)->value));
+                   mpsc_.ReleaseTokens(next);
+                 }
+                 return std::move(result);
+               });
   }
+
+  void ReceiverClosed(bool wake_reader) { mpsc_.Close(wake_reader); }
+
+  Json::Object ToJson() const { return mpsc_.ToJson(); }
 
  private:
-  Mutex mu_;
-  const size_t max_queued_;
-  std::vector<T> queue_ ABSL_GUARDED_BY(mu_);
-  // Every time we give queue_ to the receiver, we increment batch_.
-  // When the receiver is closed we set batch_ to kClosedBatch.
-  uint64_t batch_ ABSL_GUARDED_BY(mu_) = 1;
-  Waker receive_waker_ ABSL_GUARDED_BY(mu_);
-  WaitSet send_wakers_ ABSL_GUARDED_BY(mu_);
+  Mpsc mpsc_;
 };
 
 }  // namespace mpscpipe_detail
+
+template <typename T>
+using MpscQueued = typename mpscpipe_detail::Center<T>::Queued;
 
 template <typename T>
 class MpscReceiver;
@@ -167,36 +385,31 @@ class MpscSender {
   // The promise returned is thread safe. We can use multiple send calls
   // in parallel to generate multiple such send promises and these promises can
   // be run in parallel in a thread safe way.
-  auto Send(T t) { return SendGeneric<false>(std::move(t)); }
+  auto Send(T t, uint32_t tokens) {
+    return Map(center_->Send(std::move(t), tokens),
+               [c = center_](auto x) { return x; });
+  }
 
-  // Similar to send, but the promise returned by SendAcked will not resolve
-  // until the item has been received by the receiver.
-  auto SendAcked(T t) { return SendGeneric<true>(std::move(t)); }
-
-  StatusFlag UnbufferedImmediateSend(T t) {
-    return StatusFlag(center_->template Send<false>(std::move(t)) !=
-                      mpscpipe_detail::Center<T>::kClosedBatch);
+  StatusFlag UnbufferedImmediateSend(T t, uint32_t tokens) {
+    return center_->UnbufferedImmediateSend(std::move(t), tokens);
   }
 
  private:
-  template <bool kAwaitReceipt>
-  auto SendGeneric(T t) {
-    return [center = center_, t = std::move(t),
-            batch = uint64_t(0)]() mutable -> Poll<StatusFlag> {
-      if (center == nullptr) return Failure{};
-      if (batch == 0) {
-        batch = center->template Send<kAwaitReceipt>(std::move(t));
-        DCHECK_NE(batch, 0u);
-        if (batch == mpscpipe_detail::Center<T>::kClosedBatch) return Failure{};
-      }
-      auto p = center->PollReceiveBatch(batch);
-      if (p.pending()) return Pending{};
-      return Success{};
-    };
-  }
-
   friend class MpscReceiver<T>;
   explicit MpscSender(RefCountedPtr<mpscpipe_detail::Center<T>> center)
+      : center_(std::move(center)) {}
+  RefCountedPtr<mpscpipe_detail::Center<T>> center_;
+};
+
+template <typename T>
+class MpscDebug {
+ public:
+  MpscDebug() = default;
+  Json::Object ToJson() const { return center_->ToJson(); }
+
+ private:
+  friend class MpscReceiver<T>;
+  explicit MpscDebug(RefCountedPtr<mpscpipe_detail::Center<T>> center)
       : center_(std::move(center)) {}
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
@@ -205,15 +418,9 @@ class MpscSender {
 template <typename T>
 class MpscReceiver {
  public:
-  // max_buffer_hint is the maximum number of elements we'd like to buffer.
-  // We half this before passing to Center so that the number there is the
-  // maximum number of elements that can be queued in the center of the pipe.
-  // The receiver also holds some of the buffered elements (up to half of them!)
-  // so the total outstanding is equal to max_buffer_hint (unless it's 1 in
-  // which case instantaneosly we may have two elements buffered).
-  explicit MpscReceiver(size_t max_buffer_hint)
-      : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(
-            std::max(static_cast<size_t>(1), max_buffer_hint / 2))) {}
+  // max_buffer_hint is the maximum number of tokens we'd like to buffer.
+  explicit MpscReceiver(uint64_t max_buffer_hint)
+      : center_(MakeRefCounted<mpscpipe_detail::Center<T>>(max_buffer_hint)) {}
   ~MpscReceiver() {
     if (center_ != nullptr) center_->ReceiverClosed(false);
   }
@@ -225,14 +432,9 @@ class MpscReceiver {
   }
   MpscReceiver(const MpscReceiver&) = delete;
   MpscReceiver& operator=(const MpscReceiver&) = delete;
-  // Only movable until it's first polled, and so we don't need to contend with
-  // a non-empty buffer during a legal move!
   MpscReceiver(MpscReceiver&& other) noexcept
-      : center_(std::move(other.center_)) {
-    DCHECK(other.buffer_.empty());
-  }
+      : center_(std::move(other.center_)) {}
   MpscReceiver& operator=(MpscReceiver&& other) noexcept {
-    DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }
@@ -241,58 +443,19 @@ class MpscReceiver {
   // senders.
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
+  MpscDebug<T> MakeDebug() { return MpscDebug<T>(center_); }
+
   // Returns a promise that will resolve to ValueOrFailure<T>.
   // If receiving is closed, the promise will resolve to failure.
   // Otherwise, the promise resolves to the next item and removes
   // said item from the queue.
-  auto Next() {
-    return [this]() -> Poll<ValueOrFailure<T>> {
-      if (buffer_it_ != buffer_.end()) {
-        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
-      }
-      auto p = center_->PollReceiveBatch(buffer_);
-      if (bool* r = p.value_if_ready()) {
-        if (!*r) return Failure{};
-        buffer_it_ = buffer_.begin();
-        return Poll<ValueOrFailure<T>>(std::move(*buffer_it_++));
-      }
-      return Pending{};
-    };
-  }
-  // Returns a promise that will resolve to ValueOrFailure<std::vector<T>>.
-  // If receiving is closed, the promise will resolve to failure.
-  // Otherwise, the promise returns all the items enqueued till now and removes
-  // said items from the queue.
-  auto NextBatch() {
-    return [this]() -> Poll<ValueOrFailure<std::vector<T>>> {
-      if (buffer_it_ != buffer_.end()) {
-        std::vector<T> tmp_buffer;
-        std::move(buffer_it_, buffer_.end(), std::back_inserter(tmp_buffer));
-        buffer_.clear();
-        buffer_it_ = buffer_.end();
-        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
-      }
+  auto Next() { return center_->Next(); }
 
-      auto p = center_->PollReceiveBatch(buffer_);
-      if (bool* r = p.value_if_ready()) {
-        if (!*r) return Failure{};
-        auto tmp_buffer(std::move(buffer_));
-        buffer_.clear();
-        buffer_it_ = buffer_.end();
-        return ValueOrFailure<std::vector<T>>(std::move(tmp_buffer));
-      }
-      return Pending{};
-    };
+  auto NextBatch(size_t max_batch_size) {
+    return center_->NextBatch(max_batch_size);
   }
 
  private:
-  // Received items. We move out of here one by one, but don't resize the
-  // vector. Instead, when we run out of items, we poll the center for more -
-  // which swaps this buffer in for the new receive queue and clears it.
-  // In this way, upon hitting a steady state the queue ought to be allocation
-  // free.
-  std::vector<T> buffer_;
-  typename std::vector<T>::iterator buffer_it_ = buffer_.end();
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
 

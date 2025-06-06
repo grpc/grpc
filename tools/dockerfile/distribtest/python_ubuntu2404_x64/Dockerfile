@@ -1,4 +1,4 @@
-# Copyright 2024 gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:11
+FROM ubuntu:24.04
 
-{% include "../../apt_get_basic.include" %}
-{% include "../../ruby_3_0_deps.include" %}
-{% include "../../rvm_mkdir_workaround.include" %}
+RUN apt-get update -y && apt-get install -y python3 python3-pip
 
-# Define the default command.
-CMD ["bash"]
+# Ubuntu's python-pip package installs pip to /usr/bin, whereas the upgraded
+# pip lives at /usr/local/bin/pip. We'll use the absolute path for now, since
+# this will all be replaced with python3.
+RUN pip install --break-system-packages virtualenv

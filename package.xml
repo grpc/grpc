@@ -13,8 +13,8 @@
  <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
-  <release>1.73.0dev</release>
-  <api>1.73.0dev</api>
+  <release>1.74.0dev</release>
+  <api>1.74.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- gRPC Core 1.73.0 update
+- gRPC Core 1.74.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -385,6 +385,8 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
@@ -1303,8 +1305,6 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/supports_win_sockets.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/tcp_trace.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/event_engine/forkable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/grpc_polled_fd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/handle_containers.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/memory_allocator_factory.h" role="src" />
@@ -1318,6 +1318,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/event_poller_posix_default.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/file_descriptor_collection.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/internal_errqueue.h" role="src" />
@@ -1334,6 +1336,9 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/posix_interface_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/posix_engine/tcp_socket_utils.h" role="src" />
@@ -1924,6 +1929,7 @@
     <file baseinstalldir="/" name="src/core/util/matchers.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/matchers.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/memory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/memory_usage.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/msys/tmpfile.cc" role="src" />

@@ -1,4 +1,6 @@
-# Copyright 2024 gRPC authors.
+#!/usr/bin/env ruby
+
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+require_relative './end2end_common'
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/psm-interop-test-cpp.sh"
-timeout_mins: 30
-action {
-  define_artifacts {
-    regex: "artifacts/**/*sponge_log.xml"
-    regex: "artifacts/**/*.log"
-    strip_prefix: "artifacts"
-  }
-}
-env_vars {
-  key: "PSM_TEST_SUITE"
-  value: "fallback"
-}
+def main
+  # point to a non-existant server on IPv6 discard prefix
+  ch = GRPC::Core::Channel.new("[0100::]:80", {},
+                               :this_channel_is_insecure)
+  thr = Thread.new do
+    loop do
+      state = ch.connectivity_state
+      ch.watch_connectivity_state(state, Time.now + 360)
+    end
+  end
+  # sleep to allow time to get into the middle of a
+  # connectivity state watch operation
+  sleep 0.1
+  thr.kill
+  thr.join
+end
+
+main

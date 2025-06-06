@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/sync.h"
 
@@ -154,6 +155,7 @@ Party::Participant::~Participant() {
 // Party::SpawnSerializer
 
 bool Party::SpawnSerializer::PollParticipantPromise() {
+  GRPC_LATENT_SEE_INNER_SCOPE("SpawnSerializer::PollParticipantPromise");
   if (active_ == nullptr) {
     active_ = next_.Pop().value_or(nullptr);
   }
@@ -183,9 +185,66 @@ void Party::SpawnSerializer::Destroy() {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// ToJson helpers
+
+namespace {
+
+Json ParticipantBitmaskToJson(uint64_t mask) {
+  Json::Array array;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (mask & (1u << i)) {
+      array.emplace_back(Json::FromNumber(i));
+    }
+  }
+  return Json::FromArray(std::move(array));
+}
+
+}  // namespace
+
+///////////////////////////////////////////////////////////////////////////////
 // Party
 
 Party::~Party() {}
+
+void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
+  auto event_engine =
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
+  CHECK(event_engine != nullptr);
+  event_engine->Run([f = std::move(f), self = Ref()]() mutable {
+    self->Spawn(
+        "get-json",
+        [f = std::move(f), self]() mutable {
+          return [f = std::move(f), self]() mutable {
+            f(self->ToJsonLocked());
+            return absl::OkStatus();
+          };
+        },
+        [](absl::Status) {});
+  });
+}
+
+Json::Object Party::ToJsonLocked() {
+  Json::Object obj;
+  auto state = state_.load(std::memory_order_relaxed);
+  obj["ref_count"] = Json::FromNumber(state >> kRefShift);
+  obj["allocated_participants"] =
+      ParticipantBitmaskToJson((state & kAllocatedMask) >> kAllocatedShift);
+  obj["wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_ & kWakeupMask);
+  obj["locked"] = Json::FromBool((state & kLocked) != 0);
+  obj["local_wakeup_mask"] = ParticipantBitmaskToJson(wakeup_mask_);
+  obj["currently_polling"] = Json::FromNumber(currently_polling_);
+  Json::Array participants;
+  for (size_t i = 0; i < party_detail::kMaxParticipants; i++) {
+    if (auto* p = participants_[i].load(std::memory_order_acquire);
+        p != nullptr) {
+      auto obj = p->ToJson();
+      participants.emplace_back(
+          Json::FromString(JsonDump(Json::FromObject(std::move(obj)))));
+    }
+  }
+  obj["participants"] = Json::FromArray(std::move(participants));
+  return obj;
+}
 
 void Party::CancelRemainingParticipants() {
   uint64_t prev_state = state_.load(std::memory_order_relaxed);
@@ -260,6 +319,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       g_run_state = this;
       do {
         GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
+        CHECK(first.party != nullptr);
         first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
@@ -290,10 +350,12 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      auto arena = party->arena_.get();
+      auto arena = wakeup.party->arena_.get();
+      CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
       CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
         ExecCtx exec_ctx;
