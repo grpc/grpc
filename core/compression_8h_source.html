@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -133,9 +133,9 @@ $(function() {
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;<span class="preprocessor">#endif </span><span class="comment">/* GRPC_COMPRESSION_H */</span><span class="preprocessor"></span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="acompression_8h_html_a053257ed8bdeba196b380f326897e25d"><div class="ttname"><a href="compression_8h.html#a053257ed8bdeba196b380f326897e25d">grpc_compression_algorithm_is_stream</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_is_stream(grpc_compression_algorithm algorithm)</div><div class="ttdoc">Return if an algorithm is stream compression algorithm.</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:730</div></div>
-<div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:60</div></div>
-<div class="ttc" id="astructgrpc__compression__options_html"><div class="ttname"><a href="structgrpc__compression__options.html">grpc_compression_options</a></div><div class="ttdef"><b>Definition:</b> compression_types.h:80</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a2865c3b28ea7db75be4c725adb1edc7d"><div class="ttname"><a href="support_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a></div><div class="ttdeci">#define GRPCAPI</div><div class="ttdef"><b>Definition:</b> port_platform.h:733</div></div>
+<div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:61</div></div>
+<div class="ttc" id="astructgrpc__compression__options_html"><div class="ttname"><a href="structgrpc__compression__options.html">grpc_compression_options</a></div><div class="ttdef"><b>Definition:</b> compression_types.h:81</div></div>
 <div class="ttc" id="acompression_8h_html_a79e61d1ac1d226b3b54b73837f28f0ff"><div class="ttname"><a href="compression_8h.html#a79e61d1ac1d226b3b54b73837f28f0ff">grpc_compression_options_enable_algorithm</a></div><div class="ttdeci">GRPCAPI void grpc_compression_options_enable_algorithm(grpc_compression_options *opts, grpc_compression_algorithm algorithm)</div><div class="ttdoc">Mark algorithm as enabled in opts.</div></div>
 <div class="ttc" id="acompression_8h_html_af41160f827a3ff132755fb25658435c4"><div class="ttname"><a href="compression_8h.html#af41160f827a3ff132755fb25658435c4">grpc_compression_algorithm_is_message</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_is_message(grpc_compression_algorithm algorithm)</div><div class="ttdoc">Return if an algorithm is message compression algorithm.</div></div>
 <div class="ttc" id="acompression_8h_html_a177f6d6330355d5ecaffb042ab1c2c8f"><div class="ttname"><a href="compression_8h.html#a177f6d6330355d5ecaffb042ab1c2c8f">grpc_compression_algorithm_name</a></div><div class="ttdeci">GRPCAPI int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm, const char **name)</div><div class="ttdoc">Updates name with the encoding name corresponding to a valid algorithm.</div></div>
@@ -145,13 +145,13 @@ $(function() {
 <div class="ttc" id="acompression__types_8h_html"><div class="ttname"><a href="compression__types_8h.html">compression_types.h</a></div></div>
 <div class="ttc" id="acompression_8h_html_aba0dfe631311c3f49d1045694bc9b0df"><div class="ttname"><a href="compression_8h.html#aba0dfe631311c3f49d1045694bc9b0df">grpc_compression_options_is_algorithm_enabled</a></div><div class="ttdeci">GRPCAPI int grpc_compression_options_is_algorithm_enabled(const grpc_compression_options *opts, grpc_compression_algorithm algorithm)</div><div class="ttdoc">Returns true if algorithm is marked as enabled in opts.</div></div>
 <div class="ttc" id="acompression_8h_html_a2eccdbe5a4d811a7c965d6d67e5cc7d8"><div class="ttname"><a href="compression_8h.html#a2eccdbe5a4d811a7c965d6d67e5cc7d8">grpc_compression_options_init</a></div><div class="ttdeci">GRPCAPI void grpc_compression_options_init(grpc_compression_options *opts)</div></div>
-<div class="ttc" id="acompression__types_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdoc">Compression levels allow a party with knowledge of its peer's accepted encodings to request compressi...</div><div class="ttdef"><b>Definition:</b> compression_types.h:72</div></div>
+<div class="ttc" id="acompression__types_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdoc">Compression levels allow a party with knowledge of its peer's accepted encodings to request compressi...</div><div class="ttdef"><b>Definition:</b> compression_types.h:73</div></div>
 <div class="ttc" id="acompression_8h_html_adc2d1d89d880f67aacc4ce84cd72f8f3"><div class="ttname"><a href="compression_8h.html#adc2d1d89d880f67aacc4ce84cd72f8f3">grpc_compression_algorithm_for_level</a></div><div class="ttdeci">GRPCAPI grpc_compression_algorithm grpc_compression_algorithm_for_level(grpc_compression_level level, uint32_t accepted_encodings)</div><div class="ttdoc">Returns the compression algorithm corresponding to level for the compression algorithms encoded in th...</div></div>
 <div class="ttc" id="aslice_8h_html"><div class="ttname"><a href="slice_8h.html">slice.h</a></div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:53 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

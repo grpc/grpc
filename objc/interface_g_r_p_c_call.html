@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -113,12 +113,6 @@ Class Methods</h2></td></tr>
 <tr class="separator:a7106a28e27c41795fb4b4a08d597ccf1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a42a163489b038817adef235be8776825"><td class="memItemLeft" align="right" valign="top">(BOOL)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#a42a163489b038817adef235be8776825">setTLSPEMRootCerts:withPrivateKey:withCertChain:forHost:error:</a></td></tr>
 <tr class="separator:a42a163489b038817adef235be8776825"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad1b2c6c52d457ef3430cd4231cadff35"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#ad1b2c6c52d457ef3430cd4231cadff35">useCronetWithEngine:</a></td></tr>
-<tr class="separator:ad1b2c6c52d457ef3430cd4231cadff35"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8d36aa504711973fc1cd14772d9fed7d"><td class="memItemLeft" align="right" valign="top">(<a class="el" href="_g_r_p_c_call_09_cronet_8h.html#a7af5da50e43e0e2787473025918ed4ca">stream_engine</a> *)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#a8d36aa504711973fc1cd14772d9fed7d">cronetEngine</a></td></tr>
-<tr class="separator:a8d36aa504711973fc1cd14772d9fed7d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:abacdea4968b72c4a30c1bc35b51d4b2a"><td class="memItemLeft" align="right" valign="top">(BOOL)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#abacdea4968b72c4a30c1bc35b51d4b2a">isUsingCronet</a></td></tr>
-<tr class="separator:abacdea4968b72c4a30c1bc35b51d4b2a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afd48790f9bed75d15a23312fa2bed1d1"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#afd48790f9bed75d15a23312fa2bed1d1">useTestCertsPath:testName:forHost:</a></td></tr>
 <tr class="separator:afd48790f9bed75d15a23312fa2bed1d1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab691fa92ba6452827759ef75b11045b8"><td class="memItemLeft" align="right" valign="top">(void)&#160;</td><td class="memItemRight" valign="bottom">+ <a class="el" href="interface_g_r_p_c_call.html#ab691fa92ba6452827759ef75b11045b8">useInsecureConnectionsForHost:</a></td></tr>
@@ -205,25 +199,6 @@ Properties</h2></td></tr>
 
 </div>
 </div>
-<a id="a8d36aa504711973fc1cd14772d9fed7d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8d36aa504711973fc1cd14772d9fed7d">&#9670;&nbsp;</a></span>cronetEngine</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">+ (<a class="el" href="_g_r_p_c_call_09_cronet_8h.html#a7af5da50e43e0e2787473025918ed4ca">stream_engine</a>*) cronetEngine </td>
-          <td></td>
-          <td class="paramname"></td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Provided by category <a class="el" href="category_g_r_p_c_call_07_cronet_08.html#a8d36aa504711973fc1cd14772d9fed7d">GRPCCall(Cronet)</a>.</p>
-
-</div>
-</div>
 <a id="a8d045ade7403654462b6318e9df482e1"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8d045ade7403654462b6318e9df482e1">&#9670;&nbsp;</a></span>DEPRECATED_MSG_ATTRIBUTE</h2>
 
@@ -307,25 +282,6 @@ Properties</h2></td></tr>
 
 <p>The request writer has to write NSData objects into the provided Writeable. </p>
 <p>The server will receive each of those separately and in order as distinct messages. A gRPC call might not complete until the request writer finishes. On the other hand, the request finishing doesn't necessarily make the call to finish, as the server might continue sending messages to the response side of the call indefinitely (depending on the semantics of the specific remote method called). To finish a call right away, invoke cancel. host parameter should not contain the scheme (<a href="http://">http://</a> or <a href="https://">https://</a>), only the name or IP addr and the port number, for example "localhost:5050". </p>
-
-</div>
-</div>
-<a id="abacdea4968b72c4a30c1bc35b51d4b2a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#abacdea4968b72c4a30c1bc35b51d4b2a">&#9670;&nbsp;</a></span>isUsingCronet</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">+ (BOOL) isUsingCronet </td>
-          <td></td>
-          <td class="paramname"></td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Provided by category <a class="el" href="category_g_r_p_c_call_07_cronet_08.html#abacdea4968b72c4a30c1bc35b51d4b2a">GRPCCall(Cronet)</a>.</p>
 
 </div>
 </div>
@@ -701,26 +657,6 @@ Properties</h2></td></tr>
 
 </div>
 </div>
-<a id="ad1b2c6c52d457ef3430cd4231cadff35"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad1b2c6c52d457ef3430cd4231cadff35">&#9670;&nbsp;</a></span>useCronetWithEngine:</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">+ (void) useCronetWithEngine: </td>
-          <td></td>
-          <td class="paramtype">(<a class="el" href="_g_r_p_c_call_09_cronet_8h.html#a7af5da50e43e0e2787473025918ed4ca">stream_engine</a> *)&#160;</td>
-          <td class="paramname"><em>engine</em></td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-
-<p>Provided by category <a class="el" href="category_g_r_p_c_call_07_cronet_08.html#ad1b2c6c52d457ef3430cd4231cadff35">GRPCCall(Cronet)</a>.</p>
-
-</div>
-</div>
 <a id="ab691fa92ba6452827759ef75b11045b8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab691fa92ba6452827759ef75b11045b8">&#9670;&nbsp;</a></span>useInsecureConnectionsForHost:</h2>
 
@@ -981,7 +917,7 @@ Properties</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:15:03 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:36:46 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

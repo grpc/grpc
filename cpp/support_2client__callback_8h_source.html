@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -581,8 +581,8 @@ $(function() {
 <div class="line"><a name="l00636"></a><span class="lineno">  636</span>&#160;  <span class="comment">// like StartCall or RemoveHold. If this is the last operation or hold on this</span></div>
 <div class="line"><a name="l00637"></a><span class="lineno">  637</span>&#160;  <span class="comment">// object, it will invoke the OnDone reaction. If MaybeFinish was called from</span></div>
 <div class="line"><a name="l00638"></a><span class="lineno">  638</span>&#160;  <span class="comment">// a reaction, it can call OnDone directly. If not, it would need to schedule</span></div>
-<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;  <span class="comment">// OnDone onto an executor thread to avoid the possibility of deadlocking with</span></div>
-<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;  <span class="comment">// any locks in the user code that invoked it.</span></div>
+<div class="line"><a name="l00639"></a><span class="lineno">  639</span>&#160;  <span class="comment">// OnDone onto an EventEngine thread to avoid the possibility of deadlocking</span></div>
+<div class="line"><a name="l00640"></a><span class="lineno">  640</span>&#160;  <span class="comment">// with any locks in the user code that invoked it.</span></div>
 <div class="line"><a name="l00641"></a><span class="lineno">  641</span>&#160;  <span class="keywordtype">void</span> MaybeFinish(<span class="keywordtype">bool</span> from_reaction) {</div>
 <div class="line"><a name="l00642"></a><span class="lineno">  642</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a>(callbacks_outstanding_.fetch_sub(</div>
 <div class="line"><a name="l00643"></a><span class="lineno">  643</span>&#160;                         1, std::memory_order_acq_rel) == 1)) {</div>
@@ -1230,7 +1230,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_writer_html_a91bc5f726c434a2601f47193a758b5f5"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader_writer.html#a91bc5f726c434a2601f47193a758b5f5">grpc::ClientCallbackReaderWriter::AddHold</a></div><div class="ttdeci">virtual void AddHold(int holds)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_bidi_reactor_html_ad77148d32093f38daeb755e820b70c61"><div class="ttname"><a href="classgrpc_1_1_client_bidi_reactor.html#ad77148d32093f38daeb755e820b70c61">grpc::ClientBidiReactor::OnReadDone</a></div><div class="ttdeci">virtual void OnReadDone(bool)</div><div class="ttdoc">Notifies the application that a StartRead operation completed.</div><div class="ttdef"><b>Definition:</b> client_callback.h:339</div></div>
 <div class="ttc" id="aclassgrpc_1_1_status_html"><div class="ttname"><a href="classgrpc_1_1_status.html">grpc::Status</a></div><div class="ttdoc">Did it work? If it didn't, why?</div><div class="ttdef"><b>Definition:</b> status.h:34</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:858</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a99b5bddfe84f8dc8ee55b35405b8fddd"><div class="ttname"><a href="support_2port__platform_8h.html#a99b5bddfe84f8dc8ee55b35405b8fddd">GPR_UNLIKELY</a></div><div class="ttdeci">#define GPR_UNLIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:861</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_writer_html_a1fcb234f67a44bf7fa3facce48f4e6f8"><div class="ttname"><a href="classgrpc_1_1_client_callback_writer.html#a1fcb234f67a44bf7fa3facce48f4e6f8">grpc::ClientCallbackWriter::WritesDone</a></div><div class="ttdeci">virtual void WritesDone()=0</div></div>
 <div class="ttc" id="agrpc_8h_html_ad94050d59c72fadfb22962ff40110e85"><div class="ttname"><a href="grpc_8h.html#ad94050d59c72fadfb22962ff40110e85">grpc_call_unref</a></div><div class="ttdeci">GRPCAPI void grpc_call_unref(grpc_call *call)</div><div class="ttdoc">Unref a call.</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_client_callback_writer_factory_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_client_callback_writer_factory.html">grpc::internal::ClientCallbackWriterFactory</a></div><div class="ttdef"><b>Definition:</b> channel_interface.h:49</div></div>
@@ -1307,7 +1307,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_html_a92b24c8cddb636d19570f576fa509d80"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader.html#a92b24c8cddb636d19570f576fa509d80">grpc::ClientCallbackReader::AddHold</a></div><div class="ttdeci">virtual void AddHold(int holds)=0</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_write_reactor_html_a3b0a8d5db651106ad73a9654771d219f"><div class="ttname"><a href="classgrpc_1_1_client_write_reactor.html#a3b0a8d5db651106ad73a9654771d219f">grpc::ClientWriteReactor::AddMultipleHolds</a></div><div class="ttdeci">void AddMultipleHolds(int holds)</div><div class="ttdef"><b>Definition:</b> client_callback.h:406</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_reader_html"><div class="ttname"><a href="classgrpc_1_1_client_callback_reader.html">grpc::ClientCallbackReader</a></div><div class="ttdef"><b>Definition:</b> client_callback.h:170</div></div>
-<div class="ttc" id="asupport_2port__platform_8h_html_a518d2d0a7ae17a01e2fa2dee0e2f84df"><div class="ttname"><a href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">GPR_LIKELY</a></div><div class="ttdeci">#define GPR_LIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:857</div></div>
+<div class="ttc" id="asupport_2port__platform_8h_html_a518d2d0a7ae17a01e2fa2dee0e2f84df"><div class="ttname"><a href="support_2port__platform_8h.html#a518d2d0a7ae17a01e2fa2dee0e2f84df">GPR_LIKELY</a></div><div class="ttdeci">#define GPR_LIKELY(x)</div><div class="ttdef"><b>Definition:</b> port_platform.h:860</div></div>
 <div class="ttc" id="aclassgrpc_1_1_client_callback_unary_html_a619855b0e48d170700b55e50d7549370"><div class="ttname"><a href="classgrpc_1_1_client_callback_unary.html#a619855b0e48d170700b55e50d7549370">grpc::ClientCallbackUnary::~ClientCallbackUnary</a></div><div class="ttdeci">virtual ~ClientCallbackUnary()</div><div class="ttdef"><b>Definition:</b> client_callback.h:207</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_op_set_html_a449a33a6877ac4710dc40fccaf786c35"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">grpc::internal::CallOpSet::set_core_cq_tag</a></div><div class="ttdeci">void set_core_cq_tag(void *core_cq_tag)</div><div class="ttdoc">set_core_cq_tag is used to provide a different core CQ tag than &quot;this&quot;.</div><div class="ttdef"><b>Definition:</b> call_op_set.h:947</div></div>
 <div class="ttc" id="ap_2impl_2sync_8h_html"><div class="ttname"><a href="p_2impl_2sync_8h.html">sync.h</a></div></div>
@@ -1321,7 +1321,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_client_write_reactor_html_a1c1efb0ca48e94cf8bca72393ec27e7f"><div class="ttname"><a href="classgrpc_1_1_client_write_reactor.html#a1c1efb0ca48e94cf8bca72393ec27e7f">grpc::ClientWriteReactor::OnWritesDoneDone</a></div><div class="ttdeci">virtual void OnWritesDoneDone(bool)</div><div class="ttdef"><b>Definition:</b> client_callback.h:415</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:55 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -71,18 +71,11 @@ Introduction</h1>
 <p>This document lists the workarounds implemented on gRPC servers for record and reference when users need to enable a certain workaround.</p>
 <h1><a class="anchor" id="autotoc_md301"></a>
 Workaround List</h1>
-<h2><a class="anchor" id="autotoc_md302"></a>
-Cronet Compression</h2>
-<p><b>Workaround ID:</b> WORKAROUND_ID_CRONET_COMPRESSION</p>
-<p><b>Date added:</b> May 06, 2017</p>
-<p><b>Status:</b> Implemented in C core and C++</p>
-<p><b>Issue:</b> Before version v1.3.0-dev, gRPC iOS client's Cronet transport did not implement compression. However the clients still claim to support compression. As a result, a client fails to parse received message when the message is compressed. The problem above was resolved in gRPC v1.3.0-dev. For backward compatibility, a server must forcingly disable compression for gRPC clients of version lower than or equal to v1.3.0-dev.</p>
-<p><b>Workaround Description:</b> Implemented as a server channel filter in C core. The filter identifies the version of peer client with incoming <code>user-agent</code> header of each call. If the client's gRPC version is lower that or equal to v1.3.x, a flag GRPC_WRITE_NO_COMPRESS is marked for all send_message ops which prevents compression of the messages to be sent out. </p>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
