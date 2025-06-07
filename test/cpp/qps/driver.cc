@@ -357,16 +357,8 @@ static void ShutdownServers(const std::vector<ServerData>& servers,
 
 std::vector<grpc::testing::Server*>* g_inproc_servers = nullptr;
 
-std::unique_ptr<ScenarioResult> RunScenario(
-    const ClientConfig& initial_client_config, size_t num_clients,
-    const ServerConfig& initial_server_config, size_t num_servers,
-    int warmup_seconds, int benchmark_seconds, int spawn_local_worker_count,
-    const std::string& qps_server_target_override,
-    const std::string& credential_type,
-    const std::map<std::string, std::string>& per_worker_credential_types,
-    bool run_inproc, int32_t median_latency_collection_interval_millis,
-    const std::optional<std::string>& latent_see_directory) {
-  if (run_inproc) {
+std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
+  if (options.run_inproc) {
     g_inproc_servers = new std::vector<grpc::testing::Server*>;
   }
 
@@ -384,12 +376,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ClientConfig result_client_config;
 
   // Get client, server lists; ignore if inproc test
-  auto workers = (!run_inproc) ? get_workers("QPS_WORKERS") : deque<string>();
-  ClientConfig client_config = initial_client_config;
+  auto workers =
+      (!options.run_inproc) ? get_workers("QPS_WORKERS") : deque<string>();
+  ClientConfig client_config = options.client_config;
 
   // Spawn some local workers if desired
   vector<unique_ptr<QpsWorker>> local_workers;
-  for (int i = 0; i < abs(spawn_local_worker_count); i++) {
+  for (int i = 0; i < abs(options.spawn_local_worker_count); i++) {
     // act as if we're a new test -- gets a good rng seed
     static bool called_init = false;
     if (!called_init) {
@@ -403,10 +396,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
     char addr[256];
     // we use port # of -1 to indicate inproc
-    int driver_port = (!run_inproc) ? grpc_pick_unused_port_or_die() : -1;
-    local_workers.emplace_back(new QpsWorker(driver_port, 0, credential_type));
+    int driver_port =
+        (!options.run_inproc) ? grpc_pick_unused_port_or_die() : -1;
+    local_workers.emplace_back(
+        new QpsWorker(driver_port, 0, options.credential_type));
     sprintf(addr, "localhost:%d", driver_port);
-    if (spawn_local_worker_count < 0) {
+    if (options.spawn_local_worker_count < 0) {
       workers.push_front(addr);
     } else {
       workers.push_back(addr);
@@ -416,31 +411,33 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   // if num_clients is set to <=0, do dynamic sizing: all workers
   // except for servers are clients
-  if (num_clients <= 0) {
-    num_clients = workers.size() - num_servers;
+  size_t num_clients_to_use = options.num_clients;
+  if (options.num_clients <= 0) {
+    num_clients_to_use = workers.size() - options.num_servers;
   }
 
   // TODO(ctiller): support running multiple configurations, and binpack
   // client/server pairs
   // to available workers
-  CHECK_GE(workers.size(), num_clients + num_servers);
+  CHECK_GE(workers.size(), num_clients_to_use + options.num_servers);
 
   // Trim to just what we need
-  workers.resize(num_clients + num_servers);
+  workers.resize(num_clients_to_use + options.num_servers);
 
   // Start servers
-  std::vector<ServerData> servers(num_servers);
+  std::vector<ServerData> servers(options.num_servers);
   std::unordered_map<string, std::deque<int>> hosts_cores;
   ChannelArguments channel_args;
 
-  for (size_t i = 0; i < num_servers; i++) {
+  for (size_t i = 0; i < options.num_servers; i++) {
     LOG(INFO) << "Starting server on " << workers[i] << " (worker #" << i
               << ")";
     std::shared_ptr<Channel> channel;
-    if (!run_inproc) {
+    if (!options.run_inproc) {
       channel = grpc::CreateTestChannel(
           workers[i],
-          GetCredType(workers[i], per_worker_credential_types, credential_type),
+          GetCredType(workers[i], options.per_worker_credential_types,
+                      options.credential_type),
           nullptr /* call creds */, {} /* interceptor creators */);
     } else {
       channel = local_workers[i]->InProcessChannel(channel_args);
@@ -448,13 +445,12 @@ std::unique_ptr<ScenarioResult> RunScenario(
     servers[i].stub = WorkerService::NewStub(channel);
     servers[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
 
-    const ServerConfig& server_config = initial_server_config;
-    if (server_config.core_limit() != 0) {
+    if (options.server_config.core_limit() != 0) {
       grpc_core::Crash("server config core limit is set but ignored by driver");
     }
 
     ServerArgs args;
-    *args.mutable_setup() = server_config;
+    *args.mutable_setup() = options.server_config;
     servers[i].stream = servers[i].stub->RunServer(alloc_context(&contexts));
     if (!servers[i].stream->Write(args)) {
       grpc_core::Crash(
@@ -465,7 +461,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       grpc_core::Crash(
           absl::StrFormat("Server %zu did not yield initial status", i));
     }
-    if (run_inproc) {
+    if (options.run_inproc) {
       std::string cli_target(INPROC_NAME_PREFIX);
       cli_target += std::to_string(i);
       client_config.add_server_targets(cli_target);
@@ -476,39 +472,41 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target.c_str());
     }
   }
-  if (!qps_server_target_override.empty()) {
+  if (!options.qps_server_target_override.empty()) {
     // overriding the qps server target only makes since if there is <= 1
     // servers
-    CHECK_LE(num_servers, 1u);
+    CHECK_LE(options.num_servers, 1u);
     client_config.clear_server_targets();
-    client_config.add_server_targets(qps_server_target_override);
+    client_config.add_server_targets(options.qps_server_target_override);
   }
   client_config.set_median_latency_collection_interval_millis(
-      median_latency_collection_interval_millis);
+      options.median_latency_collection_interval_millis);
 
   // Targets are all set by now
   result_client_config = client_config;
   // Start clients
-  std::vector<ClientData> clients(num_clients);
+  std::vector<ClientData> clients(num_clients_to_use);
   size_t channels_allocated = 0;
-  for (size_t i = 0; i < num_clients; i++) {
-    const auto& worker = workers[i + num_servers];
+  for (size_t i = 0; i < num_clients_to_use; i++) {
+    const auto& worker = workers[i + options.num_servers];
     LOG(INFO) << "Starting client on " << worker << " (worker #"
-              << i + num_servers << ")";
+              << i + options.num_servers << ")";
     std::shared_ptr<Channel> channel;
-    if (!run_inproc) {
+    if (!options.run_inproc) {
       channel = grpc::CreateTestChannel(
           worker,
-          GetCredType(worker, per_worker_credential_types, credential_type),
+          GetCredType(worker, options.per_worker_credential_types,
+                      options.credential_type),
           nullptr /* call creds */, {} /* interceptor creators */);
     } else {
-      channel = local_workers[i + num_servers]->InProcessChannel(channel_args);
+      channel = local_workers[i + options.num_servers]->InProcessChannel(
+          channel_args);
     }
     clients[i].stub = WorkerService::NewStub(channel);
     clients[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
     ClientConfig per_client_config = client_config;
 
-    if (initial_client_config.core_limit() != 0) {
+    if (options.client_config.core_limit() != 0) {
       grpc_core::Crash("client config core limit set but ignored");
     }
 
@@ -516,7 +514,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // of the number of clients available
     size_t num_channels =
         (client_config.client_channels() - channels_allocated) /
-        (num_clients - i);
+        (num_clients_to_use - i);
     channels_allocated += num_channels;
     VLOG(2) << "Client " << i << " gets " << num_channels << " channels";
     per_client_config.set_client_channels(num_channels);
@@ -530,7 +528,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  for (size_t i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients_to_use; i++) {
     ClientStatus init_status;
     if (!clients[i].stream->Read(&init_status)) {
       grpc_core::Crash(
@@ -549,13 +547,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   client_mark.mutable_mark()->set_name("warmup");
   ServerStatus server_status;
   ClientStatus client_status;
-  for (size_t i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients_to_use; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
       grpc_core::Crash(absl::StrFormat("Couldn't write mark to client %zu", i));
     }
   }
-  for (size_t i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients_to_use; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
       grpc_core::Crash(
@@ -566,37 +564,37 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // Let everything warmup
   LOG(INFO) << "Warming up";
   gpr_timespec start = gpr_now(GPR_CLOCK_REALTIME);
-  gpr_sleep_until(
-      gpr_time_add(start, gpr_time_from_seconds(warmup_seconds, GPR_TIMESPAN)));
+  gpr_sleep_until(gpr_time_add(
+      start, gpr_time_from_seconds(options.warmup_seconds, GPR_TIMESPAN)));
 
-  if (latent_see_directory.has_value()) {
+  if (options.latent_see_directory.has_value()) {
     LOG(INFO) << "Collecting latent-see";
 
     client_mark.mutable_mark()->set_name("latent-see");
     server_mark.mutable_mark()->set_name("latent-see");
 
-    for (size_t i = 0; i < num_servers; i++) {
+    for (size_t i = 0; i < options.num_servers; i++) {
       auto server = &servers[i];
       if (!server->stream->Write(server_mark)) {
         grpc_core::Crash(
             absl::StrFormat("Couldn't write mark to server %zu", i));
       }
     }
-    for (size_t i = 0; i < num_clients; i++) {
+    for (size_t i = 0; i < num_clients_to_use; i++) {
       auto client = &clients[i];
       if (!client->stream->Write(client_mark)) {
         grpc_core::Crash(
             absl::StrFormat("Couldn't write mark to client %zu", i));
       }
     }
-    for (size_t i = 0; i < num_servers; i++) {
+    for (size_t i = 0; i < options.num_servers; i++) {
       auto server = &servers[i];
       if (!server->stream->Read(&server_status)) {
         grpc_core::Crash(
             absl::StrFormat("Couldn't get status from server %zu", i));
       }
     }
-    for (size_t i = 0; i < num_clients; i++) {
+    for (size_t i = 0; i < num_clients_to_use; i++) {
       auto client = &clients[i];
       if (!client->stream->Read(&client_status)) {
         grpc_core::Crash(
@@ -605,18 +603,18 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
 
     std::vector<std::thread> threads;
-    for (size_t i = 0; i < num_servers; i++) {
-      threads.emplace_back(std::thread([&latent_see_directory, &servers, i]() {
+    for (size_t i = 0; i < options.num_servers; i++) {
+      threads.emplace_back(std::thread([&options, &servers, i]() {
         std::ofstream out(
-            absl::StrCat(*latent_see_directory, "/server", i, ".json"));
+            absl::StrCat(*options.latent_see_directory, "/server", i, ".json"));
         grpc_core::latent_see::JsonOutput json_out(out);
         FetchLatentSee(servers[i].latent_see_stub.get(), 1.0, &json_out);
       }));
     }
-    for (size_t i = 0; i < num_clients; i++) {
-      threads.emplace_back(std::thread([&latent_see_directory, &clients, i]() {
+    for (size_t i = 0; i < num_clients_to_use; i++) {
+      threads.emplace_back(std::thread([&options, &clients, i]() {
         std::ofstream out(
-            absl::StrCat(*latent_see_directory, "/client", i, ".json"));
+            absl::StrCat(*options.latent_see_directory, "/client", i, ".json"));
         grpc_core::latent_see::JsonOutput json_out(out);
         FetchLatentSee(clients[i].latent_see_stub.get(), 1.0, &json_out);
       }));
@@ -634,26 +632,26 @@ std::unique_ptr<ScenarioResult> RunScenario(
   client_mark.mutable_mark()->set_name("benchmark");
   server_mark.mutable_mark()->set_name("benchmark");
 
-  for (size_t i = 0; i < num_servers; i++) {
+  for (size_t i = 0; i < options.num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Write(server_mark)) {
       grpc_core::Crash(absl::StrFormat("Couldn't write mark to server %zu", i));
     }
   }
-  for (size_t i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients_to_use; i++) {
     auto client = &clients[i];
     if (!client->stream->Write(client_mark)) {
       grpc_core::Crash(absl::StrFormat("Couldn't write mark to client %zu", i));
     }
   }
-  for (size_t i = 0; i < num_servers; i++) {
+  for (size_t i = 0; i < options.num_servers; i++) {
     auto server = &servers[i];
     if (!server->stream->Read(&server_status)) {
       grpc_core::Crash(
           absl::StrFormat("Couldn't get status from server %zu", i));
     }
   }
-  for (size_t i = 0; i < num_clients; i++) {
+  for (size_t i = 0; i < num_clients_to_use; i++) {
     auto client = &clients[i];
     if (!client->stream->Read(&client_status)) {
       grpc_core::Crash(
@@ -667,7 +665,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // compilers that don't work with this_thread
   gpr_sleep_until(gpr_time_add(
       start,
-      gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
+      gpr_time_from_seconds(options.warmup_seconds + options.benchmark_seconds,
+                            GPR_TIMESPAN)));
 
   client_mark.mutable_mark()->set_name("done");
   server_mark.mutable_mark()->set_name("done");
@@ -682,7 +681,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   // is running to prevent the clients from being stuck while waiting for
   // the result.
   bool client_finish_first =
-      (client_config.rpc_type() != STREAMING_FROM_SERVER);
+      (options.client_config.rpc_type() != STREAMING_FROM_SERVER);
 
   auto end_time = time(nullptr);
 
