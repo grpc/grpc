@@ -985,6 +985,21 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
+            if (
+                test
+                in [
+                    "src/ruby/end2end/fork_test.rb",
+                    "src/ruby/end2end/simple_fork_test.rb",
+                    "src/ruby/end2end/secure_fork_test.rb",
+                    "src/ruby/end2end/bad_usage_fork_test.rb",
+                    "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                    "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                    "src/ruby/end2end/fork_test_repro_35489.rb",
+                ]
+                and self.platform == "mac"
+            ):
+                # Fork support only present on linux
+                continue
             tests.append(
                 self.config.job_spec(
                     ["ruby", test],
