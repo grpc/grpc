@@ -22,6 +22,12 @@ genrule(
     cmd = "cp $(SRCS) $(@)",
 )
 
+cc_library(
+    name = "absl_log_force_link",
+    deps = ["@com_google_absl//absl/log"],
+    alwayslink = 1,
+)
+
 pyx_library(
     name = "cygrpc",
     srcs = glob([
@@ -35,6 +41,6 @@ pyx_library(
     defines = ["GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER=1"],
     deps = [
         "//:grpc",
+        ":absl_log_force_link",
     ],
-    absl_deps = ["@com_google_absl//absl/log"],
 )
