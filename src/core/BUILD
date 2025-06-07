@@ -7890,8 +7890,10 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "header_assembler",
         "http2_status",
         "message",
+        "message_assembler",
         "metadata_batch",
     ],
 )
