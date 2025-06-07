@@ -38,6 +38,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/call/dual/dual_call_credentials.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
@@ -403,6 +404,37 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     result = grpc_composite_channel_credentials_create(
         creds.get(), call_creds.get(), nullptr);
     CHECK_NE(result, nullptr);
+  } else {
+    LOG(ERROR) << "Could not create google default credentials: "
+               << grpc_core::StatusToString(error);
+  }
+  return result;
+}
+
+grpc_channel_credentials*
+grpc_google_default_credentials_create_with_dual_call_credentials(
+    grpc_call_credentials* call_credentials,
+    grpc_call_credentials* alts_credentials) {
+  if (alts_credentials == nullptr) {
+    return grpc_google_default_credentials_create(call_credentials);
+  }
+
+  grpc_channel_credentials* result = nullptr;
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_creds(call_credentials);
+  grpc_core::RefCountedPtr<grpc_call_credentials> alts_creds(alts_credentials);
+  grpc_error_handle error;
+  grpc_core::ExecCtx exec_ctx;
+
+  if (tls_creds == nullptr) {
+    tls_creds = make_default_call_creds(&error);
+  }
+
+  if (tls_creds != nullptr) {
+    auto dual_credentials =
+        grpc_core::MakeRefCounted<grpc_core::DualCallCredentials>(tls_creds,
+                                                                  alts_creds);
+    // Create google default credentials.
+    return grpc_google_default_credentials_create(dual_credentials.get());
   } else {
     LOG(ERROR) << "Could not create google default credentials: "
                << grpc_core::StatusToString(error);
