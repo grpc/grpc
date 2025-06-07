@@ -159,6 +159,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "context_list_entry",
         "resolved_address",
         "slice",
         "slice_buffer",
@@ -2009,6 +2010,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "event_engine_common",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -7427,11 +7429,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "context_list_entry",
+    srcs = [
+        "telemetry/context_list_entry.cc",
+    ],
     hdrs = [
         "telemetry/context_list_entry.h",
     ],
     deps = [
-        "tcp_tracer",
         "//:gpr",
     ],
 )

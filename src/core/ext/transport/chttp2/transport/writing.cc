@@ -723,7 +723,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
           // Old way of collecting TCP traces
           t->context_list->emplace_back(
               copy_context_fn(s->arena), outbuf_relative_start_pos,
-              num_stream_bytes, s->byte_counter, s->write_counter - 1, nullptr);
+              num_stream_bytes, s->byte_counter, s->write_counter - 1);
         } else if (s->call_tracer != nullptr &&
                    grpc_event_engine::experimental::
                        grpc_is_event_engine_endpoint(t->ep.get())) {

@@ -1796,6 +1796,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/service_config/service_config_parser.h )
   s.files += %w( src/core/telemetry/call_tracer.cc )
   s.files += %w( src/core/telemetry/call_tracer.h )
+  s.files += %w( src/core/telemetry/context_list_entry.cc )
   s.files += %w( src/core/telemetry/context_list_entry.h )
   s.files += %w( src/core/telemetry/default_tcp_tracer.cc )
   s.files += %w( src/core/telemetry/default_tcp_tracer.h )
