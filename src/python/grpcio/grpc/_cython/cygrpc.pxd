@@ -48,3 +48,12 @@ include "_cygrpc/aio/callback_common.pxd.pxi"
 include "_cygrpc/aio/call.pxd.pxi"
 include "_cygrpc/aio/channel.pxd.pxi"
 include "_cygrpc/aio/server.pxd.pxi"
+
+cdef extern from "grpc/impl/codegen/gpr_types.h":
+    ctypedef struct gpr_timespec
+
+cdef extern from "absl/log/initialize.h":
+    void InitializeLog() nogil
+
+# DML placeholder for other C definitions
+cdef extern from "grpc/grpc.h":

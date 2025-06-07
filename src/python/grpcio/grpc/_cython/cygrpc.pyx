@@ -81,9 +81,12 @@ include "_cygrpc/aio/server.pyx.pxi"
 # initialize gRPC
 #
 cdef _initialize():
-  InitializeLog()
   grpc_set_ssl_roots_override_callback(
           <grpc_ssl_roots_override_callback>ssl_roots_override_callback)
 
 
 _initialize()
+
+def initialize_absl_logging():
+  """Initializes Abseil logging."""
+  InitializeLog()
