@@ -233,6 +233,15 @@ void AresClientChannelDNSResolver::AresRequestWrapper::OnHostnameResolved(
     void* arg, grpc_error_handle error) {
   auto* self = static_cast<AresRequestWrapper*>(arg);
   std::optional<Result> result;
+  if (error.ok()) {
+    GRPC_TRACE_VLOG(cares_resolver, 2)
+        << "(c-ares resover) resolver:" << this
+        << " OnHostnameResolved addresses_: " << (addresses_ != nullptr ? *addresses_ : "nullptr");
+  } else {
+    GRPC_TRACE_VLOG(cares_resolver, 2)
+        << "(c-ares resover) resolver:" << this
+        << " OnHostnameResolved error: " << grpc_error_to_absl_status(error);
+  }
   {
     MutexLock lock(&self->on_resolved_mu_);
     self->hostname_request_.reset();
