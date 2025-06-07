@@ -51,7 +51,6 @@ class SslTlsFixture : public SecureFixture {
     return args.Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG, "foo.test.google.fr");
   }
 
- private:
   grpc_channel_credentials* MakeClientCreds(
       const grpc_core::ChannelArgs&) override {
     grpc_channel_credentials* ssl_creds =
@@ -91,6 +90,7 @@ class SslTlsFixture : public SecureFixture {
     return ssl_creds;
   }
 
+ private:
   static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                    const grpc_metadata* /*md*/,
                                    size_t /*md_count*/,
