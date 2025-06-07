@@ -193,11 +193,12 @@ TEST(ChannelTracerTest, StreamingOutputTest) {
   GRPC_CHANNELZ_LOG(tracer) << "four";
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(
-      json,
-      IsChannelTraceWithEvents(::testing::ElementsAre(
-          IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
-          IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"))))
+  EXPECT_THAT(json,
+              IsChannelTraceWithEvents(
+                  4, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"),
+                                            IsTraceEvent("two", "CT_INFO"),
+                                            IsTraceEvent("three", "CT_INFO"),
+                                            IsTraceEvent("four", "CT_INFO"))))
       << JsonDump(json);
   tracer.NewNode("five").Commit();
   tracer.NewNode("six").Commit();
@@ -205,10 +206,12 @@ TEST(ChannelTracerTest, StreamingOutputTest) {
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(
       json,
-      IsChannelTraceWithEvents(::testing::ElementsAre(
-          IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
-          IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
-          IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
+      IsChannelTraceWithEvents(
+          6,
+          ::testing::ElementsAre(
+              IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
+              IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
+              IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
       << JsonDump(json);
 }
 
