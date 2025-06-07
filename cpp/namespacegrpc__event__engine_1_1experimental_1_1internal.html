@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#enum-members">Enumerations</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::internal Namespace Reference</div>  </div>
@@ -96,6 +97,20 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable_3_01_slice_00_01_mutable_slice_01_4.html">SliceCastable&lt; Slice, MutableSlice &gt;</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
+Enumerations</h2></td></tr>
+<tr class="memitem:ada6704bd64089d8049d2f5ec68ae0761"><td class="memItemLeft" align="right" valign="top">enum &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">WriteEvent</a> { <br />
+&#160;&#160;<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761a683c410aaf8cf5a9d4d6a030fdfe1b19">WriteEvent::kSendMsg</a>, 
+<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761ad6b96be9186a34b340ce75ca89b90f8f">WriteEvent::kScheduled</a>, 
+<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761a91de3978a5f555d40750bc2d3644fca7">WriteEvent::kSent</a>, 
+<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761ac3a935014617c18b22fe37c7080d1b0d">WriteEvent::kAcked</a>, 
+<br />
+&#160;&#160;<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761af9be16a4ac9fcc9b545ff52f0606eb09">WriteEvent::kClosed</a>, 
+<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761a5a162d352f3b3603e03fc9b2f043fb40">WriteEvent::kCount</a>
+<br />
+ }</td></tr>
+<tr class="separator:ada6704bd64089d8049d2f5ec68ae0761"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:ae60e17e7c4e497b7bc207fc0928fbba4"><td class="memTemplParams" colspan="2">template&lt;typename Result , typename T &gt; </td></tr>
@@ -108,6 +123,37 @@ Functions</h2></td></tr>
 <tr class="memitem:a16c9a6e8e1da13006f55358273c41f0c"><td class="memTemplItemLeft" align="right" valign="top">Result &amp;&amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#a16c9a6e8e1da13006f55358273c41f0c">SliceCast</a> (T &amp;&amp;value, <a class="el" href="structgrpc__event__engine_1_1experimental_1_1internal_1_1_slice_castable.html">SliceCastable</a>&lt; Result, T &gt;={})</td></tr>
 <tr class="separator:a16c9a6e8e1da13006f55358273c41f0c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Enumeration Type Documentation</h2>
+<a id="ada6704bd64089d8049d2f5ec68ae0761"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ada6704bd64089d8049d2f5ec68ae0761">&#9670;&nbsp;</a></span>WriteEvent</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">enum <a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">grpc_event_engine::experimental::internal::WriteEvent</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">strong</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<table class="fieldtable">
+<tr><th colspan="2">Enumerator</th></tr><tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761a683c410aaf8cf5a9d4d6a030fdfe1b19"></a>kSendMsg&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761ad6b96be9186a34b340ce75ca89b90f8f"></a>kScheduled&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761a91de3978a5f555d40750bc2d3644fca7"></a>kSent&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761ac3a935014617c18b22fe37c7080d1b0d"></a>kAcked&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761af9be16a4ac9fcc9b545ff52f0606eb09"></a>kClosed&#160;</td><td class="fielddoc"></td></tr>
+<tr><td class="fieldname"><a id="ada6704bd64089d8049d2f5ec68ae0761a5a162d352f3b3603e03fc9b2f043fb40"></a>kCount&#160;</td><td class="fielddoc"></td></tr>
+</table>
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ae60e17e7c4e497b7bc207fc0928fbba4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae60e17e7c4e497b7bc207fc0928fbba4">&#9670;&nbsp;</a></span>SliceCast() <span class="overload">[1/3]</span></h2>
@@ -202,7 +248,7 @@ template&lt;typename Result , typename T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

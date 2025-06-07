@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -182,14 +182,14 @@ grpc_pollset_set</h3>
 <h3><a class="anchor" id="autotoc_md122"></a>
 Recap:</h3>
 <p><b>Relation between grpc_pollset_worker, grpc_pollset and grpc_fd:</b></p>
-<p><img src="../images/grpc-ps-pss-fd.png" alt="image" class="inline"/></p>
+<p><img src="/doc/images/grpc-ps-pss-fd.png" alt="image" class="inline"/></p>
 <p><b>grpc_pollset_set</b></p>
-<p><img src="../images/grpc-pss.png" alt="image" class="inline"/></p>
+<p><img src="/doc/images/grpc-pss.png" alt="image" class="inline"/></p>
 <h1><a class="anchor" id="autotoc_md123"></a>
 Polling Engine Implementations</h1>
 <h2><a class="anchor" id="autotoc_md124"></a>
 epoll1</h2>
-<p><img src="../images/grpc-epoll1.png" alt="image" class="inline"/></p>
+<p><img src="/doc/images/grpc-epoll1.png" alt="image" class="inline"/></p>
 <p>Code at <code>src/core/lib/iomgr/ev_epoll1_posix.cc</code></p>
 <ul>
 <li>The logic to choose a designated poller is quite complicated. Pollsets are internally sharded into what are called <code>pollset_neighborhood</code> (a structure internal to <code>epoll1</code> polling engine implementation). <code>grpc_pollset_workers</code> that call <code>grpc_pollset_work</code> on a given pollset are all queued in a linked-list against the <code>grpc_pollset</code>. The head of the linked list is called "root worker"</li>
@@ -217,7 +217,7 @@ Other polling engine implementations (poll and windows polling engine)</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

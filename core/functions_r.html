@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -69,10 +69,13 @@ $(function() {
 : <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#aac38c706315d24458e43986d153f0bf8">grpc_byte_buffer::grpc_byte_buffer_data</a>
 </li>
 <li>Read()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a7dfac8b5879c7088c8d2347854012095">grpc_event_engine::experimental::EventEngine::Endpoint</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a8e3e38019b031d86d8311332048c49ab">grpc_event_engine::experimental::EventEngine::Endpoint</a>
 </li>
-<li>read_hint_bytes
-: <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a0a2d665ff2d7a46ef7dea7b7bdd0a801">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
+<li>read_hint_bytes()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#aab7d107c91ee6bc77bee80ab6c9815b3">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
+</li>
+<li>ReadArgs()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#a2e2255cfbe39cf112bafc83ad9b2c484">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a>
 </li>
 <li>recv_close_on_server
 : <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ab107ca86ebc78d541ef3bb1dbca3334c">grpc_op::grpc_op_data</a>
@@ -110,11 +113,20 @@ $(function() {
 <li>RemoveLastNBytes()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html#a89375d7230133831db6afb1a4067455f">grpc_event_engine::experimental::SliceBuffer</a>
 </li>
+<li>requested_event()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html#aff5991299407e29010896f0709e20a20">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink</a>
+</li>
+<li>requested_events_mask()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html#a2b9d638d4f0dbad8c7167f28cfebc54e">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink</a>
+</li>
+<li>requested_metrics()
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html#ae696145b49cadcb4998234a73124bb58">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink</a>
+</li>
 <li>requested_token_type
 : <a class="el" href="structgrpc__sts__credentials__options.html#a139402921fe862ba5c177d28c3d1ea90">grpc_sts_credentials_options</a>
 </li>
 <li>Reservation()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#a9d23a1a88e85bd5d6a3078f05f9f3d20">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator_1_1_reservation.html#a5d6b300e395c8da01f69fec1e10b67c9">grpc_event_engine::experimental::MemoryAllocator::Reservation</a>
 </li>
 <li>Reserve()
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1internal_1_1_memory_allocator_impl.html#a668908d336cf3c21ad6f7dfe7f06739a">grpc_event_engine::experimental::internal::MemoryAllocatorImpl</a>
@@ -131,7 +143,7 @@ $(function() {
 : <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html#a033dcd524d488ef75754479c46ee63af">grpc_event_engine::experimental::MemoryAllocator</a>
 </li>
 <li>ResolvedAddress()
-: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ac8b476c2acd9c77dd881d29f2a379d5c">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
+: <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html#ad0c0417018fa8ddfe1822893e023e4c8">grpc_event_engine::experimental::EventEngine::ResolvedAddress</a>
 </li>
 <li>resource
 : <a class="el" href="structgrpc__sts__credentials__options.html#acccf3e0c9f7f8865718fbb8e51f2d5ab">grpc_sts_credentials_options</a>
@@ -150,7 +162,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

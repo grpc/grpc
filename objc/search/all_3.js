@@ -25,6 +25,5 @@ var searchData=
   ['cpp_2dstyle_2dguide_2emd_31',['cpp-style-guide.md',['../cpp-style-guide_8md.html',1,'']]],
   ['createinterceptorwithmanager_3a_32',['createInterceptorWithManager:',['../protocol_g_r_p_c_interceptor_factory-p.html#a2047e16b87d9ba8ed5354a030f074891',1,'GRPCInterceptorFactory-p']]],
   ['createtransportwithmanager_3a_33',['createTransportWithManager:',['../protocol_g_r_p_c_transport_factory-p.html#ac00356ffd7c3297fa3ed130ade090565',1,'GRPCTransportFactory-p']]],
-  ['cronetengine_34',['cronetEngine',['../category_g_r_p_c_call_07_cronet_08.html#a8d36aa504711973fc1cd14772d9fed7d',1,'GRPCCall(Cronet)::cronetEngine()'],['../interface_g_r_p_c_call.html#a8d36aa504711973fc1cd14772d9fed7d',1,'GRPCCall::cronetEngine()']]],
-  ['connection_20backoff_20interop_20test_20descriptions_35',['Connection Backoff Interop Test Descriptions',['../md_doc_connection-backoff-interop-test-description.html',1,'']]]
+  ['connection_20backoff_20interop_20test_20descriptions_34',['Connection Backoff Interop Test Descriptions',['../md_doc_connection-backoff-interop-test-description.html',1,'']]]
 ];

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -72,7 +72,6 @@ Existing Transports</h1>
 <p><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport">gRPC transports</a> plug in below the core API (one level below the C++ or other wrapped-language API). You can write your transport in C or C++ though; currently (Nov 2017) all the transports are nominally written in C++ though they are idiomatically C. The existing transports are:</p>
 <ul>
 <li><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport/chttp2">HTTP/2</a></li>
-<li><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport/cronet">Cronet</a></li>
 <li><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport/inproc">In-process</a></li>
 </ul>
 <p>Among these, the in-process is likely the easiest to understand, though arguably also the least similar to a "real" sockets-based transport since it is only used in a single process.</p>
@@ -190,7 +189,7 @@ Putting things together with detail: Sending Metadata</h1>
 <li>Core surface layer: array of <code>{slice, slice}</code> pairs where each slice references an underlying string</li>
 <li><a href="https://github.com/grpc/grpc/tree/master/src/core/lib/transport">Core transport layer</a>: list of <code>{slice, slice}</code> pairs that includes the above plus possibly some general metadata (e.g., Method and Authority for initial metadata)</li>
 <li><a href="https://github.com/grpc/grpc/tree/master/src/core/ext/transport">Specific transport layer</a>:<ul>
-<li>Either send it to the other side using transport-specific API (e.g., Cronet)</li>
+<li>Either send it to the other side using transport-specific API</li>
 <li>Or have it sent through the <a href="https://github.com/grpc/grpc/tree/master/src/core/lib/iomgr">iomgr/endpoint layer</a> (e.g., HTTP/2)</li>
 <li>Or just manipulate pointers to get it from one side to the other (e.g., In-process)</li>
 </ul>
@@ -243,7 +242,7 @@ Book-keeping responsibilities of the transport layer</h1>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

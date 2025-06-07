@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -427,9 +427,9 @@ $(function() {
 <div class="line"><a name="l00501"></a><span class="lineno">  501</span>&#160;    <span class="keywordtype">void</span> OnCancel()<span class="keyword"> override </span>{}</div>
 <div class="line"><a name="l00502"></a><span class="lineno">  502</span>&#160;    <span class="keywordtype">void</span> OnDone()<span class="keyword"> override </span>{}</div>
 <div class="line"><a name="l00503"></a><span class="lineno">  503</span>&#160;    <span class="comment">// Override InternalInlineable for this class since its reactions are</span></div>
-<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="comment">// trivial and thus do not need to be run from the executor (triggering a</span></div>
-<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    <span class="comment">// thread hop). This should only be used by internal reactors (thus the</span></div>
-<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    <span class="comment">// name) and not by user application code.</span></div>
+<div class="line"><a name="l00504"></a><span class="lineno">  504</span>&#160;    <span class="comment">// trivial and thus do not need to be run from the EventEngine (potentially</span></div>
+<div class="line"><a name="l00505"></a><span class="lineno">  505</span>&#160;    <span class="comment">// triggering a thread hop). This should only be used by internal reactors</span></div>
+<div class="line"><a name="l00506"></a><span class="lineno">  506</span>&#160;    <span class="comment">// (thus the name) and not by user application code.</span></div>
 <div class="line"><a name="l00507"></a><span class="lineno">  507</span>&#160;    <span class="keywordtype">bool</span> InternalInlineable()<span class="keyword"> override </span>{ <span class="keywordflow">return</span> <span class="keyword">true</span>; }</div>
 <div class="line"><a name="l00508"></a><span class="lineno">  508</span>&#160;  };</div>
 <div class="line"><a name="l00509"></a><span class="lineno">  509</span>&#160; </div>
@@ -617,7 +617,7 @@ $(function() {
 <div class="ttc" id="astructgrpc__metadata__array_html"><div class="ttname"><a href="structgrpc__metadata__array.html">grpc_metadata_array</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:251</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_rpc_method_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_rpc_method_handler.html">grpc::internal::RpcMethodHandler</a></div><div class="ttdoc">A wrapper class of an application provided rpc method handler.</div><div class="ttdef"><b>Definition:</b> completion_queue.h:73</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_writer_html"><div class="ttname"><a href="classgrpc_1_1_server_writer.html">grpc::ServerWriter</a></div><div class="ttdoc">Synchronous (blocking) server-side API for doing for doing a server-streaming RPCs,...</div><div class="ttdef"><b>Definition:</b> completion_queue.h:62</div></div>
-<div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:60</div></div>
+<div class="ttc" id="acompression__types_8h_html_ab9de0f68bfb1ef8ed09bd00643db14c9"><div class="ttname"><a href="compression__types_8h.html#ab9de0f68bfb1ef8ed09bd00643db14c9">grpc_compression_algorithm</a></div><div class="ttdeci">grpc_compression_algorithm</div><div class="ttdoc">The various compression algorithms supported by gRPC (not sorted by compression level)</div><div class="ttdef"><b>Definition:</b> compression_types.h:61</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_context_base_html_ada4e7a3e04ba1b9d385077f670bee3ca"><div class="ttname"><a href="classgrpc_1_1_server_context_base.html#ada4e7a3e04ba1b9d385077f670bee3ca">grpc::ServerContextBase::DefaultReactor</a></div><div class="ttdeci">grpc::ServerUnaryReactor * DefaultReactor()</div><div class="ttdoc">Get a library-owned default unary reactor for use in minimal reaction cases.</div><div class="ttdef"><b>Definition:</b> server_context.h:334</div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_call_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_call.html">grpc::internal::Call</a></div><div class="ttdoc">Straightforward wrapping of the C call object.</div><div class="ttdef"><b>Definition:</b> call.h:36</div></div>
 <div class="ttc" id="aclassgrpc_1_1_server_context_base_html"><div class="ttname"><a href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a></div><div class="ttdoc">Base class of ServerContext.</div><div class="ttdef"><b>Definition:</b> server_context.h:124</div></div>
@@ -678,7 +678,7 @@ $(function() {
 <div class="ttc" id="agrpcpp_2support_2config_8h_html"><div class="ttname"><a href="grpcpp_2support_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="agrpc_2impl_2call_8h_html"><div class="ttname"><a href="grpc_2impl_2call_8h.html">call.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_bidi_streaming_handler_html"><div class="ttname"><a href="classgrpc_1_1internal_1_1_bidi_streaming_handler.html">grpc::internal::BidiStreamingHandler</a></div><div class="ttdef"><b>Definition:</b> server_context.h:70</div></div>
-<div class="ttc" id="acompression__types_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdoc">Compression levels allow a party with knowledge of its peer's accepted encodings to request compressi...</div><div class="ttdef"><b>Definition:</b> compression_types.h:72</div></div>
+<div class="ttc" id="acompression__types_8h_html_a14a79ed6b5ebd7e1dda7c2684f499cc7"><div class="ttname"><a href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a></div><div class="ttdeci">grpc_compression_level</div><div class="ttdoc">Compression levels allow a party with knowledge of its peer's accepted encodings to request compressi...</div><div class="ttdef"><b>Definition:</b> compression_types.h:73</div></div>
 <div class="ttc" id="acall__op__set_8h_html"><div class="ttname"><a href="call__op__set_8h.html">call_op_set.h</a></div></div>
 <div class="ttc" id="anamespacestd_html"><div class="ttname"><a href="namespacestd.html">std</a></div><div class="ttdef"><b>Definition:</b> async_unary_call.h:406</div></div>
 <div class="ttc" id="agrpcpp_2impl_2call_8h_html"><div class="ttname"><a href="grpcpp_2impl_2call_8h.html">call.h</a></div></div>
@@ -712,7 +712,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_server_context_base_html_ad4a7cac98ae494a7fd231d049d574095"><div class="ttname"><a href="classgrpc_1_1_server_context_base.html#ad4a7cac98ae494a7fd231d049d574095">grpc::ServerContextBase::compression_level</a></div><div class="ttdeci">grpc_compression_level compression_level() const</div><div class="ttdoc">Return the compression algorithm to be used by the server call.</div><div class="ttdef"><b>Definition:</b> server_context.h:236</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:55 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

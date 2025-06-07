@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -68,6 +68,7 @@ $(function() {
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
+<a href="#pub-types">Public Types</a> &#124;
 <a href="#pub-methods">Public Member Functions</a>  </div>
   <div class="headertitle">
 <div class="title">grpc_event_engine::experimental::EventEngine::Endpoint Class Reference<span class="mlabels"><span class="mlabel">abstract</span></span></div>  </div>
@@ -81,29 +82,52 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Data Structures</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html">WriteEventSink</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html">WriteMetric</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An output <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html" title="An output WriteMetric consists of a key and a value.">WriteMetric</a> consists of a key and a value.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-types"></a>
+Public Types</h2></td></tr>
+<tr class="memitem:a301b6c02a83199765fee0efc0a4a77d7"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a301b6c02a83199765fee0efc0a4a77d7">WriteEvent</a> = ::<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">grpc_event_engine::experimental::internal::WriteEvent</a></td></tr>
+<tr class="separator:a301b6c02a83199765fee0efc0a4a77d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af8419b606b3e423840f713d56a6e042a"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#af8419b606b3e423840f713d56a6e042a">WriteEventCallback</a> = absl::AnyInvocable&lt; void(<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">WriteEvent</a>, absl::Time, std::vector&lt; <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html">WriteMetric</a> &gt;) const  &gt;</td></tr>
+<tr class="separator:af8419b606b3e423840f713d56a6e042a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa87b9a134fd3b57f1c9456acfe4b8951"><td class="memItemLeft" align="right" valign="top">using&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa87b9a134fd3b57f1c9456acfe4b8951">WriteEventSet</a> = std::bitset&lt; static_cast&lt; int &gt;(WriteEvent::kCount)&gt;</td></tr>
+<tr class="separator:aa87b9a134fd3b57f1c9456acfe4b8951"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
 <tr class="memitem:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">~Endpoint</a> ()=default</td></tr>
 <tr class="memdesc:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Shuts down all connections and invokes all pending read or write callbacks with an error status.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac2549a2052ff34c77674c5dd95e0d8cd">More...</a><br /></td></tr>
 <tr class="separator:ac2549a2052ff34c77674c5dd95e0d8cd"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7dfac8b5879c7088c8d2347854012095"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a7dfac8b5879c7088c8d2347854012095">Read</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a> *args)=0</td></tr>
-<tr class="memdesc:a7dfac8b5879c7088c8d2347854012095"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a7dfac8b5879c7088c8d2347854012095">More...</a><br /></td></tr>
-<tr class="separator:a7dfac8b5879c7088c8d2347854012095"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a20ee9db2384229b0d77abaca38f5e3df"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a20ee9db2384229b0d77abaca38f5e3df">Write</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data, const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a> *args)=0</td></tr>
-<tr class="memdesc:a20ee9db2384229b0d77abaca38f5e3df"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a20ee9db2384229b0d77abaca38f5e3df">More...</a><br /></td></tr>
-<tr class="separator:a20ee9db2384229b0d77abaca38f5e3df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8e3e38019b031d86d8311332048c49ab"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a8e3e38019b031d86d8311332048c49ab">Read</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_read, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *buffer, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a> args)=0</td></tr>
+<tr class="memdesc:a8e3e38019b031d86d8311332048c49ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Reads data from the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a8e3e38019b031d86d8311332048c49ab">More...</a><br /></td></tr>
+<tr class="separator:a8e3e38019b031d86d8311332048c49ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a739a963d67e0cb78842b9997901a4312"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a739a963d67e0cb78842b9997901a4312">Write</a> (absl::AnyInvocable&lt; void(absl::Status)&gt; on_writable, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_slice_buffer.html">SliceBuffer</a> *data, <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a> args)=0</td></tr>
+<tr class="memdesc:a739a963d67e0cb78842b9997901a4312"><td class="mdescLeft">&#160;</td><td class="mdescRight">Writes data out on the connection.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a739a963d67e0cb78842b9997901a4312">More...</a><br /></td></tr>
+<tr class="separator:a739a963d67e0cb78842b9997901a4312"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">GetPeerAddress</a> () const =0</td></tr>
 <tr class="memdesc:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns an address in the format described in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_d_n_s_resolver.html" title="Provides asynchronous resolution.">DNSResolver</a>.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ad0b6e8aa3891af48f11a6422f1d95bb2">More...</a><br /></td></tr>
 <tr class="separator:ad0b6e8aa3891af48f11a6422f1d95bb2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4cda2ef24a6abbc49df1806599c6c930"><td class="memItemLeft" align="right" valign="top">virtual const <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_resolved_address.html">ResolvedAddress</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a4cda2ef24a6abbc49df1806599c6c930">GetLocalAddress</a> () const =0</td></tr>
 <tr class="separator:a4cda2ef24a6abbc49df1806599c6c930"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac048621084c8ff3c600c3e64e0bee513"><td class="memItemLeft" align="right" valign="top">virtual std::vector&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac048621084c8ff3c600c3e64e0bee513">AllWriteMetrics</a> ()=0</td></tr>
+<tr class="memdesc:ac048621084c8ff3c600c3e64e0bee513"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the list of write metrics that the endpoint supports.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ac048621084c8ff3c600c3e64e0bee513">More...</a><br /></td></tr>
+<tr class="separator:ac048621084c8ff3c600c3e64e0bee513"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae46c7b27216a0ce3a7d38e0117b2ab0b"><td class="memItemLeft" align="right" valign="top">virtual std::optional&lt; absl::string_view &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ae46c7b27216a0ce3a7d38e0117b2ab0b">GetMetricName</a> (size_t key)=0</td></tr>
+<tr class="memdesc:ae46c7b27216a0ce3a7d38e0117b2ab0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the name of the write metric with the given key.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#ae46c7b27216a0ce3a7d38e0117b2ab0b">More...</a><br /></td></tr>
+<tr class="separator:ae46c7b27216a0ce3a7d38e0117b2ab0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0d8777baf0754a24a78dd61a65237520"><td class="memItemLeft" align="right" valign="top">virtual std::optional&lt; size_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a0d8777baf0754a24a78dd61a65237520">GetMetricKey</a> (absl::string_view name)=0</td></tr>
+<tr class="memdesc:a0d8777baf0754a24a78dd61a65237520"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the key of the write metric with the given name.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a0d8777baf0754a24a78dd61a65237520">More...</a><br /></td></tr>
+<tr class="separator:a0d8777baf0754a24a78dd61a65237520"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc__event__engine_1_1experimental_1_1_extensible"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc__event__engine_1_1experimental_1_1_extensible')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html">grpc_event_engine::experimental::Extensible</a></td></tr>
 <tr class="memitem:a9ef86c254e301ff8239d2f78c06be3c5 inherit pub_methods_classgrpc__event__engine_1_1experimental_1_1_extensible"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5">QueryExtension</a> (absl::string_view)</td></tr>
 <tr class="memdesc:a9ef86c254e301ff8239d2f78c06be3c5 inherit pub_methods_classgrpc__event__engine_1_1experimental_1_1_extensible"><td class="mdescLeft">&#160;</td><td class="mdescRight">A method which allows users to query whether an implementation supports a specified extension.  <a href="classgrpc__event__engine_1_1experimental_1_1_extensible.html#a9ef86c254e301ff8239d2f78c06be3c5">More...</a><br /></td></tr>
@@ -119,7 +143,50 @@ Additional Inherited Members</h2></td></tr>
 <div class="textblock"><p>One end of a connection between a gRPC client and server. </p>
 <p>Endpoints are created when connections are established, and <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> operations are gRPC's primary means of communication.</p>
 <p>Endpoints must use the provided <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_memory_allocator.html">MemoryAllocator</a> for all data buffer memory allocations. gRPC allows applications to set memory constraints per Channel or Server, and the implementation depends on all dynamic memory allocation being handled by the quota system. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+</div><h2 class="groupheader">Member Typedef Documentation</h2>
+<a id="a301b6c02a83199765fee0efc0a4a77d7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a301b6c02a83199765fee0efc0a4a77d7">&#9670;&nbsp;</a></span>WriteEvent</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent</a> =  ::<a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">grpc_event_engine::experimental::internal::WriteEvent</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af8419b606b3e423840f713d56a6e042a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af8419b606b3e423840f713d56a6e042a">&#9670;&nbsp;</a></span>WriteEventCallback</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#af8419b606b3e423840f713d56a6e042a">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventCallback</a> =  absl::AnyInvocable&lt;void( <a class="el" href="namespacegrpc__event__engine_1_1experimental_1_1internal.html#ada6704bd64089d8049d2f5ec68ae0761">WriteEvent</a>, absl::Time, std::vector&lt;<a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html">WriteMetric</a>&gt;) const&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aa87b9a134fd3b57f1c9456acfe4b8951"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa87b9a134fd3b57f1c9456acfe4b8951">&#9670;&nbsp;</a></span>WriteEventSet</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">using <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#aa87b9a134fd3b57f1c9456acfe4b8951">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSet</a> =  std::bitset&lt;static_cast&lt;int&gt;(WriteEvent::kCount)&gt;</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="ac2549a2052ff34c77674c5dd95e0d8cd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ac2549a2052ff34c77674c5dd95e0d8cd">&#9670;&nbsp;</a></span>~Endpoint()</h2>
 
@@ -148,6 +215,34 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ac048621084c8ff3c600c3e64e0bee513"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac048621084c8ff3c600c3e64e0bee513">&#9670;&nbsp;</a></span>AllWriteMetrics()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual std::vector&lt;size_t&gt; grpc_event_engine::experimental::EventEngine::Endpoint::AllWriteMetrics </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the list of write metrics that the endpoint supports. </p>
+<p>The keys are used to identify the metrics in the GetMetricName and GetMetricKey APIs. The current value of the metric can be queried by adding a <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html">WriteEventSink</a> to the <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html" title="A struct representing optional arguments that may be provided to an EventEngine Endpoint Write API ca...">WriteArgs</a> of a Write call. </p>
+
+</div>
+</div>
 <a id="a4cda2ef24a6abbc49df1806599c6c930"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4cda2ef24a6abbc49df1806599c6c930">&#9670;&nbsp;</a></span>GetLocalAddress()</h2>
 
@@ -170,6 +265,64 @@ Additional Inherited Members</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0d8777baf0754a24a78dd61a65237520"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0d8777baf0754a24a78dd61a65237520">&#9670;&nbsp;</a></span>GetMetricKey()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual std::optional&lt;size_t&gt; grpc_event_engine::experimental::EventEngine::Endpoint::GetMetricKey </td>
+          <td>(</td>
+          <td class="paramtype">absl::string_view&#160;</td>
+          <td class="paramname"><em>name</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the key of the write metric with the given name. </p>
+<p>If the name is not found, returns std::nullopt. </p>
+
+</div>
+</div>
+<a id="ae46c7b27216a0ce3a7d38e0117b2ab0b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae46c7b27216a0ce3a7d38e0117b2ab0b">&#9670;&nbsp;</a></span>GetMetricName()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">virtual std::optional&lt;absl::string_view&gt; grpc_event_engine::experimental::EventEngine::Endpoint::GetMetricName </td>
+          <td>(</td>
+          <td class="paramtype">size_t&#160;</td>
+          <td class="paramname"><em>key</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">pure virtual</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Returns the name of the write metric with the given key. </p>
+<p>If the key is not found, returns std::nullopt. </p>
 
 </div>
 </div>
@@ -201,8 +354,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a7dfac8b5879c7088c8d2347854012095"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7dfac8b5879c7088c8d2347854012095">&#9670;&nbsp;</a></span>Read()</h2>
+<a id="a8e3e38019b031d86d8311332048c49ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8e3e38019b031d86d8311332048c49ab">&#9670;&nbsp;</a></span>Read()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -225,7 +378,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">ReadArgs</a>&#160;</td>
           <td class="paramname"><em>args</em>&#160;</td>
         </tr>
         <tr>
@@ -248,8 +401,8 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
-<a id="a20ee9db2384229b0d77abaca38f5e3df"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a20ee9db2384229b0d77abaca38f5e3df">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="a739a963d67e0cb78842b9997901a4312"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a739a963d67e0cb78842b9997901a4312">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,7 +425,7 @@ Additional Inherited Members</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">const <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">WriteArgs</a>&#160;</td>
           <td class="paramname"><em>args</em>&#160;</td>
         </tr>
         <tr>
@@ -301,7 +454,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

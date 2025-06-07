@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -160,12 +160,12 @@ Additional Inherited Members</h2></td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> Interface. </p>
-<h2><a class="anchor" id="autotoc_md279"></a>
+<h2><a class="anchor" id="autotoc_md278"></a>
 Overview</h2>
 <p>The <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> encapsulates all platform-specific behaviors related to low level network I/O, timers, asynchronous execution, and DNS resolution.</p>
 <p>This interface allows developers to provide their own event management and network stacks. Motivating uses cases for supporting custom EventEngines include the ability to hook into external event loops, and using different <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instances for each channel to better insulate network I/O and callback processing from other channels.</p>
 <p>A default cross-platform <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> instance is provided by gRPC.</p>
-<h2><a class="anchor" id="autotoc_md280"></a>
+<h2><a class="anchor" id="autotoc_md279"></a>
 Lifespan and Ownership</h2>
 <p>gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure that the engines remain available until they are no longer needed. Depending on the use case, engines may live until gRPC is shut down.</p>
 <p>EXAMPLE USAGE (Not yet implemented)</p>
@@ -173,11 +173,11 @@ Lifespan and Ownership</h2>
 <p>ChannelArguments args; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); args.SetEventEngine(engine); MyAppClient client(<a class="el" href="namespacegrpc.html#a4a5c8a2c77389604feaa5d38cdd7b8d3" title="Create a new custom Channel pointing to target.">grpc::CreateCustomChannel</a>( "localhost:50051", <a class="el" href="namespacegrpc.html#a72a5e2e0be4aa041cb587bea339589d7" title="Credentials for an unencrypted, unauthenticated channel.">grpc::InsecureChannelCredentials()</a>, args));</p>
 <p>A gRPC server can use a custom <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> by calling the ServerBuilder::SetEventEngine method:</p>
 <p>ServerBuilder builder; std::shared_ptr&lt;EventEngine&gt; engine = std::make_shared&lt;MyEngine&gt;(...); builder.SetEventEngine(engine); std::unique_ptr&lt;Server&gt; server(builder.BuildAndStart()); server-&gt;Wait();</p>
-<h2><a class="anchor" id="autotoc_md281"></a>
+<h2><a class="anchor" id="autotoc_md280"></a>
 Blocking EventEngine Callbacks</h2>
 <p>Doing blocking work in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> callbacks is generally not advisable. While gRPC's default <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> implementations have some capacity to scale their thread pools to avoid starvation, this is not an instantaneous process. Further, user-provided EventEngines may not be optimized to handle excessive blocking work at all.</p>
 <p><em>Best Practice</em> : Occasional blocking work may be fine, but we do not recommend running a mostly blocking workload in <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> threads.</p>
-<h2><a class="anchor" id="autotoc_md282"></a>
+<h2><a class="anchor" id="autotoc_md281"></a>
 Thread-safety guarantees</h2>
 <p>All <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> methods are guaranteed to be thread-safe, no external synchronization is required to call any <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> method. Please note that this does not apply to application callbacks, which may be run concurrently; application state synchronization must be managed by the application. </p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
@@ -619,7 +619,7 @@ Thread-safety guarantees</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:57 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
