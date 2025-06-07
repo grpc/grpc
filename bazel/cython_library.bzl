@@ -75,6 +75,7 @@ def pyx_library(name, deps = [], py_deps = [], srcs = [], **kwargs):
             deps = deps + ["@local_config_python//:python_headers"],
             defines = defines,
             linkshared = 1,
+            linkstatic = 1,
         )
         shared_objects.append(shared_object_name)
 
