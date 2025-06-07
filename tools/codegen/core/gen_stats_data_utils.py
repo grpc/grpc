@@ -146,9 +146,11 @@ def histogram_shape(histogram, global_scope):
     else:
         return Shape(
             histogram.max,
-            histogram.scope_buckets
-            if histogram.scope_buckets
-            else histogram.buckets,
+            (
+                histogram.scope_buckets
+                if histogram.scope_buckets
+                else histogram.buckets
+            ),
             histogram.scope_counter_bits,
         )
 

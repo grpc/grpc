@@ -151,7 +151,7 @@ def scenario_transform_function(
         return lambda s: s
 
     def _transform(
-        scenarios: Iterable[Mapping[str, Any]]
+        scenarios: Iterable[Mapping[str, Any]],
     ) -> Iterable[Mapping[str, Any]]:
         """Transforms scenarios by inserting num of client channels, number of async_server_threads and offered_load."""
 

@@ -56,9 +56,11 @@ class BenchmarkClient(abc.ABC):
 
         # Parses the channel argument from config
         channel_args = tuple(
-            (arg.name, arg.str_value)
-            if arg.HasField("str_value")
-            else (arg.name, int(arg.int_value))
+            (
+                (arg.name, arg.str_value)
+                if arg.HasField("str_value")
+                else (arg.name, int(arg.int_value))
+            )
             for arg in config.channel_args
         )
 

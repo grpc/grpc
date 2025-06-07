@@ -143,9 +143,9 @@ class TestLabelInjector(OpenTelemetryLabelInjector):
                 exchange_labels_value = self._get_value_from_struct(
                     CSM_METADATA_EXCHANGE_LABEL_KEY, struct
                 )
-                deserialized_labels[
-                    CSM_METADATA_EXCHANGE_LABEL_KEY
-                ] = exchange_labels_value
+                deserialized_labels[CSM_METADATA_EXCHANGE_LABEL_KEY] = (
+                    exchange_labels_value
+                )
             else:
                 deserialized_labels[key] = value
 

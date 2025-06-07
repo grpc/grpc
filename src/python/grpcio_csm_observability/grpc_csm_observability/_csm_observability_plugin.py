@@ -130,9 +130,9 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
         serialized_str = serialized_struct.SerializeToString()
 
         self._exchange_labels = {"XEnvoyPeerMetadata": serialized_str}
-        self._additional_exchange_labels[
-            "csm.workload_canonical_service"
-        ] = canonical_service_value
+        self._additional_exchange_labels["csm.workload_canonical_service"] = (
+            canonical_service_value
+        )
         self._additional_exchange_labels["csm.mesh_id"] = mesh_id
 
     def get_labels_for_exchange(self) -> Dict[str, AnyStr]:

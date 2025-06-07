@@ -521,15 +521,15 @@ class CLanguage(object):
         environ = {"GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX": self.lang_suffix}
         if self.platform == "windows":
             environ["GRPC_CMAKE_GENERATOR"] = self._cmake_generator_windows
-            environ[
-                "GRPC_CMAKE_ARCHITECTURE"
-            ] = self._cmake_architecture_windows
-            environ[
-                "GRPC_BUILD_ACTIVATE_VS_TOOLS"
-            ] = self._activate_vs_tools_windows
-            environ[
-                "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
-            ] = self._vs_tools_architecture_windows
+            environ["GRPC_CMAKE_ARCHITECTURE"] = (
+                self._cmake_architecture_windows
+            )
+            environ["GRPC_BUILD_ACTIVATE_VS_TOOLS"] = (
+                self._activate_vs_tools_windows
+            )
+            environ["GRPC_BUILD_VS_TOOLS_ARCHITECTURE"] = (
+                self._vs_tools_architecture_windows
+            )
         elif self.platform == "linux":
             environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
