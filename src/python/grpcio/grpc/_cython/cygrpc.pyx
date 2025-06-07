@@ -37,6 +37,7 @@ _LOGGER = logging.getLogger(__name__)
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
 include "_cygrpc/grpc_string.pyx.pxi"
+include "_cygrpc/absl.pyx.pxi"
 include "_cygrpc/arguments.pyx.pxi"
 include "_cygrpc/call.pyx.pxi"
 include "_cygrpc/channel.pyx.pxi"
