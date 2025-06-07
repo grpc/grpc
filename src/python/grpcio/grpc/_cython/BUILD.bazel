@@ -35,6 +35,6 @@ pyx_library(
     defines = ["GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER=1"],
     deps = [
         "//:grpc",
-        "@com_google_absl//absl/log",
     ],
+    absl_deps = ["@com_google_absl//absl/log"],
 )
