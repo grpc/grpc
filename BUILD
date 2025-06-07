@@ -2385,6 +2385,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:alt_grpc++_base_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2479,6 +2480,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
