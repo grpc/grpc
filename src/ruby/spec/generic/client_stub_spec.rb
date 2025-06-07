@@ -113,10 +113,11 @@ describe 'ClientStub' do  # rubocop:disable Metrics/BlockLength
       expect(&blk).not_to raise_error
     end
 
-    it 'can be created with an channel override' do
+    it 'can be created with a channel override' do
+      ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)
       opts = {
         channel_args: { a_channel_arg: 'an_arg' },
-        channel_override: @ch
+        channel_override: ch
       }
       blk = proc do
         GRPC::ClientStub.new(fake_host, :this_channel_is_insecure, **opts)
