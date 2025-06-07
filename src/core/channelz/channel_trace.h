@@ -27,20 +27,17 @@
 #include <sys/types.h>
 
 #include <algorithm>
-#include <limits>
 #include <memory>
 #include <tuple>
 #include <type_traits>
-#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/dual_ref_counted.h"
+#include "src/core/lib/debug/trace_flags.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
@@ -109,6 +106,11 @@ struct RendererFromConcatenationFn {
   }
 };
 
+template <typename N>
+void OutputLogFromLogExpr(N* out, std::unique_ptr<Renderer> renderer) {
+  out->NewNode(std::move(renderer)).Commit();
+}
+
 template <typename N, typename... T>
 class LogExpr {
  public:
@@ -117,9 +119,9 @@ class LogExpr {
 
   ~LogExpr() {
     if (out_ != nullptr) {
-      out_->NewNode(std::apply(detail::RendererFromConcatenationFn(),
-                               std::move(values_)))
-          .Commit();
+      OutputLogFromLogExpr(out_,
+                           std::apply(detail::RendererFromConcatenationFn(),
+                                      std::move(values_)));
     }
   }
 
@@ -388,6 +390,40 @@ class ChannelTrace {
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
 };
 
+// A node that GRPC_CHANNELZ_TRACE can output to, that also
+// logs to absl LOG(INFO) if a particular TraceFlag is enabled.
+// Provides a way to elevate GRPC_TRACE_LOG statements to channelz
+// also.
+class TraceNode {
+ public:
+  TraceNode() = default;
+
+  template <typename F>
+  TraceNode(ChannelTrace::Node node, TraceFlag& flag, F prefix)
+      : node_(std::move(node)) {
+    if (GPR_UNLIKELY(flag.enabled())) {
+      log_to_absl_ = std::make_unique<std::string>(prefix());
+    }
+  }
+
+  bool ProducesOutput() const {
+    return node_.ProducesOutput() || log_to_absl_ != nullptr;
+  }
+
+  void Finish(std::unique_ptr<detail::Renderer> renderer) {
+    if (GPR_UNLIKELY(log_to_absl_ != nullptr)) {
+      LOG(INFO) << *log_to_absl_ << renderer->Render();
+    }
+    node_.NewNode(std::move(renderer)).Commit();
+  }
+
+  void Commit() { node_.Commit(); }
+
+ private:
+  ChannelTrace::Node node_;
+  std::unique_ptr<std::string> log_to_absl_;
+};
+
 namespace detail {
 inline ChannelTrace* LogOutputFrom(ChannelTrace& t) {
   if (!t.ProducesOutput()) return nullptr;
@@ -397,6 +433,16 @@ inline ChannelTrace* LogOutputFrom(ChannelTrace& t) {
 inline ChannelTrace::Node* LogOutputFrom(ChannelTrace::Node& n) {
   if (!n.ProducesOutput()) return nullptr;
   return &n;
+}
+
+inline TraceNode* LogOutputFrom(TraceNode& n) {
+  if (!n.ProducesOutput()) return nullptr;
+  return &n;
+}
+
+inline void OutputLogFromLogExpr(TraceNode* out,
+                                 std::unique_ptr<Renderer> renderer) {
+  out->Finish(std::move(renderer));
 }
 }  // namespace detail
 
