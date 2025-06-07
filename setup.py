@@ -495,6 +495,14 @@ def cython_extensions_and_necessity():
         core_c_files = []
     else:
         core_c_files = list(CORE_C_FILES)
+        if not BUILD_WITH_SYSTEM_ABSL:
+            core_c_files += [
+                "third_party/abseil-cpp/absl/base/internal/raw_logging.cc",
+                "third_party/abseil-cpp/absl/base/log_severity.cc",
+                "third_party/abseil-cpp/absl/log/globals.cc",
+                "third_party/abseil-cpp/absl/log/initialize.cc",
+                "third_party/abseil-cpp/absl/log/internal/globals.cc",
+            ]
         extra_objects = []
     extensions = [
         Extension(
