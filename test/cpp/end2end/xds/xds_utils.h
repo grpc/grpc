@@ -56,6 +56,12 @@ class XdsBootstrapBuilder {
     xds_channel_creds_config_ = config;
     return *this;
   }
+  XdsBootstrapBuilder& SetXdsCallCredentials(const std::string& type,
+                                             const std::string& config = "") {
+    xds_call_creds_type_ = type;
+    xds_call_creds_config_ = config;
+    return *this;
+  }
   XdsBootstrapBuilder& SetClientDefaultListenerResourceNameTemplate(
       const std::string& client_default_listener_resource_name_template) {
     client_default_listener_resource_name_template_ =
@@ -112,6 +118,8 @@ class XdsBootstrapBuilder {
   std::vector<std::string> servers_;
   std::string xds_channel_creds_type_ = "fake";
   std::string xds_channel_creds_config_;
+  std::string xds_call_creds_type_;
+  std::string xds_call_creds_config_;
   std::string client_default_listener_resource_name_template_;
   std::map<std::string /*key*/, PluginInfo> plugins_;
   std::map<std::string /*authority_name*/, AuthorityInfo> authorities_;

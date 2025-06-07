@@ -87,6 +87,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
       "              \"type\": \"<SERVER_CREDS_TYPE>\"<SERVER_CREDS_CONFIG>\n"
       "            }\n"
       "          ],\n"
+      "          \"call_creds\": [<CALL_CREDS>],\n"
       "          \"server_features\": [<SERVER_FEATURES>]\n"
       "        }";
   std::vector<std::string> server_features;
@@ -99,6 +100,11 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
   if (trusted_xds_server_) {
     server_features.push_back("\"trusted_xds_server\"");
   }
+  std::string call_creds;
+  if (!xds_call_creds_type_.empty()) {
+    call_creds = absl::StrCat("{\"type\": \"", xds_call_creds_type_,
+                              "\", \"config\": ", xds_call_creds_config_, "}");
+  }
   std::vector<std::string> servers;
   for (absl::string_view server_uri : server_uris) {
     servers.emplace_back(absl::StrReplaceAll(
@@ -110,6 +116,7 @@ std::string XdsBootstrapBuilder::MakeXdsServersText(
               ? ""
               : absl::StrCat(",\n              \"config\": ",
                              xds_channel_creds_config_)},
+         {"<CALL_CREDS>", call_creds},
          {"<SERVER_FEATURES>", absl::StrJoin(server_features, ", ")}}));
   }
   return absl::StrCat("      \"xds_servers\": [\n",
