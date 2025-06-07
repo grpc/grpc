@@ -75,7 +75,6 @@ class TraceFlag {
     value_.store(enabled, std::memory_order_relaxed);
   }
 
-  TraceFlag* next_tracer_;
   const char* const name_;
   std::atomic<bool> value_;
 };
