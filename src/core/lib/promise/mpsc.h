@@ -204,6 +204,8 @@ class Mpsc {
 
   Json::Object ToJson() const;
 
+  uint64_t QueuedTokens() const { return queued_tokens_.load(); }
+
  private:
   void Enqueue(Node* node);
   void ReleaseTokensAndClose(Node* node);
@@ -350,6 +352,8 @@ class Center : public RefCounted<Center<T>, NonPolymorphicRefCount> {
 
   void ReceiverClosed(bool wake_reader) { mpsc_.Close(wake_reader); }
 
+  uint64_t QueuedTokens() const { return mpsc_.QueuedTokens(); }
+
   Json::Object ToJson() const { return mpsc_.ToJson(); }
 
  private:
@@ -414,6 +418,22 @@ class MpscDebug {
   RefCountedPtr<mpscpipe_detail::Center<T>> center_;
 };
 
+template <typename T>
+class MpscProbe {
+ public:
+  MpscProbe() = default;
+
+  uint64_t QueuedTokens() const {
+    return center_ == nullptr ? 0 : center_->QueuedTokens();
+  }
+
+ private:
+  friend class MpscReceiver<T>;
+  explicit MpscProbe(RefCountedPtr<mpscpipe_detail::Center<T>> center)
+      : center_(std::move(center)) {}
+  RefCountedPtr<mpscpipe_detail::Center<T>> center_;
+};
+
 // Receive half of an mpsc pipe.
 template <typename T>
 class MpscReceiver {
@@ -444,6 +464,7 @@ class MpscReceiver {
   MpscSender<T> MakeSender() { return MpscSender<T>(center_); }
 
   MpscDebug<T> MakeDebug() { return MpscDebug<T>(center_); }
+  MpscProbe<T> MakeProbe() { return MpscProbe<T>(center_); }
 
   // Returns a promise that will resolve to ValueOrFailure<T>.
   // If receiving is closed, the promise will resolve to failure.
