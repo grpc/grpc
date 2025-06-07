@@ -239,6 +239,8 @@ let package = Package(
         "src/core/credentials/call/jwt/jwt_credentials.h",
         "src/core/credentials/call/jwt/jwt_verifier.cc",
         "src/core/credentials/call/jwt/jwt_verifier.h",
+        "src/core/credentials/call/jwt_util.cc",
+        "src/core/credentials/call/jwt_util.h",
         "src/core/credentials/call/oauth2/oauth2_credentials.cc",
         "src/core/credentials/call/oauth2/oauth2_credentials.h",
         "src/core/credentials/call/plugin/plugin_credentials.cc",
