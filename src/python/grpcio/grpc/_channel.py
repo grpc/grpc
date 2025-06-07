@@ -2249,6 +2249,28 @@ class Channel(grpc.Channel):
     def close(self) -> None:
         self._close()
 
+    def get_target(self) -> Optional[str]:
+        """Returns the Verbatim Target channel or None if channel is closed."""
+        connectivity = _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[
+            self._channel.check_connectivity_state(try_to_connect=False)
+        ]
+        if connectivity not in (
+            grpc.ChannelConnectivity.IDLE,
+            grpc.ChannelConnectivity.CONNECTING,
+            grpc.ChannelConnectivity.READY,
+        ):
+            return None
+        try:
+            return self._channel.target().decode("utf-8")
+        except UnicodeDecodeError as e:
+            raise UnicodeDecodeError(
+                e.encoding,
+                e.object,
+                e.start,
+                e.end,
+                f"Error decoding channel target string: {e.reason}"
+            ) from e
+
     def __del__(self):
         # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
         # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
