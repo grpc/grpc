@@ -47,7 +47,7 @@ IntegratedCallFactory = Callable[
     [
         int,
         bytes,
-        None,
+        Optional[str],
         Optional[float],
         Optional[MetadataType],
         Optional[cygrpc.CallCredentials],

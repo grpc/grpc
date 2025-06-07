@@ -1225,8 +1225,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 None if credentials is None else credentials._credentials,
                 (operations,),
                 event_handler,
-                self._context,
-                self._registered_call_handle,
+                self._context
             )
             return _MultiThreadedRendezvous(
                 state, call, self._response_deserializer, deadline
@@ -1420,8 +1419,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 None if credentials is None else credentials._credentials,
                 operations,
                 _event_handler(state, self._response_deserializer),
-                self._context,
-                self._registered_call_handle,
+                self._context
             )
             return _MultiThreadedRendezvous(
                 state, call, self._response_deserializer, deadline
@@ -1589,8 +1587,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 metadata, initial_metadata_flags
             ),
             event_handler,
-            self._context,
-            self._registered_call_handle,
+            self._context
         )
         _consume_request_iterator(
             request_iterator,
@@ -1683,8 +1680,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             None if credentials is None else credentials._credentials,
             operations,
             event_handler,
-            self._context,
-            self._registered_call_handle,
+            self._context
         )
         _consume_request_iterator(
             request_iterator,
