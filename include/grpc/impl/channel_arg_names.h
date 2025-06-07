@@ -123,10 +123,8 @@
 /** Channel arg to override the http2 :scheme header. String valued. */
 #define GRPC_ARG_HTTP2_SCHEME "grpc.http2_scheme"
 /** How many pings can the client send before needing to send a data/header
-   frame? (0 indicates that an infinite number of pings can be sent without
-   sending a data frame or header frame).
-   If experiment "max_pings_wo_data_throttle" is enabled, instead of pings being
-   completely blocked, they are throttled.
+   frame, without being throttled? (0 indicates that an infinite number of pings
+  can be sent without sending a data frame or header frame).
   * Integer valued. Defaults to 2. */
 #define GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA \
   "grpc.http2.max_pings_without_data"
