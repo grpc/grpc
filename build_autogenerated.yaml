@@ -277,6 +277,7 @@ libs:
   - src/core/credentials/transport/tls/grpc_tls_crl_provider.h
   - src/core/credentials/transport/tls/load_system_roots.h
   - src/core/credentials/transport/tls/load_system_roots_supported.h
+  - src/core/credentials/transport/tls/spiffe_utils.h
   - src/core/credentials/transport/tls/ssl_utils.h
   - src/core/credentials/transport/tls/tls_credentials.h
   - src/core/credentials/transport/tls/tls_security_connector.h
@@ -1357,6 +1358,7 @@ libs:
   - src/core/credentials/transport/tls/load_system_roots_fallback.cc
   - src/core/credentials/transport/tls/load_system_roots_supported.cc
   - src/core/credentials/transport/tls/load_system_roots_windows.cc
+  - src/core/credentials/transport/tls/spiffe_utils.cc
   - src/core/credentials/transport/tls/ssl_utils.cc
   - src/core/credentials/transport/tls/tls_credentials.cc
   - src/core/credentials/transport/tls/tls_security_connector.cc
@@ -2117,6 +2119,7 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/functional:function_ref
+  - absl/functional:overload
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
@@ -16416,10 +16419,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/credentials/transport/tls/spiffe_utils.h
+  headers: []
   src:
-  - src/core/credentials/transport/tls/spiffe_utils.cc
   - test/core/credentials/transport/tls/spiffe_utils_test.cc
   deps:
   - gtest

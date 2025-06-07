@@ -249,6 +249,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/functional/any_invocable', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/functional/function_ref', abseil_version
+    ss.dependency 'abseil/functional/overload', abseil_version
     ss.dependency 'abseil/hash/hash', abseil_version
     ss.dependency 'abseil/log/absl_check', abseil_version
     ss.dependency 'abseil/log/absl_log', abseil_version
@@ -366,6 +367,7 @@ Pod::Spec.new do |s|
                       'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                       'src/core/credentials/transport/tls/load_system_roots.h',
                       'src/core/credentials/transport/tls/load_system_roots_supported.h',
+                      'src/core/credentials/transport/tls/spiffe_utils.h',
                       'src/core/credentials/transport/tls/ssl_utils.h',
                       'src/core/credentials/transport/tls/tls_credentials.h',
                       'src/core/credentials/transport/tls/tls_security_connector.h',
@@ -1687,6 +1689,7 @@ Pod::Spec.new do |s|
                               'src/core/credentials/transport/tls/grpc_tls_crl_provider.h',
                               'src/core/credentials/transport/tls/load_system_roots.h',
                               'src/core/credentials/transport/tls/load_system_roots_supported.h',
+                              'src/core/credentials/transport/tls/spiffe_utils.h',
                               'src/core/credentials/transport/tls/ssl_utils.h',
                               'src/core/credentials/transport/tls/tls_credentials.h',
                               'src/core/credentials/transport/tls/tls_security_connector.h',
