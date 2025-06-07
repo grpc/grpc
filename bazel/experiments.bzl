@@ -32,6 +32,7 @@ EXPERIMENT_ENABLES = {
     "event_engine_secure_endpoint": "event_engine_secure_endpoint",
     "free_large_allocator": "free_large_allocator",
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
+    "keepalive_ping_timeout_enabled": "keepalive_ping_timeout_enabled",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
