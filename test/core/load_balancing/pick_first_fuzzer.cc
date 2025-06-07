@@ -511,7 +511,7 @@ class Fuzzer {
       return fuzzer_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity, absl::string_view) override {}
+    void AddTraceEvent(absl::string_view) override {}
 
     Fuzzer* const fuzzer_;
   };

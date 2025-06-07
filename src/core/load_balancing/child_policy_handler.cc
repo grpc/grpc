@@ -102,11 +102,10 @@ class ChildPolicyHandler::Helper final
     parent()->channel_control_helper()->RequestReresolution();
   }
 
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
+  void AddTraceEvent(absl::string_view message) override {
     if (parent()->shutting_down_) return;
     if (!CalledByPendingChild() && !CalledByCurrentChild()) return;
-    parent()->channel_control_helper()->AddTraceEvent(severity, message);
+    parent()->channel_control_helper()->AddTraceEvent(message);
   }
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
@@ -289,7 +288,6 @@ OrphanablePtr<LoadBalancingPolicy> ChildPolicyHandler::CreateChildPolicy(
               << lb_policy.get() << ")";
   }
   channel_control_helper()->AddTraceEvent(
-      ChannelControlHelper::TRACE_INFO,
       absl::StrCat("Created new LB policy \"", child_policy_name, "\""));
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    interested_parties());

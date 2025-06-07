@@ -495,7 +495,7 @@ class ClientChannel::ClientChannelControlHelper
     return *client_channel_->stats_plugin_group_;
   }
 
-  void AddTraceEvent(TraceSeverity, absl::string_view message) override
+  void AddTraceEvent(absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     if (client_channel_->resolver_ == nullptr) return;  // Shutting down.
     if (client_channel_->channelz_node_ != nullptr) {
@@ -505,13 +505,6 @@ class ClientChannel::ClientChannelControlHelper
   }
 
  private:
-  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
-      TraceSeverity severity) {
-    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
-    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
-    return channelz::ChannelTrace::Error;
-  }
-
   WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 

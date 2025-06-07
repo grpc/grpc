@@ -46,8 +46,7 @@ Json ChannelTrace::RenderJson() const {
   if (max_memory_ == 0) return Json();
   Json::Array array;
   MutexLock lock(&mu_);
-  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity,
-                                   std::string line, RefCountedPtr<BaseNode>) {
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, std::string line) {
     Json::Object object = {
         {"severity", Json::FromString("CT_INFO")},
         {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
@@ -201,17 +200,13 @@ void ChannelTrace::DropEntryId(uint16_t id) {
 }
 
 void ChannelTrace::ForEachTraceEvent(
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback) const {
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
   MutexLock lock(&mu_);
   ForEachTraceEventLocked(callback);
 }
 
 void ChannelTrace::ForEachTraceEventLocked(
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback) const {
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
   uint16_t id = first_entry_;
   while (id != kSentinelId) {
     const Entry& e = entries_[id];
@@ -222,16 +217,14 @@ void ChannelTrace::ForEachTraceEventLocked(
 
 void ChannelTrace::RenderEntry(
     const Entry& entry,
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback,
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback,
     int depth) const {
   if (entry.renderer != nullptr) {
-    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME), Severity::Info,
-             entry.renderer->Render(), nullptr);
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             entry.renderer->Render());
   } else if (entry.first_child != kSentinelId) {
-    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME), Severity::Info,
-             "?unknown parent entry?", nullptr);
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             "?unknown parent entry?");
   }
   if (entry.first_child != kSentinelId) {
     uint16_t id = entry.first_child;
