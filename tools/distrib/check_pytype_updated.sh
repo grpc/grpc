@@ -15,7 +15,7 @@
 
 JOBS=$(nproc) || JOBS=4
 
-VIRTUALENV=venv_check_pytype
+VIRTUALENV=venv_check_pytype_updated
 python3.7 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
