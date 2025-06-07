@@ -757,5 +757,9 @@ DataEndpoints::DataEndpoints(
   }
 }
 
+void DataEndpoints::Close() {
+  input_queues_->SetClosed(absl::UnavailableError("Transport closed."));
+}
+
 }  // namespace chaotic_good
 }  // namespace grpc_core
