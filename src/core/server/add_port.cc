@@ -78,6 +78,8 @@ int grpc_server_add_http2_port(grpc_server* server, const char* addr,
                << transport_preferences[0] << "'";
     return 0;
   }
+  LOG(INFO) << "mkmir - " << "AddPort call args -- addr: " << addr
+            << ", args: " << args;
   auto r = transport->AddPort(core_server, addr, args);
   if (!r.ok()) {
     LOG(ERROR) << "Failed to add port to server: " << r.status().message();
