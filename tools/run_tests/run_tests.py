@@ -996,7 +996,7 @@ class RubyLanguage(object):
                     "src/ruby/end2end/prefork_postfork_loop_test.rb",
                     "src/ruby/end2end/fork_test_repro_35489.rb",
                 ]
-                and self.platform == "mac"
+                and platform_string() == "mac"
             ):
                 # Fork support only present on linux
                 continue
