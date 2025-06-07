@@ -92,8 +92,7 @@ bool GrpcServerAuthzFilter::IsAuthorized(ClientMetadata& initial_metadata) {
 
 absl::Status GrpcServerAuthzFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, GrpcServerAuthzFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "GrpcServerAuthzFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("GrpcServerAuthzFilter::Call::OnClientInitialMetadata");
   if (!filter->IsAuthorized(md)) {
     return absl::PermissionDeniedError("Unauthorized RPC request rejected.");
   }

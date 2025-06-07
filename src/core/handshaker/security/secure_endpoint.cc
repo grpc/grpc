@@ -183,7 +183,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
-    GRPC_LATENT_SEE_INNER_SCOPE("unprotect");
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("unprotect");
     bool keep_looping = false;
     tsi_result result = TSI_OK;
 
@@ -312,7 +312,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   tsi_result Protect(grpc_slice_buffer* slices, int max_frame_size)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
-    GRPC_LATENT_SEE_INNER_SCOPE("protect");
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("protect");
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
 
@@ -570,7 +570,7 @@ static void on_write(void* user_data, grpc_error_handle error) {
 static void endpoint_write(
     grpc_endpoint* secure_ep, grpc_slice_buffer* slices, grpc_closure* cb,
     grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
-  GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint write");
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   tsi_result result;
   {
@@ -773,7 +773,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
                SliceBuffer* data, WriteArgs args) {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint write");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint write");
       tsi_result result;
       frame_protector_.TraceOp("Write", data->c_slice_buffer());
       if (grpc_core::IsSecureEndpointOffloadLargeWritesEnabled()) {
@@ -869,7 +869,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
    private:
     bool MaybeFinishReadImmediately() {
-      GRPC_LATENT_SEE_INNER_SCOPE("secure_endpoint maybe finish read");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure_endpoint maybe finish read");
       grpc_core::MutexLock lock(frame_protector_.read_mu());
       // If the read is large, since we got the bytes whilst still calling read,
       // offload the decryption to event engine.
@@ -900,7 +900,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
 
     static void FinishAsyncRead(grpc_core::RefCountedPtr<Impl> impl,
                                 absl::Status status) {
-      GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint finish async read");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async read");
       {
         grpc_core::MutexLock lock(impl->frame_protector_.read_mu());
         if (status.ok() && impl->wrapped_ep_ == nullptr) {
@@ -935,7 +935,7 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     };
 
     static void FinishAsyncWrite(grpc_core::RefCountedPtr<Impl> impl) {
-      GRPC_LATENT_SEE_PARENT_SCOPE("secure endpoint finish async write");
+      GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("secure endpoint finish async write");
       tsi_result result;
       std::unique_ptr<SliceBuffer> data;
       WriteArgs args;

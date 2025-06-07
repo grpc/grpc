@@ -66,6 +66,7 @@ grpc_cc_library(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
+        "//:grpcpp_latent_see_service",
     ],
 )
 
@@ -94,6 +95,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//:grpcpp_latent_see_client",
     ],
 )
 

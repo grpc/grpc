@@ -50,7 +50,7 @@ ClientLoadReportingFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 
 void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& client_initial_metadata) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientLoadReportingFilter::Call::OnClientInitialMetadata");
   // Handle client initial metadata.
   // Grab client stats object from metadata.
@@ -62,14 +62,14 @@ void ClientLoadReportingFilter::Call::OnClientInitialMetadata(
 }
 
 void ClientLoadReportingFilter::Call::OnServerInitialMetadata(ServerMetadata&) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientLoadReportingFilter::Call::OnServerInitialMetadata");
   saw_initial_metadata_ = true;
 }
 
 void ClientLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& server_trailing_metadata) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientLoadReportingFilter::Call::OnServerTrailingMetadata");
   if (client_stats_ != nullptr) {
     client_stats_->AddCallFinished(

@@ -116,8 +116,7 @@ BackendMetricFilter::Create(const ChannelArgs&, ChannelFilter::Args) {
 }
 
 void BackendMetricFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "BackendMetricFilter::Call::OnServerTrailingMetadata");
+  GRPC_LATENT_SEE_SCOPE("BackendMetricFilter::Call::OnServerTrailingMetadata");
   if (md.get(GrpcCallWasCancelled()).value_or(false)) return;
   auto* ctx = MaybeGetContext<BackendMetricProvider>();
   if (ctx == nullptr) {

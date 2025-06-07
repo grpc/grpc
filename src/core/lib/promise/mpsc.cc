@@ -26,7 +26,7 @@ namespace grpc_core::mpscpipe_detail {
 Mpsc::~Mpsc() { Close(false); }
 
 void Mpsc::Enqueue(Node* node) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::Enqueue");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::Enqueue");
   auto actors = actors_.load(std::memory_order_relaxed);
   while (true) {
     if (actors == 0) {
@@ -66,7 +66,7 @@ void Mpsc::Enqueue(Node* node) {
 }
 
 StatusFlag Mpsc::UnbufferedImmediateSend(Node* node) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::UnbufferedImmediateSend");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::UnbufferedImmediateSend");
   auto actors = actors_.load(std::memory_order_relaxed);
   while (true) {
     if (actors == 0) {
@@ -117,7 +117,7 @@ Json Mpsc::PollNextJson() const {
 }
 
 Poll<ValueOrFailure<Mpsc::Node*>> Mpsc::PollNext() {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::Next");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::Next");
   Node* accepted_head = accepted_head_;
   if (accepted_head != nullptr) {
     accepted_head_ = accepted_head->spsc_next_;
@@ -147,7 +147,7 @@ Poll<ValueOrFailure<Mpsc::Node*>> Mpsc::PollNext() {
 }
 
 bool Mpsc::AcceptNode(Node* node) {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::AcceptNode");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::AcceptNode");
   DCHECK_NE(node, nullptr);
   if (node->state_.fetch_and(255 - Node::kBlockedState,
                              std::memory_order_relaxed) &
@@ -160,7 +160,7 @@ bool Mpsc::AcceptNode(Node* node) {
 }
 
 bool Mpsc::CheckActiveTokens() {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::CheckActiveTokens");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::CheckActiveTokens");
   // First step: see if the active token count is lower than max_queued_.
   // If it's not, we do not supply any nodes.
   auto active_tokens = active_tokens_.load(std::memory_order_relaxed);
@@ -186,7 +186,7 @@ bool Mpsc::CheckActiveTokens() {
 }
 
 void Mpsc::DrainMpsc() {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::DrainMpsc");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::DrainMpsc");
 #ifndef NDEBUG
   DCHECK(!drained);
   drained = true;
@@ -210,7 +210,7 @@ void Mpsc::DrainMpsc() {
 }
 
 Poll<Mpsc::Node*> Mpsc::Dequeue() {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::Dequeue");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::Dequeue");
   Node* tail = tail_;
   uintptr_t next = tail->next_.load(std::memory_order_acquire);
 retry_all:
@@ -301,7 +301,7 @@ void Mpsc::PushStub() {
 }
 
 Mpsc::Node* Mpsc::DequeueImmediate() {
-  GRPC_LATENT_SEE_INNER_SCOPE("Mpsc::DequeueImmediate");
+  GRPC_LATENT_SEE_SCOPE("Mpsc::DequeueImmediate");
   Node* tail = tail_;
   uintptr_t next = tail->next_.load(std::memory_order_acquire);
   if (tail == &stub_) {
