@@ -286,7 +286,10 @@ cc_library(
     defines = ["CARES_STATICLIB"],
     includes = ["include", "src/lib/include", ".", "src/lib"],
     linkopts = select({
-        ":windows": ["-defaultlib:ws2_32.lib"],
+        ":windows": [
+            "-defaultlib:ws2_32.lib",
+            "-defaultlib:iphlpapi.lib",
+        ],
         "//conditions:default": [],
     }),
     linkstatic = 1,
