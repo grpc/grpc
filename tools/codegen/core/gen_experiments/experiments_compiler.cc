@@ -26,7 +26,6 @@
 #include <string>
 #include <vector>
 
-#include "src/core/util/status_helper.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -348,7 +347,7 @@ absl::Status ExperimentsCompiler::FinalizeExperiments() {
 
 absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
     const std::string& output_file, ExperimentsOutputGenerator& generator) {
-  GRPC_RETURN_IF_ERROR(FinalizeExperiments());
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateHeader(output);
   absl::Status status = WriteToFile(output_file, output);
@@ -363,7 +362,7 @@ absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
 absl::Status ExperimentsCompiler::GenerateExperimentsSrc(
     const std::string& output_file, const std::string& header_file_path,
     ExperimentsCompiler::ExperimentsOutputGenerator& generator) {
-  GRPC_RETURN_IF_ERROR(FinalizeExperiments());
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateSource(output);
   absl::Status status = WriteToFile(output_file, output);
@@ -458,7 +457,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
     const std::string& mode, std::string& output) {
   // Generate the #include for the header file.
   std::string include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H";
-  absl::StrAppend(&output, "\n#ifndef ", include_guard, "\n");
+  absl::StrAppend(&output, "\n\n#ifndef ", include_guard, "\n");
   absl::StrAppend(&output, "#define ", include_guard, "\n\n");
   absl::StrAppend(&output, "#include <grpc/support/port_platform.h>\n\n");
   absl::StrAppend(&output,
@@ -486,7 +485,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
   absl::StrAppend(&output, "\n#else\n");
   std::string num_experiments_var_name = "kNumExperiments";
   std::string experiments_metadata_var_name = "g_experiment_metadata";
-  absl::StrAppend(&output, " enum ExperimentIds {\n");
+  absl::StrAppend(&output, "enum ExperimentIds {\n");
   for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
     absl::StrAppend(&output, "  kExperimentId", SnakeToPascal(experiment_name),
                     ",\n");
@@ -592,7 +591,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateSourceInner(
       break;
     }
   }
-  absl::StrAppend(&output, "\n#include <grpc/support/port_platform.h>\n\n");
+  absl::StrAppend(&output, "\n\n#include <grpc/support/port_platform.h>\n\n");
   if (any_requires) {
     absl::StrAppend(&output, "#include <stdint.h>\n\n");
   }

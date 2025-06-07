@@ -50,6 +50,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
@@ -77,14 +78,19 @@ class OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
     call_attempt_tracer_->parent_->arena_
         ->template GetContext<grpc_core::Call>()
         ->InternalRef(
-            "OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer");
+            "OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::"
+            "TcpCallTracer");
   }
 
   ~TcpCallTracer() override {
-    call_attempt_tracer_->parent_->arena_
-        ->template GetContext<grpc_core::Call>()
-        ->InternalUnref(
-            "OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer");
+    grpc_core::ExecCtx exec_ctx;
+    auto* arena = call_attempt_tracer_->parent_->arena_;
+    // The CallAttemptTracer can be allocated on the arena and hence needs to be
+    // reset before unreffing the call.
+    call_attempt_tracer_.reset();
+    arena->template GetContext<grpc_core::Call>()->InternalUnref(
+        "OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer::~"
+        "TcpCallTracer");
   }
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
@@ -181,6 +187,9 @@ void OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
     opentelemetry::context::Context context;
     context = opentelemetry::trace::SetSpan(context, span_);
     parent_->otel_plugin_->text_map_propagator_->Inject(carrier, context);
+    if (IsSampled()) {
+      parent_->arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 

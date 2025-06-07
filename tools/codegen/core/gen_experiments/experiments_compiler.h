@@ -28,6 +28,14 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 
+// TODO(ladynana): Remove this macro once `error_flatten` experiment fully
+// rollout and status_helper.h doesn't depend on experiments.h.
+#define GRPC_EXPERIMENTS_RETURN_IF_ERROR(expr) \
+  do {                                         \
+    const absl::Status status = (expr);        \
+    if (!status.ok()) return status;           \
+  } while (0)
+
 namespace grpc_core {
 
 struct RolloutSpecification {

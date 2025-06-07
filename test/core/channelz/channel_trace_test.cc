@@ -25,6 +25,7 @@
 #include <stdlib.h>
 
 #include <list>
+#include <ostream>
 #include <string>
 #include <thread>
 
@@ -40,20 +41,18 @@
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
 namespace grpc_core {
+
+template <typename Sink>
+void AbslStringify(Sink& sink, const Json& json) {
+  sink.Append(JsonDump(json));
+}
+
+std::ostream& operator<<(std::ostream& os, const Json& json) {
+  return os << JsonDump(json);
+}
+
 namespace channelz {
 namespace testing {
-
-// Testing peer to access channel internals.
-class SubchannelNodePeer {
- public:
-  explicit SubchannelNodePeer(SubchannelNode* node) : node_(node) {}
-  ChannelTrace* trace() const { return &node_->trace_; }
-
- private:
-  SubchannelNode* node_;
-};
-
-size_t GetSizeofTraceEvent() { return sizeof(ChannelTrace::TraceEvent); }
 
 namespace {
 
@@ -104,15 +103,12 @@ MATCHER_P2(IsTraceEvent, description, severity, "is trace event") {
       arg, result_listener);
 }
 
-MATCHER_P3(IsTraceEventWithChannelRef, description, severity, channel_ref,
+MATCHER_P2(IsTraceEventWithChannelRef, description, channel_ref,
            "is trace event with channel ref") {
   return ::testing::ExplainMatchResult(
       IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("channelRef",
-                          IsJsonObject(::testing::ElementsAre(::testing::Pair(
-                              "channelId", IsJsonStringNumber(channel_ref))))),
           ::testing::Pair("description", IsJsonString(description)),
-          ::testing::Pair("severity", IsJsonString(severity)),
+          ::testing::Pair("severity", IsJsonString("CT_INFO")),
           ::testing::Pair("timestamp", IsJsonString(::testing::_)))),
       arg, result_listener);
 }
@@ -122,30 +118,8 @@ MATCHER_P3(IsTraceEventWithSubchannelRef, description, severity, subchannel_ref,
   return ::testing::ExplainMatchResult(
       IsJsonObject(::testing::ElementsAre(
           ::testing::Pair("description", IsJsonString(description)),
-          ::testing::Pair("severity", IsJsonString(severity)),
-          ::testing::Pair(
-              "subchannelRef",
-              IsJsonObject(::testing::ElementsAre(::testing::Pair(
-                  "subchannelId", IsJsonStringNumber(subchannel_ref))))),
+          ::testing::Pair("severity", IsJsonString("CT_INFO")),
           ::testing::Pair("timestamp", IsJsonString(::testing::_)))),
-      arg, result_listener);
-}
-
-MATCHER(IsEmptyChannelTrace, "is empty channel trace") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)))),
-      arg, result_listener);
-}
-
-MATCHER_P2(IsChannelTrace, num_events_logged_expected, events_matcher,
-           "is channel trace") {
-  return ::testing::ExplainMatchResult(
-      IsJsonObject(::testing::ElementsAre(
-          ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)),
-          ::testing::Pair("events", IsJsonArray(events_matcher)),
-          ::testing::Pair("numEventsLogged",
-                          IsJsonStringNumber(num_events_logged_expected)))),
       arg, result_listener);
 }
 
@@ -154,6 +128,17 @@ MATCHER_P(IsEmptyChannelTrace, num_events_logged_expected,
   return ::testing::ExplainMatchResult(
       IsJsonObject(::testing::ElementsAre(
           ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)),
+          ::testing::Pair("numEventsLogged",
+                          IsJsonStringNumber(num_events_logged_expected)))),
+      arg, result_listener);
+}
+
+MATCHER_P2(IsChannelTraceWithEvents, num_events_logged_expected, events_matcher,
+           "is channel trace") {
+  return ::testing::ExplainMatchResult(
+      IsJsonObject(::testing::ElementsAre(
+          ::testing::Pair("creationTimestamp", IsJsonString(::testing::_)),
+          ::testing::Pair("events", IsJsonArray(events_matcher)),
           ::testing::Pair("numEventsLogged",
                           IsJsonStringNumber(num_events_logged_expected)))),
       arg, result_listener);
@@ -171,107 +156,36 @@ const int kEventListMemoryLimit = 1024 * 1024;
 // Tests basic ChannelTrace functionality like construction, adding trace, and
 // lookups by uuid.
 TEST(ChannelTracerTest, BasicTest) {
-  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("one"));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("two"));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Warning,
-                       grpc_slice_from_static_string("three"));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Error,
-                       grpc_slice_from_static_string("four"));
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsChannelTrace(4, ::testing::ElementsAre(
-                                          IsTraceEvent("one", "CT_INFO"),
-                                          IsTraceEvent("two", "CT_INFO"),
-                                          IsTraceEvent("three", "CT_WARNING"),
-                                          IsTraceEvent("four", "CT_ERROR"))))
-      << JsonDump(json);
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("five"));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("six"));
-  json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsChannelTrace(6, ::testing::ElementsAre(
-                                          IsTraceEvent("one", "CT_INFO"),
-                                          IsTraceEvent("two", "CT_INFO"),
-                                          IsTraceEvent("three", "CT_WARNING"),
-                                          IsTraceEvent("four", "CT_ERROR"),
-                                          IsTraceEvent("five", "CT_INFO"),
-                                          IsTraceEvent("six", "CT_INFO"))))
-      << JsonDump(json);
-}
-
-// Tests more complex functionality, like a parent channel tracking
-// subchannles. This exercises the ref/unref patterns since the parent tracer
-// and this function will both hold refs to the subchannel.
-TEST(ChannelTracerTest, ComplexTest) {
-  ExecCtx exec_ctx;
-  ChannelTrace tracer(kEventListMemoryLimit);
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("one"));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("two"));
-  auto subchannel_node = MakeRefCounted<SubchannelNode>("ipv4:1.2.3.4:5678",
-                                                        kEventListMemoryLimit);
-  auto* subchannel_node_trace =
-      SubchannelNodePeer(subchannel_node.get()).trace();
-  tracer.AddTraceEventWithReference(
-      ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("subchannel one created"), subchannel_node);
+  tracer.NewNode("one").Commit();
+  tracer.NewNode("two").Commit();
+  tracer.NewNode("three").Commit();  // Severity Warning is lost
+  tracer.NewNode("four").Commit();   // Severity Error is lost
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(json,
-              IsChannelTrace(3, ::testing::ElementsAre(
-                                    IsTraceEvent("one", "CT_INFO"),
-                                    IsTraceEvent("two", "CT_INFO"),
-                                    IsTraceEventWithSubchannelRef(
-                                        "subchannel one created", "CT_INFO",
-                                        subchannel_node->uuid()))))
+              IsChannelTraceWithEvents(
+                  4, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"),
+                                            IsTraceEvent("two", "CT_INFO"),
+                                            IsTraceEvent("three", "CT_INFO"),
+                                            IsTraceEvent("four", "CT_INFO"))))
       << JsonDump(json);
-  subchannel_node_trace->AddTraceEvent(ChannelTrace::Severity::Info,
-                                       grpc_slice_from_static_string("one"));
-  json = subchannel_node_trace->RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(
-      json,
-      IsChannelTrace(1, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"))))
-      << JsonDump(json);
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_static_string("three"));
-  auto channel_node =
-      MakeRefCounted<ChannelNode>("fake_target", kEventListMemoryLimit, 0);
-  tracer.AddTraceEventWithReference(
-      ChannelTrace::Severity::Info,
-      grpc_slice_from_static_string("LB channel two created"), channel_node);
-  tracer.AddTraceEventWithReference(
-      ChannelTrace::Severity::Warning,
-      grpc_slice_from_static_string("subchannel one inactive"),
-      subchannel_node);
+  tracer.NewNode("five").Commit();
+  tracer.NewNode("six").Commit();
   json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
   EXPECT_THAT(
       json,
-      IsChannelTrace(
+      IsChannelTraceWithEvents(
           6,
           ::testing::ElementsAre(
               IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
-              IsTraceEventWithSubchannelRef("subchannel one created", "CT_INFO",
-                                            subchannel_node->uuid()),
-              IsTraceEvent("three", "CT_INFO"),
-              IsTraceEventWithChannelRef("LB channel two created", "CT_INFO",
-                                         channel_node->uuid()),
-              IsTraceEventWithSubchannelRef("subchannel one inactive",
-                                            "CT_WARNING",
-                                            subchannel_node->uuid()))))
+              IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
+              IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
       << JsonDump(json);
 }
 
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
-  ExecCtx exec_ctx;
   // Doesn't make sense in practice, but serves a testing purpose for the
   // channel tracing bookkeeping. All tracing events added should get
   // immediately garbage collected.
@@ -279,110 +193,22 @@ TEST(ChannelTracerTest, TestSmallMemoryLimit) {
   ChannelTrace tracer(kSmallMemoryLimit);
   const size_t kNumEvents = 4;
   for (size_t i = 0; i < kNumEvents; ++i) {
-    tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                         grpc_slice_from_static_string("trace"));
+    tracer.NewNode("trace").Commit();
   }
   Json json = tracer.RenderJson();
   ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsEmptyChannelTrace(kNumEvents)) << JsonDump(json);
-}
-
-TEST(ChannelTracerTest, TestEviction) {
-  ExecCtx exec_ctx;
-  const int kTraceEventSize = GetSizeofTraceEvent();
-  const int kNumEvents = 5;
-  ChannelTrace tracer(kTraceEventSize * kNumEvents);
-  std::list<::testing::Matcher<Json>> matchers;
-  for (int i = 1; i <= kNumEvents; ++i) {
-    tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                         grpc_slice_from_static_string("trace"));
-    matchers.push_back(IsTraceEvent("trace", "CT_INFO"));
-    Json json = tracer.RenderJson();
-    ValidateJsonProtoTranslation(json);
-    EXPECT_THAT(json, IsChannelTrace(i, ::testing::ElementsAreArray(matchers)))
-        << JsonDump(json);
-  }
-  // At this point the list is full, and each subsequent enntry will cause an
-  // eviction.
-  for (int i = 1; i <= kNumEvents; ++i) {
-    tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                         grpc_slice_from_static_string("new"));
-    matchers.pop_front();
-    matchers.push_back(IsTraceEvent("new", "CT_INFO"));
-    Json json = tracer.RenderJson();
-    ValidateJsonProtoTranslation(json);
-    EXPECT_THAT(json, IsChannelTrace(kNumEvents + i,
-                                     ::testing::ElementsAreArray(matchers)))
-        << JsonDump(json);
-  }
-}
-
-TEST(ChannelTracerTest, TestMultipleEviction) {
-  ExecCtx exec_ctx;
-  const size_t kTraceEventSize = GetSizeofTraceEvent();
-  const int kNumEvents = 5;
-  ChannelTrace tracer(kTraceEventSize * kNumEvents);
-  std::list<::testing::Matcher<Json>> matchers;
-  for (int i = 1; i <= kNumEvents; ++i) {
-    tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                         grpc_slice_from_static_string("trace"));
-    matchers.push_back(IsTraceEvent("trace", "CT_INFO"));
-    Json json = tracer.RenderJson();
-    ValidateJsonProtoTranslation(json);
-    EXPECT_THAT(json, IsChannelTrace(i, ::testing::ElementsAreArray(matchers)))
-        << JsonDump(json);
-  }
-  // At this point the list is full, and each subsequent enntry will cause an
-  // eviction. We will now add in a trace event that has a copied string. This
-  // uses more memory, so it will cause a double eviciction.
-  std::string msg(GRPC_SLICE_INLINED_SIZE + 1, 'x');
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                       grpc_slice_from_cpp_string(msg));
-  matchers.pop_front();
-  matchers.pop_front();
-  matchers.push_back(IsTraceEvent(msg, "CT_INFO"));
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsChannelTrace(kNumEvents + 1,
-                                   ::testing::ElementsAreArray(matchers)))
-      << JsonDump(json);
-}
-
-TEST(ChannelTracerTest, TestTotalEviction) {
-  ExecCtx exec_ctx;
-  const int kTraceEventSize = GetSizeofTraceEvent();
-  const int kNumEvents = 5;
-  ChannelTrace tracer(kTraceEventSize * kNumEvents);
-  std::list<::testing::Matcher<Json>> matchers;
-  for (int i = 1; i <= kNumEvents; ++i) {
-    tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                         grpc_slice_from_static_string("trace"));
-    matchers.push_back(IsTraceEvent("trace", "CT_INFO"));
-    Json json = tracer.RenderJson();
-    ValidateJsonProtoTranslation(json);
-    EXPECT_THAT(json, IsChannelTrace(i, ::testing::ElementsAreArray(matchers)))
-        << JsonDump(json);
-  }
-  // At this point the list is full. Now we add such a big slice that
-  // everything gets evicted.
-  grpc_slice huge_slice = grpc_slice_malloc(kTraceEventSize * (kNumEvents + 1));
-  tracer.AddTraceEvent(ChannelTrace::Severity::Info, huge_slice);
-  Json json = tracer.RenderJson();
-  ValidateJsonProtoTranslation(json);
-  EXPECT_THAT(json, IsEmptyChannelTrace(kNumEvents + 1)) << JsonDump(json);
+  EXPECT_THAT(json, IsEmptyChannelTrace(4)) << JsonDump(json);
 }
 
 // Tests that the code is thread-safe.
 TEST(ChannelTracerTest, ThreadSafety) {
-  ExecCtx exec_ctx;
   ChannelTrace tracer(kEventListMemoryLimit);
   absl::Notification done;
   std::vector<std::unique_ptr<std::thread>> threads;
   for (size_t i = 0; i < 10; ++i) {
     threads.push_back(std::make_unique<std::thread>([&]() {
       do {
-        tracer.AddTraceEvent(ChannelTrace::Severity::Info,
-                             grpc_slice_from_static_string("trace"));
+        tracer.NewNode("trace").Commit();
       } while (!done.HasBeenNotified());
     }));
   }

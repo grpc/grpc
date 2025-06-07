@@ -30,6 +30,7 @@
 
 namespace grpc_core {
 class GlobalStatsCollector;
+class Http2GlobalStatsCollector;
 class Http2StatsCollector;
 class HistogramCollector_16777216_20_64;
 class Histogram_16777216_20_64 {
@@ -283,13 +284,6 @@ struct GlobalStats {
     kSyscallRead,
     kTcpReadAlloc8k,
     kTcpReadAlloc64k,
-    kHttp2SettingsWrites,
-    kHttp2PingsSent,
-    kHttp2WritesBegun,
-    kHttp2TransportStalls,
-    kHttp2StreamStalls,
-    kHttp2HpackHits,
-    kHttp2HpackMisses,
     kCqPluckCreates,
     kCqNextCreates,
     kCqCallbackCreates,
@@ -316,22 +310,6 @@ struct GlobalStats {
     kTcpReadSize,
     kTcpReadOffer,
     kTcpReadOfferIovSize,
-    kHttp2SendMessageSize,
-    kHttp2MetadataSize,
-    kHttp2HpackEntryLifetime,
-    kHttp2HeaderTableSize,
-    kHttp2InitialWindowSize,
-    kHttp2MaxConcurrentStreams,
-    kHttp2MaxFrameSize,
-    kHttp2MaxHeaderListSize,
-    kHttp2PreferredReceiveCryptoMessageSize,
-    kHttp2StreamRemoteWindowUpdate,
-    kHttp2TransportRemoteWindowUpdate,
-    kHttp2TransportWindowUpdatePeriod,
-    kHttp2StreamWindowUpdatePeriod,
-    kHttp2WriteTargetSize,
-    kHttp2WriteDataFrameSize,
-    kHttp2ReadDataFrameSize,
     kWrrSubchannelListSize,
     kWrrSubchannelReadySize,
     kWorkSerializerRunTimeMs,
@@ -376,13 +354,6 @@ struct GlobalStats {
       uint64_t syscall_read;
       uint64_t tcp_read_alloc_8k;
       uint64_t tcp_read_alloc_64k;
-      uint64_t http2_settings_writes;
-      uint64_t http2_pings_sent;
-      uint64_t http2_writes_begun;
-      uint64_t http2_transport_stalls;
-      uint64_t http2_stream_stalls;
-      uint64_t http2_hpack_hits;
-      uint64_t http2_hpack_misses;
       uint64_t cq_pluck_creates;
       uint64_t cq_next_creates;
       uint64_t cq_callback_creates;
@@ -409,22 +380,6 @@ struct GlobalStats {
   Histogram_16777216_20_64 tcp_read_size;
   Histogram_16777216_20_64 tcp_read_offer;
   Histogram_80_10_64 tcp_read_offer_iov_size;
-  Histogram_16777216_20_64 http2_send_message_size;
-  Histogram_65536_26_64 http2_metadata_size;
-  Histogram_1800000_40_64 http2_hpack_entry_lifetime;
-  Histogram_16777216_20_64 http2_header_table_size;
-  Histogram_16777216_50_64 http2_initial_window_size;
-  Histogram_16777216_20_64 http2_max_concurrent_streams;
-  Histogram_16777216_50_64 http2_max_frame_size;
-  Histogram_16777216_20_64 http2_max_header_list_size;
-  Histogram_16777216_20_64 http2_preferred_receive_crypto_message_size;
-  Histogram_16777216_20_64 http2_stream_remote_window_update;
-  Histogram_16777216_20_64 http2_transport_remote_window_update;
-  Histogram_100000_20_64 http2_transport_window_update_period;
-  Histogram_100000_20_64 http2_stream_window_update_period;
-  Histogram_16777216_50_64 http2_write_target_size;
-  Histogram_16777216_50_64 http2_write_data_frame_size;
-  Histogram_16777216_50_64 http2_read_data_frame_size;
   Histogram_10000_20_64 wrr_subchannel_list_size;
   Histogram_10000_20_64 wrr_subchannel_ready_size;
   Histogram_100000_20_64 work_serializer_run_time_ms;
@@ -496,34 +451,6 @@ class GlobalStatsCollector {
   }
   void IncrementTcpReadAlloc64k() {
     data_.this_cpu().tcp_read_alloc_64k.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2SettingsWrites() {
-    data_.this_cpu().http2_settings_writes.fetch_add(1,
-                                                     std::memory_order_relaxed);
-  }
-  void IncrementHttp2PingsSent() {
-    data_.this_cpu().http2_pings_sent.fetch_add(1, std::memory_order_relaxed);
-  }
-
- private:
-  void IncrementHttp2WritesBegun() {
-    data_.this_cpu().http2_writes_begun.fetch_add(1, std::memory_order_relaxed);
-  }
-
- public:
-  void IncrementHttp2TransportStalls() {
-    data_.this_cpu().http2_transport_stalls.fetch_add(
-        1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2StreamStalls() {
-    data_.this_cpu().http2_stream_stalls.fetch_add(1,
-                                                   std::memory_order_relaxed);
-  }
-  void IncrementHttp2HpackHits() {
-    data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed);
-  }
-  void IncrementHttp2HpackMisses() {
-    data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed);
   }
   void IncrementCqPluckCreates() {
     data_.this_cpu().cq_pluck_creates.fetch_add(1, std::memory_order_relaxed);
@@ -599,59 +526,6 @@ class GlobalStatsCollector {
   void IncrementTcpReadOfferIovSize(int value) {
     data_.this_cpu().tcp_read_offer_iov_size.Increment(value);
   }
-  void IncrementHttp2SendMessageSize(int value) {
-    data_.this_cpu().http2_send_message_size.Increment(value);
-  }
-  void IncrementHttp2MetadataSize(int value) {
-    data_.this_cpu().http2_metadata_size.Increment(value);
-  }
-  void IncrementHttp2HpackEntryLifetime(int value) {
-    data_.this_cpu().http2_hpack_entry_lifetime.Increment(value);
-  }
-  void IncrementHttp2HeaderTableSize(int value) {
-    data_.this_cpu().http2_header_table_size.Increment(value);
-  }
-  void IncrementHttp2InitialWindowSize(int value) {
-    data_.this_cpu().http2_initial_window_size.Increment(value);
-  }
-  void IncrementHttp2MaxConcurrentStreams(int value) {
-    data_.this_cpu().http2_max_concurrent_streams.Increment(value);
-  }
-  void IncrementHttp2MaxFrameSize(int value) {
-    data_.this_cpu().http2_max_frame_size.Increment(value);
-  }
-  void IncrementHttp2MaxHeaderListSize(int value) {
-    data_.this_cpu().http2_max_header_list_size.Increment(value);
-  }
-  void IncrementHttp2PreferredReceiveCryptoMessageSize(int value) {
-    data_.this_cpu().http2_preferred_receive_crypto_message_size.Increment(
-        value);
-  }
-  void IncrementHttp2StreamRemoteWindowUpdate(int value) {
-    data_.this_cpu().http2_stream_remote_window_update.Increment(value);
-  }
-  void IncrementHttp2TransportRemoteWindowUpdate(int value) {
-    data_.this_cpu().http2_transport_remote_window_update.Increment(value);
-  }
-  void IncrementHttp2TransportWindowUpdatePeriod(int value) {
-    data_.this_cpu().http2_transport_window_update_period.Increment(value);
-  }
-  void IncrementHttp2StreamWindowUpdatePeriod(int value) {
-    data_.this_cpu().http2_stream_window_update_period.Increment(value);
-  }
-
- private:
-  void IncrementHttp2WriteTargetSize(int value) {
-    data_.this_cpu().http2_write_target_size.Increment(value);
-  }
-
- public:
-  void IncrementHttp2WriteDataFrameSize(int value) {
-    data_.this_cpu().http2_write_data_frame_size.Increment(value);
-  }
-  void IncrementHttp2ReadDataFrameSize(int value) {
-    data_.this_cpu().http2_read_data_frame_size.Increment(value);
-  }
   void IncrementWrrSubchannelListSize(int value) {
     data_.this_cpu().wrr_subchannel_list_size.Increment(value);
   }
@@ -715,6 +589,7 @@ class GlobalStatsCollector {
   }
 
  private:
+  friend class Http2GlobalStatsCollector;
   friend class Http2StatsCollector;
   struct Data {
     std::atomic<uint64_t> client_calls_created{0};
@@ -730,13 +605,6 @@ class GlobalStatsCollector {
     std::atomic<uint64_t> syscall_read{0};
     std::atomic<uint64_t> tcp_read_alloc_8k{0};
     std::atomic<uint64_t> tcp_read_alloc_64k{0};
-    std::atomic<uint64_t> http2_settings_writes{0};
-    std::atomic<uint64_t> http2_pings_sent{0};
-    std::atomic<uint64_t> http2_writes_begun{0};
-    std::atomic<uint64_t> http2_transport_stalls{0};
-    std::atomic<uint64_t> http2_stream_stalls{0};
-    std::atomic<uint64_t> http2_hpack_hits{0};
-    std::atomic<uint64_t> http2_hpack_misses{0};
     std::atomic<uint64_t> cq_pluck_creates{0};
     std::atomic<uint64_t> cq_next_creates{0};
     std::atomic<uint64_t> cq_callback_creates{0};
@@ -760,23 +628,6 @@ class GlobalStatsCollector {
     HistogramCollector_16777216_20_64 tcp_read_size;
     HistogramCollector_16777216_20_64 tcp_read_offer;
     HistogramCollector_80_10_64 tcp_read_offer_iov_size;
-    HistogramCollector_16777216_20_64 http2_send_message_size;
-    HistogramCollector_65536_26_64 http2_metadata_size;
-    HistogramCollector_1800000_40_64 http2_hpack_entry_lifetime;
-    HistogramCollector_16777216_20_64 http2_header_table_size;
-    HistogramCollector_16777216_50_64 http2_initial_window_size;
-    HistogramCollector_16777216_20_64 http2_max_concurrent_streams;
-    HistogramCollector_16777216_50_64 http2_max_frame_size;
-    HistogramCollector_16777216_20_64 http2_max_header_list_size;
-    HistogramCollector_16777216_20_64
-        http2_preferred_receive_crypto_message_size;
-    HistogramCollector_16777216_20_64 http2_stream_remote_window_update;
-    HistogramCollector_16777216_20_64 http2_transport_remote_window_update;
-    HistogramCollector_100000_20_64 http2_transport_window_update_period;
-    HistogramCollector_100000_20_64 http2_stream_window_update_period;
-    HistogramCollector_16777216_50_64 http2_write_target_size;
-    HistogramCollector_16777216_50_64 http2_write_data_frame_size;
-    HistogramCollector_16777216_50_64 http2_read_data_frame_size;
     HistogramCollector_10000_20_64 wrr_subchannel_list_size;
     HistogramCollector_10000_20_64 wrr_subchannel_ready_size;
     HistogramCollector_100000_20_64 work_serializer_run_time_ms;
@@ -803,6 +654,189 @@ class GlobalStatsCollector {
 inline GlobalStatsCollector& global_stats() {
   return *NoDestructSingleton<GlobalStatsCollector>::Get();
 }
+struct Http2GlobalStats {
+  enum class Counter {
+    kHttp2SettingsWrites,
+    kHttp2PingsSent,
+    kHttp2TransportStalls,
+    kHttp2StreamStalls,
+    kHttp2HpackHits,
+    kHttp2HpackMisses,
+    kHttp2WritesBegun,
+    COUNT
+  };
+  enum class Histogram {
+    kHttp2SendMessageSize,
+    kHttp2MetadataSize,
+    kHttp2HpackEntryLifetime,
+    kHttp2HeaderTableSize,
+    kHttp2InitialWindowSize,
+    kHttp2MaxConcurrentStreams,
+    kHttp2MaxFrameSize,
+    kHttp2MaxHeaderListSize,
+    kHttp2PreferredReceiveCryptoMessageSize,
+    kHttp2StreamRemoteWindowUpdate,
+    kHttp2TransportRemoteWindowUpdate,
+    kHttp2TransportWindowUpdatePeriod,
+    kHttp2StreamWindowUpdatePeriod,
+    kHttp2WriteDataFrameSize,
+    kHttp2ReadDataFrameSize,
+    kHttp2WriteTargetSize,
+    COUNT
+  };
+  Http2GlobalStats();
+  static const absl::string_view counter_name[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_name[static_cast<int>(Histogram::COUNT)];
+  static const absl::string_view counter_doc[static_cast<int>(Counter::COUNT)];
+  static const absl::string_view
+      histogram_doc[static_cast<int>(Histogram::COUNT)];
+  union {
+    struct {
+      uint64_t http2_settings_writes;
+      uint64_t http2_pings_sent;
+      uint64_t http2_transport_stalls;
+      uint64_t http2_stream_stalls;
+      uint64_t http2_hpack_hits;
+      uint64_t http2_hpack_misses;
+      uint64_t http2_writes_begun;
+    };
+    uint64_t counters[static_cast<int>(Counter::COUNT)];
+  };
+  Histogram_16777216_20_64 http2_send_message_size;
+  Histogram_65536_26_64 http2_metadata_size;
+  Histogram_1800000_40_64 http2_hpack_entry_lifetime;
+  Histogram_16777216_20_64 http2_header_table_size;
+  Histogram_16777216_50_64 http2_initial_window_size;
+  Histogram_16777216_20_64 http2_max_concurrent_streams;
+  Histogram_16777216_50_64 http2_max_frame_size;
+  Histogram_16777216_20_64 http2_max_header_list_size;
+  Histogram_16777216_20_64 http2_preferred_receive_crypto_message_size;
+  Histogram_16777216_20_64 http2_stream_remote_window_update;
+  Histogram_16777216_20_64 http2_transport_remote_window_update;
+  Histogram_100000_20_64 http2_transport_window_update_period;
+  Histogram_100000_20_64 http2_stream_window_update_period;
+  Histogram_16777216_50_64 http2_write_data_frame_size;
+  Histogram_16777216_50_64 http2_read_data_frame_size;
+  Histogram_16777216_50_64 http2_write_target_size;
+  HistogramView histogram(Histogram which) const;
+  std::unique_ptr<Http2GlobalStats> Diff(const Http2GlobalStats& other) const;
+};
+class Http2GlobalStatsCollector {
+ public:
+  std::unique_ptr<Http2GlobalStats> Collect() const;
+  void IncrementHttp2SettingsWrites() {
+    data_.this_cpu().http2_settings_writes.fetch_add(1,
+                                                     std::memory_order_relaxed);
+  }
+  void IncrementHttp2PingsSent() {
+    data_.this_cpu().http2_pings_sent.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2TransportStalls() {
+    data_.this_cpu().http2_transport_stalls.fetch_add(
+        1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2StreamStalls() {
+    data_.this_cpu().http2_stream_stalls.fetch_add(1,
+                                                   std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackHits() {
+    data_.this_cpu().http2_hpack_hits.fetch_add(1, std::memory_order_relaxed);
+  }
+  void IncrementHttp2HpackMisses() {
+    data_.this_cpu().http2_hpack_misses.fetch_add(1, std::memory_order_relaxed);
+  }
+
+ private:
+  void IncrementHttp2WritesBegun() {
+    data_.this_cpu().http2_writes_begun.fetch_add(1, std::memory_order_relaxed);
+  }
+
+ public:
+  void IncrementHttp2SendMessageSize(int value) {
+    data_.this_cpu().http2_send_message_size.Increment(value);
+  }
+  void IncrementHttp2MetadataSize(int value) {
+    data_.this_cpu().http2_metadata_size.Increment(value);
+  }
+  void IncrementHttp2HpackEntryLifetime(int value) {
+    data_.this_cpu().http2_hpack_entry_lifetime.Increment(value);
+  }
+  void IncrementHttp2HeaderTableSize(int value) {
+    data_.this_cpu().http2_header_table_size.Increment(value);
+  }
+  void IncrementHttp2InitialWindowSize(int value) {
+    data_.this_cpu().http2_initial_window_size.Increment(value);
+  }
+  void IncrementHttp2MaxConcurrentStreams(int value) {
+    data_.this_cpu().http2_max_concurrent_streams.Increment(value);
+  }
+  void IncrementHttp2MaxFrameSize(int value) {
+    data_.this_cpu().http2_max_frame_size.Increment(value);
+  }
+  void IncrementHttp2MaxHeaderListSize(int value) {
+    data_.this_cpu().http2_max_header_list_size.Increment(value);
+  }
+  void IncrementHttp2PreferredReceiveCryptoMessageSize(int value) {
+    data_.this_cpu().http2_preferred_receive_crypto_message_size.Increment(
+        value);
+  }
+  void IncrementHttp2StreamRemoteWindowUpdate(int value) {
+    data_.this_cpu().http2_stream_remote_window_update.Increment(value);
+  }
+  void IncrementHttp2TransportRemoteWindowUpdate(int value) {
+    data_.this_cpu().http2_transport_remote_window_update.Increment(value);
+  }
+  void IncrementHttp2TransportWindowUpdatePeriod(int value) {
+    data_.this_cpu().http2_transport_window_update_period.Increment(value);
+  }
+  void IncrementHttp2StreamWindowUpdatePeriod(int value) {
+    data_.this_cpu().http2_stream_window_update_period.Increment(value);
+  }
+  void IncrementHttp2WriteDataFrameSize(int value) {
+    data_.this_cpu().http2_write_data_frame_size.Increment(value);
+  }
+  void IncrementHttp2ReadDataFrameSize(int value) {
+    data_.this_cpu().http2_read_data_frame_size.Increment(value);
+  }
+
+ private:
+  void IncrementHttp2WriteTargetSize(int value) {
+    data_.this_cpu().http2_write_target_size.Increment(value);
+  }
+  friend class GlobalStatsCollector;
+  friend class Http2StatsCollector;
+  struct Data {
+    std::atomic<uint64_t> http2_settings_writes{0};
+    std::atomic<uint64_t> http2_pings_sent{0};
+    std::atomic<uint64_t> http2_transport_stalls{0};
+    std::atomic<uint64_t> http2_stream_stalls{0};
+    std::atomic<uint64_t> http2_hpack_hits{0};
+    std::atomic<uint64_t> http2_hpack_misses{0};
+    std::atomic<uint64_t> http2_writes_begun{0};
+    HistogramCollector_16777216_20_64 http2_send_message_size;
+    HistogramCollector_65536_26_64 http2_metadata_size;
+    HistogramCollector_1800000_40_64 http2_hpack_entry_lifetime;
+    HistogramCollector_16777216_20_64 http2_header_table_size;
+    HistogramCollector_16777216_50_64 http2_initial_window_size;
+    HistogramCollector_16777216_20_64 http2_max_concurrent_streams;
+    HistogramCollector_16777216_50_64 http2_max_frame_size;
+    HistogramCollector_16777216_20_64 http2_max_header_list_size;
+    HistogramCollector_16777216_20_64
+        http2_preferred_receive_crypto_message_size;
+    HistogramCollector_16777216_20_64 http2_stream_remote_window_update;
+    HistogramCollector_16777216_20_64 http2_transport_remote_window_update;
+    HistogramCollector_100000_20_64 http2_transport_window_update_period;
+    HistogramCollector_100000_20_64 http2_stream_window_update_period;
+    HistogramCollector_16777216_50_64 http2_write_data_frame_size;
+    HistogramCollector_16777216_50_64 http2_read_data_frame_size;
+    HistogramCollector_16777216_50_64 http2_write_target_size;
+  };
+  PerCpu<Data> data_{PerCpuOptions().SetCpusPerShard(4).SetMaxShards(32)};
+};
+inline Http2GlobalStatsCollector& http2_global_stats() {
+  return *NoDestructSingleton<Http2GlobalStatsCollector>::Get();
+}
 struct Http2Stats {
   enum class Counter { kHttp2WritesBegun, COUNT };
   enum class Histogram { kHttp2WriteTargetSize, COUNT };
@@ -824,13 +858,76 @@ struct Http2Stats {
 class Http2StatsCollector {
  public:
   const Http2Stats& View() const { return data_; };
+  void IncrementHttp2SettingsWrites() {
+    http2_global_stats().IncrementHttp2SettingsWrites();
+  }
+  void IncrementHttp2PingsSent() {
+    http2_global_stats().IncrementHttp2PingsSent();
+  }
+  void IncrementHttp2TransportStalls() {
+    http2_global_stats().IncrementHttp2TransportStalls();
+  }
+  void IncrementHttp2StreamStalls() {
+    http2_global_stats().IncrementHttp2StreamStalls();
+  }
+  void IncrementHttp2HpackHits() {
+    http2_global_stats().IncrementHttp2HpackHits();
+  }
+  void IncrementHttp2HpackMisses() {
+    http2_global_stats().IncrementHttp2HpackMisses();
+  }
   void IncrementHttp2WritesBegun() {
     ++data_.http2_writes_begun;
-    global_stats().IncrementHttp2WritesBegun();
+    http2_global_stats().IncrementHttp2WritesBegun();
+  }
+  void IncrementHttp2SendMessageSize(int value) {
+    http2_global_stats().IncrementHttp2SendMessageSize(value);
+  }
+  void IncrementHttp2MetadataSize(int value) {
+    http2_global_stats().IncrementHttp2MetadataSize(value);
+  }
+  void IncrementHttp2HpackEntryLifetime(int value) {
+    http2_global_stats().IncrementHttp2HpackEntryLifetime(value);
+  }
+  void IncrementHttp2HeaderTableSize(int value) {
+    http2_global_stats().IncrementHttp2HeaderTableSize(value);
+  }
+  void IncrementHttp2InitialWindowSize(int value) {
+    http2_global_stats().IncrementHttp2InitialWindowSize(value);
+  }
+  void IncrementHttp2MaxConcurrentStreams(int value) {
+    http2_global_stats().IncrementHttp2MaxConcurrentStreams(value);
+  }
+  void IncrementHttp2MaxFrameSize(int value) {
+    http2_global_stats().IncrementHttp2MaxFrameSize(value);
+  }
+  void IncrementHttp2MaxHeaderListSize(int value) {
+    http2_global_stats().IncrementHttp2MaxHeaderListSize(value);
+  }
+  void IncrementHttp2PreferredReceiveCryptoMessageSize(int value) {
+    http2_global_stats().IncrementHttp2PreferredReceiveCryptoMessageSize(value);
+  }
+  void IncrementHttp2StreamRemoteWindowUpdate(int value) {
+    http2_global_stats().IncrementHttp2StreamRemoteWindowUpdate(value);
+  }
+  void IncrementHttp2TransportRemoteWindowUpdate(int value) {
+    http2_global_stats().IncrementHttp2TransportRemoteWindowUpdate(value);
+  }
+  void IncrementHttp2TransportWindowUpdatePeriod(int value) {
+    http2_global_stats().IncrementHttp2TransportWindowUpdatePeriod(value);
+  }
+  void IncrementHttp2StreamWindowUpdatePeriod(int value) {
+    http2_global_stats().IncrementHttp2StreamWindowUpdatePeriod(value);
+  }
+  void IncrementHttp2WriteDataFrameSize(int value) {
+    http2_global_stats().IncrementHttp2WriteDataFrameSize(value);
+  }
+  void IncrementHttp2ReadDataFrameSize(int value) {
+    http2_global_stats().IncrementHttp2ReadDataFrameSize(value);
   }
   void IncrementHttp2WriteTargetSize(int value) {
     data_.http2_write_target_size.Increment(value);
-    global_stats().IncrementHttp2WriteTargetSize(value);
+    http2_global_stats().IncrementHttp2WriteTargetSize(value);
   }
 
  private:

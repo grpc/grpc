@@ -53,7 +53,7 @@
   test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2025/06/01
+  expiry: 2025/09/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
@@ -212,7 +212,7 @@
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2025/06/06
+  expiry: 2025/09/06
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
 - name: rq_fast_reject
@@ -221,11 +221,6 @@
     structure) under very high memory pressure.
   expiry: 2025/06/06
   owner: ctiller@google.com
-  test_tags: []
-- name: rst_stream_fix
-  description: Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
-  expiry: 2025/06/06
-  owner: yashkt@google.com
   test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
