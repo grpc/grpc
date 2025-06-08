@@ -370,20 +370,21 @@ class ChannelInit {
            FilterAdder filter_adder, std::vector<InclusionPredicate> predicates,
            Version version, Ordering ordering,
            SourceLocation registration_source)
-        : name(name),
+        : version(version),
+          ordering(ordering),
+          name(name),
           filter(filter),
           filter_adder(filter_adder),
           predicates(std::move(predicates)),
-          registration_source(registration_source),
-          version(version),
-          ordering(ordering) {}
+          registration_source(registration_source) {}
+
+    Version version;
+    Ordering ordering;
     UniqueTypeName name;
     const grpc_channel_filter* filter;
     const FilterAdder filter_adder;
     std::vector<InclusionPredicate> predicates;
     SourceLocation registration_source;
-    Version version;
-    Ordering ordering;
     bool CheckPredicates(const ChannelArgs& args) const;
   };
   struct StackConfig {
