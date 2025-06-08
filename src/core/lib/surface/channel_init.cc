@@ -242,7 +242,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
   // DependencyTracker dependencies;
-  std::vector<Filter> terminal_filters;
+  absl::InlinedVector<Filter, 2> terminal_filters;
   std::sort(registrations.begin(), registrations.end(),
             [](const std::unique_ptr<ChannelInit::FilterRegistration>& a,
                const std::unique_ptr<ChannelInit::FilterRegistration>& b) {

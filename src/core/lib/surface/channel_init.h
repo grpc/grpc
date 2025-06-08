@@ -389,7 +389,7 @@ class ChannelInit {
   };
   struct StackConfig {
     std::vector<Filter> filters;
-    std::vector<Filter> terminators;
+    absl::InlinedVector<Filter, 2> terminators;
     std::vector<PostProcessor> post_processors;
   };
 
