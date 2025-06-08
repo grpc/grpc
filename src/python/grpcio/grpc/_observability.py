@@ -18,7 +18,7 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar, Tuple
+from typing import Any, Generator, Generic, List, Optional, Tuple, TypeVar
 
 from grpc._cython import cygrpc as _cygrpc
 from grpc._typing import ChannelArgumentType
