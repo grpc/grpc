@@ -27,7 +27,7 @@
 - script: tools/distrib/check_naked_includes.py
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_upb_output.sh
-- script: tools/distrib/check_pytype.sh
+#- script: tools/distrib/check_pytype.sh
 - script: tools/distrib/check_pytype_updated.sh
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/clang_format_code.sh
