@@ -18,8 +18,16 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import (Any, Generator, Generic, List, Optional, Tuple, TypeVar,
-                    Union)
+from typing import (
+    Any,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from grpc._cython import cygrpc as _cygrpc
 
