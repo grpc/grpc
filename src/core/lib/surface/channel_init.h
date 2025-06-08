@@ -363,8 +363,6 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
-  class DependencyTracker;
-
   struct Filter {
     Filter(UniqueTypeName name, const grpc_channel_filter* filter,
            FilterAdder filter_adder, std::vector<InclusionPredicate> predicates,
@@ -401,12 +399,14 @@ class ChannelInit {
       PostProcessor* post_processors, grpc_channel_stack_type type);
   static void PrepareRegistrationsForBuild(
       absl::Span<std::unique_ptr<FilterRegistration>> registrations);
+#if 0
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>
           registrations,
       const DependencyTracker& dependencies, const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
+#endif
 };
 
 }  // namespace grpc_core

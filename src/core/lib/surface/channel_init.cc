@@ -112,127 +112,6 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
   return *filters_[type].back();
 }
 
-class ChannelInit::DependencyTracker {
- public:
-  // Declare that a filter exists.
-  void Declare(FilterRegistration* registration) {
-    nodes_.emplace(registration->name_, registration);
-  }
-  // Insert an edge from a to b
-  // Both nodes must be declared.
-  void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
-    auto it_a = nodes_.find(a);
-    auto it_b = nodes_.find(b);
-    if (it_a == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << a.name()
-          << " was not declared before adding an edge to " << b.name();
-      return;
-    }
-    if (it_b == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << b.name()
-          << " was not declared before adding an edge from " << a.name();
-      return;
-    }
-    auto& node_a = it_a->second;
-    auto& node_b = it_b->second;
-    node_a.dependents.push_back(&node_b);
-    node_b.all_dependencies.push_back(a);
-    ++node_b.waiting_dependencies;
-  }
-
-  // Finish the dependency graph and begin iteration.
-  void FinishDependencyMap() {
-    for (auto& p : nodes_) {
-      if (p.second.waiting_dependencies == 0) {
-        ready_dependencies_.emplace(&p.second);
-      }
-    }
-  }
-
-  FilterRegistration* Next() {
-    if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
-                                               "filters:\n"
-                                            << GraphString();
-      return nullptr;
-    }
-    auto next = ready_dependencies_.top();
-    ready_dependencies_.pop();
-    if (!ready_dependencies_.empty() &&
-        next.node->ordering() != Ordering::kDefault) {
-      // Constraint: if we use ordering other than default, then we must have an
-      // unambiguous pick. If there is ambiguity, we must fix it by adding
-      // explicit ordering constraints.
-      CHECK_NE(next.node->ordering(),
-               ready_dependencies_.top().node->ordering())
-          << "Ambiguous ordering between " << next.node->name() << " and "
-          << ready_dependencies_.top().node->name();
-    }
-    for (Node* dependent : next.node->dependents) {
-      CHECK_GT(dependent->waiting_dependencies, 0u);
-      --dependent->waiting_dependencies;
-      if (dependent->waiting_dependencies == 0) {
-        ready_dependencies_.emplace(dependent);
-      }
-    }
-    ++nodes_taken_;
-    return next.node->registration;
-  }
-
-  // Debug helper to dump the graph
-  std::string GraphString() const {
-    std::string result;
-    for (const auto& p : nodes_) {
-      absl::StrAppend(&result, p.first, " ->");
-      for (const auto& d : p.second.all_dependencies) {
-        absl::StrAppend(&result, " ", d);
-      }
-      absl::StrAppend(&result, "\n");
-    }
-    return result;
-  }
-
-  absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
-    auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
-    return it->second.all_dependencies;
-  }
-
- private:
-  struct Node {
-    explicit Node(FilterRegistration* registration)
-        : registration(registration) {}
-    // Nodes that depend on this node
-    std::vector<Node*> dependents;
-    // Nodes that this node depends on - for debugging purposes only
-    std::vector<UniqueTypeName> all_dependencies;
-    // The registration for this node
-    FilterRegistration* registration;
-    // Number of nodes this node is waiting on
-    size_t waiting_dependencies = 0;
-
-    Ordering ordering() const { return registration->ordering_; }
-    absl::string_view name() const { return registration->name_.name(); }
-  };
-  struct ReadyDependency {
-    explicit ReadyDependency(Node* node) : node(node) {}
-    Node* node;
-    bool operator<(const ReadyDependency& other) const {
-      // Sort first on ordering, and then lexically on name.
-      // The lexical sort means that the ordering is stable between builds
-      // (UniqueTypeName ordering is not stable between builds).
-      return node->ordering() > other.node->ordering() ||
-             (node->ordering() == other.node->ordering() &&
-              node->name() > other.node->name());
-    }
-  };
-  absl::flat_hash_map<UniqueTypeName, Node> nodes_;
-  std::priority_queue<ReadyDependency> ready_dependencies_;
-  size_t nodes_taken_ = 0;
-};
-
 class ChannelInit::InnerBuilder {
  public:
   InnerBuilder(absl::Span<std::unique_ptr<ChannelInit::FilterRegistration>>
@@ -376,6 +255,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                      std::move(post_processor_functions)};
 };
 
+#if 0
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
     absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>
@@ -464,6 +344,7 @@ void ChannelInit::PrintChannelStackTrace(
     LOG(INFO) << filter_str;
   }
 }
+#endif
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
@@ -526,20 +407,20 @@ bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   return true;
 }
 
-  void ChannelInit::AddToInterceptionChainBuilder(
-      grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
-    const auto& stack_config = stack_configs_[type];
-    // Based on predicates build a list of filters to include in this segment.
-    for (const auto& filter : stack_config.filters) {
-      if (SkipV3(filter.version)) continue;
-      if (!filter.CheckPredicates(builder.channel_args())) continue;
-      if (filter.filter_adder == nullptr) {
-        builder.Fail(absl::InvalidArgumentError(absl::StrCat(
-            "Filter ", filter.name, " has no v3-callstack vtable")));
-        return;
-      }
-      filter.filter_adder(builder);
+void ChannelInit::AddToInterceptionChainBuilder(
+    grpc_channel_stack_type type, InterceptionChainBuilder& builder) const {
+  const auto& stack_config = stack_configs_[type];
+  // Based on predicates build a list of filters to include in this segment.
+  for (const auto& filter : stack_config.filters) {
+    if (SkipV3(filter.version)) continue;
+    if (!filter.CheckPredicates(builder.channel_args())) continue;
+    if (filter.filter_adder == nullptr) {
+      builder.Fail(absl::InvalidArgumentError(
+          absl::StrCat("Filter ", filter.name, " has no v3-callstack vtable")));
+      return;
     }
+    filter.filter_adder(builder);
   }
+}
 
 }  // namespace grpc_core
