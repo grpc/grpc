@@ -392,12 +392,15 @@ class ChannelInit {
     absl::InlinedVector<Filter, 2> terminators;
     std::vector<PostProcessor> post_processors;
   };
+  class InnerBuilder;
 
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
   static StackConfig BuildStackConfig(
       absl::Span<std::unique_ptr<FilterRegistration>> registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
+  static void PrepareRegistrationsForBuild(
+      absl::Span<std::unique_ptr<FilterRegistration>> registrations);
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>

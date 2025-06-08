@@ -22,8 +22,6 @@
 
 namespace grpc_core {
 
-namespace topological_sort_detail {}  // namespace topological_sort_detail
-
 template <size_t kMaxNodes>
 class TopologicalSort {
  public:

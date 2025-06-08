@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstddef>
 #include <limits>
 #include <type_traits>
 
@@ -209,9 +210,14 @@ class BitSet {
   }
 
   template <typename Fn>
-  void ForEachBitSet(Fn f) {
-    for (size_t i = 0; i < kTotalBits; i++) {
-      if (is_set(i)) f(i);
+  void ForEachBitSet(Fn f) const {
+    for (size_t i = 0; i < kUnits; i++) {
+      uint64_t unit = units_[i];
+      while (unit != 0) {
+        uint64_t t = LowestOneBit(unit);
+        f(i * kUnitBits + absl::countr_zero(t));
+        unit ^= t;
+      }
     }
   }
 
