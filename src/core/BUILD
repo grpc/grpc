@@ -214,6 +214,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "topological_sort",
+    hdrs = [
+        "util/topological_sort.h",
+    ],
+    deps = [
+        "bitset",
+    ],
+)
+
+grpc_cc_library(
     name = "ring_buffer",
     srcs = [],
     hdrs = [
@@ -3368,6 +3378,7 @@ grpc_cc_library(
         "channel_stack_type",
         "interception_chain",
         "sync",
+        "topological_sort",
         "unique_type_name",
         "//:channel_stack_builder",
         "//:debug_location",

@@ -283,6 +283,7 @@ class ChannelInit {
     Version version_ = Version::kAny;
     Ordering ordering_ = Ordering::kDefault;
     SourceLocation registration_source_;
+    size_t build_stack_id_ = 0;
   };
 
   class Builder {
@@ -391,11 +392,11 @@ class ChannelInit {
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
   static StackConfig BuildStackConfig(
-      const std::vector<std::unique_ptr<FilterRegistration>>& registrations,
+      absl::Span<std::unique_ptr<FilterRegistration>> registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
-      const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+      absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>
           registrations,
       const DependencyTracker& dependencies, const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);

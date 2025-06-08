@@ -19,6 +19,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <limits>
 #include <type_traits>
 
 #include "src/core/util/useful.h"
@@ -50,6 +51,21 @@ struct UintSelector<64> {
 // An unsigned integer of some number of bits.
 template <size_t kBits>
 using Uint = typename UintSelector<kBits>::Type;
+
+constexpr size_t UintBitsForMaximum(uint64_t max) {
+  if (max < std::numeric_limits<Uint<8>>::max()) {
+    return 8;
+  } else if (max < std::numeric_limits<Uint<16>>::max()) {
+    return 16;
+  } else if (max < std::numeric_limits<Uint<32>>::max()) {
+    return 32;
+  } else {
+    return 64;
+  }
+}
+
+template <uint64_t kMax>
+using UintWithMax = Uint<UintBitsForMaximum(kMax)>;
 
 // Given the total number of bits that need to be stored, choose the size of
 // 'unit' for a BitSet... We'll use an array of units to store the total set.
@@ -112,9 +128,9 @@ class BitSet {
       }
       return true;
     } else {
-      // kTotalBits is not a multiple of kUnitBits ==> we need special handling
-      // for checking partial filling of the last unit (since not all of its
-      // bits are used!)
+      // kTotalBits is not a multiple of kUnitBits ==> we need special
+      // handling for checking partial filling of the last unit (since not all
+      // of its bits are used!)
       for (size_t i = 0; i < kUnits - 1; i++) {
         if (units_[i] != all_ones()) return false;
       }
@@ -180,6 +196,23 @@ class BitSet {
       set(i, value);
     }
     return *this;
+  }
+
+  bool LowestBitSet(size_t& out) {
+    for (size_t i = 0; i < kUnits; i++) {
+      if (units_[i] != 0) {
+        out = i * kUnitBits + absl::countr_zero(units_[i]);
+        return true;
+      }
+    }
+    return false;
+  }
+
+  template <typename Fn>
+  void ForEachBitSet(Fn f) {
+    for (size_t i = 0; i < kTotalBits; i++) {
+      if (is_set(i)) f(i);
+    }
   }
 
  private:

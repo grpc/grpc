@@ -36,8 +36,8 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/topological_sort.h"
 #include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
@@ -233,8 +233,7 @@ class ChannelInit::DependencyTracker {
 };
 
 ChannelInit::StackConfig ChannelInit::BuildStackConfig(
-    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
-        registrations,
+    absl::Span<std::unique_ptr<ChannelInit::FilterRegistration>> registrations,
     PostProcessor* post_processors, grpc_channel_stack_type type) {
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
@@ -244,7 +243,17 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // this will help overall stability.
   DependencyTracker dependencies;
   std::vector<Filter> terminal_filters;
-  for (const auto& registration : registrations) {
+  std::sort(registrations.begin(), registrations.end(),
+            [](const std::unique_ptr<ChannelInit::FilterRegistration>& a,
+               const std::unique_ptr<ChannelInit::FilterRegistration>& b) {
+              return a->ordering_ < b->ordering_ ||
+                     (a->ordering_ == b->ordering_ &&
+                      a->name_.name() < b->name_.name());
+            });
+  absl::flat_hash_map<UniqueTypeName, size_t> name_to_index;
+  for (size_t i = 0; i < registrations.size(); i++) {
+    const auto& registration = registrations[i];
+    registration->build_stack_id_ = i;
     if (registration->terminal_) {
       CHECK(registration->after_.empty());
       CHECK(registration->before_.empty());
@@ -254,23 +263,39 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
           registration->name_, registration->filter_, nullptr,
           std::move(registration->predicates_), registration->version_,
           registration->ordering_, registration->registration_source_);
-    } else {
-      dependencies.Declare(registration.get());
     }
   }
+  TopologicalSort<128> topological_sort(registrations.size());
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
     for (UniqueTypeName after : registration->after_) {
-      dependencies.InsertEdge(after, registration->name_);
+      auto it = name_to_index.find(after);
+      if (GPR_UNLIKELY(it == name_to_index.end())) {
+        GRPC_TRACE_LOG(channel_stack, INFO)
+            << "gRPC Filter " << after.name()
+            << " was not declared before adding an edge from "
+            << registration->name_.name();
+        continue;
+      }
+      topological_sort.AddDependency(it->second, registration->build_stack_id_);
     }
     for (UniqueTypeName before : registration->before_) {
-      dependencies.InsertEdge(registration->name_, before);
+      auto it = name_to_index.find(before);
+      if (GPR_UNLIKELY(it == name_to_index.end())) {
+        GRPC_TRACE_LOG(channel_stack, INFO)
+            << "gRPC Filter " << before.name()
+            << " was not declared before adding an edge to "
+            << registration->name_.name();
+        continue;
+      }
+      topological_sort.AddDependency(registration->build_stack_id_, it->second);
     }
     if (registration->before_all_) {
       for (const auto& other : registrations) {
         if (other.get() == registration.get()) continue;
         if (other->terminal_) continue;
-        dependencies.InsertEdge(registration->name_, other->name_);
+        topological_sort.AddDependency(registration->build_stack_id_,
+                                       other->build_stack_id_);
       }
     }
   }
@@ -278,14 +303,16 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // We can simply iterate through and add anything with no dependency.
   // We then remove that filter from the dependency list of all other filters.
   // We repeat until we have no more filters to add.
-  dependencies.FinishDependencyMap();
   std::vector<Filter> filters;
-  while (auto registration = dependencies.Next()) {
+  filters.reserve(registrations.size());
+  bool ok = topological_sort.Sort([&filters, &registrations](size_t i) {
+    const auto& registration = registrations[i];
     filters.emplace_back(
         registration->name_, registration->filter_, registration->filter_adder_,
         std::move(registration->predicates_), registration->version_,
         registration->ordering_, registration->registration_source_);
-  }
+  });
+  CHECK(ok);
   // Collect post processors that need to be applied.
   // We've already ensured the one-per-slot constraint, so now we can just
   // collect everything up into a vector and run it in order.
@@ -320,7 +347,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
 
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
-    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+    absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>
         registrations,
     const DependencyTracker& dependencies, const std::vector<Filter>& filters,
     const std::vector<Filter>& terminal_filters) {
@@ -410,9 +437,10 @@ void ChannelInit::PrintChannelStackTrace(
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    result.stack_configs_[i] =
-        BuildStackConfig(filters_[i], post_processors_[i],
-                         static_cast<grpc_channel_stack_type>(i));
+    result.stack_configs_[i] = BuildStackConfig(
+        absl::Span<std::unique_ptr<FilterRegistration>>(filters_[i].data(),
+                                                        filters_[i].size()),
+        post_processors_[i], static_cast<grpc_channel_stack_type>(i));
   }
   return result;
 }
