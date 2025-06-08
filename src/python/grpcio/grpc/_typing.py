@@ -13,18 +13,8 @@
 # limitations under the License.
 """Common types for gRPC Sync API"""
 
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Iterable,
-    Iterator,
-    Optional,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import (TYPE_CHECKING, Any, Callable, Iterable, Iterator, Optional,
+                    Sequence, Tuple, TypeVar, Union)
 
 from grpc._cython import cygrpc
 
