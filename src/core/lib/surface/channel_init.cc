@@ -57,7 +57,7 @@ struct CompareChannelFiltersByName {
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    after_.push_back(filter);
+    deps_.push_back(Dependency{true, filter});
   }
   return *this;
 }
@@ -65,7 +65,7 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::Before(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    before_.push_back(filter);
+    deps_.push_back(Dependency{false, filter});
   }
   return *this;
 }
@@ -241,7 +241,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker dependencies;
+  // DependencyTracker dependencies;
   std::vector<Filter> terminal_filters;
   std::sort(registrations.begin(), registrations.end(),
             [](const std::unique_ptr<ChannelInit::FilterRegistration>& a,
@@ -255,8 +255,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
     const auto& registration = registrations[i];
     registration->build_stack_id_ = i;
     if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
+      CHECK(registration->deps_.empty());
       CHECK(!registration->before_all_);
       CHECK_EQ(registration->ordering_, Ordering::kDefault);
       terminal_filters.emplace_back(
@@ -265,30 +264,25 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
           registration->ordering_, registration->registration_source_);
     }
   }
-  TopologicalSort<128> topological_sort(registrations.size());
+  TopologicalSort<256> topological_sort(registrations.size());
   for (const auto& registration : registrations) {
     if (registration->terminal_) continue;
-    for (UniqueTypeName after : registration->after_) {
-      auto it = name_to_index.find(after);
+    for (FilterRegistration::Dependency dep : registration->deps_) {
+      auto it = name_to_index.find(dep.name);
       if (GPR_UNLIKELY(it == name_to_index.end())) {
         GRPC_TRACE_LOG(channel_stack, INFO)
-            << "gRPC Filter " << after.name()
-            << " was not declared before adding an edge from "
-            << registration->name_.name();
+            << "gRPC Filter " << dep.name.name()
+            << " was not declared before adding an edge "
+            << (dep.after ? "to " : "from ") << registration->name_.name();
         continue;
       }
-      topological_sort.AddDependency(it->second, registration->build_stack_id_);
-    }
-    for (UniqueTypeName before : registration->before_) {
-      auto it = name_to_index.find(before);
-      if (GPR_UNLIKELY(it == name_to_index.end())) {
-        GRPC_TRACE_LOG(channel_stack, INFO)
-            << "gRPC Filter " << before.name()
-            << " was not declared before adding an edge to "
-            << registration->name_.name();
-        continue;
+      if (dep.after) {
+        topological_sort.AddDependency(it->second,
+                                       registration->build_stack_id_);
+      } else {
+        topological_sort.AddDependency(registration->build_stack_id_,
+                                       it->second);
       }
-      topological_sort.AddDependency(registration->build_stack_id_, it->second);
     }
     if (registration->before_all_) {
       for (const auto& other : registrations) {
@@ -323,8 +317,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
   // Log out the graph we built if that's been requested.
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    PrintChannelStackTrace(type, registrations, dependencies, filters,
-                           terminal_filters);
+    //   PrintChannelStackTrace(type, registrations, dependencies, filters,
+    //                        terminal_filters);
   }
   // Check if there are no terminal filters: this would be an error.
   // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check that

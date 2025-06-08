@@ -275,8 +275,11 @@ class ChannelInit {
     const UniqueTypeName name_;
     const grpc_channel_filter* const filter_;
     const FilterAdder filter_adder_;
-    std::vector<UniqueTypeName> after_;
-    std::vector<UniqueTypeName> before_;
+    struct Dependency {
+      bool after;
+      UniqueTypeName name;
+    };
+    absl::InlinedVector<Dependency, 4> deps_;
     std::vector<InclusionPredicate> predicates_;
     bool terminal_ = false;
     bool before_all_ = false;
