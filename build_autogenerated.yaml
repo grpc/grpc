@@ -8165,6 +8165,18 @@ targets:
   - absl/base:config
   - gpr
   uses_polling: false
+- name: dual_call_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_call_creds.h
+  src:
+  - test/core/credentials/call/dual/dual_call_credentials_test.cc
+  - test/core/test_util/test_call_creds.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: dual_ref_counted_test
   gtest: true
   build: test

@@ -206,25 +206,25 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    this could result in an oauth2 token leak. The security level of the
    resulting connection is GRPC_PRIVACY_AND_INTEGRITY.
 
-   If specified, the supplied call credentials object will be attached to the
-   returned channel credentials object. The call_credentials object must remain
+   If specified, the supplied call credentials objects will be attached to the
+   returned channel credentials object. The call_credentials objects must remain
    valid throughout the lifetime of the returned grpc_channel_credentials
-   object. It is expected that the call credentials object was generated
+   object. It is expected that each call credentials object was generated
    according to the Application Default Credentials mechanism and asserts the
    identity of the default service account of the machine. Supplying any other
    sort of call credential will result in undefined behavior, up to and
    including the sudden and unexpected failure of RPCs.
 
    If nullptr is supplied, the returned channel credentials object will use a
-   call credentials object based on the Application Default Credentials
+   default call credentials object based on the Application Default Credentials
    mechanism.
+
+   The caller may specify a secondary alts credentials objects to attach to the
+   channel for ALTS connections. Whenever the channel connection require them,
+   the ALTS credentials will be used then.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials);
-
-GRPCAPI grpc_channel_credentials*
-grpc_google_default_credentials_create_with_dual_call_credentials(
-    grpc_call_credentials* tls_credentials,
+    grpc_call_credentials* default_credentials,
     grpc_call_credentials* alts_credentials);
 
 /** Server certificate config object holds the server's public certificates and

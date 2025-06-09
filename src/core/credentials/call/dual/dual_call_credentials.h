@@ -27,6 +27,10 @@
 
 namespace grpc_core {
 
+/// A grpc_call_credentials implementation that uses two underlying
+/// credentials: one for TLS and one for ALTS.
+//  The implementation will pick the right credentials based on the auth
+//  context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property.
 class DualCallCredentials : public grpc_call_credentials {
  public:
   DualCallCredentials(RefCountedPtr<grpc_call_credentials> tls_credentials,
