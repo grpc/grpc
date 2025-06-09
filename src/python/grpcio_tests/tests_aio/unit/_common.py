@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import asyncio
+from typing import Union
 
 import grpc
 from grpc.aio._metadata import Metadata
@@ -20,11 +21,8 @@ from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
 from grpc.experimental import aio
 
-from typing import Union
-
-from tests.unit.framework.common import test_constants
-
 from src.python.grpcio.grpc import ServicerContext
+from tests.unit.framework.common import test_constants
 
 ADHOC_METHOD = "/test/AdHoc"
 
