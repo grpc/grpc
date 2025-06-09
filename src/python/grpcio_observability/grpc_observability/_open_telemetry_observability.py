@@ -364,9 +364,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def __init__(
         self,
         *,
-        plugins: Optional[Iterable[_OpenTelemetryPlugin]],
+        plugins: Optional[Iterable[_OpenTelemetryPlugin]] = None,
     ):
-        self._plugins = list(plugins) if plugins else []
+        self._plugins: List[_OpenTelemetryPlugin] = list(plugins) if plugins else []
         self._registered_method = set()
         self._client_option_activated = False
         self._server_option_activated = False
