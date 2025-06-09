@@ -2327,9 +2327,6 @@ __all__ = (
     "xds_channel_credentials",
     "xds_server_credentials",
     "insecure_server_credentials",
-    "cygrpc_init",
-    "cygrpc_shutdown",
-    "initialize_absl_logging",
 )
 
 ############################### Extension Shims ################################
