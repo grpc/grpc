@@ -17,6 +17,7 @@ import signal
 import time
 from concurrent import futures
 from types import FrameType
+from typing import Final
 
 import grpc
 
@@ -38,7 +39,9 @@ class ServerSvc(server_pb2_grpc.ServerServicer):
         return request
 
 
-class MyServer:
+class GrpcTestApp:
+    LISTEN_ADDR: Final[str] = "127.0.0.1:50051"
+
     server: grpc.Server | None = None
     server_id: int = 1
 
@@ -77,15 +80,16 @@ class MyServer:
         if self.server is None:
             raise RuntimeError("Server is None")
 
-        logging.info("Stopping the server")
+        logging.info("[SERVER] Stopping the server #%s", self.server_id)
         self.server.stop(False)
 
         delay_sec = 2
-        logging.info("Server will be restarted in %d seconds.", delay_sec)
+        logging.info("[SERVER] Server will be restarted in %d seconds.", delay_sec)
         time.sleep(delay_sec)
 
         self._handling_sigint = False
-        self.serve()
+        server = self.serve()
+        # server.wait_for_termination()
 
     def serve(self):
         self.server_id += 1
@@ -93,16 +97,35 @@ class MyServer:
         self.server = server
 
         server_pb2_grpc.add_ServerServicer_to_server(ServerSvc(self.server_id), server)
-        listen_addr = "127.0.0.1:50051"
-        server.add_insecure_port(listen_addr)
+        server.add_insecure_port(self.LISTEN_ADDR)
 
+        logging.info(
+            "[SERVER] Starting server #%s on %s", self.server_id, self.LISTEN_ADDR
+        )
         server.start()
-        logging.info(f"Starting server #{self.server_id} on {listen_addr}")
-        server.wait_for_termination()
+        return server
+
+    def start_client(self):
+        channel = grpc.insecure_channel(self.LISTEN_ADDR)
+        stub = server_pb2_grpc.ServerStub(channel)
+        i: int = 0
+        while True:
+            try:
+                i += 1
+                resp = stub.Method(server_pb2.Message(id=str(i)))
+                logging.info(f"[CLIENT] Received Message: id={resp.id}")
+            except grpc.RpcError as e:
+                logging.error("[CLIENT] %r", e)
+
+            time.sleep(1)
+            if i == 10:
+                self.restart()
 
     def run(self):
         self.register_signals()
-        self.serve()
+        server = self.serve()
+        self.start_client()
+        # server.wait_for_termination()
 
 
 def main():
@@ -111,7 +134,7 @@ def main():
         format="%(asctime)s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-    MyServer().run()
+    GrpcTestApp().run()
 
 
 if __name__ == "__main__":
