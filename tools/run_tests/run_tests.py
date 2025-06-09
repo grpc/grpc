@@ -972,6 +972,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
+            "src/ruby/end2end/fork_test_repro_35489.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
@@ -984,20 +985,20 @@ class RubyLanguage(object):
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
-            if test in [
-                "src/ruby/end2end/fork_test.rb",
-                "src/ruby/end2end/simple_fork_test.rb",
-                "src/ruby/end2end/secure_fork_test.rb",
-                "src/ruby/end2end/bad_usage_fork_test.rb",
-                "src/ruby/end2end/prefork_without_using_grpc_test.rb",
-                "src/ruby/end2end/prefork_postfork_loop_test.rb",
-                "src/ruby/end2end/fork_test_repro_35489.rb",
-            ]:
-                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
-                # is fixed. Otherwise we see too many flakes.
-                # After that's fixed, we should continue to skip on mac
-                # indefinitely, and on "dbg" builds until the Event Engine
-                # migration completes.
+            if (
+                test
+                in [
+                    "src/ruby/end2end/fork_test.rb",
+                    "src/ruby/end2end/simple_fork_test.rb",
+                    "src/ruby/end2end/secure_fork_test.rb",
+                    "src/ruby/end2end/bad_usage_fork_test.rb",
+                    "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                    "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                    "src/ruby/end2end/fork_test_repro_35489.rb",
+                ]
+                and platform_string() == "mac"
+            ):
+                # Fork support only present on linux
                 continue
             tests.append(
                 self.config.job_spec(
