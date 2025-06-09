@@ -151,7 +151,7 @@ class TestServerSideDoneCallback(AioTestBase):
 
         async def test_handler(request: bytes, context: aio.ServicerContext):
             self.assertEqual(_REQUEST, request)
-            validation_future.set_result(inject_callbacks(context))
+            validation_future.set_result(inject_callbacks(context._call))
             return _RESPONSE
 
         await self._register_method_handler(
@@ -168,7 +168,7 @@ class TestServerSideDoneCallback(AioTestBase):
 
         async def test_handler(request: bytes, context: aio.ServicerContext):
             self.assertEqual(_REQUEST, request)
-            validation_future.set_result(inject_callbacks(context))
+            validation_future.set_result(inject_callbacks(context._call))
             for _ in range(_NUM_STREAM_RESPONSES):
                 yield _RESPONSE
 
@@ -186,8 +186,7 @@ class TestServerSideDoneCallback(AioTestBase):
         validation_future = self.loop.create_future()
 
         async def test_handler(request_iterator, context: aio.ServicerContext):
-            validation_future.set_result(inject_callbacks(context))
-
+            validation_future.set_result(inject_callbacks(context._call))
             async for request in request_iterator:
                 self.assertEqual(_REQUEST, request)
             return _RESPONSE
@@ -208,8 +207,7 @@ class TestServerSideDoneCallback(AioTestBase):
         validation_future = self.loop.create_future()
 
         async def test_handler(request_iterator, context: aio.ServicerContext):
-            validation_future.set_result(inject_callbacks(context))
-
+            validation_future.set_result(inject_callbacks(context._call))
             async for request in request_iterator:
                 self.assertEqual(_REQUEST, request)
             return _RESPONSE
@@ -233,7 +231,7 @@ class TestServerSideDoneCallback(AioTestBase):
 
         async def test_handler(request: bytes, context: aio.ServicerContext):
             self.assertEqual(_REQUEST, request)
-            validation_future.set_result(inject_callbacks(context))
+            validation_future.set_result(inject_callbacks(context._call))
             raise RuntimeError("A test RuntimeError")
 
         await self._register_method_handler(
@@ -258,7 +256,7 @@ class TestServerSideDoneCallback(AioTestBase):
                 raise RuntimeError("A test RuntimeError")
 
             context.add_done_callback(exception_raiser)
-            validation_future.set_result(inject_callbacks(context))
+            validation_future.set_result(inject_callbacks(context._call))
             return _RESPONSE
 
         await self._register_method_handler(

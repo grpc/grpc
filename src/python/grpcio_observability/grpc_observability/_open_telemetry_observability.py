@@ -142,7 +142,7 @@ class _OpenTelemetryPlugin:
         elif isinstance(recorder, Histogram):
             recorder.record(value, attributes=decoded_labels)
 
-    def maybe_record_stats_data(self, stats_data: List[StatsData]) -> None:
+    def maybe_record_stats_data(self, stats_data: StatsData) -> None:
         # Records stats data to MeterProvider.
         if self._should_record(stats_data):
             self._record_stats_data(stats_data)
@@ -328,10 +328,8 @@ def end_open_telemetry_observability() -> None:
 
 
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
-    _plugins: Iterable[_OpenTelemetryPlugin]
-
-    def __init__(self, plugins: Iterable[_OpenTelemetryPlugin]):
-        self._plugins = plugins
+    def __init__(self, plugins: Optional[Iterable[_OpenTelemetryPlugin]] = None):
+        self._plugins: List[_OpenTelemetryPlugin] = list(plugins) if plugins else []
 
     def export_stats_data(
         self, stats_data: List[_observability.StatsData]
@@ -368,11 +366,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         *,
         plugins: Optional[Iterable[_OpenTelemetryPlugin]],
     ):
-        self._exporter = _OpenTelemetryExporterDelegator(plugins)
-        self._registered_methods = set()
-        self._plugins = plugins
+        self._plugins = list(plugins) if plugins else []
+        self._registered_method = set()
         self._client_option_activated = False
         self._server_option_activated = False
+        self._exporter = _OpenTelemetryExporterDelegator(plugins)
 
     def observability_init(self):
         try:
@@ -421,7 +419,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._get_identifier(),
             exchange_labels,
             enabled_optional_labels,
-            method_name in self._registered_methods,
+            method_name in self._registered_method,
         )
         return capsule
 
@@ -459,11 +457,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             rpc_latency,
             status_code,
             self._get_identifier(),
-            encoded_method in self._registered_methods,
+            encoded_method in self._registered_method,
         )
 
     def save_registered_method(self, method_name: bytes) -> None:
-        self._registered_methods.add(method_name)
+        self._registered_method.add(method_name)
 
     def _get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         client_exchange_labels = {}

@@ -53,11 +53,11 @@ class _TestPointerWrapper(object):
 
 
 _TEST_CHANNEL_ARGS = (
-    ("arg1", b"bytes_val"),
-    ("arg2", "str_val"),
-    ("arg3", 1),
-    (b"arg4", "str_val"),
-    ("arg6", _TestPointerWrapper()),
+    ("grpc.arg1", b"bytes"),
+    ("grpc.arg2", "string"),
+    ("grpc.arg3", 1),
+    (b"grpc.arg4", "string"),
+    ("grpc.arg5", _TestPointerWrapper()),
 )
 
 _INVALID_TEST_CHANNEL_ARGS = [
@@ -123,12 +123,12 @@ class TestChannelArgument(AioTestBase):
 
     async def test_client(self):
         # Do not segfault, or raise exception!
-        channel = aio.insecure_channel("[::]:0", options=_TEST_CHANNEL_ARGS)
+        channel = aio.insecure_channel("[::]:0", options=list(_TEST_CHANNEL_ARGS))
         await channel.close()
 
     async def test_server(self):
         # Do not segfault, or raise exception!
-        server = aio.server(options=_TEST_CHANNEL_ARGS)
+        server = aio.server(options=list(_TEST_CHANNEL_ARGS))
         await server.stop(None)
 
     async def test_invalid_client_args(self):
