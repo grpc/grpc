@@ -56,7 +56,7 @@ _TEST_CHANNEL_ARGS = (
     ("arg1", b"bytes_val"),
     ("arg2", "str_val"),
     ("arg3", 1),
-    (b"arg4", "str_val"),
+    ("arg4", "str_val"),
     ("arg6", _TestPointerWrapper()),
 )
 
