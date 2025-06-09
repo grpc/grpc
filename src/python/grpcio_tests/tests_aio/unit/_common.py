@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import asyncio
-from typing import AsyncIterable, Union
+from typing import AsyncIterable
 
 import grpc
 from grpc.aio._metadata import Metadata
@@ -22,7 +22,6 @@ from grpc.aio._typing import MetadataValue
 from grpc.aio._typing import MetadatumType
 from grpc.experimental import aio
 
-from src.python.grpcio.grpc import ServicerContext
 from tests.unit.framework.common import test_constants
 
 ADHOC_METHOD = "/test/AdHoc"
@@ -48,7 +47,7 @@ async def block_until_certain_state(
         state = channel.get_state()
 
 
-def inject_callbacks(call: Union[aio.Call, ServicerContext]):
+def inject_callbacks(call: aio.Call):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):

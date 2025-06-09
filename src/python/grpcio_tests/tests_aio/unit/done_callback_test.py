@@ -187,6 +187,7 @@ class TestServerSideDoneCallback(AioTestBase):
 
         async def test_handler(request_iterator, context: aio.ServicerContext):
             validation_future.set_result(inject_callbacks(context))
+
             async for request in request_iterator:
                 self.assertEqual(_REQUEST, request)
             return _RESPONSE
@@ -208,6 +209,7 @@ class TestServerSideDoneCallback(AioTestBase):
 
         async def test_handler(request_iterator, context: aio.ServicerContext):
             validation_future.set_result(inject_callbacks(context))
+
             async for request in request_iterator:
                 self.assertEqual(_REQUEST, request)
             return _RESPONSE
