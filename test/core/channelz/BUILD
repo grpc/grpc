@@ -41,6 +41,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "property_list_test",
+    srcs = ["property_list_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:channelz_property_list"
+    ],
+)
+
+grpc_cc_test(
     name = "channelz_test",
     srcs = ["channelz_test.cc"],
     external_deps = [

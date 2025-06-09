@@ -4793,6 +4793,7 @@ grpc_cc_library(
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
+        "//src/core:channelz_property_list"
     ],
 )
 
