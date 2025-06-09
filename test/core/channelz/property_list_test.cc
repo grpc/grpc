@@ -82,5 +82,32 @@ TEST(PropertyListTest, SetJsonObject) {
   EXPECT_EQ(retrieved_inner_obj.at("inner_key").string(), "inner_value");
 }
 
+TEST(PropertyListTest, SetDuration) {
+  PropertyList props;
+  props.Set("duration_key", Duration::Seconds(5));
+  Json::Object json_obj = props.TakeJsonObject();
+  ASSERT_EQ(json_obj.size(), 1);
+  auto it = json_obj.find("duration_key");
+  ASSERT_NE(it, json_obj.end());
+  EXPECT_EQ(it->second.type(), Json::Type::kString);
+  EXPECT_EQ(it->second.string(), "5.000000000s");
+}
+
+TEST(PropertyListTest, SetTimestamp) {
+  PropertyList props;
+  // Using a known epoch time for consistent testing.
+  // January 1, 2023 00:00:00 UTC
+  gpr_timespec ts_known = {1672531200, 0, GPR_CLOCK_REALTIME};
+  Timestamp timestamp = Timestamp::FromTimespecRoundDown(ts_known);
+  props.Set("timestamp_key", timestamp);
+  Json::Object json_obj = props.TakeJsonObject();
+  ASSERT_EQ(json_obj.size(), 1);
+  auto it = json_obj.find("timestamp_key");
+  ASSERT_NE(it, json_obj.end());
+  EXPECT_EQ(it->second.type(), Json::Type::kString);
+  EXPECT_THAT(it->second.string(),
+              ::testing::StartsWith("2023-01-01T00:00:00.0"));
+}
+
 }  // namespace channelz
 }  // namespace grpc_core
