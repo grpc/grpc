@@ -34,7 +34,7 @@ namespace http2 {
 template <typename T>
 class SimpleQueue {
  public:
-  SimpleQueue(uint32_t max_tokens) : max_tokens_(max_tokens) {}
+  explicit SimpleQueue(uint32_t max_tokens) : max_tokens_(max_tokens) {}
   ~SimpleQueue() = default;
 
   SimpleQueue(SimpleQueue&&) = default;
@@ -48,7 +48,7 @@ class SimpleQueue {
   auto Enqueue(T data, uint32_t tokens) {
     return
         [this, data = std::move(data), tokens]() mutable -> Poll<StatusFlag> {
-          absl::MutexLock lock(&mu_);
+          MutexLock lock(&mu_);
           STREAM_DATA_QUEUE_DEBUG << "Enqueueing data. Data tokens: " << tokens;
           if (!queue_.empty() &&
               tokens_consumed_ >
@@ -117,12 +117,12 @@ class SimpleQueue {
   }
 
   bool TestOnlyIsEmpty() {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return queue_.empty();
   }
 
   std::optional<uint32_t> TestOnlyPeekTokens() {
-    absl::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     if (queue_.empty()) {
       return std::nullopt;
     }
@@ -135,7 +135,7 @@ class SimpleQueue {
     T data;
     uint32_t tokens;
   };
-  absl::Mutex mu_;
+  Mutex mu_;
   std::queue<Entry> queue_ ABSL_GUARDED_BY(mu_);
   uint32_t max_tokens_;
   uint32_t tokens_consumed_ = 0;
