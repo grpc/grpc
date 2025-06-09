@@ -20,6 +20,8 @@ from grpc.aio._typing import MetadataKey
 from grpc.aio._typing import MetadataValue
 from grpc.experimental import aio
 
+from typing import Union
+
 from tests.unit.framework.common import test_constants
 
 from src.python.grpcio.grpc import ServicerContext
@@ -47,7 +49,7 @@ async def block_until_certain_state(
         state = channel.get_state()
 
 
-def inject_callbacks(call: aio.Call | ServicerContext):
+def inject_callbacks(call: Union[aio.Call, ServicerContext]):
     first_callback_ran = asyncio.Event()
 
     def first_callback(call):
