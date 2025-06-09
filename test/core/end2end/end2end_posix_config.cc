@@ -67,6 +67,7 @@
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/end2end/fixtures/secure_fixture.h"
 #include "test/core/end2end/fixtures/sockpair_fixture.h"
+#include "test/core/test_util/passthrough_endpoint.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
@@ -89,6 +90,9 @@
 #define SERVER_KEY_PATH "src/core/tsi/test_creds/server1.key"
 
 namespace grpc_core {
+
+using grpc_event_engine::experimental::EventEngine;
+using grpc_event_engine::experimental::PassthroughEndpoint;
 
 namespace {
 
@@ -195,115 +199,11 @@ class FdCredentialsFixture : public SslTlsFixture1_3 {
 };
 #endif
 
-namespace {
-
-using grpc_event_engine::experimental::EventEngine;
-using grpc_event_engine::experimental::SliceBuffer;
-using grpc_event_engine::experimental::URIToResolvedAddress;
-
-class MockEndpoint;
-
-// Controller class that simulates full-duplex communication between two
-// endpoints.
-class MockEndpointController {
- public:
-  // Connects two endpoints to each other.
-  void Connect(MockEndpoint* a, MockEndpoint* b) {
-    ep1_ = a;
-    ep2_ = b;
-  }
-
-  // Simulates sending data from one endpoint to the other.
-  void Send(MockEndpoint* from, SliceBuffer* buffer);
-
- private:
-  MockEndpoint* ep1_ = nullptr;
-  MockEndpoint* ep2_ = nullptr;
-};
-
-// Mock implementation of an EventEngine::Endpoint.
-class MockEndpoint : public EventEngine::Endpoint {
- public:
-  explicit MockEndpoint(MockEndpointController* controller)
-      : controller_(controller),
-        peer_addr_(URIToResolvedAddress("ipv4:127.0.0.1:12345").value()),
-        local_addr_(URIToResolvedAddress("ipv4:127.0.0.1:6789").value()) {}
-
-  ~MockEndpoint() override = default;
-
-  // Stores the read callback and buffer; completes later via Deliver().
-  bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            ReadArgs /*args*/) override {
-    pending_read_ = std::move(on_read);
-    pending_read_buffer_ = buffer;
-    return true;
-  }
-
-  // Forwards the written data to the connected endpoint.
-  bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, WriteArgs /*args*/) override {
-    controller_->Send(this, data);
-    on_writable(absl::OkStatus());
-    return true;
-  }
-
-  const EventEngine::ResolvedAddress& GetPeerAddress() const override {
-    return peer_addr_;
-  }
-
-  const EventEngine::ResolvedAddress& GetLocalAddress() const override {
-    return local_addr_;
-  }
-
-  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
-    return nullptr;
-  }
-
-  // Called by the peer endpoint to deliver data from Write.
-  void Deliver(SliceBuffer* buffer) {
-    if (pending_read_ && pending_read_buffer_ != nullptr) {
-      while (buffer->Count() > 0) {
-        pending_read_buffer_->Append(buffer->TakeFirst());
-      }
-      pending_read_(absl::OkStatus());
-      pending_read_ = nullptr;
-      pending_read_buffer_ = nullptr;
-    }
-  }
-
- private:
-  MockEndpointController* controller_;  // Not owned
-  EventEngine::ResolvedAddress peer_addr_;
-  EventEngine::ResolvedAddress local_addr_;
-  absl::AnyInvocable<void(absl::Status)> pending_read_;
-  SliceBuffer* pending_read_buffer_ = nullptr;
-};
-
-// Implementation of Send that forwards the buffer to the connected peer.
-void MockEndpointController::Send(MockEndpoint* from, SliceBuffer* buffer) {
-  if (from == ep1_) {
-    ep2_->Deliver(buffer);
-  } else {
-    ep1_->Deliver(buffer);
-  }
-}
-
-// Factory function to create two connected MockEndpoints.
-std::pair<std::unique_ptr<EventEngine::Endpoint>,
-          std::unique_ptr<EventEngine::Endpoint>>
-CreatePassthroughEndpoints() {
-  auto controller = std::make_shared<MockEndpointController>();
-  auto ep1 = std::make_unique<MockEndpoint>(controller.get());
-  auto ep2 = std::make_unique<MockEndpoint>(controller.get());
-  controller->Connect(ep1.get(), ep2.get());
-  return {std::move(ep1), std::move(ep2)};
-}
-
-}  // namespace
-
 class EndpointCredentialsFixture : public SslTlsFixture1_3 {
  public:
-  EndpointCredentialsFixture() : endpoint_pair_(CreatePassthroughEndpoints()) {}
+  EndpointCredentialsFixture()
+      : endpoint_pair_(PassthroughEndpoint::MakePassthroughEndpoint(
+            12345, 6789, /*allow_inline_callbacks=*/true)) {}
 
  private:
   grpc_server* MakeServer(
@@ -321,7 +221,7 @@ class EndpointCredentialsFixture : public SslTlsFixture1_3 {
     pre_server_start(server);
     grpc_server_start(server);
     auto status = passive_listener->AcceptConnectedEndpoint(
-        std::move(endpoint_pair_.second));
+        std::move(endpoint_pair_.server));
     return server;
   }
 
@@ -329,13 +229,11 @@ class EndpointCredentialsFixture : public SslTlsFixture1_3 {
                            grpc_completion_queue*) override {
     grpc_channel_credentials* creds = MakeClientCreds(MutateClientArgs(args));
     auto* channel = experimental::CreateChannelFromEndpoint(
-        std::move(endpoint_pair_.first), creds, args.ToC().get());
+        std::move(endpoint_pair_.client), creds, args.ToC().get());
     return channel;
   }
 
-  std::pair<std::unique_ptr<EventEngine::Endpoint>,
-            std::unique_ptr<EventEngine::Endpoint>>
-      endpoint_pair_;
+  PassthroughEndpoint::PassthroughEndpointPair endpoint_pair_;
 };
 
 #ifdef GRPC_POSIX_WAKEUP_FD

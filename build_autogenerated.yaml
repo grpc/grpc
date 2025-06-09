@@ -8288,6 +8288,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8334,6 +8335,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8420,6 +8422,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8554,6 +8557,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8640,6 +8644,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8686,6 +8691,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8768,6 +8774,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -8814,6 +8821,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -8896,6 +8904,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9030,6 +9039,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9112,6 +9122,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9246,6 +9257,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9328,6 +9340,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9374,6 +9387,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9456,6 +9470,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9590,6 +9605,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9672,6 +9688,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9718,6 +9735,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
@@ -9800,6 +9818,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/passthrough_endpoint.h
   - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
@@ -9934,6 +9953,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
+  - test/core/test_util/passthrough_endpoint.cc
   - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
