@@ -92,7 +92,12 @@ class MyServer:
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=5))
         self.server = server
 
-        server_pb2_grpc.add_ServerServicer_to_server(ServerSvc(self.server_id), server)
+        if self.server_id == 2:
+            logging.info(f"Installing service %s", server_pb2_grpc.__name__)
+            server_pb2_grpc.add_ServerServicer_to_server(
+                ServerSvc(self.server_id), server
+            )
+
         listen_addr = "127.0.0.1:50051"
         server.add_insecure_port(listen_addr)
 
