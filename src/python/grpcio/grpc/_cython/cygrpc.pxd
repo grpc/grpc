@@ -54,6 +54,3 @@ cdef extern from "grpc/impl/codegen/gpr_types.h":
 
 cdef extern from "absl/log/initialize.h":
     void InitializeLog() nogil
-
-# DML placeholder for other C definitions
-cdef extern from "grpc/grpc.h":
