@@ -52,5 +52,5 @@ include "_cygrpc/aio/server.pxd.pxi"
 cdef extern from "grpc/impl/codegen/gpr_types.h":
     ctypedef struct gpr_timespec
 
-cdef extern from "absl/log/initialize.h":
+cdef extern from "absl/log/initialize.h" namespace "absl":
     void InitializeLog() nogil
