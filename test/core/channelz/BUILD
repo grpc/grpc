@@ -48,7 +48,7 @@ grpc_cc_test(
         "gtest_main",
     ],
     deps = [
-        "//src/core:channelz_property_list"
+        "//src/core:channelz_property_list",
     ],
 )
 

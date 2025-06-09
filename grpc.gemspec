@@ -166,6 +166,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/channelz/channelz.h )
   s.files += %w( src/core/channelz/channelz_registry.cc )
   s.files += %w( src/core/channelz/channelz_registry.h )
+  s.files += %w( src/core/channelz/property_list.h )
   s.files += %w( src/core/channelz/ztrace_collector.h )
   s.files += %w( src/core/client_channel/backup_poller.cc )
   s.files += %w( src/core/client_channel/backup_poller.h )
