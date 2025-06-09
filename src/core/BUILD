@@ -8469,10 +8469,13 @@ grpc_cc_library(
     external_deps = [
         "absl/cleanup",
         "absl/strings",
+        "absl/time",
     ],
     deps = [
         "1999",
+        "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
+        "chaotic_good_scheduler",
         "chaotic_good_serialize_little_endian",
         "chaotic_good_tcp_frame_header",
         "chaotic_good_tcp_ztrace_collector",
@@ -8484,6 +8487,7 @@ grpc_cc_library(
         "event_engine_query_extensions",
         "event_engine_tcp_socket_utils",
         "grpc_promise_endpoint",
+        "latent_see",
         "loop",
         "map",
         "metrics",
@@ -8492,12 +8496,14 @@ grpc_cc_library(
         "ref_counted",
         "seq",
         "seq_bit_set",
+        "shared_bit_gen",
         "slice_buffer",
         "status_flag",
         "time",
         "transport_framing_endpoint_extension",
         "try_seq",
         "//:channelz",
+        "//:event_engine_base_hdrs",
         "//:gpr",
         "//:promise",
     ],
@@ -8532,6 +8538,23 @@ grpc_cc_library(
     name = "chaotic_good_serialize_little_endian",
     hdrs = [
         "ext/transport/chaotic_good/serialize_little_endian.h",
+    ],
+)
+
+grpc_cc_library(
+    name = "chaotic_good_scheduler",
+    srcs = [
+        "ext/transport/chaotic_good/scheduler.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/scheduler.h",
+    ],
+    external_deps = [
+        "absl/strings",
+    ],
+    deps = [
+        "chaotic_good_tcp_ztrace_collector",
+        "shared_bit_gen",
     ],
 )
 
@@ -8749,6 +8772,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "metrics",
+        "posix_event_engine_base_hdrs",
         "race",
         "resource_quota",
         "shared_bit_gen",

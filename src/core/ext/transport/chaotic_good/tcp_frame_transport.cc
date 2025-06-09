@@ -55,7 +55,8 @@ TcpFrameTransport::TcpFrameTransport(
       control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
       data_endpoints_(std::move(pending_data_endpoints), ctx,
                       options.encode_alignment, options.decode_alignment,
-                      ztrace_collector_, options.enable_tracing),
+                      ztrace_collector_, options.enable_tracing,
+                      options.scheduler_config),
       options_(options) {
   auto* transport_framing_endpoint_extension =
       GetTransportFramingEndpointExtension(
@@ -66,8 +67,9 @@ TcpFrameTransport::TcpFrameTransport(
   }
 }
 
-auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
-                                   std::shared_ptr<TcpCallTracer> call_tracer) {
+auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
+  const auto& frame =
+      absl::ConvertVariantTo<FrameInterface&>(queued_frame->payload);
   FrameHeader header = frame.MakeHeader();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: WriteFrame to:"
@@ -90,21 +92,17 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
         return control_endpoint_.Write(std::move(output));
       },
       // ... otherwise write it to a data connection
-      [this, header, &frame, &call_tracer]() mutable {
+      [this, header, &queued_frame]() mutable {
         SliceBuffer control_bytes;
-        SliceBuffer data_bytes;
         auto tag = next_payload_tag_;
         ++next_payload_tag_;
         TcpFrameHeader hdr{header, tag};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
         hdr.Serialize(control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
-        frame.SerializePayload(data_bytes);
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
-        return DiscardResult(
-            Join(data_endpoints_.Write(tag, std::move(data_bytes),
-                                       std::move(call_tracer)),
-                 control_endpoint_.Write(std::move(control_bytes))));
+        data_endpoints_.Write(tag, std::move(queued_frame));
+        return control_endpoint_.Write(std::move(control_bytes));
       });
 }
 
@@ -116,9 +114,7 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
         frames.Next(),
         // Serialize and write it out.
         [self = self.get()](MpscQueued<OutgoingFrame> outgoing_frame) {
-          return self->WriteFrame(
-              absl::ConvertVariantTo<FrameInterface&>(outgoing_frame->payload),
-              std::move(outgoing_frame->call_tracer));
+          return self->WriteFrame(std::move(outgoing_frame));
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit
@@ -207,7 +203,9 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
-  party->Spawn(
+  data_endpoints_.SetMpscProbe(frames.MakeProbe());
+  auto write_party = Party::Make(party->arena()->Ref());
+  write_party->Spawn(
       "tcp-write",
       [self = RefAsSubclass<TcpFrameTransport>(),
        frames = std::move(frames)]() mutable {
@@ -229,7 +227,8 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
               });
         }));
       },
-      [sink, ztrace_collector = ztrace_collector_](absl::Status status) {
+      [sink, ztrace_collector = ztrace_collector_,
+       write_party = std::move(write_party)](absl::Status status) {
         ztrace_collector->Append(TransportError</*read=*/true>{status});
         sink->OnFrameTransportClosed(std::move(status));
       });
