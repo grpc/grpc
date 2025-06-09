@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -120,7 +120,7 @@ $(function() {
 <div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;  } <a class="code" href="structgrpc__slice.html#a935f767d484585d016725be83e34917c">data</a>;</div>
 <div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;};</div>
 <div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160; </div>
-<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="slice__type_8h.html#a81db47a2be0a079aa797cd77f3864809">   76</a></span>&#160;<span class="preprocessor">#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 6</span></div>
+<div class="line"><a name="l00076"></a><span class="lineno"><a class="line" href="slice__type_8h.html#a81db47a2be0a079aa797cd77f3864809">   76</a></span>&#160;<span class="preprocessor">#define GRPC_SLICE_BUFFER_INLINE_ELEMENTS 3</span></div>
 <div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160; </div>
 <div class="line"><a name="l00080"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html">   80</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">struct </span><a class="code" href="structgrpc__slice__buffer.html">grpc_slice_buffer</a> {</div>
 <div class="line"><a name="l00083"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#a52a8e83b31006d685d98ce4db16520d8">   83</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a>* <a class="code" href="structgrpc__slice__buffer.html#a52a8e83b31006d685d98ce4db16520d8">base_slices</a>;</div>
@@ -129,7 +129,7 @@ $(function() {
 <div class="line"><a name="l00088"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc">   88</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc">count</a>;</div>
 <div class="line"><a name="l00091"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">   91</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">capacity</a>;</div>
 <div class="line"><a name="l00093"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#ad796dcdd16fbb680a7a5368228d20127">   93</a></span>&#160;  <span class="keywordtype">size_t</span> <a class="code" href="structgrpc__slice__buffer.html#ad796dcdd16fbb680a7a5368228d20127">length</a>;</div>
-<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#a4549bfeef8d568d5b93882ea3df040c6">   95</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="structgrpc__slice__buffer.html#a4549bfeef8d568d5b93882ea3df040c6">inlined</a>[<a class="code" href="slice__type_8h.html#a81db47a2be0a079aa797cd77f3864809">GRPC_SLICE_BUFFER_INLINE_ELEMENTS</a>];</div>
+<div class="line"><a name="l00095"></a><span class="lineno"><a class="line" href="structgrpc__slice__buffer.html#aeba56e29110df131af9364fabd4286d1">   95</a></span>&#160;  <a class="code" href="structgrpc__slice.html">grpc_slice</a> <a class="code" href="structgrpc__slice__buffer.html#aeba56e29110df131af9364fabd4286d1">inlined</a>[<a class="code" href="slice__type_8h.html#a81db47a2be0a079aa797cd77f3864809">GRPC_SLICE_BUFFER_INLINE_ELEMENTS</a>];</div>
 <div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;} <a class="code" href="slice__type_8h.html#a7aef9f4bf29684d4c69b6fdd3d9399be">grpc_slice_buffer</a>;</div>
 <div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160; </div>
 <div class="line"><a name="l00098"></a><span class="lineno"><a class="line" href="slice__type_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">   98</a></span>&#160;<span class="preprocessor">#define GRPC_SLICE_START_PTR(slice)                 \</span></div>
@@ -154,6 +154,7 @@ $(function() {
 <div class="ttc" id="astructgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted_html"><div class="ttname"><a href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html">grpc_slice::grpc_slice_data::grpc_slice_refcounted</a></div><div class="ttdef"><b>Definition:</b> slice_type.h:65</div></div>
 <div class="ttc" id="astructgrpc__slice__buffer_html_ac37e9d19ec31eab8f429d2b4af908256"><div class="ttname"><a href="structgrpc__slice__buffer.html#ac37e9d19ec31eab8f429d2b4af908256">grpc_slice_buffer::slices</a></div><div class="ttdeci">grpc_slice * slices</div><div class="ttdoc">slices in the array (Points to the first valid grpc_slice in the array)</div><div class="ttdef"><b>Definition:</b> slice_type.h:86</div></div>
 <div class="ttc" id="astructgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined_html"><div class="ttname"><a href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined.html">grpc_slice::grpc_slice_data::grpc_slice_inlined</a></div><div class="ttdef"><b>Definition:</b> slice_type.h:69</div></div>
+<div class="ttc" id="astructgrpc__slice__buffer_html_aeba56e29110df131af9364fabd4286d1"><div class="ttname"><a href="structgrpc__slice__buffer.html#aeba56e29110df131af9364fabd4286d1">grpc_slice_buffer::inlined</a></div><div class="ttdeci">grpc_slice inlined[3]</div><div class="ttdoc">inlined elements to avoid allocations</div><div class="ttdef"><b>Definition:</b> slice_type.h:95</div></div>
 <div class="ttc" id="auniongrpc__slice_1_1grpc__slice__data_html"><div class="ttname"><a href="uniongrpc__slice_1_1grpc__slice__data.html">grpc_slice::grpc_slice_data</a></div><div class="ttdef"><b>Definition:</b> slice_type.h:64</div></div>
 <div class="ttc" id="astructgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined_html_a252a85cb15f1793625ef88b1fa4f9f89"><div class="ttname"><a href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__inlined.html#a252a85cb15f1793625ef88b1fa4f9f89">grpc_slice::grpc_slice_data::grpc_slice_inlined::length</a></div><div class="ttdeci">uint8_t length</div><div class="ttdef"><b>Definition:</b> slice_type.h:70</div></div>
 <div class="ttc" id="astructgrpc__slice__buffer_html_ac6b9b99f100ac02280fe6ba0edc754cc"><div class="ttname"><a href="structgrpc__slice__buffer.html#ac6b9b99f100ac02280fe6ba0edc754cc">grpc_slice_buffer::count</a></div><div class="ttdeci">size_t count</div><div class="ttdoc">the number of slices in the array</div><div class="ttdef"><b>Definition:</b> slice_type.h:88</div></div>
@@ -166,13 +167,12 @@ $(function() {
 <div class="ttc" id="astructgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted_html_abeb23ef5c6395ccd04908b9d7227a566"><div class="ttname"><a href="structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html#abeb23ef5c6395ccd04908b9d7227a566">grpc_slice::grpc_slice_data::grpc_slice_refcounted::bytes</a></div><div class="ttdeci">uint8_t * bytes</div><div class="ttdef"><b>Definition:</b> slice_type.h:67</div></div>
 <div class="ttc" id="astructgrpc__slice__buffer_html_a8f35fa07c9a4d9f9a4e088a1155e5833"><div class="ttname"><a href="structgrpc__slice__buffer.html#a8f35fa07c9a4d9f9a4e088a1155e5833">grpc_slice_buffer::capacity</a></div><div class="ttdeci">size_t capacity</div><div class="ttdoc">the number of slices allocated in the array.</div><div class="ttdef"><b>Definition:</b> slice_type.h:91</div></div>
 <div class="ttc" id="astructgrpc__slice__buffer_html"><div class="ttname"><a href="structgrpc__slice__buffer.html">grpc_slice_buffer</a></div><div class="ttdoc">Represents an expandable array of slices, to be interpreted as a single item.</div><div class="ttdef"><b>Definition:</b> slice_type.h:80</div></div>
-<div class="ttc" id="astructgrpc__slice__buffer_html_a4549bfeef8d568d5b93882ea3df040c6"><div class="ttname"><a href="structgrpc__slice__buffer.html#a4549bfeef8d568d5b93882ea3df040c6">grpc_slice_buffer::inlined</a></div><div class="ttdeci">grpc_slice inlined[6]</div><div class="ttdoc">inlined elements to avoid allocations</div><div class="ttdef"><b>Definition:</b> slice_type.h:95</div></div>
 <div class="ttc" id="aslice__type_8h_html_ae65fc74cb3afbcd3299a1c93f90bae20"><div class="ttname"><a href="slice__type_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GRPC_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice_type.h:46</div></div>
 <div class="ttc" id="aslice__type_8h_html_a7aef9f4bf29684d4c69b6fdd3d9399be"><div class="ttname"><a href="slice__type_8h.html#a7aef9f4bf29684d4c69b6fdd3d9399be">grpc_slice_buffer</a></div><div class="ttdeci">struct grpc_slice_buffer grpc_slice_buffer</div><div class="ttdoc">Represents an expandable array of slices, to be interpreted as a single item.</div></div>
 <div class="ttc" id="asupport_2port__platform_8h_html"><div class="ttname"><a href="support_2port__platform_8h.html">port_platform.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:53 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

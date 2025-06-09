@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -76,10 +76,13 @@ $(function() {
 <div class="contents">
 <div class="textblock"><code>#include &lt;<a class="el" href="endpoint__config_8h_source.html">grpc/event_engine/endpoint_config.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="extensible_8h_source.html">grpc/event_engine/extensible.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="write__event_8h_source.html">grpc/event_engine/internal/write_event.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="memory__allocator_8h_source.html">grpc/event_engine/memory_allocator.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="port_8h_source.html">grpc/event_engine/port.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="event__engine_2slice__buffer_8h_source.html">grpc/event_engine/slice_buffer.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="support_2port__platform_8h_source.html">grpc/support/port_platform.h</a>&gt;</code><br />
+<code>#include &lt;bitset&gt;</code><br />
+<code>#include &lt;initializer_list&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 <code>#include &quot;absl/functional/any_invocable.h&quot;</code><br />
 <code>#include &quot;absl/status/status.h&quot;</code><br />
@@ -107,11 +110,16 @@ Data Structures</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html">grpc_event_engine::experimental::EventEngine::Endpoint</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">One end of a connection between a gRPC client and server.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Read API call.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_read_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a></td></tr>
-<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html">grpc_event_engine::experimental::EventEngine::Endpoint::WriteMetric</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">An output <a class="el" href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html" title="An output WriteMetric consists of a key and a value.">WriteMetric</a> consists of a key and a value.  <a href="structgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_metric.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html">grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink</a></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html">grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A struct representing optional arguments that may be provided to an <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine.html" title="The EventEngine Interface.">EventEngine</a> <a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html" title="One end of a connection between a gRPC client and server.">Endpoint</a> Write API call.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html">grpc_event_engine::experimental::EventEngine::Listener</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Listens for incoming connection requests from gRPC clients and initiates request processing once connections are established.  <a href="classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_listener.html#details">More...</a><br /></td></tr>
@@ -179,7 +187,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:53 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -140,36 +140,35 @@ $(function() {
 <div class="line"><a name="l00153"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#a779b0f160f92c52f661e5a86c5f3af79">  153</a></span>&#160;<span class="keyword">typedef</span> <a class="code" href="_g_r_p_c_types_8h.html#a0b771408f3bdd5e106736dee2bf99503">NS_ENUM</a>(NSUInteger, GRPCTransportType) {</div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;  GRPCTransportTypeDefault = 0,</div>
 <div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;  GRPCTransportTypeChttp2BoringSSL = 0,</div>
-<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  GRPCTransportTypeCronet,</div>
-<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;  GRPCTransportTypeInsecure,</div>
-<div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;};</div>
-<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160; </div>
-<div class="line"><a name="l00164"></a><span class="lineno">  164</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#ac31a1bcb28b15f798596ed3349e9bfb8">kGRPCErrorDomain</a>;</div>
-<div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160; </div>
-<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#a38801b73ee9078cac37ee2346d052a7d">kGRPCHeadersKey</a>;</div>
-<div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#abefaebd61dda59469f7f54757f2d1395">kGRPCTrailersKey</a>;</div>
-<div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160; </div>
-<div class="line"><a name="l00174"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">  174</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">const</span> <span class="keywordtype">char</span>* _Nonnull <a class="code" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a>;</div>
-<div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160; </div>
-<div class="line"><a name="l00179"></a><span class="lineno"><a class="line" href="protocol_g_r_p_c_authorization_protocol-p.html">  179</a></span>&#160;<span class="keyword">@protocol </span><a class="code" href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol</a></div>
-<div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160; </div>
-<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;- (void)getTokenWithHandler:(<span class="keywordtype">void</span> (^_Nonnull)(NSString* _Nullable token))handler;</div>
+<div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;  GRPCTransportTypeInsecure,</div>
+<div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;};</div>
+<div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160; </div>
+<div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#ac31a1bcb28b15f798596ed3349e9bfb8">kGRPCErrorDomain</a>;</div>
+<div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160; </div>
+<div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#a38801b73ee9078cac37ee2346d052a7d">kGRPCHeadersKey</a>;</div>
+<div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;<span class="keyword">extern</span> NSString* _Nonnull <span class="keyword">const</span> <a class="code" href="_g_r_p_c_types_8h.html#abefaebd61dda59469f7f54757f2d1395">kGRPCTrailersKey</a>;</div>
+<div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160; </div>
+<div class="line"><a name="l00172"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">  172</a></span>&#160;<span class="keyword">typedef</span> <span class="keyword">const</span> <span class="keywordtype">char</span>* _Nonnull <a class="code" href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a>;</div>
+<div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160; </div>
+<div class="line"><a name="l00177"></a><span class="lineno"><a class="line" href="protocol_g_r_p_c_authorization_protocol-p.html">  177</a></span>&#160;<span class="keyword">@protocol </span><a class="code" href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol</a></div>
+<div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160; </div>
+<div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;- (void)getTokenWithHandler:(<span class="keywordtype">void</span> (^_Nonnull)(NSString* _Nullable token))handler;</div>
+<div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160; </div>
+<div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;<span class="keyword">@end</span></div>
 <div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160; </div>
-<div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;<span class="keyword">@end</span></div>
-<div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160; </div>
-<div class="line"><a name="l00190"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">  190</a></span>&#160;<span class="keyword">typedef</span> NSDictionary&lt;NSString*, id&gt; <a class="code" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a>;</div>
+<div class="line"><a name="l00188"></a><span class="lineno"><a class="line" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">  188</a></span>&#160;<span class="keyword">typedef</span> NSDictionary&lt;NSString*, id&gt; <a class="code" href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a>;</div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a0b771408f3bdd5e106736dee2bf99503"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a0b771408f3bdd5e106736dee2bf99503">NS_ENUM</a></div><div class="ttdeci">typedef NS_ENUM(NSUInteger, GRPCErrorCode)</div><div class="ttdoc">gRPC error codes.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:26</div></div>
-<div class="ttc" id="a_g_r_p_c_types_8h_html_a34464a42046cbec45f941d1fd08ef60a"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a></div><div class="ttdeci">NSDictionary&lt; NSString *, id &gt; GRPCMetadataDictionary</div><div class="ttdoc">gRPC metadata dictionary typedef</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:190</div></div>
+<div class="ttc" id="a_g_r_p_c_types_8h_html_a34464a42046cbec45f941d1fd08ef60a"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a34464a42046cbec45f941d1fd08ef60a">GRPCMetadataDictionary</a></div><div class="ttdeci">NSDictionary&lt; NSString *, id &gt; GRPCMetadataDictionary</div><div class="ttdoc">gRPC metadata dictionary typedef</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:188</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_ac31a1bcb28b15f798596ed3349e9bfb8"><div class="ttname"><a href="_g_r_p_c_types_8h.html#ac31a1bcb28b15f798596ed3349e9bfb8">kGRPCErrorDomain</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCErrorDomain</div><div class="ttdoc">Domain of NSError objects produced by gRPC.</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_abefaebd61dda59469f7f54757f2d1395"><div class="ttname"><a href="_g_r_p_c_types_8h.html#abefaebd61dda59469f7f54757f2d1395">kGRPCTrailersKey</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCTrailersKey</div></div>
-<div class="ttc" id="aprotocol_g_r_p_c_authorization_protocol-p_html"><div class="ttname"><a href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol-p</a></div><div class="ttdoc">Implement this protocol to provide a token to gRPC when a call is initiated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:179</div></div>
-<div class="ttc" id="a_g_r_p_c_types_8h_html_af3bbf543fba8f9c001d26153c96f83e6"><div class="ttname"><a href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a></div><div class="ttdeci">const typedef char *_Nonnull GRPCTransportID</div><div class="ttdoc">The id of a transport implementation.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:174</div></div>
+<div class="ttc" id="aprotocol_g_r_p_c_authorization_protocol-p_html"><div class="ttname"><a href="protocol_g_r_p_c_authorization_protocol-p.html">GRPCAuthorizationProtocol-p</a></div><div class="ttdoc">Implement this protocol to provide a token to gRPC when a call is initiated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:177</div></div>
+<div class="ttc" id="a_g_r_p_c_types_8h_html_af3bbf543fba8f9c001d26153c96f83e6"><div class="ttname"><a href="_g_r_p_c_types_8h.html#af3bbf543fba8f9c001d26153c96f83e6">GRPCTransportID</a></div><div class="ttdeci">const typedef char *_Nonnull GRPCTransportID</div><div class="ttdoc">The id of a transport implementation.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:172</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a38801b73ee9078cac37ee2346d052a7d"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a38801b73ee9078cac37ee2346d052a7d">kGRPCHeadersKey</a></div><div class="ttdeci">NSString *const _Nonnull kGRPCHeadersKey</div><div class="ttdoc">Keys used in |NSError|'s |userInfo| dictionary to store the response headers and trailers sent by the...</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a6d1c0685676b450f85433dc8b8920153"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a6d1c0685676b450f85433dc8b8920153">GRPCCompressAlgorithm</a></div><div class="ttdeci">GRPCCompressionAlgorithm GRPCCompressAlgorithm</div><div class="ttdoc">GRPCCompressAlgorithm is deprecated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:147</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:15:03 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:36:46 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -1,4 +1,6 @@
 var searchData=
 [
-  ['write_1861',['Write',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a20ee9db2384229b0d77abaca38f5e3df',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]]
+  ['write_1903',['Write',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint.html#a739a963d67e0cb78842b9997901a4312',1,'grpc_event_engine::experimental::EventEngine::Endpoint']]],
+  ['writeargs_1904',['WriteArgs',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a28869bd8a51c7be72ead34f5d371a026',1,'grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs::WriteArgs()=default'],['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a92f6eb8baad1837a6a1403152c26109b',1,'grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs::WriteArgs(const WriteArgs &amp;)=delete'],['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_args.html#a7ad2d12ad1a69f46d5df4fedc75b6e99',1,'grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs::WriteArgs(WriteArgs &amp;&amp;)=default']]],
+  ['writeeventsink_1905',['WriteEventSink',['../classgrpc__event__engine_1_1experimental_1_1_event_engine_1_1_endpoint_1_1_write_event_sink.html#a5acb2d9f7a90097bf7ace65bf1f670f4',1,'grpc_event_engine::experimental::EventEngine::Endpoint::WriteEventSink']]]
 ];

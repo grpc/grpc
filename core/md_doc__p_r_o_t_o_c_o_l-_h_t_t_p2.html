@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">46.0.0</span>
+   &#160;<span id="projectnumber">48.0.0</span>
    </div>
   </td>
  </tr>
@@ -87,7 +87,7 @@ Requests</h2>
 <p>Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.</p>
 <ul>
 <li><b>Request-Headers</b> → Call-Definition *Custom-Metadata</li>
-<li><b>Call-Definition</b> → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]</li>
+<li><b>Call-Definition</b> → Method Scheme Path [Authority] TE [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]</li>
 <li><b>Method</b> → ":method POST"</li>
 <li><b>Scheme</b> → ":scheme " ("http" / "https")</li>
 <li><b>Path</b> → ":path" "/" Service-Name "/" {<em>method name</em>} ; But see note below.</li>
@@ -268,7 +268,7 @@ Appendix A - GRPC for Protobuf</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:54 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:55 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

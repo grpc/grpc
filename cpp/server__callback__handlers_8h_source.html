@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.71.0</span>
+   &#160;<span id="projectnumber">1.73.0</span>
    </div>
   </td>
  </tr>
@@ -187,8 +187,8 @@ $(function() {
 <div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;      <span class="comment">// A callback that only contains a call to MaybeDone can be run as an</span></div>
 <div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;      <span class="comment">// inline callback regardless of whether or not OnDone is inlineable</span></div>
 <div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;      <span class="comment">// because if the actual OnDone callback needs to be scheduled, MaybeDone</span></div>
-<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;      <span class="comment">// is responsible for dispatching to an executor thread if needed. Thus,</span></div>
-<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;      <span class="comment">// when setting up the finish_tag_, we can set its own callback to</span></div>
+<div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;      <span class="comment">// is responsible for dispatching to an EventEngine thread if needed.</span></div>
+<div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;      <span class="comment">// Thus, when setting up the finish_tag_, we can set its own callback to</span></div>
 <div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;      <span class="comment">// inlineable.</span></div>
 <div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;      finish_tag_.Set(</div>
 <div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;          call_.call(),</div>
@@ -223,9 +223,9 @@ $(function() {
 <div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;      this-&gt;<a class="code" href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">Ref</a>();</div>
 <div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;      <span class="comment">// The callback for this function should not be marked inline because it</span></div>
 <div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;      <span class="comment">// is directly invoking a user-controlled reaction</span></div>
-<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;      <span class="comment">// (OnSendInitialMetadataDone). Thus it must be dispatched to an executor</span></div>
-<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;      <span class="comment">// thread. However, any OnDone needed after that can be inlined because it</span></div>
-<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      <span class="comment">// is already running on an executor thread.</span></div>
+<div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;      <span class="comment">// (OnSendInitialMetadataDone). Thus it must be dispatched to an</span></div>
+<div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;      <span class="comment">// EventEngine thread. However, any OnDone needed after that can be</span></div>
+<div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;      <span class="comment">// inlined because it is already running on an EventEngine thread.</span></div>
 <div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;      meta_tag_.Set(</div>
 <div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;          [<span class="keyword">this</span>](<span class="keywordtype">bool</span> ok) {</div>
@@ -407,7 +407,7 @@ $(function() {
 <div class="line"><a name="l00340"></a><span class="lineno">  340</span>&#160;      this-&gt;<a class="code" href="classgrpc_1_1internal_1_1_server_callback_call.html#abf7d5b632ff79a688b342b235275be72">Ref</a>();</div>
 <div class="line"><a name="l00341"></a><span class="lineno">  341</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00342"></a><span class="lineno">  342</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
-<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;      <span class="comment">// the executor to which this callback is dispatched.</span></div>
+<div class="line"><a name="l00343"></a><span class="lineno">  343</span>&#160;      <span class="comment">// the EventEngine thread to which this callback is dispatched.</span></div>
 <div class="line"><a name="l00344"></a><span class="lineno">  344</span>&#160;      meta_tag_.Set(</div>
 <div class="line"><a name="l00345"></a><span class="lineno">  345</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00346"></a><span class="lineno">  346</span>&#160;          [<span class="keyword">this</span>](<span class="keywordtype">bool</span> ok) {</div>
@@ -447,7 +447,7 @@ $(function() {
 <div class="line"><a name="l00380"></a><span class="lineno">  380</span>&#160;      reactor_.store(reactor, std::memory_order_relaxed);</div>
 <div class="line"><a name="l00381"></a><span class="lineno">  381</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00382"></a><span class="lineno">  382</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
-<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;      <span class="comment">// the executor to which this callback is dispatched.</span></div>
+<div class="line"><a name="l00383"></a><span class="lineno">  383</span>&#160;      <span class="comment">// the EventEngine thread to which this callback is dispatched.</span></div>
 <div class="line"><a name="l00384"></a><span class="lineno">  384</span>&#160;      read_tag_.Set(</div>
 <div class="line"><a name="l00385"></a><span class="lineno">  385</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00386"></a><span class="lineno">  386</span>&#160;          [<span class="keyword">this</span>, reactor](<span class="keywordtype">bool</span> ok) {</div>
@@ -611,7 +611,7 @@ $(function() {
 <div class="line"><a name="l00544"></a><span class="lineno">  544</span>&#160;      this-&gt;Ref();</div>
 <div class="line"><a name="l00545"></a><span class="lineno">  545</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00546"></a><span class="lineno">  546</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
-<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;      <span class="comment">// the executor to which this callback is dispatched.</span></div>
+<div class="line"><a name="l00547"></a><span class="lineno">  547</span>&#160;      <span class="comment">// the EventEngine thread to which this callback is dispatched.</span></div>
 <div class="line"><a name="l00548"></a><span class="lineno">  548</span>&#160;      meta_tag_.Set(</div>
 <div class="line"><a name="l00549"></a><span class="lineno">  549</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00550"></a><span class="lineno">  550</span>&#160;          [<span class="keyword">this</span>](<span class="keywordtype">bool</span> ok) {</div>
@@ -674,7 +674,7 @@ $(function() {
 <div class="line"><a name="l00607"></a><span class="lineno">  607</span>&#160;      reactor_.store(reactor, std::memory_order_relaxed);</div>
 <div class="line"><a name="l00608"></a><span class="lineno">  608</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00609"></a><span class="lineno">  609</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
-<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;      <span class="comment">// the executor to which this callback is dispatched.</span></div>
+<div class="line"><a name="l00610"></a><span class="lineno">  610</span>&#160;      <span class="comment">// the EventEngine thread to which this callback is dispatched.</span></div>
 <div class="line"><a name="l00611"></a><span class="lineno">  611</span>&#160;      write_tag_.Set(</div>
 <div class="line"><a name="l00612"></a><span class="lineno">  612</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00613"></a><span class="lineno">  613</span>&#160;          [<span class="keyword">this</span>, reactor](<span class="keywordtype">bool</span> ok) {</div>
@@ -823,7 +823,7 @@ $(function() {
 <div class="line"><a name="l00756"></a><span class="lineno">  756</span>&#160;      this-&gt;Ref();</div>
 <div class="line"><a name="l00757"></a><span class="lineno">  757</span>&#160;      <span class="comment">// The callback for this function should not be inlined because it invokes</span></div>
 <div class="line"><a name="l00758"></a><span class="lineno">  758</span>&#160;      <span class="comment">// a user-controlled reaction, but any resulting OnDone can be inlined in</span></div>
-<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;      <span class="comment">// the executor to which this callback is dispatched.</span></div>
+<div class="line"><a name="l00759"></a><span class="lineno">  759</span>&#160;      <span class="comment">// the EventEngine thread to which this callback is dispatched.</span></div>
 <div class="line"><a name="l00760"></a><span class="lineno">  760</span>&#160;      meta_tag_.Set(</div>
 <div class="line"><a name="l00761"></a><span class="lineno">  761</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00762"></a><span class="lineno">  762</span>&#160;          [<span class="keyword">this</span>](<span class="keywordtype">bool</span> ok) {</div>
@@ -888,7 +888,7 @@ $(function() {
 <div class="line"><a name="l00821"></a><span class="lineno">  821</span>&#160;      reactor_.store(reactor, std::memory_order_relaxed);</div>
 <div class="line"><a name="l00822"></a><span class="lineno">  822</span>&#160;      <span class="comment">// The callbacks for these functions should not be inlined because they</span></div>
 <div class="line"><a name="l00823"></a><span class="lineno">  823</span>&#160;      <span class="comment">// invoke user-controlled reactions, but any resulting OnDones can be</span></div>
-<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;      <span class="comment">// inlined in the executor to which a callback is dispatched.</span></div>
+<div class="line"><a name="l00824"></a><span class="lineno">  824</span>&#160;      <span class="comment">// inlined in the EventEngine thread to which a callback is dispatched.</span></div>
 <div class="line"><a name="l00825"></a><span class="lineno">  825</span>&#160;      write_tag_.Set(</div>
 <div class="line"><a name="l00826"></a><span class="lineno">  826</span>&#160;          call_.call(),</div>
 <div class="line"><a name="l00827"></a><span class="lineno">  827</span>&#160;          [<span class="keyword">this</span>, reactor](<span class="keywordtype">bool</span> ok) {</div>
@@ -1040,7 +1040,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1internal_1_1_callback_unary_handler_html_a646b7d063c74f4bce30ad27eb4c18b1e"><div class="ttname"><a href="classgrpc_1_1internal_1_1_callback_unary_handler.html#a646b7d063c74f4bce30ad27eb4c18b1e">grpc::internal::CallbackUnaryHandler::Deserialize</a></div><div class="ttdeci">void * Deserialize(grpc_call *call, grpc_byte_buffer *req, grpc::Status *status, void **handler_data) final</div><div class="ttdef"><b>Definition:</b> server_callback_handlers.h:83</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Mar 13 2025 18:13:55 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Sat Jun 7 2025 19:35:56 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
