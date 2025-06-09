@@ -14,6 +14,8 @@
 
 #include "src/core/util/wait_for_single_owner.h"
 
+#include <grpc/grpc.h>
+
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -50,6 +52,7 @@ TEST(WaitForSingleOwner, CallsStallCallback) {
 TEST(WaitForSingleOwner, SucceedsWithoutAStallCallback) {
   // Ensures that WaitForSingleOwner continues to work if no stall callback is
   // set.
+  grpc_init();
   auto i = std::make_shared<int>(3);
   auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
   // Holds a ref until the stall callback would have been run once.
@@ -60,6 +63,7 @@ TEST(WaitForSingleOwner, SucceedsWithoutAStallCallback) {
       [i]() mutable { i.reset(); });
   grpc_core::WaitForSingleOwner(std::move(i));
   grpc_core::SetWaitForSingleOwnerStalledCallback(nullptr);
+  grpc_shutdown();
 }
 
 int main(int argc, char** argv) {
