@@ -94,4 +94,4 @@ git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
 #tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only
-tools/run_tests/run_tests.py -t -j 16 -x /tmp/sponge_log.xml --report_suite_name cpp_linux_noexcept_native_buildonly -l c++ -c noexcept --compiler=gcc7 --iomgr_platform native --build_only
+tools/run_tests/run_tests.py --use_docker -t -j 16 -x /tmp/sponge_log.xml --report_suite_name cpp_linux_noexcept_native_buildonly -l c++ -c noexcept --compiler=gcc7 --iomgr_platform native --build_only
