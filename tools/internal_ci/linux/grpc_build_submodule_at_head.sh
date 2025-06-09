@@ -30,7 +30,13 @@ SUBMODULE_NAME="${RUN_TESTS_FLAGS}"
 SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
 
 # Update submodule to be tested at HEAD
-(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout "origin/${SUBMODULE_BRANCH_NAME}")
+
+# DO NOT SUBMIT
+# This is the commit before dmauro's gcc7 fix
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98^)
+
+# This is dmauro's gcc7 fix
+#(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98)
 
 echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
 echo "If a test breaks, either"
@@ -87,4 +93,5 @@ tools/buildgen/generate_projects.sh
 git add -A
 git -c user.name='foo' -c user.email='foo@google.com' commit -m 'Update submodule' --allow-empty
 
-tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only
+#tools/run_tests/run_tests_matrix.py -f linux --exclude c sanity basictests_arm64 openssl dbg --inner_jobs 16 -j 2 --build_only
+tools/run_tests/run_tests.py -t -j 16 -x /tmp/sponge_log.xml --report_suite_name cpp_linux_noexcept_native_buildonly -l c++ -c noexcept --compiler=gcc7 --iomgr_platform native --build_only
