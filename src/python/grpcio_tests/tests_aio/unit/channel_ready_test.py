@@ -42,11 +42,26 @@ class TestChannelReady(AioTestBase):
         await self._channel.close()
 
     async def test_channel_ready_success(self):
-        channel = aio.insecure_channel("localhost:50051")
+        # Start `channel_ready` as another Task
+        channel_ready_task = self.loop.create_task(
+            self._channel.channel_ready()
+        )
+
+        # Wait for TRANSIENT_FAILURE
+        await _common.block_until_certain_state(
+            self._channel, grpc.ChannelConnectivity.TRANSIENT_FAILURE
+        )
+
+        server = None
         try:
-            await channel.channel_ready()
+            # Start the server
+            _, server = await start_test_server(port=self._port)
+
+            # The RPC should recover itself
+            await channel_ready_task
         finally:
-            await channel.close()
+          if server:
+            await server.stop(None)
 
     @unittest.skip(
         "skipping due to flake: https://github.com/grpc/grpc/issues/37949"
