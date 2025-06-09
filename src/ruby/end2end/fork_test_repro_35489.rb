@@ -16,6 +16,8 @@
 
 ENV['GRPC_ENABLE_FORK_SUPPORT'] = "1"
 fail "forking only supported on linux" unless RUBY_PLATFORM =~ /linux/
+# TODO(apolcyn): remove after this experiment is on by default
+ENV['GRPC_EXPERIMENTS'] = "event_engine_fork"
 
 this_dir = File.expand_path(File.dirname(__FILE__))
 protos_lib_dir = File.join(this_dir, 'lib')
