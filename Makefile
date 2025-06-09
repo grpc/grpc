@@ -77,7 +77,7 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang++
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan = -fsanitize=address
 
 VALID_CONFIG_asan-noleaks = 1
@@ -86,7 +86,7 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-noleaks = fsanitize=address
 
 VALID_CONFIG_asan-trace-cmp = 1
@@ -95,7 +95,7 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
-CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_asan-trace-cmp = -fsanitize=address
 
 VALID_CONFIG_c++-compat = 1
@@ -156,7 +156,7 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie
 LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
@@ -183,7 +183,7 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang++
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
 LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
@@ -367,8 +367,8 @@ E = @echo
 Q = @
 endif
 
-CORE_VERSION = 47.0.0
-CPP_VERSION = 1.73.0-dev
+CORE_VERSION = 48.0.0
+CPP_VERSION = 1.74.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -404,7 +404,7 @@ SHARED_EXT_CORE = dll
 SHARED_EXT_CPP = dll
 
 SHARED_PREFIX =
-SHARED_VERSION_CORE = -47
+SHARED_VERSION_CORE = -48
 SHARED_VERSION_CPP = -1
 else ifeq ($(SYSTEM),Darwin)
 EXECUTABLE_SUFFIX =
@@ -804,6 +804,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
@@ -1172,10 +1173,10 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+    src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
@@ -1183,6 +1184,8 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_posix.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_windows.cc \
     src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
@@ -1234,7 +1237,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/event_engine_shims/endpoint.cc \
     src/core/lib/iomgr/event_engine_shims/tcp_client.cc \
     src/core/lib/iomgr/exec_ctx.cc \
-    src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/internal_errqueue.cc \
@@ -1396,6 +1398,7 @@ LIBGRPC_SRC = \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
     src/core/telemetry/metrics.cc \
@@ -1837,8 +1840,8 @@ $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_
 ifeq ($(SYSTEM),Darwin)
 	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.47 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
-	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.47
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc.so.48 -o $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_OBJS) $(LIBDIR)/$(CONFIG)/libcares.a $(OPENSSL_MERGE_LIBS) $(ZLIB_MERGE_LIBS) $(LDLIBS_SECURE) $(LDLIBS)
+	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so.48
 	$(Q) ln -sf $(SHARED_PREFIX)grpc$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc$(SHARED_VERSION_CORE).so
 endif
 endif

@@ -318,12 +318,14 @@ void HttpConnectHandshaker::DoHandshake(
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   Ref().release();
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs write_args;
+  write_args.set_max_frame_size(INT_MAX);
   grpc_endpoint_write(
       args->endpoint.get(), write_buffer_.c_slice_buffer(),
       GRPC_CLOSURE_INIT(&on_write_done_scheduler_,
                         &HttpConnectHandshaker::OnWriteDoneScheduler, this,
                         grpc_schedule_on_exec_ctx),
-      nullptr, /*max_frame_size=*/INT_MAX);
+      std::move(write_args));
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {

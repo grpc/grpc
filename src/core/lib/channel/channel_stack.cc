@@ -177,7 +177,7 @@ grpc_error_handle grpc_channel_stack_init(
 }
 
 void grpc_channel_stack::ChannelStackDataSource::AddData(
-    grpc_core::channelz::DataSink& sink) {
+    grpc_core::channelz::DataSink sink) {
   using grpc_core::Json;
   Json::Object output;
   output["type"] = Json::FromString("v1");

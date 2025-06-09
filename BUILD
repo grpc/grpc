@@ -215,11 +215,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gradient"  # @unused
+g_stands_for = "gee"  # @unused
 
-core_version = "47.0.0"  # @unused
+core_version = "48.0.0"  # @unused
 
-version = "1.73.0-dev"  # @unused
+version = "1.74.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -596,7 +596,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:http_proxy_mapper",
         "//src/core:init_internally",
@@ -692,7 +691,6 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:endpoint_info_handshaker",
         "//src/core:experiments",
-        "//src/core:forkable",
         "//src/core:grpc_authorization_base",
         "//src/core:grpc_external_account_credentials",
         "//src/core:grpc_fake_credentials",
@@ -1275,10 +1273,13 @@ grpc_cc_library(
         "//src/core:json",
         "//src/core:json_reader",
         "//src/core:json_writer",
+        "//src/core:memory_usage",
+        "//src/core:notification",
         "//src/core:per_cpu",
         "//src/core:ref_counted",
         "//src/core:resolved_address",
         "//src/core:shared_bit_gen",
+        "//src/core:single_set_ptr",
         "//src/core:slice",
         "//src/core:sync",
         "//src/core:time",
@@ -3151,6 +3152,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
+        "channelz",
         "debug_location",
         "event_engine_base_hdrs",
         "exec_ctx",
@@ -3215,13 +3217,11 @@ grpc_cc_library(
     srcs = [
         "//src/core:lib/iomgr/combiner.cc",
         "//src/core:lib/iomgr/exec_ctx.cc",
-        "//src/core:lib/iomgr/executor.cc",
         "//src/core:lib/iomgr/iomgr_internal.cc",
     ],
     hdrs = [
         "//src/core:lib/iomgr/combiner.h",
         "//src/core:lib/iomgr/exec_ctx.h",
-        "//src/core:lib/iomgr/executor.h",
         "//src/core:lib/iomgr/iomgr_internal.h",
     ],
     external_deps = [
@@ -3373,7 +3373,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
     ],
-    visibility = ["//bazel:alt_grpc_base_legacy"],
+    visibility = [
+        "//bazel:alt_grpc_base_legacy",
+        "//bazel:client_channel",
+    ],
     deps = ["gpr"],
 )
 
@@ -3911,6 +3914,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:error_utils",
         "//src/core:event_engine_common",
+        "//src/core:event_engine_shim",
         "//src/core:event_engine_tcp_socket_utils",
         "//src/core:handshaker_registry",
         "//src/core:iomgr_fwd",
@@ -4213,15 +4217,11 @@ grpc_cc_library(
     name = "tsi_ssl_credentials",
     srcs = [
         "//src/core:credentials/transport/tls/ssl_utils.cc",
-        "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
         "//src/core:tsi/ssl_transport_security.cc",
-        "//src/core:tsi/ssl_transport_security_utils.cc",
     ],
     hdrs = [
         "//src/core:credentials/transport/tls/ssl_utils.h",
-        "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
         "//src/core:tsi/ssl_transport_security.h",
-        "//src/core:tsi/ssl_transport_security_utils.h",
     ],
     external_deps = [
         "absl/base:core_headers",
@@ -4255,6 +4255,8 @@ grpc_cc_library(
         "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:slice",
+        "//src/core:ssl_key_logging",
+        "//src/core:ssl_transport_security_utils",
         "//src/core:sync",
         "//src/core:tsi_ssl_types",
         "//src/core:useful",
@@ -4402,6 +4404,7 @@ grpc_cc_library(
         "uri",
         "work_serializer",
         "//src/core:default_event_engine",
+        "//src/core:down_cast",
         "//src/core:dual_ref_counted",
         "//src/core:env",
         "//src/core:grpc_backend_metric_data",
@@ -4716,6 +4719,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:cord",
         "absl/strings:str_format",
+        "absl/time",
     ],
     visibility = ["//bazel:grpclb"],
     deps = [
@@ -4729,6 +4733,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_base",
+        "grpc_core_credentials_header",
         "grpc_public_hdrs",
         "grpc_trace",
         "hpack_encoder",
@@ -4756,9 +4761,11 @@ grpc_cc_library(
         "//src/core:experiments",
         "//src/core:gpr_manual_constructor",
         "//src/core:http2_settings",
+        "//src/core:http2_stats_collector",
         "//src/core:http2_status",
         "//src/core:http2_ztrace_collector",
         "//src/core:init_internally",
+        "//src/core:internal_channel_arg_names",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:json",

@@ -38,7 +38,6 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -355,10 +354,6 @@ BasicFuzzer::BasicFuzzer(const fuzzing_event_engine::Actions& actions)
   grpc_event_engine::experimental::SetDefaultEventEngine(engine_);
   grpc_timer_manager_set_start_threaded(false);
   grpc_init();
-  {
-    ExecCtx exec_ctx;
-    Executor::SetThreadingAll(false);
-  }
   resource_quota_ = MakeResourceQuota("fuzzer");
   cq_ = grpc_completion_queue_create_for_next(nullptr);
 }

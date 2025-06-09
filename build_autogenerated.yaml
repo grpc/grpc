@@ -324,10 +324,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -873,7 +875,6 @@ libs:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -884,6 +885,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -893,6 +895,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -944,7 +947,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -1194,6 +1196,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -1402,6 +1405,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -1770,10 +1774,10 @@ libs:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -1781,6 +1785,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -1831,7 +1837,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -1993,6 +1998,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -2117,6 +2123,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -2370,10 +2377,12 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
+  - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
@@ -2468,7 +2477,6 @@ libs:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -2479,6 +2487,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -2488,6 +2497,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -2539,7 +2549,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -2747,6 +2756,7 @@ libs:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -2875,6 +2885,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -2940,10 +2951,10 @@ libs:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -2951,6 +2962,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -3001,7 +3014,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -3146,6 +3158,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -3205,6 +3218,7 @@ libs:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -4454,7 +4468,6 @@ libs:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -4465,6 +4478,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -4474,6 +4488,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -4525,7 +4540,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -4655,6 +4669,7 @@ libs:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -4691,6 +4706,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -4789,10 +4805,10 @@ libs:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -4800,6 +4816,8 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -4850,7 +4868,6 @@ libs:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -4956,6 +4973,7 @@ libs:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -5003,6 +5021,7 @@ libs:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -6034,7 +6053,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -6120,7 +6138,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -6314,7 +6331,6 @@ targets:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -6325,6 +6341,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -6334,6 +6351,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -6385,7 +6403,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -6503,6 +6520,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -6534,6 +6552,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -6613,10 +6632,10 @@ targets:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -6624,6 +6643,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -6674,7 +6695,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -6769,6 +6789,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -6812,6 +6833,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -6855,7 +6877,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/cancel_callback.h
@@ -6913,7 +6934,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -7495,7 +7515,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -7553,7 +7572,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -8090,16 +8108,6 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
-- name: destroy_grpclb_channel_with_active_connect_stress_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
-  deps:
-  - gtest
-  - grpc++_test_util
 - name: directory_reader_test
   gtest: true
   build: test
@@ -8111,6 +8119,23 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: dns_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/posix/dns_server.h
+  src:
+  - test/core/event_engine/posix/dns_fork_test.cc
+  - test/core/event_engine/posix/dns_server.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: dns_resolver_cooldown_test
   gtest: true
   build: test
@@ -8246,6 +8271,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8300,6 +8326,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8376,6 +8403,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8430,6 +8458,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8594,6 +8623,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8648,6 +8678,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8720,6 +8751,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8774,6 +8806,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -8846,6 +8879,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -8900,6 +8934,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9060,6 +9095,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9114,6 +9150,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9274,6 +9311,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9328,6 +9366,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9400,6 +9439,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9454,6 +9494,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9614,6 +9655,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9668,6 +9710,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -9740,6 +9783,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -9794,6 +9838,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -10145,7 +10190,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -10189,7 +10233,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -10299,6 +10342,20 @@ targets:
   - linux
   - posix
   - mac
+- name: file_descriptor_collection_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/file_descriptor_collection_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -10392,7 +10449,6 @@ targets:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -10403,6 +10459,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -10412,6 +10469,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -10463,7 +10521,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -10581,6 +10638,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -10612,6 +10670,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -10691,10 +10750,10 @@ targets:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -10702,6 +10761,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -10752,7 +10813,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -10847,6 +10907,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -10890,6 +10951,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -10958,7 +11020,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -11019,7 +11080,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/memory_quota.cc
@@ -11071,7 +11131,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -11138,7 +11197,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -11184,27 +11242,6 @@ targets:
   - posix
   - mac
   uses_polling: false
-- name: forkable_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/debug/trace_flags.h
-  - src/core/lib/debug/trace_impl.h
-  - src/core/lib/event_engine/forkable.h
-  - src/core/util/glob.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/event_engine/forkable.cc
-  - src/core/util/glob.cc
-  - test/core/event_engine/forkable_test.cc
-  deps:
-  - gtest
-  - absl/container:flat_hash_map
-  - absl/status:statusor
-  - gpr
 - name: format_request_test
   gtest: true
   build: test
@@ -11296,6 +11333,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/fuzzing_event_engine_test.cc
   - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/endpoint_test.cc
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
@@ -11833,6 +11871,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -11884,6 +11923,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -12005,21 +12045,28 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
   - src/core/credentials/transport/channel_creds_registry.h
   - src/core/credentials/transport/tls/certificate_provider_factory.h
   - src/core/credentials/transport/tls/certificate_provider_registry.h
+  - src/core/ext/transport/chttp2/transport/bin_encoder.h
   - src/core/ext/transport/chttp2/transport/decode_huff.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.h
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
+  - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
@@ -12069,7 +12116,6 @@ targets:
   - src/core/lib/event_engine/extensions/supports_fd.h
   - src/core/lib/event_engine/extensions/supports_win_sockets.h
   - src/core/lib/event_engine/extensions/tcp_trace.h
-  - src/core/lib/event_engine/forkable.h
   - src/core/lib/event_engine/grpc_polled_fd.h
   - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/memory_allocator_factory.h
@@ -12080,6 +12126,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.h
   - src/core/lib/event_engine/posix_engine/event_poller.h
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.h
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.h
   - src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h
   - src/core/lib/event_engine/posix_engine/internal_errqueue.h
   - src/core/lib/event_engine/posix_engine/lockfree_event.h
@@ -12089,6 +12136,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_closure.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
+  - src/core/lib/event_engine/posix_engine/posix_interface.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -12140,7 +12188,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.h
   - src/core/lib/iomgr/event_engine_shims/tcp_client.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/internal_errqueue.h
   - src/core/lib/iomgr/iocp_windows.h
   - src/core/lib/iomgr/iomgr.h
@@ -12258,6 +12305,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -12289,6 +12337,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -12342,11 +12391,16 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.cc
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
+  - src/core/ext/transport/chttp2/transport/bin_encoder.cc
   - src/core/ext/transport/chttp2/transport/decode_huff.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder.cc
+  - src/core/ext/transport/chttp2/transport/hpack_encoder_table.cc
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
@@ -12377,10 +12431,10 @@ targets:
   - src/core/lib/event_engine/default_event_engine.cc
   - src/core/lib/event_engine/default_event_engine_factory.cc
   - src/core/lib/event_engine/event_engine.cc
-  - src/core/lib/event_engine/forkable.cc
   - src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   - src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
   - src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc
+  - src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc
   - src/core/lib/event_engine/posix_engine/internal_errqueue.cc
   - src/core/lib/event_engine/posix_engine/lockfree_event.cc
   - src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc
@@ -12388,6 +12442,8 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.cc
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
+  - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -12438,7 +12494,6 @@ targets:
   - src/core/lib/iomgr/event_engine_shims/endpoint.cc
   - src/core/lib/iomgr/event_engine_shims/tcp_client.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/internal_errqueue.cc
@@ -12533,6 +12588,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -12579,6 +12635,7 @@ targets:
   - absl/random:bit_gen_ref
   - absl/random:distributions
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -12701,8 +12758,11 @@ targets:
   - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_transport.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
+  - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/lib/promise/detail/promise_variant.h
+  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
@@ -12718,6 +12778,9 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_transport.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
+  - src/core/ext/transport/chttp2/transport/ping_promise.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -12752,6 +12815,7 @@ targets:
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
@@ -13068,7 +13132,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13127,7 +13190,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13484,25 +13546,44 @@ targets:
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/seq_state.h
+  - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/lib/promise/seq.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
+  - src/core/util/latent_see.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
   src:
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - absl/base:config
   - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
   - gpr
@@ -13540,7 +13621,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13607,7 +13687,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13708,6 +13787,22 @@ targets:
   - gtest
   - grpc_test_util_unsecure
   uses_polling: false
+- name: memory_usage_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/util/memory_usage.h
+  - src/core/util/time.h
+  src:
+  - src/core/util/time.cc
+  - test/core/util/memory_usage_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - absl/strings:string_view
+  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -13750,7 +13845,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -13811,7 +13905,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/resource_quota/arena.cc
@@ -13945,57 +14038,6 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
-- name: mpsc_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - src/core/lib/debug/trace.h
-  - src/core/lib/debug/trace_flags.h
-  - src/core/lib/debug/trace_impl.h
-  - src/core/lib/promise/activity.h
-  - src/core/lib/promise/context.h
-  - src/core/lib/promise/detail/promise_factory.h
-  - src/core/lib/promise/detail/promise_like.h
-  - src/core/lib/promise/detail/status.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/poll.h
-  - src/core/lib/promise/promise.h
-  - src/core/lib/promise/status_flag.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/util/atomic_utils.h
-  - src/core/util/down_cast.h
-  - src/core/util/dump_args.h
-  - src/core/util/function_signature.h
-  - src/core/util/glob.h
-  - src/core/util/json/json.h
-  - src/core/util/latent_see.h
-  - src/core/util/orphanable.h
-  - src/core/util/per_cpu.h
-  - src/core/util/ref_counted.h
-  - src/core/util/ref_counted_ptr.h
-  - src/core/util/ring_buffer.h
-  - test/core/promise/poll_matcher.h
-  src:
-  - src/core/lib/debug/trace.cc
-  - src/core/lib/debug/trace_flags.cc
-  - src/core/lib/promise/activity.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/util/dump_args.cc
-  - src/core/util/glob.cc
-  - src/core/util/latent_see.cc
-  - src/core/util/per_cpu.cc
-  - test/core/promise/mpsc_test.cc
-  deps:
-  - gtest
-  - absl/base:config
-  - absl/container:flat_hash_map
-  - absl/functional:function_ref
-  - absl/hash:hash
-  - absl/meta:type_traits
-  - absl/status:statusor
-  - gpr
-  uses_polling: false
 - name: mpscq_test
   gtest: true
   build: test
@@ -14087,13 +14129,17 @@ targets:
   - src/core/lib/debug/trace_impl.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/basic_seq.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/seq.h
   - src/core/util/atomic_utils.h
   - src/core/util/down_cast.h
   - src/core/util/dump_args.h
@@ -14461,12 +14507,18 @@ targets:
   headers:
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/wait_set.h
+  - test/core/promise/poll_matcher.h
   src:
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_mpsc_test.cc
   deps:
   - gtest
   - grpc_unsecure
+  platforms:
+  - linux
+  - posix
+  - mac
   uses_polling: false
 - name: party_test
   gtest: true
@@ -14513,7 +14565,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/resource_quota/periodic_update.h
   - src/core/lib/slice/percent_encoding.h
@@ -14543,7 +14594,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/resource_quota/periodic_update.cc
   - src/core/lib/slice/percent_encoding.cc
@@ -14659,6 +14709,25 @@ targets:
   - absl/log:check
   - absl/strings:str_format
   uses_polling: false
+- name: poller_fork_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/event_engine/event_engine_test_utils.h
+  - test/core/event_engine/posix/posix_engine_test_utils.h
+  src:
+  - test/core/event_engine/event_engine_test_utils.cc
+  - test/core/event_engine/posix/poller_fork_test.cc
+  - test/core/event_engine/posix/posix_engine_test_utils.cc
+  deps:
+  - gtest
+  - grpc++
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -14783,6 +14852,7 @@ targets:
   - test/core/event_engine/test_suite/posix_event_engine_test.cc
   - test/core/event_engine/test_suite/tests/client_test.cc
   - test/core/event_engine/test_suite/tests/dns_test.cc
+  - test/core/event_engine/test_suite/tests/endpoint_test.cc
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
@@ -15192,6 +15262,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15240,6 +15311,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -15302,6 +15374,7 @@ targets:
   - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
+  - src/core/lib/promise/lock_based_mpsc.h
   - src/core/lib/promise/match_promise.h
   - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
@@ -15345,6 +15418,7 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/wait_set.cc
   - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
@@ -15366,12 +15440,41 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/util/glob.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
+  - src/core/util/glob.cc
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
+  - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: race_test
@@ -15381,13 +15484,12 @@ targets:
   headers:
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
-  - src/core/util/construct_destruct.h
+  - src/core/util/json/json.h
   src:
   - test/core/promise/race_test.cc
   deps:
   - gtest
-  - absl/log:check
-  - absl/strings:str_format
+  - gpr
   uses_polling: false
 - name: random_early_detection_test
   gtest: true
@@ -15515,7 +15617,6 @@ targets:
   - src/core/lib/iomgr/combiner.h
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
-  - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/iomgr_internal.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
@@ -15569,6 +15670,7 @@ targets:
   - src/core/util/glob.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
@@ -15611,7 +15713,6 @@ targets:
   - src/core/lib/iomgr/combiner.cc
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
-  - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/iomgr_internal.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
@@ -15631,6 +15732,7 @@ targets:
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
@@ -16780,6 +16882,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/util/glob.h
   src:
   - src/core/lib/debug/trace.cc
@@ -16791,6 +16894,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/util/glob.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
@@ -17032,6 +17136,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   - test/core/event_engine/test_suite/tests/client_test.cc
+  - test/core/event_engine/test_suite/tests/endpoint_test.cc
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
@@ -18360,7 +18465,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -19342,7 +19446,6 @@ targets:
   run: false
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/end2end/counted_service.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/end2end/xds/xds_end2end_test_lib.h
@@ -19882,7 +19985,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - test/cpp/util/cli_call.h
   - test/cpp/util/cli_credentials.h
   - test/cpp/util/config_grpc_cli.h
@@ -20021,7 +20123,6 @@ targets:
   build: test
   language: c++
   headers:
-  - test/core/test_util/scoped_env_var.h
   - third_party/protoc-gen-validate/validate/validate.h
   src:
   - third_party/envoy-api/envoy/annotations/deprecation.proto
