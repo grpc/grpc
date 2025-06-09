@@ -28,6 +28,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/container/btree_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "src/core/call/call_filters.h"
@@ -170,18 +171,118 @@ class ChannelInit {
     return out << OrderingToString(ordering);
   }
 
+  class FilterRegistration;
+  class InnerBuilder;
+
+  class Builder {
+   public:
+    // Register a builder in the normal filter registration pass.
+    // This occurs first during channel build time.
+    // The FilterRegistration methods can be called to declaratively define
+    // properties of the filter being registered.
+    // TODO(ctiller): remove in favor of the version that does not mention
+    // grpc_channel_filter
+    FilterRegistration RegisterFilter(grpc_channel_stack_type type,
+                                      UniqueTypeName name,
+                                      const grpc_channel_filter* filter,
+                                      FilterAdder filter_adder = nullptr,
+                                      SourceLocation registration_source = {});
+    FilterRegistration RegisterFilter(grpc_channel_stack_type type,
+                                      const grpc_channel_filter* filter,
+                                      SourceLocation registration_source = {}) {
+      CHECK(filter != nullptr);
+      return RegisterFilter(type, NameFromChannelFilter(filter), filter,
+                            nullptr, registration_source);
+    }
+    template <typename Filter>
+    FilterRegistration RegisterFilter(grpc_channel_stack_type type,
+                                      SourceLocation registration_source = {}) {
+      return RegisterFilter(
+          type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
+          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
+          registration_source);
+    }
+
+    // Filter does not participate in v3
+    template <typename Filter>
+    FilterRegistration RegisterV2Filter(
+        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
+      return RegisterFilter(type, &Filter::kFilter, registration_source)
+          .SkipV3();
+    }
+
+    // Register a post processor for the builder.
+    // These run after the main graph has been placed into the builder.
+    // At most one filter per slot per channel stack type can be added.
+    // If at all possible, prefer to use the RegisterFilter() mechanism to add
+    // filters to the system - this should be a last resort escape hatch.
+    void RegisterPostProcessor(grpc_channel_stack_type type,
+                               PostProcessorSlot slot,
+                               PostProcessor post_processor) {
+      auto& slot_value = post_processors_[type][static_cast<int>(slot)];
+      CHECK(slot_value == nullptr);
+      slot_value = std::move(post_processor);
+    }
+
+    /// Finalize registration.
+    ChannelInit Build();
+
+   private:
+    friend class FilterRegistration;
+    friend class InnerBuilder;
+
+    struct FilterInfo {
+      bool terminal = false;
+      bool before_all = false;
+      Version version = Version::kAny;
+      Ordering ordering = Ordering::kDefault;
+      uint16_t topological_id;
+      // TODO(ctiller): when we can do a sort per channel creation, just make a
+      // single vector of predicates for the entire stack (along with the id
+      // that it corresponds to) - to do this in one allocation instead of one
+      // per filter.
+      absl::InlinedVector<InclusionPredicate, 1> predicates;
+      UniqueTypeName name;
+      SourceLocation registration_source;
+      const grpc_channel_filter* filter;
+      FilterAdder filter_adder;
+    };
+
+    struct FilterDependency {
+      uint16_t id;
+      bool after;
+      UniqueTypeName name;
+    };
+
+    struct FilterKey {
+      absl::string_view name;
+      Ordering ordering;
+
+      bool operator<(const FilterKey& other) const {
+        return std::tie(ordering, name) < std::tie(other.ordering, other.name);
+      }
+      bool operator==(const FilterKey& other) const {
+        return std::tie(ordering, name) == std::tie(other.ordering, other.name);
+      }
+    };
+
+    struct ChannelStack {
+      absl::btree_map<FilterKey, uint16_t> filter_key_to_index;
+      std::vector<FilterInfo> info;
+      std::vector<FilterDependency> dependencies;
+    };
+
+    ChannelStack stacks_[GRPC_NUM_CHANNEL_STACK_TYPES];
+    PostProcessor post_processors_[GRPC_NUM_CHANNEL_STACK_TYPES]
+                                  [static_cast<int>(PostProcessorSlot::kCount)];
+  };
+
   class FilterRegistration {
    public:
     // TODO(ctiller): Remove grpc_channel_filter* arg when that can be
     // deprecated (once filter stack is removed).
-    explicit FilterRegistration(UniqueTypeName name,
-                                const grpc_channel_filter* filter,
-                                FilterAdder filter_adder,
-                                SourceLocation registration_source)
-        : name_(name),
-          filter_(filter),
-          filter_adder_(filter_adder),
-          registration_source_(registration_source) {}
+    explicit FilterRegistration(Builder::ChannelStack* stack, uint16_t index)
+        : stack_(stack), index_(index) {}
     FilterRegistration(const FilterRegistration&) = delete;
     FilterRegistration& operator=(const FilterRegistration&) = delete;
 
@@ -232,121 +333,43 @@ class ChannelInit {
     // If multiple are defined they are tried in registration order, and the
     // first terminal filter whose predicates succeed is selected.
     FilterRegistration& Terminal() {
-      terminal_ = true;
+      info()->terminal = true;
       return *this;
     }
     // Ensure this filter appears at the top of the stack.
     // Effectively adds a 'Before' constraint on every other filter.
     // Adding this to more than one filter will cause a loop.
     FilterRegistration& BeforeAll() {
-      before_all_ = true;
+      info()->before_all = true;
       return *this;
     }
     // Add a predicate that ensures this filter does not appear in the minimal
     // stack.
     FilterRegistration& ExcludeFromMinimalStack();
     FilterRegistration& SkipV3() {
-      CHECK_EQ(version_, Version::kAny);
-      version_ = Version::kV2;
+      CHECK_EQ(info()->version, Version::kAny);
+      info()->version = Version::kV2;
       return *this;
     }
     FilterRegistration& SkipV2() {
-      CHECK_EQ(version_, Version::kAny);
-      version_ = Version::kV3;
+      CHECK_EQ(info()->version, Version::kAny);
+      info()->version = Version::kV3;
       return *this;
     }
     // Request this filter be placed as high as possible in the stack (given
     // before/after constraints).
-    FilterRegistration& FloatToTop() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
-      ordering_ = Ordering::kTop;
-      return *this;
-    }
+    FilterRegistration& FloatToTop();
     // Request this filter be placed as low as possible in the stack (given
     // before/after constraints).
-    FilterRegistration& SinkToBottom() {
-      CHECK_EQ(ordering_, Ordering::kDefault);
-      ordering_ = Ordering::kBottom;
-      return *this;
-    }
+    FilterRegistration& SinkToBottom();
 
    private:
     friend class ChannelInit;
-    const UniqueTypeName name_;
-    const grpc_channel_filter* const filter_;
-    const FilterAdder filter_adder_;
-    struct Dependency {
-      bool after;
-      UniqueTypeName name;
-    };
-    absl::InlinedVector<Dependency, 4> deps_;
-    std::vector<InclusionPredicate> predicates_;
-    bool terminal_ = false;
-    bool before_all_ = false;
-    Version version_ = Version::kAny;
-    Ordering ordering_ = Ordering::kDefault;
-    SourceLocation registration_source_;
-    size_t build_stack_id_ = 0;
-  };
 
-  class Builder {
-   public:
-    // Register a builder in the normal filter registration pass.
-    // This occurs first during channel build time.
-    // The FilterRegistration methods can be called to declaratively define
-    // properties of the filter being registered.
-    // TODO(ctiller): remove in favor of the version that does not mention
-    // grpc_channel_filter
-    FilterRegistration& RegisterFilter(grpc_channel_stack_type type,
-                                       UniqueTypeName name,
-                                       const grpc_channel_filter* filter,
-                                       FilterAdder filter_adder = nullptr,
-                                       SourceLocation registration_source = {});
-    FilterRegistration& RegisterFilter(
-        grpc_channel_stack_type type, const grpc_channel_filter* filter,
-        SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
-      return RegisterFilter(type, NameFromChannelFilter(filter), filter,
-                            nullptr, registration_source);
-    }
-    template <typename Filter>
-    FilterRegistration& RegisterFilter(
-        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFilter(
-          type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
-          [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
-          registration_source);
-    }
+    Builder::FilterInfo* info() { return &stack_->info[index_]; }
 
-    // Filter does not participate in v3
-    template <typename Filter>
-    FilterRegistration& RegisterV2Filter(
-        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFilter(type, &Filter::kFilter, registration_source)
-          .SkipV3();
-    }
-
-    // Register a post processor for the builder.
-    // These run after the main graph has been placed into the builder.
-    // At most one filter per slot per channel stack type can be added.
-    // If at all possible, prefer to use the RegisterFilter() mechanism to add
-    // filters to the system - this should be a last resort escape hatch.
-    void RegisterPostProcessor(grpc_channel_stack_type type,
-                               PostProcessorSlot slot,
-                               PostProcessor post_processor) {
-      auto& slot_value = post_processors_[type][static_cast<int>(slot)];
-      CHECK(slot_value == nullptr);
-      slot_value = std::move(post_processor);
-    }
-
-    /// Finalize registration.
-    ChannelInit Build();
-
-   private:
-    std::vector<std::unique_ptr<FilterRegistration>>
-        filters_[GRPC_NUM_CHANNEL_STACK_TYPES];
-    PostProcessor post_processors_[GRPC_NUM_CHANNEL_STACK_TYPES]
-                                  [static_cast<int>(PostProcessorSlot::kCount)];
+    Builder::ChannelStack* stack_;
+    uint16_t index_;
   };
 
   /// Construct a channel stack of some sort: see channel_stack.h for details

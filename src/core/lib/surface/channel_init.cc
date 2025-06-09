@@ -58,7 +58,7 @@ struct CompareChannelFiltersByName {
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    deps_.push_back(Dependency{true, filter});
+    stack_->dependencies.emplace_back(index_, true, filter);
   }
   return *this;
 }
@@ -66,20 +66,20 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::Before(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    deps_.push_back(Dependency{false, filter});
+    stack_->dependencies.emplace_back(index_, false, filter);
   }
   return *this;
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::If(
     InclusionPredicate predicate) {
-  predicates_.emplace_back(std::move(predicate));
+  info()->predicates.emplace_back(std::move(predicate));
   return *this;
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfNot(
     InclusionPredicate predicate) {
-  predicates_.emplace_back(
+  info()->predicates.emplace_back(
       [predicate = std::move(predicate)](const ChannelArgs& args) {
         return !predicate(args);
       });
@@ -102,38 +102,68 @@ ChannelInit::FilterRegistration&
 ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
   return If([](const ChannelArgs& args) { return !args.WantMinimalStack(); });
 }
+ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::FloatToTop() {
+  CHECK_EQ(info()->ordering, Ordering::kDefault);
+  auto e = stack_->filter_key_to_index.extract(
+      Builder::FilterKey{info()->name.name(), info()->ordering});
+  CHECK(!e.empty());
+  e.key().ordering = Ordering::kTop;
+  stack_->filter_key_to_index.insert(std::move(e));
+  info()->ordering = Ordering::kTop;
+  return *this;
+}
 
-ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
+ChannelInit::FilterRegistration&
+ChannelInit::FilterRegistration::SinkToBottom() {
+  CHECK_EQ(info()->ordering, Ordering::kDefault);
+  auto e = stack_->filter_key_to_index.extract(
+      Builder::FilterKey{info()->name.name(), info()->ordering});
+  CHECK(!e.empty());
+  e.key().ordering = Ordering::kBottom;
+  stack_->filter_key_to_index.insert(std::move(e));
+  info()->ordering = Ordering::kBottom;
+  return *this;
+}
+
+ChannelInit::FilterRegistration ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
     const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
-  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-      name, filter, filter_adder, registration_source));
-  return *filters_[type].back();
+  auto& stack = stacks_[type];
+  const uint16_t id = stack.info.size();
+  bool inserted =
+      stack.filter_key_to_index
+          .emplace(FilterKey{name.name(), Ordering::kDefault}, index)
+          .second;
+  CHECK(inserted) << "Duplicate filter name: " << name.name();
+  stack.info.emplace_back();
+  auto& info = stack.info.back();
+  info.filter = filter;
+  info.filter_adder = filter_adder;
+  info.registration_source = registration_source;
+  info.name = name;
+  return FilterRegistration(&stack, id);
 }
 
 class ChannelInit::InnerBuilder {
  public:
-  InnerBuilder(absl::Span<std::unique_ptr<ChannelInit::FilterRegistration>>
-                   registrations,
-               PostProcessor* post_processors, grpc_channel_stack_type type)
-      : registrations_(registrations) {}
+  static constexpr size_t kMaxFilters = 256;
+
+  explicit InnerBuilder(Builder::ChannelStack& stack) : stack_(stack) {}
 
   GPR_ATTRIBUTE_NOINLINE void EnsureCorrectRegistrationOrdering() {
-    std::sort(registrations_.begin(), registrations_.end(),
-              [](const std::unique_ptr<ChannelInit::FilterRegistration>& a,
-                 const std::unique_ptr<ChannelInit::FilterRegistration>& b) {
-                return a->ordering_ < b->ordering_ ||
-                       (a->ordering_ == b->ordering_ &&
-                        a->name_.name() < b->name_.name());
-              });
+    size_t i = 0;
+    for (const auto& [key, id] : stack_.filter_name_to_index) {
+      topological_id_to_filter_id_[i] = id;
+      stack_.info[id].topological_id = i;
+      ++i;
+    }
   }
 
   GPR_ATTRIBUTE_NOINLINE void BuildEdgesAndTerminalFilters() {
     absl::flat_hash_map<UniqueTypeName, size_t> name_to_index;
-    for (size_t i = 0; i < registrations_.size(); i++) {
-      const auto& registration = registrations_[i];
-      registration->build_stack_id_ = i;
+    for (size_t i = 0; i < stack_.info.size(); i++) {
+      const auto& info = stack_.info[i];
       name_to_index.insert({registration->name_, i});
       if (registration->terminal_) {
         CHECK(registration->deps_.empty());
@@ -197,9 +227,10 @@ class ChannelInit::InnerBuilder {
         registration->ordering_, registration->registration_source_);
   }
 
-  absl::Span<std::unique_ptr<ChannelInit::FilterRegistration>> registrations_;
+  Builder::ChannelStack& stack_;
   absl::InlinedVector<Filter, 2> terminal_filters_;
-  TopologicalSort<256> topological_sort_{registrations_.size()};
+  TopologicalSort<kMaxFilters> topological_sort_{stack_.info.size()};
+  UintWithMax<kMaxFilters> topological_id_to_filter_id_[kMaxFilters];
   std::vector<Filter> filters_;
 };
 

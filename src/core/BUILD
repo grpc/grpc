@@ -3370,6 +3370,7 @@ grpc_cc_library(
         "absl/log",
         "absl/log:check",
         "absl/strings",
+        "absl/container:btree",
     ],
     deps = [
         "call_filters",
