@@ -18,10 +18,18 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar, Tuple
+from typing import (
+    Any,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -283,7 +291,7 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
 
 def create_server_call_tracer_factory_option(
     xds: bool,
-) -> Tuple[Any, ...]:
+) -> Union[Tuple[Tuple[str, ServerCallTracerFactory]], Tuple[()]]:
     with get_plugin() as plugin:
         if plugin and plugin.stats_enabled:
             server_call_tracer_factory_address = (
@@ -291,9 +299,11 @@ def create_server_call_tracer_factory_option(
             )
             if server_call_tracer_factory_address:
                 return (
-                    "grpc.experimental.server_call_tracer_factory",
-                    ServerCallTracerFactory(
-                        server_call_tracer_factory_address
+                    (
+                        "grpc.experimental.server_call_tracer_factory",
+                        ServerCallTracerFactory(
+                            server_call_tracer_factory_address
+                        ),
                     ),
                 )
-    return ()
+        return ()
