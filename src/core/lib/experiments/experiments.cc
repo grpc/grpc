@@ -90,11 +90,6 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -230,8 +225,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -365,11 +358,6 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -505,8 +493,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
@@ -640,11 +626,6 @@ const char* const additional_constraints_local_connector_secure = "{}";
 const char* const description_max_inflight_pings_strict_limit =
     "If set, the max inflight pings limit is strictly enforced.";
 const char* const additional_constraints_max_inflight_pings_strict_limit = "{}";
-const char* const description_max_pings_wo_data_throttle =
-    "Experiment to throttle pings to a period of 1 min when "
-    "GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of "
-    "completely blocking).";
-const char* const additional_constraints_max_pings_wo_data_throttle = "{}";
 const char* const description_monitoring_experiment =
     "Placeholder experiment to prove/disprove our monitoring is working";
 const char* const additional_constraints_monitoring_experiment = "{}";
@@ -780,8 +761,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      description_max_inflight_pings_strict_limit,
      additional_constraints_max_inflight_pings_strict_limit, nullptr, 0, true,
      true},
-    {"max_pings_wo_data_throttle", description_max_pings_wo_data_throttle,
-     additional_constraints_max_pings_wo_data_throttle, nullptr, 0, true, true},
     {"monitoring_experiment", description_monitoring_experiment,
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
