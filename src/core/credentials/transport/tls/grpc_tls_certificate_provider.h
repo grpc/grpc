@@ -31,6 +31,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -139,6 +140,12 @@ class FileWatcherCertificateProvider final
                                  std::string root_cert_path,
                                  int64_t refresh_interval_sec);
 
+  FileWatcherCertificateProvider(std::string private_key_path,
+                                 std::string identity_certificate_path,
+                                 std::string root_cert_path,
+                                 absl::string_view spiffe_bundle_map_path,
+                                 int64_t refresh_interval_sec);
+
   ~FileWatcherCertificateProvider() override;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
@@ -178,7 +185,9 @@ class FileWatcherCertificateProvider final
   std::string private_key_path_;
   std::string identity_certificate_path_;
   std::string root_cert_path_;
+  std::string spiffe_bundle_map_path_;
   int64_t refresh_interval_sec_ = 0;
+  absl::Status spiffe_load_status_;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
@@ -190,6 +199,7 @@ class FileWatcherCertificateProvider final
   // attempt failed.
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);

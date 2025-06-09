@@ -4255,6 +4255,7 @@ grpc_cc_library(
         "//src/core:load_file",
         "//src/core:ref_counted",
         "//src/core:slice",
+        "//src/core:spiffe_utils",
         "//src/core:ssl_key_logging",
         "//src/core:ssl_transport_security_utils",
         "//src/core:sync",

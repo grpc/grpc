@@ -25,6 +25,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/functional/overload.h"
 #include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -35,6 +36,10 @@
 namespace grpc_core {
 
 namespace testing {
+
+namespace {
+
+using ::testing::VariantWith;
 
 constexpr const char* kCertName1 = "cert_1_name";
 constexpr const char* kCertName2 = "cert_2_name";
@@ -51,6 +56,25 @@ constexpr const char* kIdentityCert2Contents = "identity_cert_2_contents";
 constexpr const char* kErrorMessage = "error_message";
 constexpr const char* kRootErrorMessage = "root_error_message";
 constexpr const char* kIdentityErrorMessage = "identity_error_message";
+constexpr absl::string_view kSpiffeBundleMapPath =
+    "test/core/credentials/transport/tls/test_data/spiffe/"
+    "client_spiffebundle.json";
+
+constexpr absl::string_view kSpiffeBundleMapPath2 =
+    "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
+    "spiffebundle.json";
+
+std::shared_ptr<SpiffeBundleMap> GetTestSpiffeBundleMap() {
+  auto map = SpiffeBundleMap::FromFile(kSpiffeBundleMapPath);
+  EXPECT_TRUE(map.ok()) << map.status();
+  return *map;
+}
+
+std::shared_ptr<SpiffeBundleMap> GetTestSpiffeBundleMap2() {
+  auto map = SpiffeBundleMap::FromFile(kSpiffeBundleMapPath2);
+  EXPECT_TRUE(map.ok()) << map.status();
+  return *map;
+}
 
 class GrpcTlsCertificateDistributorTest : public ::testing::Test {
  protected:
@@ -63,11 +87,25 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
   // if the status updates are correct.
   struct CredentialInfo {
     std::string root_certs;
+    SpiffeBundleMap spiffe_bundle_map;
     PemKeyCertPairList key_cert_pairs;
-    CredentialInfo(std::string root, PemKeyCertPairList key_cert)
-        : root_certs(std::move(root)), key_cert_pairs(std::move(key_cert)) {}
+    CredentialInfo(
+        std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>> roots,
+        PemKeyCertPairList key_cert)
+        : key_cert_pairs(std::move(key_cert)) {
+      auto visitor = absl::Overload{
+          [&](const absl::string_view& pem_root_certs) {
+            root_certs = pem_root_certs;
+          },
+          [&](const std::shared_ptr<SpiffeBundleMap>& bundle_map) {
+            spiffe_bundle_map = *bundle_map;
+          },
+      };
+      std::visit(visitor, roots);
+    }
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
+             spiffe_bundle_map == other.spiffe_bundle_map &&
              key_cert_pairs == other.key_cert_pairs;
     }
   };
@@ -116,11 +154,14 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        std::optional<absl::string_view> root_certs,
+        std::optional<
+            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
+            roots,
         std::optional<PemKeyCertPairList> key_cert_pairs) override {
-      std::string updated_root;
-      if (root_certs.has_value()) {
-        updated_root = std::string(*root_certs);
+      std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>
+          updated_root;
+      if (roots.has_value()) {
+        updated_root = *roots;
       }
       PemKeyCertPairList updated_identity;
       if (key_cert_pairs.has_value()) {
@@ -908,8 +949,115 @@ TEST_F(GrpcTlsCertificateDistributorTest, SetErrorForCertInCallback) {
   }
 }
 
-}  // namespace testing
+TEST_F(GrpcTlsCertificateDistributorTest,
+       BasicCredentialBehaviorsWithSpiffeRoot) {
+  EXPECT_FALSE(distributor_.HasRootCerts(kRootCert1Name));
+  EXPECT_FALSE(distributor_.HasKeyCertPairs(kIdentityCert1Name));
+  // After setting the certificates to the corresponding cert names, the
+  // distributor should possess the corresponding certs.
+  distributor_.SetKeyMaterials(kRootCert1Name, GetTestSpiffeBundleMap(),
+                               std::nullopt);
+  EXPECT_TRUE(distributor_.HasRootCerts(kRootCert1Name));
+  distributor_.SetKeyMaterials(
+      kIdentityCert1Name, std::nullopt,
+      MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
+  EXPECT_TRUE(distributor_.HasKeyCertPairs(kIdentityCert1Name));
+  // Querying a non-existing cert name should return false.
+  EXPECT_FALSE(distributor_.HasRootCerts(kRootCert2Name));
+  EXPECT_FALSE(distributor_.HasKeyCertPairs(kIdentityCert2Name));
+}
 
+TEST_F(GrpcTlsCertificateDistributorTest, UpdateCredentialsSpiffe) {
+  WatcherState* watcher_state_1 = MakeWatcher(kCertName1, kCertName1);
+  EXPECT_THAT(GetCallbackQueue(),
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+  // SetKeyMaterials should trigger watcher's OnCertificatesChanged method.
+  distributor_.SetKeyMaterials(
+      kCertName1, GetTestSpiffeBundleMap(),
+      MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          GetTestSpiffeBundleMap(),
+          MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
+  // Set root certs should trigger watcher's OnCertificatesChanged again.
+  distributor_.SetKeyMaterials(kCertName1, GetTestSpiffeBundleMap2(),
+                               std::nullopt);
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          GetTestSpiffeBundleMap2(),
+          MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents))));
+  // Set identity certs should trigger watcher's OnCertificatesChanged again.
+  distributor_.SetKeyMaterials(
+      kCertName1, std::nullopt,
+      MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(
+          GetTestSpiffeBundleMap2(),
+          MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents))));
+  CancelWatch(watcher_state_1);
+}
+
+TEST_F(
+    GrpcTlsCertificateDistributorTest,
+    AddAndCancelFirstWatcherForIdentityCertNameWithRootBeingWatchedWithSpiffe) {
+  // Register watcher 1 watching kCertName1 for root certs.
+  WatcherState* watcher_state_1 = MakeWatcher(kCertName1, std::nullopt);
+  EXPECT_THAT(GetCallbackQueue(),
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
+  // Register watcher 2 watching kCertName1 for identity certs.
+  WatcherState* watcher_state_2 = MakeWatcher(std::nullopt, kCertName1);
+  EXPECT_THAT(GetCallbackQueue(),
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, true)));
+  // Push credential updates to kCertName1 and check if the status works as
+  // expected.
+  distributor_.SetKeyMaterials(
+      kCertName1, GetTestSpiffeBundleMap(),
+      MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1Contents));
+  // Check the updates are delivered to watcher 1.
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(GetTestSpiffeBundleMap(), {})));
+  // Check the updates are delivered to watcher 2.
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  "", MakeCertKeyPairs(kIdentityCert1PrivateKey,
+                                       kIdentityCert1Contents))));
+  // Push root cert updates to kCertName1.
+  distributor_.SetKeyMaterials(kCertName1, GetTestSpiffeBundleMap2(),
+                               std::nullopt);
+  // Check the updates are delivered to watcher 1.
+  EXPECT_THAT(
+      watcher_state_1->GetCredentialQueue(),
+      ::testing::ElementsAre(CredentialInfo(GetTestSpiffeBundleMap2(), {})));
+  // Check the updates are not delivered to watcher 2.
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(), ::testing::ElementsAre());
+  // Push identity cert updates to kCertName1.
+  distributor_.SetKeyMaterials(
+      kCertName1, std::nullopt,
+      MakeCertKeyPairs(kIdentityCert2PrivateKey, kIdentityCert2Contents));
+  // Check the updates are not delivered to watcher 1.
+  EXPECT_THAT(watcher_state_1->GetCredentialQueue(), ::testing::ElementsAre());
+  // Check the updates are delivered to watcher 2.
+  EXPECT_THAT(watcher_state_2->GetCredentialQueue(),
+              ::testing::ElementsAre(CredentialInfo(
+                  "", MakeCertKeyPairs(kIdentityCert2PrivateKey,
+                                       kIdentityCert2Contents))));
+  watcher_state_2->cert_update_queue.clear();
+  // Cancel watcher 2.
+  CancelWatch(watcher_state_2);
+  EXPECT_THAT(GetCallbackQueue(),
+              ::testing::ElementsAre(CallbackStatus(kCertName1, true, false)));
+  // Cancel watcher 1.
+  CancelWatch(watcher_state_1);
+  EXPECT_THAT(GetCallbackQueue(),
+              ::testing::ElementsAre(CallbackStatus(kCertName1, false, false)));
+}
+
+}  // namespace
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

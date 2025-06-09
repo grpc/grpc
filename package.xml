@@ -290,6 +290,8 @@
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_supported.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_supported.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/load_system_roots_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/spiffe_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/transport/tls/spiffe_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/ssl_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/ssl_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/transport/tls/tls_credentials.cc" role="src" />
@@ -2282,6 +2284,7 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/any_invocable.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/front_binder.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/internal/function_ref.h" role="src" />
+    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/functional/overload.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/hash.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/city.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/hash/internal/city.h" role="src" />

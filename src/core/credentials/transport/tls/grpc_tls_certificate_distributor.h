@@ -29,6 +29,7 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/ref_counted.h"
@@ -53,11 +54,13 @@ struct grpc_tls_certificate_distributor
     // latest contents for both root and identity certificates, even when only
     // one side of it got updated.
     //
-    // @param root_certs the contents of the reloaded root certs.
+    // @param roots the contents of the reloaded roots.
     // @param key_cert_pairs the contents of the reloaded identity key-cert
     // pairs.
     virtual void OnCertificatesChanged(
-        std::optional<absl::string_view> root_certs,
+        std::optional<std::variant<absl::string_view,
+                                   std::shared_ptr<grpc_core::SpiffeBundleMap>>>
+            roots,
         std::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) = 0;
 
     // Handles an error that occurs while attempting to fetch certificate data.
@@ -81,10 +84,14 @@ struct grpc_tls_certificate_distributor
   // Sets the key materials based on their certificate name.
   //
   // @param cert_name The name of the certificates being updated.
-  // @param pem_root_certs The content of root certificates.
+  // @param roots The content of the roots, either the pem root certificates or
+  // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
   void SetKeyMaterials(
-      const std::string& cert_name, std::optional<std::string> pem_root_certs,
+      const std::string& cert_name,
+      std::optional<std::variant<absl::string_view,
+                                 std::shared_ptr<grpc_core::SpiffeBundleMap>>>
+          roots,
       std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
@@ -171,7 +178,8 @@ struct grpc_tls_certificate_distributor
   // root certs, while pem_root_certs still contains the valid old data.
   struct CertificateInfo {
     // The contents of the root certificates.
-    std::string pem_root_certs;
+    std::variant<std::string, std::shared_ptr<grpc_core::SpiffeBundleMap>>
+        roots;
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // The root cert reloading error propagated by the caller.
@@ -192,6 +200,13 @@ struct grpc_tls_certificate_distributor
     void SetIdentityError(grpc_error_handle error) {
       identity_cert_error = error;
     }
+
+    std::variant<absl::string_view, std::shared_ptr<grpc_core::SpiffeBundleMap>>
+    GetRoots();
+
+    // Returns if the root variant contains either "", an empty SpiffeBundleMap,
+    // or a nullptr to a SpiffeBundleMap
+    bool AreRootsEmpty();
   };
 
   grpc_core::Mutex mu_;
@@ -202,8 +217,8 @@ struct grpc_tls_certificate_distributor
   // Stores information about each watcher.
   std::map<TlsCertificatesWatcherInterface*, WatcherInfo> watchers_
       ABSL_GUARDED_BY(mu_);
-  // The callback to notify the caller, e.g. the Producer, that the watch status
-  // is changed.
+  // The callback to notify the caller, e.g. the Producer, that the watch
+  // status is changed.
   std::function<void(std::string, bool, bool)> watch_status_callback_
       ABSL_GUARDED_BY(callback_mu_);
   // Stores the names of each certificate, and their corresponding credential

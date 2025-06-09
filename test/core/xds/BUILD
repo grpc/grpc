@@ -74,7 +74,14 @@ grpc_cc_test(
 grpc_cc_test(
     name = "xds_certificate_provider_test",
     srcs = ["xds_certificate_provider_test.cc"],
-    external_deps = ["gtest"],
+    data = [
+        "//test/core/credentials/transport/tls/test_data:spiffe/client_spiffebundle.json",
+        "//test/core/credentials/transport/tls/test_data:spiffe/test_bundles/spiffebundle2.json",
+    ],
+    external_deps = [
+        "gtest",
+        "absl/functional:overload",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
