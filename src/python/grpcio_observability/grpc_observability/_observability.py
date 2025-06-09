@@ -17,7 +17,7 @@ import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
-from typing import AnyStr, Dict, List, Mapping, Optional, Set, Tuple, Union
+from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
 
 
 class Exporter(metaclass=abc.ABCMeta):
