@@ -24,16 +24,6 @@ from grpc._cython import cygrpc as _cygrpc
 from grpc._runtime_protos import protos
 from grpc._runtime_protos import protos_and_services
 from grpc._runtime_protos import services
-from grpc._cython.cygrpc import (cygrpc_init,
-                               cygrpc_shutdown,
-                               end_client_rpc,
-                               insecure_channel,
-                               secure_channel,
-                               server,
-                               shutdown_server,
-                               start_client_rpc,
-                               start_server,
-                               initialize_absl_logging)
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
