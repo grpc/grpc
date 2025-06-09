@@ -1219,7 +1219,7 @@ bool PosixEndpointImpl::Write(
     outgoing_byte_idx_ = 0;
   }
   outgoing_buffer_arg_ =
-      args.GetDeprecatedAndDiscouragedGoogleSpecificPointer();
+      args.TakeDeprecatedAndDiscouragedGoogleSpecificPointer();
   if (outgoing_buffer_arg_) {
     CHECK(poller_->CanTrackErrors());
   }
