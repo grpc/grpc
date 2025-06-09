@@ -33,10 +33,10 @@ SUBMODULE_BRANCH_NAME="${BAZEL_FLAGS:-master}"
 
 # DO NOT SUBMIT
 # This is the commit before dmauro's gcc7 fix
-(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98^)
+#(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98^)
 
 # This is dmauro's gcc7 fix
-#(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98)
+(cd "third_party/${SUBMODULE_NAME}" && git fetch origin && git checkout 669459108da9e467949699b2db904e77221a1d98)
 
 echo "This suite tests whether gRPC HEAD builds with HEAD of submodule '${SUBMODULE_NAME}'"
 echo "If a test breaks, either"
