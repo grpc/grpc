@@ -48,6 +48,7 @@ TEST(WaitForSingleOwner, CallsStallCallback) {
   // Holds a ref until the stall callback has run once.
   engine->Run([&cb_ran, i]() { cb_ran.WaitForNotification(); });
   grpc_core::WaitForSingleOwner(std::move(i));
+  grpc_core::SetWaitForSingleOwnerStalledCallback(nullptr);
 }
 
 TEST(WaitForSingleOwner, SucceedsWithoutAStallCallback) {
@@ -62,6 +63,7 @@ TEST(WaitForSingleOwner, SucceedsWithoutAStallCallback) {
           1),
       [i]() {});
   grpc_core::WaitForSingleOwner(std::move(i));
+  grpc_core::SetWaitForSingleOwnerStalledCallback(nullptr);
 }
 
 int main(int argc, char** argv) {
