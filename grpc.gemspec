@@ -2013,6 +2013,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/uuid_v4.h )
   s.files += %w( src/core/util/validation_errors.cc )
   s.files += %w( src/core/util/validation_errors.h )
+  s.files += %w( src/core/util/wait_for_single_owner.cc )
   s.files += %w( src/core/util/wait_for_single_owner.h )
   s.files += %w( src/core/util/windows/cpu.cc )
   s.files += %w( src/core/util/windows/directory_reader.cc )

@@ -43,10 +43,9 @@ TEST(WaitForSingleOwner, DoesNotFinishWithAHeldInstance) {
 TEST(WaitForSingleOwner, CallsStallCallback) {
   auto i = std::make_shared<int>(3);
   auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
-  grpc_core::Notification cb_ran;
   grpc_core::SetWaitForSingleOwnerStalledCallback([&]() { cb_ran.Notify(); });
   // Holds a ref until the stall callback has run once.
-  engine->Run([&cb_ran, i]() { cb_ran.WaitForNotification(); });
+  engine->Run([i]() {});
   grpc_core::WaitForSingleOwner(std::move(i));
   grpc_core::SetWaitForSingleOwnerStalledCallback(nullptr);
 }

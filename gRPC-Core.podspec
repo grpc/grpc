@@ -2129,6 +2129,7 @@ Pod::Spec.new do |s|
                       'src/core/util/uuid_v4.h',
                       'src/core/util/validation_errors.cc',
                       'src/core/util/validation_errors.h',
+                      'src/core/util/wait_for_single_owner.cc',
                       'src/core/util/wait_for_single_owner.h',
                       'src/core/util/windows/cpu.cc',
                       'src/core/util/windows/directory_reader.cc',
