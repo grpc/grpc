@@ -447,9 +447,15 @@ void grpc_rb_fork_unsafe_begin() { g_grpc_rb_num_fork_unsafe_threads++; }
 void grpc_rb_fork_unsafe_end() { g_grpc_rb_num_fork_unsafe_threads--; }
 
 // APIs to mark fork-unsafe sections from ruby code
-static VALUE grpc_rb_fork_unsafe_begin_api() { grpc_rb_fork_unsafe_begin(); }
+static VALUE grpc_rb_fork_unsafe_begin_api() {
+  grpc_rb_fork_unsafe_begin();
+  return Qnil;
+}
 
-static VALUE grpc_rb_fork_unsafe_end_api() { grpc_rb_fork_unsafe_end(); }
+static VALUE grpc_rb_fork_unsafe_end_api() {
+  grpc_rb_fork_unsafe_end();
+  return Qnil;
+}
 
 // One-time initialization
 void Init_grpc_c() {
