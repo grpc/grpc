@@ -14,10 +14,12 @@
 
 #include "src/core/util/wait_for_single_owner.h"
 
+#include <chrono>
 #include <memory>
 #include <thread>
 
 #include "gtest/gtest.h"
+#include "src/core/util/notification.h"
 
 TEST(WaitForSingleOwner, Finishes) {
   auto i = std::make_shared<int>(3);
@@ -36,6 +38,30 @@ TEST(WaitForSingleOwner, DoesNotFinishWithAHeldInstance) {
   auto duration = grpc_core::Timestamp::Now() - start;
   ASSERT_GE(duration, timeout);
   t.join();
+}
+
+TEST(WaitForSingleOwner, CallsStallCallback) {
+  auto i = std::make_shared<int>(3);
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  grpc_core::Notification cb_ran;
+  grpc_core::SetWaitForSingleOwnerStalledCallback([&]() { cb_ran.Notify(); });
+  // Holds a ref until the stall callback has run once.
+  engine->Run([&cb_ran, i]() { cb_ran.WaitForNotification(); });
+  grpc_core::WaitForSingleOwner(std::move(i));
+}
+
+TEST(WaitForSingleOwner, SucceedsWithoutAStallCallback) {
+  // Ensures that WaitForSingleOwner continues to work if no stall callback is
+  // set.
+  auto i = std::make_shared<int>(3);
+  auto engine = grpc_event_engine::experimental::GetDefaultEventEngine();
+  // Holds a ref until the stall callback would have been run once.
+  engine->RunAfter(
+      std::chrono::seconds(
+          (size_t)grpc_core::kWaitForSingleOwnerStallCheckFrequency.seconds() +
+          1),
+      [i]() {});
+  grpc_core::WaitForSingleOwner(std::move(i));
 }
 
 int main(int argc, char** argv) {

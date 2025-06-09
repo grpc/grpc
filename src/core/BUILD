@@ -9834,8 +9834,12 @@ grpc_cc_library(
     name = "wait_for_single_owner",
     srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "no_destruct",
         "time",
         "//:gpr",
     ],

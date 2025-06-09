@@ -14,31 +14,18 @@
 
 #include "src/core/util/wait_for_single_owner.h"
 
+#include "src/core/util/no_destruct.h"
+
 namespace grpc_core {
 
-// Copied from test/core/test_util/build.cc
-// Define GRPC_BUILD_HAS_ASAN as 1 or 0 depending on if we're building under
-// ASAN.
-#if defined(__has_feature)
-#if __has_feature(address_sanitizer)
-#define GRPC_BUILD_HAS_ASAN 1
-#else
-#define GRPC_BUILD_HAS_ASAN 0
-#endif
-#else
-#ifdef ADDRESS_SANITIZER
-#define GRPC_BUILD_HAS_ASAN 1
-#else
-#define GRPC_BUILD_HAS_ASAN 0
-#endif
-#endif
+NoDestruct<absl::AnyInvocable<void()>> cb_{nullptr};
 
-#if GRPC_BUILD_HAS_ASAN
-#include <sanitizer/lsan_interface.h>
+void SetWaitForSingleOwnerStalledCallback(absl::AnyInvocable<void()> cb) {
+  *cb_ = std::move(cb);
+}
 
-void AsanAssertNoLeaks() { __lsan_do_leak_check(); }
-#else  // GRPC_BUILD_HAS_ASAN
-void AsanAssertNoLeaks() {}
-#endif  // GRPC_BUILD_HAS_ASAN
+void WaitForSingleOwnerStalled() {
+  if (*cb_ != nullptr) (*cb_)();
+}
 
 }  // namespace grpc_core

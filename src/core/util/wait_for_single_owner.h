@@ -17,14 +17,22 @@
 
 #include <memory>
 
+#include "absl/functional/any_invocable.h"
 #include "absl/log/log.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
 
-// Force a leak check if built under ASAN. If there are leaks, crash.
-void AsanAssertNoLeaks();
+constexpr Duration kWaitForSingleOwnerStallCheckFrequency =
+    Duration::Seconds(10);
+
+// Provide a function that WaitForSingleOwner will call when it appears to have
+// stalled.
+void SetWaitForSingleOwnerStalledCallback(absl::AnyInvocable<void()> cb);
+
+// INTERNAL: Call the stall callback.
+void WaitForSingleOwnerStalled();
 
 // Waits until the use_count of the shared_ptr has reached 1 and returns,
 // destroying the object.
@@ -44,13 +52,17 @@ void WaitForSingleOwner(std::shared_ptr<T> obj) {
 template <typename T>
 void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
   auto start = Timestamp::Now();
-  size_t iter_count = 0;
+  size_t last_check_period = 0;
   while (obj.use_count() > 1) {
-    if (++iter_count % 100 == 0) {
-      LOG(INFO) << "Checking for leaks...";
-      AsanAssertNoLeaks();
-    }
     auto elapsed = Timestamp::Now() - start;
+    if (size_t current_check_period =
+            elapsed.seconds() /
+            kWaitForSingleOwnerStallCheckFrequency.seconds();
+        current_check_period > last_check_period) {
+      ++last_check_period;
+      LOG(INFO) << "Investigating stall...";
+      WaitForSingleOwnerStalled();
+    }
     auto remaining = timeout - elapsed;
     if (remaining < Duration::Zero()) {
       Crash("Timed out waiting for a single shared_ptr owner");
