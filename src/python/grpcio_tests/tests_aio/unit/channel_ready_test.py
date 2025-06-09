@@ -60,8 +60,8 @@ class TestChannelReady(AioTestBase):
             # The RPC should recover itself
             await channel_ready_task
         finally:
-          if server:
-            await server.stop(None)
+            if server:
+                await server.stop(None)
 
     @unittest.skip(
         "skipping due to flake: https://github.com/grpc/grpc/issues/37949"
