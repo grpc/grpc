@@ -23,6 +23,9 @@
 
 namespace grpc_core {
 
+// Force a leak check if built under ASAN. If there are leaks, crash.
+void AsanAssertNoLeaks();
+
 // Waits until the use_count of the shared_ptr has reached 1 and returns,
 // destroying the object.
 //
@@ -41,7 +44,12 @@ void WaitForSingleOwner(std::shared_ptr<T> obj) {
 template <typename T>
 void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
   auto start = Timestamp::Now();
+  size_t iter_count = 0;
   while (obj.use_count() > 1) {
+    if (++iter_count % 100 == 0) {
+      LOG(INFO) << "Checking for leaks...";
+      AsanAssertNoLeaks();
+    }
     auto elapsed = Timestamp::Now() - start;
     auto remaining = timeout - elapsed;
     if (remaining < Duration::Zero()) {
