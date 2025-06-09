@@ -56,24 +56,6 @@ class XdsMatcher {
     virtual UniqueTypeName type() const = 0;
   };
 
-  // FIXME: move this to another file
-  class RpcMatchContext : public MatchContext {
-   public:
-    static UniqueTypeName Type() {
-      return GRPC_UNIQUE_TYPE_NAME_HERE("rpc_context");
-    }
-
-    UniqueTypeName type() const override { return Type(); }
-
-    // Returns the metadata value(s) for the specified key.
-    // As special cases, binary headers return a value of std::nullopt, and
-    // "content-type" header returns "application/grpc".
-    std::optional<absl::string_view> GetHeaderValue(
-        absl::string_view header_name, std::string* concatenated_value) const;
-
-    // FIXME: add other methods here
-  };
-
   // Produces match input from MatchContext.
   // There will be one subclass for each proto type that we support in
   // the input fields.
@@ -117,6 +99,14 @@ class XdsMatcher {
   struct OnMatch {
     std::variant<std::unique_ptr<Action>, std::unique_ptr<XdsMatcher>> action;
     bool keep_matching = false;
+
+    // Constructor for Action variant
+    OnMatch(std::unique_ptr<Action> act_ptr, bool km)
+        : action(std::move(act_ptr)), keep_matching(km) {}
+
+    // Constructor for XdsMatcher variant
+    OnMatch(std::unique_ptr<XdsMatcher> matcher_ptr, bool km)
+        : action(std::move(matcher_ptr)), keep_matching(km) {}
 
     bool FindMatches(const MatchContext& context, Result& result) const;
   };
@@ -203,7 +193,7 @@ class XdsMatcherList : public XdsMatcher {
   };
 
   XdsMatcherList(std::vector<FieldMatcher> matchers,
-                 std::optional<OnMatch> on_no_match)
+                 std::unique_ptr<OnMatch> on_no_match)
       : matchers_(std::move(matchers)), on_no_match_(std::move(on_no_match)) {}
 
   bool FindMatches(const MatchContext& context, Result& result) const override;
@@ -213,7 +203,7 @@ class XdsMatcherList : public XdsMatcher {
   class SinglePredicate;
 
   std::vector<FieldMatcher> matchers_;
-  std::optional<OnMatch> on_no_match_;
+  std::unique_ptr<OnMatch> on_no_match_;
 };
 
 //
@@ -300,8 +290,8 @@ class XdsMatcherList::NotPredicate : public XdsMatcherList::Predicate {
 class XdsMatcherExactMap : public XdsMatcher {
  public:
   XdsMatcherExactMap(std::unique_ptr<InputValue<absl::string_view>> input,
-                     absl::flat_hash_map<std::string, OnMatch> map,
-                     std::optional<OnMatch> on_no_match)
+                     absl::flat_hash_map<std::string, std::unique_ptr<OnMatch>> map,
+                     std::unique_ptr<OnMatch> on_no_match)
       : input_(std::move(input)),
         map_(std::move(map)),
         on_no_match_(std::move(on_no_match)) {}
@@ -310,17 +300,17 @@ class XdsMatcherExactMap : public XdsMatcher {
 
  private:
   std::unique_ptr<InputValue<absl::string_view>> input_;
-  absl::flat_hash_map<std::string, OnMatch> map_;
-  std::optional<OnMatch> on_no_match_;
+  absl::flat_hash_map<std::string, std::unique_ptr<OnMatch>> map_;
+  std::unique_ptr<OnMatch> on_no_match_;
 };
 
 class XdsMatcherPrefixMap : public XdsMatcher {
  public:
   XdsMatcherPrefixMap(
       std::unique_ptr<InputValue<absl::string_view>> input,
-      absl::flat_hash_map<std::string, std::shared_ptr<XdsMatcher::OnMatch>>
+      absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>>
           map,
-      std::optional<OnMatch> on_no_match)
+      std::unique_ptr<OnMatch> on_no_match)
       : input_(std::move(input)), on_no_match_(std::move(on_no_match)) {
     PopulateTrie(std::move(map));
   }
@@ -329,12 +319,12 @@ class XdsMatcherPrefixMap : public XdsMatcher {
 
  private:
   void PopulateTrie(
-      absl::flat_hash_map<std::string, std::shared_ptr<XdsMatcher::OnMatch>>
+      absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>>
           map);
 
   TrieLookupTree<XdsMatcher::OnMatch> root_;
   std::unique_ptr<InputValue<absl::string_view>> input_;
-  std::optional<OnMatch> on_no_match_;
+  std::unique_ptr<OnMatch> on_no_match_;
 };
 
 }  // namespace grpc_core
