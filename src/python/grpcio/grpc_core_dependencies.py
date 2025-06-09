@@ -941,6 +941,7 @@ CORE_SOURCE_FILES = [
     'third_party/abseil-cpp/absl/log/internal/log_format.cc',
     'third_party/abseil-cpp/absl/log/internal/log_message.cc',
     'third_party/abseil-cpp/absl/log/internal/log_sink_set.cc',
+    'third_party/abseil-cpp/absl/log/initialize.cc',
     'third_party/abseil-cpp/absl/log/internal/nullguard.cc',
     'third_party/abseil-cpp/absl/log/internal/proto.cc',
     'third_party/abseil-cpp/absl/log/internal/structured_proto.cc',
