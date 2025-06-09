@@ -51,45 +51,25 @@ class GrpcTestApp:
         self.server = None
         self.server_id = 0
 
-    def register_signals(self):
-        signal.signal(signal.SIGINT, self.handle_sigint)
-
-    def handle_sigint(self, signalnum: _SignalNum, frame: _SignalFrame) -> None:
-        print(flush=True)
-        if self._handling_sigint:
-            logging.info("Ctrl+C pressed twice, exiting.")
-        elif self.server is not None:
-            delay_sec = 2
-            logging.info(
-                "Caught Ctrl+C. Server will be stopped in %d seconds."
-                " Press Ctrl+C again to abort.",
-                delay_sec,
-            )
-            self._handling_sigint = True
-            # Sleep for a few seconds to allow second Ctrl-C before the stop.
-            time.sleep(delay_sec)
-            self.restart()
-            return
-
-        # Remove the sigint handler.
-        self._handling_sigint = False
-        logging.info("Full stop")
-        raise SystemExit
+    def stop(self):
+        if self.server is None:
+            raise RuntimeError("Server is None")
+        logging.info("[SERVER] Stopping the server #%s", self.server_id)
+        self.server.stop(False)
 
     def restart(self):
         if self.server is None:
             raise RuntimeError("Server is None")
 
-        logging.info("[SERVER] Stopping the server #%s", self.server_id)
-        self.server.stop(False)
+        self.stop()
 
+        # server.wait_for_termination()
+
+    def start(self):
         delay_sec = 2
         logging.info("[SERVER] Server will be restarted in %d seconds.", delay_sec)
         time.sleep(delay_sec)
-
-        self._handling_sigint = False
         server = self.serve()
-        # server.wait_for_termination()
 
     def serve(self):
         self.server_id += 1
@@ -112,17 +92,20 @@ class GrpcTestApp:
         while True:
             try:
                 i += 1
+                # td - rpc timeout using with_call
                 resp = stub.Method(server_pb2.Message(id=str(i)))
                 logging.info(f"[CLIENT] Received Message: id={resp.id}")
             except grpc.RpcError as e:
                 logging.error("[CLIENT] %r", e)
 
             time.sleep(1)
-            if i == 10:
-                self.restart()
+            if i == 5:
+                self.stop()
+            elif i == 10:
+                self.start()
 
     def run(self):
-        self.register_signals()
+        # self.register_signals()
         server = self.serve()
         self.start_client()
         # server.wait_for_termination()
