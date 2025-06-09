@@ -85,6 +85,10 @@ class SimpleQueueTest : public YodelTest {
 
  private:
   void InitCoreConfiguration() override {}
+  void InitTest() override {
+    InitParty();
+    InitParty2();
+  }
   void Shutdown() override {
     party_.reset();
     party2_.reset();
@@ -102,7 +106,6 @@ YODEL_TEST(SimpleQueueTest, NoOp) {}
 YODEL_TEST(SimpleQueueTest, EnqueueTest) {
   // Simple test that does a single enqueue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -122,7 +125,6 @@ YODEL_TEST(SimpleQueueTest, EnqueueTest) {
 YODEL_TEST(SimpleQueueTest, MultipleEnqueueTest) {
   // Test multiple enqueues. All the enqueues for this test are immediate.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
@@ -169,7 +171,6 @@ YODEL_TEST(SimpleQueueTest, DequeueTest) {
   // 2. The dequeue data is the same as the enqueue data.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
   Latch<void> enqueue_done;
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -204,7 +205,6 @@ YODEL_TEST(SimpleQueueTest, DequeuePartialDequeueTest) {
   // Test to assert on different combinations of allow_partial_dequeue.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -259,7 +259,6 @@ YODEL_TEST(SimpleQueueTest, DequeueMaxTokensTest) {
   // Test to assert different combinations of max_tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/200);
   Latch<void> enqueue_done;
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_enqueue_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -328,7 +327,6 @@ YODEL_TEST(SimpleQueueTest, EnqueueAndDequeueTest) {
   // 1. All enqueues and dequeues are successful.
   // 2. The dequeue data is the same as the enqueue data.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
@@ -390,8 +388,6 @@ YODEL_TEST(SimpleQueueTest, EnqueueAndDequeueTest) {
 YODEL_TEST(SimpleQueueTest, EnqueueAndDequeueMultiPartyTest) {
   // Similar to EnqueueAndDequeueTest, but with two parties.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  InitParty();
-  InitParty2();
   auto* party = GetParty();
   auto* party2 = GetParty2();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
@@ -455,7 +451,6 @@ YODEL_TEST(SimpleQueueTest, BigMessageEnqueueTest) {
   // Tests that the first message is enqueued even if the tokens are more than
   // the max tokens.
   http2::SimpleQueue<int> queue(/*max_tokens=*/100);
-  InitParty();
   auto* party = GetParty();
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   StrictMock<MockFunction<void(absl::Status)>> on_dequeue_done;
