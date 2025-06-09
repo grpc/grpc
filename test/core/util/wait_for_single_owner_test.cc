@@ -19,7 +19,6 @@
 #include <thread>
 
 #include "gtest/gtest.h"
-#include "src/core/util/notification.h"
 
 TEST(WaitForSingleOwner, Finishes) {
   auto i = std::make_shared<int>(3);
