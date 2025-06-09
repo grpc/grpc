@@ -636,7 +636,8 @@ grpc_cc_library(
         "//conditions:default": [],
     }),
     external_deps = [
-        "absl/log:initialize",
+        "@com_google_absl//absl/log",
+        "@com_google_absl//absl/log:log_initialize",
         "absl/base:core_headers",
         "absl/log:log",
         "absl/status",
