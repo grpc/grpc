@@ -13,10 +13,8 @@
 # limitations under the License.
 
 import logging
-import signal
 import time
 from concurrent import futures
-from types import FrameType
 from typing import Final
 
 import grpc
@@ -24,9 +22,6 @@ import grpc
 import load_protos
 import server_pb2
 import server_pb2_grpc
-
-_SignalNum = int | signal.Signals
-_SignalFrame = FrameType | None
 
 
 class ServerSvc(server_pb2_grpc.ServerServicer):
@@ -45,8 +40,6 @@ class GrpcTestApp:
     server: grpc.Server | None = None
     server_id: int = 1
 
-    _handling_sigint: bool = False
-
     def __init__(self):
         self.server = None
         self.server_id = 0
@@ -54,21 +47,11 @@ class GrpcTestApp:
     def stop(self):
         if self.server is None:
             raise RuntimeError("Server is None")
-        logging.info("[SERVER] Stopping the server #%s", self.server_id)
+        logging.info("[SERVER  #%s] Stopping the server...", self.server_id)
         self.server.stop(False)
 
-    def restart(self):
-        if self.server is None:
-            raise RuntimeError("Server is None")
-
-        self.stop()
-
-        # server.wait_for_termination()
-
     def start(self):
-        delay_sec = 2
-        logging.info("[SERVER] Server will be restarted in %d seconds.", delay_sec)
-        time.sleep(delay_sec)
+        logging.info("[SERVER #%s] Restarting the server...", self.server_id)
         server = self.serve()
 
     def serve(self):
@@ -80,10 +63,9 @@ class GrpcTestApp:
         server.add_insecure_port(self.LISTEN_ADDR)
 
         logging.info(
-            "[SERVER] Starting server #%s on %s", self.server_id, self.LISTEN_ADDR
+            "[SERVER #%s] Starting server on %s", self.server_id, self.LISTEN_ADDR
         )
         server.start()
-        return server
 
     def start_client(self):
         channel = grpc.insecure_channel(self.LISTEN_ADDR)
@@ -92,7 +74,7 @@ class GrpcTestApp:
         while True:
             try:
                 i += 1
-                # td - rpc timeout using with_call
+                # todo - rpc timeout using with_call
                 resp = stub.Method(server_pb2.Message(id=str(i)))
                 logging.info(f"[CLIENT] Received Message: id={resp.id}")
             except grpc.RpcError as e:
@@ -105,10 +87,9 @@ class GrpcTestApp:
                 self.start()
 
     def run(self):
-        # self.register_signals()
-        server = self.serve()
+        self.serve()
         self.start_client()
-        # server.wait_for_termination()
+        self.stop
 
 
 def main():
