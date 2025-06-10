@@ -36,6 +36,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/surface/init.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/test_util/build.h"
 #include "test/core/test_util/stack_tracer.h"
@@ -155,6 +156,7 @@ void grpc_test_init(int* argc, char** argv) {
   // seed rng with pid, so we don't end up with the same random numbers as a
   // concurrently running test binary
   srand(seed());
+  grpc_core::SetWaitForSingleOwnerStalledCallback(AsanAssertNoLeaks);
 }
 
 void grpc_set_absl_verbosity_debug() {

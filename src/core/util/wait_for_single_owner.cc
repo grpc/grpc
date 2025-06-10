@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/util/per_cpu.h"
+#include "src/core/util/wait_for_single_owner.h"
 
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/useful.h"
+#include "src/core/util/no_destruct.h"
 
 namespace grpc_core {
 
-#ifndef GPR_CPU_CUSTOM
-thread_local PerCpuShardingHelper::State PerCpuShardingHelper::state_;
-#endif  // GPR_CPU_CUSTOM
+NoDestruct<absl::AnyInvocable<void()>> cb_{nullptr};
 
-size_t PerCpuOptions::Shards() {
-  return ShardsForCpuCount(gpr_cpu_num_cores());
+void SetWaitForSingleOwnerStalledCallback(absl::AnyInvocable<void()> cb) {
+  *cb_ = std::move(cb);
 }
 
-size_t PerCpuOptions::ShardsForCpuCount(size_t cpu_count) {
-  return Clamp<size_t>(cpu_count / cpus_per_shard_, 1, max_shards_);
+void WaitForSingleOwnerStalled() {
+  if (*cb_ != nullptr) (*cb_)();
 }
 
 }  // namespace grpc_core

@@ -246,7 +246,6 @@ using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
-grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -295,15 +294,9 @@ void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
   g_write_timestamps_callback = fn;
 }
 
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  g_get_copied_context_fn = fn;
-}
-
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
   return g_write_timestamps_callback;
 }
-
-CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
 // GrpcHttp2SetWriteTimestampsCallback method with each context in the list
@@ -375,12 +368,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
-  // ContextList::Execute follows semantics of a callback function and does not
-  // take a ref on error
-  if (context_list != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
-  }
+  delete context_list;
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);

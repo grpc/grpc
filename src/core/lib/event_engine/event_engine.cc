@@ -15,8 +15,15 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/strings/str_cat.h"
+#include "src/core/telemetry/context_list_entry.h"
 
 namespace grpc_event_engine::experimental {
+
+EventEngine::Endpoint::WriteArgs::~WriteArgs() {
+  if (google_specific_ != nullptr) {
+    delete reinterpret_cast<grpc_core::ContextList*>(google_specific_);
+  }
+}
 
 const EventEngine::TaskHandle EventEngine::TaskHandle::kInvalid = {-1, -1};
 const EventEngine::ConnectionHandle EventEngine::ConnectionHandle::kInvalid = {
