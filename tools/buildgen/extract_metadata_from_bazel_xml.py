@@ -212,7 +212,11 @@ def _extract_rules_from_bazel_xml(xml_tree):
 
 def _get_bazel_label(target_name: str) -> str:
     if target_name.startswith("@"):
-        return target_name
+        if ":" in target_name:
+            return target_name
+        else:
+            # @foo//bar/baz -> @foo//bar/baz:baz
+            return target_name + ":" + target_name.split("/")[-1]
     if ":" in target_name:
         return "//%s" % target_name
     else:
@@ -1105,7 +1109,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib",
@@ -1115,7 +1119,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_hash_lib",
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib",
@@ -1125,7 +1129,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_lex_lib",
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib",

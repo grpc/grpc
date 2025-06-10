@@ -22,8 +22,8 @@ cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
         "//upb/base:internal",
     ],
@@ -34,7 +34,7 @@ cc_test(
     srcs = ["test.cc"],
     deps = [
         ":hash",
-        "//upb:mem",
+        "//upb/mem",
         "//upb:port",
         "@abseil-cpp//absl/container:flat_hash_map",
         "@googletest//:gtest",
