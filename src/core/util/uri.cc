@@ -259,7 +259,7 @@ absl::StatusOr<URI> URI::Parse(absl::string_view uri_text) {
   std::string host_port;
   if (absl::ConsumePrefix(&remaining, "//")) {
     offset = remaining.find_first_of("/?#");
-    absl::string_view encoded_authority = (remaining.substr(0, offset));
+    absl::string_view encoded_authority = remaining.substr(0, offset);
     // parse user_info and host_port
     absl::string_view encoded_user_info;
     absl::string_view encoded_host_port;
@@ -404,7 +404,8 @@ std::string URI::ToString() const {
   std::vector<std::string> parts = {PercentEncode(scheme_, IsSchemeChar), ":"};
   // If path starts with '//' we need to encode the authority to ensure that
   // we can round-trip the URI through a parse/encode/parse loop.
-  if (!host_port_.empty() || absl::StartsWith(path_, "//")) {
+  if (!user_info_.empty() || !host_port_.empty() ||
+      absl::StartsWith(path_, "//")) {
     parts.emplace_back("//");
     if (!user_info_.empty()) {
       parts.emplace_back(PercentEncode(user_info_, IsUserInfoChar));
