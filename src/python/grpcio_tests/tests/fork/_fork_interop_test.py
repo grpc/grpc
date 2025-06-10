@@ -31,9 +31,7 @@ def _dump_streams(name, streams):
     for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
         stream.seek(0)
         sys.stderr.write(
-            "{} {}:\n{}\n".format(
-                name, stream_name, stream.read().decode()
-            )
+            "{} {}:\n{}\n".format(name, stream_name, stream.read().decode())
         )
         stream.close()
     sys.stderr.flush()
