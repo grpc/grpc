@@ -401,15 +401,20 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
     if (!GRPC_LOG_IF_ERROR("validate_metadata",
                            grpc_validate_header_key_is_legal(md->key))) {
       return false;
-    } else if (!grpc_is_binary_header_internal(md->key) &&
-               !GRPC_LOG_IF_ERROR(
-                   "validate_metadata",
-                   grpc_validate_header_nonbin_value_is_legal(md->value))) {
-      return false;
-    } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
+    }
+    if (!grpc_is_binary_header_internal(md->key)) {
+      if (auto status = grpc_validate_header_nonbin_value_is_legal(md->value);
+          !status.ok()) {
+        LOG(ERROR) << "Metadata value for key " << StringViewFromSlice(md->key)
+                   << " is invalid: " << status;
+        return false;
+      }
+    }
+    if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
       return false;
-    } else if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
+    }
+    if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
       // Filter "content-length metadata"
       continue;
     }
