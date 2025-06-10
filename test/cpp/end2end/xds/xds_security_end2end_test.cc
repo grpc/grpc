@@ -1067,8 +1067,7 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  SendRpc([this]() {
-    return CreateMtlsChannel(); }, RpcOptions(), {}, {},
+  SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
