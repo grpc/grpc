@@ -40,6 +40,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
@@ -398,8 +399,11 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
       is_trailing ? &send_trailing_metadata_ : &send_initial_metadata_;
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
-    if (!GRPC_LOG_IF_ERROR("validate_metadata",
-                           grpc_validate_header_key_is_legal(md->key))) {
+    if (auto status = grpc_validate_header_key_is_legal(md->key);
+        !status.ok()) {
+      LOG(ERROR) << "Metadata key '"
+                 << absl::CEscape(StringViewFromSlice(md->key))
+                 << "' is invalid: " << status;
       return false;
     }
     if (!grpc_is_binary_header_internal(md->key)) {
