@@ -40,22 +40,19 @@ class DualCallCredentials : public grpc_call_credentials {
 
   void Orphaned() override;
 
-  static grpc_core::UniqueTypeName Type();
+  static UniqueTypeName Type();
 
-  grpc_core::UniqueTypeName type() const override { return Type(); }
+  UniqueTypeName type() const override { return Type(); }
 
-  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
-                     const GetRequestMetadataArgs* args) override;
+  ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
+      ClientMetadataHandle initial_metadata, const GetRequestMetadataArgs* args) override;
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
-    return grpc_core::QsortCompare(
-        static_cast<const grpc_call_credentials*>(this), other);
+    return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
   }
   std::string debug_string() override;
 
- private:
   RefCountedPtr<grpc_call_credentials> tls_credentials_;
   RefCountedPtr<grpc_call_credentials> alts_credentials_;
 };

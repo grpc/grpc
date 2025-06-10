@@ -35,10 +35,9 @@ DualCallCredentials::DualCallCredentials(
 
 DualCallCredentials::~DualCallCredentials() = default;
 
-grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
-DualCallCredentials::GetRequestMetadata(
-    grpc_core::ClientMetadataHandle initial_metadata,
-    const GetRequestMetadataArgs* args) {
+ArenaPromise<absl::StatusOr<ClientMetadataHandle>>
+DualCallCredentials::GetRequestMetadata(ClientMetadataHandle initial_metadata,
+                                        const GetRequestMetadataArgs* args) {
   bool use_alts = false;
   if (args != nullptr) {
     auto auth_context = args->auth_context;
@@ -61,8 +60,8 @@ DualCallCredentials::GetRequestMetadata(
 
 void DualCallCredentials::Orphaned() {}
 
-grpc_core::UniqueTypeName DualCallCredentials::Type() {
-  static grpc_core::UniqueTypeName::Factory kFactory("Dual");
+UniqueTypeName DualCallCredentials::Type() {
+  static UniqueTypeName::Factory kFactory("Dual");
   return kFactory.Create();
 }
 
