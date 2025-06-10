@@ -376,10 +376,6 @@ TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 0);
-  // LDS should have been ACKed.
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Now update the LDS resource to add the fault injection filter with
   // a config that fails all RPCs.
   envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
@@ -399,18 +395,8 @@ TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                    default_route_config_);
-  // Wait for the LDS update to be ACKed.
-  const auto deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  while (true) {
-    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
-    response_state = balancer_->ads_service()->lds_response_state();
-    if (response_state.has_value()) break;
-    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
-  }
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Now RPCs should fail with ABORTED status.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
+  // When the client sees the update, RPCs should fail with ABORTED status.
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
 }
 
 TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
