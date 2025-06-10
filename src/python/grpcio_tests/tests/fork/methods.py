@@ -443,8 +443,8 @@ def _in_progress_bidi_continue_call(channel):
         inherited_code = parent_bidi_call.code()
         if inherited_code != grpc.StatusCode.CANCELLED:
             raise ValueError(
-                "Expected inherited code CANCELLED, got %s (details: %s)"
-                % (inherited_code, parent_bidi_call.details())
+                "Expected inherited code CANCELLED, "
+                 f"got {inherited_code} (details: {parent_bidi_call.details()})"
             )
 
     # Don't run child_target after closing the parent call, as the call may have

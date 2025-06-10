@@ -32,7 +32,7 @@ def _dump_streams(name, streams):
         stream.seek(0)
         sys.stderr.write(
             "{} {}:\n{}\n".format(
-                name, stream_name, stream.read().decode("UTF-8")
+                name, stream_name, stream.read().decode()
             )
         )
         stream.close()
@@ -67,8 +67,8 @@ _GDB_TIMEOUT_S = 60
 
 
 @unittest.skipUnless(
-    sys.platform in ["linux", "darwin"],
-    "not supported on windows",
+    sys.platform in ("linux", "darwin"),
+    f"not supported on {sys.platform}",
 )
 @unittest.skipUnless(
     os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,
