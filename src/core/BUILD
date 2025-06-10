@@ -4484,6 +4484,7 @@ grpc_cc_library(
         "error",
         "error_utils",
         "event_engine_shim",
+        "grpc_dual_credentials",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_dual_credentials",
