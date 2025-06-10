@@ -203,13 +203,6 @@
   expiry: 2025/09/06
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: rq_fast_reject
-  description:
-    Resource quota rejects requests immediately (before allocating the request
-    structure) under very high memory pressure.
-  expiry: 2025/06/06
-  owner: ctiller@google.com
-  test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2025/10/01
