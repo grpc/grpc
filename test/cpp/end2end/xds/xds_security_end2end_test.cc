@@ -1072,7 +1072,7 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*resolution_note=*/"");
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
