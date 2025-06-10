@@ -64,7 +64,9 @@ def _start_client(
 class CancellationExampleTest(unittest.TestCase):
     def test_successful_run(self):
         with _get_port() as test_port:
-            with subprocess.Popen((_SERVER_PATH, "--port", str(test_port))) as server_process:
+            with subprocess.Popen(
+                (_SERVER_PATH, "--port", str(test_port))
+            ) as server_process:
                 client_process = _start_client(test_port, "aa", 0)
                 client_return_code = client_process.wait()
                 self.assertEqual(0, client_return_code)
@@ -72,7 +74,9 @@ class CancellationExampleTest(unittest.TestCase):
 
     def test_graceful_sigint(self):
         with _get_port() as test_port:
-            with subprocess.Popen((_SERVER_PATH, "--port", str(test_port))) as server_process:
+            with subprocess.Popen(
+                (_SERVER_PATH, "--port", str(test_port))
+            ) as server_process:
                 client_process1 = _start_client(test_port, "aaaaaaaaaa", 0)
                 client_process1.send_signal(signal.SIGINT)
                 client_process1.wait()

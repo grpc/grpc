@@ -72,7 +72,9 @@ def _calculate_primes(server_address):
     ) as worker_pool:
         check_range = range(2, _MAXIMUM_CANDIDATE)
         primality = worker_pool.map(_run_worker_query, check_range)
-        primes = zip(check_range, map(operator.attrgetter("isPrime"), primality))
+        primes = zip(
+            check_range, map(operator.attrgetter("isPrime"), primality)
+        )
         return tuple(primes)
 
 
