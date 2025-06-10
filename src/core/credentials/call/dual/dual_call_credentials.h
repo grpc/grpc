@@ -14,8 +14,8 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CREDENTIALS_H
-#define GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CREDENTIALS_H
+#ifndef GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CALL_CREDENTIALS_H
+#define GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CALL_CREDENTIALS_H
 
 #include <grpc/grpc_security.h>
 
@@ -62,4 +62,4 @@ class DualCallCredentials : public grpc_call_credentials {
 
 }  // namespace grpc_core
 
-#endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CREDENTIALS_H
+#endif  // GRPC_SRC_CORE_CREDENTIALS_CALL_DUAL_DUAL_CALL_CREDENTIALS_H
