@@ -40,11 +40,10 @@ def run():
             ),
         )
 
-    print("Greeter client received: %s" % response.message)
+    print(f"Greeter client received: {response.message}")
     for key, value in call.trailing_metadata():
         print(
-            "Greeter client received trailing metadata: key=%s value=%s"
-            % (key, value)
+            f"Greeter client received trailing metadata: key={key} value={value}"
         )
 
 

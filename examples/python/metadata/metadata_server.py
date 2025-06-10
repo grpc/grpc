@@ -26,7 +26,7 @@ import helloworld_pb2_grpc
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, context):
         for key, value in context.invocation_metadata():
-            print("Received initial metadata: key=%s value=%s" % (key, value))
+            print(f"Received initial metadata: key={key} value={value}")
 
         context.set_trailing_metadata(
             (
