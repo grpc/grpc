@@ -30,8 +30,11 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/for_each.h"
@@ -87,13 +90,58 @@ void Http2ClientTransport::AbortWithError() {
 
 Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
       << frame.stream_id << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << "}";
+
+  // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
+  // the function returns a non-ok status?
   ping_manager_.ReceivedDataFrame();
+
+  // Lookup stream
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P2] : Decide the correct behaviour later.
+    // RFC9113 : If a DATA frame is received whose stream is not in the "open"
+    // or "half-closed (local)" state, the recipient MUST respond with a stream
+    // error (Section 5.4.2) of type STREAM_CLOSED.
+    return Http2Status::Ok();
+  }
+
+  // Add frame to assembler
+  GrpcMessageAssembler& assembler = stream->assembler;
+  Http2Status status =
+      assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
+  if (!status.IsOk()) {
+    return status;
+  }
+
+  // Pass the messages up the stack if it is ready.
+  while (true) {
+    ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+    if (!result.IsOk()) {
+      return ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
+    }
+    MessageHandle message = TakeValue(std::move(result));
+    if (message != nullptr) {
+      // TODO(tjagtap) : [PH2][P1] : Ask ctiller what is the right way to plumb
+      // with call V3. PushMessage or SpawnPushMessage.
+      stream->call.SpawnPushMessage(std::move(message));
+      continue;
+    }
+    break;
+  }
+
+  // TODO(tjagtap) : [PH2][P1] : List of Tests:
+  // 1. Data frame with unknown stream ID
+  // 2. Data frame with only half a message and then end stream
+  // 3. One data frame with a full message
+  // 4. Three data frames with one full message
+  // 5. One data frame with three full messages. All messages should be pushed.
+  // Will need to mock the call_handler object and test this along with the
+  // Header reading code. Because we need a stream in place for the lookup to
+  // work.
   return Http2Status::Ok();
 }
 

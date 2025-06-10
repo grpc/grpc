@@ -324,6 +324,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -1404,6 +1405,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -1996,6 +1998,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -2374,6 +2377,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -2881,6 +2885,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -3153,6 +3158,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -4663,6 +4669,7 @@ libs:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -4699,6 +4706,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -4965,6 +4973,7 @@ libs:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -5012,6 +5021,7 @@ libs:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -6510,6 +6520,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -6541,6 +6552,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -6777,6 +6789,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -6820,6 +6833,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -10624,6 +10638,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -10655,6 +10670,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -10891,6 +10907,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -10934,6 +10951,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -12287,6 +12305,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -12569,6 +12588,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -13773,16 +13793,16 @@ targets:
   language: c++
   headers:
   - src/core/util/memory_usage.h
+  - src/core/util/time.h
   src:
+  - src/core/util/time.cc
   - test/core/util/memory_usage_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/log:log
-  - absl/status:status
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/time:time
+  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -15420,12 +15440,41 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/util/glob.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
+  - src/core/util/glob.cc
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
+  - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: race_test
@@ -16833,6 +16882,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/util/glob.h
   src:
   - src/core/lib/debug/trace.cc
@@ -16844,6 +16894,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/util/glob.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
