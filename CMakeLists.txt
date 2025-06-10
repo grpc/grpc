@@ -2957,6 +2957,7 @@ add_library(grpc
   src/core/util/uri.cc
   src/core/util/uuid_v4.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/windows/directory_reader.cc
   src/core/util/work_serializer.cc
   src/core/xds/grpc/certificate_provider_store.cc
@@ -3689,6 +3690,7 @@ add_library(grpc_unsecure
   src/core/util/uri.cc
   src/core/util/uuid_v4.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
@@ -6000,6 +6002,7 @@ add_library(grpc_authorization_provider
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
 )
 
@@ -9652,6 +9655,7 @@ add_executable(call_utils_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/call/call_utils_test.cc
 )
@@ -15848,6 +15852,7 @@ add_executable(filter_fusion_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/call/filter_fusion_test.cc
 )
@@ -18701,6 +18706,7 @@ add_executable(header_assembler_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/transport/chttp2/header_assembler_test.cc
 )
@@ -31415,7 +31421,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_single_owner_test
-  src/core/util/time.cc
   test/core/util/wait_for_single_owner_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31423,6 +31428,7 @@ if(WIN32 AND MSVC)
     target_compile_definitions(wait_for_single_owner_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31449,8 +31455,7 @@ target_include_directories(wait_for_single_owner_test
 target_link_libraries(wait_for_single_owner_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc
 )
 
 
