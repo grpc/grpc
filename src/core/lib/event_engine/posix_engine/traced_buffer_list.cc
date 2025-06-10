@@ -293,7 +293,7 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
   tail_ = (head_ == nullptr) ? head_ : prev;
 }
 
-void TracedBufferList::Shutdown(void* remaining, absl::Status shutdown_err) {
+void TracedBufferList::Shutdown(absl::Status shutdown_err) {
   grpc_core::MutexLock lock(&mu_);
   while (head_) {
     TracedBuffer* elem = head_;

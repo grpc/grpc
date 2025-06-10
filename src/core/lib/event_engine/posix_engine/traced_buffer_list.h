@@ -15,6 +15,7 @@
 #ifndef GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
 #define GRPC_SRC_CORE_LIB_EVENT_ENGINE_POSIX_ENGINE_TRACED_BUFFER_LIST_H
 
+#include <grpc/event_engine/event_engine.h>
 #include <grpc/support/port_platform.h>
 #include <grpc/support/time.h>
 #include <stdint.h>
@@ -109,16 +110,16 @@ struct Timestamps {
 class TracedBufferList {
  public:
   TracedBufferList() = default;
-  ~TracedBufferList() = default;
+  ~TracedBufferList() { Shutdown(nullptr, absl::UnavailableError("Shutdown")); }
+
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
   void AddNewEntry(int32_t seq_no, EventEnginePosixInterface* posix_interface,
-                   const FileDescriptor& fd, void* arg);
+                   const FileDescriptor& fd, EventEngine::Endpoint::WriteEventSink sink);
   // Processes a received timestamp based on sock_extended_err and
   // scm_timestamping structures. It will invoke the timestamps callback if the
   // timestamp type is SCM_TSTAMP_ACK.
-  void ProcessTimestamp(struct sock_extended_err* serr,
-                        struct cmsghdr* opt_stats,
+  void ProcessTimestamp(struct sock_extended_err* serr, struct cmsghdr* opt_stats,
                         struct scm_timestamping* tss);
   // The Size() operation is slow and is used only in tests.
   int Size() {
@@ -133,7 +134,7 @@ class TracedBufferList {
   }
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
-  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/);
+  void Shutdown(EventEngine::Endpoint::WriteEventSink remaining, absl::Status shutdown_err);
 
  private:
   class TracedBuffer {
@@ -165,8 +166,7 @@ class TracedBufferList {
 class TracedBufferList {
  public:
   void AddNewEntry(int32_t /*seq_no*/, int /*fd*/, void* /*arg*/) {}
-  void ProcessTimestamp(struct sock_extended_err* /*serr*/,
-                        struct cmsghdr* /*opt_stats*/,
+  void ProcessTimestamp(struct sock_extended_err* /*serr*/, struct cmsghdr* /*opt_stats*/,
                         struct scm_timestamping* /*tss*/) {}
   int Size() { return 0; }
   void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
@@ -175,8 +175,7 @@ class TracedBufferList {
 
 // Sets the callback function to call when timestamps for a write are collected.
 // This is expected to be called atmost once.
-void TcpSetWriteTimestampsCallback(
-    absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>);
+void TcpSetWriteTimestampsCallback(absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>);
 
 }  // namespace grpc_event_engine::experimental
 

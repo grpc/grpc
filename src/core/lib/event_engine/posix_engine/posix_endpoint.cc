@@ -893,10 +893,10 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   *sent_length = length;
   // Only save timestamps if all the bytes were taken by sendmsg.
   if (sending_length == static_cast<size_t>(*length)) {
-    traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + *length),
-                                &poller_->posix_interface(), fd_,
-                                outgoing_buffer_arg_);
-    outgoing_buffer_arg_ = nullptr;
+    traced_buffers_.AddNewEntry(
+        static_cast<uint32_t>(bytes_counter_ + *length),
+        &poller_->posix_interface(), fd_,
+        std::move(outgoing_buffer_write_event_sink_).value());
   }
   return true;
 }
@@ -929,12 +929,14 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 }
 
 // If outgoing_buffer_arg is filled, shuts down the list early, so that any
-// release operations needed can be performed on the arg.
+// release operations needed can be performed on the arg. Should be used when we
+// know that there are not gonna be any write timestamps returned on the error
+// queue, for example, if the socket is not capable of reporting timestamps.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
-  if (outgoing_buffer_arg_ != nullptr) {
-    traced_buffers_.Shutdown(outgoing_buffer_arg_,
-                             absl::InternalError("TracedBuffer list shutdown"));
-    outgoing_buffer_arg_ = nullptr;
+  if (outgoing_buffer_write_event_sink_.has_value()) {
+    traced_buffers_.Shutdown(
+        std::move(outgoing_buffer_write_event_sink_).value(),
+        absl::InternalError("TracedBuffer list shutdown"));
   }
 }
 
@@ -1027,7 +1029,6 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         return false;
       } else {
         status = TcpAnnotateError(PosixOSError(send_status, "sendmsg"));
-        TcpShutdownTracedBufferList();
         return true;
       }
     }
@@ -1125,7 +1126,6 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       } else {
         status = TcpAnnotateError(PosixOSError(send_result, "sendmsg"));
         outgoing_buffer_->Clear();
-        TcpShutdownTracedBufferList();
         return true;
       }
     }
@@ -1196,7 +1196,6 @@ bool PosixEndpointImpl::Write(
       << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
 
   if (data->Length() == 0) {
-    TcpShutdownTracedBufferList();
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
     if (handle_->IsHandleShutdown()) {
