@@ -1067,11 +1067,12 @@ TEST_P(XdsServerSecurityTest, CertificatesNotAvailable) {
   SetLdsUpdate("fake_plugin1", "", "fake_plugin1", "", true);
   StartBackend(0);
   ASSERT_TRUE(backends_[0]->WaitOnServingStatusChange(grpc::StatusCode::OK));
-  SendRpc([this]() { return CreateMtlsChannel(); }, RpcOptions(), {}, {},
+  SendRpc([this]() {
+    return CreateMtlsChannel(); }, RpcOptions(), {}, {},
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/"");
 }
 
 TEST_P(XdsServerSecurityTest, TestMtls) {
@@ -1098,7 +1099,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootPluginUpdate) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityPluginUpdate) {
@@ -1151,7 +1152,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsWithRootCertificateNameUpdate) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsWithIdentityCertificateNameUpdate) {
@@ -1262,7 +1263,7 @@ TEST_P(XdsServerSecurityTest, TestMtlsToTls) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
   SetLdsUpdate("", "", "fake_plugin1", "", false);
   SendRpc([this]() { return CreateTlsChannel(); },
           RpcOptions().set_wait_for_ready(true), server_authenticated_identity_,
@@ -1282,7 +1283,7 @@ TEST_P(XdsServerSecurityTest, TestTlsToMtls) {
           true /* test_expects_failure */, grpc::StatusCode::UNAVAILABLE,
           MakeConnectionFailureRegex(
               "failed to connect to all addresses; last error: ",
-              /*has_resolution_note=*/false));
+              /*resolution_note=*/""));
 }
 
 TEST_P(XdsServerSecurityTest, TestMtlsToFallback) {

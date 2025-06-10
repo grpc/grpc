@@ -848,7 +848,11 @@ void XdsEnd2endTest::SetProtoDuration(
 }
 
 std::string XdsEnd2endTest::MakeConnectionFailureRegex(
-    absl::string_view prefix, bool has_resolution_note) {
+    absl::string_view prefix, absl::string_view resolution_note) {
+  std::string resolution_note_str;
+  if (!resolution_note.empty()) {
+    resolution_note_str = absl::StrCat(" \\(", resolution_note, "\\)");
+  }
   return absl::StrCat(
       prefix,
       "(UNKNOWN|UNAVAILABLE): "
@@ -875,8 +879,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "( \\([0-9]+\\))?"
       // close paren from wrappers above
       ")\\)*)+",
-      // xDS node ID
-      has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
+      // resolution note, if any
+      resolution_note_str);
 }
 
 std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(
