@@ -61,9 +61,12 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         context: grpc.aio.ServicerContext,
     ) -> Awaitable[helloworld_pb2.HelloReply]:
         logging.info(
-            "Handle rpc with id %s in server handler.", rpc_id_var.get()
+            "Handle rpc with id %s in server handler.",
+            rpc_id_var.get()
         )
-        return asyncio.Future().set_result(helloworld_pb2.HelloReply(message=f"Hello, {request.name}!"))
+        return asyncio.Future().set_result(
+            helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
+        )
 
 
 async def serve() -> None:

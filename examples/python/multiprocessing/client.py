@@ -65,15 +65,15 @@ def _run_worker_query(primality_candidate):
 
 
 def _calculate_primes(server_address):
-    worker_pool = multiprocessing.Pool(
+    with multiprocessing.Pool(
         processes=_PROCESS_COUNT,
         initializer=_initialize_worker,
         initargs=(server_address,),
-    )
-    check_range = range(2, _MAXIMUM_CANDIDATE)
-    primality = worker_pool.map(_run_worker_query, check_range)
-    primes = zip(check_range, map(operator.attrgetter("isPrime"), primality))
-    return tuple(primes)
+    ) as worker_pool:
+        check_range = range(2, _MAXIMUM_CANDIDATE)
+        primality = worker_pool.map(_run_worker_query, check_range)
+        primes = zip(check_range, map(operator.attrgetter("isPrime"), primality))
+        return tuple(primes)
 
 
 def main():

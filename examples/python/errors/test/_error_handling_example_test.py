@@ -36,7 +36,7 @@ class ErrorHandlingExampleTest(unittest.TestCase):
     def setUp(self):
         self._server, port = error_handling_server.create_server("[::]:0")
         self._server.start()
-        self._channel = grpc.insecure_channel("localhost:%d" % port)
+        self._channel = grpc.insecure_channel(f"localhost:{port}")
 
     def tearDown(self):
         self._channel.close()

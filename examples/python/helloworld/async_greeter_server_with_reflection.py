@@ -23,11 +23,12 @@ import helloworld_pb2_grpc
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
+    # pylint: disable=invalid-overridden-method
     async def SayHello(
         self,
         request: helloworld_pb2.HelloRequest,
         context: grpc.aio.ServicerContext,
-    ) -> helloworld_pb2.HelloReply:  # pylint: disable=invalid-overridden-method
+    ) -> helloworld_pb2.HelloReply:
         return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 

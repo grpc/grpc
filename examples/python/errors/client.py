@@ -40,7 +40,7 @@ def process(stub):
                 detail.Unpack(info)
                 _LOGGER.error("Quota failure: %s", info)
             else:
-                raise RuntimeError("Unexpected failure: %s" % detail)
+                raise RuntimeError(f"Unexpected failure: {detail}") from rpc_error
 
 
 def main():

@@ -51,24 +51,23 @@ def _get_server_address(server_stream):
 class MultiprocessingExampleTest(unittest.TestCase):
     def test_multiprocessing_example(self):
         server_stdout = tempfile.TemporaryFile(mode="r")
-        server_process = subprocess.Popen((_SERVER_PATH,), stdout=server_stdout)
-        server_address = _get_server_address(server_stdout)
-        client_stdout = tempfile.TemporaryFile(mode="r")
-        client_process = subprocess.Popen(
-            (
-                _CLIENT_PATH,
-                server_address,
-            ),
-            stdout=client_stdout,
-        )
-        client_process.wait()
-        server_process.terminate()
-        client_stdout.seek(0)
-        results = ast.literal_eval(client_stdout.read().strip().split("\n")[-1])
-        values = tuple(result[0] for result in results)
-        self.assertSequenceEqual(range(2, 10000), values)
-        for result in results:
-            self.assertEqual(is_prime(result[0]), result[1])
+        with subprocess.Popen((_SERVER_PATH,), stdout=server_stdout) as server_process:
+            server_address = _get_server_address(server_stdout)
+            client_stdout = tempfile.TemporaryFile(mode="r")
+            with subprocess.Popen(
+                (
+                    _CLIENT_PATH,
+                    server_address,
+                ),
+                stdout=client_stdout,
+            ) as client_process:
+                client_process.wait()
+                client_stdout.seek(0)
+                results = ast.literal_eval(client_stdout.read().strip().split("\n")[-1])
+                values = tuple(result[0] for result in results)
+                self.assertSequenceEqual(range(2, 10000), values)
+                for result in results:
+                    self.assertEqual(is_prime(result[0]), result[1])
 
 
 if __name__ == "__main__":
