@@ -46,11 +46,6 @@
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: callv3_client_auth_filter
-  description: Use the CallV3 client auth filter.
-  expiry: 2025/06/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
   expiry: 2025/09/01

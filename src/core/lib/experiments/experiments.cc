@@ -26,9 +26,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -183,8 +180,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -294,9 +289,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -451,8 +443,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -562,9 +552,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -719,8 +706,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
