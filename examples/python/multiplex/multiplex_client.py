@@ -41,9 +41,9 @@ def guide_get_one_feature(route_guide_stub, point):
         return
 
     if feature.name:
-        print("Feature called %s at %s" % (feature.name, feature.location))
+        print(f"Feature called {feature.name} at {feature.location}")
     else:
-        print("Found no feature at %s" % feature.location)
+        print(f"Found no feature at {feature.location}")
 
 
 def guide_get_feature(route_guide_stub):
@@ -66,13 +66,13 @@ def guide_list_features(route_guide_stub):
     features = route_guide_stub.ListFeatures(rectangle)
 
     for feature in features:
-        print("Feature called %s at %s" % (feature.name, feature.location))
+        print(f"Feature called {feature.name} at {feature.location}")
 
 
 def generate_route(feature_list):
     for _ in range(0, 10):
         random_feature = feature_list[random.randint(0, len(feature_list) - 1)]
-        print("Visiting point %s" % random_feature.location)
+        print(f"Visiting point {random_feature.location}")
         yield random_feature.location
         time.sleep(random.uniform(0.5, 1.5))
 
@@ -82,10 +82,10 @@ def guide_record_route(route_guide_stub):
 
     route_iterator = generate_route(feature_list)
     route_summary = route_guide_stub.RecordRoute(route_iterator)
-    print("Finished trip with %s points " % route_summary.point_count)
-    print("Passed %s features " % route_summary.feature_count)
-    print("Travelled %s meters " % route_summary.distance)
-    print("It took %s seconds " % route_summary.elapsed_time)
+    print(f"Finished trip with {route_summary.point_count} points")
+    print(f"Passed {route_summary.feature_count} features")
+    print(f"Travelled {route_summary.distance} meters")
+    print(f"It took {route_summary.elapsed_time} seconds")
 
 
 def generate_messages():
@@ -97,7 +97,7 @@ def generate_messages():
         make_route_note("Fifth message", 1, 0),
     ]
     for msg in messages:
-        print("Sending %s at %s" % (msg.message, msg.location))
+        print(f"Sending {msg.message} at {msg.location}")
         yield msg
         time.sleep(random.uniform(0.5, 1.0))
 

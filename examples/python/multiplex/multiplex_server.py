@@ -59,9 +59,7 @@ def _get_distance(start, end):
 
 class _GreeterServicer(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, context):
-        return helloworld_pb2.HelloReply(
-            message="Hello, {}!".format(request.name)
-        )
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 class _RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):

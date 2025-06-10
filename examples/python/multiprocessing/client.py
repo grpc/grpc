@@ -77,9 +77,7 @@ def _calculate_primes(server_address):
 
 
 def main():
-    msg = "Determine the primality of the first {} integers.".format(
-        _MAXIMUM_CANDIDATE
-    )
+    msg = f"Determine the primality of the first {_MAXIMUM_CANDIDATE} integers."
     parser = argparse.ArgumentParser(description=msg)
     parser.add_argument(
         "server_address",
