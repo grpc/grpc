@@ -1996,6 +1996,7 @@
     <file baseinstalldir="/" name="src/core/util/uuid_v4.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/directory_reader.cc" role="src" />
