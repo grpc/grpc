@@ -220,12 +220,12 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    mechanism.
 
    The caller may specify a secondary alts credentials objects to attach to the
-   channel for ALTS connections. Whenever the channel connection require them,
-   the ALTS credentials will be used then.
+   channel for ALTS connections. If an alts credentials object is specified, it
+   will be used if the underlying channel type is ALTS.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* default_credentials,
-    grpc_call_credentials* alts_credentials);
+    grpc_call_credentials* alts_credentials = nullptr);
 
 /** Server certificate config object holds the server's public certificates and
    associated private keys, as well as any CA certificates needed for client
