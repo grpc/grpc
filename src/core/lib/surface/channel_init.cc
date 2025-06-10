@@ -23,6 +23,7 @@
 
 #include <algorithm>
 #include <map>
+#include <memory>
 #include <optional>
 #include <queue>
 #include <set>
@@ -36,8 +37,8 @@
 #include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/sync.h"
+#include "src/core/util/topological_sort.h"
 #include "src/core/util/unique_type_name.h"
 
 namespace grpc_core {
@@ -57,7 +58,7 @@ struct CompareChannelFiltersByName {
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    after_.push_back(filter);
+    stack_->dependencies.emplace_back(index_, true, filter);
   }
   return *this;
 }
@@ -65,20 +66,20 @@ ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::After(
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::Before(
     std::initializer_list<UniqueTypeName> filters) {
   for (auto filter : filters) {
-    before_.push_back(filter);
+    stack_->dependencies.emplace_back(index_, false, filter);
   }
   return *this;
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::If(
     InclusionPredicate predicate) {
-  predicates_.emplace_back(std::move(predicate));
+  info()->predicates.emplace_back(std::move(predicate));
   return *this;
 }
 
 ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::IfNot(
     InclusionPredicate predicate) {
-  predicates_.emplace_back(
+  info()->predicates.emplace_back(
       [predicate = std::move(predicate)](const ChannelArgs& args) {
         return !predicate(args);
       });
@@ -101,140 +102,140 @@ ChannelInit::FilterRegistration&
 ChannelInit::FilterRegistration::ExcludeFromMinimalStack() {
   return If([](const ChannelArgs& args) { return !args.WantMinimalStack(); });
 }
+ChannelInit::FilterRegistration& ChannelInit::FilterRegistration::FloatToTop() {
+  CHECK_EQ(info()->ordering, Ordering::kDefault);
+  auto e = stack_->filter_key_to_index.extract(
+      Builder::FilterKey{info()->name.name(), info()->ordering});
+  CHECK(!e.empty());
+  e.key().ordering = Ordering::kTop;
+  stack_->filter_key_to_index.insert(std::move(e));
+  info()->ordering = Ordering::kTop;
+  return *this;
+}
 
-ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
+ChannelInit::FilterRegistration&
+ChannelInit::FilterRegistration::SinkToBottom() {
+  CHECK_EQ(info()->ordering, Ordering::kDefault);
+  auto e = stack_->filter_key_to_index.extract(
+      Builder::FilterKey{info()->name.name(), info()->ordering});
+  CHECK(!e.empty());
+  e.key().ordering = Ordering::kBottom;
+  stack_->filter_key_to_index.insert(std::move(e));
+  info()->ordering = Ordering::kBottom;
+  return *this;
+}
+
+ChannelInit::FilterRegistration ChannelInit::Builder::RegisterFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
     const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
-  filters_[type].emplace_back(std::make_unique<FilterRegistration>(
-      name, filter, filter_adder, registration_source));
-  return *filters_[type].back();
+  auto& stack = stacks_[type];
+  const uint16_t id = stack.info.size();
+  bool inserted =
+      stack.filter_key_to_index
+          .emplace(FilterKey{name.name(), Ordering::kDefault}, index)
+          .second;
+  CHECK(inserted) << "Duplicate filter name: " << name.name();
+  stack.info.emplace_back();
+  auto& info = stack.info.back();
+  info.filter = filter;
+  info.filter_adder = filter_adder;
+  info.registration_source = registration_source;
+  info.name = name;
+  return FilterRegistration(&stack, id);
 }
 
-class ChannelInit::DependencyTracker {
+class ChannelInit::InnerBuilder {
  public:
-  // Declare that a filter exists.
-  void Declare(FilterRegistration* registration) {
-    nodes_.emplace(registration->name_, registration);
-  }
-  // Insert an edge from a to b
-  // Both nodes must be declared.
-  void InsertEdge(UniqueTypeName a, UniqueTypeName b) {
-    auto it_a = nodes_.find(a);
-    auto it_b = nodes_.find(b);
-    if (it_a == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << a.name()
-          << " was not declared before adding an edge to " << b.name();
-      return;
+  static constexpr size_t kMaxFilters = 256;
+
+  explicit InnerBuilder(Builder::ChannelStack& stack) : stack_(stack) {}
+
+  GPR_ATTRIBUTE_NOINLINE void EnsureCorrectRegistrationOrdering() {
+    size_t i = 0;
+    for (const auto& [key, id] : stack_.filter_name_to_index) {
+      topological_id_to_filter_id_[i] = id;
+      stack_.info[id].topological_id = i;
+      ++i;
     }
-    if (it_b == nodes_.end()) {
-      GRPC_TRACE_LOG(channel_stack, INFO)
-          << "gRPC Filter " << b.name()
-          << " was not declared before adding an edge from " << a.name();
-      return;
-    }
-    auto& node_a = it_a->second;
-    auto& node_b = it_b->second;
-    node_a.dependents.push_back(&node_b);
-    node_b.all_dependencies.push_back(a);
-    ++node_b.waiting_dependencies;
   }
 
-  // Finish the dependency graph and begin iteration.
-  void FinishDependencyMap() {
-    for (auto& p : nodes_) {
-      if (p.second.waiting_dependencies == 0) {
-        ready_dependencies_.emplace(&p.second);
+  GPR_ATTRIBUTE_NOINLINE void BuildEdgesAndTerminalFilters() {
+    absl::flat_hash_map<UniqueTypeName, size_t> name_to_index;
+    for (size_t i = 0; i < stack_.info.size(); i++) {
+      const auto& info = stack_.info[i];
+      name_to_index.insert({registration->name_, i});
+      if (registration->terminal_) {
+        CHECK(registration->deps_.empty());
+        CHECK(!registration->before_all_);
+        CHECK_EQ(registration->ordering_, Ordering::kDefault);
+        terminal_filters_.emplace_back(
+            registration->name_, registration->filter_, nullptr,
+            std::move(registration->predicates_), registration->version_,
+            registration->ordering_, registration->registration_source_);
+      }
+    }
+    for (const auto& registration : registrations_) {
+      if (registration->terminal_) continue;
+      for (FilterRegistration::Dependency dep : registration->deps_) {
+        auto it = name_to_index.find(dep.name);
+        if (GPR_UNLIKELY(it == name_to_index.end())) {
+          GRPC_TRACE_LOG(channel_stack, INFO)
+              << "gRPC Filter " << dep.name.name()
+              << " was not declared before adding an edge "
+              << (dep.after ? "to " : "from ") << registration->name_.name();
+          continue;
+        }
+        if (dep.after) {
+          topological_sort_.AddDependency(it->second,
+                                          registration->build_stack_id_);
+        } else {
+          topological_sort_.AddDependency(registration->build_stack_id_,
+                                          it->second);
+        }
+      }
+      if (registration->before_all_) {
+        for (const auto& other : registrations_) {
+          if (other.get() == registration.get()) continue;
+          if (other->terminal_) continue;
+          topological_sort_.AddDependency(registration->build_stack_id_,
+                                          other->build_stack_id_);
+        }
       }
     }
   }
 
-  FilterRegistration* Next() {
-    if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
-                                               "filters:\n"
-                                            << GraphString();
-      return nullptr;
-    }
-    auto next = ready_dependencies_.top();
-    ready_dependencies_.pop();
-    if (!ready_dependencies_.empty() &&
-        next.node->ordering() != Ordering::kDefault) {
-      // Constraint: if we use ordering other than default, then we must have an
-      // unambiguous pick. If there is ambiguity, we must fix it by adding
-      // explicit ordering constraints.
-      CHECK_NE(next.node->ordering(),
-               ready_dependencies_.top().node->ordering())
-          << "Ambiguous ordering between " << next.node->name() << " and "
-          << ready_dependencies_.top().node->name();
-    }
-    for (Node* dependent : next.node->dependents) {
-      CHECK_GT(dependent->waiting_dependencies, 0u);
-      --dependent->waiting_dependencies;
-      if (dependent->waiting_dependencies == 0) {
-        ready_dependencies_.emplace(dependent);
-      }
-    }
-    ++nodes_taken_;
-    return next.node->registration;
+  GPR_ATTRIBUTE_NOINLINE void GenerateFilterList() {
+    filters_.reserve(registrations_.size());
+    bool ok = topological_sort_.Sort(
+        [this](size_t i) { AddFilter(registrations_[i].get()); });
+    CHECK(ok);
   }
 
-  // Debug helper to dump the graph
-  std::string GraphString() const {
-    std::string result;
-    for (const auto& p : nodes_) {
-      absl::StrAppend(&result, p.first, " ->");
-      for (const auto& d : p.second.all_dependencies) {
-        absl::StrAppend(&result, " ", d);
-      }
-      absl::StrAppend(&result, "\n");
-    }
-    return result;
+  absl::InlinedVector<Filter, 2> TakeTerminalFilters() {
+    return std::move(terminal_filters_);
   }
 
-  absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
-    auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
-    return it->second.all_dependencies;
-  }
+  std::vector<Filter> TakeFilters() { return std::move(filters_); }
 
  private:
-  struct Node {
-    explicit Node(FilterRegistration* registration)
-        : registration(registration) {}
-    // Nodes that depend on this node
-    std::vector<Node*> dependents;
-    // Nodes that this node depends on - for debugging purposes only
-    std::vector<UniqueTypeName> all_dependencies;
-    // The registration for this node
-    FilterRegistration* registration;
-    // Number of nodes this node is waiting on
-    size_t waiting_dependencies = 0;
+  GPR_ATTRIBUTE_NOINLINE void AddFilter(
+      ChannelInit::FilterRegistration* registration) {
+    filters_.emplace_back(
+        registration->name_, registration->filter_, registration->filter_adder_,
+        std::move(registration->predicates_), registration->version_,
+        registration->ordering_, registration->registration_source_);
+  }
 
-    Ordering ordering() const { return registration->ordering_; }
-    absl::string_view name() const { return registration->name_.name(); }
-  };
-  struct ReadyDependency {
-    explicit ReadyDependency(Node* node) : node(node) {}
-    Node* node;
-    bool operator<(const ReadyDependency& other) const {
-      // Sort first on ordering, and then lexically on name.
-      // The lexical sort means that the ordering is stable between builds
-      // (UniqueTypeName ordering is not stable between builds).
-      return node->ordering() > other.node->ordering() ||
-             (node->ordering() == other.node->ordering() &&
-              node->name() > other.node->name());
-    }
-  };
-  absl::flat_hash_map<UniqueTypeName, Node> nodes_;
-  std::priority_queue<ReadyDependency> ready_dependencies_;
-  size_t nodes_taken_ = 0;
+  Builder::ChannelStack& stack_;
+  absl::InlinedVector<Filter, 2> terminal_filters_;
+  TopologicalSort<kMaxFilters> topological_sort_{stack_.info.size()};
+  UintWithMax<kMaxFilters> topological_id_to_filter_id_[kMaxFilters];
+  std::vector<Filter> filters_;
 };
 
 ChannelInit::StackConfig ChannelInit::BuildStackConfig(
-    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
-        registrations,
+    absl::Span<std::unique_ptr<ChannelInit::FilterRegistration>> registrations,
     PostProcessor* post_processors, grpc_channel_stack_type type) {
   // Phase 1: Build a map from filter to the set of filters that must be
   // initialized before it.
@@ -242,50 +243,14 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker dependencies;
-  std::vector<Filter> terminal_filters;
-  for (const auto& registration : registrations) {
-    if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
-      CHECK(!registration->before_all_);
-      CHECK_EQ(registration->ordering_, Ordering::kDefault);
-      terminal_filters.emplace_back(
-          registration->name_, registration->filter_, nullptr,
-          std::move(registration->predicates_), registration->version_,
-          registration->ordering_, registration->registration_source_);
-    } else {
-      dependencies.Declare(registration.get());
-    }
-  }
-  for (const auto& registration : registrations) {
-    if (registration->terminal_) continue;
-    for (UniqueTypeName after : registration->after_) {
-      dependencies.InsertEdge(after, registration->name_);
-    }
-    for (UniqueTypeName before : registration->before_) {
-      dependencies.InsertEdge(registration->name_, before);
-    }
-    if (registration->before_all_) {
-      for (const auto& other : registrations) {
-        if (other.get() == registration.get()) continue;
-        if (other->terminal_) continue;
-        dependencies.InsertEdge(registration->name_, other->name_);
-      }
-    }
-  }
+  InnerBuilder builder(registrations, post_processors, type);
+  builder.EnsureCorrectRegistrationOrdering();
+  builder.BuildEdgesAndTerminalFilters();
   // Phase 2: Build a list of filters in dependency order.
   // We can simply iterate through and add anything with no dependency.
   // We then remove that filter from the dependency list of all other filters.
   // We repeat until we have no more filters to add.
-  dependencies.FinishDependencyMap();
-  std::vector<Filter> filters;
-  while (auto registration = dependencies.Next()) {
-    filters.emplace_back(
-        registration->name_, registration->filter_, registration->filter_adder_,
-        std::move(registration->predicates_), registration->version_,
-        registration->ordering_, registration->registration_source_);
-  }
+  builder.GenerateFilterList();
   // Collect post processors that need to be applied.
   // We've already ensured the one-per-slot constraint, so now we can just
   // collect everything up into a vector and run it in order.
@@ -296,31 +261,35 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
   // Log out the graph we built if that's been requested.
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    PrintChannelStackTrace(type, registrations, dependencies, filters,
-                           terminal_filters);
+    //   PrintChannelStackTrace(type, registrations, dependencies, filters,
+    //                        terminal_filters);
   }
   // Check if there are no terminal filters: this would be an error.
-  // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check that
-  // condition here.
-  // Right now we only log: many tests end up with a core configuration that
-  // is invalid.
+  // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check
+  // that condition here. Right now we only log: many tests end up with a core
+  // configuration that is invalid.
   // TODO(ctiller): evaluate if we can turn this into a crash one day.
   // Right now it forces too many tests to know about channel initialization,
-  // either by supplying a valid configuration or by including an opt-out flag.
-  if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
-    VLOG(2) << "No terminal filters registered for channel stack type "
-            << grpc_channel_stack_type_string(type)
-            << "; this is common for unit tests messing with "
-               "CoreConfiguration, but will result in a "
-               "ChannelInit::CreateStack that never completes successfully.";
-  }
-  return StackConfig{std::move(filters), std::move(terminal_filters),
+  // either by supplying a valid configuration or by including an opt-out
+  // flag.
+  /*
+    if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
+      VLOG(2) << "No terminal filters registered for channel stack type "
+              << grpc_channel_stack_type_string(type)
+              << "; this is common for unit tests messing with "
+                 "CoreConfiguration, but will result in a "
+                 "ChannelInit::CreateStack that never completes
+    successfully.";
+    }
+  */
+  return StackConfig{builder.TakeFilters(), builder.TakeTerminalFilters(),
                      std::move(post_processor_functions)};
 };
 
+#if 0
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
-    const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
+    absl::Span<const std::unique_ptr<ChannelInit::FilterRegistration>>
         registrations,
     const DependencyTracker& dependencies, const std::vector<Filter>& filters,
     const std::vector<Filter>& terminal_filters) {
@@ -406,13 +375,15 @@ void ChannelInit::PrintChannelStackTrace(
     LOG(INFO) << filter_str;
   }
 }
+#endif
 
 ChannelInit ChannelInit::Builder::Build() {
   ChannelInit result;
   for (int i = 0; i < GRPC_NUM_CHANNEL_STACK_TYPES; i++) {
-    result.stack_configs_[i] =
-        BuildStackConfig(filters_[i], post_processors_[i],
-                         static_cast<grpc_channel_stack_type>(i));
+    result.stack_configs_[i] = BuildStackConfig(
+        absl::Span<std::unique_ptr<FilterRegistration>>(filters_[i].data(),
+                                                        filters_[i].size()),
+        post_processors_[i], static_cast<grpc_channel_stack_type>(i));
   }
   return result;
 }
