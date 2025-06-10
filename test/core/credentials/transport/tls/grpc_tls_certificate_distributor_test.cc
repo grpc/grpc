@@ -39,8 +39,6 @@ namespace testing {
 
 namespace {
 
-using ::testing::VariantWith;
-
 constexpr const char* kCertName1 = "cert_1_name";
 constexpr const char* kCertName2 = "cert_2_name";
 constexpr const char* kRootCert1Name = "root_cert_1_name";
