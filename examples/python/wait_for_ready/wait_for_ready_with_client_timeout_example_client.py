@@ -39,8 +39,7 @@ def wait_for_metadata(response_future, event):
     metadata: Sequence[Tuple[str, str]] = response_future.initial_metadata()
     for key, value in metadata:
         print(
-            "Greeter client received initial metadata: key=%s value=%s"
-            % (key, value)
+            f"Greeter client received initial metadata: key={key} value={value}"
         )
     event.set()
 
