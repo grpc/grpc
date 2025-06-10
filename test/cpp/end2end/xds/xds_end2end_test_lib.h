@@ -795,10 +795,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
       StatusCode expected_status, absl::string_view expected_message_prefix,
       const RpcOptions& rpc_options = RpcOptions());
 
-  // A class for running a long-running RPC in its own thread.
-  // TODO(roth): Maybe consolidate this and SendConcurrentRpcs()
-  // somehow?  LongRunningRpc has a cleaner API, but SendConcurrentRpcs()
-  // uses the callback API, which is probably better.
+  // A class for running a long-running RPC using the callback API.
   class LongRunningRpc {
    public:
     // Starts the RPC.
@@ -814,12 +811,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<XdsTestType>,
     Status GetStatus();
 
    private:
-    std::thread sender_thread_;
+    EchoRequest request_;
+    EchoResponse response_;
     ClientContext context_;
-    Status status_;
+    grpc_core::Mutex mu_;
+    grpc_core::CondVar cv_;
+    std::optional<Status> status_ ABSL_GUARDED_BY(&mu_);
   };
 
   // Starts a set of concurrent RPCs.
+  // TODO(roth): Change this to use LongRunningRpc.
   struct ConcurrentRpc {
     ClientContext context;
     Status status;
