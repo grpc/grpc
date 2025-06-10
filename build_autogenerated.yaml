@@ -2118,6 +2118,7 @@ libs:
   - absl/functional:bind_front
   - absl/functional:function_ref
   - absl/hash:hash
+  - absl/log:initialize
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
@@ -2177,7 +2178,6 @@ libs:
   - absl/debugging:failure_signal_handler
   - absl/debugging:stacktrace
   - absl/debugging:symbolize
-  - absl/log:initialize
   - grpc
 - name: grpc_test_util_unsecure
   build: private
