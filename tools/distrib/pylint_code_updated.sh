@@ -30,7 +30,7 @@ TEST_DIRS=(
 )
 
 VIRTUALENV=venv_python_code
-python3.11 -m venv $VIRTUALENV
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 python3 -m pip install --upgrade astroid==3.3.10 \
