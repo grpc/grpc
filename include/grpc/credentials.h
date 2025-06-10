@@ -228,11 +228,6 @@ GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* call_creds_for_tls,
     grpc_call_credentials* call_creds_for_alts);
 
-GRPCAPI grpc_channel_credentials*
-grpc_google_default_credentials_create_with_dual_call_credentials(
-    grpc_call_credentials* tls_credentials,
-    grpc_call_credentials* alts_credentials);
-
 /** Server certificate config object holds the server's public certificates and
    associated private keys, as well as any CA certificates needed for client
    certificate validation (if applicable). Create using
