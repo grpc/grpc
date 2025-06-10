@@ -274,10 +274,10 @@ class WorkerServiceImpl final : public WorkerService::Service {
 QpsWorker::QpsWorker(int driver_port, int server_port,
                      const std::string& credential_type) {
   impl_ = std::make_unique<WorkerServiceImpl>(server_port, this);
-  latent_see_ = std::make_unique<LatentSeeService>(
-      LatentSeeService::Options()
-          .set_max_memory(2 * 1024 * 1024 * 1024)
-          .set_max_query_time(30.0));
+  latent_see_ =
+      std::make_unique<LatentSeeService>(LatentSeeService::Options()
+                                             .set_max_memory(1024 * 1024 * 1024)
+                                             .set_max_query_time(30.0));
   gpr_atm_rel_store(&done_, gpr_atm{0});
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
