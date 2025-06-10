@@ -91,7 +91,6 @@
 
 namespace grpc_core {
 
-using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::PassthroughEndpoint;
 
 namespace {
