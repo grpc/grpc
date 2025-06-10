@@ -219,13 +219,18 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    default call credentials object based on the Application Default Credentials
    mechanism.
 
-   The caller may specify a secondary alts credentials objects to attach to the
-   channel for ALTS connections. If an alts credentials object is specified, it
-   will be used if the underlying channel type is ALTS.
+   The caller may choose to create the default credential with a secondary alts
+   credentials object to attach to the channel for ALTS connections. If an alts
+   credentials object is specified, it will be used if the underlying channel
+   type is ALTS.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
+    grpc_call_credentials* call_credentials);
+
+GRPCAPI grpc_channel_credentials*
+grpc_google_default_credentials_create_with_alts_option(
     grpc_call_credentials* default_credentials,
-    grpc_call_credentials* alts_credentials = nullptr);
+    grpc_call_credentials* alts_credentials);
 
 /** Server certificate config object holds the server's public certificates and
    associated private keys, as well as any CA certificates needed for client
