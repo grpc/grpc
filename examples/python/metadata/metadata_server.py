@@ -34,7 +34,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
                 ("retry", "false"),
             )
         )
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 def serve():

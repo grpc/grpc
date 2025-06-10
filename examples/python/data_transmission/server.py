@@ -32,7 +32,8 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     # only respond once.)
     def SimpleMethod(self, request, context):
         print(
-            f"SimpleMethod called by client({request.client_id}) the message: {request.request_data}"
+            f"SimpleMethod called by client({request.client_id}) "
+            f"the message: {request.request_data}"
         )
         response = demo_pb2.Response(
             server_id=SERVER_ID,
@@ -60,7 +61,8 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     # but the server can return the response many times.)
     def ServerStreamingMethod(self, request, context):
         print(
-            f"ServerStreamingMethod called by client({request.client_id}), message= {request.request_data}"
+            f"ServerStreamingMethod called by client({request.client_id}), "
+            f"message= {request.request_data}"
         )
 
         # 创建一个生成器
