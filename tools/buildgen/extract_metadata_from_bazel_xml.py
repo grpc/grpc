@@ -1537,9 +1537,9 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like[
-    "external_proto_libraries"
-] = _generate_external_proto_libraries()
+build_yaml_like["external_proto_libraries"] = (
+    _generate_external_proto_libraries()
+)
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)
