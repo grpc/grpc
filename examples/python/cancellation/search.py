@@ -92,10 +92,9 @@ def _all_bytestrings():
     Yields:
       All bytestrings in ascending order of length.
     """
-    for bytestring in itertools.chain.from_iterable(
+    yield from itertools.chain.from_iterable(
         _bytestrings_of_length(length) for length in itertools.count()
-    ):
-        yield bytestring
+    )
 
 
 def search(

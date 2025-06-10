@@ -21,7 +21,7 @@ import grpc
 import demo_pb2
 import demo_pb2_grpc
 
-__all__ = "DemoServer"
+__all__ = ("DemoServer",)
 SERVER_ADDRESS = "localhost:23333"
 SERVER_ID = 1
 
@@ -32,8 +32,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     # only respond once.)
     def SimpleMethod(self, request, context):
         print(
-            "SimpleMethod called by client(%d) the message: %s"
-            % (request.client_id, request.request_data)
+            f"SimpleMethod called by client({request.client_id}) the message: {request.request_data}"
         )
         response = demo_pb2.Response(
             server_id=SERVER_ID,
@@ -48,8 +47,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
         print("ClientStreamingMethod called by client...")
         for request in request_iterator:
             print(
-                "recv from client(%d), message= %s"
-                % (request.client_id, request.request_data)
+                f"recv from client({request.client_id}), message= {request.request_data}"
             )
         response = demo_pb2.Response(
             server_id=SERVER_ID,
@@ -62,8 +60,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     # but the server can return the response many times.)
     def ServerStreamingMethod(self, request, context):
         print(
-            "ServerStreamingMethod called by client(%d), message= %s"
-            % (request.client_id, request.request_data)
+            f"ServerStreamingMethod called by client({request.client_id}), message= {request.request_data}"
         )
 
         # 创建一个生成器
@@ -72,7 +69,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
             for i in range(5):
                 response = demo_pb2.Response(
                     server_id=SERVER_ID,
-                    response_data="send by Python server, message=%d" % i,
+                    response_data=f"send by Python server, message={i}",
                 )
                 yield response
 
@@ -89,8 +86,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
         def parse_request():
             for request in request_iterator:
                 print(
-                    "recv from client(%d), message= %s"
-                    % (request.client_id, request.request_data)
+                    f"recv from client({request.client_id}), message= {request.request_data}"
                 )
 
         t = Thread(target=parse_request)
@@ -99,7 +95,7 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
         for i in range(5):
             yield demo_pb2.Response(
                 server_id=SERVER_ID,
-                response_data="send by Python server, message= %d" % i,
+                response_data=f"send by Python server, message= {i}",
             )
 
         t.join()

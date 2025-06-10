@@ -29,11 +29,11 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         self,
         request: helloworld_pb2.HelloRequest,
         context: grpc.aio.ServicerContext,
-    ) -> helloworld_pb2.HelloReply:
-        logging.info("Received request, sleeping for 4 seconds...")
+    ) -> helloworld_pb2.HelloReply:  # pylint: disable=invalid-overridden-method
+        logging.info("Sleeping for 4 seconds...")
         await asyncio.sleep(4)
         logging.info("Sleep completed, responding")
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 async def serve() -> None:

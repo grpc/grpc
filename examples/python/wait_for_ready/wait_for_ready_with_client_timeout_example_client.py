@@ -50,7 +50,7 @@ def check_status(response_future, wait_success):
         print("received initial metadata before time out!")
         for response in response_future:
             message = response.message
-            print("Greeter client received: " + message)
+            print(f"Greeter client received: {message}")
     else:
         print("Timed out before receiving any initial metadata!")
         response_future.cancel()

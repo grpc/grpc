@@ -23,7 +23,7 @@ protos, services = grpc.protos_and_services("helloworld.proto")
 
 class Greeter(services.GreeterServicer):
     def SayHello(self, request, context):
-        return protos.HelloReply(message="Hello, %s!" % request.name)
+        return protos.HelloReply(message=f"Hello, {request.name}!")
 
 
 def serve():

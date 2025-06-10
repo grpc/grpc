@@ -105,9 +105,7 @@ def generate_messages():
 def guide_route_chat(route_guide_stub):
     responses = route_guide_stub.RouteChat(generate_messages())
     for response in responses:
-        print(
-            "Received message %s at %s" % (response.message, response.location)
-        )
+        print(f"Received message {response.message} at {response.location}")
 
 
 def run():
@@ -120,7 +118,7 @@ def run():
         greeter_response = greeter_stub.SayHello(
             helloworld_pb2.HelloRequest(name="you")
         )
-        print("Greeter client received: " + greeter_response.message)
+        print(f"Greeter client received: {greeter_response.message}")
         print("-------------- GetFeature --------------")
         guide_get_feature(route_guide_stub)
         print("-------------- ListFeatures --------------")

@@ -39,7 +39,6 @@ disable=
 	# altogether and rely on .pylintrc for everything.
 	pointless-statement,
 	no-member,
-	no-self-use,
 	attribute-defined-outside-init,
 	unused-argument,
 	unused-variable,
@@ -47,7 +46,6 @@ disable=
 	redefined-builtin,
 	too-many-public-methods,
 	too-many-locals,
-	redefined-variable-type,
 	redefined-outer-name,
 	ungrouped-imports,
 	too-many-branches,
@@ -78,20 +76,9 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
 	# work for now? Try with a later pylint?
 	locally-disabled,
-	# NOTE(nathaniel): What even is this? *Enabling* an inspection results
-	# in a warning? How does that encourage more analysis and coverage?
-	locally-enabled,
 	# NOTE(nathaniel): We don't write doc strings for most private code
 	# elements.
 	missing-docstring,
-	# NOTE(nathaniel): In numeric comparisons it is better to have the
-	# lesser (or lesser-or-equal-to) quantity on the left when the
-	# expression is true than it is to worry about which is an identifier
-	# and which a literal value.
-	misplaced-comparison-constant,
-	# NOTE(nathaniel): Our completely abstract interface classes don't have
-	# constructors.
-	no-init,
 	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't yet play
 	# nicely with some of our code being implemented in Cython. Maybe in a
 	# later version?
@@ -128,5 +115,3 @@ disable=
 	wrong-import-order,
 	# TODO(https://github.com/PyCQA/pylint/issues/3882): Upgrade Pylint
 	unsubscriptable-object,
-  # NOTE(sergiitk): yapf compatibility, ref #25071
-  bad-continuation,

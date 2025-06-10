@@ -22,12 +22,11 @@ IGNORE_PATTERNS=--ignore-patterns='.*pb2\.py,.*pb2_grpc\.py'
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-    'src/python/grpcio/grpc'
+    'src/python/grpcio/grpc/_cython'
 )
 
 TEST_DIRS=(
-    'src/python/grpcio_tests/tests'
-    'src/python/grpcio_tests/tests_gevent'
+    'src/python/grpcio_tests/tests/_sanity'
 )
 
 VIRTUALENV=venv_python_code
