@@ -41,7 +41,6 @@ VIRTUALENV=venv_python_code
 python3.7 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-# TODO(https://github.com/grpc/grpc/issues/23394): Update Pylint.
 python3 -m pip install --upgrade astroid==2.3.3 \
   pylint==3.3.7 \
   toml==0.10.2 \
