@@ -738,7 +738,7 @@ void XdsEnd2endTest::LongRunningRpc::StartRpc(
 
 void XdsEnd2endTest::LongRunningRpc::CancelRpc() {
   context_.TryCancel();
-  GetStatus();
+  (void)GetStatus();
 }
 
 Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
