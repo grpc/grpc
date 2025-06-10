@@ -279,7 +279,6 @@ class Flow {
 
  private:
   void AppendBegin(Appender& appender) {
-    DCHECK_EQ(id_, 0);
     id_ = next_id_.fetch_add(1, std::memory_order_relaxed);
     appender.Append(metadata_, -id_, absl::GetCurrentTimeNanos());
   }
