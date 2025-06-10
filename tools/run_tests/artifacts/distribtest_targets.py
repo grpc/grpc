@@ -235,11 +235,20 @@ class RubyDistribTest(object):
         if not protobuf_version == "":
             self.name += "_protobuf_%s" % protobuf_version
         self.platform = platform
+        platform_label = self.platform
         self.arch = arch
         self.docker_suffix = docker_suffix
         self.ruby_version = ruby_version
         self.protobuf_version = protobuf_version
-        self.labels = ["distribtest", "ruby", platform, arch, docker_suffix]
+        if platform_label.startswith("linux"):
+            platform_label = "linux"
+        self.labels = [
+            "distribtest",
+            "ruby",
+            platform_label,
+            arch,
+            docker_suffix,
+        ]
         if presubmit:
             self.labels.append("presubmit")
 
@@ -253,7 +262,7 @@ class RubyDistribTest(object):
             "x64": "x86_64",
             "x86": "x86",
         }
-        if not self.platform == "linux":
+        if self.platform not in ["linux-gnu", "linux-musl"]:
             raise Exception("Not supported yet.")
 
         dockerfile_name = "tools/dockerfile/distribtest/ruby_%s_%s" % (
