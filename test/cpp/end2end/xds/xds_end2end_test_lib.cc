@@ -727,22 +727,26 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
 
 void XdsEnd2endTest::LongRunningRpc::StartRpc(
     grpc::testing::EchoTestService::Stub* stub, const RpcOptions& rpc_options) {
-  sender_thread_ = std::thread([this, stub, rpc_options]() {
-    EchoRequest request;
-    EchoResponse response;
-    rpc_options.SetupRpc(&context_, &request);
-    status_ = stub->Echo(&context_, request, &response);
+  LOG(INFO) << "Starting long-running RPC...";
+  rpc_options.SetupRpc(&context_, &request_);
+  stub->async()->Echo(&context_, &request_, &response_, [this](Status status) {
+    grpc_core::MutexLock lock(&mu_);
+    status_ = std::move(status);
+    cv_.Signal();
   });
 }
 
 void XdsEnd2endTest::LongRunningRpc::CancelRpc() {
   context_.TryCancel();
-  if (sender_thread_.joinable()) sender_thread_.join();
+  (void)GetStatus();
 }
 
 Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
-  if (sender_thread_.joinable()) sender_thread_.join();
-  return status_;
+  grpc_core::MutexLock lock(&mu_);
+  while (!status_.has_value()) {
+    cv_.Wait(&mu_);
+  }
+  return *status_;
 }
 
 std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
