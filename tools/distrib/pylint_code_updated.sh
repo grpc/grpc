@@ -29,7 +29,7 @@ TEST_DIRS=(
     'src/python/grpcio_tests/tests/_sanity'
 )
 
-VIRTUALENV=venv_python_code
+VIRTUALENV=venv_python_code_updated
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
