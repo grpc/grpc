@@ -34,6 +34,9 @@ disable=
 	unused-variable,
 	# -- END OF EXAMPLE-SPECIFIC SUPPRESSIONS --
 
+	# This is to support new Pylint version
+	invalid-overridden-method,
+
 	# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
 	# Enable cyclic-import after a 1.7-or-later pylint release that
 	# recognizes our disable=cyclic-import suppressions.

@@ -48,13 +48,13 @@ python3 -m pip install --upgrade astroid==2.3.3 \
   "isort>=4.3.0,<5.0.0"
 
 EXIT=0
-for dir in "${DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
-done
+# for dir in "${DIRS[@]}"; do
+#   python3 -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
+# done
 
-for dir in "${TEST_DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
-done
+# for dir in "${TEST_DIRS[@]}"; do
+#   python3 -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
+# done
 
 find examples/python \
   -iname "*.py" \

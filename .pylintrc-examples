@@ -100,6 +100,7 @@ disable=
 	useless-object-inheritance,
 	# NOTE(lidiz): the import order will be enforced by isort instead
 	wrong-import-order,
+	# To support new Pylint version
 	# TODO(https://github.com/PyCQA/pylint/issues/3882): Upgrade Pylint
 	unsubscriptable-object,
 	# NOTE(rbellevi): Pylint doesn't understand .pyi files.

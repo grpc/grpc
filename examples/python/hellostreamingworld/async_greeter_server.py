@@ -26,7 +26,6 @@ NUMBER_OF_REPLY = 10
 
 
 class Greeter(MultiGreeterServicer):
-    # pylint: disable=invalid-overridden-method
     async def sayHello(
         self, request: HelloRequest, context: grpc.aio.ServicerContext
     ) -> HelloReply:
