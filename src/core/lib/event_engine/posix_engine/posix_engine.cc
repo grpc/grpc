@@ -938,7 +938,7 @@ void PosixEventEngine::AfterForkInChild() {
   for (const auto& cb : resolver_handles_) {
     auto locked = cb.lock();
     if (locked != nullptr) {
-      locked->Reset();
+      locked->Reset(absl::CancelledError("Reset resolver on fork"));
     }
   }
 #endif

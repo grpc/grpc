@@ -229,10 +229,10 @@ void AresResolver::ReinitHandle::OnResolverGone() {
   resolver_ = nullptr;
 }
 
-void AresResolver::ReinitHandle::Reset() {
+void AresResolver::ReinitHandle::Reset(const absl::Status& status) {
   grpc_core::MutexLock lock(&mutex_);
   if (resolver_ != nullptr) {
-    resolver_->Reset();
+    resolver_->Reset(status);
   }
 }
 
@@ -718,7 +718,10 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
   if (hostname_qa->pending_requests == 0) {
     auto nh =
         ares_resolver->callback_map_.extract(hostname_qa->callback_map_id);
-    CHECK(!nh.empty());
+    if (nh.empty()) {
+      delete hostname_qa;
+      return;
+    }
     CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
@@ -745,7 +748,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
+  if (nh.empty()) {
+    return;
+  }
   CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
@@ -806,7 +811,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   std::unique_ptr<QueryArg> qa(static_cast<QueryArg*>(arg));
   auto* ares_resolver = qa->ares_resolver;
   auto nh = ares_resolver->callback_map_.extract(qa->callback_map_id);
-  CHECK(!nh.empty());
+  if (nh.empty()) {
+    return;
+  }
   CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
@@ -872,17 +879,23 @@ std::weak_ptr<AresResolver::ReinitHandle> AresResolver::GetReinitHandle() {
   return reinit_handle_;
 }
 
-void AresResolver::Reset() {
+void AresResolver::Reset(const absl::Status& reason) {
   auto self = RefIfNonZero();
   if (self == nullptr) {
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
-  ShutdownLocked(absl::CancelledError("AresResolver::Reset"), "resolver reset");
+  event_engine_->Run(
+      [callbacks = std::move(callback_map_), reason = reason]() mutable {
+        for (auto& [_, callback] : callbacks) {
+          std::visit([=](auto& cb) { cb(reason); }, callback);
+        }
+      });
+  callback_map_.clear();
+  ShutdownLocked(reason, "resolver reset");
   CheckSocketsLocked();
   CHECK_NE(channel_, nullptr);
   ares_destroy(channel_);
-  callback_map_.clear();
   channel_ = nullptr;
 }
 
