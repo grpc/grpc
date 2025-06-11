@@ -40,17 +40,17 @@ python3 -m pip install --upgrade astroid==3.3.10 \
 
 EXIT=0
 for dir in "${DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
+  python3 -m pylint --rcfile=.pylintupdatedrc -rn "$dir" ${IGNORE_PATTERNS}  || EXIT=1
 done
 
 for dir in "${TEST_DIRS[@]}"; do
-  python3 -m pylint --rcfile=.pylintrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
+  python3 -m pylint --rcfile=.pylintupdatedrc-tests -rn "$dir" ${IGNORE_PATTERNS} || EXIT=1
 done
 
 find examples/python \
   -iname "*.py" \
   -not -name "*_pb2.py" \
   -not -name "*_pb2_grpc.py" \
-  | xargs python3 -m pylint --rcfile=.pylintrc-examples -rn ${IGNORE_PATTERNS}
+  | xargs python3 -m pylint --rcfile=.pylintupdatedrc-examples -rn ${IGNORE_PATTERNS}
 
 exit $EXIT
