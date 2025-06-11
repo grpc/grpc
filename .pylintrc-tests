@@ -130,6 +130,3 @@ disable=
 	unsubscriptable-object,
   # NOTE(sergiitk): yapf compatibility, ref #25071
   bad-continuation,
-
-  [DESIGN]
-  invalid-overridden-method-rgx=.*
