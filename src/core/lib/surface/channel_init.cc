@@ -122,16 +122,14 @@ ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFilter(
   return *filters_[type].back();
 }
 
-ChannelInit::FilterRegistration& ChannelInit::Builder::RegisterFusedFilter(
+void ChannelInit::Builder::RegisterFusedFilter(
     grpc_channel_stack_type type, UniqueTypeName name,
     const grpc_channel_filter* filter, FilterAdder filter_adder,
     SourceLocation registration_source) {
   fused_filters_[type].emplace_back(std::make_unique<FilterRegistration>(
       name, filter, filter_adder, registration_source));
-  return *fused_filters_[type].back();
 }
 
-template <bool fused>
 class ChannelInit::DependencyTracker {
  public:
   // Declare that a filter exists.
@@ -243,16 +241,9 @@ class ChannelInit::DependencyTracker {
       // Sort first on ordering, and then lexically on name.
       // The lexical sort means that the ordering is stable between builds
       // (UniqueTypeName ordering is not stable between builds).
-      if constexpr (fused) {
-        return node->ordering() > other.node->ordering() ||
-               (node->ordering() == other.node->ordering() &&
-                CompareFusedChannelFiltersByName()(node->name(),
-                                                   other.node->name()));
-      } else {
-        return node->ordering() > other.node->ordering() ||
-               (node->ordering() == other.node->ordering() &&
-                node->name() > other.node->name());
-      }
+      return node->ordering() > other.node->ordering() ||
+             (node->ordering() == other.node->ordering() &&
+              node->name() > other.node->name());
     }
   };
   absl::flat_hash_map<UniqueTypeName, Node> nodes_;
@@ -335,7 +326,6 @@ bool ChannelInit::MergeFilters(
   return false;
 }
 
-template <bool fused>
 std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
 ChannelInit::SortFilterRegistrationsByDependencies(
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
@@ -347,7 +337,7 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   // ensure algorithm ordering stability is deterministic for a given build.
   // We should not require this, but at the time of writing it's expected that
   // this will help overall stability.
-  DependencyTracker<fused> dependencies;
+  DependencyTracker dependencies;
   std::vector<Filter> terminal_filters;
   for (const auto& registration : filter_registrations) {
     if (registration->terminal_) {
@@ -393,7 +383,7 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   }
   // Log out the graph we built if that's been requested.
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    PrintChannelStackTrace<fused>(type, filter_registrations, dependencies,
+    PrintChannelStackTrace<false>(type, filter_registrations, dependencies,
                                   filters, terminal_filters);
   }
   return std::make_tuple(std::move(filters), std::move(terminal_filters));

@@ -328,23 +328,23 @@ class ChannelInit {
     // properties of the filter being registered.
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, UniqueTypeName name,
-        const grpc_channel_filter* filter, FilterAdder filter_adder = nullptr,
-        SourceLocation registration_source = {});
+    void RegisterFusedFilter(grpc_channel_stack_type type, UniqueTypeName name,
+                             const grpc_channel_filter* filter,
+                             FilterAdder filter_adder = nullptr,
+                             SourceLocation registration_source = {});
 
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, const grpc_channel_filter* filter,
-        SourceLocation registration_source = {}) {
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             const grpc_channel_filter* filter,
+                             SourceLocation registration_source = {}) {
       CHECK(filter != nullptr);
-      return RegisterFusedFilter(type, NameFromChannelFilter(filter), filter,
-                                 nullptr, registration_source);
+      RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
+                          registration_source);
     }
 
     template <typename Filter>
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFusedFilter(
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             SourceLocation registration_source = {}) {
+      RegisterFusedFilter(
           type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
           [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
           registration_source);
@@ -389,7 +389,6 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
-  template <bool fused>
   class DependencyTracker;
 
   struct Filter {
@@ -429,7 +428,6 @@ class ChannelInit {
 
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
-  template <bool fused>
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFilterRegistrationsByDependencies(
       const std::vector<std::unique_ptr<FilterRegistration>>&
@@ -448,7 +446,6 @@ class ChannelInit {
           fused_filter_registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
 
-  template <bool fused>
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
