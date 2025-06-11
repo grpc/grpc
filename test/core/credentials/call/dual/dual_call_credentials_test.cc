@@ -79,7 +79,7 @@ class DualCredentialsTest : public ::testing::Test {
 
   RefCountedPtr<grpc_auth_context> CreateAuthContextWithSecurityType(
       std::string security_type) {
-    auto auth_context = grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
+    auto auth_context = MakeRefCounted<grpc_auth_context>(nullptr);
     grpc_auth_context_add_property(
         auth_context.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
         security_type.c_str(), security_type.length());
