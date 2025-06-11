@@ -36,7 +36,9 @@ _LOGGER = logging.getLogger(__name__)
 _channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
-ServerCallTracerFactoryOption = Union[Tuple[Tuple[str, 'ServerCallTracerFactory']], Tuple[()]]
+ServerCallTracerFactoryOption = Union[
+    Tuple[Tuple[str, "ServerCallTracerFactory"]], Tuple[()]
+]
 
 _plugin_lock: threading.RLock = threading.RLock()
 _OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
