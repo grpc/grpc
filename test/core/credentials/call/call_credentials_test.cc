@@ -1531,7 +1531,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsAuthKey) {
       null_well_known_creds_path_getter);
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1558,7 +1558,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1585,7 +1585,7 @@ TEST_F(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1609,7 +1609,7 @@ TEST_F(CredentialsTest,
   grpc_override_well_known_credentials_path_getter(
       null_well_known_creds_path_getter);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1655,7 +1655,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsGce) {
   // Simulate a successful detection of GCE.
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr));
+          grpc_google_default_credentials_create(nullptr, nullptr));
 
   // Verify that the default creds actually embeds a GCE creds.
   CHECK(creds != nullptr);
@@ -1693,7 +1693,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNonGce) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr));
+          grpc_google_default_credentials_create(nullptr, nullptr));
   // Verify that the default creds actually embeds a GCE creds.
   CHECK(creds != nullptr);
   CHECK_NE(creds->call_creds(), nullptr);
@@ -1734,10 +1734,10 @@ TEST_F(CredentialsTest, TestNoGoogleDefaultCreds) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   // Simulate a successful detection of GCE.
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
-  CHECK_EQ(grpc_google_default_credentials_create(nullptr), nullptr);
+  CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
   CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1760,7 +1760,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsCallCredsSpecified) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds));
+          grpc_google_default_credentials_create(call_creds, nullptr));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);
@@ -1812,7 +1812,7 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds.release()));
+          grpc_google_default_credentials_create(call_creds.release(), nullptr));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);

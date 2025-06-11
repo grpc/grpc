@@ -225,11 +225,7 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    type is ALTS.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials);
-
-GRPCAPI grpc_channel_credentials*
-grpc_google_default_credentials_create_with_alts_option(
-    grpc_call_credentials* default_credentials,
+    grpc_call_credentials* call_credentials,
     grpc_call_credentials* alts_credentials);
 
 /** Server certificate config object holds the server's public certificates and
