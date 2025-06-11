@@ -32,6 +32,7 @@
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/extensions/supports_win_sockets.h"
 #include "src/core/lib/event_engine/query_extensions.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/endpoint_pair.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -90,7 +91,7 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
   grpc_endpoint_pair p;
   create_sockets(sv);
   grpc_core::ExecCtx exec_ctx;
-  if (grpc_core::IsPollsetAlternativeEnabled()) {
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
     auto new_args = grpc_core::CoreConfiguration::Get()
                         .channel_args_preconditioning()
                         .PreconditionChannelArgs(channel_args);
