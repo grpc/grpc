@@ -46,7 +46,10 @@ RefCountedPtr<Blackboard::Entry> Blackboard::Set(
   Map old_map2;
   MutexLock lock(&write_shard.mu);
   auto* existing = write_shard.map.Lookup(key);
-  if (existing != nullptr) return (*existing)->RefIfNonZero();
+  if (existing != nullptr) {
+    auto existing_ref = (*existing)->RefIfNonZero();
+    if (existing_ref != nullptr) return existing_ref;
+  }
   constructed->blackboard_ = Ref();
   constructed->key_ = key;
   old_map1 = std::exchange(write_shard.map,
