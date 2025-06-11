@@ -58,7 +58,6 @@ disable=
 	line-too-long,
 	wrong-import-position,
 	wrong-import-order,
-	invalid-overridden-method,
 	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
 
 
@@ -131,3 +130,6 @@ disable=
 	unsubscriptable-object,
   # NOTE(sergiitk): yapf compatibility, ref #25071
   bad-continuation,
+
+  [DESIGN]
+  invalid-overridden-method-rgx=.*
