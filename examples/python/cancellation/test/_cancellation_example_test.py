@@ -53,7 +53,7 @@ def _start_client(
             _CLIENT_PATH,
             desired_string,
             "--server",
-            f"localhost:{server_port}",
+            "localhost:{}".format(server_port),
             "--ideal-distance",
             str(ideal_distance),
         )
@@ -64,19 +64,24 @@ def _start_client(
 class CancellationExampleTest(unittest.TestCase):
     def test_successful_run(self):
         with _get_port() as test_port:
-            with subprocess.Popen(
+            server_process = subprocess.Popen(
                 (_SERVER_PATH, "--port", str(test_port))
-            ) as server_process:
+            )
+            try:
                 client_process = _start_client(test_port, "aa", 0)
                 client_return_code = client_process.wait()
                 self.assertEqual(0, client_return_code)
                 self.assertIsNone(server_process.poll())
+            finally:
+                server_process.kill()
+                server_process.wait()
 
     def test_graceful_sigint(self):
         with _get_port() as test_port:
-            with subprocess.Popen(
+            server_process = subprocess.Popen(
                 (_SERVER_PATH, "--port", str(test_port))
-            ) as server_process:
+            )
+            try:
                 client_process1 = _start_client(test_port, "aaaaaaaaaa", 0)
                 client_process1.send_signal(signal.SIGINT)
                 client_process1.wait()
@@ -84,6 +89,9 @@ class CancellationExampleTest(unittest.TestCase):
                 client_return_code = client_process2.wait()
                 self.assertEqual(0, client_return_code)
                 self.assertIsNone(server_process.poll())
+            finally:
+                server_process.kill()
+                server_process.wait()
 
 
 if __name__ == "__main__":

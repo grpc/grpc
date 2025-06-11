@@ -42,7 +42,7 @@ def _get_port():
 class CompressionExampleTest(unittest.TestCase):
     def test_compression_example(self):
         with _get_port() as test_port:
-            with subprocess.Popen(
+            server_process = subprocess.Popen(
                 (
                     _SERVER_PATH,
                     "--port",
@@ -52,9 +52,10 @@ class CompressionExampleTest(unittest.TestCase):
                     "--no_compress_every_n",
                     "3",
                 )
-            ) as server_process:
-                server_target = f"localhost:{test_port}"
-                with subprocess.Popen(
+            )
+            try:
+                server_target = "localhost:{}".format(test_port)
+                client_process = subprocess.Popen(
                     (
                         _CLIENT_PATH,
                         "--server",
@@ -62,10 +63,13 @@ class CompressionExampleTest(unittest.TestCase):
                         "--channel_compression",
                         "gzip",
                     )
-                ) as client_process:
-                    client_return_code = client_process.wait()
-                    self.assertEqual(0, client_return_code)
-                    self.assertIsNone(server_process.poll())
+                )
+                client_return_code = client_process.wait()
+                self.assertEqual(0, client_return_code)
+                self.assertIsNone(server_process.poll())
+            finally:
+                server_process.kill()
+                server_process.wait()
 
 
 if __name__ == "__main__":
