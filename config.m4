@@ -869,6 +869,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/uri.cc \
     src/core/util/uuid_v4.cc \
     src/core/util/validation_errors.cc \
+    src/core/util/wait_for_single_owner.cc \
     src/core/util/windows/cpu.cc \
     src/core/util/windows/directory_reader.cc \
     src/core/util/windows/env.cc \
