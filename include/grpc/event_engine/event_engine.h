@@ -23,7 +23,10 @@
 #include <grpc/support/port_platform.h>
 
 #include <bitset>
+#include <cstddef>
 #include <initializer_list>
+#include <memory>
+#include <optional>
 #include <utility>
 #include <vector>
 
@@ -252,16 +255,18 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     // requested.
     class WriteEventSink final {
      public:
-      WriteEventSink(std::vector<size_t> requested_metrics,
+      WriteEventSink(std::shared_ptr<const std::vector<size_t>> requested_metrics,
                      std::initializer_list<WriteEvent> requested_events,
                      WriteEventCallback on_event)
-          : requested_metrics_(requested_metrics), on_event_(std::move(on_event)) {
+          : requested_metrics_(std::move(requested_metrics)), on_event_(std::move(on_event)) {
         for (auto event : requested_events) {
           requested_events_mask_.set(static_cast<int>(event));
         }
       }
 
-      std::vector<size_t> requested_metrics() const { return requested_metrics_; }
+      const std::shared_ptr<const std::vector<size_t>>& requested_metrics() const {
+        return requested_metrics_;
+      }
 
       bool requested_event(WriteEvent event) const {
         return requested_events_mask_.test(static_cast<int>(event));
@@ -274,7 +279,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
 
      private:
-      std::vector<size_t> requested_metrics_;
+      std::shared_ptr<const std::vector<size_t>> requested_metrics_;
       WriteEventSet requested_events_mask_;
       // The callback to be called on each event.
       WriteEventCallback on_event_;
@@ -356,7 +361,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       /// The keys are used to identify the metrics in the GetMetricName and
       /// GetMetricKey APIs. The current value of the metric can be queried by
       /// adding a WriteEventSink to the WriteArgs of a Write call.
-      virtual std::vector<size_t> AllWriteMetrics() const = 0;
+      virtual std::shared_ptr<const std::vector<size_t>> AllWriteMetrics() const = 0;
       /// Returns the name of the write metric with the given key.
       /// If the key is not found, returns std::nullopt.
       virtual std::optional<absl::string_view> GetMetricName(size_t key) const = 0;

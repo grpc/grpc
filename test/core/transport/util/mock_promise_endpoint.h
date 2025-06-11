@@ -99,7 +99,8 @@ class MockEndpoint
 class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
                               Endpoint::TelemetryInfo {
  public:
-  MOCK_METHOD(std::vector<size_t>, AllWriteMetrics, (), (const override));
+  MOCK_METHOD(std::shared_ptr<const std::vector<size_t>>, AllWriteMetrics, (),
+              (const override));
   MOCK_METHOD(std::optional<absl::string_view>, GetMetricName, (size_t key),
               (const override));
   MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
