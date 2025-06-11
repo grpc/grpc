@@ -15,6 +15,8 @@
 
 JOBS=$(nproc) || JOBS=4
 
+mkdir -p ~/.cache/pytype
+
 VIRTUALENV=venv_check_pytype_updated
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
