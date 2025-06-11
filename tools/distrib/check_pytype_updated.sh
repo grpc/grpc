@@ -19,5 +19,5 @@ VIRTUALENV=venv_check_pytype_updated
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-python3.11 -m pip install pytype==2024.10.11
-python3.11 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup_updated.cfg"
+python3 -m pip install pytype==2024.10.11
+python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup_updated.cfg"
