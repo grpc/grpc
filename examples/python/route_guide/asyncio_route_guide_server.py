@@ -76,7 +76,6 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
         else:
             return feature
 
-    # pylint: disable=invalid-overridden-method
     async def ListFeatures(
         self, request: route_guide_pb2.Rectangle, unused_context
     ) -> AsyncIterable[route_guide_pb2.Feature]:
@@ -93,7 +92,6 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             ):
                 yield feature
 
-    # pylint: disable=invalid-overridden-method
     async def RecordRoute(
         self,
         request_iterator: AsyncIterable[route_guide_pb2.Point],
@@ -121,7 +119,6 @@ class RouteGuideServicer(route_guide_pb2_grpc.RouteGuideServicer):
             elapsed_time=int(elapsed_time),
         )
 
-    # pylint: disable=invalid-overridden-method
     async def RouteChat(
         self,
         request_iterator: AsyncIterable[route_guide_pb2.RouteNote],

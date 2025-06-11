@@ -25,7 +25,6 @@ _cleanup_coroutines = []
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
-    # pylint: disable=invalid-overridden-method
     async def SayHello(
         self,
         request: helloworld_pb2.HelloRequest,
