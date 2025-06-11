@@ -215,25 +215,7 @@ EventEngine::Closure* WorkStealingThreadPool::TheftRegistry::StealOne() {
 
 #if GRPC_ENABLE_FORK_SUPPORT
 
-void WorkStealingThreadPool::AllowFork() {
-  grpc_core::MutexLock lock(&can_fork_mutex_);
-  can_fork_ = true;
-  can_fork_cond_.SignalAll();
-}
-
-void WorkStealingThreadPool::PreventFork() {
-  grpc_core::MutexLock lock(&can_fork_mutex_);
-  can_fork_ = false;
-  can_fork_cond_.SignalAll();
-}
-
-void WorkStealingThreadPool::PrepareFork() {
-  grpc_core::MutexLock lock(&can_fork_mutex_);
-  while (!can_fork_) {
-    can_fork_cond_.Wait(&can_fork_mutex_);
-  }
-  pool_->PrepareFork();
-}
+void WorkStealingThreadPool::PrepareFork() { pool_->PrepareFork(); }
 
 void WorkStealingThreadPool::PostFork() { pool_->Postfork(); }
 
