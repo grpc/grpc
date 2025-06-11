@@ -108,7 +108,7 @@ class XdsMetadataTest : public ::testing::Test {
       return errors.status(absl::StatusCode::kInvalidArgument,
                            "validation failed");
     }
-    return metadata_map;
+    return std::move(metadata_map);
   }
 
   absl::StatusOr<XdsMetadataMap> Decode(Metadata proto) {

@@ -135,12 +135,12 @@ class Test3 : public ImplementChannelFilter<Test3> {
     absl::StatusOr<MessageHandle> OnClientToServerMessage(MessageHandle handle,
                                                           Test3*) {
       history.push_back("Test3::Call::OnClientToServerMessage");
-      return handle;
+      return std::move(handle);
     }
     absl::StatusOr<MessageHandle> OnServerToClientMessage(MessageHandle handle,
                                                           Test3*) {
       history.push_back("Test3::Call::OnServerToClientMessage");
-      return handle;
+      return std::move(handle);
     }
     void OnServerTrailingMetadata(ServerMetadata&) {
       history.push_back("Test3::Call::OnServerTrailingMetadata");
