@@ -58,6 +58,7 @@ disable=
 	line-too-long,
 	wrong-import-position,
 	wrong-import-order,
+	invalid-overridden-method
 	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
 
 

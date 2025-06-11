@@ -18,6 +18,7 @@ import os
 import socket
 import subprocess
 import unittest
+import signal
 
 _BINARY_DIR = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
@@ -39,9 +40,48 @@ def _get_port():
         sock.close()
 
 
+def _start_client(server_port, desired_string, ideal_distance, interesting_distance=None):
+    interesting_distance_args = (
+        ()
+        if interesting_distance is None
+        else ("--show-inferior", interesting_distance)
+    )
+    return subprocess.Popen(
+        (
+            _CLIENT_PATH,
+            desired_string,
+            "--server",
+            f"localhost:{server_port}",
+            "--ideal-distance",
+            str(ideal_distance),
+        )
+        + interesting_distance_args
+    )
+
+
 class CompressionExampleTest(unittest.TestCase):
+    def test_successful_run(self):
+        with _get_port() as test_port:
+            with subprocess.Popen((_SERVER_PATH, "--port", str(test_port))) as server_process:
+                client_process = _start_client(test_port, "aa", 0)
+                client_return_code = client_process.wait()
+                self.assertEqual(0, client_return_code)
+                self.assertIsNone(server_process.poll())
+
+    def test_graceful_sigint(self):
+        with _get_port() as test_port:
+            with subprocess.Popen((_SERVER_PATH, "--port", str(test_port))) as server_process:
+                client_process1 = _start_client(test_port, "aaaaaaaaaa", 0)
+                client_process1.send_signal(signal.SIGINT)
+                client_process1.wait()
+                client_process2 = _start_client(test_port, "aa", 0)
+                client_return_code = client_process2.wait()
+                self.assertEqual(0, client_return_code)
+                self.assertIsNone(server_process.poll())
+
     def test_compression_example(self):
         with _get_port() as test_port:
+            # pylint: disable=R1732
             server_process = subprocess.Popen(
                 (
                     _SERVER_PATH,
@@ -54,7 +94,7 @@ class CompressionExampleTest(unittest.TestCase):
                 )
             )
             try:
-                server_target = "localhost:{}".format(test_port)
+                server_target = f"localhost:{test_port}"
                 client_process = subprocess.Popen(
                     (
                         _CLIENT_PATH,

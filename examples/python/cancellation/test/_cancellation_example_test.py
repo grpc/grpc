@@ -53,7 +53,7 @@ def _start_client(
             _CLIENT_PATH,
             desired_string,
             "--server",
-            "localhost:{}".format(server_port),
+            f"localhost:{server_port}",
             "--ideal-distance",
             str(ideal_distance),
         )
@@ -64,6 +64,7 @@ def _start_client(
 class CancellationExampleTest(unittest.TestCase):
     def test_successful_run(self):
         with _get_port() as test_port:
+            # pylint: disable=R1732
             server_process = subprocess.Popen(
                 (_SERVER_PATH, "--port", str(test_port))
             )
@@ -78,6 +79,7 @@ class CancellationExampleTest(unittest.TestCase):
 
     def test_graceful_sigint(self):
         with _get_port() as test_port:
+            # pylint: disable=R1732
             server_process = subprocess.Popen(
                 (_SERVER_PATH, "--port", str(test_port))
             )
