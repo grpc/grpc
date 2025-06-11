@@ -45,7 +45,8 @@ class DualCallCredentials : public grpc_call_credentials {
   UniqueTypeName type() const override { return Type(); }
 
   ArenaPromise<absl::StatusOr<ClientMetadataHandle>> GetRequestMetadata(
-      ClientMetadataHandle initial_metadata, const GetRequestMetadataArgs* args) override;
+      ClientMetadataHandle initial_metadata, 
+      const GetRequestMetadataArgs* args) override;
 
  private:
   int cmp_impl(const grpc_call_credentials* other) const override {
