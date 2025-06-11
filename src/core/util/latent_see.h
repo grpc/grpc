@@ -114,8 +114,8 @@ struct Bin : public MultiProducerSingleConsumerQueue::Node {
     return num_events == kEventsPerBin;
   }
 
-  const Event* begin() const { return events.begin(); }
-  const Event* end() const { return events.begin() + num_events; }
+  const Event* begin() const { return events.data(); }
+  const Event* end() const { return events.data() + num_events; }
 
   static constexpr size_t kEventsPerBin = 8192 / sizeof(Event) - 1;
   size_t num_events = 0;
