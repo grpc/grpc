@@ -127,6 +127,7 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
+        "postmortem",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -175,6 +176,7 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
+        "postmortem",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -575,7 +577,6 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "postmortem",
-    testonly = True,
     srcs = ["postmortem.cc"],
     hdrs = ["postmortem.h"],
     external_deps = [
