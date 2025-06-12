@@ -13,7 +13,7 @@
 # limitations under the License.
 
 FROM --platform=linux/386 ruby:3.4-alpine
-RUN apk update && apk add bash file
+RUN apk update && apk add bash file build-base
 
 # To test that 32 architecture is loaded
 #    docker run <image>:<tag> file /bin/bash

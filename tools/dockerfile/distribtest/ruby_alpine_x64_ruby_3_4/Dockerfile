@@ -15,5 +15,5 @@
 FROM ruby:3.4-alpine
 
 # Our test infrastructure demands bash
-RUN apk update && apk add bash
+RUN apk update && apk add bash build-base
 
