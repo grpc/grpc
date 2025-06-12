@@ -480,6 +480,12 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
   return result;
 }
 
+grpc_channel_credentials* grpc_google_default_credentials_create(
+    grpc_call_credentials* call_credentials) {
+  return grpc_google_default_credentials_create_with_alts_option(
+      call_credentials, nullptr);
+}
+
 namespace grpc_core {
 namespace internal {
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {

@@ -44,7 +44,7 @@ class DualCredentialsTest : public ::testing::Test {
 
   void SetUp() override {
     auto* creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-        grpc_google_default_credentials_create(
+        grpc_google_default_credentials_create_with_alts_option(
             grpc_md_only_test_credentials_create(
                 GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                 GRPC_TLS_TRANSPORT_SECURITY_TYPE),
