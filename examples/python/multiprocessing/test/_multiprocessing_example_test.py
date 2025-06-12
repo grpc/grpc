@@ -14,13 +14,10 @@
 """Test for multiprocessing example."""
 
 import ast
-import contextlib
 import logging
 import math
 import os
 import re
-import signal
-import socket
 import subprocess
 import tempfile
 import unittest
