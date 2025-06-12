@@ -14,16 +14,16 @@
 """Test for multiprocessing example."""
 
 import ast
+import contextlib
 import logging
 import math
 import os
 import re
+import signal
+import socket
 import subprocess
 import tempfile
 import unittest
-import signal
-import contextlib
-import socket
 
 _BINARY_DIR = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")

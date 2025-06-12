@@ -15,10 +15,10 @@
 
 import contextlib
 import os
+import signal
 import socket
 import subprocess
 import unittest
-import signal
 
 _BINARY_DIR = os.path.realpath(
     os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
