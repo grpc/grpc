@@ -64,7 +64,9 @@ def _get_port():
         sock.close()
 
 
-def _start_client(server_port, desired_string, ideal_distance, interesting_distance=None):
+def _start_client(
+    server_port, desired_string, ideal_distance, interesting_distance=None
+):
     interesting_distance_args = (
         ()
         if interesting_distance is None
