@@ -885,12 +885,12 @@ void AresResolver::Reset(const absl::Status& reason) {
     return;
   }
   grpc_core::MutexLock lock(&mutex_);
-  event_engine_->Run(
-      [callbacks = std::move(callback_map_), reason = reason]() mutable {
-        for (auto& [_, callback] : callbacks) {
-          std::visit([=](auto& cb) { cb(reason); }, callback);
-        }
-      });
+  for (auto& [_, callback] : callback_map_) {
+    event_engine_->Run(
+        [callback = std::move(callback), reason = reason]() mutable {
+          std::visit([&](auto& cb) { cb(reason); }, callback);
+        });
+  }
   callback_map_.clear();
   ShutdownLocked(reason, "resolver reset");
   CheckSocketsLocked();
