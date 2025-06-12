@@ -38,6 +38,7 @@ def _get_port():
     finally:
         sock.close()
 
+
 class CompressionExampleTest(unittest.TestCase):
     def test_compression_example(self):
         with _get_port() as test_port:

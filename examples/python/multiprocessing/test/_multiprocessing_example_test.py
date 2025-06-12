@@ -70,6 +70,7 @@ class MultiprocessingExampleTest(unittest.TestCase):
         for result in results:
             self.assertEqual(is_prime(result[0]), result[1])
 
+
 if __name__ == "__main__":
     logging.basicConfig()
     unittest.main(verbosity=2)
