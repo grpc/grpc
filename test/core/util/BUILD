@@ -99,14 +99,15 @@ grpc_cc_test(
     srcs = ["latent_see_test.cc"],
     external_deps = [
         "absl/log:log",
-        "gtest","gtest_main"
+        "gtest",
+        "gtest_main",
     ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:latent_see",
-        "//src/core:json_reader",
         "//src/core:json",
+        "//src/core:json_reader",
+        "//src/core:latent_see",
     ],
 )
 

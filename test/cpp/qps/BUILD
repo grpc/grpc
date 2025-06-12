@@ -56,6 +56,7 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
+        "//:grpcpp_latent_see_service",
         "//src/core:chaotic_good",
         "//src/core:endpoint_transport",
         "//src/proto/grpc/testing:benchmark_service_cc_grpc",
@@ -66,7 +67,6 @@ grpc_cc_library(
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
-        "//:grpcpp_latent_see_service",
     ],
 )
 
@@ -89,13 +89,13 @@ grpc_cc_library(
         ":parse_json",
         ":qps_worker_impl",
         "//:grpc++",
+        "//:grpcpp_latent_see_client",
         "//src/proto/grpc/testing:control_cc_proto",
         "//src/proto/grpc/testing:messages_cc_proto",
         "//src/proto/grpc/testing:report_qps_scenario_service_cc_grpc",
         "//src/proto/grpc/testing:worker_service_cc_grpc",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
-        "//:grpcpp_latent_see_client",
     ],
 )
 

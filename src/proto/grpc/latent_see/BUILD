@@ -17,7 +17,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 licenses(["notice"])
 
 grpc_package(
-    name = "latent_see",
+    name = "src/proto/grpc/latent_see",
     visibility = "public",
 )
 

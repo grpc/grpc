@@ -222,9 +222,9 @@ grpc_cc_library(
     visibility = ["//bazel:latent_see"],
     deps = [
         "notification",
-        "//:gpr",
-        "//:backoff",
         "sync",
+        "//:backoff",
+        "//:gpr",
     ],
 )
 
