@@ -147,9 +147,10 @@ void HandshakeManager::Shutdown(absl::Status error) {
 }
 
 void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
-  GRPC_CHANNELZ_LOG(args_.trace_node)
-      << "error=" << error << " shutdown=" << is_shutdown_
-      << " index=" << index_ << ", args=" << HandshakerArgsString(&args_);
+  GRPC_TRACE_LOG(handshaker, INFO)
+      << "CallNextHandshakerLocked: error=" << error
+      << " shutdown=" << is_shutdown_ << " index=" << index_
+      << ", args=" << HandshakerArgsString(&args_);
   CHECK(index_ <= handshakers_.size());
   // If we got an error or we've been shut down or we're exiting early or
   // we've finished the last handshaker, invoke the on_handshake_done
