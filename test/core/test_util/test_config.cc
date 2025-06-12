@@ -158,8 +158,8 @@ void grpc_test_init(int* argc, char** argv) {
   // concurrently running test binary
   srand(seed());
   grpc_core::SetWaitForSingleOwnerStalledCallback([]() {
-    AsanAssertNoLeaks();
     grpc_core::PostMortem::Emit();
+    AsanAssertNoLeaks();
   });
 }
 
