@@ -610,6 +610,10 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           }
           misc["keepaliveTime"] =
               Json::FromString(t->keepalive_time.ToJsonString());
+          misc["keepaliveTimeout"] =
+              Json::FromString(t->keepalive_timeout.ToJsonString());
+          misc["pingTimeout"] =
+              Json::FromString(t->ping_timeout.ToJsonString());
           misc["nextAdjustedKeepaliveTimestamp"] =
               Json::FromString((t->next_adjusted_keepalive_timestamp -
                                 grpc_core::Timestamp::Now())
