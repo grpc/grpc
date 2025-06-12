@@ -20,6 +20,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/time.h>
+#include <gtest/gtest.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -111,6 +112,7 @@ static void addbuf(const void* data, size_t len) {
 int main(int argc, char** argv) {
   int i;
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
 #define NUM_FRAMES 10
