@@ -449,6 +449,30 @@ inline void OutputLogFromLogExpr(TraceNode* out,
 }  // namespace channelz
 }  // namespace grpc_core
 
+// Log like LOG() to a channelz object (and potentially as part of a GRPC_TRACE
+// log with channelz::TraceNode).
+//
+// `output` is one of a ChannelTrace, ChannelTrace::Node or a TraceNode.
+//
+// This trace always commits - and the channelz node is inaccessible as a
+// result. Use it for annotation like things, and if commit-ability is
+// important, put it under a parent node and use that for `output`.
+//
+// Notes on this weird macro!
+// - We want this to be a statement level thing, such that end of statement ==>
+//   we can commit the log line.
+// - To do that we need to ensure we're not an expression, so we want an if,
+//   for, while, or do statement enclosing things.
+// - But hey! we want to stream after the GRPC_CHANNELZ_LOG(foo), so we want an
+//   if right - if (we_can_output) output << s1 << s2 << s3;
+// - But hey! now if someone copy/pastes this in front of an else then we
+//   bind with that else, and boom we've got a security hole... so let's not do
+//   that.
+// - So, the for here acts as an if (the output = nullptr part ensures we don't)
+//   actually loop), ensures we have a statement, and ensures we don't
+//   accidentally bind with a trailing else.
+// - And of course we skip wrapping things in {} because we really like that
+//   GRPC_CHANNELZ_LOG(foo) << "hello!"; syntax.
 #define GRPC_CHANNELZ_LOG(output)                                        \
   for (auto* out = ::grpc_core::channelz::detail::LogOutputFrom(output); \
        out != nullptr; out = nullptr)                                    \
