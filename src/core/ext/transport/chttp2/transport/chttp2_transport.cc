@@ -643,6 +643,9 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           misc["lastWindowUpdateAge"] = Json::FromString(
               (grpc_core::Timestamp::Now() - t->last_window_update_time)
                   .ToJsonString());
+          misc["pingRatePolicy"] =
+              Json::FromObject(t->ping_rate_policy.ToJson());
+          misc["pingCallbacks"] = Json::FromObject(t->ping_callbacks.ToJson());
           misc["goaway_error"] = Json::FromString(t->goaway_error.ToString());
           switch (t->sent_goaway_state) {
             case GRPC_CHTTP2_NO_GOAWAY_SEND:
