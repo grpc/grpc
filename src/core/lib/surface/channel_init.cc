@@ -54,12 +54,18 @@ struct CompareChannelFiltersByName {
 };
 
 struct CompareFusedChannelFiltersByName {
-  bool operator()(absl::string_view a, absl::string_view b) const {
+  bool operator()(ChannelInit::FilterRegistration* a,
+                  ChannelInit::FilterRegistration* b) const {
     // Sort by descending order based on number of filters contained in the
     // FusedFilter.
-    int num_filters_a = std::count(a.begin(), a.end(), '+') + 1;
-    int num_filters_b = std::count(b.begin(), b.end(), '+') + 1;
-    return num_filters_a < num_filters_b;
+    int num_filters_a =
+        std::count(a->name().name().begin(), a->name().name().end(), '+') + 1;
+    int num_filters_b =
+        std::count(b->name().name().begin(), b->name().name().end(), '+') + 1;
+    if (num_filters_a == num_filters_b) {
+      return a->name().name() > b->name().name();
+    }
+    return num_filters_a > num_filters_b;
   }
 };
 
@@ -128,6 +134,14 @@ void ChannelInit::Builder::RegisterFusedFilter(
     SourceLocation registration_source) {
   fused_filters_[type].emplace_back(std::make_unique<FilterRegistration>(
       name, filter, filter_adder, registration_source));
+}
+
+void ChannelInit::Builder::RegisterTerminalFusedFilter(
+    grpc_channel_stack_type type, UniqueTypeName name,
+    const grpc_channel_filter* filter, FilterAdder filter_adder,
+    SourceLocation registration_source) {
+  RegisterFusedFilter(type, name, filter, filter_adder, registration_source);
+  fused_filters_[type].back()->Terminal();
 }
 
 class ChannelInit::DependencyTracker {
@@ -383,8 +397,50 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   }
   // Log out the graph we built if that's been requested.
   if (GRPC_TRACE_FLAG_ENABLED(channel_stack)) {
-    PrintChannelStackTrace<false>(type, filter_registrations, dependencies,
-                                  filters, terminal_filters);
+    PrintChannelStackTrace(type, filter_registrations, dependencies, filters,
+                           terminal_filters);
+  }
+  return std::make_tuple(std::move(filters), std::move(terminal_filters));
+}
+
+std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
+ChannelInit::SortFusedFilterRegistrations(
+    const std::vector<std::unique_ptr<FilterRegistration>>&
+        filter_registrations,
+    grpc_channel_stack_type type) {
+  std::vector<FilterRegistration*> terminal_fused_filter_registrations;
+  std::vector<FilterRegistration*> fused_filter_registrations;
+  std::vector<Filter> filters;
+  std::vector<Filter> terminal_filters;
+  for (const auto& registration : filter_registrations) {
+    if (registration->terminal_) {
+      CHECK(registration->after_.empty());
+      CHECK(registration->before_.empty());
+      CHECK(!registration->before_all_);
+      CHECK_EQ(registration->ordering_, Ordering::kDefault);
+      terminal_fused_filter_registrations.push_back(registration.get());
+    } else {
+      fused_filter_registrations.push_back(registration.get());
+    }
+  }
+  std::sort(fused_filter_registrations.begin(),
+            fused_filter_registrations.end(),
+            CompareFusedChannelFiltersByName());
+  std::sort(terminal_fused_filter_registrations.begin(),
+            terminal_fused_filter_registrations.end(),
+            CompareFusedChannelFiltersByName());
+  for (auto registration : terminal_fused_filter_registrations) {
+    terminal_filters.emplace_back(
+        registration->name_, registration->filter_, nullptr,
+        std::move(registration->predicates_), registration->version_,
+        registration->ordering_, registration->registration_source_);
+  }
+
+  for (auto registration : fused_filter_registrations) {
+    filters.emplace_back(
+        registration->name_, registration->filter_, registration->filter_adder_,
+        std::move(registration->predicates_), registration->version_,
+        registration->ordering_, registration->registration_source_);
   }
   return std::make_tuple(std::move(filters), std::move(terminal_filters));
 }
@@ -405,12 +461,12 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   }
 
   auto sorted_filters =
-      SortFilterRegistrationsByDependencies<false>(filter_registrations, type);
+      SortFilterRegistrationsByDependencies(filter_registrations, type);
   std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
-  auto sorted_fused_filters = SortFilterRegistrationsByDependencies<true>(
-      fused_filter_registrations, type);
+  auto sorted_fused_filters =
+      SortFusedFilterRegistrations(fused_filter_registrations, type);
   std::vector<Filter> fused_filters =
       std::move(std::get<0>(sorted_fused_filters));
   std::vector<Filter> terminal_fused_filters =
@@ -436,13 +492,11 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
       std::move(terminal_fused_filters), std::move(post_processor_functions)};
 };
 
-template <bool fused>
 void ChannelInit::PrintChannelStackTrace(
     grpc_channel_stack_type type,
     const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
         registrations,
-    const DependencyTracker<fused>& dependencies,
-    const std::vector<Filter>& filters,
+    const DependencyTracker& dependencies, const std::vector<Filter>& filters,
     const std::vector<Filter>& terminal_filters) {
   // It can happen that multiple threads attempt to construct a core config at
   // once.
@@ -453,13 +507,9 @@ void ChannelInit::PrintChannelStackTrace(
   MutexLock lock(m);
   // List the channel stack type (since we'll be repeatedly printing graphs in
   // this loop).
-  if constexpr (fused) {
-    LOG(INFO) << "ORDERED FUSED FILTER CHANNEL STACK "
-              << grpc_channel_stack_type_string(type) << ":";
-  } else {
-    LOG(INFO) << "ORDERED CHANNEL STACK "
-              << grpc_channel_stack_type_string(type) << ":";
-  }
+
+  LOG(INFO) << "ORDERED CHANNEL STACK " << grpc_channel_stack_type_string(type)
+            << ":";
   // First build up a map of filter -> file:line: strings, because it helps
   // the readability of this log to get later fields aligned vertically.
   absl::flat_hash_map<UniqueTypeName, std::string> loc_strs;

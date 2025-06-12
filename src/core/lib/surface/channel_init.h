@@ -270,6 +270,8 @@ class ChannelInit {
       return *this;
     }
 
+    const UniqueTypeName& name() { return name_; }
+
    private:
     friend class ChannelInit;
     const UniqueTypeName name_;
@@ -333,12 +335,26 @@ class ChannelInit {
                              FilterAdder filter_adder = nullptr,
                              SourceLocation registration_source = {});
 
+    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
+                                     UniqueTypeName name,
+                                     const grpc_channel_filter* filter,
+                                     FilterAdder filter_adder = nullptr,
+                                     SourceLocation registration_source = {});
+
     void RegisterFusedFilter(grpc_channel_stack_type type,
                              const grpc_channel_filter* filter,
                              SourceLocation registration_source = {}) {
       CHECK(filter != nullptr);
       RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
                           registration_source);
+    }
+
+    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
+                                     const grpc_channel_filter* filter,
+                                     SourceLocation registration_source = {}) {
+      CHECK(filter != nullptr);
+      RegisterTerminalFusedFilter(type, NameFromChannelFilter(filter), filter,
+                                  nullptr, registration_source);
     }
 
     template <typename Filter>
@@ -434,6 +450,12 @@ class ChannelInit {
           filter_registrations,
       grpc_channel_stack_type type);
 
+  static std::tuple<std::vector<Filter>, std::vector<Filter>>
+  SortFusedFilterRegistrations(
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          filter_registrations,
+      grpc_channel_stack_type type);
+
   static bool MergeFilters(ChannelStackBuilder* builder,
                            const std::vector<Filter>& filters,
                            const std::vector<Filter>& fused_filters,
@@ -450,8 +472,7 @@ class ChannelInit {
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
           registrations,
-      const DependencyTracker<fused>& dependencies,
-      const std::vector<Filter>& filters,
+      const DependencyTracker& dependencies, const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
 };
 
