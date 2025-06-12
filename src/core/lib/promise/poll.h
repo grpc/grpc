@@ -271,7 +271,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline Poll<T> poll_cast(U poll) {
 }
 
 template <typename T>
-bool IsPending(const T& value) {
+bool IsPending(const T&) {
   return false;
 }
 

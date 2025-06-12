@@ -45,17 +45,17 @@ class Output {
   virtual void Span(absl::string_view name, int64_t tid,
                     int64_t timestamp_begin, int64_t duration) = 0;
   virtual void Finish() = 0;
+
+ protected:
+  ~Output() = default;
 };
 
 class DiscardOutput final : public Output {
  public:
-  void Mark(absl::string_view name, int64_t tid, int64_t timestamp) override {}
-  void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,
-                 int64_t flow_id) override {}
-  void FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
-               int64_t flow_id) override {}
-  void Span(absl::string_view name, int64_t tid, int64_t timestamp_begin,
-            int64_t duration) override {}
+  void Mark(absl::string_view, int64_t, int64_t) override {}
+  void FlowBegin(absl::string_view, int64_t, int64_t, int64_t) override {}
+  void FlowEnd(absl::string_view, int64_t, int64_t, int64_t) override {}
+  void Span(absl::string_view, int64_t, int64_t, int64_t) override {}
   void Finish() override {}
 };
 
