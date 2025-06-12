@@ -42,7 +42,6 @@ def _get_port():
 class CompressionExampleTest(unittest.TestCase):
     def test_compression_example(self):
         with _get_port() as test_port:
-            # pylint: disable=R1732
             server_process = subprocess.Popen(
                 (
                     _SERVER_PATH,

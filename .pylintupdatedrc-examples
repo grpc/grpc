@@ -46,8 +46,7 @@ disable=
 	duplicate-code,
 	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't seem to
 	# understand enum and concurrent.futures; look into this later with the
-	# latest pylint version.
-	import-error,
+	# latest pylint version. import-error,
 	# TODO(https://github.com/grpc/grpc/issues/261): Enable this one.
 	# Should take a little configuration but not much.
 	invalid-name,
@@ -95,3 +94,5 @@ disable=
 	unsubscriptable-object,
 	# NOTE(rbellevi): Pylint doesn't understand .pyi files.
 	no-member,
+
+	consider-using-with,
