@@ -1,4 +1,4 @@
-// Copyright 2023 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,25 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/util/per_cpu.h"
-
-#include <grpc/support/cpu.h>
-#include <grpc/support/port_platform.h>
-
-#include "src/core/util/useful.h"
+#include "src/core/telemetry/context_list_entry.h"
 
 namespace grpc_core {
 
-#ifndef GPR_CPU_CUSTOM
-thread_local PerCpuShardingHelper::State PerCpuShardingHelper::state_;
-#endif  // GPR_CPU_CUSTOM
+namespace {
+CopyContextFn g_get_copied_context_fn = nullptr;
+DeleteContextFn g_delete_copied_context_fn = nullptr;
+}  // namespace
 
-size_t PerCpuOptions::Shards() {
-  return ShardsForCpuCount(gpr_cpu_num_cores());
+void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
+  g_get_copied_context_fn = fn;
 }
 
-size_t PerCpuOptions::ShardsForCpuCount(size_t cpu_count) {
-  return Clamp<size_t>(cpu_count / cpus_per_shard_, 1, max_shards_);
+void GrpcHttp2SetDeleteContextFn(DeleteContextFn fn) {
+  g_delete_copied_context_fn = fn;
+}
+
+CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
+
+DeleteContextFn GrpcHttp2GetDeleteContextFn() {
+  return g_delete_copied_context_fn;
 }
 
 }  // namespace grpc_core

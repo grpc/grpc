@@ -1778,6 +1778,7 @@
     <file baseinstalldir="/" name="src/core/service_config/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/call_tracer.h" role="src" />
+    <file baseinstalldir="/" name="src/core/telemetry/context_list_entry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/context_list_entry.h" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/telemetry/default_tcp_tracer.h" role="src" />
@@ -1995,6 +1996,7 @@
     <file baseinstalldir="/" name="src/core/util/uuid_v4.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/validation_errors.h" role="src" />
+    <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/wait_for_single_owner.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/cpu.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/windows/directory_reader.cc" role="src" />

@@ -70,8 +70,6 @@
   default: false
 - name: max_inflight_pings_strict_limit
   default: true
-- name: max_pings_wo_data_throttle
-  default: true
 - name: monitoring_experiment
   default: true
 - name: pollset_alternative
