@@ -1164,8 +1164,9 @@ Server::MakeCallDestination(const ChannelArgs& args) {
 }
 
 Server::Server(const ChannelArgs& args)
-    : channel_args_(args),
-      channelz_node_(CreateChannelzNode(args)),
+    : channelz::DataSource(CreateChannelzNode(args)),
+      channel_args_(args),
+      channelz_node_(channelz_node()->RefAsSubclass<channelz::ServerNode>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
       compression_options_(CompressionOptionsFromChannelArgs(args)),
       max_time_in_pending_queue_(Duration::Seconds(
@@ -1174,6 +1175,7 @@ Server::Server(const ChannelArgs& args)
               .value_or(30))) {}
 
 Server::~Server() {
+  ResetDataSource();
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -1185,6 +1187,44 @@ Server::~Server() {
   for (size_t i = 0; i < cqs_.size(); i++) {
     GRPC_CQ_INTERNAL_UNREF(cqs_[i], "server");
   }
+}
+
+void Server::AddData(channelz::DataSink sink) {
+  // TODO(ctiller): config_fetcher?
+  // TODO(ctiller): server_call_tracer_factory?
+  Json::Object obj;
+  obj["registered_cqs"] = Json::FromNumber(cqs_.size());
+  obj["pollsets"] = Json::FromNumber(pollsets_.size());
+  obj["started"] = Json::FromBool(started_);
+  // TODO(ctiller): compression_options?
+  absl::MutexLock global_lock(&mu_global_);
+  obj["starting"] = Json::FromBool(starting_);
+  Json::Array registered_methods;
+  for (auto& [host_method, rm] : registered_methods_) {
+    Json::Object rmobj;
+    rmobj["host"] = Json::FromString(host_method.first);
+    rmobj["method"] = Json::FromString(host_method.second);
+    rmobj["payload_handling"] = Json::FromString(
+        rm->payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+            ? "READ_INITIAL_BYTE_BUFFER"
+            : "PAYLOAD_NONE");
+    registered_methods.push_back(Json::FromObject(std::move(rmobj)));
+  }
+  obj["registered_methods"] = Json::FromArray(std::move(registered_methods));
+  // TODO(ctiller): unregistered_request_matcher?
+  obj["shutdown_refs"] =
+      Json::FromNumber(shutdown_refs_.load(std::memory_order_relaxed));
+  obj["shutdown_published"] = Json::FromBool(shutdown_published_);
+  obj["num_shutdown_tags"] = Json::FromNumber(shutdown_tags_.size());
+  obj["max_time_in_pending_queue_ms"] =
+      Json::FromNumber(max_time_in_pending_queue_.millis());
+  obj["num_channels"] = Json::FromNumber(channels_.size());
+  obj["num_connections"] = Json::FromNumber(connections_.size());
+  // TODO(ctiller): connection_manager
+  obj["connections_open"] = Json::FromNumber(connections_open_);
+  obj["num_listener_states"] = Json::FromNumber(listener_states_.size());
+  obj["listeners_destroyed"] = Json::FromNumber(listeners_destroyed_);
+  sink.AddAdditionalInfo("server", std::move(obj));
 }
 
 void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
