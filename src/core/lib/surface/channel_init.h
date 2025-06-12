@@ -453,8 +453,7 @@ class ChannelInit {
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFusedFilterRegistrations(
       const std::vector<std::unique_ptr<FilterRegistration>>&
-          filter_registrations,
-      grpc_channel_stack_type type);
+          filter_registrations);
 
   static bool MergeFilters(ChannelStackBuilder* builder,
                            const std::vector<Filter>& filters,

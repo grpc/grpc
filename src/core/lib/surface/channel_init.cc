@@ -406,8 +406,7 @@ ChannelInit::SortFilterRegistrationsByDependencies(
 std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
 ChannelInit::SortFusedFilterRegistrations(
     const std::vector<std::unique_ptr<FilterRegistration>>&
-        filter_registrations,
-    grpc_channel_stack_type type) {
+        filter_registrations) {
   std::vector<FilterRegistration*> terminal_fused_filter_registrations;
   std::vector<FilterRegistration*> fused_filter_registrations;
   std::vector<Filter> filters;
