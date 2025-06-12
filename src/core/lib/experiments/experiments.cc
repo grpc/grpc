@@ -100,10 +100,6 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -223,8 +219,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -357,10 +351,6 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -480,8 +470,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -614,10 +602,6 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -737,8 +721,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,

@@ -87,8 +87,6 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
-inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -136,8 +134,6 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
-inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -185,8 +181,6 @@ inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
 inline bool IsMonitoringExperimentEnabled() { return true; }
 inline bool IsMultipingEnabled() { return false; }
 inline bool IsPollsetAlternativeEnabled() { return false; }
-#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
-inline bool IsPosixEeSkipGrpcInitEnabled() { return true; }
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() { return false; }
 inline bool IsPromiseBasedHttp2ServerTransportEnabled() { return false; }
 inline bool IsPromiseBasedInprocTransportEnabled() { return false; }
@@ -225,7 +219,6 @@ enum ExperimentIds {
   kExperimentIdMonitoringExperiment,
   kExperimentIdMultiping,
   kExperimentIdPollsetAlternative,
-  kExperimentIdPosixEeSkipGrpcInit,
   kExperimentIdPromiseBasedHttp2ClientTransport,
   kExperimentIdPromiseBasedHttp2ServerTransport,
   kExperimentIdPromiseBasedInprocTransport,
@@ -317,10 +310,6 @@ inline bool IsMultipingEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_POLLSET_ALTERNATIVE
 inline bool IsPollsetAlternativeEnabled() {
   return IsExperimentEnabled<kExperimentIdPollsetAlternative>();
-}
-#define GRPC_EXPERIMENT_IS_INCLUDED_POSIX_EE_SKIP_GRPC_INIT
-inline bool IsPosixEeSkipGrpcInitEnabled() {
-  return IsExperimentEnabled<kExperimentIdPosixEeSkipGrpcInit>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_PROMISE_BASED_HTTP2_CLIENT_TRANSPORT
 inline bool IsPromiseBasedHttp2ClientTransportEnabled() {

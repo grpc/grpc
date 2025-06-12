@@ -36,7 +36,6 @@ EXPERIMENT_ENABLES = {
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
-    "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
@@ -118,11 +117,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -192,11 +187,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -266,11 +257,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
