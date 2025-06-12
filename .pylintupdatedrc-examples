@@ -29,6 +29,7 @@ notes=FIXME,XXX
 [MESSAGES CONTROL]
 
 disable=
+	import-error,
 	# -- START OF EXAMPLE-SPECIFIC SUPPRESSIONS --
 	unused-argument,
 	unused-variable,

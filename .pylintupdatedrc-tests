@@ -115,5 +115,3 @@ disable=
 	wrong-import-order,
 	# TODO(https://github.com/PyCQA/pylint/issues/3882): Upgrade Pylint
 	unsubscriptable-object,
-  # NOTE(sergiitk): yapf compatibility, ref #25071
-  bad-continuation,
