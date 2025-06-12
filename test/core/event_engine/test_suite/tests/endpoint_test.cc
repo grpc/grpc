@@ -129,21 +129,17 @@ TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
     SliceBuffer server_write_slice_buf;
     WriteArgs client_write_args;
     auto client_telemetry_info = client_endpoint->GetTelemetryInfo();
-    std::vector<size_t> client_write_metrics =
-        client_telemetry_info ? client_telemetry_info->AllWriteMetrics()
-                              : std::vector<size_t>{};
     client_write_args.set_metrics_sink(WriteEventSink(
-        client_write_metrics,
+        client_telemetry_info ? client_telemetry_info->AllWriteMetrics()
+                              : nullptr,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
         event_cb));
     WriteArgs server_write_args;
     auto server_telemetry_info = client_endpoint->GetTelemetryInfo();
-    std::vector<size_t> server_write_metrics =
-        server_telemetry_info ? server_telemetry_info->AllWriteMetrics()
-                              : std::vector<size_t>{};
     server_write_args.set_metrics_sink(WriteEventSink(
-        server_write_metrics,
+        server_telemetry_info ? server_telemetry_info->AllWriteMetrics()
+                              : nullptr,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
         event_cb));
