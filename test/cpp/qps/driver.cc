@@ -608,7 +608,8 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
         std::ofstream out(
             absl::StrCat(*options.latent_see_directory, "/server", i, ".json"));
         grpc_core::latent_see::JsonOutput json_out(out);
-        FetchLatentSee(servers[i].latent_see_stub.get(), 1.0, &json_out);
+        FetchLatentSee(servers[i].latent_see_stub.get(), 1.0, &json_out)
+            .IgnoreError();
       }));
     }
     for (size_t i = 0; i < num_clients_to_use; i++) {
@@ -616,7 +617,8 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
         std::ofstream out(
             absl::StrCat(*options.latent_see_directory, "/client", i, ".json"));
         grpc_core::latent_see::JsonOutput json_out(out);
-        FetchLatentSee(clients[i].latent_see_stub.get(), 1.0, &json_out);
+        FetchLatentSee(clients[i].latent_see_stub.get(), 1.0, &json_out)
+            .IgnoreError();
       }));
     }
     for (auto& t : threads) {

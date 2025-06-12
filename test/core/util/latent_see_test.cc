@@ -14,7 +14,9 @@
 
 #include "src/core/util/latent_see.h"
 
+#include <iterator>
 #include <limits>
+#include <ostream>
 #include <sstream>
 #include <thread>
 
@@ -124,8 +126,10 @@ TEST(LatentSeeTest, EmptyCollectionWorks) {
 }
 
 TEST(LatentSeeTest, ScopeWorks) {
-  auto elems =
-      RunAndReportJson([]() { GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("foo"); });
+  auto elems = RunAndReportJson([]() {
+    GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("foo");
+    absl::SleepFor(absl::Milliseconds(5));
+  });
   ASSERT_EQ(elems.size(), 1);
   ASSERT_EQ(elems[0].type(), Json::Type::kObject);
   auto obj = elems[0].object();
@@ -134,6 +138,9 @@ TEST(LatentSeeTest, ScopeWorks) {
   EXPECT_THAT(obj, HasNumberFieldWithValue("tid", 1));
   EXPECT_THAT(obj, HasNumberFieldWithValue("pid", 0));
   EXPECT_THAT(obj, HasNumberField("dur"));
+  double dur;
+  ASSERT_TRUE(absl::SimpleAtod(obj["dur"].string(), &dur));
+  EXPECT_GE(dur, 5000.0);
   EXPECT_THAT(obj, HasNumberField("ts"));
 }
 
