@@ -52,6 +52,7 @@ class LookupCallback {
 
   EventEngine::DNSResolver::LookupHostnameCallback lookup_hostname_callback() {
     return [this](const auto& addresses) {
+      ++times_called_;
       if (addresses.ok()) {
         result_.emplace();
         for (const auto& address : addresses.value()) {
@@ -74,10 +75,13 @@ class LookupCallback {
     return result_;
   }
 
+  int times_got_called() const { return times_called_; }
+
  private:
   std::string label_;
   absl::StatusOr<std::vector<std::string>> result_;
   grpc_core::Notification notification_;
+  int times_called_ = 0;
 };
 
 // In a parent process, request made before fork can be resolved post-fork
@@ -86,10 +90,15 @@ TEST(DnsForkTest, DnsLookupAcrossForkInParent) {
   auto ee = std::static_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
   auto resolver = ee->GetDNSResolver({.dns_server = dns_server->address()});
   ASSERT_TRUE(resolver.ok()) << resolver.status();
-  LookupCallback callback("DnsLookupAcrossForkInParent");
-  resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
-                                  "443");
-  DnsQuestion question = dns_server->WaitForQuestion();
+  std::array callbacks = {
+      LookupCallback("DnsLookupAcrossForkInParent pre-fork 1"),
+      LookupCallback("DnsLookupAcrossForkInParent pre-fork 2"),
+      LookupCallback("DnsLookupAcrossForkInParent pre-fork 3")};
+  for (auto& callback : callbacks) {
+    resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
+                                    "443");
+  }
+  DnsQuestion question = dns_server->WaitForQuestion(kHost);
   // This will be fully qualified domain name, so we only check the prefix
   ASSERT_THAT(question.qname, ::testing::StartsWith(kHost));
   // A or AAAA
@@ -101,12 +110,18 @@ TEST(DnsForkTest, DnsLookupAcrossForkInParent) {
   LOG(INFO) << "         Forking        ";
   LOG(INFO) << "------------------------";
   ee->AfterFork(PosixEventEngine::OnForkRole::kParent);
-  dns_server->SetIPv4Response({1, 1, 1, 1});
-  auto result = callback.result();
-  ASSERT_TRUE(result.ok()) << result.status();
-  EXPECT_THAT(
-      result.value(),
-      ResolvedTo("1.1.1.1:443", "[101:101:101:101:101:101:101:101]:443"));
+  dns_server->SetIPv4Response(kHost, {1, 1, 1, 1});
+  for (auto& callback : callbacks) {
+    auto result = callback.result();
+    ASSERT_TRUE(result.ok()) << result.status();
+    EXPECT_THAT(
+        result.value(),
+        ResolvedTo("1.1.1.1:443", "[101:101:101:101:101:101:101:101]:443"));
+  }
+  // Ensure callbacks were only called once
+  for (auto& callback : callbacks) {
+    EXPECT_EQ(callback.times_got_called(), 1);
+  }
 }
 
 // In a child process, a request made before fork will fail because of the Ares
@@ -116,10 +131,25 @@ TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   auto ee = std::static_pointer_cast<PosixEventEngine>(GetDefaultEventEngine());
   auto resolver = ee->GetDNSResolver({.dns_server = dns_server->address()});
   ASSERT_TRUE(resolver.ok()) << resolver.status();
-  LookupCallback callback("DnsLookupAcrossForkInChild pre-fork");
-  resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
+  // Ensure all 3 callbacks are cancelled
+  std::array callbacks = {
+      LookupCallback("DnsLookupAcrossForkInChild pre-fork 1"),
+      LookupCallback("DnsLookupAcrossForkInChild pre-fork 2"),
+      LookupCallback("DnsLookupAcrossForkInChild pre-fork 3")};
+  for (auto& callback : callbacks) {
+    resolver->get()->LookupHostname(callback.lookup_hostname_callback(), kHost,
+                                    "443");
+  }
+  LookupCallback host2_cb("Host2 callback");
+  resolver->get()->LookupHostname(host2_cb.lookup_hostname_callback(), "host2",
                                   "443");
-  DnsQuestion question = dns_server->WaitForQuestion();
+  dns_server->SetIPv4Response("host2", {9, 9, 9, 9});
+  auto result = host2_cb.result();
+  ASSERT_TRUE(result.ok()) << result.status();
+  EXPECT_THAT(
+      result.value(),
+      ResolvedTo("9.9.9.9:443", "[909:909:909:909:909:909:909:909]:443"));
+  DnsQuestion question = dns_server->WaitForQuestion(kHost);
   LOG(INFO) << "Pre fork question " << question.id;
   ASSERT_THAT(question.qname, ::testing::StartsWith(kHost));
   // Expected questions are A or AAAA
@@ -131,10 +161,12 @@ TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   LOG(INFO) << "         Forking        ";
   LOG(INFO) << "------------------------";
   ee->AfterFork(PosixEventEngine::OnForkRole::kChild);
-  auto result = callback.result();
-  // Request is cancelled on fork
-  ASSERT_TRUE(absl::IsCancelled(result.status())) << result.status();
-  dns_server->SetIPv4Response({2, 2, 2, 2});
+  for (auto& callback : callbacks) {
+    result = callback.result();
+    // Request is cancelled on fork
+    ASSERT_TRUE(absl::IsCancelled(result.status())) << result.status();
+  }
+  dns_server->SetIPv4Response(kHost, {2, 2, 2, 2});
   LookupCallback cb2("DnsLookupAcrossForkInChild post-fork");
   resolver->get()->LookupHostname(cb2.lookup_hostname_callback(), kHost, "443");
   result = cb2.result();
@@ -143,6 +175,11 @@ TEST(DnsForkTest, DnsLookupAcrossForkInChild) {
   EXPECT_THAT(
       result.value(),
       ResolvedTo("2.2.2.2:443", "[202:202:202:202:202:202:202:202]:443"));
+  // Ensure callbacks were only called once
+  EXPECT_EQ(host2_cb.times_got_called(), 1);
+  for (auto& callback : callbacks) {
+    EXPECT_EQ(callback.times_got_called(), 1);
+  }
 }
 
 #else  // GRPC_ENABLE_FORK_SUPPORT

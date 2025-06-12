@@ -14,6 +14,7 @@
 #ifndef GRPC_TEST_CORE_EVENT_ENGINE_POSIX_DNS_SERVER_H
 #define GRPC_TEST_CORE_EVENT_ENGINE_POSIX_DNS_SERVER_H
 
+#include <absl/container/inlined_vector.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/support/port_platform.h>
 
@@ -34,6 +35,8 @@ struct DnsQuestion {
   uint16_t qtype;
   uint16_t qclass;
   sockaddr_in client_addr;
+
+  bool is_host(absl::string_view host) const { return qname.find(host) == 0; }
 };
 
 class DnsServer {
@@ -43,9 +46,9 @@ class DnsServer {
   DnsServer(int port, int sockfd);
   ~DnsServer();
   std::string address() const;
-  DnsQuestion WaitForQuestion() const;
+  DnsQuestion WaitForQuestion(absl::string_view host) const;
   // IPv4 address as 4 bytes. This address will be returned x4 for IPv6.
-  void SetIPv4Response(absl::Span<const uint8_t> ipv4_address);
+  void SetIPv4Response(absl::string_view host, absl::Span<const uint8_t> ipv4_address);
 
  private:
   void ServerLoop(int sockfd);
@@ -58,7 +61,7 @@ class DnsServer {
   grpc_core::Notification running_;
   mutable grpc_core::Mutex mu_;
   mutable grpc_core::CondVar cond_;
-  std::optional<std::array<uint8_t, 4>> ipv4_address_ ABSL_GUARDED_BY(mu_);
+  std::unordered_map<std::string, std::array<uint8_t, 4>> ipv4_addresses_ ABSL_GUARDED_BY(mu_);
   absl::InlinedVector<DnsQuestion, 16> questions_ ABSL_GUARDED_BY(mu_);
   std::thread background_thread_;
 };
