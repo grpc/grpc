@@ -55,6 +55,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_base",
+    testonly = 1,
     srcs = [
         "cmdline.cc",
         "grpc_profiler.cc",
@@ -110,6 +111,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util",
+    testonly = 1,
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES + ["tls_utils.cc"],
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS + ["tls_utils.h"],
     external_deps = [
@@ -161,6 +163,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_test_util_unsecure",
+    testonly = 1,
     srcs = TEST_UTILS_THAT_USE_GRPC_H_SOURCES,
     hdrs = TEST_UTILS_THAT_USE_GRPC_H_HEADERS,
     external_deps = [
@@ -577,6 +580,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "postmortem",
+    testonly = 1,
     srcs = ["postmortem.cc"],
     hdrs = ["postmortem.h"],
     external_deps = [

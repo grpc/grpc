@@ -68,6 +68,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http_proxy",
+    testonly = 1,
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
@@ -103,6 +104,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy",
+    testonly = 1,
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
     external_deps = [
