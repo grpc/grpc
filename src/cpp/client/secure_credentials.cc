@@ -86,7 +86,7 @@ std::shared_ptr<WrappedChannelCredentials> WrapChannelCredentials(
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials() {
   grpc::internal::GrpcLibrary init;  // To call grpc_init().
   return WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr, nullptr));
+      grpc_google_default_credentials_create(nullptr));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
