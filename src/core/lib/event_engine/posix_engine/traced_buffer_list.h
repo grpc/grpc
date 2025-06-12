@@ -110,7 +110,7 @@ struct Timestamps {
 class TracedBufferList {
  public:
   TracedBufferList() = default;
-  ~TracedBufferList() { Shutdown(nullptr, absl::UnavailableError("Shutdown")); }
+  ~TracedBufferList() { Shutdown(std::nullopt, absl::UnavailableError("Shutdown")); }
 
   // Add a new entry in the TracedBuffer list pointed to by head. Also saves
   // sendmsg_time with the current timestamp.
@@ -134,7 +134,8 @@ class TracedBufferList {
   }
   // Cleans the list by calling the callback for each traced buffer in the list
   // with timestamps that it has.
-  void Shutdown(EventEngine::Endpoint::WriteEventSink remaining, absl::Status shutdown_err);
+  void Shutdown(std::optional<EventEngine::Endpoint::WriteEventSink> remaining,
+                absl::Status shutdown_err);
 
  private:
   class TracedBuffer {

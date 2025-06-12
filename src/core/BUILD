@@ -2517,6 +2517,7 @@ grpc_cc_library(
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_posix_interface",
         "sync",
+        "//:event_engine_base_hdrs",
         "//:gpr",
     ],
 )

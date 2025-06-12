@@ -44,19 +44,6 @@ void FillGprFromTimestamp(gpr_timespec* gts, const struct timespec* ts) {
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void DefaultTimestampsCallback(void* /*arg*/, Timestamps* /*ts*/,
-                               absl::Status /*shutdown_err*/) {
-  VLOG(2) << "Timestamps callback has not been registered";
-}
-
-// The saved callback function that will be invoked when we get all the
-// timestamps that we are going to get for a TracedBuffer.
-absl::AnyInvocable<void(void*, Timestamps*, absl::Status)>
-    g_timestamps_callback =
-        []() -> absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> {
-  return DefaultTimestampsCallback;
-}();
-
 // Used to extract individual opt stats from cmsg, so as to avoid troubles with
 // unaligned reads.
 template <typename T>
@@ -293,7 +280,9 @@ void TracedBufferList::ProcessTimestamp(struct sock_extended_err* serr,
   tail_ = (head_ == nullptr) ? head_ : prev;
 }
 
-void TracedBufferList::Shutdown(absl::Status shutdown_err) {
+void TracedBufferList::Shutdown(
+    std::optional<EventEngine::Endpoint::WriteEventSink> remaining,
+    absl::Status shutdown_err) {
   grpc_core::MutexLock lock(&mu_);
   while (head_) {
     TracedBuffer* elem = head_;
@@ -301,28 +290,11 @@ void TracedBufferList::Shutdown(absl::Status shutdown_err) {
     head_ = head_->next_;
     delete elem;
   }
-  if (remaining != nullptr) {
-    g_timestamps_callback(remaining, nullptr, shutdown_err);
+  if (remaining.has_value()) {
+    remaining->TakeEventCallback()()
+        g_timestamps_callback(remaining, nullptr, shutdown_err);
   }
   tail_ = head_;
-}
-
-void TcpSetWriteTimestampsCallback(
-    absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> fn) {
-  g_timestamps_callback = std::move(fn);
-}
-
-}  // namespace grpc_event_engine::experimental
-
-#else  // GRPC_LINUX_ERRQUEUE
-
-#include "src/core/util/crash.h"
-
-namespace grpc_event_engine::experimental {
-
-void TcpSetWriteTimestampsCallback(
-    absl::AnyInvocable<void(void*, Timestamps*, absl::Status)> /*fn*/) {
-  grpc_core::Crash("Timestamps callback is not enabled for this platform");
 }
 
 }  // namespace grpc_event_engine::experimental
