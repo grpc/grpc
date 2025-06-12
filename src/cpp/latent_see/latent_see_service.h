@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_SRC_CPP_SERVER_LATENT_SEE_LATENT_SEE_SERVICE_H
-#define GRPC_SRC_CPP_SERVER_LATENT_SEE_LATENT_SEE_SERVICE_H
+#ifndef GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_SERVICE_H
+#define GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_SERVICE_H
 
 #include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
 
@@ -47,4 +47,4 @@ class LatentSeeService final : public latent_see::v1::LatentSee::Service {
 
 }  // namespace grpc
 
-#endif
+#endif  // GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_SERVICE_H

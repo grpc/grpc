@@ -43,7 +43,7 @@ class RunScenarioOptions {
   int warmup_seconds = 1;
   int benchmark_seconds = 3;
   int spawn_local_worker_count = -2;
-  std::string qps_server_target_override = "";
+  std::string qps_server_target_override;
   std::string credential_type = grpc::testing::kInsecureCredentialsType;
   std::map<std::string, std::string> per_worker_credential_types = {};
   bool run_inproc = false;

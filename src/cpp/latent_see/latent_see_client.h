@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H
+#define GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H
+
 #include "src/core/util/latent_see.h"
 #include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
 
@@ -21,3 +24,5 @@ Status FetchLatentSee(latent_see::v1::LatentSee::Stub* stub, double sample_time,
                       grpc_core::latent_see::Output* output);
 
 }
+
+#endif  // GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H
