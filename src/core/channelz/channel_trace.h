@@ -476,7 +476,7 @@ inline void OutputLogFromLogExpr(TraceNode* out,
 #define GRPC_CHANNELZ_LOG(output)                                        \
   for (auto* out = ::grpc_core::channelz::detail::LogOutputFrom(output); \
        out != nullptr; out = nullptr)                                    \
-  ::grpc_core::channelz::detail::LogExpr<                                \
+  grpc_core::channelz::detail::LogExpr<                                  \
       std::remove_reference_t<decltype(*out)>>(out)
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
