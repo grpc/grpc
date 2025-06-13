@@ -179,7 +179,7 @@ class _GenericMethod(_Method):
 class _RPCState(object):
     context: contextvars.Context
     condition: threading.Condition
-    due = Set[str]
+    due: Set[str]  # pytype: disable=invalid-annotation
     request: Any
     client: str
     initial_metadata_allowed: bool
@@ -224,7 +224,7 @@ def _possibly_finish_call(
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
         state.callbacks = None
-        return state, callbacks
+        return state, callbacks or ()
     else:
         return None, ()
 
@@ -469,14 +469,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -594,7 +594,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
@@ -649,7 +649,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
@@ -844,7 +844,7 @@ def _stream_response_in_pool(
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer
                 )
-                if proceed:
+                if proceed and response_iterator is not None:
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator
                     )
@@ -869,7 +869,8 @@ def _send_message_callback_to_blocking_iterator_adapter(
             rpc_event, state, response_iterator
         )
         if proceed:
-            send_response_callback(response)
+            if response is not None:
+                send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
         else:
@@ -898,7 +899,8 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_unary, default_thread_pool
+        method_handler.unary_unary,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -922,7 +924,8 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_stream, default_thread_pool
+        method_handler.unary_stream,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -946,7 +949,8 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_unary, default_thread_pool
+        method_handler.stream_unary,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -970,7 +974,8 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_stream, default_thread_pool
+        method_handler.stream_stream,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -1303,7 +1308,7 @@ def _process_event_and_continue(
                 if (
                     registered_method_name
                     in state.registered_method_handlers.keys()
-                ):
+                ) and registered_method_name is not None:
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)

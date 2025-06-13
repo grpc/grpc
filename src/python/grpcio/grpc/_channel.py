@@ -38,8 +38,8 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # type: ignore # pytype: disable=pyi-error
 from grpc import _compression  # type: ignore # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # type: ignore # pytype: disable=pyi-error
-from grpc import _observability  # type: ignore # pytype: disable=pyi-error
-from grpc._cython import cygrpc  # type: ignore
+from grpc import _observability  # pytype: disable=pyi-error
+from grpc._cython import cygrpc
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import IntegratedCallFactory
@@ -104,6 +104,9 @@ _NON_OK_RENDEZVOUS_REPR_FORMAT = (
     '\tdebug_error_string = "{}"\n'
     ">"
 )
+
+CallbackType = Callable[[grpc.ChannelConnectivity], None]
+MixedTupleElementType = Union[CallbackType, grpc.ChannelConnectivity, None]
 
 
 def _deadline(timeout: Optional[float]) -> Optional[float]:
@@ -260,7 +263,7 @@ def _consume_request_iterator(
     request_iterator: Iterator,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
@@ -399,11 +402,11 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def trailing_metadata(self) -> Optional[MetadataType]:
         return self._state.trailing_metadata
 
-    def code(self) -> Optional[grpc.StatusCode]:
-        return self._state.code
+    def code(self) -> grpc.StatusCode:
+        return self._state.code or grpc.StatusCode.UNKNOWN
 
-    def details(self) -> Optional[str]:
-        return _common.decode(self._state.details)
+    def details(self) -> str:
+        return _common.decode(self._state.details) or ""
 
     def debug_error_string(self) -> Optional[str]:
         return _common.decode(self._state.debug_error_string)
@@ -417,49 +420,41 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def __str__(self) -> str:
         return self._repr()
 
-    def cancel(self) -> bool:
-        """See grpc.Future.cancel."""
+    def is_active(self) -> bool:
         return False
+
+    def time_remaining(self) -> Optional[float]:
+        return None
+
+    def cancel(self) -> bool:
+        return False
+
+    def add_callback(self, callback: NullaryCallbackType) -> bool:
+        callback()
+        return True
 
     def cancelled(self) -> bool:
-        """See grpc.Future.cancelled."""
-        return False
+        return self._state.cancelled
 
     def running(self) -> bool:
-        """See grpc.Future.running."""
         return False
 
     def done(self) -> bool:
-        """See grpc.Future.done."""
         return True
 
-    def result(
-        self, timeout: Optional[float] = None
-    ) -> Any:  # pylint: disable=unused-argument
-        """See grpc.Future.result."""
+    def result(self, timeout: Optional[float] = None) -> Any:
         raise self
 
-    def exception(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
-    ) -> Optional[Exception]:
-        """See grpc.Future.exception."""
+    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         return self
 
-    def traceback(
-        self, timeout: Optional[float] = None  # pylint: disable=unused-argument
-    ) -> Optional[types.TracebackType]:
-        """See grpc.Future.traceback."""
+    def traceback(self, timeout: Optional[float] = None) -> Optional[types.TracebackType]:
         try:
             raise self
         except grpc.RpcError:
             return sys.exc_info()[2]
 
-    def add_done_callback(
-        self,
-        fn: Callable[[grpc.Future], None],
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument
-    ) -> None:
-        """See grpc.Future.add_done_callback."""
+    def add_done_callback(self, fn: Callable[[grpc.Future], None]) -> None:
         fn(self)
 
 
@@ -972,7 +967,7 @@ class _MultiThreadedRendezvous(
 def _start_unary_request(
     request: Any,
     timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -1044,7 +1039,9 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
     elif user_deadline is not None and parent_deadline is None:
         return user_deadline
     else:
-        return min(parent_deadline, user_deadline)
+        # At this point both are non-None
+        assert parent_deadline is not None and user_deadline is not None
+        return min(parent_deadline, user_deadline) #type: ignore[arg-type]
 
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
@@ -1257,8 +1254,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         channel: cygrpc.Channel,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1360,8 +1357,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         managed_call: IntegratedCallFactory,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ):
         self._channel = channel
@@ -1834,7 +1831,7 @@ class _ChannelConnectivityState(object):
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        List[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -1902,7 +1899,10 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
+    callbacks: Union[
+        List[CallbackType],
+        Tuple[MixedTupleElementType, ...]
+    ],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
@@ -1983,7 +1983,7 @@ def _subscribe(
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
-            _spawn_delivery(state, (callback,))
+            _spawn_delivery(state, [callback])
             state.try_to_connect |= bool(try_to_connect)
             state.callbacks_and_connectivities.append(
                 [callback, state.connectivity]
@@ -2115,7 +2115,7 @@ class Channel(grpc.Channel):
         callback: Callable[[grpc.ChannelConnectivity], None],
         try_to_connect: Optional[bool] = None,
     ) -> None:
-        _subscribe(self._connectivity_state, callback, try_to_connect)
+        _subscribe(self._connectivity_state, callback, bool(try_to_connect))
 
     def unsubscribe(
         self, callback: Callable[[grpc.ChannelConnectivity], None]
