@@ -14,6 +14,8 @@
 
 #include "test/core/event_engine/posix/dns_server.h"
 
+#include <string>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_POSIX_SOCKET
@@ -215,12 +217,15 @@ std::string DnsServer::address() const {
   return absl::StrCat("127.0.0.1:", port_);
 }
 
-DnsQuestion DnsServer::WaitForQuestion() const {
+DnsQuestion DnsServer::WaitForQuestion(absl::string_view host) const {
   grpc_core::MutexLock lock(&mu_);
-  while (questions_.empty()) {
+  while (std::find_if(questions_.begin(), questions_.end(), [=](const auto& q) {
+           return q.is_host(host);
+         }) == questions_.end()) {
     cond_.WaitWithTimeout(&mu_, absl::Milliseconds(50));
   }
-  return questions_.front();
+  return *std::find_if(questions_.begin(), questions_.end(),
+                       [=](const auto& q) { return q.is_host(host); });
 }
 
 absl::Status DnsServer::Respond(const DnsQuestion& query,
@@ -238,16 +243,19 @@ absl::Status DnsServer::Respond(const DnsQuestion& query,
   return absl::OkStatus();
 }
 
-void DnsServer::SetIPv4Response(absl::Span<const uint8_t> ipv4_address) {
+void DnsServer::SetIPv4Response(absl::string_view host,
+                                absl::Span<const uint8_t> ipv4_address) {
   CHECK_EQ(ipv4_address.size(), 4u);
   grpc_core::MutexLock lock(&mu_);
   for (const auto& question : questions_) {
-    auto status = Respond(question, ipv4_address);
-    LOG_IF(FATAL, !status.ok()) << status;
+    if (question.is_host(host)) {
+      auto status = Respond(question, ipv4_address);
+      LOG_IF(FATAL, !status.ok()) << status;
+    }
   }
   questions_.clear();
-  ipv4_address_.emplace();
-  std::copy(ipv4_address.begin(), ipv4_address.end(), ipv4_address_->begin());
+  std::copy(ipv4_address.begin(), ipv4_address.end(),
+            ipv4_addresses_[host].begin());
 }
 
 void DnsServer::ServerLoop(int sockfd) {
@@ -280,10 +288,17 @@ void DnsServer::ServerLoop(int sockfd) {
     query->client_addr = client_addr;
     {
       grpc_core::MutexLock lock(&mu_);
-      if (ipv4_address_.has_value()) {
-        auto response = Respond(*query, *ipv4_address_);
-        LOG_IF(FATAL, !response.ok()) << response;
-      } else {
+      bool responded = false;
+      for (const auto& [host, address] : ipv4_addresses_) {
+        LOG(INFO) << query->qname << " " << host << " " << query->is_host(host);
+        if (query->is_host(host)) {
+          auto response = Respond(*query, address);
+          LOG_IF(FATAL, !response.ok()) << response;
+          responded = true;
+          break;
+        }
+      }
+      if (!responded) {
         questions_.emplace_back(std::move(query).value());
         cond_.SignalAll();
       }
