@@ -209,6 +209,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -2298,6 +2299,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -15168,6 +15170,22 @@ targets:
   - absl/meta:type_traits
   - gpr
   uses_polling: false
+- name: property_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/property_list.h
+  - src/core/util/json/json.h
+  - src/core/util/time.h
+  src:
+  - src/core/util/time.cc
+  - test/core/channelz/property_list_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - gpr
 - name: proto_buffer_reader_test
   gtest: true
   build: test

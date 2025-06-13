@@ -86,4 +86,4 @@ class PropertyList {
 
 }  // namespace grpc_core::channelz
 
-#endif
+#endif  // GRPC_SRC_CORE_CHANNELZ_PROPERTY_LIST_H

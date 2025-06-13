@@ -9976,10 +9976,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "channelz_property_list",
     hdrs = ["channelz/property_list.h"],
-    deps = ["json", "time"],
     external_deps = [
         "absl/strings",
-    ]
+    ],
+    deps = [
+        "json",
+        "time",
+    ],
 )
 
 grpc_cc_library(
