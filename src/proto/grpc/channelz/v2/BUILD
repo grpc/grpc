@@ -17,23 +17,6 @@ load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 licenses(["notice"])
 
 grpc_package(
-    name = "src/proto/grpc/latent_see",
+    name = "src/proto/grpc/channelz/v2",
     visibility = "public",
-)
-
-# TODO(roth): Migrate this to use separate
-# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
-# rules when internal build system limitations are resolved.
-grpc_proto_library(
-    name = "latent_see_proto",
-    srcs = ["latent_see.proto"],
-    has_services = True,
-    well_known_protos = True,
-)
-
-filegroup(
-    name = "latent_see_proto_file",
-    srcs = [
-        "latent_see.proto",
-    ],
 )
