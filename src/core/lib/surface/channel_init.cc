@@ -465,7 +465,7 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
   auto sorted_fused_filters =
-      SortFusedFilterRegistrations(fused_filter_registrations, type);
+      SortFusedFilterRegistrations(fused_filter_registrations);
   std::vector<Filter> fused_filters =
       std::move(std::get<0>(sorted_fused_filters));
   std::vector<Filter> terminal_fused_filters =
