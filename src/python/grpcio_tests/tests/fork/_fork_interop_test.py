@@ -65,7 +65,7 @@ _GDB_TIMEOUT_S = 60
 
 
 @unittest.skipUnless(
-    sys.platform in ("linux", "darwin"),
+    sys.platform.startswith("linux") or sys.platform.startswith("darwin"),
     f"not supported on {sys.platform}",
 )
 @unittest.skipUnless(
