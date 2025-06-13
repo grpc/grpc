@@ -898,7 +898,8 @@ def _handle_unary_unary(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_unary, default_thread_pool
+        method_handler.unary_unary,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -922,7 +923,8 @@ def _handle_unary_stream(
         rpc_event, state, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_stream, default_thread_pool
+        method_handler.unary_stream,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -946,7 +948,8 @@ def _handle_stream_unary(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_unary, default_thread_pool
+        method_handler.stream_unary,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
@@ -970,7 +973,8 @@ def _handle_stream_stream(
         state, rpc_event.call, method_handler.request_deserializer
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_stream, default_thread_pool
+        method_handler.stream_stream,  # type: ignore
+        default_thread_pool
     )
     return thread_pool.submit(
         state.context.run,
