@@ -332,7 +332,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
         call = self._interceptor.intercept_unary_unary(
-            continuation, client_call_details, request
+            continuation,  # type: ignore[arg-type]
+            client_call_details,
+            request,
         )
         return call.result(), call
 
@@ -392,7 +394,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_unary(
-                continuation, client_call_details, request
+                continuation,  # type: ignore[arg-type]
+                client_call_details,
+                request,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -451,7 +455,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_stream(
-                continuation, client_call_details, request
+                continuation,  # type: ignore[arg-type]
+                client_call_details,
+                request,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -520,7 +526,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             ) = _unwrap_client_call_details(new_details, client_call_details)
             try:
                 response, call = self._thunk(new_method).with_call(
-                    request_iterator,
+                    request_iterator,  # type: ignore[arg-type]
                     timeout=new_timeout,
                     metadata=new_metadata,
                     credentials=new_credentials,
@@ -533,7 +539,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
-        call = self._interceptor.intercept_stream_unary(
+        call = self._interceptor.intercept_stream_unary(  # type: ignore[call-arg]
             continuation, client_call_details, request_iterator
         )
         return call.result(), call
@@ -584,7 +590,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 new_compression,
             ) = _unwrap_client_call_details(new_details, client_call_details)
             return self._thunk(new_method).future(
-                request_iterator,
+                request_iterator,  # type: ignore[arg-type]
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
@@ -593,7 +599,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             )
 
         try:
-            return self._interceptor.intercept_stream_unary(
+            return self._interceptor.intercept_stream_unary(  # type: ignore[call-arg]
                 continuation, client_call_details, request_iterator
             )
         except Exception as exception:  # pylint:disable=broad-except
