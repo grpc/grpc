@@ -1308,7 +1308,7 @@ def _process_event_and_continue(
                 if (
                     registered_method_name
                     in state.registered_method_handlers.keys()
-                ):
+                ) and registered_method_name is not None:
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
