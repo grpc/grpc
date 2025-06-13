@@ -51,9 +51,10 @@ IntegratedCallFactory = Callable[
         Optional[float],
         Optional[MetadataType],
         Optional[cygrpc.CallCredentials],
-        Sequence[Sequence[cygrpc.Operation]],
+        Sequence[Union[Sequence[cygrpc.Operation], cygrpc.Operation]],
         UserTag,
         Any,
+        Optional[int],
     ],
     cygrpc.IntegratedCall,
 ]
