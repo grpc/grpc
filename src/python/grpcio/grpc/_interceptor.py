@@ -72,12 +72,7 @@ class _ClientCallDetails(
     ),
     grpc.ClientCallDetails,
 ):
-    method: str
-    timeout: Optional[float]
-    metadata: Optional[MetadataType]
-    credentials: Optional[grpc.CallCredentials]
-    wait_for_ready: Optional[bool]
-    compression: Optional[grpc.Compression]
+    pass
 
 
 def _unwrap_client_call_details(

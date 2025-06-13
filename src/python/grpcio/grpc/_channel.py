@@ -472,8 +472,13 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return None
 
     def add_callback(self, callback: NullaryCallbackType) -> bool:
-        callback()
-        return True
+        return False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        raise self
 
 
 class _Rendezvous(grpc.RpcError, grpc.RpcContext):
@@ -2281,3 +2286,4 @@ class Channel(grpc.Channel):
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass
+
