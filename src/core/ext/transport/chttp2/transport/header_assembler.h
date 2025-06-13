@@ -222,8 +222,6 @@ class HeaderAssembler {
 
   bool header_in_progress_;
   bool is_ready_;
-  uint8_t num_headers_received_;
-  const uint8_t max_headers_;
   const uint32_t stream_id_;
   SliceBuffer buffer_;
 };
