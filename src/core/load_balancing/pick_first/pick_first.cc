@@ -580,7 +580,7 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
       latest_update_args_.config != nullptr) {
     args.addresses = std::move(latest_update_args_.addresses);
   }
-  if (!IsPickFirstIgnoreEmptyUpdatesEnabled()) {
+  if (status.ok() || !IsPickFirstIgnoreEmptyUpdatesEnabled()) {
     // Update latest_update_args_.
     latest_update_args_ = std::move(args);
   }
