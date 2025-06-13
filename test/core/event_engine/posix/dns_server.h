@@ -37,7 +37,9 @@ struct DnsQuestion {
   uint16_t qclass;
   sockaddr_in client_addr;
 
-  bool is_host(absl::string_view host) const { return absl::StartsWith(qname, host); }
+  bool is_host(absl::string_view host) const {
+    return absl::StartsWith(qname, host);
+  }
 };
 
 class DnsServer {
@@ -49,11 +51,13 @@ class DnsServer {
   std::string address() const;
   DnsQuestion WaitForQuestion(absl::string_view host) const;
   // IPv4 address as 4 bytes. This address will be returned x4 for IPv6.
-  void SetIPv4Response(absl::string_view host, absl::Span<const uint8_t> ipv4_address);
+  void SetIPv4Response(absl::string_view host,
+                       absl::Span<const uint8_t> ipv4_address);
 
  private:
   void ServerLoop(int sockfd);
-  absl::Status Respond(const DnsQuestion& query, absl::Span<const uint8_t> ipv4_address);
+  absl::Status Respond(const DnsQuestion& query,
+                       absl::Span<const uint8_t> ipv4_address);
 
   int port_;
   int sockfd_;
@@ -61,7 +65,8 @@ class DnsServer {
   grpc_core::Notification running_;
   mutable grpc_core::Mutex mu_;
   mutable grpc_core::CondVar cond_;
-  absl::flat_hash_map<std::string, std::array<uint8_t, 4>> ipv4_addresses_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, std::array<uint8_t, 4>> ipv4_addresses_
+      ABSL_GUARDED_BY(mu_);
   absl::InlinedVector<DnsQuestion, 16> questions_ ABSL_GUARDED_BY(mu_);
   std::thread background_thread_;
 };
