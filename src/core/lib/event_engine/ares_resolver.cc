@@ -280,7 +280,7 @@ AresResolver::AresResolver(
 }
 
 AresResolver::~AresResolver() {
-  CHECK(fd_node_list_.empty());
+  fd_node_list_.clear();
   CHECK(callback_map_.empty());
   ares_destroy(channel_);
 }
@@ -455,7 +455,6 @@ void AresResolver::LookupTXT(
 }
 
 void AresResolver::CheckSocketsLocked() {
-  FdNodeList new_list;
   if (!shutting_down_) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
     int socks_bitmask = ares_getsock(channel_, socks, ARES_GETSOCK_MAXNUM);
@@ -467,16 +466,17 @@ void AresResolver::CheckSocketsLocked() {
                                    return node->as == sock &&
                                           node->polled_fd->IsCurrent();
                                  });
+        FdNode* fd_node;
         if (iter == fd_node_list_.end()) {
           GRPC_TRACE_LOG(cares_resolver, INFO)
               << "(EventEngine c-ares resolver) resolver:" << this
               << " new fd: " << socks[i];
-          new_list.push_back(std::make_unique<FdNode>(
+          fd_node_list_.push_back(std::make_unique<FdNode>(
               socks[i], polled_fd_factory_->NewGrpcPolledFdLocked(socks[i])));
+          fd_node = fd_node_list_.back().get();
         } else {
-          new_list.splice(new_list.end(), fd_node_list_, iter);
+          fd_node = (*iter).get();
         }
-        FdNode* fd_node = new_list.back().get();
         if (ARES_GETSOCK_READABLE(socks_bitmask, i) &&
             !fd_node->readable_registered) {
           fd_node->readable_registered = true;
@@ -526,32 +526,6 @@ void AresResolver::CheckSocketsLocked() {
       }
     }
   }
-  // Any remaining fds in fd_node_list_ were not returned by ares_getsock()
-  // and are therefore no longer in use, so they can be shut down and removed
-  // from the list.
-  // TODO(yijiem): Since we are keeping the underlying socket opened for both
-  // Posix and Windows, it might be reasonable to also keep the FdNodes alive
-  // till the end. But we need to change the state management of FdNodes in this
-  // file. This may simplify the code a bit.
-  while (!fd_node_list_.empty()) {
-    FdNode* fd_node = fd_node_list_.front().get();
-    if (!fd_node->already_shutdown) {
-      GRPC_TRACE_LOG(cares_resolver, INFO)
-          << "(EventEngine c-ares resolver) resolver: " << this
-          << " shutdown fd: " << fd_node->polled_fd->GetName();
-      fd_node->already_shutdown =
-          fd_node->polled_fd->ShutdownLocked(absl::OkStatus());
-    }
-    if (!fd_node->readable_registered && !fd_node->writable_registered) {
-      GRPC_TRACE_LOG(cares_resolver, INFO)
-          << "(EventEngine c-ares resolver) resolver: " << this
-          << " delete fd: " << fd_node->polled_fd->GetName();
-      fd_node_list_.pop_front();
-    } else {
-      new_list.splice(new_list.end(), fd_node_list_, fd_node_list_.begin());
-    }
-  }
-  fd_node_list_ = std::move(new_list);
 }
 
 void AresResolver::MaybeStartTimerLocked() {
@@ -902,7 +876,7 @@ void AresResolver::ShutdownLocked(const absl::Status& shutdown_status,
       GRPC_TRACE_LOG(cares_resolver, INFO) << absl::Substitute(
           "(EventEngine c-ares resolver) resolver: $0 shutdown fd: $1 ($2)",
           this, fd_node->polled_fd->GetName(), reason);
-      CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
+      fd_node->polled_fd->ShutdownLocked(shutdown_status);
       fd_node->already_shutdown = true;
     }
   }

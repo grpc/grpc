@@ -177,11 +177,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
 
   bool IsFdStillReadableLocked() override { return read_buf_has_data_; }
 
-  bool ShutdownLocked(absl::Status error) override {
+  void ShutdownLocked(absl::Status error) override {
     CHECK(!shutdown_called_);
-    if (!absl::IsCancelled(error)) {
-      return false;
-    }
     GRPC_TRACE_LOG(cares_resolver, INFO) << "(EventEngine c-ares resolver) fd:|"
                                          << GetName() << "| ShutdownLocked";
     shutdown_called_ = true;
@@ -190,7 +187,6 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     // socket after this point except calling close which should then destroy
     // the GrpcPolledFdWindows object.
     winsocket_->Shutdown(DEBUG_LOCATION, "GrpcPolledFdWindows::ShutdownLocked");
-    return true;
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override {
@@ -801,8 +797,8 @@ class GrpcPolledFdWrapper : public GrpcPolledFd {
     return polled_fd_->IsFdStillReadableLocked();
   }
 
-  bool ShutdownLocked(absl::Status error) override {
-    return polled_fd_->ShutdownLocked(error);
+  void ShutdownLocked(absl::Status error) override {
+    polled_fd_->ShutdownLocked(error);
   }
 
   ares_socket_t GetWrappedAresSocketLocked() override {
