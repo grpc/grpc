@@ -12,6 +12,7 @@ exports_files([
     "six.BUILD",
     "enum34.BUILD",
     "futures.BUILD",
+    "opencensus-cpp.patch",
     "protobuf.patch",
     "protoc-gen-validate.patch",
 ])
