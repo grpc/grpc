@@ -50,6 +50,9 @@ from grpc._typing import SerializingFunction
 from grpc._typing import UserTag
 import grpc.experimental  # pytype: disable=pyi-error
 
+CallbackType = Callable[[grpc.ChannelConnectivity], None]
+MixedTupleElementType = Union[CallbackType, grpc.ChannelConnectivity, None]
+
 _LOGGER = logging.getLogger(__name__)
 
 _USER_AGENT = "grpc-python/{}".format(_grpcio_metadata.__version__)
@@ -1915,7 +1918,7 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
+    callbacks: Union[List[CallbackType], Tuple[MixedTupleElementType, ...]],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
