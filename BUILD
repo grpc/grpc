@@ -4529,6 +4529,7 @@ grpc_cc_library(
         "hpack_parse_result",
         "stats",
         "//src/core:hpack_constants",
+        "//src/core:http2_stats_collector",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",

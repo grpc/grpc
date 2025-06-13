@@ -834,6 +834,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
   http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =

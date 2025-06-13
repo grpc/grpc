@@ -12025,6 +12025,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -12362,6 +12363,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
