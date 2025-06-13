@@ -18,11 +18,7 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pylint: disable=unused-import
-from ._typing import DoneCallbackType
-from ._typing import MetadataType
-from ._typing import RequestType
-from ._typing import ResponseType
+from ._typing import DoneCallbackType, MetadataType, RequestType, ResponseType
 
 
 class Server(abc.ABC):
@@ -30,7 +26,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -60,7 +56,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials
+        self, address: str, server_credentials: grpc.ServerCredentials,
     ) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -113,7 +109,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     async def wait_for_termination(
-        self, timeout: Optional[float] = None
+        self, timeout: Optional[float] = None,
     ) -> bool:
         """Continues current coroutine once the server stops.
 
@@ -177,7 +173,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def send_initial_metadata(
-        self, initial_metadata: MetadataType
+        self, initial_metadata: MetadataType,
     ) -> None:
         """Sends the initial metadata value to the client.
 
@@ -193,7 +189,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: MetadataType = tuple(),
+        trailing_metadata: MetadataType = (),
     ) -> NoReturn:
         """Raises an exception to terminate the RPC with a non-OK status.
 
@@ -330,7 +326,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The trailing :term:`metadata` for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
@@ -340,7 +336,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The StatusCode value for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
@@ -350,7 +346,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The details string of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
         """Registers a callback to be called on RPC termination.

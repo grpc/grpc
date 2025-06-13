@@ -14,11 +14,13 @@
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import TYPE_CHECKING
 
-import grpc
 from grpc._cython import cygrpc
-from grpc._typing import MetadataType
+
+if TYPE_CHECKING:
+    import grpc
+    from grpc._typing import MetadataType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
 Deflate = cygrpc.CompressionAlgorithm.deflate
@@ -44,7 +46,7 @@ def compression_algorithm_to_metadata(compression: grpc.Compression):
     )
 
 
-def create_channel_option(compression: Optional[grpc.Compression]):
+def create_channel_option(compression: grpc.Compression | None):
     return (
         ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, int(compression)),)
         if compression
@@ -53,7 +55,7 @@ def create_channel_option(compression: Optional[grpc.Compression]):
 
 
 def augment_metadata(
-    metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
+    metadata: MetadataType | None, compression: grpc.Compression | None,
 ):
     if not metadata and not compression:
         return None
@@ -65,7 +67,7 @@ def augment_metadata(
 
 
 __all__ = (
-    "NoCompression",
     "Deflate",
     "Gzip",
+    "NoCompression",
 )

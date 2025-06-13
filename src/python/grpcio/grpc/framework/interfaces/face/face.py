@@ -19,10 +19,6 @@ import enum
 
 # cardinality, style, abandonment, future, and stream are
 # referenced from specification in this module.
-from grpc.framework.common import cardinality  # pylint: disable=unused-import
-from grpc.framework.common import style  # pylint: disable=unused-import
-from grpc.framework.foundation import future  # pylint: disable=unused-import
-from grpc.framework.foundation import stream  # pylint: disable=unused-import
 
 # pylint: disable=too-many-arguments
 
@@ -42,15 +38,12 @@ class NoSuchMethodError(Exception):
           group: The group identifier of the unrecognized RPC name.
           method: The method identifier of the unrecognized RPC name.
         """
-        super(NoSuchMethodError, self).__init__()
+        super().__init__()
         self.group = group
         self.method = method
 
     def __repr__(self):
-        return "face.NoSuchMethodError(%s, %s)" % (
-            self.group,
-            self.method,
-        )
+        return f"face.NoSuchMethodError({self.group}, {self.method})"
 
 
 class Abortion(
@@ -63,7 +56,7 @@ class Abortion(
             "code",
             "details",
         ),
-    )
+    ),
 ):
     """A value describing RPC abortion.
 
@@ -106,18 +99,14 @@ class AbortionError(Exception, metaclass=abc.ABCMeta):
     """
 
     def __init__(self, initial_metadata, terminal_metadata, code, details):
-        super(AbortionError, self).__init__()
+        super().__init__()
         self.initial_metadata = initial_metadata
         self.terminal_metadata = terminal_metadata
         self.code = code
         self.details = details
 
     def __str__(self):
-        return '%s(code=%s, details="%s")' % (
-            self.__class__.__name__,
-            self.code,
-            self.details,
-        )
+        return f'{self.__class__.__name__}(code={self.code}, details="{self.details}")'
 
 
 class CancellationError(AbortionError):
@@ -154,7 +143,7 @@ class RpcContext(abc.ABC):
     @abc.abstractmethod
     def is_active(self):
         """Describes whether the RPC is active or has terminated."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def time_remaining(self):
@@ -165,7 +154,7 @@ class RpcContext(abc.ABC):
           remaining for the RPC to complete before it is considered to have timed
           out.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_abortion_callback(self, abortion_callback):
@@ -175,7 +164,7 @@ class RpcContext(abc.ABC):
           abortion_callback: A callable to be called and passed an Abortion value
             in the event of RPC abortion.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def cancel(self):
@@ -183,7 +172,7 @@ class RpcContext(abc.ABC):
 
         Idempotent and has no effect if the RPC has already terminated.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def protocol_context(self):
@@ -193,7 +182,7 @@ class RpcContext(abc.ABC):
           A value specified by the provider of a Face interface implementation
             affording custom state and behavior.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Call(RpcContext, metaclass=abc.ABCMeta):
@@ -210,7 +199,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
           The initial metadata object emitted by the service-side of the RPC, or
             None if there was no such value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminal_metadata(self):
@@ -223,7 +212,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
           The terminal metadata object emitted by the service-side of the RPC, or
             None if there was no such value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def code(self):
@@ -236,7 +225,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
           The code object emitted by the service-side of the RPC, or None if there
             was no such value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def details(self):
@@ -249,7 +238,7 @@ class Call(RpcContext, metaclass=abc.ABCMeta):
           The details value emitted by the service-side of the RPC, or None if there
             was no such value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
@@ -266,7 +255,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           The metadata object emitted by the invocation-side of the RPC, or None if
             there was no such value.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def initial_metadata(self, initial_metadata):
@@ -279,7 +268,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           initial_metadata: The service-side initial metadata value of the RPC to
             be transmitted to the invocation side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def terminal_metadata(self, terminal_metadata):
@@ -292,7 +281,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           terminal_metadata: The service-side terminal metadata value of the RPC to
             be transmitted to the invocation side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def code(self, code):
@@ -305,7 +294,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           code: The code of the RPC to be transmitted to the invocation side of the
             RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def details(self, details):
@@ -318,7 +307,7 @@ class ServicerContext(RpcContext, metaclass=abc.ABCMeta):
           details: The service-side details value of the RPC to be transmitted to
             the invocation side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class ResponseReceiver(abc.ABC):
@@ -332,7 +321,7 @@ class ResponseReceiver(abc.ABC):
           initial_metadata: The initial metadata object emitted from the
             service-side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def response(self, response):
@@ -341,7 +330,7 @@ class ResponseReceiver(abc.ABC):
         Args:
           response: A response object emitted from the service-side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def complete(self, terminal_metadata, code, details):
@@ -353,7 +342,7 @@ class ResponseReceiver(abc.ABC):
           code: The code object emitted from the service-side of the RPC.
           details: The details object emitted from the service-side of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryUnaryMultiCallable(abc.ABC):
@@ -387,7 +376,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         Raises:
           AbortionError: Indicating that the RPC was aborted.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future(self, request, timeout, metadata=None, protocol_options=None):
@@ -407,7 +396,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
             response value of the RPC. In the event of RPC abortion, the returned
             Future's exception value will be an AbortionError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event(
@@ -435,7 +424,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
         Returns:
           A Call for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class UnaryStreamMultiCallable(abc.ABC):
@@ -458,7 +447,7 @@ class UnaryStreamMultiCallable(abc.ABC):
             values. Drawing response values from the returned iterator may raise
             AbortionError indicating abortion of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event(
@@ -486,7 +475,7 @@ class UnaryStreamMultiCallable(abc.ABC):
         Returns:
           A Call object for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamUnaryMultiCallable(abc.ABC):
@@ -520,11 +509,11 @@ class StreamUnaryMultiCallable(abc.ABC):
         Raises:
           AbortionError: Indicating that the RPC was aborted.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future(
-        self, request_iterator, timeout, metadata=None, protocol_options=None
+        self, request_iterator, timeout, metadata=None, protocol_options=None,
     ):
         """Asynchronously invokes the underlying RPC.
 
@@ -542,7 +531,7 @@ class StreamUnaryMultiCallable(abc.ABC):
             response value of the RPC. In the event of RPC abortion, the returned
             Future's exception value will be an AbortionError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event(
@@ -569,7 +558,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           A single object that is both a Call object for the RPC and a
             stream.Consumer to which the request values of the RPC should be passed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class StreamStreamMultiCallable(abc.ABC):
@@ -577,7 +566,7 @@ class StreamStreamMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(
-        self, request_iterator, timeout, metadata=None, protocol_options=None
+        self, request_iterator, timeout, metadata=None, protocol_options=None,
     ):
         """Invokes the underlying RPC.
 
@@ -594,7 +583,7 @@ class StreamStreamMultiCallable(abc.ABC):
             values. Drawing response values from the returned iterator may raise
             AbortionError indicating abortion of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event(
@@ -621,7 +610,7 @@ class StreamStreamMultiCallable(abc.ABC):
           A single object that is both a Call object for the RPC and a
             stream.Consumer to which the request values of the RPC should be passed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class MethodImplementation(abc.ABC):
@@ -697,7 +686,7 @@ class MultiMethodImplementation(abc.ABC):
           NoSuchMethodError: If this MultiMethod does not recognize the given group
             and name for the RPC and is not able to service the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class GenericStub(abc.ABC):
@@ -738,7 +727,7 @@ class GenericStub(abc.ABC):
         Raises:
           AbortionError: Indicating that the RPC was aborted.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future_unary_unary(
@@ -767,7 +756,7 @@ class GenericStub(abc.ABC):
             response value of the RPC. In the event of RPC abortion, the returned
             Future's exception value will be an AbortionError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def inline_unary_stream(
@@ -795,7 +784,7 @@ class GenericStub(abc.ABC):
             values. Drawing response values from the returned iterator may raise
             AbortionError indicating abortion of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def blocking_stream_unary(
@@ -832,7 +821,7 @@ class GenericStub(abc.ABC):
         Raises:
           AbortionError: Indicating that the RPC was aborted.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def future_stream_unary(
@@ -861,7 +850,7 @@ class GenericStub(abc.ABC):
             response value of the RPC. In the event of RPC abortion, the returned
             Future's exception value will be an AbortionError.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def inline_stream_stream(
@@ -889,7 +878,7 @@ class GenericStub(abc.ABC):
             values. Drawing response values from the returned iterator may raise
             AbortionError indicating abortion of the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event_unary_unary(
@@ -920,7 +909,7 @@ class GenericStub(abc.ABC):
         Returns:
           A Call for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event_unary_stream(
@@ -951,7 +940,7 @@ class GenericStub(abc.ABC):
         Returns:
           A Call for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event_stream_unary(
@@ -981,7 +970,7 @@ class GenericStub(abc.ABC):
           A pair of a Call object for the RPC and a stream.Consumer to which the
             request values of the RPC should be passed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def event_stream_stream(
@@ -1011,7 +1000,7 @@ class GenericStub(abc.ABC):
           A pair of a Call object for the RPC and a stream.Consumer to which the
             request values of the RPC should be passed.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unary_unary(self, group, method):
@@ -1024,7 +1013,7 @@ class GenericStub(abc.ABC):
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def unary_stream(self, group, method):
@@ -1037,7 +1026,7 @@ class GenericStub(abc.ABC):
         Returns:
           A UnaryStreamMultiCallable value for the name unary-stream method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stream_unary(self, group, method):
@@ -1050,7 +1039,7 @@ class GenericStub(abc.ABC):
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stream_stream(self, group, method):
@@ -1063,7 +1052,7 @@ class GenericStub(abc.ABC):
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class DynamicStub(abc.ABC):

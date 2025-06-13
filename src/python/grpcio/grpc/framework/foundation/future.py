@@ -74,7 +74,7 @@ class Future(abc.ABC):
             remote system for which a determination of whether or not it commenced
             before being cancelled cannot be made without blocking.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # NOTE(nathaniel): Here too this isn't the return type that I'd want this
     # method to have if it were up to me. I think I'd go with another sum type
@@ -102,7 +102,7 @@ class Future(abc.ABC):
             not limited to this object's cancel method not having been called and
             the computation's result having become immediately available.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def running(self):
@@ -115,7 +115,7 @@ class Future(abc.ABC):
             taking place now, or False if the computation took place in the past or
             was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     # NOTE(nathaniel): These aren't quite the semantics I'd like here either. I
     # would rather this only returned True in cases in which the underlying
@@ -132,7 +132,7 @@ class Future(abc.ABC):
             unscheduled or interrupted. False if the computation may possibly be
             executing or scheduled to execute later.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def result(self, timeout=None):
@@ -155,7 +155,7 @@ class Future(abc.ABC):
           Exception: If the computation raised an exception, this call will raise
             the same exception.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def exception(self, timeout=None):
@@ -178,7 +178,7 @@ class Future(abc.ABC):
             terminate within the allotted time.
           CancelledError: If the computation was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def traceback(self, timeout=None):
@@ -201,7 +201,7 @@ class Future(abc.ABC):
             terminate within the allotted time.
           CancelledError: If the computation was cancelled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_done_callback(self, fn):
@@ -216,4 +216,4 @@ class Future(abc.ABC):
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
-        raise NotImplementedError()
+        raise NotImplementedError

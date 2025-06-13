@@ -14,18 +14,12 @@
 """Entry points into the Beta API of gRPC Python."""
 
 # threading is referenced from specification in this module.
-import threading  # pylint: disable=unused-import
 
 # interfaces, cardinality, and face are referenced from specification in this
 # module.
 import grpc
 from grpc import _auth
-from grpc.beta import _client_adaptations
-from grpc.beta import _metadata
-from grpc.beta import _server_adaptations
-from grpc.beta import interfaces  # pylint: disable=unused-import
-from grpc.framework.common import cardinality  # pylint: disable=unused-import
-from grpc.framework.interfaces.face import face  # pylint: disable=unused-import
+from grpc.beta import _client_adaptations, _metadata, _server_adaptations
 
 # pylint: disable=too-many-arguments
 
@@ -61,7 +55,7 @@ composite_call_credentials = grpc.composite_call_credentials
 composite_channel_credentials = grpc.composite_channel_credentials
 
 
-class Channel(object):
+class Channel:
     """A channel to a remote host through which RPCs may be conducted.
 
     Only the "subscribe" and "unsubscribe" methods are supported for application
@@ -109,7 +103,7 @@ def insecure_channel(host, port):
       A Channel to the remote host through which RPCs may be conducted.
     """
     channel = grpc.insecure_channel(
-        host if port is None else "%s:%d" % (host, port)
+        host if port is None else "%s:%d" % (host, port),
     )
     return Channel(channel)
 
@@ -127,12 +121,12 @@ def secure_channel(host, port, channel_credentials):
       A secure Channel to the remote host through which RPCs may be conducted.
     """
     channel = grpc.secure_channel(
-        host if port is None else "%s:%d" % (host, port), channel_credentials
+        host if port is None else "%s:%d" % (host, port), channel_credentials,
     )
     return Channel(channel)
 
 
-class StubOptions(object):
+class StubOptions:
     """A value encapsulating the various options for creation of a Stub.
 
     This class and its instances have no supported interface - it exists to define
@@ -248,7 +242,7 @@ ServerCredentials = grpc.ServerCredentials
 ssl_server_credentials = grpc.ssl_server_credentials
 
 
-class ServerOptions(object):
+class ServerOptions:
     """A value encapsulating the various options for creation of a Server.
 
     This class and its instances have no supported interface - it exists to define

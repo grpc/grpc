@@ -17,10 +17,10 @@ import threading
 import time
 
 # implementations is referenced from specification in this module.
-from grpc.beta import implementations  # pylint: disable=unused-import
-from grpc.beta import interfaces
-from grpc.framework.foundation import callable_util
-from grpc.framework.foundation import future
+from grpc.beta import (
+    interfaces,
+)
+from grpc.framework.foundation import callable_util, future
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!'
@@ -41,18 +41,16 @@ class _ChannelReadyFuture(future.Future):
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise future.CancelledError()
-                elif self._matured:
+                    raise future.CancelledError
+                if self._matured:
                     return
+                if until is None:
+                    self._condition.wait()
                 else:
-                    if until is None:
-                        self._condition.wait()
-                    else:
-                        remaining = until - time.time()
-                        if remaining < 0:
-                            raise future.TimeoutError()
-                        else:
-                            self._condition.wait(timeout=remaining)
+                    remaining = until - time.time()
+                    if remaining < 0:
+                        raise future.TimeoutError
+                    self._condition.wait(timeout=remaining)
 
     def _update(self, connectivity):
         with self._condition:
@@ -70,7 +68,7 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self,
             )
 
     def cancel(self):
@@ -86,7 +84,7 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self,
             )
 
         return True
@@ -105,15 +103,12 @@ class _ChannelReadyFuture(future.Future):
 
     def result(self, timeout=None):
         self._block(timeout)
-        return None
 
     def exception(self, timeout=None):
         self._block(timeout)
-        return None
 
     def traceback(self, timeout=None):
         self._block(timeout)
-        return None
 
     def add_done_callback(self, fn):
         with self._condition:

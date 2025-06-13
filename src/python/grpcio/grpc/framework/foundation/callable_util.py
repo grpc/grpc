@@ -13,11 +13,11 @@
 # limitations under the License.
 """Utilities for working with callables."""
 
-from abc import ABC
 import collections
 import enum
 import functools
 import logging
+from abc import ABC
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -44,7 +44,7 @@ class Outcome(ABC):
 
 class _EasyOutcome(
     collections.namedtuple(
-        "_EasyOutcome", ["kind", "return_value", "exception"]
+        "_EasyOutcome", ["kind", "return_value", "exception"],
     ),
     Outcome,
 ):
@@ -54,7 +54,7 @@ class _EasyOutcome(
 def _call_logging_exceptions(behavior, message, *args, **kwargs):
     try:
         return _EasyOutcome(
-            Outcome.Kind.RETURNED, behavior(*args, **kwargs), None
+            Outcome.Kind.RETURNED, behavior(*args, **kwargs), None,
         )
     except Exception as e:  # pylint: disable=broad-except
         _LOGGER.exception(message)

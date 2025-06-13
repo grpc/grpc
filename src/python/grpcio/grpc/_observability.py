@@ -18,10 +18,18 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Generator,
+    Generic,
+    TypeVar,
+)
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc._typing import ChannelArgumentType
+
+if TYPE_CHECKING:
+    from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -30,8 +38,8 @@ ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
 _plugin_lock: threading.RLock = threading.RLock()
-_OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
-_SERVICES_TO_EXCLUDE: List[bytes] = [
+_OBSERVABILITY_PLUGIN: ObservabilityPlugin | None = None
+_SERVICES_TO_EXCLUDE: list[bytes] = [
     b"google.monitoring.v3.MetricService",
     b"google.devtools.cloudtrace.v2.TraceService",
 ]
@@ -79,7 +87,7 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def create_client_call_tracer(
-        self, method_name: bytes, target: bytes
+        self, method_name: bytes, target: bytes,
     ) -> ClientCallTracerCapsule:
         """Creates a ClientCallTracerCapsule.
 
@@ -98,11 +106,11 @@ class ObservabilityPlugin(
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def save_trace_context(
-        self, trace_id: str, span_id: str, is_sampled: bool
+        self, trace_id: str, span_id: str, is_sampled: bool,
     ) -> None:
         """Saves the trace_id and span_id related to the current span.
 
@@ -119,14 +127,14 @@ class ObservabilityPlugin(
             string. e.g. 113ec879e62583bc
           is_sampled: A bool indicates whether the span is sampled.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def create_server_call_tracer_factory(
         self,
         *,
         xds: bool = False,
-    ) -> Optional[ServerCallTracerFactoryCapsule]:
+    ) -> ServerCallTracerFactoryCapsule | None:
         """Creates a ServerCallTracerFactoryCapsule.
 
         This method will be called at server initialization time to create a
@@ -142,11 +150,11 @@ class ObservabilityPlugin(
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self, method: str, target: str, rpc_latency: float, status_code: Any
+        self, method: str, target: str, rpc_latency: float, status_code: Any,
     ) -> None:
         """Record the latency of the RPC.
 
@@ -161,7 +169,7 @@ class ObservabilityPlugin(
           status_code: An element of grpc.StatusCode in string format representing the
             final status for the RPC.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def set_tracing(self, enable: bool) -> None:
         """Enable or disable tracing.
@@ -188,7 +196,7 @@ class ObservabilityPlugin(
         Args:
           method_name: The method name in bytes.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @property
     def tracing_enabled(self) -> bool:
@@ -204,7 +212,7 @@ class ObservabilityPlugin(
 
 
 @contextlib.contextmanager
-def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
+def get_plugin() -> Generator[ObservabilityPlugin | None, None, None]:
     """Get the ObservabilityPlugin in _observability module.
 
     Returns:
@@ -215,7 +223,7 @@ def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
         yield _OBSERVABILITY_PLUGIN
 
 
-def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
+def set_plugin(observability_plugin: ObservabilityPlugin | None) -> None:
     """Save ObservabilityPlugin to _observability module.
 
     Args:
@@ -259,7 +267,7 @@ def observability_deinit() -> None:
     _cygrpc.clear_server_call_tracer_factory()
 
 
-def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
+def maybe_record_rpc_latency(state: _channel._RPCState) -> None:
     """Record the latency of the RPC, if the plugin is registered and stats is enabled.
 
     This method will be called at the end of each RPC.
@@ -277,7 +285,7 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
             rpc_latency_s = state.rpc_end_time - state.rpc_start_time
             rpc_latency_ms = rpc_latency_s * 1000
             plugin.record_rpc_latency(
-                state.method, state.target, rpc_latency_ms, state.code
+                state.method, state.target, rpc_latency_ms, state.code,
             )
 
 
@@ -292,7 +300,7 @@ def create_server_call_tracer_factory_option(xds: bool) -> ChannelArgumentType:
                     (
                         "grpc.experimental.server_call_tracer_factory",
                         ServerCallTracerFactory(
-                            server_call_tracer_factory_address
+                            server_call_tracer_factory_address,
                         ),
                     ),
                 )

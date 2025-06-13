@@ -24,7 +24,7 @@ ChannelConnectivity.FATAL_FAILURE = ChannelConnectivity.SHUTDOWN
 StatusCode = grpc.StatusCode
 
 
-class GRPCCallOptions(object):
+class GRPCCallOptions:
     """A value encapsulating gRPC-specific options passed on RPC invocation.
 
     This class and its instances have no supported interface - it exists to
@@ -67,12 +67,12 @@ class GRPCServicerContext(abc.ABC):
         Returns:
           A string identifying the peer that invoked the RPC being serviced.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def disable_next_response_compression(self):
         """Disables compression of the next response passed by the application."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class GRPCInvocationContext(abc.ABC):
@@ -81,7 +81,7 @@ class GRPCInvocationContext(abc.ABC):
     @abc.abstractmethod
     def disable_next_request_compression(self):
         """Disables compression of the next request passed by the application."""
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 class Server(abc.ABC):
@@ -103,7 +103,7 @@ class Server(abc.ABC):
             in the passed address, but will likely be different if the port number
             contained in the passed address was zero.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def add_secure_port(self, address, server_credentials):
@@ -122,7 +122,7 @@ class Server(abc.ABC):
             in the passed address, but will likely be different if the port number
             contained in the passed address was zero.
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def start(self):
@@ -131,7 +131,7 @@ class Server(abc.ABC):
         This method may only be called while the server is not serving RPCs (i.e. it
         is not idempotent).
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     @abc.abstractmethod
     def stop(self, grace):
@@ -160,4 +160,4 @@ class Server(abc.ABC):
           at the time it was stopped or if all RPCs that it had underway completed
           very early in the grace period).
         """
-        raise NotImplementedError()
+        raise NotImplementedError

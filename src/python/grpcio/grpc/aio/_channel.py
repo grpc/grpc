@@ -18,37 +18,40 @@ import sys
 from typing import Any, Iterable, List, Optional, Sequence
 
 import grpc
-from grpc import _common
-from grpc import _compression
-from grpc import _grpcio_metadata
+from grpc import _common, _compression, _grpcio_metadata
 from grpc._cython import cygrpc
 
-from . import _base_call
-from . import _base_channel
-from ._call import StreamStreamCall
-from ._call import StreamUnaryCall
-from ._call import UnaryStreamCall
-from ._call import UnaryUnaryCall
-from ._interceptor import ClientInterceptor
-from ._interceptor import InterceptedStreamStreamCall
-from ._interceptor import InterceptedStreamUnaryCall
-from ._interceptor import InterceptedUnaryStreamCall
-from ._interceptor import InterceptedUnaryUnaryCall
-from ._interceptor import StreamStreamClientInterceptor
-from ._interceptor import StreamUnaryClientInterceptor
-from ._interceptor import UnaryStreamClientInterceptor
-from ._interceptor import UnaryUnaryClientInterceptor
+from . import _base_call, _base_channel
+from ._call import (
+    StreamStreamCall,
+    StreamUnaryCall,
+    UnaryStreamCall,
+    UnaryUnaryCall,
+)
+from ._interceptor import (
+    ClientInterceptor,
+    InterceptedStreamStreamCall,
+    InterceptedStreamUnaryCall,
+    InterceptedUnaryStreamCall,
+    InterceptedUnaryUnaryCall,
+    StreamStreamClientInterceptor,
+    StreamUnaryClientInterceptor,
+    UnaryStreamClientInterceptor,
+    UnaryUnaryClientInterceptor,
+)
 from ._metadata import Metadata
-from ._typing import ChannelArgumentType
-from ._typing import DeserializingFunction
-from ._typing import MetadataType
-from ._typing import RequestIterableType
-from ._typing import RequestType
-from ._typing import ResponseType
-from ._typing import SerializingFunction
+from ._typing import (
+    ChannelArgumentType,
+    DeserializingFunction,
+    MetadataType,
+    RequestIterableType,
+    RequestType,
+    ResponseType,
+    SerializingFunction,
+)
 from ._utils import _timeout_to_deadline
 
-_USER_AGENT = "grpc-python-asyncio/{}".format(_grpcio_metadata.__version__)
+_USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
 if sys.version_info[1] < 7:
 
@@ -62,10 +65,10 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
 ):
     compression_channel_argument = _compression.create_channel_option(
-        compression
+        compression,
     )
     user_agent_channel_argument = (
         (
@@ -127,13 +130,13 @@ class _BaseMultiCallable:
             metadata = Metadata.from_tuple(metadata)
         if compression:
             metadata = Metadata(
-                *_compression.augment_metadata(metadata, compression)
+                *_compression.augment_metadata(metadata, compression),
             )
         return metadata
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable
+    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -178,7 +181,7 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable
+    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -224,7 +227,7 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable
+    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -269,7 +272,7 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable
+    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -357,11 +360,11 @@ class Channel(_base_channel.Channel):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
                     raise ValueError(
-                        "Interceptor {} must be ".format(interceptor)
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
+                        f"Interceptor {interceptor} must be "
+                         f"{UnaryUnaryClientInterceptor.__name__} or "
+                         f"{UnaryStreamClientInterceptor.__name__} or "
+                         f"{StreamUnaryClientInterceptor.__name__} or "
+                         f"{StreamStreamClientInterceptor.__name__}. ",
                     )
 
         self._loop = cygrpc.get_working_loop()
@@ -409,8 +412,7 @@ class Channel(_base_channel.Channel):
                 # TODO(lidiz) drop this hack after 3.8 deprecation
                 if "frame" in str(attribute_error):
                     continue
-                else:
-                    raise
+                raise
 
             # If the Task is created by a C-extension, the stack will be empty.
             if not stack:
@@ -435,7 +437,7 @@ class Channel(_base_channel.Channel):
                     else:
                         # Unidentified Call object
                         raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}"
+                            f"Unrecognized call object: {candidate}",
                         )
 
                     calls.append(candidate)
@@ -457,12 +459,11 @@ class Channel(_base_channel.Channel):
         await self._close(grace)
 
     def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False
+        self, try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -472,7 +473,7 @@ class Channel(_base_channel.Channel):
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
         assert await self._channel.watch_connectivity_state(
-            last_observed_state.value[0], None
+            last_observed_state.value[0], None,
         )
 
     async def channel_ready(self) -> None:

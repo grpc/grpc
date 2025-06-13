@@ -18,19 +18,15 @@ its information. They also offer methods to manipulate the life-cycle of the
 RPC, e.g. cancellation.
 """
 
-from abc import ABCMeta
-from abc import abstractmethod
+from abc import ABCMeta, abstractmethod
 from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 
 from ._metadata import Metadata
-from ._typing import DoneCallbackType
-from ._typing import EOFType
-from ._typing import RequestType
-from ._typing import ResponseType
+from ._typing import DoneCallbackType, EOFType, RequestType, ResponseType
 
-__all__ = "RpcContext", "Call", "UnaryUnaryCall", "UnaryStreamCall"
+__all__ = "Call", "RpcContext", "UnaryStreamCall", "UnaryUnaryCall"
 
 
 class RpcContext(metaclass=ABCMeta):
@@ -136,7 +132,7 @@ class Call(RpcContext, metaclass=ABCMeta):
 
 
 class UnaryUnaryCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
 ):
     """The abstract base class of a unary-unary RPC on the client-side."""
 
@@ -150,7 +146,7 @@ class UnaryUnaryCall(
 
 
 class UnaryStreamCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
 ):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
@@ -179,7 +175,7 @@ class UnaryStreamCall(
 
 
 class StreamUnaryCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
 ):
     @abstractmethod
     async def write(self, request: RequestType) -> None:
@@ -210,7 +206,7 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta
+    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
 ):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:

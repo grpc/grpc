@@ -19,12 +19,14 @@ from typing import Generic, Optional
 import grpc
 
 from . import _base_call
-from ._typing import DeserializingFunction
-from ._typing import MetadataType
-from ._typing import RequestIterableType
-from ._typing import RequestType
-from ._typing import ResponseType
-from ._typing import SerializingFunction
+from ._typing import (
+    DeserializingFunction,
+    MetadataType,
+    RequestIterableType,
+    RequestType,
+    ResponseType,
+    SerializingFunction,
+)
 
 
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
@@ -220,7 +222,7 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False
+        self, try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         """Checks the connectivity state of a channel.
 

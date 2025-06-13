@@ -27,7 +27,7 @@ from grpc._cython import cygrpc as _cygrpc
 _EXPERIMENTAL_APIS_USED = set()
 
 
-class ChannelOptions(object):
+class ChannelOptions:
     """Indicates a channel option unique to gRPC Python.
 
     This enumeration is part of an EXPERIMENTAL API.
@@ -46,7 +46,7 @@ class UsageError(Exception):
 # It's important that there be a single insecure credentials object so that its
 # hash is deterministic and can be used for indexing in the simple stubs cache.
 _insecure_channel_credentials = grpc.ChannelCredentials(
-    _cygrpc.channel_credentials_insecure()
+    _cygrpc.channel_credentials_insecure(),
 )
 
 
@@ -66,10 +66,8 @@ def _warn_experimental(api_name, stack_offset):
     if api_name not in _EXPERIMENTAL_APIS_USED:
         _EXPERIMENTAL_APIS_USED.add(api_name)
         msg = (
-            "'{}' is an experimental API. It is subject to change or ".format(
-                api_name
-            )
-            + "removal between minor releases. Proceed with caution."
+            f"'{api_name}' is an experimental API. It is subject to change or "
+             "removal between minor releases. Proceed with caution."
         )
         warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
 
@@ -106,15 +104,12 @@ def wrap_server_method_handler(wrapper, handler):
             # NOTE(lidiz) _replace is a public API:
             #   https://docs.python.org/dev/library/collections.html
             return handler._replace(unary_unary=wrapper(handler.unary_unary))
-        else:
-            return handler._replace(unary_stream=wrapper(handler.unary_stream))
-    else:
-        if not handler.response_streaming:
-            return handler._replace(stream_unary=wrapper(handler.stream_unary))
-        else:
-            return handler._replace(
-                stream_stream=wrapper(handler.stream_stream)
-            )
+        return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    if not handler.response_streaming:
+        return handler._replace(stream_unary=wrapper(handler.stream_unary))
+    return handler._replace(
+        stream_stream=wrapper(handler.stream_stream),
+    )
 
 
 __all__ = (
@@ -125,10 +120,11 @@ __all__ = (
     "wrap_server_method_handler",
 )
 
-if sys.version_info > (3, 6):
-    from grpc._simple_stubs import stream_stream
-    from grpc._simple_stubs import stream_unary
-    from grpc._simple_stubs import unary_stream
-    from grpc._simple_stubs import unary_unary
+from grpc._simple_stubs import (
+    stream_stream,
+    stream_unary,
+    unary_stream,
+    unary_unary,
+)
 
-    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)
+__all__ = (*__all__, unary_unary, unary_stream, stream_unary, stream_stream)

@@ -54,7 +54,7 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _method_handlers: Dict[str, grpc.RpcMethodHandler]
 
     def __init__(
-        self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler]
+        self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler],
     ):
         self._name = service
         self._method_handlers = {
@@ -66,11 +66,11 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
         return self._name
 
     def service(
-        self, handler_call_details: grpc.HandlerCallDetails
+        self, handler_call_details: grpc.HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
         details_method = handler_call_details.method
         return self._method_handlers.get(
-            details_method
+            details_method,
         )  # pytype: disable=attribute-error
 
 
@@ -94,18 +94,16 @@ class _ChannelReadyFuture(grpc.Future):
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise grpc.FutureCancelledError()
-                elif self._matured:
+                    raise grpc.FutureCancelledError
+                if self._matured:
                     return
+                if until is None:
+                    self._condition.wait()
                 else:
-                    if until is None:
-                        self._condition.wait()
-                    else:
-                        remaining = until - time.time()
-                        if remaining < 0:
-                            raise grpc.FutureTimeoutError()
-                        else:
-                            self._condition.wait(timeout=remaining)
+                    remaining = until - time.time()
+                    if remaining < 0:
+                        raise grpc.FutureTimeoutError
+                    self._condition.wait(timeout=remaining)
 
     def _update(self, connectivity: Optional[grpc.ChannelConnectivity]) -> None:
         with self._condition:
@@ -212,7 +210,7 @@ def first_version_is_lower(version1: str, version2: str) -> bool:
         for i in range(3):
             if int(version1_list[i]) < int(version2_list[i]):
                 return True
-            elif int(version1_list[i]) > int(version2_list[i]):
+            if int(version1_list[i]) > int(version2_list[i]):
                 return False
     except ValueError:
         # Return false in case we can't convert version to int.

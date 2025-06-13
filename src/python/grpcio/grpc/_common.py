@@ -19,8 +19,7 @@ from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import DeserializingFunction
-from grpc._typing import SerializingFunction
+from grpc._typing import DeserializingFunction, SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -67,8 +66,7 @@ _ERROR_MESSAGE_PORT_BINDING_FAILED = (
 def encode(s: AnyStr) -> bytes:
     if isinstance(s, bytes):
         return s
-    else:
-        return s.encode("utf8")
+    return s.encode("utf8")
 
 
 def decode(b: AnyStr) -> str:
@@ -84,12 +82,11 @@ def _transform(
 ) -> Any:
     if transformer is None:
         return message
-    else:
-        try:
-            return transformer(message)
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.exception(exception_message)
-            return None
+    try:
+        return transformer(message)
+    except Exception:  # pylint: disable=broad-except
+        _LOGGER.exception(exception_message)
+        return None
 
 
 def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
@@ -97,15 +94,15 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
 
 
 def deserialize(
-    serialized_message: bytes, deserializer: Optional[DeserializingFunction]
+    serialized_message: bytes, deserializer: Optional[DeserializingFunction],
 ) -> Any:
     return _transform(
-        serialized_message, deserializer, "Exception deserializing message!"
+        serialized_message, deserializer, "Exception deserializing message!",
     )
 
 
 def fully_qualified_method(group: str, method: str) -> str:
-    return "/{}/{}".format(group, method)
+    return f"/{group}/{method}"
 
 
 def _wait_once(
@@ -179,5 +176,4 @@ def validate_port_binding_result(address: str, port: int) -> int:
         # The Core API doesn't return a failure message. The best we can do
         # is raising an exception to prevent further confusion.
         raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
-    else:
-        return port
+    return port
