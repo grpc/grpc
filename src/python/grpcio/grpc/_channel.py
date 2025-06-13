@@ -1036,7 +1036,9 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
     elif user_deadline is not None and parent_deadline is None:
         return user_deadline
     else:
-        return min(parent_deadline, user_deadline)
+        # At this point both are non-None
+        assert parent_deadline is not None and user_deadline is not None
+        return min(parent_deadline, user_deadline) #type: ignore[arg-type]
 
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
