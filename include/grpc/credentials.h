@@ -495,6 +495,12 @@ GRPCAPI grpc_call_credentials* grpc_composite_call_credentials_create(
 GRPCAPI grpc_call_credentials* grpc_google_compute_engine_credentials_create(
     void* reserved);
 
+/** Creates a compute engine credentials object for connecting to Google.
+   WARNING: Do NOT use this credentials to connect to a non-google service as
+   this could result in an oauth2 token leak. */
+GRPCAPI grpc_call_credentials*
+grpc_google_compute_engine_alts_credentials_create(void* reserved);
+
 /** Creates a composite channel credentials object. The security level of
  * resulting connection is determined by channel_creds. */
 GRPCAPI grpc_channel_credentials* grpc_composite_channel_credentials_create(
