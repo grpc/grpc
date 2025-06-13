@@ -55,7 +55,8 @@ def create_channel_option(compression: grpc.Compression | None):
 
 
 def augment_metadata(
-    metadata: MetadataType | None, compression: grpc.Compression | None,
+    metadata: MetadataType | None,
+    compression: grpc.Compression | None,
 ):
     if not metadata and not compression:
         return None

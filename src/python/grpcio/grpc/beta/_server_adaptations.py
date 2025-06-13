@@ -85,7 +85,8 @@ class _FaceServicerContext(face.ServicerContext):
 def _adapt_unary_request_inline(unary_request_inline):
     def adaptation(request, servicer_context):
         return unary_request_inline(
-            request, _FaceServicerContext(servicer_context),
+            request,
+            _FaceServicerContext(servicer_context),
         )
 
     return adaptation
@@ -94,7 +95,8 @@ def _adapt_unary_request_inline(unary_request_inline):
 def _adapt_stream_request_inline(stream_request_inline):
     def adaptation(request_iterator, servicer_context):
         return stream_request_inline(
-            request_iterator, _FaceServicerContext(servicer_context),
+            request_iterator,
+            _FaceServicerContext(servicer_context),
         )
 
     return adaptation
@@ -152,7 +154,9 @@ class _Callback(stream.Consumer):
 
 
 def _run_request_pipe_thread(
-    request_iterator, request_consumer, servicer_context,
+    request_iterator,
+    request_consumer,
+    servicer_context,
 ) -> None:
     thread_joined = threading.Event()
 
@@ -191,7 +195,9 @@ def _adapt_unary_stream_event(unary_stream_event):
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned
         unary_stream_event(
-            request, callback, _FaceServicerContext(servicer_context),
+            request,
+            callback,
+            _FaceServicerContext(servicer_context),
         )
         while True:
             response = callback.draw_one_value()
@@ -213,7 +219,9 @@ def _adapt_stream_unary_event(stream_unary_event):
             _FaceServicerContext(servicer_context),
         )
         _run_request_pipe_thread(
-            request_iterator, request_consumer, servicer_context,
+            request_iterator,
+            request_consumer,
+            servicer_context,
         )
         return callback.draw_all_values()[0]
 
@@ -226,10 +234,13 @@ def _adapt_stream_stream_event(stream_stream_event):
         if not servicer_context.add_callback(callback.cancel):
             raise abandonment.Abandoned
         request_consumer = stream_stream_event(
-            callback, _FaceServicerContext(servicer_context),
+            callback,
+            _FaceServicerContext(servicer_context),
         )
         _run_request_pipe_thread(
-            request_iterator, request_consumer, servicer_context,
+            request_iterator,
+            request_consumer,
+            servicer_context,
         )
         while True:
             response = callback.draw_one_value()
@@ -261,7 +272,9 @@ class _SimpleMethodHandler(
 
 
 def _simple_method_handler(
-    implementation, request_deserializer, response_serializer,
+    implementation,
+    request_deserializer,
+    response_serializer,
 ):
     if implementation.style is style.Service.INLINE:
         if implementation.cardinality is cardinality.Cardinality.UNARY_UNARY:
@@ -299,9 +312,7 @@ def _simple_method_handler(
                 ),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -348,9 +359,7 @@ def _simple_method_handler(
                 _adapt_stream_unary_event(implementation.stream_unary_event),
                 None,
             )
-        if (
-            implementation.cardinality is cardinality.Cardinality.STREAM_STREAM
-        ):
+        if implementation.cardinality is cardinality.Cardinality.STREAM_STREAM:
             return _SimpleMethodHandler(
                 True,
                 True,
@@ -451,7 +460,11 @@ def server(
     )
     if thread_pool is None:
         effective_thread_pool = logging_pool.pool(
-            _DEFAULT_POOL_SIZE if thread_pool_size is None else thread_pool_size,
+            (
+                _DEFAULT_POOL_SIZE
+                if thread_pool_size is None
+                else thread_pool_size
+            ),
         )
     else:
         effective_thread_pool = thread_pool

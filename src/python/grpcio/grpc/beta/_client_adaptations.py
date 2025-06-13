@@ -512,7 +512,11 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         )
 
     def future(
-        self, request_iterator, timeout, metadata=None, protocol_options=None,
+        self,
+        request_iterator,
+        timeout,
+        metadata=None,
+        protocol_options=None,
     ):
         return _future_stream_unary(
             self._channel,
@@ -556,7 +560,11 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         self._response_deserializer = response_deserializer
 
     def __call__(
-        self, request_iterator, timeout, metadata=None, protocol_options=None,
+        self,
+        request_iterator,
+        timeout,
+        metadata=None,
+        protocol_options=None,
     ):
         return _stream_stream(
             self._channel,

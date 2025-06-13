@@ -102,7 +102,9 @@ class AbortionError(Exception, metaclass=abc.ABCMeta):
       details value was received.
     """
 
-    def __init__(self, initial_metadata, terminal_metadata, code, details) -> None:
+    def __init__(
+        self, initial_metadata, terminal_metadata, code, details
+    ) -> None:
         super().__init__()
         self.initial_metadata = initial_metadata
         self.terminal_metadata = terminal_metadata
@@ -399,7 +401,9 @@ class UnaryUnaryMultiCallable(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def future(self, request, timeout, metadata=None, protocol_options=None) -> NoReturn:
+    def future(
+        self, request, timeout, metadata=None, protocol_options=None
+    ) -> NoReturn:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -538,7 +542,11 @@ class StreamUnaryMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def future(
-        self, request_iterator, timeout, metadata=None, protocol_options=None,
+        self,
+        request_iterator,
+        timeout,
+        metadata=None,
+        protocol_options=None,
     ) -> NoReturn:
         """Asynchronously invokes the underlying RPC.
 
@@ -593,7 +601,11 @@ class StreamStreamMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def __call__(
-        self, request_iterator, timeout, metadata=None, protocol_options=None,
+        self,
+        request_iterator,
+        timeout,
+        metadata=None,
+        protocol_options=None,
     ):
         """Invokes the underlying RPC.
 

@@ -68,7 +68,7 @@ def _warn_experimental(api_name, stack_offset) -> None:
         _EXPERIMENTAL_APIS_USED.add(api_name)
         msg = (
             f"'{api_name}' is an experimental API. It is subject to change or "
-             "removal between minor releases. Proceed with caution."
+            "removal between minor releases. Proceed with caution."
         )
         warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
 

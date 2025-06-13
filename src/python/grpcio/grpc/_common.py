@@ -94,10 +94,13 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
 
 
 def deserialize(
-    serialized_message: bytes, deserializer: Optional[DeserializingFunction],
+    serialized_message: bytes,
+    deserializer: Optional[DeserializingFunction],
 ) -> Any:
     return _transform(
-        serialized_message, deserializer, "Exception deserializing message!",
+        serialized_message,
+        deserializer,
+        "Exception deserializing message!",
     )
 
 

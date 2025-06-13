@@ -100,7 +100,8 @@ def _completion_code(state: _RPCState) -> cygrpc.StatusCode:
 
 
 def _abortion_code(
-    state: _RPCState, code: cygrpc.StatusCode,
+    state: _RPCState,
+    code: cygrpc.StatusCode,
 ) -> cygrpc.StatusCode:
     if state.code is None:
         return code
@@ -131,7 +132,8 @@ class _Method(abc.ABC):
 
     @abc.abstractmethod
     def handler(
-        self, handler_call_details: _HandlerCallDetails,
+        self,
+        handler_call_details: _HandlerCallDetails,
     ) -> grpc.RpcMethodHandler | None:
         raise NotImplementedError
 
@@ -149,7 +151,8 @@ class _RegisteredMethod(_Method):
         return self._name
 
     def handler(
-        self, handler_call_details: _HandlerCallDetails,
+        self,
+        handler_call_details: _HandlerCallDetails,
     ) -> grpc.RpcMethodHandler | None:
         return self._registered_handler
 
@@ -165,7 +168,8 @@ class _GenericMethod(_Method):
         return None
 
     def handler(
-        self, handler_call_details: _HandlerCallDetails,
+        self,
+        handler_call_details: _HandlerCallDetails,
     ) -> grpc.RpcMethodHandler | None:
         # If the same method have both generic and registered handler,
         # registered handler will take precedence.
@@ -218,7 +222,8 @@ def _raise_rpc_error(state: _RPCState) -> None:
 
 
 def _possibly_finish_call(
-    state: _RPCState, token: str,
+    state: _RPCState,
+    token: str,
 ) -> ServerTagCallbackType:
     state.due.remove(token)
     if not _is_rpc_state_active(state) and not state.due:
@@ -237,7 +242,8 @@ def _send_status_from_server(state: _RPCState, token: str) -> ServerCallbackTag:
 
 
 def _get_initial_metadata(
-    state: _RPCState, metadata: MetadataType | None,
+    state: _RPCState,
+    metadata: MetadataType | None,
 ) -> MetadataType | None:
     with state.condition:
         if state.compression_algorithm:
@@ -253,15 +259,20 @@ def _get_initial_metadata(
 
 
 def _get_initial_metadata_operation(
-    state: _RPCState, metadata: MetadataType | None,
+    state: _RPCState,
+    metadata: MetadataType | None,
 ) -> cygrpc.Operation:
     return cygrpc.SendInitialMetadataOperation(
-        _get_initial_metadata(state, metadata), _EMPTY_FLAGS,
+        _get_initial_metadata(state, metadata),
+        _EMPTY_FLAGS,
     )
 
 
 def _abort(
-    state: _RPCState, call: cygrpc.Call, code: cygrpc.StatusCode, details: bytes,
+    state: _RPCState,
+    call: cygrpc.Call,
+    code: cygrpc.StatusCode,
+    details: bytes,
 ) -> None:
     if state.client is not _CANCELLED:
         effective_code = _abortion_code(state, code)
@@ -288,7 +299,8 @@ def _abort(
             )
             token = _SEND_STATUS_FROM_SERVER_TOKEN
         call.start_server_batch(
-            operations, _send_status_from_server(state, token),
+            operations,
+            _send_status_from_server(state, token),
         )
         state.statused = True
         state.due.add(token)
@@ -322,7 +334,8 @@ def _receive_message(
                 return _possibly_finish_call(state, _RECEIVE_MESSAGE_TOKEN)
         else:
             request = _common.deserialize(
-                serialized_request, request_deserializer,
+                serialized_request,
+                request_deserializer,
             )
             with state.condition:
                 if request is None:
@@ -424,10 +437,12 @@ class _Context(grpc.ServicerContext):
                 _raise_rpc_error(self._state)
             elif self._state.initial_metadata_allowed:
                 operation = _get_initial_metadata_operation(
-                    self._state, initial_metadata,
+                    self._state,
+                    initial_metadata,
                 )
                 self._rpc_event.call.start_server_batch(
-                    (operation,), _send_initial_metadata(self._state),
+                    (operation,),
+                    _send_initial_metadata(self._state),
                 )
                 self._state.initial_metadata_allowed = False
                 self._state.due.add(_SEND_INITIAL_METADATA_TOKEN)
@@ -502,7 +517,9 @@ class _RequestIterator:
             self._call.start_server_batch(
                 (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                 _receive_message(
-                    self._state, self._call, self._request_deserializer,
+                    self._state,
+                    self._call,
+                    self._request_deserializer,
                 ),
             )
             self._state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -553,7 +570,9 @@ def _unary_request(
             rpc_event.call.start_server_batch(
                 (cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),),
                 _receive_message(
-                    state, rpc_event.call, request_deserializer,
+                    state,
+                    rpc_event.call,
+                    request_deserializer,
                 ),
             )
             state.due.add(_RECEIVE_MESSAGE_TOKEN)
@@ -590,13 +609,17 @@ def _call_behavior(
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
-        rpc_event, state, request_deserializer,
+        rpc_event,
+        state,
+        request_deserializer,
     ) as context:
         try:
             response_or_iterator = None
             if send_response_callback is not None:
                 response_or_iterator = behavior(
-                    argument, context, send_response_callback,
+                    argument,
+                    context,
+                    send_response_callback,
                 )
             else:
                 response_or_iterator = behavior(argument, context)
@@ -698,7 +721,9 @@ def _reset_per_message_state(state: _RPCState) -> None:
 
 
 def _send_response(
-    rpc_event: cygrpc.BaseEvent, state: _RPCState, serialized_response: bytes,
+    rpc_event: cygrpc.BaseEvent,
+    state: _RPCState,
+    serialized_response: bytes,
 ) -> bool:
     with state.condition:
         if not _is_rpc_state_active(state):
@@ -722,7 +747,8 @@ def _send_response(
             )
             token = _SEND_MESSAGE_TOKEN
         rpc_event.call.start_server_batch(
-            operations, _send_message(state, token),
+            operations,
+            _send_message(state, token),
         )
         state.due.add(token)
         _reset_per_message_state(state)
@@ -743,7 +769,10 @@ def _status(
             details = _details(state)
             operations = [
                 cygrpc.SendStatusFromServerOperation(
-                    state.trailing_metadata, code, details, _EMPTY_FLAGS,
+                    state.trailing_metadata,
+                    code,
+                    details,
+                    _EMPTY_FLAGS,
                 ),
             ]
             if state.initial_metadata_allowed:
@@ -778,11 +807,18 @@ def _unary_response_in_pool(
         argument = argument_thunk()
         if argument is not None:
             response, proceed = _call_behavior(
-                rpc_event, state, behavior, argument, request_deserializer,
+                rpc_event,
+                state,
+                behavior,
+                argument,
+                request_deserializer,
             )
             if proceed:
                 serialized_response = _serialize_response(
-                    rpc_event, state, response, response_serializer,
+                    rpc_event,
+                    state,
+                    response,
+                    response_serializer,
                 )
                 if serialized_response is not None:
                     _status(rpc_event, state, serialized_response)
@@ -807,7 +843,10 @@ def _stream_response_in_pool(
             _status(rpc_event, state, None)
         else:
             serialized_response = _serialize_response(
-                rpc_event, state, response, response_serializer,
+                rpc_event,
+                state,
+                response,
+                response_serializer,
             )
             if serialized_response is not None:
                 _send_response(rpc_event, state, serialized_response)
@@ -829,11 +868,18 @@ def _stream_response_in_pool(
                 )
             else:
                 response_iterator, proceed = _call_behavior(
-                    rpc_event, state, behavior, argument, request_deserializer,
+                    rpc_event,
+                    state,
+                    behavior,
+                    argument,
+                    request_deserializer,
                 )
                 if proceed:
                     _send_message_callback_to_blocking_iterator_adapter(
-                        rpc_event, state, send_response, response_iterator,
+                        rpc_event,
+                        state,
+                        send_response,
+                        response_iterator,
                     )
     except Exception:  # pylint: disable=broad-except
         traceback.print_exc()
@@ -853,7 +899,9 @@ def _send_message_callback_to_blocking_iterator_adapter(
 ) -> None:
     while True:
         response, proceed = _take_response_from_response_iterator(
-            rpc_event, state, response_iterator,
+            rpc_event,
+            state,
+            response_iterator,
         )
         if proceed:
             send_response_callback(response)
@@ -868,7 +916,8 @@ def _select_thread_pool_for_behavior(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.ThreadPoolExecutor:
     if hasattr(behavior, "experimental_thread_pool") and isinstance(
-        behavior.experimental_thread_pool, futures.ThreadPoolExecutor,
+        behavior.experimental_thread_pool,
+        futures.ThreadPoolExecutor,
     ):
         return behavior.experimental_thread_pool
     return default_thread_pool
@@ -881,10 +930,13 @@ def _handle_unary_unary(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future:
     unary_request = _unary_request(
-        rpc_event, state, method_handler.request_deserializer,
+        rpc_event,
+        state,
+        method_handler.request_deserializer,
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_unary, default_thread_pool,
+        method_handler.unary_unary,
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -905,10 +957,13 @@ def _handle_unary_stream(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future:
     unary_request = _unary_request(
-        rpc_event, state, method_handler.request_deserializer,
+        rpc_event,
+        state,
+        method_handler.request_deserializer,
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.unary_stream, default_thread_pool,
+        method_handler.unary_stream,
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -929,10 +984,13 @@ def _handle_stream_unary(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future:
     request_iterator = _RequestIterator(
-        state, rpc_event.call, method_handler.request_deserializer,
+        state,
+        rpc_event.call,
+        method_handler.request_deserializer,
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_unary, default_thread_pool,
+        method_handler.stream_unary,
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -953,10 +1011,13 @@ def _handle_stream_stream(
     default_thread_pool: futures.ThreadPoolExecutor,
 ) -> futures.Future:
     request_iterator = _RequestIterator(
-        state, rpc_event.call, method_handler.request_deserializer,
+        state,
+        rpc_event.call,
+        method_handler.request_deserializer,
     )
     thread_pool = _select_thread_pool_for_behavior(
-        method_handler.stream_stream, default_thread_pool,
+        method_handler.stream_stream,
+        default_thread_pool,
     )
     return thread_pool.submit(
         state.context.run,
@@ -992,7 +1053,9 @@ def _find_method_handler(
 
     if interceptor_pipeline is not None:
         return state.context.run(
-            interceptor_pipeline.execute, query_handlers, handler_call_details,
+            interceptor_pipeline.execute,
+            query_handlers,
+            handler_call_details,
         )
     return state.context.run(query_handlers, handler_call_details)
 
@@ -1007,7 +1070,10 @@ def _reject_rpc(
         _get_initial_metadata_operation(rpc_state, None),
         cygrpc.ReceiveCloseOnServerOperation(_EMPTY_FLAGS),
         cygrpc.SendStatusFromServerOperation(
-            None, status, details, _EMPTY_FLAGS,
+            None,
+            status,
+            details,
+            _EMPTY_FLAGS,
         ),
     )
     rpc_event.call.start_server_batch(
@@ -1034,17 +1100,29 @@ def _handle_with_method_handler(
         if method_handler.request_streaming:
             if method_handler.response_streaming:
                 return _handle_stream_stream(
-                    rpc_event, state, method_handler, thread_pool,
+                    rpc_event,
+                    state,
+                    method_handler,
+                    thread_pool,
                 )
             return _handle_stream_unary(
-                rpc_event, state, method_handler, thread_pool,
+                rpc_event,
+                state,
+                method_handler,
+                thread_pool,
             )
         if method_handler.response_streaming:
             return _handle_unary_stream(
-                rpc_event, state, method_handler, thread_pool,
+                rpc_event,
+                state,
+                method_handler,
+                thread_pool,
             )
         return _handle_unary_unary(
-            rpc_event, state, method_handler, thread_pool,
+            rpc_event,
+            state,
+            method_handler,
+            thread_pool,
         )
 
 
@@ -1106,7 +1184,10 @@ def _handle_call(
         return (
             rpc_state,
             _handle_with_method_handler(
-                rpc_event, rpc_state, method_handler, thread_pool,
+                rpc_event,
+                rpc_state,
+                method_handler,
+                thread_pool,
             ),
         )
     return None, None
@@ -1168,14 +1249,16 @@ class _ServerState:
 
 
 def _add_generic_handlers(
-    state: _ServerState, generic_handlers: Iterable[grpc.GenericRpcHandler],
+    state: _ServerState,
+    generic_handlers: Iterable[grpc.GenericRpcHandler],
 ) -> None:
     with state.lock:
         state.generic_handlers.extend(generic_handlers)
 
 
 def _add_registered_method_handlers(
-    state: _ServerState, method_handlers: dict[str, grpc.RpcMethodHandler],
+    state: _ServerState,
+    method_handlers: dict[str, grpc.RpcMethodHandler],
 ) -> None:
     with state.lock:
         state.registered_method_handlers.update(method_handlers)
@@ -1193,13 +1276,16 @@ def _add_secure_port(
 ) -> int:
     with state.lock:
         return state.server.add_http2_port(
-            address, server_credentials._credentials,
+            address,
+            server_credentials._credentials,
         )
 
 
 def _request_call(state: _ServerState) -> None:
     state.server.request_call(
-        state.completion_queue, state.completion_queue, _REQUEST_CALL_TAG,
+        state.completion_queue,
+        state.completion_queue,
+        _REQUEST_CALL_TAG,
     )
     state.due.add(_REQUEST_CALL_TAG)
 
@@ -1233,7 +1319,8 @@ def _on_call_completed(state: _ServerState) -> None:
 
 # pylint: disable=too-many-branches
 def _process_event_and_continue(
-    state: _ServerState, event: cygrpc.BaseEvent,
+    state: _ServerState,
+    event: cygrpc.BaseEvent,
 ) -> bool:
     should_continue = True
     if event.tag is _SHUTDOWN_TAG:
@@ -1251,7 +1338,8 @@ def _process_event_and_continue(
             method_with_handler = _RegisteredMethod(
                 registered_method_name,
                 state.registered_method_handlers.get(
-                    registered_method_name, None,
+                    registered_method_name,
+                    None,
                 ),
             )
         else:
@@ -1279,10 +1367,7 @@ def _process_event_and_continue(
                     lambda unused_future: _on_call_completed(state),
                 )
             if state.stage is _ServerStage.STARTED:
-                if (
-                    registered_method_name
-                    in state.registered_method_handlers
-                ):
+                if registered_method_name in state.registered_method_handlers:
                     _request_registered_call(state, registered_method_name)
                 else:
                     _request_call(state)
@@ -1427,7 +1512,8 @@ class _Server(grpc.Server):
         self._cy_server = server
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Iterable[grpc.GenericRpcHandler],
+        self,
+        generic_rpc_handlers: Iterable[grpc.GenericRpcHandler],
     ) -> None:
         _validate_generic_rpc_handlers(generic_rpc_handlers)
         _add_generic_handlers(self._state, generic_rpc_handlers)
@@ -1453,16 +1539,21 @@ class _Server(grpc.Server):
 
     def add_insecure_port(self, address: str) -> int:
         return _common.validate_port_binding_result(
-            address, _add_insecure_port(self._state, _common.encode(address)),
+            address,
+            _add_insecure_port(self._state, _common.encode(address)),
         )
 
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials,
+        self,
+        address: str,
+        server_credentials: grpc.ServerCredentials,
     ) -> int:
         return _common.validate_port_binding_result(
             address,
             _add_secure_port(
-                self._state, _common.encode(address), server_credentials,
+                self._state,
+                _common.encode(address),
+                server_credentials,
             ),
         )
 

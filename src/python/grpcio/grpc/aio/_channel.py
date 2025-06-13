@@ -65,7 +65,8 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
+    base_options: ChannelArgumentType,
+    compression: Optional[grpc.Compression],
 ):
     compression_channel_argument = _compression.create_channel_option(
         compression,
@@ -136,7 +137,8 @@ class _BaseMultiCallable:
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -181,7 +183,8 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -227,7 +230,8 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -272,7 +276,8 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -362,10 +367,10 @@ class Channel(_base_channel.Channel):
                 else:
                     msg = (
                         f"Interceptor {interceptor} must be "
-                         f"{UnaryUnaryClientInterceptor.__name__} or "
-                         f"{UnaryStreamClientInterceptor.__name__} or "
-                         f"{StreamUnaryClientInterceptor.__name__} or "
-                         f"{StreamStreamClientInterceptor.__name__}. "
+                        f"{UnaryUnaryClientInterceptor.__name__} or "
+                        f"{UnaryStreamClientInterceptor.__name__} or "
+                        f"{StreamUnaryClientInterceptor.__name__} or "
+                        f"{StreamStreamClientInterceptor.__name__}. "
                     )
                     raise ValueError(
                         msg,
@@ -468,7 +473,8 @@ class Channel(_base_channel.Channel):
             self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False,
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -478,7 +484,8 @@ class Channel(_base_channel.Channel):
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
         assert await self._channel.watch_connectivity_state(
-            last_observed_state.value[0], None,
+            last_observed_state.value[0],
+            None,
         )
 
     async def channel_ready(self) -> None:

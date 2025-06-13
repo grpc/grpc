@@ -88,7 +88,9 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def create_client_call_tracer(
-        self, method_name: bytes, target: bytes,
+        self,
+        method_name: bytes,
+        target: bytes,
     ) -> ClientCallTracerCapsule:
         """Creates a ClientCallTracerCapsule.
 
@@ -112,7 +114,10 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def save_trace_context(
-        self, trace_id: str, span_id: str, is_sampled: bool,
+        self,
+        trace_id: str,
+        span_id: str,
+        is_sampled: bool,
     ) -> None:
         """Saves the trace_id and span_id related to the current span.
 
@@ -159,7 +164,11 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self, method: str, target: str, rpc_latency: float, status_code: Any,
+        self,
+        method: str,
+        target: str,
+        rpc_latency: float,
+        status_code: Any,
     ) -> None:
         """Record the latency of the RPC.
 
@@ -299,7 +308,10 @@ def maybe_record_rpc_latency(state: _channel._RPCState) -> None:
             rpc_latency_s = state.rpc_end_time - state.rpc_start_time
             rpc_latency_ms = rpc_latency_s * 1000
             plugin.record_rpc_latency(
-                state.method, state.target, rpc_latency_ms, state.code,
+                state.method,
+                state.target,
+                rpc_latency_ms,
+                state.code,
             )
 
 

@@ -455,7 +455,9 @@ class UnaryUnaryClientInterceptor(abc.ABC):
     """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
-    def intercept_unary_unary(self, continuation, client_call_details, request) -> NoReturn:
+    def intercept_unary_unary(
+        self, continuation, client_call_details, request
+    ) -> NoReturn:
         """Intercepts a unary-unary invocation asynchronously.
 
         Args:
@@ -491,7 +493,10 @@ class UnaryStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_stream(
-        self, continuation, client_call_details, request,
+        self,
+        continuation,
+        client_call_details,
+        request,
     ) -> NoReturn:
         """Intercepts a unary-stream invocation.
 
@@ -527,7 +532,10 @@ class StreamUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_unary(
-        self, continuation, client_call_details, request_iterator,
+        self,
+        continuation,
+        client_call_details,
+        request_iterator,
     ) -> NoReturn:
         """Intercepts a stream-unary invocation asynchronously.
 
@@ -563,7 +571,10 @@ class StreamStreamClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_stream_stream(
-        self, continuation, client_call_details, request_iterator,
+        self,
+        continuation,
+        client_call_details,
+        request_iterator,
     ) -> NoReturn:
         """Intercepts a stream-stream invocation.
 
@@ -1514,7 +1525,9 @@ class Server(abc.ABC):
         """
         raise NotImplementedError
 
-    def add_registered_method_handlers(self, service_name, method_handlers) -> None:
+    def add_registered_method_handlers(
+        self, service_name, method_handlers
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -1632,7 +1645,9 @@ class Server(abc.ABC):
 
 
 def unary_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None,
+    behavior,
+    request_deserializer=None,
+    response_serializer=None,
 ):
     """Creates an RpcMethodHandler for a unary-unary RPC method.
 
@@ -1661,7 +1676,9 @@ def unary_unary_rpc_method_handler(
 
 
 def unary_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None,
+    behavior,
+    request_deserializer=None,
+    response_serializer=None,
 ):
     """Creates an RpcMethodHandler for a unary-stream RPC method.
 
@@ -1690,7 +1707,9 @@ def unary_stream_rpc_method_handler(
 
 
 def stream_unary_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None,
+    behavior,
+    request_deserializer=None,
+    response_serializer=None,
 ):
     """Creates an RpcMethodHandler for a stream-unary RPC method.
 
@@ -1719,7 +1738,9 @@ def stream_unary_rpc_method_handler(
 
 
 def stream_stream_rpc_method_handler(
-    behavior, request_deserializer=None, response_serializer=None,
+    behavior,
+    request_deserializer=None,
+    response_serializer=None,
 ):
     """Creates an RpcMethodHandler for a stream-stream RPC method.
 
@@ -1767,7 +1788,9 @@ def method_handlers_generic_handler(service, method_handlers):
 
 
 def ssl_channel_credentials(
-    root_certificates=None, private_key=None, certificate_chain=None,
+    root_certificates=None,
+    private_key=None,
+    certificate_chain=None,
 ):
     """Creates a ChannelCredentials for use with an SSL-enabled Channel.
 
@@ -1786,7 +1809,9 @@ def ssl_channel_credentials(
     """
     return ChannelCredentials(
         _cygrpc.SSLChannelCredentials(
-            root_certificates, private_key, certificate_chain,
+            root_certificates,
+            private_key,
+            certificate_chain,
         ),
     )
 
@@ -1825,7 +1850,8 @@ def metadata_call_credentials(metadata_plugin, name=None):
     from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
 
     return _plugin_wrapping.metadata_plugin_call_credentials(
-        metadata_plugin, name,
+        metadata_plugin,
+        name,
     )
 
 
@@ -1847,7 +1873,8 @@ def access_token_call_credentials(access_token):
     )
 
     return _plugin_wrapping.metadata_plugin_call_credentials(
-        _auth.AccessTokenAuthMetadataPlugin(access_token), None,
+        _auth.AccessTokenAuthMetadataPlugin(access_token),
+        None,
     )
 
 
@@ -1967,7 +1994,8 @@ def insecure_server_credentials():
 
 
 def ssl_server_certificate_configuration(
-    private_key_certificate_chain_pairs, root_certificates=None,
+    private_key_certificate_chain_pairs,
+    root_certificates=None,
 ):
     """Creates a ServerCertificateConfiguration for use with a Server.
 
@@ -2208,7 +2236,10 @@ def insecure_channel(target, options=None, compression=None):
     from grpc import _channel  # pylint: disable=cyclic-import
 
     return _channel.Channel(
-        target, () if options is None else options, None, compression,
+        target,
+        () if options is None else options,
+        None,
+        compression,
     )
 
 
@@ -2235,7 +2266,7 @@ def secure_channel(target, credentials, options=None, compression=None):
     if credentials._credentials is _insecure_channel_credentials:
         msg = (
             "secure_channel cannot be called with insecure credentials."
-             " Call insecure_channel instead."
+            " Call insecure_channel instead."
         )
         raise ValueError(
             msg,

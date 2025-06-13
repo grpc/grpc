@@ -68,7 +68,9 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self,
+                done_callback,
+                _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE,
+                self,
             )
 
     def cancel(self) -> bool:
@@ -84,7 +86,9 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self,
+                done_callback,
+                _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE,
+                self,
             )
 
         return True

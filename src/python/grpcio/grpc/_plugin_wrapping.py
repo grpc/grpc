@@ -54,7 +54,9 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         self._callback = callback
 
     def __call__(
-        self, metadata: MetadataType, error: Optional[Type[BaseException]],
+        self,
+        metadata: MetadataType,
+        error: Optional[Type[BaseException]],
     ):
         with self._state.lock:
             if self._state.exception is None:
@@ -73,7 +75,9 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
             self._callback(metadata, cygrpc.StatusCode.ok, None)
         else:
             self._callback(
-                None, cygrpc.StatusCode.internal, _common.encode(str(error)),
+                None,
+                cygrpc.StatusCode.internal,
+                _common.encode(str(error)),
             )
 
 
@@ -97,12 +101,14 @@ class _Plugin:
 
     def __call__(self, service_url: str, method_name: str, callback: Callable):
         context = _AuthMetadataContext(
-            _common.decode(service_url), _common.decode(method_name),
+            _common.decode(service_url),
+            _common.decode(method_name),
         )
         callback_state = _CallbackState()
         try:
             self._metadata_plugin(
-                context, _AuthMetadataPluginCallback(callback_state, callback),
+                context,
+                _AuthMetadataPluginCallback(callback_state, callback),
             )
         except Exception as exception:  # pylint: disable=broad-except
             _LOGGER.exception(
@@ -114,12 +120,15 @@ class _Plugin:
                 if callback_state.called:
                     return
             callback(
-                None, cygrpc.StatusCode.internal, _common.encode(str(exception)),
+                None,
+                cygrpc.StatusCode.internal,
+                _common.encode(str(exception)),
             )
 
 
 def metadata_plugin_call_credentials(
-    metadata_plugin: grpc.AuthMetadataPlugin, name: Optional[str],
+    metadata_plugin: grpc.AuthMetadataPlugin,
+    name: Optional[str],
 ) -> grpc.CallCredentials:
     if name is None:
         try:
@@ -130,6 +139,7 @@ def metadata_plugin_call_credentials(
         effective_name = name
     return grpc.CallCredentials(
         cygrpc.MetadataPluginCallCredentials(
-            _Plugin(metadata_plugin), _common.encode(effective_name),
+            _Plugin(metadata_plugin),
+            _common.encode(effective_name),
         ),
     )

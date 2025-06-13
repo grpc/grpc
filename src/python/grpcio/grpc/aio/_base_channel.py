@@ -227,7 +227,8 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False,
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         """Checks the connectivity state of a channel.
 

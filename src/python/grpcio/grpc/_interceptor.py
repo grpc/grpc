@@ -39,7 +39,10 @@ class _ServicePipeline:
         return lambda context: self._intercept_at(thunk, index, context)
 
     def _intercept_at(
-        self, thunk: Callable, index: int, context: grpc.HandlerCallDetails,
+        self,
+        thunk: Callable,
+        index: int,
+        context: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
         if index < len(self.interceptors):
             interceptor = self.interceptors[index]
@@ -48,7 +51,9 @@ class _ServicePipeline:
         return thunk(context)
 
     def execute(
-        self, thunk: Callable, context: grpc.HandlerCallDetails,
+        self,
+        thunk: Callable,
+        context: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
         return self._intercept_at(thunk, 0, context)
 
@@ -80,7 +85,12 @@ def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails,
 ) -> Tuple[
-    str, float, MetadataType, grpc.CallCredentials, bool, grpc.Compression,
+    str,
+    float,
+    MetadataType,
+    grpc.CallCredentials,
+    bool,
+    grpc.Compression,
 ]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
@@ -128,12 +138,16 @@ def _unwrap_client_call_details(
 
 
 class _FailureOutcome(
-    grpc.RpcError, grpc.Future, grpc.Call,
+    grpc.RpcError,
+    grpc.Future,
+    grpc.Call,
 ):  # pylint: disable=too-many-ancestors
     _exception: Exception
     _traceback: types.TracebackType
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType) -> None:
+    def __init__(
+        self, exception: Exception, traceback: types.TracebackType
+    ) -> None:
         super().__init__()
         self._exception = exception
         self._traceback = traceback
@@ -172,12 +186,14 @@ class _FailureOutcome(
         raise self._exception
 
     def exception(
-        self, ignored_timeout: Optional[float] = None,
+        self,
+        ignored_timeout: Optional[float] = None,
     ) -> Optional[Exception]:
         return self._exception
 
     def traceback(
-        self, ignored_timeout: Optional[float] = None,
+        self,
+        ignored_timeout: Optional[float] = None,
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
@@ -328,7 +344,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
         call = self._interceptor.intercept_unary_unary(
-            continuation, client_call_details, request,
+            continuation,
+            client_call_details,
+            request,
         )
         return call.result(), call
 
@@ -388,7 +406,9 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_unary(
-                continuation, client_call_details, request,
+                continuation,
+                client_call_details,
+                request,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -447,7 +467,9 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_stream(
-                continuation, client_call_details, request,
+                continuation,
+                client_call_details,
+                request,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -530,7 +552,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
         call = self._interceptor.intercept_stream_unary(
-            continuation, client_call_details, request_iterator,
+            continuation,
+            client_call_details,
+            request_iterator,
         )
         return call.result(), call
 
@@ -590,7 +614,9 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
 
         try:
             return self._interceptor.intercept_stream_unary(
-                continuation, client_call_details, request_iterator,
+                continuation,
+                client_call_details,
+                request_iterator,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -649,7 +675,9 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
         try:
             return self._interceptor.intercept_stream_stream(
-                continuation, client_call_details, request_iterator,
+                continuation,
+                client_call_details,
+                request_iterator,
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -678,7 +706,9 @@ class _Channel(grpc.Channel):
         self._interceptor = interceptor
 
     def subscribe(
-        self, callback: Callable, try_to_connect: Optional[bool] = False,
+        self,
+        callback: Callable,
+        try_to_connect: Optional[bool] = False,
     ) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
@@ -696,11 +726,12 @@ class _Channel(grpc.Channel):
         # pytype: disable=wrong-arg-count
         def thunk(m):
             return self._channel.unary_unary(
-                    m,
-                    request_serializer,
-                    response_deserializer,
-                    _registered_method,
-                )
+                m,
+                request_serializer,
+                response_deserializer,
+                _registered_method,
+            )
+
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
             return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)
@@ -717,11 +748,12 @@ class _Channel(grpc.Channel):
         # pytype: disable=wrong-arg-count
         def thunk(m):
             return self._channel.unary_stream(
-                    m,
-                    request_serializer,
-                    response_deserializer,
-                    _registered_method,
-                )
+                m,
+                request_serializer,
+                response_deserializer,
+                _registered_method,
+            )
+
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
             return _UnaryStreamMultiCallable(thunk, method, self._interceptor)
@@ -738,11 +770,12 @@ class _Channel(grpc.Channel):
         # pytype: disable=wrong-arg-count
         def thunk(m):
             return self._channel.stream_unary(
-                    m,
-                    request_serializer,
-                    response_deserializer,
-                    _registered_method,
-                )
+                m,
+                request_serializer,
+                response_deserializer,
+                _registered_method,
+            )
+
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
             return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
@@ -759,11 +792,12 @@ class _Channel(grpc.Channel):
         # pytype: disable=wrong-arg-count
         def thunk(m):
             return self._channel.stream_stream(
-                    m,
-                    request_serializer,
-                    response_deserializer,
-                    _registered_method,
-                )
+                m,
+                request_serializer,
+                response_deserializer,
+                _registered_method,
+            )
+
         # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)

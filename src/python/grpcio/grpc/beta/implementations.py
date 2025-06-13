@@ -126,7 +126,8 @@ def secure_channel(host, port, channel_credentials):
 
     """
     channel = grpc.secure_channel(
-        host if port is None else "%s:%d" % (host, port), channel_credentials,
+        host if port is None else "%s:%d" % (host, port),
+        channel_credentials,
     )
     return Channel(channel)
 

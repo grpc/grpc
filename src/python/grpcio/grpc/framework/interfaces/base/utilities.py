@@ -49,7 +49,11 @@ class _Subscription(
 
 
 _NONE_SUBSCRIPTION = _Subscription(
-    base.Subscription.Kind.NONE, None, None, None, None,
+    base.Subscription.Kind.NONE,
+    None,
+    None,
+    None,
+    None,
 )
 
 
@@ -81,5 +85,9 @@ def full_subscription(operator, protocol_receiver):
 
     """
     return _Subscription(
-        base.Subscription.Kind.FULL, None, None, operator, protocol_receiver,
+        base.Subscription.Kind.FULL,
+        None,
+        None,
+        operator,
+        protocol_receiver,
     )

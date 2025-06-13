@@ -54,7 +54,9 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
     _method_handlers: Dict[str, grpc.RpcMethodHandler]
 
     def __init__(
-        self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler],
+        self,
+        service: str,
+        method_handlers: Dict[str, grpc.RpcMethodHandler],
     ) -> None:
         self._name = service
         self._method_handlers = {
@@ -66,7 +68,8 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
         return self._name
 
     def service(
-        self, handler_call_details: grpc.HandlerCallDetails,
+        self,
+        handler_call_details: grpc.HandlerCallDetails,
     ) -> Optional[grpc.RpcMethodHandler]:
         details_method = handler_call_details.method
         return self._method_handlers.get(

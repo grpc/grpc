@@ -26,7 +26,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
+        self,
+        generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -58,7 +59,9 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials,
+        self,
+        address: str,
+        server_credentials: grpc.ServerCredentials,
     ) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -113,7 +116,8 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     async def wait_for_termination(
-        self, timeout: Optional[float] = None,
+        self,
+        timeout: Optional[float] = None,
     ) -> bool:
         """Continues current coroutine once the server stops.
 
@@ -137,7 +141,9 @@ class Server(abc.ABC):
 
         """
 
-    def add_registered_method_handlers(self, service_name, method_handlers) -> None:
+    def add_registered_method_handlers(
+        self, service_name, method_handlers
+    ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -181,7 +187,8 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def send_initial_metadata(
-        self, initial_metadata: MetadataType,
+        self,
+        initial_metadata: MetadataType,
     ) -> None:
         """Sends the initial metadata value to the client.
 
