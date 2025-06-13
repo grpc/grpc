@@ -246,7 +246,6 @@ using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
-grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -295,15 +294,9 @@ void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
   g_write_timestamps_callback = fn;
 }
 
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  g_get_copied_context_fn = fn;
-}
-
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
   return g_write_timestamps_callback;
 }
-
-CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
 // GrpcHttp2SetWriteTimestampsCallback method with each context in the list
@@ -375,12 +368,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
-  // ContextList::Execute follows semantics of a callback function and does not
-  // take a ref on error
-  if (context_list != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
-  }
+  delete context_list;
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -622,6 +610,10 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           }
           misc["keepaliveTime"] =
               Json::FromString(t->keepalive_time.ToJsonString());
+          misc["keepaliveTimeout"] =
+              Json::FromString(t->keepalive_timeout.ToJsonString());
+          misc["pingTimeout"] =
+              Json::FromString(t->ping_timeout.ToJsonString());
           misc["nextAdjustedKeepaliveTimestamp"] =
               Json::FromString((t->next_adjusted_keepalive_timestamp -
                                 grpc_core::Timestamp::Now())
@@ -651,6 +643,36 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           misc["lastWindowUpdateAge"] = Json::FromString(
               (grpc_core::Timestamp::Now() - t->last_window_update_time)
                   .ToJsonString());
+          misc["pingRatePolicy"] =
+              Json::FromObject(t->ping_rate_policy.ToJson());
+          misc["pingCallbacks"] = Json::FromObject(t->ping_callbacks.ToJson());
+          misc["goaway_error"] = Json::FromString(t->goaway_error.ToString());
+          switch (t->sent_goaway_state) {
+            case GRPC_CHTTP2_NO_GOAWAY_SEND:
+              misc["sentGoawayState"] = Json::FromString("none");
+              break;
+            case GRPC_CHTTP2_GRACEFUL_GOAWAY:
+              misc["sentGoawayState"] = Json::FromString("graceful");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED:
+              misc["sentGoawayState"] = Json::FromString("final_scheduled");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SENT:
+              misc["sentGoawayState"] = Json::FromString("final_sent");
+              break;
+          }
+          switch (t->write_state) {
+            case GRPC_CHTTP2_WRITE_STATE_IDLE:
+              misc["writeState"] = Json::FromString("idle");
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING:
+              misc["writeState"] = Json::FromString("writing");
+              break;
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+              misc["writeState"] = Json::FromString("writing_with_more");
+              break;
+          }
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
           sink.AddAdditionalInfo("http2", std::move(http2_info));

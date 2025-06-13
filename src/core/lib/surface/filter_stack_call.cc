@@ -40,6 +40,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
@@ -398,18 +399,26 @@ bool FilterStackCall::PrepareApplicationMetadata(size_t count,
       is_trailing ? &send_trailing_metadata_ : &send_initial_metadata_;
   for (size_t i = 0; i < count; i++) {
     grpc_metadata* md = &metadata[i];
-    if (!GRPC_LOG_IF_ERROR("validate_metadata",
-                           grpc_validate_header_key_is_legal(md->key))) {
+    if (auto status = grpc_validate_header_key_is_legal(md->key);
+        !status.ok()) {
+      LOG(ERROR) << "Metadata key '"
+                 << absl::CEscape(StringViewFromSlice(md->key))
+                 << "' is invalid: " << status;
       return false;
-    } else if (!grpc_is_binary_header_internal(md->key) &&
-               !GRPC_LOG_IF_ERROR(
-                   "validate_metadata",
-                   grpc_validate_header_nonbin_value_is_legal(md->value))) {
-      return false;
-    } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
+    }
+    if (!grpc_is_binary_header_internal(md->key)) {
+      if (auto status = grpc_validate_header_nonbin_value_is_legal(md->value);
+          !status.ok()) {
+        LOG(ERROR) << "Metadata value for key " << StringViewFromSlice(md->key)
+                   << " is invalid: " << status;
+        return false;
+      }
+    }
+    if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
       // HTTP2 hpack encoding has a maximum limit.
       return false;
-    } else if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
+    }
+    if (grpc_slice_str_cmp(md->key, "content-length") == 0) {
       // Filter "content-length metadata"
       continue;
     }
