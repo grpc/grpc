@@ -7718,6 +7718,7 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
+        "json",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7752,9 +7753,11 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "experiments",
+        "json",
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -8753,6 +8756,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "metrics",
+        "posix_event_engine_base_hdrs",
         "race",
         "resource_quota",
         "shared_bit_gen",
@@ -9836,9 +9840,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "wait_for_single_owner",
+    srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "no_destruct",
         "time",
         "//:gpr",
     ],
