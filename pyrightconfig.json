@@ -26,6 +26,6 @@
     "reportMissingModuleSource": false,
     "reportMissingTypeStubs": false,
     "reportGeneralTypeIssues": "warning",
-    "pythonVersion": "3.12",
+    "pythonVersion": "3.11",
     "typeCheckingMode": "basic"
 }

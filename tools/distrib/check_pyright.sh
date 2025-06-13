@@ -16,7 +16,7 @@
 JOBS=$(nproc) || JOBS=4
 
 VIRTUALENV=venv_check_pyright
-python3.12 -m virtualenv $VIRTUALENV
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 # Install pyright using pip
