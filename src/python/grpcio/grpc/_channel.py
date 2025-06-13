@@ -105,6 +105,9 @@ _NON_OK_RENDEZVOUS_REPR_FORMAT = (
     ">"
 )
 
+CallbackType = Callable[[grpc.ChannelConnectivity], None]
+MixedTupleElementType = Union[CallbackType, grpc.ChannelConnectivity, None]
+
 
 def _deadline(timeout: Optional[float]) -> Optional[float]:
     return None if timeout is None else time.time() + timeout
@@ -1896,7 +1899,10 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
+    callbacks: Union[
+        List[CallbackType],
+        Tuple[MixedTupleElementType, ...]
+    ],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
