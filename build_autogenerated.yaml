@@ -2148,6 +2148,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2167,6 +2168,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -2196,6 +2198,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2214,6 +2217,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -5457,14 +5461,12 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/postmortem.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/postmortem.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
@@ -5769,11 +5771,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5784,13 +5784,11 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5805,13 +5803,11 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5826,12 +5822,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5842,12 +5836,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6850,12 +6842,10 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/postmortem.h
   - test/core/test_util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
@@ -7492,10 +7482,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/chttp2_server_listener_test.cc
   deps:
   - gtest
@@ -7792,7 +7780,6 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -7943,12 +7930,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7958,11 +7943,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8189,11 +8172,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8223,12 +8204,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8348,7 +8327,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8568,7 +8546,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8700,7 +8677,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8828,7 +8804,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9044,7 +9019,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9260,7 +9234,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9388,7 +9361,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9604,7 +9576,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9732,7 +9703,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9948,7 +9918,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -11421,11 +11390,9 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/event_engine/util/delegating_event_engine.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11458,10 +11425,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
@@ -11947,7 +11912,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -11959,11 +11923,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11973,11 +11935,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12015,12 +11975,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12654,12 +12612,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13011,12 +12967,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13271,11 +13225,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13394,11 +13346,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14077,11 +14027,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14405,12 +14353,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16205,12 +16151,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16343,12 +16287,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16639,10 +16581,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
   - gtest
@@ -16989,7 +16929,6 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/postmortem.cc
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -17284,10 +17223,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
@@ -17453,12 +17390,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17648,12 +17583,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
