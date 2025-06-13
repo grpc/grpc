@@ -18,7 +18,7 @@ import time
 from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
-from grpc._cython import cygrpc
+from grpc._cython import cygrpc  # type: ignore
 from grpc._typing import DeserializingFunction
 from grpc._typing import SerializingFunction
 

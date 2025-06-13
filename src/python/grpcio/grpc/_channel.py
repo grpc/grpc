@@ -38,8 +38,8 @@ import grpc  # pytype: disable=pyi-error
 from grpc import _common  # type: ignore # pytype: disable=pyi-error
 from grpc import _compression  # type: ignore # pytype: disable=pyi-error
 from grpc import _grpcio_metadata  # type: ignore # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
-from grpc._cython import cygrpc
+from grpc import _observability  # type: ignore # pytype: disable=pyi-error
+from grpc._cython import cygrpc  # type: ignore
 from grpc._typing import ChannelArgumentType
 from grpc._typing import DeserializingFunction
 from grpc._typing import IntegratedCallFactory

@@ -17,7 +17,7 @@ from __future__ import annotations
 from typing import Optional
 
 import grpc
-from grpc._cython import cygrpc
+from grpc._cython import cygrpc  # type: ignore
 from grpc._typing import MetadataType
 
 NoCompression = cygrpc.CompressionAlgorithm.none
