@@ -2148,7 +2148,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
-  - test/core/test_util/postmortem.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2168,7 +2168,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
-  - test/core/test_util/postmortem.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -2178,7 +2178,9 @@ libs:
   - test/core/test_util/tls_utils.cc
   - test/core/test_util/tracer_util.cc
   deps:
-  - gtest
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
   - absl/log:initialize
   - grpc
 - name: grpc_test_util_unsecure
@@ -2196,7 +2198,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
-  - test/core/test_util/postmortem.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2215,7 +2217,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
-  - test/core/test_util/postmortem.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -2224,7 +2226,9 @@ libs:
   - test/core/test_util/test_tcp_server.cc
   - test/core/test_util/tracer_util.cc
   deps:
-  - gtest
+  - absl/debugging:failure_signal_handler
+  - absl/debugging:stacktrace
+  - absl/debugging:symbolize
   - absl/log:initialize
   - grpc_unsecure
 - name: grpc_unsecure
@@ -5105,6 +5109,38 @@ libs:
   - grpc++
   - opentelemetry-cpp::api
 targets:
+- name: fd_conservation_posix_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/fd_conservation_posix_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+- name: multiple_server_queues_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/end2end/multiple_server_queues_test.cc
+  deps:
+  - grpc_test_util
+- name: pollset_windows_starvation_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/iomgr/pollset_windows_starvation_test.cc
+  deps:
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - windows
 - name: activity_test
   gtest: true
   build: test
@@ -5170,6 +5206,7 @@ targets:
   src:
   - test/cpp/naming/address_sorting_test.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -5194,6 +5231,7 @@ targets:
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   deps:
+  - gtest
   - grpc++_unsecure
   - grpc_test_util_unsecure
   - grpc++_test_config
@@ -5341,6 +5379,7 @@ targets:
   - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/admin_services_end2end_test.cc
   deps:
+  - gtest
   - grpc++_reflection
   - grpcpp_channelz
   - grpc++_test_util
@@ -5352,6 +5391,7 @@ targets:
   src:
   - test/cpp/common/alarm_test.cc
   deps:
+  - gtest
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -5400,6 +5440,7 @@ targets:
   src:
   - test/core/util/alloc_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: alpn_test
@@ -5410,6 +5451,7 @@ targets:
   src:
   - test/core/transport/chttp2/alpn_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_concurrent_connectivity_test
   gtest: true
@@ -5428,6 +5470,7 @@ targets:
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
@@ -5443,6 +5486,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_counter_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_crypt_test
   gtest: true
@@ -5454,6 +5498,7 @@ targets:
   - test/core/tsi/alts/crypt/aes_gcm_test.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_crypter_test
   gtest: true
@@ -5465,6 +5510,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_frame_protector_test
   gtest: true
@@ -5478,6 +5524,7 @@ targets:
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_grpc_record_protocol_test
   gtest: true
@@ -5489,6 +5536,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_handshaker_client_test
   gtest: true
@@ -5500,6 +5548,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_iovec_record_protocol_test
   gtest: true
@@ -5511,6 +5560,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_security_connector_test
   gtest: true
@@ -5520,6 +5570,7 @@ targets:
   src:
   - test/core/credentials/transport/alts/alts_security_connector_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_tsi_handshaker_test
   gtest: true
@@ -5531,6 +5582,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_tsi_utils_test
   gtest: true
@@ -5542,6 +5594,7 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: alts_util_test
   gtest: true
@@ -5551,6 +5604,7 @@ targets:
   src:
   - test/cpp/common/alts_util_test.cc
   deps:
+  - gtest
   - grpc++_alts
   - grpc++_test_util
 - name: alts_zero_copy_grpc_protector_test
@@ -5563,6 +5617,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: arena_promise_test
   gtest: true
@@ -5573,6 +5628,7 @@ targets:
   src:
   - test/core/promise/arena_promise_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   uses_polling: false
 - name: arena_test
@@ -5583,6 +5639,7 @@ targets:
   src:
   - test/core/resource_quota/arena_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   uses_polling: false
 - name: async_end2end_test
@@ -5603,6 +5660,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/async_end2end_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: auth_context_test
   gtest: true
@@ -5612,6 +5670,7 @@ targets:
   src:
   - test/core/transport/auth_context_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: auth_property_iterator_test
@@ -5622,6 +5681,7 @@ targets:
   src:
   - test/cpp/common/auth_property_iterator_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: authorization_matchers_test
@@ -5632,6 +5692,7 @@ targets:
   src:
   - test/core/security/authorization_matchers_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: authorization_policy_provider_test
   gtest: true
@@ -5642,6 +5703,7 @@ targets:
   - src/cpp/server/authorization_policy_provider.cc
   - test/cpp/server/authorization_policy_provider_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_authorization_provider
   - grpc_test_util
@@ -5671,6 +5733,7 @@ targets:
   src:
   - test/core/credentials/call/external/aws_request_signer_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: backend_metrics_lb_policy_test
   gtest: true
@@ -5687,6 +5750,7 @@ targets:
   - test/cpp/interop/backend_metrics_lb_policy.cc
   - test/cpp/interop/backend_metrics_lb_policy_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -5698,6 +5762,7 @@ targets:
   src:
   - test/core/util/backoff_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: bad_server_response_test
@@ -5710,6 +5775,7 @@ targets:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: bad_ssl_alpn_test
   gtest: true
@@ -5724,6 +5790,7 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -5742,6 +5809,7 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -5759,6 +5827,7 @@ targets:
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: badreq_bad_client_test
   gtest: true
@@ -5772,6 +5841,7 @@ targets:
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: basic_work_queue_test
   gtest: true
@@ -5781,6 +5851,7 @@ targets:
   src:
   - test/core/event_engine/work_queue/basic_work_queue_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
 - name: bdp_estimator_test
   gtest: true
@@ -5790,6 +5861,7 @@ targets:
   src:
   - test/core/transport/bdp_estimator_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -5804,6 +5876,7 @@ targets:
   src:
   - test/core/transport/chttp2/bin_decoder_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: bin_encoder_test
@@ -5814,6 +5887,7 @@ targets:
   src:
   - test/core/transport/chttp2/bin_encoder_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: bitset_test
@@ -5887,6 +5961,7 @@ targets:
   src:
   - test/core/iomgr/buffer_list_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: byte_buffer_test
   gtest: true
@@ -5896,6 +5971,7 @@ targets:
   src:
   - test/cpp/util/byte_buffer_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: c_slice_buffer_test
@@ -5906,6 +5982,7 @@ targets:
   src:
   - test/core/slice/c_slice_buffer_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: call_arena_allocator_test
@@ -5916,6 +5993,7 @@ targets:
   src:
   - test/core/call/call_arena_allocator_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -5937,6 +6015,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/test_call_creds.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
 - name: call_filters_test
@@ -6102,6 +6181,7 @@ targets:
   src:
   - test/core/call/call_finalization_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: call_state_test
   gtest: true
@@ -6162,6 +6242,7 @@ targets:
   - test/core/telemetry/call_tracer_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: call_utils_test
@@ -6768,6 +6849,7 @@ targets:
   - test/core/test_util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
 - name: cancel_callback_test
@@ -7162,6 +7244,7 @@ targets:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
@@ -7171,6 +7254,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/certificate_provider_registry_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: certificate_provider_store_test
   gtest: true
@@ -7180,6 +7264,7 @@ targets:
   src:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: cf_engine_test
@@ -7190,6 +7275,7 @@ targets:
   src:
   - test/core/event_engine/cf/cf_engine_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -7213,6 +7299,7 @@ targets:
   - test/core/event_engine/test_suite/tests/client_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -7237,6 +7324,7 @@ targets:
   - test/cpp/end2end/cfstream_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: channel_args_test
   gtest: true
@@ -7246,6 +7334,7 @@ targets:
   src:
   - test/core/channel/channel_args_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: channel_arguments_test
@@ -7256,6 +7345,7 @@ targets:
   src:
   - test/cpp/common/channel_arguments_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -7267,6 +7357,7 @@ targets:
   src:
   - test/core/credentials/transport/channel_creds_registry_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: channel_init_test
   gtest: true
@@ -7276,6 +7367,7 @@ targets:
   src:
   - test/core/surface/channel_init_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: channel_stack_builder_test
@@ -7286,6 +7378,7 @@ targets:
   src:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: channel_stack_test
   gtest: true
@@ -7295,6 +7388,7 @@ targets:
   src:
   - test/core/channel/channel_stack_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: channel_trace_test
@@ -7308,6 +7402,7 @@ targets:
   - test/core/channelz/channel_trace_test.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: channelz_registry_test
@@ -7318,6 +7413,7 @@ targets:
   src:
   - test/core/channelz/channelz_registry_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -7341,6 +7437,7 @@ targets:
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpcpp_channelz
   - grpc++_test_util
 - name: channelz_test
@@ -7356,6 +7453,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: check_gcp_environment_linux_test
@@ -7366,6 +7464,7 @@ targets:
   src:
   - test/core/credentials/transport/alts/check_gcp_environment_linux_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: check_gcp_environment_windows_test
   gtest: true
@@ -7375,6 +7474,7 @@ targets:
   src:
   - test/core/credentials/transport/alts/check_gcp_environment_windows_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: chttp2_server_listener_test
   gtest: true
@@ -7386,6 +7486,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/chttp2_server_listener_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: chunked_vector_test
   gtest: true
@@ -7523,6 +7624,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - protoc
   - grpc++_test_util
 - name: client_auth_filter_test
@@ -7540,6 +7642,7 @@ targets:
   - test/core/filters/client_auth_filter_test.cc
   - test/core/filters/filter_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7558,6 +7661,7 @@ targets:
   - test/core/filters/client_authority_filter_test.cc
   - test/core/filters/filter_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -7581,6 +7685,7 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: client_channel_service_config_test
   gtest: true
@@ -7590,6 +7695,7 @@ targets:
   src:
   - test/core/client_channel/client_channel_service_config_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: client_context_test_peer_test
@@ -7619,6 +7725,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/client_fork_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -7646,6 +7753,7 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: client_lb_end2end_test
   gtest: true
@@ -7654,6 +7762,7 @@ targets:
   language: c++
   headers:
   - src/cpp/server/orca/orca_service.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_lb_policies.h
   - test/cpp/end2end/connection_attempt_injector.h
   - test/cpp/end2end/test_service_impl.h
@@ -7676,6 +7785,7 @@ targets:
   - test/cpp/end2end/connection_attempt_injector.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -7689,6 +7799,7 @@ targets:
   src:
   - test/core/handshake/client_ssl.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -7702,6 +7813,7 @@ targets:
   src:
   - test/core/test_util/cmdline_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: codegen_test_full
@@ -7712,6 +7824,7 @@ targets:
   src:
   - test/cpp/codegen/codegen_test_full.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -7723,6 +7836,7 @@ targets:
   src:
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -7735,6 +7849,7 @@ targets:
   src:
   - test/core/iomgr/combiner_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -7762,6 +7877,7 @@ targets:
   src:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: composite_credentials_test
   gtest: true
@@ -7773,6 +7889,7 @@ targets:
   - test/core/credentials/transport/composite/composite_credentials_test.cc
   - test/core/test_util/test_call_creds.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: compression_test
   gtest: true
@@ -7782,6 +7899,7 @@ targets:
   src:
   - test/core/compression/compression_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: concurrent_connectivity_test
@@ -7792,6 +7910,7 @@ targets:
   src:
   - test/core/surface/concurrent_connectivity_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: connection_context_test
   gtest: true
@@ -7801,6 +7920,7 @@ targets:
   src:
   - test/core/surface/connection_context_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: connection_prefix_bad_client_test
@@ -7815,6 +7935,7 @@ targets:
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: connection_refused_test
   gtest: true
@@ -7826,6 +7947,7 @@ targets:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: connectivity_state_test
   gtest: true
@@ -7835,6 +7957,7 @@ targets:
   src:
   - test/core/transport/connectivity_state_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: context_allocator_end2end_test
   gtest: true
@@ -7854,6 +7977,7 @@ targets:
   - test/cpp/end2end/context_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: context_test
   gtest: true
@@ -7900,6 +8024,7 @@ targets:
   src:
   - test/core/util/cpu_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: crl_provider_test
@@ -7920,6 +8045,7 @@ targets:
   - test/cpp/end2end/crl_provider_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: crl_ssl_transport_security_test
   gtest: true
@@ -7931,6 +8057,7 @@ targets:
   - test/core/tsi/crl_ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -7945,6 +8072,7 @@ targets:
   src:
   - test/core/event_engine/default_engine_methods_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: delegating_channel_test
@@ -7965,6 +8093,7 @@ targets:
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: directory_reader_test
   gtest: true
@@ -7974,6 +8103,7 @@ targets:
   src:
   - test/core/util/directory_reader_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: dns_fork_test
@@ -7986,6 +8116,7 @@ targets:
   - test/core/event_engine/posix/dns_fork_test.cc
   - test/core/event_engine/posix/dns_server.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
@@ -8000,6 +8131,7 @@ targets:
   src:
   - test/core/resolver/dns_resolver_cooldown_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: dns_resolver_test
   gtest: true
@@ -8009,6 +8141,7 @@ targets:
   src:
   - test/core/resolver/dns_resolver_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: down_cast_test
   gtest: true
@@ -8031,6 +8164,7 @@ targets:
   src:
   - test/core/util/dual_ref_counted_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: dualstack_socket_test
   gtest: true
@@ -8042,6 +8176,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -8074,6 +8209,7 @@ targets:
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: end2end_chaotic_good_no_logging_test
   gtest: true
@@ -8145,6 +8281,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8194,6 +8331,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -8274,6 +8412,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8411,6 +8550,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -8491,6 +8631,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8540,6 +8681,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -8616,6 +8758,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8665,6 +8808,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -8741,6 +8885,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -8878,6 +9023,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -8954,6 +9100,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9091,6 +9238,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -9167,6 +9315,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9216,6 +9365,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -9292,6 +9442,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9429,6 +9580,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -9505,6 +9657,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9554,6 +9707,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -9630,6 +9784,7 @@ targets:
   - test/core/test_util/fail_first_call_filter.h
   - test/core/test_util/fake_stats_plugin.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   - test/core/test_util/test_lb_policies.h
   src:
@@ -9767,6 +9922,7 @@ targets:
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
+  - gtest
   - absl/log:log_entry
   - absl/log:log_sink
   - absl/log:log_sink_registry
@@ -9805,6 +9961,7 @@ targets:
   src:
   - test/core/resolver/endpoint_addresses_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: endpoint_config_test
@@ -9849,6 +10006,7 @@ targets:
   - test/core/iomgr/endpoint_pair_test.cc
   - test/core/iomgr/endpoint_tests.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: env_test
   gtest: true
@@ -9858,6 +10016,7 @@ targets:
   src:
   - test/core/util/env_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: error_details_test
@@ -9874,6 +10033,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/util/error_details_test.cc
   deps:
+  - gtest
   - grpc++_error_details
   - grpc_test_util
 - name: error_test
@@ -9886,6 +10046,7 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: error_utils_test
@@ -9896,6 +10057,7 @@ targets:
   src:
   - test/core/transport/error_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: errqueue_support_test
   gtest: true
@@ -9905,6 +10067,7 @@ targets:
   src:
   - test/core/event_engine/posix/errqueue_support_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -9918,6 +10081,7 @@ targets:
   src:
   - test/core/security/evaluate_args_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: event_engine_wakeup_scheduler_test
   gtest: true
@@ -9941,6 +10105,7 @@ targets:
   - test/core/event_engine/posix/event_poller_posix_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -9954,6 +10119,7 @@ targets:
   src:
   - test/core/util/examine_stack_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -9976,6 +10142,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/exception_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: exec_ctx_wakeup_scheduler_test
   gtest: true
@@ -10109,6 +10276,7 @@ targets:
   src:
   - test/core/event_engine/factory_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   uses_polling: false
 - name: fake_resolver_test
@@ -10119,6 +10287,7 @@ targets:
   src:
   - test/core/resolver/fake_resolver_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: fake_transport_security_test
   gtest: true
@@ -10130,20 +10299,8 @@ targets:
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
-- name: fd_conservation_posix_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/fd_conservation_posix_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
 - name: fd_posix_test
   gtest: true
   build: test
@@ -10152,6 +10309,7 @@ targets:
   src:
   - test/core/iomgr/fd_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -10165,6 +10323,7 @@ targets:
   src:
   - test/core/event_engine/posix/file_descriptor_collection_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -10178,6 +10337,7 @@ targets:
   src:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: filter_fusion_test
@@ -10786,6 +10946,7 @@ targets:
   - test/core/filters/filter_test.cc
   - test/core/filters/filter_test_test.cc
   deps:
+  - gtest
   - grpc_unsecure
   - protobuf
   - grpc_test_util
@@ -10809,6 +10970,7 @@ targets:
   - test/cpp/end2end/flaky_network_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: flow_control_test
   gtest: true
@@ -11047,6 +11209,7 @@ targets:
   src:
   - test/core/util/fork_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -11066,6 +11229,7 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/util/http_client/format_request_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: frame_handler_test
   gtest: true
@@ -11077,6 +11241,7 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: frame_test
   gtest: true
@@ -11146,6 +11311,7 @@ targets:
   - test/core/event_engine/test_suite/tests/server_test.cc
   - test/core/event_engine/test_suite/tests/timer_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   platforms:
@@ -11165,6 +11331,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine_unittest.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
 - name: gcp_authentication_filter_test
@@ -11182,6 +11349,7 @@ targets:
   - test/core/filters/filter_test.cc
   - test/core/filters/gcp_authentication_filter_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -11202,6 +11370,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: glob_test
   gtest: true
@@ -11211,6 +11380,7 @@ targets:
   src:
   - test/core/util/glob_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: goaway_server_test
@@ -11224,6 +11394,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: google_c2p_resolver_test
   gtest: true
@@ -11235,6 +11406,7 @@ targets:
   - test/core/resolver/google_c2p_resolver_test.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: gpr_time_test
   gtest: true
@@ -11244,6 +11416,7 @@ targets:
   src:
   - test/core/util/gpr_time_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: graceful_shutdown_test
@@ -11256,6 +11429,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_alts_credentials_options_test
   gtest: true
@@ -11265,6 +11439,7 @@ targets:
   src:
   - test/core/credentials/transport/alts/grpc_alts_credentials_options_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_audit_logging_test
   gtest: true
@@ -11274,6 +11449,7 @@ targets:
   src:
   - test/core/security/grpc_audit_logging_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_authorization_engine_test
   gtest: true
@@ -11285,6 +11461,7 @@ targets:
   - test/core/security/grpc_authorization_engine_test.cc
   - test/core/test_util/audit_logging_utils.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_authorization_policy_provider_test
   gtest: true
@@ -11294,6 +11471,7 @@ targets:
   src:
   - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
+  - gtest
   - grpc_authorization_provider
   - grpc_test_util
 - name: grpc_authz_end2end_test
@@ -11317,6 +11495,7 @@ targets:
   - test/cpp/end2end/grpc_authz_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc_authorization_provider
   - grpc++_test_util
 - name: grpc_byte_buffer_reader_test
@@ -11327,6 +11506,7 @@ targets:
   src:
   - test/core/surface/byte_buffer_reader_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: grpc_cli
@@ -11362,6 +11542,7 @@ targets:
   src:
   - test/core/surface/completion_queue_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_cpp_plugin
   build: protoc
@@ -11387,6 +11568,7 @@ targets:
   src:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_node_plugin
   build: protoc
@@ -11445,6 +11627,7 @@ targets:
   - src/cpp/ext/otel/otel_server_call_tracer.cc
   - test/cpp/ext/otel/grpc_text_map_carrier_test.cc
   deps:
+  - gtest
   - grpc++
   - opentelemetry-cpp::api
   - grpc_test_util
@@ -11456,6 +11639,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_distributor_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_tls_certificate_provider_test
   gtest: true
@@ -11465,6 +11649,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_provider_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_tls_certificate_verifier_test
   gtest: true
@@ -11474,6 +11659,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/grpc_tls_certificate_verifier_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_tls_credentials_options_comparator_test
   gtest: true
@@ -11483,6 +11669,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/grpc_tls_credentials_options_comparator_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_tls_credentials_options_test
   gtest: true
@@ -11492,6 +11679,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/grpc_tls_credentials_options_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: grpc_tls_crl_provider_test
   gtest: true
@@ -11509,6 +11697,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
 - name: grpc_tool_test
@@ -11540,6 +11729,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++_reflection
   - protoc
   - grpc++_test_config
@@ -11564,6 +11754,7 @@ targets:
   - src/cpp/ext/otel/otel_server_call_tracer.cc
   - test/cpp/ext/otel/grpc_trace_bin_text_map_propagator_test.cc
   deps:
+  - gtest
   - grpc++
   - opentelemetry-cpp::api
   - grpc_test_util
@@ -11576,6 +11767,7 @@ targets:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: grpclb_end2end_test
   gtest: true
@@ -11601,6 +11793,7 @@ targets:
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -11674,6 +11867,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/fuzz_config_vars.h
+  - test/core/test_util/postmortem.h
   - test/core/test_util/test_call_creds.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
@@ -11720,6 +11914,7 @@ targets:
   - test/core/test_util/fuzz_config_vars.cc
   - test/core/test_util/test_call_creds.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
 - name: h2_ssl_session_reuse_test
@@ -11732,6 +11927,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: h2_tls_peer_property_external_verifier_test
   gtest: true
@@ -11743,6 +11939,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: handle_tests
   gtest: true
@@ -11765,6 +11962,7 @@ targets:
   - test/core/handshake/readahead_handshaker_server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -11782,6 +11980,7 @@ targets:
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: header_assembler_test
   gtest: true
@@ -12418,6 +12617,7 @@ targets:
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: health_service_end2end_test
   gtest: true
@@ -12441,6 +12641,7 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: histogram_test
   gtest: true
@@ -12450,6 +12651,7 @@ targets:
   src:
   - test/core/test_util/histogram_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: host_port_test
@@ -12460,6 +12662,7 @@ targets:
   src:
   - test/core/util/host_port_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: hpack_encoder_test
@@ -12470,6 +12673,7 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: hpack_parser_table_test
@@ -12480,6 +12684,7 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_parser_table_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: hpack_parser_test
@@ -12490,10 +12695,10 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: http2_client
-  gtest: true
   build: test
   run: false
   language: c++
@@ -12545,6 +12750,7 @@ targets:
   - test/core/transport/chttp2/http2_client_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   platforms:
@@ -12579,6 +12785,7 @@ targets:
   - test/core/transport/chttp2/http2_server_transport_test.cc
   - test/core/transport/util/mock_promise_endpoint.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   platforms:
@@ -12594,6 +12801,7 @@ targets:
   src:
   - test/core/transport/chttp2/http2_settings_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: http2_status_test
   gtest: true
@@ -12639,6 +12847,7 @@ targets:
   src:
   - test/core/handshake/http_proxy_mapper_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: httpcli_test
@@ -12653,6 +12862,7 @@ targets:
   - test/core/util/http_client/httpcli_test.cc
   - test/core/util/http_client/httpcli_test_util.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -12670,6 +12880,7 @@ targets:
   - test/core/util/http_client/httpcli_test_util.cc
   - test/core/util/http_client/httpscli_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -12694,6 +12905,7 @@ targets:
   - test/cpp/end2end/hybrid_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: idle_filter_state_test
   gtest: true
@@ -12745,6 +12957,7 @@ targets:
   src:
   - test/core/surface/init_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: initial_settings_frame_bad_client_test
@@ -12759,6 +12972,7 @@ targets:
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: insecure_credentials_test
   gtest: true
@@ -12768,6 +12982,7 @@ targets:
   src:
   - test/core/credentials/transport/insecure/insecure_credentials_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: insecure_security_connector_test
   gtest: true
@@ -12777,6 +12992,7 @@ targets:
   src:
   - test/core/credentials/transport/insecure/insecure_security_connector_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: inter_activity_latch_test
   gtest: true
@@ -12965,7 +13181,6 @@ targets:
   - gpr
   uses_polling: false
 - name: interop_client
-  gtest: true
   build: test
   run: false
   language: c++
@@ -12987,7 +13202,6 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: interop_server
-  gtest: true
   build: test
   run: false
   language: c++
@@ -13015,6 +13229,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: iocp_test
   gtest: true
@@ -13026,6 +13241,7 @@ targets:
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/iocp_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -13043,6 +13259,7 @@ targets:
   - test/cpp/interop/istio_echo_server_lib.cc
   - test/cpp/interop/istio_echo_server_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   - grpc++_test_config
@@ -13087,6 +13304,7 @@ targets:
   src:
   - test/core/util/json/json_object_loader_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: json_test
@@ -13097,6 +13315,7 @@ targets:
   src:
   - test/core/util/json/json_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: json_token_test
@@ -13107,6 +13326,7 @@ targets:
   src:
   - test/core/credentials/call/jwt/json_token_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: jwt_verifier_test
@@ -13117,6 +13337,7 @@ targets:
   src:
   - test/core/credentials/call/jwt/jwt_verifier_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: lame_client_test
@@ -13129,6 +13350,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: latch_test
   gtest: true
@@ -13198,6 +13420,7 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: lb_load_data_store_test
   gtest: true
@@ -13210,6 +13433,7 @@ targets:
   - src/cpp/server/load_reporter/load_data_store.cc
   - test/cpp/server/load_reporter/load_data_store_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: lb_metadata_test
@@ -13220,6 +13444,7 @@ targets:
   src:
   - test/core/client_channel/lb_metadata_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: load_config_test
@@ -13241,6 +13466,7 @@ targets:
   src:
   - test/core/util/load_file_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: local_security_connector_test
@@ -13251,6 +13477,7 @@ targets:
   src:
   - test/core/credentials/transport/local/local_security_connector_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: log_too_many_open_files_test
   gtest: true
@@ -13260,6 +13487,7 @@ targets:
   src:
   - test/core/event_engine/posix/log_too_many_open_files_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -13487,6 +13715,7 @@ targets:
   src:
   - test/core/util/matchers_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: memory_quota_stress_test
   gtest: true
@@ -13496,6 +13725,7 @@ targets:
   src:
   - test/core/resource_quota/memory_quota_stress_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   platforms:
   - linux
@@ -13510,6 +13740,7 @@ targets:
   src:
   - test/core/resource_quota/memory_quota_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   uses_polling: false
 - name: memory_usage_test
@@ -13546,6 +13777,7 @@ targets:
   - test/cpp/end2end/message_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: message_assembler_test
   gtest: true
@@ -13668,6 +13900,7 @@ targets:
   src:
   - test/core/compression/message_compress_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: message_size_service_config_test
@@ -13678,6 +13911,7 @@ targets:
   src:
   - test/core/message_size/message_size_service_config_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: metadata_map_test
   gtest: true
@@ -13687,6 +13921,7 @@ targets:
   src:
   - test/core/call/metadata_map_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: metrics_test
   gtest: true
@@ -13698,6 +13933,7 @@ targets:
   - test/core/telemetry/metrics_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: minimal_stack_is_minimal_test
@@ -13708,6 +13944,7 @@ targets:
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: miscompile_with_no_unique_address_test
@@ -13765,21 +14002,13 @@ targets:
   src:
   - test/core/util/mpscq_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
   uses_polling: false
-- name: multiple_server_queues_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/end2end/multiple_server_queues_test.cc
-  deps:
-  - grpc_test_util
 - name: no_destruct_test
   gtest: true
   build: test
@@ -13802,6 +14031,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: nonblocking_test
   gtest: true
@@ -13819,6 +14049,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/nonblocking_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: notification_test
   gtest: true
@@ -13840,6 +14071,7 @@ targets:
   src:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: observable_test
   gtest: true
@@ -13913,6 +14145,7 @@ targets:
   - test/core/event_engine/test_suite/tests/client_test.cc
   - test/core/event_engine/test_suite/tests/server_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -13934,6 +14167,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/end2end/orca_service_end2end_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: orca_service_test
   gtest: true
@@ -13945,6 +14179,7 @@ targets:
   - src/cpp/server/orca/orca_service.cc
   - test/cpp/server/orca_service_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: orphanable_test
   gtest: true
@@ -13954,6 +14189,7 @@ targets:
   src:
   - test/core/util/orphanable_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: osa_distance_test
   gtest: true
@@ -13997,6 +14233,7 @@ targets:
   - test/cpp/ext/otel/otel_npc_metrics_test.cc
   - test/cpp/ext/otel/otel_test_library.cc
   deps:
+  - gtest
   - opentelemetry-cpp::api
   - opentelemetry-cpp::metrics
   - grpc++_test_util
@@ -14031,6 +14268,7 @@ targets:
   - test/cpp/ext/otel/otel_plugin_option_test.cc
   - test/cpp/ext/otel/otel_test_library.cc
   deps:
+  - gtest
   - opentelemetry-cpp::api
   - opentelemetry-cpp::metrics
   - grpc++_test_util
@@ -14065,6 +14303,7 @@ targets:
   - test/cpp/ext/otel/otel_plugin_test.cc
   - test/cpp/ext/otel/otel_test_library.cc
   deps:
+  - gtest
   - opentelemetry-cpp::api
   - opentelemetry-cpp::metrics
   - grpc++_test_util
@@ -14101,6 +14340,7 @@ targets:
   - test/cpp/ext/otel/otel_test_library.cc
   - test/cpp/ext/otel/otel_tracing_test.cc
   deps:
+  - gtest
   - opentelemetry-cpp::api
   - opentelemetry-cpp::in_memory_span_exporter
   - opentelemetry-cpp::metrics
@@ -14118,6 +14358,7 @@ targets:
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: outlier_detection_lb_config_parser_test
   gtest: true
@@ -14128,6 +14369,7 @@ targets:
   src:
   - test/core/load_balancing/outlier_detection_lb_config_parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: outlier_detection_test
@@ -14144,6 +14386,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/outlier_detection_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -14166,6 +14409,7 @@ targets:
   src:
   - test/core/address_utils/parse_address_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: parse_address_with_named_scope_id_test
   gtest: true
@@ -14175,6 +14419,7 @@ targets:
   src:
   - test/core/address_utils/parse_address_with_named_scope_id_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -14189,6 +14434,7 @@ targets:
   src:
   - test/core/call/parsed_metadata_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: parser_test
   gtest: true
@@ -14203,6 +14449,7 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/util/http_client/parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: party_mpsc_test
@@ -14247,6 +14494,7 @@ targets:
   src:
   - test/core/slice/percent_encoding_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: periodic_update_test
@@ -14337,6 +14585,7 @@ targets:
   - test/core/load_balancing/pick_first_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -14348,6 +14597,7 @@ targets:
   src:
   - test/core/transport/chttp2/ping_abuse_policy_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: ping_callbacks_test
@@ -14370,6 +14620,7 @@ targets:
   src:
   - test/core/transport/chttp2/ping_configuration_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: ping_rate_policy_test
@@ -14380,6 +14631,7 @@ targets:
   src:
   - test/core/transport/chttp2/ping_rate_policy_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: pipe_test
@@ -14421,25 +14673,13 @@ targets:
   - test/core/event_engine/posix/poller_fork_test.cc
   - test/core/event_engine/posix/posix_engine_test_utils.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
   - linux
   - posix
   - mac
-- name: pollset_windows_starvation_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/pollset_windows_starvation_test.cc
-  deps:
-  - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - windows
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -14458,6 +14698,7 @@ targets:
   - test/cpp/end2end/port_sharing_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: posix_endpoint_test
   gtest: true
@@ -14475,6 +14716,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -14488,6 +14730,7 @@ targets:
   src:
   - test/core/event_engine/posix/posix_engine_listener_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -14507,6 +14750,7 @@ targets:
   - test/core/event_engine/test_suite/event_engine_test_framework.cc
   - test/core/event_engine/test_suite/posix/oracle_event_engine_posix.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -14533,6 +14777,7 @@ targets:
   - test/cpp/util/get_grpc_test_runfile_dir.cc
   - test/cpp/util/windows/manifest_file.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -14566,6 +14811,7 @@ targets:
   - test/cpp/util/get_grpc_test_runfile_dir.cc
   - test/cpp/util/windows/manifest_file.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -14721,6 +14967,7 @@ targets:
   - test/cpp/interop/pre_stop_hook_server_test.cc
   - test/cpp/interop/xds_interop_server_lib.cc
   deps:
+  - gtest
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -14875,6 +15122,7 @@ targets:
   src:
   - test/cpp/util/proto_buffer_reader_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: proto_buffer_writer_test
@@ -14885,6 +15133,7 @@ targets:
   src:
   - test/cpp/util/proto_buffer_writer_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: proto_server_reflection_test
@@ -14908,6 +15157,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
+  - gtest
   - grpc++_reflection
   - grpc++_test_util
 - name: proto_utils_test
@@ -14918,11 +15168,11 @@ targets:
   src:
   - test/cpp/codegen/proto_utils_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
 - name: qps_json_driver
-  gtest: true
   build: test
   run: false
   language: c++
@@ -15035,7 +15285,6 @@ targets:
   - grpc++_test_config
   - grpc++_test_util
 - name: qps_worker
-  gtest: true
   build: test
   run: false
   language: c++
@@ -15228,6 +15477,7 @@ targets:
   - test/cpp/end2end/raw_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: rbac_service_config_parser_test
   gtest: true
@@ -15237,6 +15487,7 @@ targets:
   src:
   - test/core/ext/filters/rbac/rbac_service_config_parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: rbac_translator_test
@@ -15247,6 +15498,7 @@ targets:
   src:
   - test/core/security/rbac_translator_test.cc
   deps:
+  - gtest
   - grpc_authorization_provider
   - grpc_test_util
 - name: ref_counted_ptr_test
@@ -15257,6 +15509,7 @@ targets:
   src:
   - test/core/util/ref_counted_ptr_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: ref_counted_test
   gtest: true
@@ -15266,6 +15519,7 @@ targets:
   src:
   - test/core/util/ref_counted_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: remove_stream_from_stalled_lists_test
   gtest: true
@@ -15275,6 +15529,7 @@ targets:
   src:
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -15458,6 +15713,7 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   args:
   - --resolver=ares
@@ -15475,6 +15731,7 @@ targets:
   - test/core/iomgr/resolve_address_test.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
   deps:
+  - gtest
   - grpc_test_util
   - grpc++_test_config
 - name: resolve_address_using_native_resolver_posix_test
@@ -15485,6 +15742,7 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   args:
   - --resolver=native
@@ -15502,6 +15760,7 @@ targets:
   - test/core/iomgr/resolve_address_test.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
   deps:
+  - gtest
   - grpc_test_util
   - grpc++_test_config
 - name: resource_quota_end2end_stress_test
@@ -15520,6 +15779,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/resource_quota_end2end_stress_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: resource_quota_test
   gtest: true
@@ -15529,6 +15789,7 @@ targets:
   src:
   - test/core/resource_quota/resource_quota_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
   uses_polling: false
 - name: retry_service_config_test
@@ -15539,6 +15800,7 @@ targets:
   src:
   - test/core/client_channel/retry_service_config_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: retry_throttle_test
@@ -15549,6 +15811,7 @@ targets:
   src:
   - test/core/client_channel/retry_throttle_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: ring_buffer_test
@@ -15577,6 +15840,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/ring_hash_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -15612,6 +15876,7 @@ targets:
   - test/cpp/end2end/rls_server.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
 - name: rls_lb_config_parser_test
@@ -15622,6 +15887,7 @@ targets:
   src:
   - test/core/load_balancing/rls_lb_config_parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: round_robin_test
@@ -15638,6 +15904,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/round_robin_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -15649,6 +15916,7 @@ targets:
   src:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: secure_channel_create_test
   gtest: true
@@ -15658,6 +15926,7 @@ targets:
   src:
   - test/core/surface/secure_channel_create_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: secure_endpoint_test
   gtest: true
@@ -15670,6 +15939,7 @@ targets:
   - test/core/handshake/secure_endpoint_test.cc
   - test/core/iomgr/endpoint_tests.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: security_connector_test
   gtest: true
@@ -15679,6 +15949,7 @@ targets:
   src:
   - test/core/credentials/transport/security_connector_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: seq_test
   gtest: true
@@ -15720,6 +15991,7 @@ targets:
   src:
   - test/core/surface/sequential_connectivity_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: server_builder_plugin_test
   gtest: true
@@ -15740,6 +16012,7 @@ targets:
   - test/cpp/end2end/server_builder_plugin_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: server_builder_test
   gtest: true
@@ -15759,6 +16032,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/cpp/server/server_builder_test.cc
   deps:
+  - gtest
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -15781,6 +16055,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
+  - gtest
   - grpc++_unsecure
   - grpc_test_util_unsecure
   platforms:
@@ -15795,6 +16070,7 @@ targets:
   src:
   - test/core/channel/server_call_tracer_factory_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: server_chttp2_test
@@ -15805,6 +16081,7 @@ targets:
   src:
   - test/core/surface/server_chttp2_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: server_config_selector_test
   gtest: true
@@ -15814,6 +16091,7 @@ targets:
   src:
   - test/core/server/server_config_selector_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: server_context_test_spouse_test
@@ -15842,6 +16120,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/server_early_return_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: server_interceptors_end2end_test
   gtest: true
@@ -15863,6 +16142,7 @@ targets:
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: server_registered_method_bad_client_test
   gtest: true
@@ -15876,6 +16156,7 @@ targets:
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: server_request_call_test
   gtest: true
@@ -15893,6 +16174,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
@@ -15909,6 +16191,7 @@ targets:
   - test/core/handshake/server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -15922,6 +16205,7 @@ targets:
   src:
   - test/core/surface/server_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: service_config_end2end_test
   gtest: true
@@ -15942,6 +16226,7 @@ targets:
   - test/cpp/end2end/service_config_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: service_config_test
   gtest: true
@@ -15951,6 +16236,7 @@ targets:
   src:
   - test/core/service_config/service_config_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: settings_timeout_test
   gtest: true
@@ -15960,6 +16246,7 @@ targets:
   src:
   - test/core/transport/chttp2/settings_timeout_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: shared_bit_gen_test
   gtest: true
@@ -15991,6 +16278,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/shutdown_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: simple_request_bad_client_test
   gtest: true
@@ -16004,6 +16292,7 @@ targets:
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: single_set_ptr_test
   gtest: true
@@ -16072,6 +16361,7 @@ targets:
   src:
   - test/core/resolver/sockaddr_resolver_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: sockaddr_utils_test
   gtest: true
@@ -16081,6 +16371,7 @@ targets:
   src:
   - test/core/address_utils/sockaddr_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: socket_utils_test
   gtest: true
@@ -16090,6 +16381,7 @@ targets:
   src:
   - test/core/iomgr/socket_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16117,6 +16409,7 @@ targets:
   - src/core/credentials/transport/tls/spiffe_utils.cc
   - test/core/credentials/transport/tls/spiffe_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: spinlock_test
   gtest: true
@@ -16126,6 +16419,7 @@ targets:
   src:
   - test/core/util/spinlock_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: ssl_transport_security_test
@@ -16138,6 +16432,7 @@ targets:
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16153,6 +16448,7 @@ targets:
   - test/core/tsi/ssl_transport_security_utils_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16166,6 +16462,7 @@ targets:
   src:
   - test/core/test_util/stack_tracer_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16180,6 +16477,7 @@ targets:
   src:
   - test/core/util/stat_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: static_stride_scheduler_test
@@ -16204,6 +16502,7 @@ targets:
   src:
   - test/core/transport/status_conversion_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: status_flag_test
@@ -16229,6 +16528,7 @@ targets:
   src:
   - test/core/util/status_helper_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: status_util_test
@@ -16239,6 +16539,7 @@ targets:
   src:
   - test/core/call/status_util_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: stream_leak_with_queued_flow_control_update_test
@@ -16249,6 +16550,7 @@ targets:
   src:
   - test/core/transport/chttp2/stream_leak_with_queued_flow_control_update_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: streaming_throughput_test
   gtest: true
@@ -16267,6 +16569,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/streaming_throughput_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -16282,6 +16585,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: string_ref_test
   gtest: true
@@ -16291,6 +16595,7 @@ targets:
   src:
   - test/cpp/util/string_ref_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   uses_polling: false
@@ -16302,6 +16607,7 @@ targets:
   src:
   - test/core/util/string_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: subchannel_args_test
@@ -16312,6 +16618,7 @@ targets:
   src:
   - test/core/client_channel/subchannel_args_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: switch_test
@@ -16343,6 +16650,7 @@ targets:
   src:
   - test/core/util/sync_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: system_roots_test
@@ -16353,6 +16661,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/system_roots_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: table_test
   gtest: true
@@ -16379,6 +16688,7 @@ targets:
   src:
   - test/core/iomgr/tcp_client_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16392,6 +16702,7 @@ targets:
   src:
   - test/core/event_engine/posix/tcp_posix_socket_utils_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16408,6 +16719,7 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16420,6 +16732,7 @@ targets:
   src:
   - test/core/iomgr/tcp_server_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16464,6 +16777,7 @@ targets:
   src:
   - test/core/credentials/transport/ssl/ssl_credentials_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: test_core_credentials_transport_tls_tls_credentials_test
   gtest: true
@@ -16473,6 +16787,7 @@ targets:
   src:
   - test/core/credentials/transport/tls/tls_credentials_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: test_core_event_engine_posix_timer_heap_test
   gtest: true
@@ -16544,6 +16859,7 @@ targets:
   src:
   - test/core/iomgr/timer_heap_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: test_core_slice_slice_buffer_test
@@ -16554,6 +16870,7 @@ targets:
   src:
   - test/core/slice/slice_buffer_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: test_core_slice_slice_test
@@ -16593,6 +16910,7 @@ targets:
   - test/cpp/client/credentials_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: test_cpp_end2end_ssl_credentials_test
@@ -16600,6 +16918,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/test_util/postmortem.h
   - test/cpp/end2end/test_service_impl.h
   src:
   - src/proto/grpc/testing/echo.proto
@@ -16613,6 +16932,7 @@ targets:
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: test_cpp_end2end_tls_credentials_test
   gtest: true
@@ -16632,6 +16952,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/tls_credentials_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: test_cpp_server_credentials_test
   gtest: true
@@ -16643,6 +16964,7 @@ targets:
   - test/cpp/server/credentials_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: test_cpp_util_slice_test
@@ -16653,6 +16975,7 @@ targets:
   src:
   - test/cpp/util/slice_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: test_cpp_util_time_test
@@ -16663,6 +16986,7 @@ targets:
   src:
   - test/cpp/util/time_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   uses_polling: false
 - name: thd_test
@@ -16673,6 +16997,7 @@ targets:
   src:
   - test/core/util/thd_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: thread_manager_test
@@ -16683,6 +17008,7 @@ targets:
   src:
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
 - name: thread_pool_test
@@ -16693,6 +17019,7 @@ targets:
   src:
   - test/core/event_engine/thread_pool_test.cc
   deps:
+  - gtest
   - grpc
   - grpc_test_util_unsecure
   uses_polling: false
@@ -16732,6 +17059,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/thread_stress_test.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -16758,6 +17086,7 @@ targets:
   - test/core/event_engine/test_suite/tests/timer_test.cc
   - test/core/event_engine/test_suite/thready_posix_event_engine_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16772,6 +17101,7 @@ targets:
   src:
   - test/cpp/common/time_jump_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
@@ -16786,6 +17116,7 @@ targets:
   src:
   - test/core/util/time_util_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: timeout_encoding_test
@@ -16796,6 +17127,7 @@ targets:
   src:
   - test/core/transport/timeout_encoding_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: timer_list_test
@@ -16826,6 +17158,7 @@ targets:
   src:
   - test/core/event_engine/posix/timer_manager_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: timer_test
@@ -16837,6 +17170,7 @@ targets:
   src:
   - test/cpp/common/timer_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: tls_certificate_verifier_test
@@ -16849,6 +17183,7 @@ targets:
   - test/cpp/security/tls_certificate_verifier_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
 - name: tls_key_export_test
@@ -16867,6 +17202,7 @@ targets:
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - test/cpp/end2end/tls_key_export_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: tls_security_connector_test
   gtest: true
@@ -16878,6 +17214,7 @@ targets:
   - test/core/credentials/transport/tls/tls_security_connector_test.cc
   - test/core/test_util/test_call_creds.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: too_many_pings_test
   gtest: true
@@ -16890,6 +17227,7 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
 - name: trace_flags_test
@@ -16900,6 +17238,7 @@ targets:
   src:
   - test/core/telemetry/trace_flags_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: traced_buffer_list_test
@@ -16910,6 +17249,7 @@ targets:
   src:
   - test/core/event_engine/posix/traced_buffer_list_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -16924,6 +17264,7 @@ targets:
   src:
   - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: transport_security_test
   gtest: true
@@ -16933,6 +17274,7 @@ targets:
   src:
   - test/core/tsi/transport_security_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: try_join_test
   gtest: true
@@ -17053,6 +17395,7 @@ targets:
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: uri_test
   gtest: true
@@ -17062,6 +17405,7 @@ targets:
   src:
   - test/core/util/uri_test.cc
   deps:
+  - gtest
   - grpc_test_util_unsecure
 - name: useful_test
   gtest: true
@@ -17084,6 +17428,7 @@ targets:
   src:
   - test/core/util/uuid_v4_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: validation_errors_test
@@ -17094,6 +17439,7 @@ targets:
   src:
   - test/core/util/validation_errors_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: varint_test
   gtest: true
@@ -17103,6 +17449,7 @@ targets:
   src:
   - test/core/transport/chttp2/varint_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: wait_for_callback_test
@@ -17173,6 +17520,7 @@ targets:
   src:
   - test/core/event_engine/posix/wakeup_fd_posix_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -17188,6 +17536,7 @@ targets:
   - test/core/load_balancing/weighted_round_robin_config_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: weighted_round_robin_test
@@ -17206,6 +17555,7 @@ targets:
   - test/core/load_balancing/weighted_round_robin_test.cc
   - test/core/test_util/fake_stats_plugin.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -17219,6 +17569,7 @@ targets:
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/win_socket_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -17237,6 +17588,7 @@ targets:
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: windows_endpoint_test
   gtest: true
@@ -17248,6 +17600,7 @@ targets:
   - test/core/event_engine/windows/create_sockpair.cc
   - test/core/event_engine/windows/windows_endpoint_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -17265,6 +17618,7 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/util/work_serializer_test.cc
   deps:
+  - gtest
   - grpc_test_util
   platforms:
   - linux
@@ -17307,6 +17661,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
+  - gtest
   - grpc++
   - grpc_test_util
   platforms:
@@ -17419,6 +17774,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -17431,6 +17787,7 @@ targets:
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: xds_certificate_provider_test
@@ -17441,6 +17798,7 @@ targets:
   src:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: xds_client_test
@@ -17594,6 +17952,7 @@ targets:
   - test/core/xds/xds_client_test.cc
   - test/core/xds/xds_transport_fake.cc
   deps:
+  - gtest
   - absl/log:absl_check
   - absl/log:absl_log
   - protobuf
@@ -17745,6 +18104,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -17878,6 +18238,7 @@ targets:
   - src/cpp/util/status.cc
   - test/core/xds/xds_cluster_resource_type_test.cc
   deps:
+  - gtest
   - absl/log:absl_check
   - absl/log:absl_log
   - protobuf
@@ -18028,6 +18389,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -18129,6 +18491,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -18277,6 +18640,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -18300,6 +18664,7 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds/xds_credentials_end2end_test.cc
   deps:
+  - gtest
   - grpc++_test_util
 - name: xds_credentials_test
   gtest: true
@@ -18309,6 +18674,7 @@ targets:
   src:
   - test/core/credentials/transport/xds/xds_credentials_test.cc
   deps:
+  - gtest
   - grpc_test_util
 - name: xds_csds_end2end_test
   gtest: true
@@ -18475,6 +18841,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -18622,6 +18989,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -18706,6 +19074,7 @@ targets:
   - src/cpp/util/status.cc
   - test/core/xds/xds_endpoint_resource_type_test.cc
   deps:
+  - gtest
   - absl/log:absl_check
   - absl/log:absl_log
   - protobuf
@@ -18852,6 +19221,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -19000,6 +19370,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -19146,6 +19517,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -19295,6 +19667,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -19427,6 +19800,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -19536,6 +19910,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -19673,6 +20048,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -19751,6 +20127,7 @@ targets:
   - third_party/xds/xds/core/v3/resource_name.proto
   - test/core/xds/xds_metadata_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -19897,6 +20274,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20045,6 +20423,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20058,6 +20437,7 @@ targets:
   src:
   - test/core/load_balancing/xds_override_host_lb_config_parser_test.cc
   deps:
+  - gtest
   - grpc_test_util
   uses_polling: false
 - name: xds_override_host_test
@@ -20074,6 +20454,7 @@ targets:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/load_balancing/xds_override_host_test.cc
   deps:
+  - gtest
   - protobuf
   - grpc_test_util
   uses_polling: false
@@ -20222,6 +20603,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20372,6 +20754,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20522,6 +20905,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20636,6 +21020,7 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
+  - gtest
   - grpc++
   - protoc
   - grpc_test_util
@@ -20784,6 +21169,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux
@@ -20939,6 +21325,7 @@ targets:
   - test/cpp/end2end/xds/xds_utils.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_config
   - grpc++_test_util
   platforms:
@@ -21092,6 +21479,7 @@ targets:
   - test/cpp/interop/xds_stats_watcher.cc
   - test/cpp/interop/xds_stats_watcher_test.cc
   deps:
+  - gtest
   - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
@@ -21241,6 +21629,7 @@ targets:
   - test/cpp/end2end/xds/xds_wrr_end2end_test.cc
   - test/cpp/util/tls_test_utils.cc
   deps:
+  - gtest
   - grpc++_test_util
   platforms:
   - linux

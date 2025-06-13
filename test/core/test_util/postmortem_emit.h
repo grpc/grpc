@@ -12,26 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
-#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
-
-#include "gtest/gtest.h"
-#include "test/core/test_util/postmortem_emit.h"
+#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
 
 namespace grpc_core {
 
-// Helper class to dump useful post-mortem analysis in the event of a test
-// failure.
-class PostMortem {
- public:
-  // Used as a scoped object PostMortem will check gtest failure and emit
-  // state if it sees a test failure on destruction.
-  ~PostMortem() {
-    if (!::testing::Test::HasFailure()) return;
-    PostMortemEmit();
-  }
-};
+// Emit useful post mortem analysis from whatever in-process data we have.
+void PostMortemEmit();
 
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
+#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H

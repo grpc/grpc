@@ -39,7 +39,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/test_init.h"
 #include "test/core/test_util/build.h"
-#include "test/core/test_util/postmortem.h"
+#include "test/core/test_util/postmortem_emit.h"
 #include "test/core/test_util/stack_tracer.h"
 
 int64_t g_fixture_slowdown_factor = 1;
@@ -158,7 +158,7 @@ void grpc_test_init(int* argc, char** argv) {
   // concurrently running test binary
   srand(seed());
   grpc_core::SetWaitForSingleOwnerStalledCallback([]() {
-    grpc_core::PostMortem::Emit();
+    grpc_core::PostMortemEmit();
     AsanAssertNoLeaks();
   });
 }

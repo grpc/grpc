@@ -50,7 +50,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:postmortem",
+        "//test/core/test_util:postmortem_emit",
     ],
 )
 
