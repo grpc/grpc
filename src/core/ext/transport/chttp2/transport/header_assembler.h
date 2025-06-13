@@ -200,11 +200,7 @@ class HeaderAssembler {
   bool IsReady() const { return is_ready_; }
 
   explicit HeaderAssembler(const uint32_t stream_id)
-      : header_in_progress_(false),
-        is_ready_(false),
-        num_headers_received_(0),
-        max_headers_(kMaxHeaderFrames),
-        stream_id_(stream_id) {}
+      : header_in_progress_(false), is_ready_(false), stream_id_(stream_id) {}
 
   ~HeaderAssembler() = default;
 
