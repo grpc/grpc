@@ -247,7 +247,6 @@ using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
-grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -296,15 +295,9 @@ void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
   g_write_timestamps_callback = fn;
 }
 
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  g_get_copied_context_fn = fn;
-}
-
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
   return g_write_timestamps_callback;
 }
-
-CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
 // GrpcHttp2SetWriteTimestampsCallback method with each context in the list
@@ -376,12 +369,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
-  // ContextList::Execute follows semantics of a callback function and does not
-  // take a ref on error
-  if (context_list != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
-  }
+  delete context_list;
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -643,6 +631,33 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("last_window_update", t->last_window_update_time)
                   .Set("settings", t->settings.ToJsonObject())
                   .Set("flow_control", t->flow_control.stats().ToJsonObject())
+                  .Set("ping_rate_policy", t->ping_rate_policy.ToJson())
+                  .Set("ping_callbacks", t->ping_callbacks.ToJson())
+                  .Set("goaway_error", t->goaway_error.ToString())
+                  .Set("goaway_error", Json::FromString([t]() {
+                         switch (t->sent_goaway_state) {
+                           case GRPC_CHTTP2_NO_GOAWAY_SEND:
+                             return "none";
+                           case GRPC_CHTTP2_GRACEFUL_GOAWAY:
+                             return "graceful";
+                           case GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED:
+                             return "final_scheduled";
+                           case GRPC_CHTTP2_FINAL_GOAWAY_SENT:
+                             return "final_sent";
+                         }
+                         return "unknown";
+                       }()))
+                  .Set("write_state", Json::FromString([t]() {
+                         switch (t->write_state) {
+                           case GRPC_CHTTP2_WRITE_STATE_IDLE:
+                             return "idle";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING:
+                             return "writing";
+                           case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+                             return "writing_with_more";
+                         }
+                         return "unknown";
+                       }()))
                   .TakeJsonObject());
           std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
               children;

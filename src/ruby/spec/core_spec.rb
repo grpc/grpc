@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,25 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+require 'spec_helper'
 
-ACTION="${1:-}"
-[[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
-
-# change to root directory
-cd "$(dirname "${0}")/../.."
-
-DIRS=(
-    'examples'
-    'src'
-    'test'
-    'tools'
-    'setup.py'
-)
-
-VIRTUALENV=venv_black_code
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
-
-python3 -m pip install black==25.1.0
-python3 -m black --config=black.toml $ACTION "${DIRS[@]}"
+describe GRPC::Core do
+  it 'returns valid VALUEs from C functions' do
+    expect(GRPC::Core.fork_unsafe_begin).to be_nil
+    expect(GRPC::Core.fork_unsafe_end).to be_nil
+  end
+end

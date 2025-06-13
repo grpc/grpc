@@ -2885,6 +2885,7 @@ add_library(grpc
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
@@ -2954,6 +2955,7 @@ add_library(grpc
   src/core/util/uri.cc
   src/core/util/uuid_v4.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/windows/directory_reader.cc
   src/core/util/work_serializer.cc
   src/core/xds/grpc/certificate_provider_store.cc
@@ -3645,6 +3647,7 @@ add_library(grpc_unsecure
   src/core/service_config/service_config_impl.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/default_tcp_tracer.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
@@ -3685,6 +3688,7 @@ add_library(grpc_unsecure
   src/core/util/uri.cc
   src/core/util/uuid_v4.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   ${gRPC_ADDITIONAL_DLL_SRC}
 )
@@ -5964,6 +5968,7 @@ add_library(grpc_authorization_provider
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -5995,6 +6000,7 @@ add_library(grpc_authorization_provider
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
 )
 
@@ -9619,6 +9625,7 @@ add_executable(call_utils_test
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -9646,6 +9653,7 @@ add_executable(call_utils_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/call/call_utils_test.cc
 )
@@ -15771,6 +15779,7 @@ add_executable(filter_fusion_test
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -15798,6 +15807,7 @@ add_executable(filter_fusion_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/call/filter_fusion_test.cc
 )
@@ -18622,6 +18632,7 @@ add_executable(header_assembler_test
   src/core/resolver/resolver_registry.cc
   src/core/service_config/service_config_parser.cc
   src/core/telemetry/call_tracer.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/telemetry/histogram_view.cc
   src/core/telemetry/metrics.cc
   src/core/telemetry/stats.cc
@@ -18650,6 +18661,7 @@ add_executable(header_assembler_test
   src/core/util/time_averaged_stats.cc
   src/core/util/uri.cc
   src/core/util/validation_errors.cc
+  src/core/util/wait_for_single_owner.cc
   src/core/util/work_serializer.cc
   test/core/transport/chttp2/header_assembler_test.cc
 )
@@ -25235,6 +25247,17 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(query_extensions_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/event_engine/event_engine.cc
+  src/core/lib/event_engine/resolved_address.cc
+  src/core/lib/event_engine/slice.cc
+  src/core/lib/event_engine/slice_buffer.cc
+  src/core/lib/slice/slice.cc
+  src/core/lib/slice/slice_buffer.cc
+  src/core/lib/slice/slice_string_helpers.cc
+  src/core/telemetry/context_list_entry.cc
+  src/core/util/glob.cc
   test/core/event_engine/query_extensions_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25268,7 +25291,10 @@ target_include_directories(query_extensions_test
 target_link_libraries(query_extensions_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
+  absl::hash
   absl::statusor
+  absl::utility
   gpr
 )
 
@@ -29349,6 +29375,7 @@ add_executable(test_core_event_engine_slice_buffer_test
   src/core/lib/slice/slice.cc
   src/core/lib/slice/slice_buffer.cc
   src/core/lib/slice/slice_string_helpers.cc
+  src/core/telemetry/context_list_entry.cc
   src/core/util/glob.cc
   test/core/event_engine/slice_buffer_test.cc
 )
@@ -31349,7 +31376,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_single_owner_test
-  src/core/util/time.cc
   test/core/util/wait_for_single_owner_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31357,6 +31383,7 @@ if(WIN32 AND MSVC)
     target_compile_definitions(wait_for_single_owner_test
     PRIVATE
       "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
     )
   endif()
 endif()
@@ -31383,8 +31410,7 @@ target_include_directories(wait_for_single_owner_test
 target_link_libraries(wait_for_single_owner_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  absl::statusor
-  gpr
+  grpc
 )
 
 
