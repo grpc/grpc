@@ -307,7 +307,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request):
+        def continuation(new_details, request):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -332,7 +332,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
         call = self._interceptor.intercept_unary_unary(
-            continuation,  # type: ignore[arg-type]
+            continuation,  # type: ignore
             client_call_details,
             request,
         )
@@ -374,7 +374,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request):
+        def continuation(new_details, request):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -394,7 +394,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_unary(
-                continuation,  # type: ignore[arg-type]
+                continuation,  # type: ignore
                 client_call_details,
                 request,
             )
@@ -435,7 +435,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request):
+        def continuation(new_details, request):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -455,7 +455,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
         try:
             return self._interceptor.intercept_unary_stream(
-                continuation,  # type: ignore[arg-type]
+                continuation,  # type: ignore
                 client_call_details,
                 request,
             )
@@ -515,7 +515,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details, request_iterator):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -526,7 +526,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             ) = _unwrap_client_call_details(new_details, client_call_details)
             try:
                 response, call = self._thunk(new_method).with_call(
-                    request_iterator,  # type: ignore[arg-type]
+                    request_iterator,
                     timeout=new_timeout,
                     metadata=new_metadata,
                     credentials=new_credentials,
@@ -539,8 +539,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             except Exception as exception:  # pylint:disable=broad-except
                 return _FailureOutcome(exception, sys.exc_info()[2])
 
-        call = self._interceptor.intercept_stream_unary(  # type: ignore[call-arg]
-            continuation, client_call_details, request_iterator
+        call = self._interceptor.intercept_stream_unary(
+            continuation,  # type: ignore
+            client_call_details,
+            request_iterator,  # type: ignore[arg-type]
         )
         return call.result(), call
 
@@ -580,7 +582,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details, request_iterator):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -590,7 +592,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 new_compression,
             ) = _unwrap_client_call_details(new_details, client_call_details)
             return self._thunk(new_method).future(
-                request_iterator,  # type: ignore[arg-type]
+                request_iterator,
                 timeout=new_timeout,
                 metadata=new_metadata,
                 credentials=new_credentials,
@@ -599,8 +601,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             )
 
         try:
-            return self._interceptor.intercept_stream_unary(  # type: ignore[call-arg]
-                continuation, client_call_details, request_iterator
+            return self._interceptor.intercept_stream_unary(
+                continuation,  # type: ignore
+                client_call_details,
+                request_iterator,  # type: ignore[arg-type]
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -639,7 +643,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             compression,
         )
 
-        def continuation(new_details, request_iterator):
+        def continuation(new_details, request_iterator):  # type: ignore
             (
                 new_method,
                 new_timeout,
@@ -659,7 +663,9 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
         try:
             return self._interceptor.intercept_stream_stream(
-                continuation, client_call_details, request_iterator
+                continuation,  # type: ignore
+                client_call_details,
+                request_iterator,  # type: ignore[arg-type]
             )
         except Exception as exception:  # pylint:disable=broad-except
             return _FailureOutcome(exception, sys.exc_info()[2])
@@ -690,7 +696,8 @@ class _Channel(grpc.Channel):
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False
     ):
-        self._channel.subscribe(callback, try_to_connect=try_to_connect)
+        """Subscribes to connectivity changes."""
+        self._channel.subscribe(callback, try_to_connect or False)
 
     def unsubscribe(self, callback: Callable):
         self._channel.unsubscribe(callback)
@@ -704,15 +711,14 @@ class _Channel(grpc.Channel):
         _registered_method: Optional[bool] = False,
     ) -> grpc.UnaryUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
-        thunk = lambda m: self._channel.unary_unary(
+        thunk = lambda m: self._channel.unary_unary(  # type: ignore
             m,
             request_serializer,
             response_deserializer,
             _registered_method,
         )
-        # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryUnaryClientInterceptor):
-            return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)
+            return _UnaryUnaryMultiCallable(thunk, method, self._interceptor)  # type: ignore
         else:
             return thunk(method)
 
@@ -725,15 +731,14 @@ class _Channel(grpc.Channel):
         _registered_method: Optional[bool] = False,
     ) -> grpc.UnaryStreamMultiCallable:
         # pytype: disable=wrong-arg-count
-        thunk = lambda m: self._channel.unary_stream(
+        thunk = lambda m: self._channel.unary_stream(  # type: ignore
             m,
             request_serializer,
             response_deserializer,
             _registered_method,
         )
-        # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.UnaryStreamClientInterceptor):
-            return _UnaryStreamMultiCallable(thunk, method, self._interceptor)
+            return _UnaryStreamMultiCallable(thunk, method, self._interceptor)  # type: ignore
         else:
             return thunk(method)
 
@@ -746,15 +751,14 @@ class _Channel(grpc.Channel):
         _registered_method: Optional[bool] = False,
     ) -> grpc.StreamUnaryMultiCallable:
         # pytype: disable=wrong-arg-count
-        thunk = lambda m: self._channel.stream_unary(
+        thunk = lambda m: self._channel.stream_unary(  # type: ignore
             m,
             request_serializer,
             response_deserializer,
             _registered_method,
         )
-        # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamUnaryClientInterceptor):
-            return _StreamUnaryMultiCallable(thunk, method, self._interceptor)
+            return _StreamUnaryMultiCallable(thunk, method, self._interceptor)  # type: ignore
         else:
             return thunk(method)
 
@@ -767,15 +771,14 @@ class _Channel(grpc.Channel):
         _registered_method: Optional[bool] = False,
     ) -> grpc.StreamStreamMultiCallable:
         # pytype: disable=wrong-arg-count
-        thunk = lambda m: self._channel.stream_stream(
+        thunk = lambda m: self._channel.stream_stream(  # type: ignore
             m,
             request_serializer,
             response_deserializer,
             _registered_method,
         )
-        # pytype: enable=wrong-arg-count
         if isinstance(self._interceptor, grpc.StreamStreamClientInterceptor):
-            return _StreamStreamMultiCallable(thunk, method, self._interceptor)
+            return _StreamStreamMultiCallable(thunk, method, self._interceptor)  # type: ignore
         else:
             return thunk(method)
 

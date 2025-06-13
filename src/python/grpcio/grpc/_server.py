@@ -224,7 +224,7 @@ def _possibly_finish_call(
     if not _is_rpc_state_active(state) and not state.due:
         callbacks = state.callbacks
         state.callbacks = None
-        return state, callbacks
+        return state, callbacks or ()
     else:
         return None, ()
 
