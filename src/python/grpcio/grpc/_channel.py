@@ -1826,7 +1826,7 @@ class _ChannelConnectivityState(object):
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        List[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -1975,7 +1975,7 @@ def _subscribe(
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
-            _spawn_delivery(state, (callback,))
+            _spawn_delivery(state, [callback])
             state.try_to_connect |= bool(try_to_connect)
             state.callbacks_and_connectivities.append(
                 [callback, state.connectivity]
@@ -2107,7 +2107,7 @@ class Channel(grpc.Channel):
         callback: Callable[[grpc.ChannelConnectivity], None],
         try_to_connect: Optional[bool] = None,
     ) -> None:
-        _subscribe(self._connectivity_state, callback, try_to_connect)
+        _subscribe(self._connectivity_state, callback, bool(try_to_connect))
 
     def unsubscribe(
         self, callback: Callable[[grpc.ChannelConnectivity], None]

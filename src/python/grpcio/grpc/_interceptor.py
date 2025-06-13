@@ -28,7 +28,7 @@ from ._typing import SerializingFunction
 
 
 class _ServicePipeline(object):
-    interceptors: Tuple[grpc.ServerInterceptor]
+    interceptors: Sequence[grpc.ServerInterceptor]
 
     def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
         self.interceptors = tuple(interceptors)

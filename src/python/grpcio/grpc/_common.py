@@ -81,7 +81,7 @@ def _transform(
     message: Any,
     transformer: Union[SerializingFunction, DeserializingFunction, None],
     exception_message: str,
-) -> Any:
+) -> Any:  # pytype: disable=invalid-annotation
     if transformer is None:
         return message
     else:
@@ -112,7 +112,7 @@ def _wait_once(
     wait_fn: Callable[..., bool],
     timeout: float,
     spin_cb: Optional[Callable[[], None]],
-):
+) -> None:  # pytype: disable=invalid-annotation
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
