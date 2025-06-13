@@ -21,7 +21,9 @@
 
 namespace grpc_core {
 
+#ifndef GPR_CPU_CUSTOM
 thread_local PerCpuShardingHelper::State PerCpuShardingHelper::state_;
+#endif  // GPR_CPU_CUSTOM
 
 size_t PerCpuOptions::Shards() {
   return ShardsForCpuCount(gpr_cpu_num_cores());

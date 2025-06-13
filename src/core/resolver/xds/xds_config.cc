@@ -41,10 +41,10 @@ XdsConfig::ClusterConfig::ClusterConfig(
 
 XdsConfig::ClusterConfig::ClusterConfig(
     std::shared_ptr<const XdsClusterResource> cluster,
-    std::vector<absl::string_view> leaf_clusters)
+    std::vector<absl::string_view> leaf_clusters, std::string resolution_note)
     : cluster(std::move(cluster)),
       children(absl::in_place_type_t<AggregateConfig>(),
-               std::move(leaf_clusters)) {}
+               std::move(leaf_clusters), std::move(resolution_note)) {}
 
 //
 // XdsConfig
@@ -81,7 +81,10 @@ std::string XdsConfig::ToString() const {
           [&](const ClusterConfig::AggregateConfig& aggregate_config) {
             parts.push_back(absl::StrCat(
                 "        leaf_clusters: [",
-                absl::StrJoin(aggregate_config.leaf_clusters, ", "), "]\n"));
+                absl::StrJoin(aggregate_config.leaf_clusters, ", "),
+                "],\n"
+                "        resolution_note: \"",
+                aggregate_config.resolution_note, "\"\n"));
           });
       parts.push_back(
           "      }\n"

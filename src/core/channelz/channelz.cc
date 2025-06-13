@@ -122,8 +122,8 @@ void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
 // BaseNode
 //
 
-BaseNode::BaseNode(EntityType type, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)) {
+BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
+    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_memory) {
   // The registry will set uuid_ under its lock.
   ChannelzRegistry::Register(this);
 }
@@ -298,13 +298,12 @@ CallCounts PerCpuCallCountingHelper::GetCallCounts() const {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+ChannelNode::ChannelNode(std::string target, size_t max_trace_memory,
                          bool is_internal_channel)
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
-               target),
-      target_(std::move(target)),
-      trace_(channel_tracer_max_nodes) {}
+               max_trace_memory, target),
+      target_(std::move(target)) {}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
@@ -368,7 +367,7 @@ Json ChannelNode::RenderJson() {
     });
   }
   // Fill in the channel trace if applicable.
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -422,10 +421,9 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 //
 
 SubchannelNode::SubchannelNode(std::string target_address,
-                               size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel, target_address),
-      target_(std::move(target_address)),
-      trace_(channel_tracer_max_nodes) {}
+                               size_t max_trace_memory)
+    : BaseNode(EntityType::kSubchannel, max_trace_memory, target_address),
+      target_(std::move(target_address)) {}
 
 SubchannelNode::~SubchannelNode() {}
 
@@ -454,7 +452,7 @@ Json SubchannelNode::RenderJson() {
       {"target", Json::FromString(target_)},
   };
   // Fill in the channel trace if applicable
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -489,8 +487,8 @@ Json SubchannelNode::RenderJson() {
 // ServerNode
 //
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
+ServerNode::ServerNode(size_t max_trace_memory)
+    : BaseNode(EntityType::kServer, max_trace_memory, "") {}
 
 ServerNode::~ServerNode() {}
 
@@ -519,7 +517,7 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
 Json ServerNode::RenderJson() {
   Json::Object data;
   // Fill in the channel trace if applicable.
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -700,7 +698,7 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
 
 SocketNode::SocketNode(std::string local, std::string remote, std::string name,
                        RefCountedPtr<Security> security)
-    : BaseNode(EntityType::kSocket, std::move(name)),
+    : BaseNode(EntityType::kSocket, 0, std::move(name)),
       local_(std::move(local)),
       remote_(std::move(remote)),
       security_(std::move(security)) {}
@@ -814,7 +812,7 @@ Json SocketNode::RenderJson() {
 //
 
 ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
-    : BaseNode(EntityType::kListenSocket, std::move(name)),
+    : BaseNode(EntityType::kListenSocket, 0, std::move(name)),
       local_addr_(std::move(local_addr)) {}
 
 Json ListenSocketNode::RenderJson() {

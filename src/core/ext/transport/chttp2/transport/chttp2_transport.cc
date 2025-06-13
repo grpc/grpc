@@ -16,6 +16,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/credentials.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
@@ -67,6 +68,7 @@
 #include "src/core/ext/transport/chttp2/transport/frame_security.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_encoder.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
@@ -108,6 +110,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/transport/auth_context.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
@@ -243,7 +246,6 @@ using WriteEvent =
     ::grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent;
 
 grpc_core::WriteTimestampsCallback g_write_timestamps_callback = nullptr;
-grpc_core::CopyContextFn g_get_copied_context_fn = nullptr;
 }  // namespace
 
 namespace grpc_core {
@@ -292,15 +294,9 @@ void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn) {
   g_write_timestamps_callback = fn;
 }
 
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn) {
-  g_get_copied_context_fn = fn;
-}
-
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback() {
   return g_write_timestamps_callback;
 }
-
-CopyContextFn GrpcHttp2GetCopyContextFn() { return g_get_copied_context_fn; }
 
 // For each entry in the passed ContextList, it executes the function set using
 // GrpcHttp2SetWriteTimestampsCallback method with each context in the list
@@ -372,12 +368,7 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   grpc_slice_buffer_destroy(&qbuf);
 
-  grpc_error_handle error = GRPC_ERROR_CREATE("Transport destroyed");
-  // ContextList::Execute follows semantics of a callback function and does not
-  // take a ref on error
-  if (context_list != nullptr) {
-    grpc_core::ForEachContextListEntryExecute(context_list, nullptr, error);
-  }
+  delete context_list;
   context_list = nullptr;
 
   grpc_slice_buffer_destroy(&read_buffer);
@@ -619,6 +610,10 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           }
           misc["keepaliveTime"] =
               Json::FromString(t->keepalive_time.ToJsonString());
+          misc["keepaliveTimeout"] =
+              Json::FromString(t->keepalive_timeout.ToJsonString());
+          misc["pingTimeout"] =
+              Json::FromString(t->ping_timeout.ToJsonString());
           misc["nextAdjustedKeepaliveTimestamp"] =
               Json::FromString((t->next_adjusted_keepalive_timestamp -
                                 grpc_core::Timestamp::Now())
@@ -648,6 +643,36 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           misc["lastWindowUpdateAge"] = Json::FromString(
               (grpc_core::Timestamp::Now() - t->last_window_update_time)
                   .ToJsonString());
+          misc["pingRatePolicy"] =
+              Json::FromObject(t->ping_rate_policy.ToJson());
+          misc["pingCallbacks"] = Json::FromObject(t->ping_callbacks.ToJson());
+          misc["goaway_error"] = Json::FromString(t->goaway_error.ToString());
+          switch (t->sent_goaway_state) {
+            case GRPC_CHTTP2_NO_GOAWAY_SEND:
+              misc["sentGoawayState"] = Json::FromString("none");
+              break;
+            case GRPC_CHTTP2_GRACEFUL_GOAWAY:
+              misc["sentGoawayState"] = Json::FromString("graceful");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED:
+              misc["sentGoawayState"] = Json::FromString("final_scheduled");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SENT:
+              misc["sentGoawayState"] = Json::FromString("final_sent");
+              break;
+          }
+          switch (t->write_state) {
+            case GRPC_CHTTP2_WRITE_STATE_IDLE:
+              misc["writeState"] = Json::FromString("idle");
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING:
+              misc["writeState"] = Json::FromString("writing");
+              break;
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+              misc["writeState"] = Json::FromString("writing_with_more");
+              break;
+          }
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
           sink.AddAdditionalInfo("http2", std::move(http2_info));
@@ -806,6 +831,10 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   if (grpc_core::test_only_init_callback != nullptr) {
     grpc_core::test_only_init_callback();
   }
+
+  grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
+  http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =
@@ -1609,7 +1638,7 @@ static void send_message_locked(
     grpc_transport_stream_op_batch_payload* op_payload,
     grpc_chttp2_transport* t, grpc_closure* on_complete) {
   t->num_messages_in_next_write++;
-  grpc_core::global_stats().IncrementHttp2SendMessageSize(
+  t->http2_stats->IncrementHttp2SendMessageSize(
       op->payload->send_message.send_message->Length());
   on_complete->next_data.scratch |= t->closure_barrier_may_cover_write;
   s->send_message_finished = add_closure_barrier(op->on_complete);
@@ -2449,8 +2478,7 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
             // sent headers yet (still in "idle" state). Note that since we have
             // marked the stream closed above, we won't be writing to it
             // anymore.
-            if (grpc_core::IsRstStreamFixEnabled() && t->is_client &&
-                !sent_initial_metadata) {
+            if (t->is_client && !sent_initial_metadata) {
               return;
             }
             grpc_chttp2_add_rst_stream_to_next_write(
