@@ -36,6 +36,7 @@
 - script: tools/distrib/gen_experiments_and_format.sh --check
   cpu_cost: 1000
 - script: tools/distrib/pylint_code.sh
+- script: tools/distrib/ruff_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
 - script: tools/distrib/black_code.sh --check
   cpu_cost: 1000
