@@ -1288,7 +1288,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 (),
                 (),
                 grpc.StatusCode.INTERNAL,
-                "Exception serializing request!",
+                "Exception serializing request!!",
             )
             raise _InactiveRpcError(state)
 
