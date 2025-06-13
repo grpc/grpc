@@ -906,7 +906,7 @@ def _handle_unary_unary(
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_unary,
+        method_handler.unary_unary,  # type: ignore
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -930,7 +930,7 @@ def _handle_unary_stream(
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.unary_stream,
+        method_handler.unary_stream,  # type: ignore
         unary_request,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -954,7 +954,7 @@ def _handle_stream_unary(
         _unary_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_unary,
+        method_handler.stream_unary,  # type: ignore
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
@@ -978,7 +978,7 @@ def _handle_stream_stream(
         _stream_response_in_pool,
         rpc_event,
         state,
-        method_handler.stream_stream,
+        method_handler.stream_stream,  # type: ignore
         lambda: request_iterator,
         method_handler.request_deserializer,
         method_handler.response_serializer,
