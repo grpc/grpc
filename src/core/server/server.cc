@@ -1166,8 +1166,10 @@ Server::MakeCallDestination(const ChannelArgs& args) {
 Server::Server(const ChannelArgs& args)
     : channelz::DataSource(CreateChannelzNode(args)),
       channel_args_(args),
-      channelz_node_(channelz::DataSource::channelz_node()
-                         ->RefAsSubclass<channelz::ServerNode>()),
+      channelz_node_(channelz_node() == nullptr
+                         ? nullptr
+                         : channelz::DataSource::channelz_node()
+                               ->RefAsSubclass<channelz::ServerNode>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
       compression_options_(CompressionOptionsFromChannelArgs(args)),
       max_time_in_pending_queue_(Duration::Seconds(
