@@ -473,10 +473,10 @@ inline void OutputLogFromLogExpr(TraceNode* out,
 //   accidentally bind with a trailing else.
 // - And of course we skip wrapping things in {} because we really like that
 //   GRPC_CHANNELZ_LOG(foo) << "hello!"; syntax.
-#define GRPC_CHANNELZ_LOG(output)                                        \
-  for (auto* out = ::grpc_core::channelz::detail::LogOutputFrom(output); \
-       out != nullptr; out = nullptr)                                    \
-  grpc_core::channelz::detail::LogExpr<                                  \
+#define GRPC_CHANNELZ_LOG(output)                                      \
+  for (auto* out = grpc_core::channelz::detail::LogOutputFrom(output); \
+       out != nullptr; out = nullptr)                                  \
+  grpc_core::channelz::detail::LogExpr<                                \
       std::remove_reference_t<decltype(*out)>>(out)
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H
