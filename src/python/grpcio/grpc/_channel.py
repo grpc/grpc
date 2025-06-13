@@ -445,11 +445,11 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def result(self, timeout: Optional[float] = None) -> Any:
         raise self
 
-    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
+    def exception(self, _timeout: Optional[float] = None) -> Optional[Exception]:
         return self
 
     def traceback(
-        self, timeout: Optional[float] = None
+        self, _timeout: Optional[float] = None
     ) -> Optional[types.TracebackType]:
         try:
             raise self
