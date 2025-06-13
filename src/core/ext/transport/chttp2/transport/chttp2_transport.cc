@@ -633,8 +633,9 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("flow_control", t->flow_control.stats().ToJsonObject())
                   .Set("ping_rate_policy", t->ping_rate_policy.ToJson())
                   .Set("ping_callbacks", t->ping_callbacks.ToJson())
-                  .Set("goaway_error", t->goaway_error.ToString())
-                  .Set("goaway_error", Json::FromString([t]() {
+                  .Set("goaway_error", t->goaway_error)
+                  .Set("goaway_error",
+                       [t]() {
                          switch (t->sent_goaway_state) {
                            case GRPC_CHTTP2_NO_GOAWAY_SEND:
                              return "none";
@@ -646,8 +647,9 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                              return "final_sent";
                          }
                          return "unknown";
-                       }()))
-                  .Set("write_state", Json::FromString([t]() {
+                       }())
+                  .Set("write_state",
+                       [t]() {
                          switch (t->write_state) {
                            case GRPC_CHTTP2_WRITE_STATE_IDLE:
                              return "idle";
@@ -657,7 +659,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                              return "writing_with_more";
                          }
                          return "unknown";
-                       }()))
+                       }())
                   .TakeJsonObject());
           std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
               children;

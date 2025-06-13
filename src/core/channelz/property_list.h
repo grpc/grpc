@@ -17,6 +17,7 @@
 
 #include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
@@ -33,6 +34,11 @@ namespace grpc_core::channelz {
 class PropertyList {
  public:
   PropertyList& Set(absl::string_view key, absl::string_view value) {
+    property_list_.emplace(key, Json::FromString(std::string(value)));
+    return *this;
+  }
+
+  PropertyList& Set(absl::string_view key, const char* value) {
     property_list_.emplace(key, Json::FromString(std::string(value)));
     return *this;
   }
@@ -62,6 +68,11 @@ class PropertyList {
   PropertyList& Set(absl::string_view key, Timestamp ts) {
     property_list_.emplace(key, Json::FromString(gpr_format_timespec(
                                     ts.as_timespec(GPR_CLOCK_REALTIME))));
+    return *this;
+  }
+
+  PropertyList& Set(absl::string_view key, absl::Status status) {
+    property_list_.emplace(key, Json::FromString(status.ToString()));
     return *this;
   }
 
