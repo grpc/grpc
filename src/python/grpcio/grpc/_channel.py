@@ -982,7 +982,7 @@ def _start_unary_request(
             (),
             (),
             grpc.StatusCode.INTERNAL,
-            "Exception serializing request!",
+            "Exception serializing request",
         )
         error = _InactiveRpcError(state)
         return deadline, None, error
