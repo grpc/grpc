@@ -255,7 +255,7 @@ void DnsServer::SetIPv4Response(absl::string_view host,
   }
   questions_.clear();
   std::copy(ipv4_address.begin(), ipv4_address.end(),
-            ipv4_addresses_[std::string(host)].begin());
+            ipv4_addresses_[host].begin());
 }
 
 void DnsServer::ServerLoop(int sockfd) {

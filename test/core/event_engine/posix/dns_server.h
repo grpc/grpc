@@ -22,8 +22,10 @@
 #include <string>
 #include <thread>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/inlined_vector.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/match.h"
 #include "src/core/util/notification.h"
 
 namespace grpc_event_engine::experimental {
@@ -35,7 +37,7 @@ struct DnsQuestion {
   uint16_t qclass;
   sockaddr_in client_addr;
 
-  bool is_host(absl::string_view host) const { return qname.find(host) == 0; }
+  bool is_host(absl::string_view host) const { return absl::StartsWith(qname, host); }
 };
 
 class DnsServer {
@@ -51,8 +53,7 @@ class DnsServer {
 
  private:
   void ServerLoop(int sockfd);
-  absl::Status Respond(const DnsQuestion& query,
-                       absl::Span<const uint8_t> ipv4_address);
+  absl::Status Respond(const DnsQuestion& query, absl::Span<const uint8_t> ipv4_address);
 
   int port_;
   int sockfd_;
@@ -60,7 +61,7 @@ class DnsServer {
   grpc_core::Notification running_;
   mutable grpc_core::Mutex mu_;
   mutable grpc_core::CondVar cond_;
-  std::unordered_map<std::string, std::array<uint8_t, 4>> ipv4_addresses_ ABSL_GUARDED_BY(mu_);
+  absl::flat_hash_map<std::string, std::array<uint8_t, 4>> ipv4_addresses_ ABSL_GUARDED_BY(mu_);
   absl::InlinedVector<DnsQuestion, 16> questions_ ABSL_GUARDED_BY(mu_);
   std::thread background_thread_;
 };
