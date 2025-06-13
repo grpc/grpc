@@ -30,8 +30,7 @@
 
 namespace grpc_event_engine::experimental {
 
-class CFEventEngine : public EventEngine,
-                      public Scheduler {
+class CFEventEngine : public EventEngine, public Scheduler {
  public:
   CFEventEngine();
   ~CFEventEngine() override;
