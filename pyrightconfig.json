@@ -1,9 +1,6 @@
 {
     "include": [
-        "src/python/grpcio/grpc/experimental",
-        "src/python/grpcio/grpc",
-        "src/python/grpcio_tests/tests_aio",
-        "src/python/grpcio_observability/grpc_observability"
+        "src/python/grpcio/grpc"
     ],
     "exclude": [
         "**/*_pb2.py",
