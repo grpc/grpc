@@ -465,21 +465,6 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         """See grpc.Future.add_done_callback."""
         fn(self)
 
-    def is_active(self) -> bool:
-        return False
-
-    def time_remaining(self) -> Optional[float]:
-        return None
-
-    def add_callback(self, callback: NullaryCallbackType) -> bool:
-        return False
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        raise self
-
 
 class _Rendezvous(grpc.RpcError, grpc.RpcContext):
     """An RPC iterator.
