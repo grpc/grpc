@@ -1989,7 +1989,14 @@ def _subscribe(
     try_to_connect: bool,
 ) -> None:
     with state.lock:
-        if state.polling:
+        if not state.callbacks_and_connectivities and not state.polling:
+            polling_thread = cygrpc.ForkManagedThread(
+                target=_poll_connectivity,
+                args=(state, state.channel, bool(try_to_connect)),
+            )
+            polling_thread.setDaemon(True)
+            polling_thread.start()
+            state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
             _spawn_delivery(state, [callback])
