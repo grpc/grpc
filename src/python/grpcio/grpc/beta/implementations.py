@@ -29,8 +29,8 @@ CallCredentials = grpc.CallCredentials
 
 
 def metadata_call_credentials(metadata_plugin, name=None):
-    def plugin(context, callback):
-        def wrapped_callback(beta_metadata, error):
+    def plugin(context, callback) -> None:
+        def wrapped_callback(beta_metadata, error) -> None:
             callback(_metadata.unbeta(beta_metadata), error)
 
         metadata_plugin(context, wrapped_callback)
@@ -46,6 +46,7 @@ def google_call_credentials(credentials):
 
     Returns:
       A CallCredentials object for use in a GRPCCallOptions object.
+
     """
     return metadata_call_credentials(_auth.GoogleCallCredentials(credentials))
 
@@ -63,10 +64,10 @@ class Channel:
     unsupported.
     """
 
-    def __init__(self, channel):
+    def __init__(self, channel) -> None:
         self._channel = channel
 
-    def subscribe(self, callback, try_to_connect=None):
+    def subscribe(self, callback, try_to_connect=None) -> None:
         """Subscribes to this Channel's connectivity.
 
         Args:
@@ -78,15 +79,17 @@ class Channel:
           try_to_connect: A boolean indicating whether or not this Channel should
             attempt to connect if it is not already connected and ready to conduct
             RPCs.
+
         """
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback):
+    def unsubscribe(self, callback) -> None:
         """Unsubscribes a callback from this Channel's connectivity.
 
         Args:
           callback: A callable previously registered with this Channel from having
             been passed to its "subscribe" method.
+
         """
         self._channel.unsubscribe(callback)
 
@@ -101,6 +104,7 @@ def insecure_channel(host, port):
 
     Returns:
       A Channel to the remote host through which RPCs may be conducted.
+
     """
     channel = grpc.insecure_channel(
         host if port is None else "%s:%d" % (host, port),
@@ -119,6 +123,7 @@ def secure_channel(host, port, channel_credentials):
 
     Returns:
       A secure Channel to the remote host through which RPCs may be conducted.
+
     """
     channel = grpc.secure_channel(
         host if port is None else "%s:%d" % (host, port), channel_credentials,
@@ -142,7 +147,7 @@ class StubOptions:
         metadata_transformer,
         thread_pool,
         thread_pool_size,
-    ):
+    ) -> None:
         self.host = host
         self.request_serializers = request_serializers
         self.response_deserializers = response_deserializers
@@ -181,6 +186,7 @@ def stub_options(
 
     Returns:
       A StubOptions value created from the passed parameters.
+
     """
     return StubOptions(
         host,
@@ -201,6 +207,7 @@ def generic_stub(channel, options=None):
 
     Returns:
       A face.GenericStub on which RPCs can be made.
+
     """
     effective_options = _EMPTY_STUB_OPTIONS if options is None else options
     return _client_adaptations.generic_stub(
@@ -225,6 +232,7 @@ def dynamic_stub(channel, service, cardinalities, options=None):
 
     Returns:
       A face.DynamicStub with which RPCs can be invoked.
+
     """
     effective_options = _EMPTY_STUB_OPTIONS if options is None else options
     return _client_adaptations.dynamic_stub(
@@ -259,7 +267,7 @@ class ServerOptions:
         thread_pool_size,
         default_timeout,
         maximum_timeout,
-    ):
+    ) -> None:
         self.multi_method_implementation = multi_method_implementation
         self.request_deserializers = request_deserializers
         self.response_serializers = response_serializers
@@ -304,6 +312,7 @@ def server_options(
 
     Returns:
       A StubOptions value created from the passed parameters.
+
     """
     return ServerOptions(
         multi_method_implementation,
@@ -327,6 +336,7 @@ def server(service_implementations, options=None):
 
     Returns:
       An interfaces.Server with which RPCs can be serviced.
+
     """
     effective_options = _EMPTY_SERVER_OPTIONS if options is None else options
     return _server_adaptations.server(

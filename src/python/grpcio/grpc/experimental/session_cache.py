@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC's APIs for TLS Session Resumption support"""
+"""gRPC's APIs for TLS Session Resumption support."""
 
 from grpc._cython import cygrpc as _cygrpc
 
 
 def ssl_session_cache_lru(capacity):
-    """Creates an SSLSessionCache with LRU replacement policy
+    """Creates an SSLSessionCache with LRU replacement policy.
 
     Args:
       capacity: Size of the cache
@@ -27,6 +27,7 @@ def ssl_session_cache_lru(capacity):
       the grpc.ssl_session_cache option to a grpc.Channel. SSL session caches are used
       to store session tickets, which clients can present to resume previous TLS sessions
       with a server.
+
     """
     return SSLSessionCache(_cygrpc.SSLSessionCacheLRU(capacity))
 
@@ -38,8 +39,8 @@ class SSLSessionCache:
     grpc.ssl_session_cache option
     """
 
-    def __init__(self, cache):
+    def __init__(self, cache) -> None:
         self._cache = cache
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int(self._cache)

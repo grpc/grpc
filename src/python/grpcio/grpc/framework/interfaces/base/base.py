@@ -24,6 +24,7 @@ applications choose.
 # threading is referenced from specification in this module.
 import abc
 import enum
+from typing import NoReturn
 
 # pylint: disable=too-many-arguments
 
@@ -36,9 +37,10 @@ class NoSuchMethodError(Exception):
         along with indication of operation termination. May be None.
       details: A details value to communicate to the other side of the
         operation along with indication of operation termination. May be None.
+
     """
 
-    def __init__(self, code, details):
+    def __init__(self, code, details) -> None:
         """Constructor.
 
         Args:
@@ -46,6 +48,7 @@ class NoSuchMethodError(Exception):
             along with indication of operation termination. May be None.
           details: A details value to communicate to the other side of the
             operation along with indication of operation termination. May be None.
+
         """
         super().__init__()
         self.code = code
@@ -61,6 +64,7 @@ class Outcome:
         provided.
       details: An application-specific details value or None if no such value was
         provided.
+
     """
 
     @enum.unique
@@ -85,6 +89,7 @@ class Completion(abc.ABC):
       terminal_metadata: A terminal metadata value for the operation.
       code: A code value for the operation.
       message: A message value for the operation.
+
     """
 
 
@@ -92,17 +97,18 @@ class OperationContext(abc.ABC):
     """Provides operation-related information and action."""
 
     @abc.abstractmethod
-    def outcome(self):
+    def outcome(self) -> NoReturn:
         """Indicates the operation's outcome (or that the operation is ongoing).
 
         Returns:
           None if the operation is still active or the Outcome value for the
             operation if it has terminated.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_termination_callback(self, callback):
+    def add_termination_callback(self, callback) -> NoReturn:
         """Adds a function to be called upon operation termination.
 
         Args:
@@ -114,31 +120,34 @@ class OperationContext(abc.ABC):
             later be called when it does terminate, or if the operation has already
             terminated an Outcome value describing the operation termination and the
             passed callback will not be called as a result of this method call.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def time_remaining(self):
+    def time_remaining(self) -> NoReturn:
         """Describes the length of allowed time remaining for the operation.
 
         Returns:
           A nonnegative float indicating the length of allowed time in seconds
           remaining for the operation to complete before it is considered to have
           timed out. Zero is returned if the operation has terminated.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> NoReturn:
         """Cancels the operation if the operation has not yet terminated."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def fail(self, exception):
+    def fail(self, exception) -> NoReturn:
         """Indicates that the operation has failed.
 
         Args:
           exception: An exception germane to the operation failure. May be None.
+
         """
         raise NotImplementedError
 
@@ -153,7 +162,7 @@ class Operator(abc.ABC):
         payload=None,
         completion=None,
         allowance=None,
-    ):
+    ) -> NoReturn:
         """Progresses the operation.
 
         Args:
@@ -165,6 +174,7 @@ class Operator(abc.ABC):
             direction, and no payloads may be passed after it has been communicated.
           allowance: A positive integer communicating the number of additional
             payloads allowed to be passed by the remote side of the operation.
+
         """
         raise NotImplementedError
 
@@ -173,11 +183,12 @@ class ProtocolReceiver(abc.ABC):
     """A means of receiving protocol values during an operation."""
 
     @abc.abstractmethod
-    def context(self, protocol_context):
+    def context(self, protocol_context) -> NoReturn:
         """Accepts the protocol context object for the operation.
 
         Args:
           protocol_context: The protocol context object for the operation.
+
         """
         raise NotImplementedError
 
@@ -199,6 +210,7 @@ class Subscription(abc.ABC):
       protocol_receiver: A ProtocolReceiver to be passed protocol objects as they
         become available during the operation. Must be non-None if kind is
         Kind.FULL.
+
     """
 
     @enum.unique
@@ -212,7 +224,7 @@ class Servicer(abc.ABC):
     """Interface for service implementations."""
 
     @abc.abstractmethod
-    def service(self, group, method, context, output_operator):
+    def service(self, group, method, context, output_operator) -> NoReturn:
         """Services an operation.
 
         Args:
@@ -232,6 +244,7 @@ class Servicer(abc.ABC):
             given group and method.
           abandonment.Abandoned: If the operation has been aborted and there no
             longer is any reason to service the operation.
+
         """
         raise NotImplementedError
 
@@ -240,12 +253,12 @@ class End(abc.ABC):
     """Common type for entry-point objects on both sides of an operation."""
 
     @abc.abstractmethod
-    def start(self):
+    def start(self) -> NoReturn:
         """Starts this object's service of operations."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def stop(self, grace):
+    def stop(self, grace) -> NoReturn:
         """Stops this object's service of operations.
 
         This object will refuse service of new operations as soon as this method is
@@ -265,6 +278,7 @@ class End(abc.ABC):
             operation continues for the full length of the period) or it may be set
             much sooner (if for example this End had no operations in progress at
             the time its stop method was called).
+
         """
         raise NotImplementedError
 
@@ -279,7 +293,7 @@ class End(abc.ABC):
         payload=None,
         completion=None,
         protocol_options=None,
-    ):
+    ) -> NoReturn:
         """Commences an operation.
 
         Args:
@@ -304,24 +318,27 @@ class End(abc.ABC):
             OperationContext for the operation and the second element of the
             returned pair is an Operator to which operation values not passed in
             this call should later be passed.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def operation_stats(self):
+    def operation_stats(self) -> NoReturn:
         """Reports the number of terminated operations broken down by outcome.
 
         Returns:
           A dictionary from Outcome.Kind value to an integer identifying the number
             of operations that terminated with that outcome kind.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_idle_action(self, action):
+    def add_idle_action(self, action) -> NoReturn:
         """Adds an action to be called when this End has no ongoing operations.
 
         Args:
           action: A callable that accepts no arguments.
+
         """
         raise NotImplementedError

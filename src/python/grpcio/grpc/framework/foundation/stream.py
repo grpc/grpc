@@ -14,30 +14,33 @@
 """Interfaces related to streams of values or objects."""
 
 import abc
+from typing import NoReturn
 
 
 class Consumer(abc.ABC):
     """Interface for consumers of finite streams of values or objects."""
 
     @abc.abstractmethod
-    def consume(self, value):
+    def consume(self, value) -> NoReturn:
         """Accepts a value.
 
         Args:
           value: Any value accepted by this Consumer.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def terminate(self):
+    def terminate(self) -> NoReturn:
         """Indicates to this Consumer that no more values will be supplied."""
         raise NotImplementedError
 
     @abc.abstractmethod
-    def consume_and_terminate(self, value):
+    def consume_and_terminate(self, value) -> NoReturn:
         """Supplies a value and signals that no more values will be supplied.
 
         Args:
           value: Any value accepted by this Consumer.
+
         """
         raise NotImplementedError

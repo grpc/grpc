@@ -16,7 +16,7 @@
 import collections
 import sys
 import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, NoReturn, Optional, Sequence, Tuple, Union
 
 import grpc
 
@@ -32,7 +32,7 @@ from ._typing import (
 class _ServicePipeline:
     interceptors: Tuple[grpc.ServerInterceptor]
 
-    def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]):
+    def __init__(self, interceptors: Sequence[grpc.ServerInterceptor]) -> None:
         self.interceptors = tuple(interceptors)
 
     def _continuation(self, thunk: Callable, index: int) -> Callable:
@@ -133,7 +133,7 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: types.TracebackType
 
-    def __init__(self, exception: Exception, traceback: types.TracebackType):
+    def __init__(self, exception: Exception, traceback: types.TracebackType) -> None:
         super().__init__()
         self._exception = exception
         self._traceback = traceback
@@ -168,7 +168,7 @@ class _FailureOutcome(
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> NoReturn:
         raise self._exception
 
     def exception(
@@ -201,7 +201,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     _response: Any
     _call: grpc.Call
 
-    def __init__(self, response: Any, call: grpc.Call):
+    def __init__(self, response: Any, call: grpc.Call) -> None:
         self._response = response
         self._call = call
 
@@ -241,10 +241,10 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def result(self, ignored_timeout: Optional[float] = None):
         return self._response
 
-    def exception(self, ignored_timeout: Optional[float] = None):
+    def exception(self, ignored_timeout: Optional[float] = None) -> None:
         return None
 
-    def traceback(self, ignored_timeout: Optional[float] = None):
+    def traceback(self, ignored_timeout: Optional[float] = None) -> None:
         return None
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -261,7 +261,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         thunk: Callable,
         method: str,
         interceptor: grpc.UnaryUnaryClientInterceptor,
-    ):
+    ) -> None:
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -404,7 +404,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         thunk: Callable,
         method: str,
         interceptor: grpc.UnaryStreamClientInterceptor,
-    ):
+    ) -> None:
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -463,7 +463,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         thunk: Callable,
         method: str,
         interceptor: grpc.StreamUnaryClientInterceptor,
-    ):
+    ) -> None:
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -606,7 +606,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         thunk: Callable,
         method: str,
         interceptor: grpc.StreamStreamClientInterceptor,
-    ):
+    ) -> None:
         self._thunk = thunk
         self._method = method
         self._interceptor = interceptor
@@ -673,16 +673,16 @@ class _Channel(grpc.Channel):
             grpc.StreamStreamClientInterceptor,
             grpc.StreamUnaryClientInterceptor,
         ],
-    ):
+    ) -> None:
         self._channel = channel
         self._interceptor = interceptor
 
     def subscribe(
         self, callback: Callable, try_to_connect: Optional[bool] = False,
-    ):
+    ) -> None:
         self._channel.subscribe(callback, try_to_connect=try_to_connect)
 
-    def unsubscribe(self, callback: Callable):
+    def unsubscribe(self, callback: Callable) -> None:
         self._channel.unsubscribe(callback)
 
     # pylint: disable=arguments-differ
@@ -769,7 +769,7 @@ class _Channel(grpc.Channel):
             return _StreamStreamMultiCallable(thunk, method, self._interceptor)
         return thunk(method)
 
-    def _close(self):
+    def _close(self) -> None:
         self._channel.close()
 
     def __enter__(self):
@@ -779,7 +779,7 @@ class _Channel(grpc.Channel):
         self._close()
         return False
 
-    def close(self):
+    def close(self) -> None:
         self._channel.close()
 
 
@@ -803,12 +803,15 @@ def intercept_channel(
             and not isinstance(interceptor, grpc.StreamUnaryClientInterceptor)
             and not isinstance(interceptor, grpc.StreamStreamClientInterceptor)
         ):
-            raise TypeError(
+            msg = (
                 "interceptor must be "
                 "grpc.UnaryUnaryClientInterceptor or "
                 "grpc.UnaryStreamClientInterceptor or "
                 "grpc.StreamUnaryClientInterceptor or "
-                "grpc.StreamStreamClientInterceptor or ",
+                "grpc.StreamStreamClientInterceptor or "
+            )
+            raise TypeError(
+                msg,
             )
         channel = _Channel(channel, interceptor)
     return channel

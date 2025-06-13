@@ -101,7 +101,7 @@ class ChannelCache:
     _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
             target=ChannelCache._perform_evictions, daemon=True,
@@ -116,7 +116,7 @@ class ChannelCache:
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    def _evict_locked(self, key: CacheKey):
+    def _evict_locked(self, key: CacheKey) -> None:
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
             "Evicting channel %s with configuration %s.", channel, key,
@@ -125,7 +125,7 @@ class ChannelCache:
         del channel
 
     @staticmethod
-    def _perform_evictions():
+    def _perform_evictions() -> None:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()
@@ -170,12 +170,16 @@ class ChannelCache:
         Returns:
             A tuple with two items. The first item is the channel, second item is
               the call handle if the method is registered, None if it's not registered.
+
         """
         if insecure and channel_credentials:
-            raise ValueError(
+            msg = (
                 "The insecure option is mutually exclusive with "
                  "the channel_credentials option. Please use one "
-                 "or the other.",
+                 "or the other."
+            )
+            raise ValueError(
+                msg,
             )
         if insecure:
             channel_credentials = (
@@ -290,6 +294,7 @@ def unary_unary(
 
     Returns:
       The response to the RPC.
+
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -381,6 +386,7 @@ def unary_stream(
 
     Returns:
       An iterator of responses.
+
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -472,6 +478,7 @@ def stream_unary(
 
     Returns:
       The response to the RPC.
+
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -563,6 +570,7 @@ def stream_stream(
 
     Returns:
       An iterator of responses.
+
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,

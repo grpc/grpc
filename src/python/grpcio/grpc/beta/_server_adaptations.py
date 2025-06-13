@@ -15,6 +15,7 @@
 
 import collections
 import threading
+from typing import NoReturn
 
 import grpc
 from grpc import _common
@@ -29,18 +30,18 @@ _DEFAULT_POOL_SIZE = 8
 
 
 class _ServerProtocolContext(interfaces.GRPCServicerContext):
-    def __init__(self, servicer_context):
+    def __init__(self, servicer_context) -> None:
         self._servicer_context = servicer_context
 
     def peer(self):
         return self._servicer_context.peer()
 
-    def disable_next_response_compression(self):
+    def disable_next_response_compression(self) -> None:
         pass  # TODO(https://github.com/grpc/grpc/issues/4078): design, implement.
 
 
 class _FaceServicerContext(face.ServicerContext):
-    def __init__(self, servicer_context):
+    def __init__(self, servicer_context) -> None:
         self._servicer_context = servicer_context
 
     def is_active(self):
@@ -49,12 +50,13 @@ class _FaceServicerContext(face.ServicerContext):
     def time_remaining(self):
         return self._servicer_context.time_remaining()
 
-    def add_abortion_callback(self, abortion_callback):
+    def add_abortion_callback(self, abortion_callback) -> NoReturn:
+        msg = "add_abortion_callback no longer supported server-side!"
         raise NotImplementedError(
-            "add_abortion_callback no longer supported server-side!",
+            msg,
         )
 
-    def cancel(self):
+    def cancel(self) -> None:
         self._servicer_context.cancel()
 
     def protocol_context(self):
@@ -63,20 +65,20 @@ class _FaceServicerContext(face.ServicerContext):
     def invocation_metadata(self):
         return _metadata.beta(self._servicer_context.invocation_metadata())
 
-    def initial_metadata(self, initial_metadata):
+    def initial_metadata(self, initial_metadata) -> None:
         self._servicer_context.send_initial_metadata(
             _metadata.unbeta(initial_metadata),
         )
 
-    def terminal_metadata(self, terminal_metadata):
+    def terminal_metadata(self, terminal_metadata) -> None:
         self._servicer_context.set_terminal_metadata(
             _metadata.unbeta(terminal_metadata),
         )
 
-    def code(self, code):
+    def code(self, code) -> None:
         self._servicer_context.set_code(code)
 
-    def details(self, details):
+    def details(self, details) -> None:
         self._servicer_context.set_details(details)
 
 
@@ -99,29 +101,29 @@ def _adapt_stream_request_inline(stream_request_inline):
 
 
 class _Callback(stream.Consumer):
-    def __init__(self):
+    def __init__(self) -> None:
         self._condition = threading.Condition()
         self._values = []
         self._terminated = False
         self._cancelled = False
 
-    def consume(self, value):
+    def consume(self, value) -> None:
         with self._condition:
             self._values.append(value)
             self._condition.notify_all()
 
-    def terminate(self):
+    def terminate(self) -> None:
         with self._condition:
             self._terminated = True
             self._condition.notify_all()
 
-    def consume_and_terminate(self, value):
+    def consume_and_terminate(self, value) -> None:
         with self._condition:
             self._values.append(value)
             self._terminated = True
             self._condition.notify_all()
 
-    def cancel(self):
+    def cancel(self) -> None:
         with self._condition:
             self._cancelled = True
             self._condition.notify_all()
@@ -151,10 +153,10 @@ class _Callback(stream.Consumer):
 
 def _run_request_pipe_thread(
     request_iterator, request_consumer, servicer_context,
-):
+) -> None:
     thread_joined = threading.Event()
 
-    def pipe_requests():
+    def pipe_requests() -> None:
         for request in request_iterator:
             if not servicer_context.is_active() or thread_joined.is_set():
                 return
@@ -378,7 +380,7 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
         multi_method_implementation,
         request_deserializers,
         response_serializers,
-    ):
+    ) -> None:
         self._method_implementations = _flatten_method_pair_map(
             method_implementations,
         )
@@ -409,7 +411,7 @@ class _GenericRpcHandler(grpc.GenericRpcHandler):
 
 
 class _Server(interfaces.Server):
-    def __init__(self, grpc_server):
+    def __init__(self, grpc_server) -> None:
         self._grpc_server = grpc_server
 
     def add_insecure_port(self, address):
@@ -418,7 +420,7 @@ class _Server(interfaces.Server):
     def add_secure_port(self, address, server_credentials):
         return self._grpc_server.add_secure_port(address, server_credentials)
 
-    def start(self):
+    def start(self) -> None:
         self._grpc_server.start()
 
     def stop(self, grace):

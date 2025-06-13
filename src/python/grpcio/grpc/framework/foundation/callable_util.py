@@ -32,6 +32,7 @@ class Outcome(ABC):
         Kind.RETURNED.
       exception: The exception raised by the call. Must be present if kind is
         Kind.RAISED.
+
     """
 
     @enum.unique
@@ -73,6 +74,7 @@ def with_exceptions_logged(behavior, message):
         callable takes the same arguments as the given behavior but returns a
         future.Outcome describing whether the given behavior returned a value or
         raised an exception.
+
     """
 
     @functools.wraps(behavior)
@@ -94,5 +96,6 @@ def call_logging_exceptions(behavior, message, *args, **kwargs):
     Returns:
       An Outcome describing whether the given behavior returned a value or raised
         an exception.
+
     """
     return _call_logging_exceptions(behavior, message, *args, **kwargs)

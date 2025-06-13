@@ -100,8 +100,8 @@ class AioRpcError(grpc.RpcError):
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
-        """
 
+        """
         super().__init__()
         self._code = code
         self._details = details
@@ -114,6 +114,7 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The `grpc.StatusCode` status code.
+
         """
         return self._code
 
@@ -122,6 +123,7 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The description of the error.
+
         """
         return self._details
 
@@ -130,6 +132,7 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The initial metadata received.
+
         """
         return self._initial_metadata
 
@@ -138,6 +141,7 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The trailing metadata received.
+
         """
         return self._trailing_metadata
 
@@ -146,6 +150,7 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The debug error string received.
+
         """
         return self._debug_error_string
 
@@ -293,7 +298,7 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
     _call_response: asyncio.Task
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task):
+    def _init_unary_response_mixin(self, response_task: asyncio.Task) -> None:
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -337,12 +342,12 @@ class _StreamResponseMixin(Call):
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task) -> None:
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
 
-    def _update_response_style(self, style: _APIStyle):
+    def _update_response_style(self, style: _APIStyle) -> None:
         if self._response_style is _APIStyle.UNKNOWN:
             self._response_style = style
         elif self._response_style is not style:
@@ -409,7 +414,7 @@ class _StreamRequestMixin(Call):
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType],
-    ):
+    ) -> None:
         self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
@@ -423,7 +428,7 @@ class _StreamRequestMixin(Call):
             self._async_request_poller = None
             self._request_style = _APIStyle.READER_WRITER
 
-    def _raise_for_different_style(self, style: _APIStyle):
+    def _raise_for_different_style(self, style: _APIStyle) -> None:
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
@@ -434,7 +439,7 @@ class _StreamRequestMixin(Call):
             return True
         return False
 
-    def _metadata_sent_observer(self):
+    def _metadata_sent_observer(self) -> None:
         self._metadata_sent.set()
 
     async def _consume_request_iterator(
@@ -743,7 +748,7 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self):
+    async def _prepare_rpc(self) -> None:
         """This method prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the

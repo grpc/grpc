@@ -60,7 +60,8 @@ class Metadata(abc.Collection):
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError(f"{key!r}") from e
+            msg = f"{key!r}"
+            raise KeyError(msg) from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>

@@ -91,6 +91,7 @@ class ServerInterceptor(metaclass=ABCMeta):
         Returns:
             An RpcMethodHandler with which the RPC may be serviced if the
             interceptor chooses to service this RPC, or None otherwise.
+
         """
 
 
@@ -112,6 +113,7 @@ class ClientCallDetails(
           the RPC.
         credentials: An optional CallCredentials for the RPC.
         wait_for_ready: An optional flag to enable :term:`wait_for_ready` mechanism.
+
     """
 
     method: str
@@ -122,7 +124,7 @@ class ClientCallDetails(
 
 
 class ClientInterceptor(metaclass=ABCMeta):
-    """Base class used for all Aio Client Interceptor classes"""
+    """Base class used for all Aio Client Interceptor classes."""
 
 
 class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
@@ -158,6 +160,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
+
         """
 
 
@@ -198,6 +201,7 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
+
         """
 
 
@@ -240,6 +244,7 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
+
         """
 
 
@@ -286,6 +291,7 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         Raises:
           AioRpcError: Indicating that the RPC terminated with non-OK status.
           asyncio.CancelledError: Indicating that the RPC was canceled.
+
         """
 
 
@@ -319,7 +325,7 @@ class InterceptedCall:
             self._fire_or_add_pending_done_callbacks,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.cancel()
 
     def _fire_or_add_pending_done_callbacks(
@@ -547,7 +553,7 @@ class _InterceptedStreamRequestMixin:
 
     async def _write_to_iterator_queue_interruptible(
         self, request: RequestType, call: InterceptedCall,
-    ):
+    ) -> None:
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
@@ -664,7 +670,7 @@ class InterceptedUnaryUnaryCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> UnaryUnaryCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: List[UnaryUnaryClientInterceptor],
@@ -763,7 +769,7 @@ class InterceptedUnaryStreamCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> UnaryStreamCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: List[UnaryStreamClientInterceptor],
@@ -882,7 +888,7 @@ class InterceptedStreamUnaryCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> StreamUnaryCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: Iterator[StreamUnaryClientInterceptor],
@@ -983,7 +989,7 @@ class InterceptedStreamStreamCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> StreamStreamCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: List[StreamStreamClientInterceptor],

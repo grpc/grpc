@@ -38,7 +38,7 @@ def _wrap(behavior):
 class _LoggingPool:
     """An exception-logging futures.ThreadPoolExecutor-compatible thread pool."""
 
-    def __init__(self, backing_pool):
+    def __init__(self, backing_pool) -> None:
         self._backing_pool = backing_pool
 
     def __enter__(self):
@@ -55,7 +55,7 @@ class _LoggingPool:
             _wrap(func), *iterables, timeout=kwargs.get("timeout"),
         )
 
-    def shutdown(self, wait=True):
+    def shutdown(self, wait=True) -> None:
         self._backing_pool.shutdown(wait=wait)
 
 
@@ -68,5 +68,6 @@ def pool(max_workers):
     Returns:
       A futures.ThreadPoolExecutor-compatible thread pool that logs exceptions
         raised by the tasks executed within it.
+
     """
     return _LoggingPool(futures.ThreadPoolExecutor(max_workers))

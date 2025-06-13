@@ -43,7 +43,7 @@ class Server(_base_server.Server):
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
-    ):
+    ) -> None:
         self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
@@ -52,9 +52,12 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                raise ValueError(
+                msg = (
                     "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}",
+                    f"following are invalid: {invalid_interceptors}"
+                )
+                raise ValueError(
+                    msg,
                 )
         self._server = cygrpc.AioServer(
             self._loop,
@@ -75,6 +78,7 @@ class Server(_base_server.Server):
         Args:
           generic_rpc_handlers: A sequence of GenericRpcHandlers that will be
           used to service RPCs.
+
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
 
@@ -97,6 +101,7 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
         return _common.validate_port_binding_result(
             address, self._server.add_insecure_port(_common.encode(address)),
@@ -117,6 +122,7 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
         return _common.validate_port_binding_result(
             address,
@@ -154,6 +160,7 @@ class Server(_base_server.Server):
 
         Args:
           grace: A duration of time in seconds or None.
+
         """
         await self._server.shutdown(grace)
 
@@ -179,10 +186,11 @@ class Server(_base_server.Server):
 
         Returns:
           A bool indicates if the operation times out.
+
         """
         return await self._server.wait_for_termination(timeout)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Schedules a graceful shutdown in current event loop.
 
         The Cython AioServer doesn't hold a ref-count to this class. It should
@@ -226,6 +234,7 @@ def server(
 
     Returns:
       A Server object.
+
     """
     return Server(
         migration_thread_pool,

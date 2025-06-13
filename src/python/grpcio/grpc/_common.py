@@ -109,7 +109,7 @@ def _wait_once(
     wait_fn: Callable[..., bool],
     timeout: float,
     spin_cb: Optional[Callable[[], None]],
-):
+) -> None:
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
@@ -147,6 +147,7 @@ def wait(
 
     Returns:
       True if a timeout was supplied and it was reached. False otherwise.
+
     """
     if timeout is None:
         while not wait_complete_fn():
@@ -171,6 +172,7 @@ def validate_port_binding_result(address: str, port: int) -> int:
     Args:
         address: The address string to be bound.
         port: An int returned by core
+
     """
     if port == 0:
         # The Core API doesn't return a failure message. The best we can do

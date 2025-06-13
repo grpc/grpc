@@ -34,6 +34,7 @@ class ChannelOptions:
 
     Attributes:
       SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
+
     """
 
     SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
@@ -62,7 +63,7 @@ class ExperimentalApiWarning(Warning):
     """A warning that an API is experimental."""
 
 
-def _warn_experimental(api_name, stack_offset):
+def _warn_experimental(api_name, stack_offset) -> None:
     if api_name not in _EXPERIMENTAL_APIS_USED:
         _EXPERIMENTAL_APIS_USED.add(api_name)
         msg = (
@@ -95,6 +96,7 @@ def wrap_server_method_handler(wrapper, handler):
 
     Returns:
         A newly created RpcMethodHandler.
+
     """
     if not handler:
         return None

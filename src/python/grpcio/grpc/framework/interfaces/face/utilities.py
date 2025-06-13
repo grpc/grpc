@@ -51,6 +51,7 @@ def unary_unary_inline(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.UNARY_UNARY,
@@ -76,6 +77,7 @@ def unary_stream_inline(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.UNARY_STREAM,
@@ -101,6 +103,7 @@ def stream_unary_inline(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.STREAM_UNARY,
@@ -126,6 +129,7 @@ def stream_stream_inline(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.STREAM_STREAM,
@@ -151,6 +155,7 @@ def unary_unary_event(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.UNARY_UNARY,
@@ -176,6 +181,7 @@ def unary_stream_event(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.UNARY_STREAM,
@@ -202,6 +208,7 @@ def stream_unary_event(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.STREAM_UNARY,
@@ -228,6 +235,7 @@ def stream_stream_event(behavior):
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
+
     """
     return _MethodImplementation(
         cardinality.Cardinality.STREAM_STREAM,

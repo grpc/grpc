@@ -28,6 +28,7 @@ from typing import (
     Dict,
     Iterator,
     List,
+    NoReturn,
     Optional,
     Sequence,
     Set,
@@ -145,7 +146,7 @@ class _RPCState:
         trailing_metadata: Optional[MetadataType],
         code: Optional[grpc.StatusCode],
         details: Optional[str],
-    ):
+    ) -> None:
         # `condition` guards all members of _RPCState. `notify_all` is called on
         # `condition` when the state of the RPC has changed.
         self.condition = threading.Condition()
@@ -178,7 +179,7 @@ class _RPCState:
         self.callbacks = []
         self.fork_epoch = cygrpc.get_fork_epoch()
 
-    def reset_postfork_child(self):
+    def reset_postfork_child(self) -> None:
         self.condition = threading.Condition()
 
 
@@ -268,7 +269,7 @@ def _consume_request_iterator(
 ) -> None:
     """Consume a request supplied by the user."""
 
-    def consume_request_iterator():  # pylint: disable=too-many-branches
+    def consume_request_iterator() -> None:  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
         while True:
@@ -378,11 +379,12 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     Attributes:
       _state: An instance of _RPCState.
+
     """
 
     _state: _RPCState
 
-    def __init__(self, state: _RPCState):
+    def __init__(self, state: _RPCState) -> None:
         with state.condition:
             self._state = _RPCState(
                 (),
@@ -476,6 +478,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
         object.
       _deadline: A float representing the deadline of the RPC in seconds. Or
         possibly None, to represent an RPC with no deadline at all.
+
     """
 
     _state: _RPCState
@@ -489,7 +492,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
         call: Union[cygrpc.SegregatedCall, cygrpc.IntegratedCall],
         response_deserializer: Optional[DeserializingFunction],
         deadline: Optional[float],
-    ):
+    ) -> None:
         super().__init__()
         self._state = state
         self._call = call
@@ -497,19 +500,19 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
         self._deadline = deadline
 
     def is_active(self) -> bool:
-        """See grpc.RpcContext.is_active"""
+        """See grpc.RpcContext.is_active."""
         with self._state.condition:
             return self._state.code is None
 
     def time_remaining(self) -> Optional[float]:
-        """See grpc.RpcContext.time_remaining"""
+        """See grpc.RpcContext.time_remaining."""
         with self._state.condition:
             if self._deadline is None:
                 return None
             return max(self._deadline - time.time(), 0)
 
     def cancel(self) -> bool:
-        """See grpc.RpcContext.cancel"""
+        """See grpc.RpcContext.cancel."""
         with self._state.condition:
             if self._state.code is None:
                 code = grpc.StatusCode.CANCELLED
@@ -524,7 +527,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             return False
 
     def add_callback(self, callback: NullaryCallbackType) -> bool:
-        """See grpc.RpcContext.add_callback"""
+        """See grpc.RpcContext.add_callback."""
         with self._state.condition:
             if self._state.callbacks is None:
                 return False
@@ -540,7 +543,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
     def __next__(self):
         return self._next()
 
-    def _next(self):
+    def _next(self) -> NoReturn:
         raise NotImplementedError
 
     def debug_error_string(self) -> Optional[str]:
@@ -613,9 +616,12 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
+                msg = (
                     "_SingleThreadedRendezvous only supports result() when the"
-                    " RPC is complete.",
+                    " RPC is complete."
+                )
+                raise grpc.experimental.UsageError(
+                    msg,
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
@@ -635,9 +641,12 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
+                msg = (
                     "_SingleThreadedRendezvous only supports exception() when"
-                    " the RPC is complete.",
+                    " the RPC is complete."
+                )
+                raise grpc.experimental.UsageError(
+                    msg,
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return None
@@ -659,9 +668,12 @@ class _SingleThreadedRendezvous(
         del timeout
         with self._state.condition:
             if not self._is_complete():
-                raise grpc.experimental.UsageError(
+                msg = (
                     "_SingleThreadedRendezvous only supports traceback() when"
-                    " the RPC is complete.",
+                    " the RPC is complete."
+                )
+                raise grpc.experimental.UsageError(
+                    msg,
                 )
             if self._state.code is grpc.StatusCode.OK:
                 return None
@@ -681,7 +693,7 @@ class _SingleThreadedRendezvous(
         fn(self)
 
     def initial_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.initial_metadata"""
+        """See grpc.Call.initial_metadata."""
         with self._state.condition:
             # NOTE(gnossen): Based on our initial call batch, we are guaranteed
             # to receive initial metadata before any messages.
@@ -690,29 +702,32 @@ class _SingleThreadedRendezvous(
             return self._state.initial_metadata
 
     def trailing_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.trailing_metadata"""
+        """See grpc.Call.trailing_metadata."""
         with self._state.condition:
             if self._state.trailing_metadata is None:
+                msg = "Cannot get trailing metadata until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get trailing metadata until RPC is completed.",
+                    msg,
                 )
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
-        """See grpc.Call.code"""
+        """See grpc.Call.code."""
         with self._state.condition:
             if self._state.code is None:
+                msg = "Cannot get code until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get code until RPC is completed.",
+                    msg,
                 )
             return self._state.code
 
     def details(self) -> Optional[str]:
-        """See grpc.Call.details"""
+        """See grpc.Call.details."""
         with self._state.condition:
             if self._state.details is None:
+                msg = "Cannot get details until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get details until RPC is completed.",
+                    msg,
                 )
             return _common.decode(self._state.details)
 
@@ -773,8 +788,9 @@ class _SingleThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
             if self._state.debug_error_string is None:
+                msg = "Cannot get debug error string until RPC is completed."
                 raise grpc.experimental.UsageError(
-                    "Cannot get debug error string until RPC is completed.",
+                    msg,
                 )
             return _common.decode(self._state.debug_error_string)
 
@@ -795,7 +811,7 @@ class _MultiThreadedRendezvous(
     _state: _RPCState
 
     def initial_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.initial_metadata"""
+        """See grpc.Call.initial_metadata."""
         with self._state.condition:
 
             def _done():
@@ -805,7 +821,7 @@ class _MultiThreadedRendezvous(
             return self._state.initial_metadata
 
     def trailing_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.trailing_metadata"""
+        """See grpc.Call.trailing_metadata."""
         with self._state.condition:
 
             def _done():
@@ -815,7 +831,7 @@ class _MultiThreadedRendezvous(
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
-        """See grpc.Call.code"""
+        """See grpc.Call.code."""
         with self._state.condition:
 
             def _done():
@@ -825,7 +841,7 @@ class _MultiThreadedRendezvous(
             return self._state.code
 
     def details(self) -> Optional[str]:
-        """See grpc.Call.details"""
+        """See grpc.Call.details."""
         with self._state.condition:
 
             def _done():
@@ -1064,7 +1080,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
-    ):
+    ) -> None:
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1244,7 +1260,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         _registered_call_handle: Optional[int],
-    ):
+    ) -> None:
         self._channel = channel
         self._method = method
         self._target = target
@@ -1347,7 +1363,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         _registered_call_handle: Optional[int],
-    ):
+    ) -> None:
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1441,7 +1457,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
-    ):
+    ) -> None:
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1617,7 +1633,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
-    ):
+    ) -> None:
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1682,7 +1698,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
 
 class _InitialMetadataFlags(int):
-    """Stores immutable initial metadata flags"""
+    """Stores immutable initial metadata flags."""
 
     def __new__(cls, value: int = _EMPTY_FLAGS):
         value &= cygrpc.InitialMetadataFlags.used_mask
@@ -1709,7 +1725,7 @@ class _ChannelCallState:
     managed_calls: int
     threading: bool
 
-    def __init__(self, channel: cygrpc.Channel):
+    def __init__(self, channel: cygrpc.Channel) -> None:
         self.lock = threading.Lock()
         self.channel = channel
         self.managed_calls = 0
@@ -1718,7 +1734,7 @@ class _ChannelCallState:
     def reset_postfork_child(self) -> None:
         self.managed_calls = 0
 
-    def __del__(self):
+    def __del__(self) -> None:
         with contextlib.suppress(TypeError, AttributeError):
             self.channel.close(
                 cygrpc.StatusCode.cancelled, "Channel deallocated!",
@@ -1726,7 +1742,7 @@ class _ChannelCallState:
 
 
 def _run_channel_spin_thread(state: _ChannelCallState) -> None:
-    def channel_spin():
+    def channel_spin() -> None:
         while True:
             cygrpc.block_if_fork_in_progress(state)
             event = state.channel.next_call_event()
@@ -1775,8 +1791,10 @@ def _channel_managed_call_management(state: _ChannelCallState):
           context: Context object for distributed tracing.
           _registered_call_handle: An int representing the call handle of the
             method, or None if the method is not registered.
+
         Returns:
           A cygrpc.IntegratedCall with which to conduct an RPC.
+
         """
         operations_and_tags = tuple(
             (
@@ -1824,7 +1842,7 @@ class _ChannelConnectivityState:
     ]
     delivering: bool
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: grpc.Channel) -> None:
         self.lock = threading.RLock()
         self.channel = channel
         self.polling = False
@@ -2037,7 +2055,7 @@ class Channel(grpc.Channel):
         options: Sequence[ChannelArgumentType],
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
-    ):
+    ) -> None:
         """Constructor.
 
         Args:
@@ -2046,6 +2064,7 @@ class Channel(grpc.Channel):
           credentials: A cygrpc.ChannelCredentials or None.
           compression: An optional value indicating the compression method to be
             used over the lifetime of the channel.
+
         """
         python_options, core_options = _separate_channel_options(options)
         self._single_threaded_unary_stream = (
@@ -2065,8 +2084,7 @@ class Channel(grpc.Channel):
             cygrpc.gevent_increment_channel_count()
 
     def _get_registered_call_handle(self, method: str) -> int:
-        """
-        Get the registered call handle for a method.
+        """Get the registered call handle for a method.
 
         This is a semi-private method. It is intended for use only by gRPC generated code.
 
@@ -2077,6 +2095,7 @@ class Channel(grpc.Channel):
 
         Returns:
           The registered call handle pointer in the form of a Python Long.
+
         """
         return self._channel.get_registered_call_handle(_common.encode(method))
 
@@ -2229,7 +2248,7 @@ class Channel(grpc.Channel):
     def close(self) -> None:
         self._close()
 
-    def __del__(self):
+    def __del__(self) -> None:
         # TODO(https://github.com/grpc/grpc/issues/12531): Several releases
         # after 1.12 (1.16 or thereabouts?) add a "self._channel.close" call
         # here (or more likely, call self._close() here). We don't do this today

@@ -331,7 +331,7 @@ class Channel(_base_channel.Channel):
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ):
+    ) -> None:
         """Constructor.
 
         Args:
@@ -342,6 +342,7 @@ class Channel(_base_channel.Channel):
             used over the lifetime of the channel.
           interceptors: An optional list of interceptors that would be used for
             intercepting any RPC executed with that channel.
+
         """
         self._unary_unary_interceptors = []
         self._unary_stream_interceptors = []
@@ -359,12 +360,15 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError(
+                    msg = (
                         f"Interceptor {interceptor} must be "
                          f"{UnaryUnaryClientInterceptor.__name__} or "
                          f"{UnaryStreamClientInterceptor.__name__} or "
                          f"{StreamUnaryClientInterceptor.__name__} or "
-                         f"{StreamStreamClientInterceptor.__name__}. ",
+                         f"{StreamStreamClientInterceptor.__name__}. "
+                    )
+                    raise ValueError(
+                        msg,
                     )
 
         self._loop = cygrpc.get_working_loop()
@@ -381,7 +385,7 @@ class Channel(_base_channel.Channel):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(self, grace) -> None:  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
@@ -436,8 +440,9 @@ class Channel(_base_channel.Channel):
                             continue
                     else:
                         # Unidentified Call object
+                        msg = f"Unrecognized call object: {candidate}"
                         raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}",
+                            msg,
                         )
 
                     calls.append(candidate)
@@ -455,10 +460,10 @@ class Channel(_base_channel.Channel):
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
-    def __del__(self):
+    def __del__(self) -> None:
         if hasattr(self, "_channel") and not self._channel.closed():
             self._channel.close()
 
@@ -587,6 +592,7 @@ def insecure_channel(
 
     Returns:
       A Channel.
+
     """
     return Channel(
         target,
@@ -618,6 +624,7 @@ def secure_channel(
 
     Returns:
       An aio.Channel.
+
     """
     return Channel(
         target,

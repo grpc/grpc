@@ -16,7 +16,7 @@
 from grpc._cython import cygrpc as _cygrpc
 
 
-def init_gevent():
+def init_gevent() -> None:
     """Patches gRPC's libraries to be compatible with gevent.
 
     This must be called AFTER the python standard lib has been patched,

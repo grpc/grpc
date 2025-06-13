@@ -39,7 +39,7 @@ class _AuthMetadataContext(
 
 
 class _CallbackState:
-    def __init__(self):
+    def __init__(self) -> None:
         self.lock = threading.Lock()
         self.called = False
         self.exception = None
@@ -49,7 +49,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
     _state: _CallbackState
     _callback: Callable
 
-    def __init__(self, state: _CallbackState, callback: Callable):
+    def __init__(self, state: _CallbackState, callback: Callable) -> None:
         self._state = state
         self._callback = callback
 
@@ -59,13 +59,15 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
+                    msg = "AuthMetadataPluginCallback invoked more than once!"
                     raise RuntimeError(
-                        "AuthMetadataPluginCallback invoked more than once!",
+                        msg,
                     )
                 self._state.called = True
             else:
+                msg = f'AuthMetadataPluginCallback raised exception "{self._state.exception}"!'
                 raise RuntimeError(
-                    f'AuthMetadataPluginCallback raised exception "{self._state.exception}"!',
+                    msg,
                 )
         if error is None:
             self._callback(metadata, cygrpc.StatusCode.ok, None)
@@ -78,7 +80,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 class _Plugin:
     _metadata_plugin: grpc.AuthMetadataPlugin
 
-    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
+    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin) -> None:
         self._metadata_plugin = metadata_plugin
         self._stored_ctx = None
 

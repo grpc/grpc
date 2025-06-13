@@ -52,10 +52,10 @@ class ServerCallTracerFactory:
     grpc.experimental.server_call_tracer_factory option
     """
 
-    def __init__(self, address):
+    def __init__(self, address) -> None:
         self._address = address
 
-    def __int__(self):
+    def __int__(self) -> int:
         return self._address
 
 
@@ -80,6 +80,7 @@ class ObservabilityPlugin(
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
       _registered_methods: A set which stores the registered method names in
         bytes.
+
     """
 
     _tracing_enabled: bool = False
@@ -105,6 +106,7 @@ class ObservabilityPlugin(
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
+
         """
         raise NotImplementedError
 
@@ -126,6 +128,7 @@ class ObservabilityPlugin(
           span_id: The identifier for the span as a 16-character hexadecimal encoded
             string. e.g. 113ec879e62583bc
           is_sampled: A bool indicates whether the span is sampled.
+
         """
         raise NotImplementedError
 
@@ -146,9 +149,11 @@ class ObservabilityPlugin(
 
         Args:
           xds: Whether the server is xds server.
+
         Returns:
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
+
         """
         raise NotImplementedError
 
@@ -168,6 +173,7 @@ class ObservabilityPlugin(
             when the client invokes the RPC and when the client receives the status.
           status_code: An element of grpc.StatusCode in string format representing the
             final status for the RPC.
+
         """
         raise NotImplementedError
 
@@ -176,6 +182,7 @@ class ObservabilityPlugin(
 
         Args:
           enable: A bool indicates whether tracing should be enabled.
+
         """
         self._tracing_enabled = enable
 
@@ -184,6 +191,7 @@ class ObservabilityPlugin(
 
         Args:
           enable: A bool indicates whether stats should be enabled.
+
         """
         self._stats_enabled = enable
 
@@ -195,6 +203,7 @@ class ObservabilityPlugin(
 
         Args:
           method_name: The method name in bytes.
+
         """
         raise NotImplementedError
 
@@ -218,6 +227,7 @@ def get_plugin() -> Generator[ObservabilityPlugin | None, None, None]:
     Returns:
       The ObservabilityPlugin currently registered with the _observability
     module. Or None if no plugin exists at the time of calling this method.
+
     """
     with _plugin_lock:
         yield _OBSERVABILITY_PLUGIN
@@ -232,11 +242,13 @@ def set_plugin(observability_plugin: ObservabilityPlugin | None) -> None:
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
+
     """
     global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
     with _plugin_lock:
         if observability_plugin and _OBSERVABILITY_PLUGIN:
-            raise ValueError("observability_plugin was already set!")
+            msg = "observability_plugin was already set!"
+            raise ValueError(msg)
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
@@ -252,13 +264,14 @@ def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
+
     """
     set_plugin(observability_plugin)
 
 
 def observability_deinit() -> None:
     """Clear the observability context, including ObservabilityPlugin and
-    ServerCallTracerFactory
+    ServerCallTracerFactory.
 
     This method have to be called after exit observability context so that
     it's possible to re-initialize again.
@@ -275,6 +288,7 @@ def maybe_record_rpc_latency(state: _channel._RPCState) -> None:
     Args:
       state: a grpc._channel._RPCState object which contains the stats related to the
     RPC.
+
     """
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _SERVICES_TO_EXCLUDE:

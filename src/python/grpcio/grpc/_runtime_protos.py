@@ -55,6 +55,7 @@ def _call_with_lazy_import(
 
     Returns:
       The appropriate module object.
+
     """
     if sys.version_info < _MINIMUM_VERSION:
         raise NotImplementedError(_VERSION_ERROR_TEMPLATE.format(fn_name))
@@ -100,6 +101,7 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A module object corresponding to the message code for the indicated
       .proto file. Equivalent to a generated _pb2.py file.
+
     """
     return _call_with_lazy_import("protos", protobuf_path)
 
@@ -137,6 +139,7 @@ def services(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A module object corresponding to the stub/service code for the indicated
       .proto file. Equivalent to a generated _pb2_grpc.py file.
+
     """
     return _call_with_lazy_import("services", protobuf_path)
 
@@ -159,5 +162,6 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
 
     Returns:
       A 2-tuple of module objects corresponding to (protos(path), services(path)).
+
     """
     return _call_with_lazy_import("protos_and_services", protobuf_path)

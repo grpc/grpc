@@ -32,6 +32,7 @@ built-in-but-only-in-3.3-and-later TimeoutError.
 """
 
 import abc
+from typing import NoReturn
 
 
 class TimeoutError(Exception):
@@ -60,7 +61,7 @@ class Future(abc.ABC):
     # UNCANCELLABLE
     # NOT_IMMEDIATELY_DETERMINABLE
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> NoReturn:
         """Attempts to cancel the computation.
 
         This method does not block.
@@ -73,6 +74,7 @@ class Future(abc.ABC):
             finished, and the computation's having been scheduled for execution on a
             remote system for which a determination of whether or not it commenced
             before being cancelled cannot be made without blocking.
+
         """
         raise NotImplementedError
 
@@ -91,7 +93,7 @@ class Future(abc.ABC):
     # Notice how giving the cancel method the right semantics obviates most
     # reasons for this method to exist.
     @abc.abstractmethod
-    def cancelled(self):
+    def cancelled(self) -> NoReturn:
         """Describes whether the computation was cancelled.
 
         This method does not block.
@@ -101,11 +103,12 @@ class Future(abc.ABC):
             immediately available. False under all other circumstances including but
             not limited to this object's cancel method not having been called and
             the computation's result having become immediately available.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def running(self):
+    def running(self) -> NoReturn:
         """Describes whether the computation is taking place.
 
         This method does not block.
@@ -114,6 +117,7 @@ class Future(abc.ABC):
           True if the computation is scheduled to take place in the future or is
             taking place now, or False if the computation took place in the past or
             was cancelled.
+
         """
         raise NotImplementedError
 
@@ -122,7 +126,7 @@ class Future(abc.ABC):
     # computation completed successfully. A computation's having been cancelled
     # conflicts with considering that computation "done".
     @abc.abstractmethod
-    def done(self):
+    def done(self) -> NoReturn:
         """Describes whether the computation has taken place.
 
         This method does not block.
@@ -131,11 +135,12 @@ class Future(abc.ABC):
           True if the computation is known to have either completed or have been
             unscheduled or interrupted. False if the computation may possibly be
             executing or scheduled to execute later.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def result(self, timeout=None):
+    def result(self, timeout=None) -> NoReturn:
         """Accesses the outcome of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -154,11 +159,12 @@ class Future(abc.ABC):
           CancelledError: If the computation was cancelled.
           Exception: If the computation raised an exception, this call will raise
             the same exception.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def exception(self, timeout=None):
+    def exception(self, timeout=None) -> NoReturn:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -177,11 +183,12 @@ class Future(abc.ABC):
           TimeoutError: If a timeout value is passed and the computation does not
             terminate within the allotted time.
           CancelledError: If the computation was cancelled.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def traceback(self, timeout=None):
+    def traceback(self, timeout=None) -> NoReturn:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -200,11 +207,12 @@ class Future(abc.ABC):
           TimeoutError: If a timeout value is passed and the computation does not
             terminate within the allotted time.
           CancelledError: If the computation was cancelled.
+
         """
         raise NotImplementedError
 
     @abc.abstractmethod
-    def add_done_callback(self, fn):
+    def add_done_callback(self, fn) -> NoReturn:
         """Adds a function to be called at completion of the computation.
 
         The callback will be passed this Future object describing the outcome of
@@ -215,5 +223,6 @@ class Future(abc.ABC):
 
         Args:
           fn: A callable taking this Future object as its single parameter.
+
         """
         raise NotImplementedError
