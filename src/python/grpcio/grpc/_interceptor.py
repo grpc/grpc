@@ -84,7 +84,12 @@ def _unwrap_client_call_details(
     call_details: grpc.ClientCallDetails,
     default_details: grpc.ClientCallDetails,
 ) -> Tuple[
-    str, Optional[float], Optional[MetadataType], Optional[grpc.CallCredentials], Optional[bool], Optional[grpc.Compression]
+    str,
+    Optional[float],
+    Optional[MetadataType],
+    Optional[grpc.CallCredentials],
+    Optional[bool],
+    Optional[grpc.Compression],
 ]:
     try:
         method = call_details.method  # pytype: disable=attribute-error
@@ -137,7 +142,9 @@ class _FailureOutcome(
     _exception: Exception
     _traceback: Optional[types.TracebackType]
 
-    def __init__(self, exception: Exception, traceback: Optional[types.TracebackType]):
+    def __init__(
+        self, exception: Exception, traceback: Optional[types.TracebackType]
+    ):
         super(_FailureOutcome, self).__init__()
         self._exception = exception
         self._traceback = traceback

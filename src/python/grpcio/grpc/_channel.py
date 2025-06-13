@@ -448,7 +448,9 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         return self
 
-    def traceback(self, timeout: Optional[float] = None) -> Optional[types.TracebackType]:
+    def traceback(
+        self, timeout: Optional[float] = None
+    ) -> Optional[types.TracebackType]:
         try:
             raise self
         except grpc.RpcError:
@@ -1041,7 +1043,7 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
     else:
         # At this point both are non-None
         assert parent_deadline is not None and user_deadline is not None
-        return min(parent_deadline, user_deadline) #type: ignore[arg-type]
+        return min(parent_deadline, user_deadline)  # type: ignore[arg-type]
 
 
 class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
@@ -1899,10 +1901,7 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Union[
-        List[CallbackType],
-        Tuple[MixedTupleElementType, ...]
-    ],
+    callbacks: Union[List[CallbackType], Tuple[MixedTupleElementType, ...]],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
