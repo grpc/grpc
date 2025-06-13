@@ -19,6 +19,7 @@
     "reportArgumentType": "error",
     "reportOptionalMemberAccess": "error",
     "reportAttributeAccessIssue": "warning",
+    "reportCallIssue": "warning",
     "reportUnknownMemberAccess": "warning",
     "reportUnreachable": "warning",
     "reportMissingImports": false,

@@ -469,14 +469,14 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
-    def code(self) -> grpc.StatusCode:
+    def code(self) -> Optional[grpc.StatusCode]:
         return self._state.code
 
     def set_details(self, details: str) -> None:
         with self._state.condition:
             self._state.details = _common.encode(details)
 
-    def details(self) -> bytes:
+    def details(self) -> Optional[bytes]:
         return self._state.details
 
     def _finalize_state(self) -> None:
@@ -594,7 +594,7 @@ def _call_behavior(
     argument: Any,
     request_deserializer: Optional[DeserializingFunction],
     send_response_callback: Optional[Callable[[ResponseType], None]] = None,
-) -> Tuple[Union[ResponseType, Iterator[ResponseType]], bool]:
+) -> Tuple[Optional[Union[ResponseType, Iterator[ResponseType]]], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
     with _create_servicer_context(
@@ -649,7 +649,7 @@ def _take_response_from_response_iterator(
     rpc_event: cygrpc.BaseEvent,
     state: _RPCState,
     response_iterator: Iterator[ResponseType],
-) -> Tuple[ResponseType, bool]:
+) -> Tuple[Optional[ResponseType], bool]:
     try:
         return next(response_iterator), True
     except StopIteration:
