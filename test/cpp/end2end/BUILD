@@ -168,7 +168,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpcpp_latent_see_client",
         "//:grpcpp_latent_see_service",
-        "//src/proto/grpc/latent_see:latent_see_proto",
+        "//src/proto/grpc/channelz/v2:latent_see_proto",
         "//test/core/test_util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],

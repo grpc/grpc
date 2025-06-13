@@ -12,16 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This file defines an interface for exporting monitoring information
-// out of gRPC servers.  See the full design at
-// https://github.com/grpc/proposal/blob/master/A14-channelz.md
-//
-// The canonical version of this proto can be found at
-// https://github.com/grpc/grpc-proto/blob/master/grpc/channelz/v1/channelz.proto
-
 syntax = "proto3";
 
-package grpc.latent_see.v1;
+// This protocol is unstable and experimental and likely to change.
+
+package grpc.channelz.v2;
 
 message LatentSeeTrace {
   message FlowBegin {

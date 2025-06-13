@@ -16,13 +16,12 @@
 #define GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H
 
 #include "src/core/util/latent_see.h"
-#include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
+#include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 
 namespace grpc {
 
-Status FetchLatentSee(latent_see::v1::LatentSee::Stub* stub, double sample_time,
+Status FetchLatentSee(channelz::v2::LatentSee::Stub* stub, double sample_time,
                       grpc_core::latent_see::Output* output);
-
 }
 
 #endif  // GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_CLIENT_H

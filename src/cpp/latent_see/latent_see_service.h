@@ -15,11 +15,11 @@
 #ifndef GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_SERVICE_H
 #define GRPC_SRC_CPP_LATENT_SEE_LATENT_SEE_SERVICE_H
 
-#include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
+#include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 
 namespace grpc {
 
-class LatentSeeService final : public latent_see::v1::LatentSee::Service {
+class LatentSeeService final : public channelz::v2::LatentSee::Service {
  public:
   struct Options {
     double max_query_time = 1.0;
@@ -38,8 +38,8 @@ class LatentSeeService final : public latent_see::v1::LatentSee::Service {
   explicit LatentSeeService(const Options& options) : options_(options) {}
 
   Status GetTrace(
-      ServerContext*, const latent_see::v1::GetTraceRequest* request,
-      ServerWriter<latent_see::v1::LatentSeeTrace>* response) override;
+      ServerContext*, const channelz::v2::GetTraceRequest* request,
+      ServerWriter<channelz::v2::LatentSeeTrace>* response) override;
 
  private:
   Options options_;

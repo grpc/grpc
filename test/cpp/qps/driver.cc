@@ -40,7 +40,7 @@
 #include "src/core/util/env.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/latent_see/latent_see_client.h"
-#include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
+#include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
@@ -229,13 +229,13 @@ static void postprocess_scenario_result(ScenarioResult* result) {
 }
 
 struct ClientData {
-  unique_ptr<latent_see::v1::LatentSee::Stub> latent_see_stub;
+  unique_ptr<channelz::v2::LatentSee::Stub> latent_see_stub;
   unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ClientArgs, ClientStatus>> stream;
 };
 
 struct ServerData {
-  unique_ptr<latent_see::v1::LatentSee::Stub> latent_see_stub;
+  unique_ptr<channelz::v2::LatentSee::Stub> latent_see_stub;
   unique_ptr<WorkerService::Stub> stub;
   unique_ptr<ClientReaderWriter<ServerArgs, ServerStatus>> stream;
 };
@@ -443,7 +443,7 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
       channel = local_workers[i]->InProcessChannel(channel_args);
     }
     servers[i].stub = WorkerService::NewStub(channel);
-    servers[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
+    servers[i].latent_see_stub = channelz::v2::LatentSee::NewStub(channel);
 
     if (options.server_config.core_limit() != 0) {
       grpc_core::Crash("server config core limit is set but ignored by driver");
@@ -503,7 +503,7 @@ std::unique_ptr<ScenarioResult> RunScenario(const RunScenarioOptions& options) {
           channel_args);
     }
     clients[i].stub = WorkerService::NewStub(channel);
-    clients[i].latent_see_stub = latent_see::v1::LatentSee::NewStub(channel);
+    clients[i].latent_see_stub = channelz::v2::LatentSee::NewStub(channel);
     ClientConfig per_client_config = client_config;
 
     if (options.client_config.core_limit() != 0) {

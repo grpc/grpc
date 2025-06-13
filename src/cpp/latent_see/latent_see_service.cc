@@ -22,12 +22,11 @@ namespace {
 
 class StreamingOutput final : public grpc_core::latent_see::Output {
  public:
-  explicit StreamingOutput(
-      ServerWriter<latent_see::v1::LatentSeeTrace>* response)
+  explicit StreamingOutput(ServerWriter<channelz::v2::LatentSeeTrace>* response)
       : response_(response) {}
 
   void Mark(absl::string_view name, int64_t tid, int64_t timestamp) override {
-    latent_see::v1::LatentSeeTrace trace;
+    channelz::v2::LatentSeeTrace trace;
     trace.set_name(name);
     trace.set_tid(tid);
     trace.set_timestamp(timestamp);
@@ -36,7 +35,7 @@ class StreamingOutput final : public grpc_core::latent_see::Output {
   }
   void FlowBegin(absl::string_view name, int64_t tid, int64_t timestamp,
                  int64_t flow_id) override {
-    latent_see::v1::LatentSeeTrace trace;
+    channelz::v2::LatentSeeTrace trace;
     trace.set_name(name);
     trace.set_tid(tid);
     trace.set_timestamp(timestamp);
@@ -45,7 +44,7 @@ class StreamingOutput final : public grpc_core::latent_see::Output {
   }
   void FlowEnd(absl::string_view name, int64_t tid, int64_t timestamp,
                int64_t flow_id) override {
-    latent_see::v1::LatentSeeTrace trace;
+    channelz::v2::LatentSeeTrace trace;
     trace.set_name(name);
     trace.set_tid(tid);
     trace.set_timestamp(timestamp);
@@ -54,7 +53,7 @@ class StreamingOutput final : public grpc_core::latent_see::Output {
   }
   void Span(absl::string_view name, int64_t tid, int64_t timestamp_begin,
             int64_t duration) override {
-    latent_see::v1::LatentSeeTrace trace;
+    channelz::v2::LatentSeeTrace trace;
     trace.set_name(name);
     trace.set_tid(tid);
     trace.set_timestamp(timestamp_begin);
@@ -64,14 +63,14 @@ class StreamingOutput final : public grpc_core::latent_see::Output {
   void Finish() override {}
 
  private:
-  ServerWriter<latent_see::v1::LatentSeeTrace>* response_;
+  ServerWriter<channelz::v2::LatentSeeTrace>* response_;
 };
 
 }  // namespace
 
 Status LatentSeeService::GetTrace(
-    ServerContext*, const latent_see::v1::GetTraceRequest* request,
-    ServerWriter<latent_see::v1::LatentSeeTrace>* response) {
+    ServerContext*, const channelz::v2::GetTraceRequest* request,
+    ServerWriter<channelz::v2::LatentSeeTrace>* response) {
   StreamingOutput output(response);
   grpc_core::latent_see::Collect(
       nullptr,

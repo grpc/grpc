@@ -2723,7 +2723,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_config_proto",
         "//src/core:latent_see",
-        "//src/proto/grpc/latent_see:latent_see_proto",
+        "//src/proto/grpc/channelz/v2:latent_see_proto",
     ],
     alwayslink = 1,
 )
@@ -2748,7 +2748,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_config_proto",
         "//src/core:latent_see",
-        "//src/proto/grpc/latent_see:latent_see_proto",
+        "//src/proto/grpc/channelz/v2:latent_see_proto",
     ],
     alwayslink = 1,
 )
