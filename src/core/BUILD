@@ -7718,6 +7718,7 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
+        "json",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7752,9 +7753,11 @@ grpc_cc_library(
     deps = [
         "channel_args",
         "experiments",
+        "json",
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
