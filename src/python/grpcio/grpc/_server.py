@@ -844,7 +844,7 @@ def _stream_response_in_pool(
                 response_iterator, proceed = _call_behavior(
                     rpc_event, state, behavior, argument, request_deserializer
                 )
-                if proceed:
+                if proceed and response_iterator is not None:
                     _send_message_callback_to_blocking_iterator_adapter(
                         rpc_event, state, send_response, response_iterator
                     )
