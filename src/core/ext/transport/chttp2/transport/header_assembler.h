@@ -96,34 +96,9 @@ class HeaderAssembler {
   // Call this for each incoming HTTP2 Header frame.
   // The payload of the Http2HeaderFrame will be cleared in this function.
   Http2Status AppendHeaderFrame(Http2HeaderFrame&& frame) {
-    // Validate current state of Assembler
-    if (GPR_UNLIKELY(header_in_progress_)) {
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerContiguousSequenceError));
-    }
-
     // Validate input frame
     DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
-    if (GPR_UNLIKELY(frame.stream_id != stream_id_)) {
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerContiguousSequenceError));
-    }
-
-    ++num_headers_received_;
-    if (GPR_UNLIKELY(num_headers_received_ > max_headers_)) {
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kGrpcErrorMaxTwoHeaderFrames;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kInternalError,
-          std::string(kGrpcErrorMaxTwoHeaderFrames));
-    }
 
     // Manage size constraints
     const size_t current_len = frame.payload.Length();
@@ -157,34 +132,6 @@ class HeaderAssembler {
   // Call this for each incoming HTTP2 Continuation frame.
   // The payload of the Http2ContinuationFrame will be cleared in this function.
   Http2Status AppendContinuationFrame(Http2ContinuationFrame&& frame) {
-    // Validate current state
-    if (GPR_UNLIKELY(!header_in_progress_)) {
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerContiguousSequenceError));
-    }
-
-    if (GPR_UNLIKELY(is_ready_ == true)) {
-      // Received continuation frame after END_HEADERS was received. This is
-      // wrong.
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerContiguousSequenceError;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerContiguousSequenceError));
-    }
-
-    // Validate input frame
-    if (GPR_UNLIKELY(frame.stream_id != stream_id_)) {
-      Cleanup();
-      LOG(ERROR) << "Connection Error: " << kAssemblerMismatchedStreamId;
-      return Http2Status::Http2ConnectionError(
-          Http2ErrorCode::kProtocolError,
-          std::string(kAssemblerMismatchedStreamId));
-    }
-
     // Manage payload
     const size_t current_len = frame.payload.Length();
     frame.payload.MoveFirstNBytesIntoSliceBuffer(current_len, buffer_);
