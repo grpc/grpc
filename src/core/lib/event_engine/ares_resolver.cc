@@ -96,9 +96,6 @@ absl::Status AresStatusToAbslStatus(int status, absl::string_view error_msg) {
       return absl::NotFoundError(error_msg);
     case ARES_ECONNREFUSED:
       return absl::UnavailableError(error_msg);
-    case ARES_EDESTRUCTION:
-      // Happens on fork and shutdown, means we cancel the requests
-      return absl::CancelledError(error_msg);
     default:
       return absl::UnknownError(error_msg);
   }
@@ -462,9 +459,6 @@ void AresResolver::LookupTXT(
 }
 
 void AresResolver::CheckSocketsLocked() {
-  if (channel_ == nullptr) {
-    return;
-  }
   FdNodeList new_list;
   if (!shutting_down_ && channel_ != nullptr) {
     ares_socket_t socks[ARES_GETSOCK_MAXNUM] = {};
