@@ -1,0 +1,26 @@
+#! /bin/bash -ex
+# Copyright 2024 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+JOBS=$(nproc) || JOBS=4
+
+VIRTUALENV=venv_check_pyright
+python3.12 -m virtualenv $VIRTUALENV
+source $VIRTUALENV/bin/activate
+
+# Install pyright using pip
+python3 -m pip install pyright
+
+# Run pyright with the configuration
+python3 -m pyright --project pyrightconfig.json
