@@ -53,7 +53,7 @@ def _start_client(
             _CLIENT_PATH,
             desired_string,
             "--server",
-            "localhost:{}".format(server_port),
+            f"localhost:{server_port}",
             "--ideal-distance",
             str(ideal_distance),
         )

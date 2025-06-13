@@ -36,7 +36,7 @@ _DESCRIPTION = "A server for finding hashes similar to names."
 
 class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
     def __init__(self, maximum_hashes):
-        super(HashFinder, self).__init__()
+        super().__init__()
         self._maximum_hashes = maximum_hashes
 
     def Find(self, request, context):
@@ -81,8 +81,7 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
             interesting_hamming_distance=request.interesting_hamming_distance,
         )
         try:
-            for candidate in secret_generator:
-                yield candidate
+            yield from secret_generator
         except search.ResourceLimitExceededError:
             _LOGGER.info("Cancelling RPC due to exhausted resources.")
             context.cancel()
@@ -99,10 +98,10 @@ def _running_server(port, maximum_hashes):
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(
         HashFinder(maximum_hashes), server
     )
-    address = "{}:{}".format(_SERVER_HOST, port)
+    address = f"{_SERVER_HOST}:{port}"
     actual_port = server.add_insecure_port(address)
     server.start()
-    print("Server listening at '{}'".format(address))
+    print(f"Server listening at '{address}'")
     return server
 
 

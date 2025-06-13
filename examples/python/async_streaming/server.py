@@ -61,8 +61,8 @@ class Phone(phone_pb2_grpc.PhoneServicer):
                 "Received a phone call request for number [%s]",
                 request.phone_number,
             )
-        except StopIteration:
-            raise RuntimeError("Failed to receive call request")
+        except StopIteration as exc:
+            raise RuntimeError("Failed to receive call request") from exc
         # Simulate the acceptance of call request
         time.sleep(1)
         yield create_state_response(phone_pb2.CallState.NEW)

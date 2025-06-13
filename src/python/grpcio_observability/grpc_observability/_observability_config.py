@@ -25,7 +25,7 @@ GRPC_GCP_OBSERVABILITY_CONFIG_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG"
 
 @dataclass
 class GcpObservabilityConfig:
-    project_id: str = ""
+    project_id: Optional[str] = ""
     stats_enabled: bool = False
     tracing_enabled: bool = False
     labels: Optional[Mapping[str, str]] = field(default_factory=dict)

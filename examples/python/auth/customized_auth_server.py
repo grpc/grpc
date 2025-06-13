@@ -54,7 +54,7 @@ class SignatureValidationInterceptor(grpc.ServerInterceptor):
 
 class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 @contextlib.contextmanager

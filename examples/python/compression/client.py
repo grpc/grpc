@@ -46,7 +46,7 @@ def run_client(channel_compression, call_compression, target):
                 compression=call_compression,
                 wait_for_ready=True,
             )
-            print("Response: {}".format(response))
+            print(f"Greeter client received: {response.message}")
 
 
 def main():

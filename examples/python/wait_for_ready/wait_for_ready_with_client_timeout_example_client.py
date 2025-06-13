@@ -39,8 +39,7 @@ def wait_for_metadata(response_future, event):
     metadata: Sequence[Tuple[str, str]] = response_future.initial_metadata()
     for key, value in metadata:
         print(
-            "Greeter client received initial metadata: key=%s value=%s"
-            % (key, value)
+            f"Greeter client received initial metadata: key={key} value={value}"
         )
     event.set()
 
@@ -50,7 +49,7 @@ def check_status(response_future, wait_success):
         print("received initial metadata before time out!")
         for response in response_future:
             message = response.message
-            print("Greeter client received: " + message)
+            print(f"Greeter client received: {message}")
     else:
         print("Timed out before receiving any initial metadata!")
         response_future.cancel()

@@ -93,7 +93,7 @@ def _reserve_port():
 
 def main():
     with _reserve_port() as port:
-        bind_address = "localhost:{}".format(port)
+        bind_address = f"localhost:{port}"
         _LOGGER.info("Binding to '%s'", bind_address)
         sys.stdout.flush()
         workers = []

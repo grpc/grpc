@@ -28,7 +28,7 @@ async def run(addr: str) -> None:
         response = await channelz_stub.GetServers(
             channelz_pb2.GetServersRequest(start_server_id=0)
         )
-        print("Info for all servers: %s" % response)
+        print(f"Info for all servers: {response}")
 
 
 async def main() -> None:

@@ -28,7 +28,7 @@ test_var = contextvars.ContextVar("test", default="test")
 async def run() -> None:
     async with grpc.aio.insecure_channel("localhost:50051") as channel:
         stub = helloworld_pb2_grpc.GreeterStub(channel)
-        rpc_id = "{:032x}".format(random.getrandbits(128))
+        rpc_id = f"{random.getrandbits(128):032x}"
         metadata = grpc.aio.Metadata(
             ("client-rpc-id", rpc_id),
         )

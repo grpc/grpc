@@ -42,7 +42,7 @@ class ErrorInjectingGreeter(helloworld_pb2_grpc.GreeterServicer):
                     grpc.StatusCode.UNAVAILABLE, "injected error"
                 )
         logging.info("Successfully responding to RPC from %s", context.peer())
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 async def serve() -> None:
