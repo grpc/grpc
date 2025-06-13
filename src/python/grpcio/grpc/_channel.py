@@ -2271,4 +2271,3 @@ class Channel(grpc.Channel):
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass
-
