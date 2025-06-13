@@ -575,11 +575,15 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
-  if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
+  if ((IsPickFirstIgnoreEmptyUpdatesEnabled() ? !status.ok()
+                                              : !args.addresses.ok()) &&
+      latest_update_args_.config != nullptr) {
     args.addresses = std::move(latest_update_args_.addresses);
   }
-  // Update latest_update_args_.
-  latest_update_args_ = std::move(args);
+  if (status.ok() || !IsPickFirstIgnoreEmptyUpdatesEnabled()) {
+    // Update latest_update_args_.
+    latest_update_args_ = std::move(args);
+  }
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
   if (!IsIdle()) {

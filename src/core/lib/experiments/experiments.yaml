@@ -158,6 +158,10 @@
   expiry: 2025/09/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: pick_first_ignore_empty_updates
+  description: Ignore empty resolutions in pick_first
+  expiry: 2026/02/02
+  owner: ctiller@google.com
 - name: pollset_alternative
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when

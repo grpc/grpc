@@ -35,6 +35,7 @@ EXPERIMENT_ENABLES = {
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
     "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
