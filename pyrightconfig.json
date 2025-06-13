@@ -4,8 +4,6 @@
         "src/python/grpcio/grpc",
         "src/python/grpcio_tests/tests_aio",
         "src/python/grpcio_observability/grpc_observability",
-        "examples/python/auth",
-        "examples/python/helloworld"
     ],
     "exclude": [
         "**/*_pb2.py",
@@ -13,7 +11,8 @@
         "src/python/grpcio/grpc/aio",
         "src/python/grpcio/grpc/beta",
         "src/python/grpcio/grpc/__init__.py",
-        "src/python/grpcio/grpc/_simple_stubs.py"
+        "src/python/grpcio/grpc/_simple_stubs.py",
+        "examples/python/"
     ],
     "ignore": [
         "import-error",
@@ -31,4 +30,4 @@
     "reportGeneralTypeIssues": "warning",
     "pythonVersion": "3.12",
     "typeCheckingMode": "basic"
-} 
+}
