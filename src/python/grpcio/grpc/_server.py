@@ -869,7 +869,8 @@ def _send_message_callback_to_blocking_iterator_adapter(
             rpc_event, state, response_iterator
         )
         if proceed:
-            send_response_callback(response)
+            if response is not None:
+                send_response_callback(response)
             if not _is_rpc_state_active(state):
                 break
         else:
