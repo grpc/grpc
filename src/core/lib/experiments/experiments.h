@@ -80,6 +80,8 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_PING_TIMEOUT_ENABLED
+inline bool IsKeepalivePingTimeoutEnabledEnabled() { return true; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
@@ -130,6 +132,8 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_PING_TIMEOUT_ENABLED
+inline bool IsKeepalivePingTimeoutEnabledEnabled() { return true; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
@@ -180,6 +184,8 @@ inline bool IsEventEngineForAllOtherEndpointsEnabled() { return true; }
 inline bool IsEventEngineSecureEndpointEnabled() { return true; }
 inline bool IsFreeLargeAllocatorEnabled() { return false; }
 inline bool IsKeepAlivePingTimerBatchEnabled() { return false; }
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_PING_TIMEOUT_ENABLED
+inline bool IsKeepalivePingTimeoutEnabledEnabled() { return true; }
 inline bool IsLocalConnectorSecureEnabled() { return false; }
 #define GRPC_EXPERIMENT_IS_INCLUDED_MAX_INFLIGHT_PINGS_STRICT_LIMIT
 inline bool IsMaxInflightPingsStrictLimitEnabled() { return true; }
@@ -223,6 +229,7 @@ enum ExperimentIds {
   kExperimentIdEventEngineSecureEndpoint,
   kExperimentIdFreeLargeAllocator,
   kExperimentIdKeepAlivePingTimerBatch,
+  kExperimentIdKeepalivePingTimeoutEnabled,
   kExperimentIdLocalConnectorSecure,
   kExperimentIdMaxInflightPingsStrictLimit,
   kExperimentIdMonitoringExperiment,
@@ -301,6 +308,10 @@ inline bool IsFreeLargeAllocatorEnabled() {
 #define GRPC_EXPERIMENT_IS_INCLUDED_KEEP_ALIVE_PING_TIMER_BATCH
 inline bool IsKeepAlivePingTimerBatchEnabled() {
   return IsExperimentEnabled<kExperimentIdKeepAlivePingTimerBatch>();
+}
+#define GRPC_EXPERIMENT_IS_INCLUDED_KEEPALIVE_PING_TIMEOUT_ENABLED
+inline bool IsKeepalivePingTimeoutEnabledEnabled() {
+  return IsExperimentEnabled<kExperimentIdKeepalivePingTimeoutEnabled>();
 }
 #define GRPC_EXPERIMENT_IS_INCLUDED_LOCAL_CONNECTOR_SECURE
 inline bool IsLocalConnectorSecureEnabled() {
