@@ -634,7 +634,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("ping_rate_policy", t->ping_rate_policy.ToJson())
                   .Set("ping_callbacks", t->ping_callbacks.ToJson())
                   .Set("goaway_error", t->goaway_error)
-                  .Set("goaway_error",
+                  .Set("sent_goaway_state",
                        [t]() {
                          switch (t->sent_goaway_state) {
                            case GRPC_CHTTP2_NO_GOAWAY_SEND:
