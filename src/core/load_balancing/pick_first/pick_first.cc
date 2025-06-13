@@ -528,6 +528,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     });
     if (endpoints.empty()) {
       status = absl::UnavailableError("address list must not be empty");
+      // TODO(roth): Replace this one-off special case with a more
+      // general solution.
+      if (IsPickFirstIgnoreEmptyUpdatesEnabled()) args.addresses = status;
     } else {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());
@@ -575,15 +578,11 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
-  if ((IsPickFirstIgnoreEmptyUpdatesEnabled() ? !status.ok()
-                                              : !args.addresses.ok()) &&
-      latest_update_args_.config != nullptr) {
+  if (!args.addresses.ok() && latest_update_args_.config != nullptr) {
     args.addresses = std::move(latest_update_args_.addresses);
   }
-  if (status.ok() || !IsPickFirstIgnoreEmptyUpdatesEnabled()) {
-    // Update latest_update_args_.
-    latest_update_args_ = std::move(args);
-  }
+  // Update latest_update_args_.
+  latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
   if (!IsIdle()) {
