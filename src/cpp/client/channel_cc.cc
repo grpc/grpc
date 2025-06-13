@@ -41,6 +41,7 @@
 
 #include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/channel.h"
 
 namespace grpc {
 
@@ -103,6 +104,12 @@ namespace experimental {
 
 void ChannelResetConnectionBackoff(Channel* channel) {
   grpc_channel_reset_connect_backoff(channel->c_channel_);
+}
+
+int64_t ChannelGetChannelzUuid(Channel* channel) {
+  auto* node = grpc_channel_get_channelz_node(channel->c_channel_);
+  if (node == nullptr) return 0;
+  return node->uuid();
 }
 
 }  // namespace experimental
