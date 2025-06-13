@@ -36,7 +36,7 @@
 #include "gtest/gtest.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/cpp/latent_see/latent_see_client.h"
-#include "src/proto/grpc/latent_see/latent_see.grpc.pb.h"
+#include "src/proto/grpc/channelz/v2/latent_see.grpc.pb.h"
 #include "test/core/test_util/test_config.h"
 
 namespace grpc {
@@ -50,7 +50,7 @@ TEST(LatentSeeServiceTest, Works) {
   builder.RegisterService(service.get());
   auto server = builder.BuildAndStart();
   auto channel = server->InProcessChannel(ChannelArguments());
-  auto stub = std::make_unique<latent_see::v1::LatentSee::Stub>(channel);
+  auto stub = std::make_unique<channelz::v2::LatentSee::Stub>(channel);
   std::ostringstream out;
   auto output = std::make_unique<grpc_core::latent_see::JsonOutput>(out);
   FetchLatentSee(stub.get(), 1.0, output.get());
