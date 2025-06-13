@@ -1130,6 +1130,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/crypt/gsec.h
@@ -2724,6 +2725,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/transport/endpoint_transport_client_channel_factory.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
@@ -4682,6 +4684,7 @@ libs:
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
   - src/core/transport/auth_context.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/tsi/transport_security.h
@@ -6521,6 +6524,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
@@ -10617,6 +10621,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
@@ -12274,6 +12279,7 @@ targets:
   - src/core/telemetry/stats.h
   - src/core/telemetry/stats_data.h
   - src/core/telemetry/tcp_tracer.h
+  - src/core/transport/auth_context_comparator_registry.h
   - src/core/transport/endpoint_transport.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - src/core/util/atomic_utils.h
