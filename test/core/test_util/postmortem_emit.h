@@ -1,5 +1,3 @@
-//
-//
 // Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,18 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
-#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
-
-#include <grpc/credentials.h>
+#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
 
 namespace grpc_core {
 
-std::shared_ptr<Http2StatsCollector> CreateHttp2StatsCollector(
-    grpc_auth_context* /*ctx*/) {
-  return std::make_shared<Http2StatsCollector>();
-}
+// Emit useful post mortem analysis from whatever in-process data we have.
+void PostMortemEmit();
 
 }  // namespace grpc_core
+
+#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
