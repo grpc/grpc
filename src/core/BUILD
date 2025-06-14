@@ -7718,7 +7718,7 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
-        "json",
+        "channelz_property_list",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
