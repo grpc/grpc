@@ -1025,7 +1025,7 @@ class _MultiThreadedRendezvous(
 def _start_unary_request(
     request: Any,
     timeout: Optional[float],
-    request_serializer: SerializingFunction,
+    request_serializer: Optional[SerializingFunction],
 ) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -1097,6 +1097,7 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
         return parent_deadline
     if user_deadline is not None and parent_deadline is None:
         return user_deadline
+    assert parent_deadline is not None and user_deadline is not None
     return min(parent_deadline, user_deadline)
 
 
@@ -1336,8 +1337,8 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         channel: cygrpc.Channel,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ) -> None:
         self._channel = channel
@@ -1445,8 +1446,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         managed_call: IntegratedCallFactory,
         method: bytes,
         target: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
     ) -> None:
         self._channel = channel
@@ -1949,7 +1950,7 @@ class _ChannelConnectivityState:
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
     callbacks_and_connectivities: List[
-        Sequence[
+        List[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -2014,7 +2015,7 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Sequence[Callable[[grpc.ChannelConnectivity], None]],
+    callbacks: Union[List[CallbackType], Tuple[MixedTupleElementType, ...]],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
@@ -2096,7 +2097,7 @@ def _subscribe(
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
-            _spawn_delivery(state, (callback,))
+            _spawn_delivery(state, [callback,])
             state.try_to_connect |= bool(try_to_connect)
             state.callbacks_and_connectivities.append(
                 [callback, state.connectivity],
