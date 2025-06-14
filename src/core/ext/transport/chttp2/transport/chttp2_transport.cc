@@ -648,19 +648,17 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                          }
                          return "unknown";
                        }())
-                  .Set("write_state",
-                       [t]() {
-                         switch (t->write_state) {
-                           case GRPC_CHTTP2_WRITE_STATE_IDLE:
-                             return "idle";
-                           case GRPC_CHTTP2_WRITE_STATE_WRITING:
-                             return "writing";
-                           case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
-                             return "writing_with_more";
-                         }
-                         return "unknown";
-                       }())
-                  .TakeJsonObject());
+                  .Set("write_state", [t]() {
+                    switch (t->write_state) {
+                      case GRPC_CHTTP2_WRITE_STATE_IDLE:
+                        return "idle";
+                      case GRPC_CHTTP2_WRITE_STATE_WRITING:
+                        return "writing";
+                      case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+                        return "writing_with_more";
+                    }
+                    return "unknown";
+                  }()));
           std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
               children;
           children.reserve(t->stream_map.size());
