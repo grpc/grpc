@@ -1248,7 +1248,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         return _end_unary_response_blocking(
             state,
             call,
-            False, # noqa: FBT003
+            False,  # noqa: FBT003
             None,
         )
 
@@ -1272,7 +1272,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         return _end_unary_response_blocking(
             state,
             call,
-            True, # noqa: FBT003
+            True,  # noqa: FBT003
             None,
         )
 
@@ -1638,7 +1638,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         return _end_unary_response_blocking(
             state,
             call,
-            False, # noqa: FBT003
+            False,  # noqa: FBT003
             None,
         )
 
@@ -1662,7 +1662,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         return _end_unary_response_blocking(
             state,
             call,
-            True, # noqa: FBT003
+            True,  # noqa: FBT003
             None,
         )
 
