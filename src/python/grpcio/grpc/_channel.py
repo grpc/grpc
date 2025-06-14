@@ -411,6 +411,19 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def debug_error_string(self) -> Optional[str]:
         return _common.decode(self._state.debug_error_string)
 
+    def is_active(self) -> bool:
+        """See grpc.RpcContext.is_active."""
+        return False
+
+    def time_remaining(self) -> Optional[float]:
+        """See grpc.RpcContext.time_remaining."""
+        return 0.0
+
+    def add_callback(self, callback: Callable[[], None]) -> bool:
+        """See grpc.RpcContext.add_callback."""
+        # The RPC is already terminated, so the callback is not added.
+        return False
+
     def _repr(self) -> str:
         return _rpc_state_string(self.__class__.__name__, self._state)
 
