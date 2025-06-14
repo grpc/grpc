@@ -1117,12 +1117,12 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 
     __slots__ = [
         "_channel",
-        "_context",
         "_managed_call",
         "_method",
+        "_target",
         "_request_serializer",
         "_response_deserializer",
-        "_target",
+        "_context",
     ]
 
     # pylint: disable=too-many-arguments
