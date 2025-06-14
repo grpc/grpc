@@ -457,7 +457,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         raise self
 
     def exception(
-        self, timeout: Optional[float] = None,  # pylint: disable=unused-argument
+        self, timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
@@ -474,7 +474,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def add_done_callback(
         self,
         fn: Callable[[grpc.Future], None],
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument
+        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
     ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
@@ -548,13 +548,13 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             self._state.callbacks.append(callback)
             return True
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         return self
 
-    def next(self):
+    def next(self) -> Any:
         return self._next()
 
-    def __next__(self):
+    def __next__(self) -> Any:
         return self._next()
 
     def _next(self) -> Any:
