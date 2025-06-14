@@ -24,13 +24,13 @@
 #include <optional>
 #include <vector>
 
+#include "src/core/channelz/property_list.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/time.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/functional/any_invocable.h"
 #include "absl/hash/hash.h"
 #include "absl/random/bit_gen_ref.h"
-#include "src/core/lib/debug/trace.h"
-#include "src/core/util/json/json.h"
-#include "src/core/util/time.h"
 
 namespace grpc_core {
 
@@ -91,21 +91,22 @@ class Chttp2PingCallbacks {
       grpc_event_engine::experimental::EventEngine* event_engine,
       Callback callback);
 
-  Json::Object ToJson() const {
-    Json::Object obj;
-    obj["ping_requested"] = Json::FromBool(ping_requested_);
-    obj["most_recent_inflight"] = Json::FromNumber(most_recent_inflight_);
-    obj["started_new_ping_without_setting_timeout"] =
-        Json::FromBool(started_new_ping_without_setting_timeout_);
-    Json::Array inflight;
-    for (const auto& [id, ping] : inflight_) {
-      Json::Object ping_obj;
-      ping_obj["id"] = Json::FromNumber(id);
-    }
-    obj["inflight"] = Json::FromArray(std::move(inflight));
-    obj["num_on_start"] = Json::FromNumber(on_start_.size());
-    obj["num_on_ack"] = Json::FromNumber(on_ack_.size());
-    return obj;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("ping_requested", ping_requested_)
+        .Set("most_recent_inflight", most_recent_inflight_)
+        .Set("started_new_ping_without_setting_timeout",
+             started_new_ping_without_setting_timeout_)
+        .Set("inflight",
+             [this]() {
+               std::vector<channelz::PropertyList> inflight;
+               for (const auto& [id, ping] : inflight_) {
+                 inflight.emplace_back().Set("id", id);
+               }
+               return inflight;
+             }())
+        .Set("num_on_start", on_start_.size())
+        .Set("num_on_ack", on_ack_.size());
   }
 
  private:

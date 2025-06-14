@@ -32,6 +32,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -261,6 +262,13 @@ class DataSink {
     if (impl == nullptr) return;
     impl->AddAdditionalInfo(name, std::move(additional_info));
   }
+
+  template <typename T>
+  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddAdditionalInfo(
+      absl::string_view name, T value) {
+    AddAdditionalInfo(name, value.TakeJsonObject());
+  }
+
   void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
     auto impl = impl_.lock();
     if (impl == nullptr) return;
