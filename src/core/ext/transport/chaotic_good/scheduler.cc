@@ -87,9 +87,7 @@ class ParseConfig {
 // override ChooseChannel.
 class SimpleScheduler : public Scheduler {
  public:
-  void NewStep(double outstanding_bytes, double min_tokens) override {
-    channels_.clear();
-  }
+  void NewStep(double, double) override { channels_.clear(); }
 
   void SetConfig(absl::string_view name, absl::string_view value) override {
     LOG(ERROR) << "SimpleScheduler::SetConfig: " << name << "=" << value;
@@ -100,7 +98,7 @@ class SimpleScheduler : public Scheduler {
     channels_.emplace_back(Channel{id, ready, start_time, bytes_per_second});
   }
 
-  void MakePlan(TcpZTraceCollector& ztrace_collector) override {
+  void MakePlan(TcpZTraceCollector&) override {
     num_ready_ = std::partition(channels_.begin(), channels_.end(),
                                 [](const Channel& a) { return a.ready; }) -
                  channels_.begin();

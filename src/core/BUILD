@@ -8551,6 +8551,7 @@ grpc_cc_library(
         "ext/transport/chaotic_good/scheduler.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/strings",
     ],
     deps = [
