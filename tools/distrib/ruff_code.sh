@@ -24,12 +24,12 @@ DIRS=(
 )
 
 VIRTUALENV=venv_ruff
-python3.11 -m venv $VIRTUALENV
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 python3 -m pip install --upgrade ruff==0.11.13
 
 EXIT=0
-ruff check --fix --unsafe-fixes --config ruff.toml "${DIRS[@]}" || EXIT=1
+ruff check --config ruff.toml "${DIRS[@]}" || EXIT=1
 
 exit $EXIT 
