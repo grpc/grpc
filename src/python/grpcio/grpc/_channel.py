@@ -37,7 +37,7 @@ from typing import (
 
 import grpc  # pytype: disable=pyi-error
 import grpc.experimental  # pytype: disable=pyi-error
-from grpc import ( # pytype: disable=pyi-error
+from grpc import (  # pytype: disable=pyi-error
     _common,
     _compression,
     _grpcio_metadata,
@@ -475,7 +475,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         self,
         timeout: Optional[  # noqa: ARG002 # pylint: disable=unused-argument
             float
-        ] = None, # pylint: disable=C0326
+        ] = None,  # pylint: disable=C0326
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
