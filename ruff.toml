@@ -61,6 +61,9 @@ ignore = [
     "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
 
     "PLR0913", # Checks for function definitions that include too many arguments.
+    "PERF203", # Checks for uses of except handling via try-except within for and while loops.
+
+    "SLF001", # Checks for accesses on "private" class members.
 ]
 
 # Select all rules by default, and then ignore the ones we don't want.
