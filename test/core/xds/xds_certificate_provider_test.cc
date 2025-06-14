@@ -22,6 +22,8 @@
 
 #include <optional>
 
+#include "absl/base/no_destructor.h"
+#include "absl/functional/overload.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -44,6 +46,36 @@ constexpr const char* kIdentityCert2PrivateKey = "identity_private_key_2";
 constexpr const char* kIdentityCert2 = "identity_cert_2_contents";
 constexpr const char* kRootErrorMessage = "root_error_message";
 constexpr const char* kIdentityErrorMessage = "identity_error_message";
+
+constexpr absl::string_view kGoodSpiffeBundleMapPath =
+    "test/core/credentials/transport/tls/test_data/spiffe/"
+    "client_spiffebundle.json";
+
+constexpr absl::string_view kGoodSpiffeBundleMapPath2 =
+    "test/core/credentials/transport/tls/test_data/spiffe/"
+    "test_bundles/spiffebundle2.json";
+
+std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap() {
+  static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
+      kSpiffeBundleMap([] {
+        auto spiffe_bundle_map =
+            SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath);
+        EXPECT_TRUE(spiffe_bundle_map.ok());
+        return *spiffe_bundle_map;
+      }());
+  return *kSpiffeBundleMap;
+}
+
+std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap2() {
+  static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
+      kSpiffeBundleMap2([] {
+        auto spiffe_bundle_map =
+            SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath2);
+        EXPECT_TRUE(spiffe_bundle_map.ok());
+        return *spiffe_bundle_map;
+      }());
+  return *kSpiffeBundleMap2;
+}
 
 PemKeyCertPairList MakeKeyCertPairsType1() {
   return MakeCertKeyPairs(kIdentityCert1PrivateKey, kIdentityCert1);
@@ -81,16 +113,32 @@ class TestCertificatesWatcher
   ~TestCertificatesWatcher() override {}
 
   void OnCertificatesChanged(
-      std::optional<absl::string_view> root_certs,
+      std::optional<
+          std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
+          roots,
       std::optional<PemKeyCertPairList> key_cert_pairs) override {
-    if (root_certs.has_value()) {
-      if (!root_certs_.has_value() ||
-          (root_certs_.has_value() &&
-           std::string(root_certs.value()) != root_certs_.value())) {
-        root_cert_error_ = absl::OkStatus();
-      }
-      root_certs_.emplace(std::string(root_certs.value()));
+    if (roots.has_value()) {
+      auto visitor = absl::Overload{
+          [&](const absl::string_view& pem_root_certs) {
+            if (!root_certs_.has_value() ||
+                (root_certs_.has_value() &&
+                 pem_root_certs != root_certs_.value())) {
+              root_cert_error_ = absl::OkStatus();
+            }
+            root_certs_ = pem_root_certs;
+          },
+          [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
+            if (!spiffe_bundle_map_.has_value() ||
+                (spiffe_bundle_map_.has_value() &&
+                 *spiffe_bundle_map != *spiffe_bundle_map_.value())) {
+              root_cert_error_ = absl::OkStatus();
+            }
+            spiffe_bundle_map_ = spiffe_bundle_map;
+          },
+      };
+      std::visit(visitor, *roots);
     }
+
     if (key_cert_pairs.has_value()) {
       if (key_cert_pairs != key_cert_pairs_) {
         identity_cert_error_ = absl::OkStatus();
@@ -111,6 +159,10 @@ class TestCertificatesWatcher
     return key_cert_pairs_;
   }
 
+  std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map() const {
+    return spiffe_bundle_map_;
+  }
+
   grpc_error_handle root_cert_error() const { return root_cert_error_; }
 
   grpc_error_handle identity_cert_error() const { return identity_cert_error_; }
@@ -118,6 +170,7 @@ class TestCertificatesWatcher
  private:
   std::optional<std::string> root_certs_;
   std::optional<PemKeyCertPairList> key_cert_pairs_;
+  std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map_;
   grpc_error_handle root_cert_error_;
   grpc_error_handle identity_cert_error_;
 };
@@ -399,6 +452,74 @@ TEST(XdsCertificateProviderTest, UnknownCertName) {
       StatusToString(watcher->identity_cert_error()),
       ::testing::HasSubstr(
           "No certificate provider available for identity certificates"));
+}
+
+TEST(
+    XdsCertificateProviderTest,
+    SpiffeRootCertDistributorDifferentFromIdentityCertDistributorDifferentCertNames) {
+  auto root_provider = MakeRefCounted<TestCertProvider>();
+  auto identity_provider = MakeRefCounted<TestCertProvider>();
+  XdsCertificateProvider provider(root_provider, "root", identity_provider,
+                                  "identity", {});
+  auto* watcher = new TestCertificatesWatcher;
+  provider.distributor()->WatchTlsCertificates(
+      std::unique_ptr<TestCertificatesWatcher>(watcher), "", "");
+  EXPECT_EQ(watcher->root_certs(), std::nullopt);
+  EXPECT_EQ(watcher->key_cert_pairs(), std::nullopt);
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
+  // Update both root certs and identity certs
+  root_provider->distributor()->SetKeyMaterials(
+      "root", GetGoodSpiffeBundleMap(), std::nullopt);
+  identity_provider->distributor()->SetKeyMaterials("identity", std::nullopt,
+                                                    MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
+  // Second update for just root certs
+  root_provider->distributor()->SetKeyMaterials(
+      "root", GetGoodSpiffeBundleMap2(),
+      MakeKeyCertPairsType2() /* does not have an effect */);
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap2());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
+  // Second update for identity certs
+  identity_provider->distributor()->SetKeyMaterials(
+      "identity", GetGoodSpiffeBundleMap() /* does not have an effect */,
+      MakeKeyCertPairsType2());
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap2());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
+  // Set error for both root and identity
+  root_provider->distributor()->SetErrorForCert(
+      "root", GRPC_ERROR_CREATE(kRootErrorMessage), std::nullopt);
+  identity_provider->distributor()->SetErrorForCert(
+      "identity", std::nullopt, GRPC_ERROR_CREATE(kIdentityErrorMessage));
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap2());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
+  EXPECT_THAT(StatusToString(watcher->root_cert_error()),
+              ::testing::HasSubstr(kRootErrorMessage));
+  EXPECT_THAT(StatusToString(watcher->identity_cert_error()),
+              ::testing::HasSubstr(kIdentityErrorMessage));
+  // Send an update for root certs. Test that the root cert error is reset.
+  root_provider->distributor()->SetKeyMaterials(
+      "root", GetGoodSpiffeBundleMap(), std::nullopt);
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType2());
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_THAT(StatusToString(watcher->identity_cert_error()),
+              ::testing::HasSubstr(kIdentityErrorMessage));
+  // Send an update for identity certs. Test that the identity cert error is
+  // reset.
+  identity_provider->distributor()->SetKeyMaterials("identity", std::nullopt,
+                                                    MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher->spiffe_bundle_map(), GetGoodSpiffeBundleMap());
+  EXPECT_EQ(watcher->key_cert_pairs(), MakeKeyCertPairsType1());
+  EXPECT_EQ(watcher->root_cert_error(), absl::OkStatus());
+  EXPECT_EQ(watcher->identity_cert_error(), absl::OkStatus());
 }
 
 }  // namespace

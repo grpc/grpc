@@ -63,6 +63,10 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
     parts.push_back(
         absl::StrFormat("ca_certificate_file=\"%s\", ", root_cert_file_));
   }
+  if (!spiffe_bundle_map_file_.empty()) {
+    parts.push_back(absl::StrFormat("spiffe_bundle_map_file=\"%s\", ",
+                                    spiffe_bundle_map_file_));
+  }
   parts.push_back(
       absl::StrFormat("refresh_interval=%ldms}", refresh_interval_.millis()));
   return absl::StrJoin(parts, "");
@@ -75,6 +79,8 @@ FileWatcherCertificateProviderFactory::Config::JsonLoader(const JsonArgs&) {
           .OptionalField("certificate_file", &Config::identity_cert_file_)
           .OptionalField("private_key_file", &Config::private_key_file_)
           .OptionalField("ca_certificate_file", &Config::root_cert_file_)
+          .OptionalField("spiffe_bundle_map_file",
+                         &Config::spiffe_bundle_map_file_)
           .OptionalField("refresh_interval", &Config::refresh_interval_)
           .Finish();
   return loader;
@@ -88,10 +94,14 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset");
   }
+  bool is_root_configured =
+      (json.object().find("ca_certificate_file") != json.object().end()) ||
+      (json.object().find("spiffe_bundle_map_file") != json.object().end());
   if ((json.object().find("certificate_file") == json.object().end()) &&
-      (json.object().find("ca_certificate_file") == json.object().end())) {
+      !is_root_configured) {
     errors->AddError(
-        "at least one of \"certificate_file\" and \"ca_certificate_file\" must "
+        "at least one of \"certificate_file\" and a root "
+        "(\"ca_certificate_file\" or \"spiffe_bundle_map_file\") must "
         "be specified");
   }
 }

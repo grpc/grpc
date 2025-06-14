@@ -2348,6 +2348,8 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
+      (options->spiffe_bundle_map == nullptr ||
+       options->spiffe_bundle_map->size() == 0) &&
       !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }

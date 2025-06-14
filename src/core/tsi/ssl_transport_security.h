@@ -27,6 +27,7 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security_utils.h"
 #include "src/core/tsi/transport_security_interface.h"
@@ -190,6 +191,8 @@ struct tsi_ssl_client_handshaker_options {
   // options as a shared_ptr.
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
+  std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map;
+
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -202,7 +205,8 @@ struct tsi_ssl_client_handshaker_options {
         skip_server_certificate_verification(false),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
-        crl_directory(nullptr) {}
+        crl_directory(nullptr),
+        spiffe_bundle_map(nullptr) {}
 };
 
 // Creates a client handshaker factory.
@@ -360,6 +364,8 @@ struct tsi_ssl_server_handshaker_options {
   // will be unusable.
   bool send_client_ca_list;
 
+  std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map;
+
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -374,7 +380,8 @@ struct tsi_ssl_server_handshaker_options {
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
         crl_directory(nullptr),
-        send_client_ca_list(true) {}
+        send_client_ca_list(true),
+        spiffe_bundle_map(nullptr) {}
 };
 
 // Creates a server handshaker factory.

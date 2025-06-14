@@ -34,6 +34,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/security_connector.h"
+#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/ssl/key_logging/ssl_key_logging.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -90,6 +91,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
@@ -100,6 +102,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
+    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Free the memory occupied by key cert pairs.
