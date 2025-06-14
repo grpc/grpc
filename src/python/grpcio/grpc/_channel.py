@@ -2264,7 +2264,7 @@ class Channel(grpc.Channel):
         # for as long as they are in use and to close them after using them,
         # then deletion of this grpc._channel.Channel instance can be made to
         # effect closure of the underlying cygrpc.Channel instance.
-        try:
+        try:  # noqa: SIM105
             self._unsubscribe_all()
         except:  # pylint: disable=bare-except
             # Exceptions in __del__ are ignored by Python anyway, but they can
