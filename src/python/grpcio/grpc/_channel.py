@@ -464,7 +464,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         self,
         timeout: Optional[ # noqa: ARG002 # pylint: disable=unused-argument
             float
-        ] = None,
+        ] = None, # pylint: disable=C0326
     ) -> Any:
         """See grpc.Future.result."""
         raise self
@@ -495,7 +495,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         fn: Callable[[grpc.Future], None],
         timeout: Optional[ # noqa: ARG002 # pylint: disable=unused-argument
             float
-        ] = None,
+        ] = None, # pylint: disable=C0326
     ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
