@@ -2266,7 +2266,7 @@ class Channel(grpc.Channel):
         # effect closure of the underlying cygrpc.Channel instance.
         try:  # noqa: SIM105
             self._unsubscribe_all()
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except # noqa: E722, S110
             # Exceptions in __del__ are ignored by Python anyway, but they can
             # keep spamming logs.  Just silence them.
             pass
