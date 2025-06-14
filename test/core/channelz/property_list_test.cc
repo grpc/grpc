@@ -14,9 +14,9 @@
 
 #include "src/core/channelz/property_list.h"
 
-#include "src/core/util/json/json.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/util/json/json.h"
 
 namespace grpc_core {
 namespace channelz {
