@@ -610,6 +610,10 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           }
           misc["keepaliveTime"] =
               Json::FromString(t->keepalive_time.ToJsonString());
+          misc["keepaliveTimeout"] =
+              Json::FromString(t->keepalive_timeout.ToJsonString());
+          misc["pingTimeout"] =
+              Json::FromString(t->ping_timeout.ToJsonString());
           misc["nextAdjustedKeepaliveTimestamp"] =
               Json::FromString((t->next_adjusted_keepalive_timestamp -
                                 grpc_core::Timestamp::Now())
@@ -639,6 +643,36 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
           misc["lastWindowUpdateAge"] = Json::FromString(
               (grpc_core::Timestamp::Now() - t->last_window_update_time)
                   .ToJsonString());
+          misc["pingRatePolicy"] =
+              Json::FromObject(t->ping_rate_policy.ToJson());
+          misc["pingCallbacks"] = Json::FromObject(t->ping_callbacks.ToJson());
+          misc["goaway_error"] = Json::FromString(t->goaway_error.ToString());
+          switch (t->sent_goaway_state) {
+            case GRPC_CHTTP2_NO_GOAWAY_SEND:
+              misc["sentGoawayState"] = Json::FromString("none");
+              break;
+            case GRPC_CHTTP2_GRACEFUL_GOAWAY:
+              misc["sentGoawayState"] = Json::FromString("graceful");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SEND_SCHEDULED:
+              misc["sentGoawayState"] = Json::FromString("final_scheduled");
+              break;
+            case GRPC_CHTTP2_FINAL_GOAWAY_SENT:
+              misc["sentGoawayState"] = Json::FromString("final_sent");
+              break;
+          }
+          switch (t->write_state) {
+            case GRPC_CHTTP2_WRITE_STATE_IDLE:
+              misc["writeState"] = Json::FromString("idle");
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING:
+              misc["writeState"] = Json::FromString("writing");
+              break;
+              break;
+            case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
+              misc["writeState"] = Json::FromString("writing_with_more");
+              break;
+          }
           http2_info["misc"] = Json::FromObject(std::move(misc));
           http2_info["settings"] = Json::FromObject(t->settings.ToJsonObject());
           sink.AddAdditionalInfo("http2", std::move(http2_info));
@@ -800,6 +834,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   grpc_auth_context* auth_context = channel_args.GetObject<grpc_auth_context>();
   http2_stats = grpc_core::CreateHttp2StatsCollector(auth_context);
+  hpack_parser.hpack_table()->SetHttp2StatsCollector(http2_stats);
 
 #ifdef GRPC_POSIX_SOCKET_TCP
   closure_barrier_may_cover_write =

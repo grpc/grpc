@@ -12,20 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/postmortem.h"
+#include "test/core/test_util/postmortem_emit.h"
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
-PostMortem::~PostMortem() {
-  if (!::testing::Test::HasFailure()) return;
-  Emit();
-}
-
-void PostMortem::Emit() {
+void PostMortemEmit() {
   LOG(INFO) << "===========================================================";
   LOG(INFO) << "🛑 gRPC Test Postmortem Analysis 🛑";
   LOG(INFO) << "===========================================================";
