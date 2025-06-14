@@ -31,23 +31,18 @@ class FilterArgs {
              grpc_channel_element* channel_element,
              size_t (*channel_stack_filter_instance_number)(
                  grpc_channel_stack*, grpc_channel_element*),
-             const Blackboard* old_blackboard = nullptr,
-             Blackboard* new_blackboard = nullptr)
+             Blackboard* blackboard = nullptr)
       : impl_(ChannelStackBased{channel_stack, channel_element,
                                 channel_stack_filter_instance_number}),
-        old_blackboard_(old_blackboard),
-        new_blackboard_(new_blackboard) {}
+        blackboard_(blackboard) {}
   // While we're moving to call-v3 we need to have access to
   // grpc_channel_stack & friends here. That means that we can't rely on this
   // type signature from interception_chain.h, which means that we need a way
   // of constructing this object without naming it ===> implicit construction.
   // TODO(ctiller): remove this once we're fully on call-v3
   // NOLINTNEXTLINE(google-explicit-constructor)
-  FilterArgs(size_t instance_id, const Blackboard* old_blackboard = nullptr,
-             Blackboard* new_blackboard = nullptr)
-      : impl_(V3Based{instance_id}),
-        old_blackboard_(old_blackboard),
-        new_blackboard_(new_blackboard) {}
+  FilterArgs(size_t instance_id, Blackboard* blackboard = nullptr)
+      : impl_(V3Based{instance_id}), blackboard_(blackboard) {}
 
   ABSL_DEPRECATED("Direct access to channel stack is deprecated")
   grpc_channel_stack* channel_stack() const {
@@ -74,16 +69,19 @@ class FilterArgs {
   // Invokes update_func() to update a filter state object of type T
   // with the specified key.  The existing filter state object, if any,
   // will be passed to update_func().  The filter state object returned
-  // by update_func() will be saved and returned.
+  // by update_func(), if different than the original object, will be
+  // saved and returned.
   template <typename T>
   RefCountedPtr<T> GetOrCreateState(
       const std::string& key,
       absl::FunctionRef<RefCountedPtr<T>(RefCountedPtr<T>)> update_func) const {
     RefCountedPtr<T> state;
-    if (old_blackboard_ != nullptr) state = old_blackboard_->Get<T>(key);
-    state = update_func(std::move(state));
-    if (new_blackboard_ != nullptr) new_blackboard_->Set(key, state);
-    return state;
+    if (blackboard_ != nullptr) state = blackboard_->Get<T>(key);
+    auto new_state = update_func(state);
+    if (blackboard_ != nullptr && new_state != state) {
+      new_state = blackboard_->Set(key, std::move(new_state));
+    }
+    return new_state;
   }
 
  private:
@@ -103,8 +101,7 @@ class FilterArgs {
   using Impl = std::variant<ChannelStackBased, V3Based>;
   Impl impl_;
 
-  const Blackboard* old_blackboard_ = nullptr;
-  Blackboard* new_blackboard_ = nullptr;
+  Blackboard* blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core
