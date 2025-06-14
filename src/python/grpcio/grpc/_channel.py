@@ -253,9 +253,7 @@ def _event_handler(
         for callback in callbacks:
             try:
                 callback()
-            except (
-                Exception
-            ) as e:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
                 logging.exception(  # noqa: LOG015,
@@ -279,7 +277,7 @@ def _consume_request_iterator(  # noqa: C901
 ) -> None:
     """Consume a request supplied by the user."""
 
-    def consume_request_iterator() -> ( # noqa: C901
+    def consume_request_iterator() -> (  # noqa: C901
         None
     ):  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
@@ -475,7 +473,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def exception(
         self,
-        timeout: Optional[ # noqa: ARG002
+        timeout: Optional[  # noqa: ARG002
             float
         ] = None,  # pylint: disable=unused-argument
     ) -> Optional[Exception]:
@@ -484,7 +482,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def traceback(
         self,
-        timeout: Optional[ # noqa: ARG002
+        timeout: Optional[  # noqa: ARG002
             float
         ] = None,  # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
@@ -1216,9 +1214,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             None,
             _determine_deadline(deadline),
             metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             (
                 (
                     operations,
@@ -1250,7 +1246,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, False, None, #noqa: FBT003
+            state,
+            call,
+            False,
+            None,  # noqa: FBT003
         )
 
     def with_call(
@@ -1271,7 +1270,10 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, True, None, # noqa: FBT003
+            state,
+            call,
+            True,
+            None,  # noqa: FBT003
         )
 
     def future(
@@ -1302,9 +1304,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             None,
             deadline,
             metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             (operations,),
             event_handler,
             self._context,
@@ -1380,9 +1380,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
-            None
-            if credentials is None
-            else credentials._credentials
+            None if credentials is None else credentials._credentials
         )
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready,
@@ -1514,9 +1512,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             None,
             _determine_deadline(deadline),
             metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             operations,
             _event_handler(state, self._response_deserializer),
             self._context,
@@ -1598,9 +1594,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             _stream_unary_invocation_operations_and_tags(
                 augmented_metadata,
                 initial_metadata_flags,
@@ -1642,7 +1636,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, False, None, #noqa: FBT003
+            state,
+            call,
+            False,
+            None,  # noqa: FBT003
         )
 
     def with_call(
@@ -1663,7 +1660,10 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, True, None, #noqa: FBT003
+            state,
+            call,
+            True,
+            None,  # noqa: FBT003
         )
 
     def future(
@@ -1694,9 +1694,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             deadline,
             augmented_metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             _stream_unary_invocation_operations(
                 metadata,
                 initial_metadata_flags,
@@ -1799,9 +1797,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            (
-                None if credentials is None else credentials._credentials
-            ),
+            (None if credentials is None else credentials._credentials),
             operations,
             event_handler,
             self._context,
