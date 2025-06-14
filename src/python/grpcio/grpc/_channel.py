@@ -664,7 +664,7 @@ class _SingleThreadedRendezvous(
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             raise self
 
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
@@ -689,7 +689,7 @@ class _SingleThreadedRendezvous(
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             return self
 
     def traceback(
@@ -717,7 +717,7 @@ class _SingleThreadedRendezvous(
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             try:
                 raise self
             except grpc.RpcError:
@@ -794,7 +794,7 @@ class _SingleThreadedRendezvous(
                     return response
                 if cygrpc.OperationType.receive_message not in self._state.due:
                     if self._state.code is grpc.StatusCode.OK:
-                        raise StopIteration
+                        raise StopIteration()
                     if self._state.code is not None:
                         raise self
 
@@ -820,7 +820,7 @@ class _SingleThreadedRendezvous(
                 if not operating:
                     self._state.due.remove(cygrpc.OperationType.receive_message)
             elif self._state.code is grpc.StatusCode.OK:
-                raise StopIteration
+                raise StopIteration()
             else:
                 raise self
         return self._next_response()
@@ -928,11 +928,11 @@ class _MultiThreadedRendezvous(
                 timeout=timeout,
             )
             if timed_out:
-                raise grpc.FutureTimeoutError
+                raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return self._state.response
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             raise self
 
     def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
@@ -947,11 +947,11 @@ class _MultiThreadedRendezvous(
                 timeout=timeout,
             )
             if timed_out:
-                raise grpc.FutureTimeoutError
+                raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             return self
 
     def traceback(
@@ -969,11 +969,11 @@ class _MultiThreadedRendezvous(
                 timeout=timeout,
             )
             if timed_out:
-                raise grpc.FutureTimeoutError
+                raise grpc.FutureTimeoutError()
             if self._state.code is grpc.StatusCode.OK:
                 return None
             if self._state.cancelled:
-                raise grpc.FutureCancelledError
+                raise grpc.FutureCancelledError()
             try:
                 raise self
             except grpc.RpcError:
@@ -1002,7 +1002,7 @@ class _MultiThreadedRendezvous(
                 if not operating:
                     self._state.due.remove(cygrpc.OperationType.receive_message)
             elif self._state.code is grpc.StatusCode.OK:
-                raise StopIteration
+                raise StopIteration()
             else:
                 raise self
 
@@ -1019,7 +1019,7 @@ class _MultiThreadedRendezvous(
                 return response
             if cygrpc.OperationType.receive_message not in self._state.due:
                 if self._state.code is grpc.StatusCode.OK:
-                    raise StopIteration
+                    raise StopIteration()
                 if self._state.code is not None:
                     raise self
                 return None
