@@ -1328,12 +1328,11 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     __slots__ = [
         "_channel",
-        "_context",
         "_method",
-        "_registered_call_handle",
+        "_target",
         "_request_serializer",
         "_response_deserializer",
-        "_target",
+        "_context",
     ]
 
     def __init__(
@@ -1435,13 +1434,12 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     __slots__ = [
         "_channel",
-        "_context",
         "_managed_call",
         "_method",
-        "_registered_call_handle",
+        "_target",
         "_request_serializer",
         "_response_deserializer",
-        "_target",
+        "_context",
     ]
 
     def __init__(
@@ -1533,7 +1531,6 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         "_context",
         "_managed_call",
         "_method",
-        "_registered_call_handle",
         "_request_serializer",
         "_response_deserializer",
         "_target",
@@ -1722,13 +1719,12 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 
     __slots__ = [
         "_channel",
-        "_context",
         "_managed_call",
         "_method",
-        "_registered_call_handle",
+        "_target",
         "_request_serializer",
         "_response_deserializer",
-        "_target",
+        "_context",
     ]
 
     # pylint: disable=too-many-arguments
