@@ -892,7 +892,7 @@ class _MultiThreadedRendezvous(
         return self._state.code is not None
 
     def result(self, timeout: Optional[float] = None) -> Any:
-        """Returns the result of the computation or raises its exception.
+        """Return the result of the computation or raises its exception.
 
         See grpc.Future.result for the full API contract.
         """
@@ -973,7 +973,7 @@ class _MultiThreadedRendezvous(
             else:
                 raise self
 
-            def _response_ready():
+            def _response_ready():  # noqa: ANN202
                 return self._state.response is not None or (
                     cygrpc.OperationType.receive_message not in self._state.due
                     and self._state.code is not None
@@ -1099,7 +1099,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
-    ) -> None:  # noqa: PLR0913
+    ) -> None:
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1146,7 +1146,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return state, operations, deadline, None
 
-    def _blocking(  # noqa: PLR0913
+    def _blocking(
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1183,7 +1183,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         _handle_event(event, state, self._response_deserializer)
         return state, call
 
-    def __call__(  # noqa: PLR0913
+    def __call__(
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1197,7 +1197,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return _end_unary_response_blocking(state, call, False, None)  # noqa: FBT003
 
-    def with_call(  # noqa: PLR0913
+    def with_call(
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1211,7 +1211,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return _end_unary_response_blocking(state, call, True, None)  # noqa: FBT003
 
-    def future(  # noqa: PLR0913
+    def future(
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1282,7 +1282,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._context = cygrpc.build_census_context()
         self._registered_call_handle = _registered_call_handle
 
-    def __call__(  # pylint: disable=too-many-locals # noqa: PLR0913
+    def __call__(  # pylint: disable=too-many-locals
         self,
         request: Any,
         timeout: Optional[float] = None,

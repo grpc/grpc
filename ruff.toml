@@ -59,6 +59,8 @@ ignore = [
     "S105", # Checks for potential uses of hardcoded passwords in strings.
 
     "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
+
+    "PLR0913", # Checks for function definitions that include too many arguments.
 ]
 
 # Select all rules by default, and then ignore the ones we don't want.
