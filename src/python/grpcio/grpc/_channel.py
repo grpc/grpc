@@ -1507,7 +1507,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials, # noqa: SLF001
             _stream_unary_invocation_operations_and_tags(
                 augmented_metadata, initial_metadata_flags,
             ),
@@ -1543,7 +1543,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             wait_for_ready,
             compression,
         )
-        return _end_unary_response_blocking(state, call, False, None)
+        return _end_unary_response_blocking(state, call, False, None)  # noqa: FBT003
 
     def with_call(
         self,
@@ -1562,7 +1562,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             wait_for_ready,
             compression,
         )
-        return _end_unary_response_blocking(state, call, True, None)
+        return _end_unary_response_blocking(state, call, True, None) # noqa: FBT003
 
     def future(
         self,
@@ -1783,7 +1783,7 @@ def _channel_managed_call_management(state: _ChannelCallState):  # noqa: ANN202
         context: Any,
         _registered_call_handle: Optional[int],
     ) -> cygrpc.IntegratedCall:
-        """Creates a cygrpc.IntegratedCall.
+        """Create a cygrpc.IntegratedCall.
 
         Args:
           flags: An integer bitfield of call flags.
