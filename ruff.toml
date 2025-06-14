@@ -65,7 +65,7 @@ ignore = [
 
     "SLF001", # Checks for accesses on "private" class members.
 
-    "IOO1", # De-duplicates, groups, and sorts imports based on the provided isort settings.
+    "I001", # De-duplicates, groups, and sorts imports based on the provided isort settings.
     # This conflicts with isort
 ]
 

@@ -463,7 +463,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def result(
         self,
         timeout: Optional[float] = None,  # noqa: ARG002 # pylint: disable=unused-argument
-    ) -> Any:  
+    ) -> Any:
         """See grpc.Future.result."""
         raise self
 
