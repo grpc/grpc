@@ -419,7 +419,7 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         """See grpc.RpcContext.time_remaining."""
         return 0.0
 
-    def add_callback(self, callback: Callable[[], None]) -> bool:
+    def add_callback(self, _callback: Callable[[], None]) -> bool:
         """See grpc.RpcContext.add_callback."""
         # The RPC is already terminated, so the callback is not added.
         return False
