@@ -451,19 +451,22 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
         return True
 
     def result(
-        self, timeout: Optional[float] = None,
+        self,
+        timeout: Optional[float] = None,  # noqa: ARG002
     ) -> Any:  # pylint: disable=unused-argument
         """See grpc.Future.result."""
         raise self
 
     def exception(
-        self, timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
+        self,
+        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
-        self, timeout: Optional[float] = None,  # pylint: disable=unused-argument
+        self,
+        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -619,7 +622,7 @@ class _SingleThreadedRendezvous(
             return self._state.code is not None
 
     def result(self, timeout: Optional[float] = None) -> Any:
-        """Returns the result of the computation or raises its exception.
+        """Return the result of the computation or raises its exception.
 
         This method will never block. Instead, it will raise an exception
         if calling this method would otherwise result in blocking.
@@ -825,40 +828,40 @@ class _MultiThreadedRendezvous(
     _state: _RPCState
 
     def initial_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.initial_metadata."""
+        """See grpc.Call.initial_metadata"""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.initial_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.initial_metadata
 
     def trailing_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.trailing_metadata."""
+        """See grpc.Call.trailing_metadata"""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.trailing_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
-        """See grpc.Call.code."""
+        """See grpc.Call.code"""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.code is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.code
 
     def details(self) -> Optional[str]:
-        """See grpc.Call.details."""
+        """See grpc.Call.details"""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
@@ -867,7 +870,7 @@ class _MultiThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
