@@ -37,11 +37,11 @@ from typing import (
 
 import grpc  # pytype: disable=pyi-error
 import grpc.experimental  # pytype: disable=pyi-error
-from grpc import (
-    _common,  # pytype: disable=pyi-error
-    _compression,  # pytype: disable=pyi-error
-    _grpcio_metadata,  # pytype: disable=pyi-error
-    _observability,  # pytype: disable=pyi-error
+from grpc import ( # pytype: disable=pyi-error
+    _common,
+    _compression,
+    _grpcio_metadata,
+    _observability,
 )
 from grpc._cython import cygrpc
 from grpc._typing import (
