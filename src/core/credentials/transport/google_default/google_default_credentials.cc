@@ -38,6 +38,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/credentials/call/dual/dual_call_credentials.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
@@ -372,15 +373,18 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   return call_creds;
 }
 
-grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials) {
+grpc_channel_credentials*
+grpc_google_default_credentials_create_with_alts_option(
+    grpc_call_credentials* default_credentials,
+    grpc_call_credentials* alts_credentials) {
   grpc_channel_credentials* result = nullptr;
-  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
+  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(
+      default_credentials);
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_google_default_credentials_create(" << call_credentials << ")";
+  GRPC_TRACE_LOG(api, INFO) << "grpc_google_default_credentials_create("
+                            << default_credentials << ")";
 
   if (call_creds == nullptr) {
     call_creds = make_default_call_creds(&error);
@@ -400,14 +404,30 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
         grpc_core::MakeRefCounted<grpc_google_default_channel_credentials>(
             grpc_core::RefCountedPtr<grpc_channel_credentials>(alts_creds),
             grpc_core::RefCountedPtr<grpc_channel_credentials>(ssl_creds));
-    result = grpc_composite_channel_credentials_create(
-        creds.get(), call_creds.get(), nullptr);
+    if (alts_credentials != nullptr) {
+      grpc_core::RefCountedPtr<grpc_call_credentials> alts_creds(
+          alts_credentials);
+      auto dual_creds =
+          grpc_core::MakeRefCounted<grpc_core::DualCallCredentials>(call_creds,
+                                                                    alts_creds);
+      result = grpc_composite_channel_credentials_create(
+          creds.get(), dual_creds.get(), nullptr);
+    } else {
+      result = grpc_composite_channel_credentials_create(
+          creds.get(), call_creds.get(), nullptr);
+    }
     CHECK_NE(result, nullptr);
   } else {
     LOG(ERROR) << "Could not create google default credentials: "
                << grpc_core::StatusToString(error);
   }
   return result;
+}
+
+grpc_channel_credentials* grpc_google_default_credentials_create(
+    grpc_call_credentials* call_credentials) {
+  return grpc_google_default_credentials_create_with_alts_option(
+      call_credentials, nullptr);
 }
 
 namespace grpc_core {
