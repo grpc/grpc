@@ -2247,7 +2247,7 @@ class Channel(grpc.Channel):
     def __enter__(self):  # noqa: ANN204
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: ANN204
+    def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: ANN204, ANN001
         self._close()
         return False
 
