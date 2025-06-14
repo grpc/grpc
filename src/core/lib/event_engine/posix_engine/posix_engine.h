@@ -40,7 +40,6 @@
 #include "src/core/lib/event_engine/ref_counted_dns_resolver_interface.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/sync.h"
 
@@ -131,8 +130,7 @@ class PosixEnginePollerManager
 
 // An iomgr-based Posix EventEngine implementation.
 // All methods require an ExecCtx to already exist on the thread's stack.
-class PosixEventEngine final : public PosixEventEngineWithFdSupport,
-                               public grpc_core::KeepsGrpcInitialized {
+class PosixEventEngine final : public PosixEventEngineWithFdSupport {
  public:
   class PosixDNSResolver : public EventEngine::DNSResolver {
    public:
