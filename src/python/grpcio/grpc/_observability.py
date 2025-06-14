@@ -18,16 +18,27 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import Any, Generator, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Generator,
+    Generic,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from grpc._cython import cygrpc as _cygrpc
-from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
 _channel = Any  # _channel.py imports this module.
 ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
+ServerCallTracerFactoryOption = Union[
+    Tuple[Tuple[str, "ServerCallTracerFactory"]], Tuple[()]
+]
 
 _plugin_lock: threading.RLock = threading.RLock()
 _OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
@@ -281,7 +292,9 @@ def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
             )
 
 
-def create_server_call_tracer_factory_option(xds: bool) -> ChannelArgumentType:
+def create_server_call_tracer_factory_option(
+    xds: bool,
+) -> ServerCallTracerFactoryOption:
     with get_plugin() as plugin:
         if plugin and plugin.stats_enabled:
             server_call_tracer_factory_address = (
