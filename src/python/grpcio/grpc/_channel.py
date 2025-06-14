@@ -828,40 +828,40 @@ class _MultiThreadedRendezvous(
     _state: _RPCState
 
     def initial_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.initial_metadata"""
+        """See grpc.Call.initial_metadata."""
         with self._state.condition:
 
-            def _done() -> bool:
+            def _done():
                 return self._state.initial_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.initial_metadata
 
     def trailing_metadata(self) -> Optional[MetadataType]:
-        """See grpc.Call.trailing_metadata"""
+        """See grpc.Call.trailing_metadata."""
         with self._state.condition:
 
-            def _done() -> bool:
+            def _done():
                 return self._state.trailing_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.trailing_metadata
 
     def code(self) -> Optional[grpc.StatusCode]:
-        """See grpc.Call.code"""
+        """See grpc.Call.code."""
         with self._state.condition:
 
-            def _done() -> bool:
+            def _done():
                 return self._state.code is not None
 
             _common.wait(self._state.condition.wait, _done)
             return self._state.code
 
     def details(self) -> Optional[str]:
-        """See grpc.Call.details"""
+        """See grpc.Call.details."""
         with self._state.condition:
 
-            def _done() -> bool:
+            def _done():
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
@@ -870,7 +870,7 @@ class _MultiThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
 
-            def _done() -> bool:
+            def _done():
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
