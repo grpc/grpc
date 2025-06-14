@@ -1591,7 +1591,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             deadline,
             augmented_metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials,  # noqa: SLF001
             _stream_unary_invocation_operations(
                 metadata, initial_metadata_flags,
             ),
@@ -1688,7 +1688,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials,  # noqa: SLF001
             operations,
             event_handler,
             self._context,
