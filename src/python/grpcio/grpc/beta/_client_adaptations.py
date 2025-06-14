@@ -13,11 +13,10 @@
 # limitations under the License.
 """Translates gRPC's client-side API into gRPC's client-side Beta API."""
 
-from typing import NoReturn
-
 import grpc
 from grpc import _common
-from grpc.beta import _metadata, interfaces
+from grpc.beta import _metadata
+from grpc.beta import interfaces
 from grpc.framework.common import cardinality
 from grpc.framework.foundation import future
 from grpc.framework.interfaces.face import face
@@ -48,7 +47,8 @@ def _effective_metadata(metadata, metadata_transformer):
     non_none_metadata = () if metadata is None else metadata
     if metadata_transformer is None:
         return non_none_metadata
-    return metadata_transformer(non_none_metadata)
+    else:
+        return metadata_transformer(non_none_metadata)
 
 
 def _credentials(grpc_call_options):
@@ -81,12 +81,12 @@ def _abortion_error(rpc_error_call):
 
 
 class _InvocationProtocolContext(interfaces.GRPCInvocationContext):
-    def disable_next_request_compression(self) -> None:
+    def disable_next_request_compression(self):
         pass  # TODO(https://github.com/grpc/grpc/issues/4078): design, implement.
 
 
 class _Rendezvous(future.Future, face.Call):
-    def __init__(self, response_future, response_iterator, call) -> None:
+    def __init__(self, response_future, response_iterator, call):
         self._future = response_future
         self._iterator = response_iterator
         self._call = call
@@ -109,30 +109,31 @@ class _Rendezvous(future.Future, face.Call):
         except grpc.RpcError as rpc_error_call:
             raise _abortion_error(rpc_error_call)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError
+            raise future.TimeoutError()
         except grpc.FutureCancelledError:
-            raise future.CancelledError
+            raise future.CancelledError()
 
     def exception(self, timeout=None):
         try:
             rpc_error_call = self._future.exception(timeout=timeout)
             if rpc_error_call is None:
                 return None
-            return _abortion_error(rpc_error_call)
+            else:
+                return _abortion_error(rpc_error_call)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError
+            raise future.TimeoutError()
         except grpc.FutureCancelledError:
-            raise future.CancelledError
+            raise future.CancelledError()
 
     def traceback(self, timeout=None):
         try:
             return self._future.traceback(timeout=timeout)
         except grpc.FutureTimeoutError:
-            raise future.TimeoutError
+            raise future.TimeoutError()
         except grpc.FutureCancelledError:
-            raise future.CancelledError
+            raise future.CancelledError()
 
-    def add_done_callback(self, fn) -> None:
+    def add_done_callback(self, fn):
         self._future.add_done_callback(lambda ignored_callback: fn(self))
 
     def __iter__(self):
@@ -157,7 +158,7 @@ class _Rendezvous(future.Future, face.Call):
         return self._call.time_remaining()
 
     def add_abortion_callback(self, abortion_callback):
-        def done_callback() -> None:
+        def done_callback():
             if self.code() is not grpc.StatusCode.OK:
                 abortion_callback(_abortion(self._call))
 
@@ -208,12 +209,13 @@ def _blocking_unary_unary(
                 credentials=_credentials(protocol_options),
             )
             return response, _Rendezvous(None, None, call)
-        return multi_callable(
-            request,
-            timeout=timeout,
-            metadata=_metadata.unbeta(effective_metadata),
-            credentials=_credentials(protocol_options),
-        )
+        else:
+            return multi_callable(
+                request,
+                timeout=timeout,
+                metadata=_metadata.unbeta(effective_metadata),
+                credentials=_credentials(protocol_options),
+            )
     except grpc.RpcError as rpc_error_call:
         raise _abortion_error(rpc_error_call)
 
@@ -300,12 +302,13 @@ def _blocking_stream_unary(
                 credentials=_credentials(protocol_options),
             )
             return response, _Rendezvous(None, None, call)
-        return multi_callable(
-            request_iterator,
-            timeout=timeout,
-            metadata=_metadata.unbeta(effective_metadata),
-            credentials=_credentials(protocol_options),
-        )
+        else:
+            return multi_callable(
+                request_iterator,
+                timeout=timeout,
+                metadata=_metadata.unbeta(effective_metadata),
+                credentials=_credentials(protocol_options),
+            )
     except grpc.RpcError as rpc_error_call:
         raise _abortion_error(rpc_error_call)
 
@@ -373,7 +376,7 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
         metadata_transformer,
         request_serializer,
         response_deserializer,
-    ) -> None:
+    ):
         self._channel = channel
         self._group = group
         self._method = method
@@ -425,8 +428,8 @@ class _UnaryUnaryMultiCallable(face.UnaryUnaryMultiCallable):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
 
 class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
@@ -438,7 +441,7 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
         metadata_transformer,
         request_serializer,
         response_deserializer,
-    ) -> None:
+    ):
         self._channel = channel
         self._group = group
         self._method = method
@@ -468,8 +471,8 @@ class _UnaryStreamMultiCallable(face.UnaryStreamMultiCallable):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
 
 class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
@@ -481,7 +484,7 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         metadata_transformer,
         request_serializer,
         response_deserializer,
-    ) -> None:
+    ):
         self._channel = channel
         self._group = group
         self._method = method
@@ -512,11 +515,7 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         )
 
     def future(
-        self,
-        request_iterator,
-        timeout,
-        metadata=None,
-        protocol_options=None,
+        self, request_iterator, timeout, metadata=None, protocol_options=None
     ):
         return _future_stream_unary(
             self._channel,
@@ -538,8 +537,8 @@ class _StreamUnaryMultiCallable(face.StreamUnaryMultiCallable):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
 
 class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
@@ -551,7 +550,7 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         metadata_transformer,
         request_serializer,
         response_deserializer,
-    ) -> None:
+    ):
         self._channel = channel
         self._group = group
         self._method = method
@@ -560,11 +559,7 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         self._response_deserializer = response_deserializer
 
     def __call__(
-        self,
-        request_iterator,
-        timeout,
-        metadata=None,
-        protocol_options=None,
+        self, request_iterator, timeout, metadata=None, protocol_options=None
     ):
         return _stream_stream(
             self._channel,
@@ -586,8 +581,8 @@ class _StreamStreamMultiCallable(face.StreamStreamMultiCallable):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
 
 class _GenericStub(face.GenericStub):
@@ -597,7 +592,7 @@ class _GenericStub(face.GenericStub):
         metadata_transformer,
         request_serializers,
         response_deserializers,
-    ) -> None:
+    ):
         self._channel = channel
         self._metadata_transformer = metadata_transformer
         self._request_serializers = request_serializers or {}
@@ -617,13 +612,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _blocking_unary_unary(
             self._channel,
@@ -652,13 +647,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _future_unary_unary(
             self._channel,
@@ -686,13 +681,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _unary_stream(
             self._channel,
@@ -721,13 +716,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _blocking_stream_unary(
             self._channel,
@@ -756,13 +751,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _future_stream_unary(
             self._channel,
@@ -790,13 +785,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _stream_stream(
             self._channel,
@@ -821,8 +816,8 @@ class _GenericStub(face.GenericStub):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
     def event_unary_stream(
         self,
@@ -834,8 +829,8 @@ class _GenericStub(face.GenericStub):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
     def event_stream_unary(
         self,
@@ -846,8 +841,8 @@ class _GenericStub(face.GenericStub):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
     def event_stream_stream(
         self,
@@ -858,21 +853,21 @@ class _GenericStub(face.GenericStub):
         timeout,
         metadata=None,
         protocol_options=None,
-    ) -> NoReturn:
-        raise NotImplementedError
+    ):
+        raise NotImplementedError()
 
     def unary_unary(self, group, method):
         request_serializer = self._request_serializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _UnaryUnaryMultiCallable(
             self._channel,
@@ -888,13 +883,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _UnaryStreamMultiCallable(
             self._channel,
@@ -910,13 +905,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _StreamUnaryMultiCallable(
             self._channel,
@@ -932,13 +927,13 @@ class _GenericStub(face.GenericStub):
             (
                 group,
                 method,
-            ),
+            )
         )
         response_deserializer = self._response_deserializers.get(
             (
                 group,
                 method,
-            ),
+            )
         )
         return _StreamStreamMultiCallable(
             self._channel,
@@ -957,7 +952,7 @@ class _GenericStub(face.GenericStub):
 
 
 class _DynamicStub(face.DynamicStub):
-    def __init__(self, backing_generic_stub, group, cardinalities) -> None:
+    def __init__(self, backing_generic_stub, group, cardinalities):
         self._generic_stub = backing_generic_stub
         self._group = group
         self._cardinalities = cardinalities
@@ -966,16 +961,16 @@ class _DynamicStub(face.DynamicStub):
         method_cardinality = self._cardinalities.get(attr)
         if method_cardinality is cardinality.Cardinality.UNARY_UNARY:
             return self._generic_stub.unary_unary(self._group, attr)
-        if method_cardinality is cardinality.Cardinality.UNARY_STREAM:
+        elif method_cardinality is cardinality.Cardinality.UNARY_STREAM:
             return self._generic_stub.unary_stream(self._group, attr)
-        if method_cardinality is cardinality.Cardinality.STREAM_UNARY:
+        elif method_cardinality is cardinality.Cardinality.STREAM_UNARY:
             return self._generic_stub.stream_unary(self._group, attr)
-        if method_cardinality is cardinality.Cardinality.STREAM_STREAM:
+        elif method_cardinality is cardinality.Cardinality.STREAM_STREAM:
             return self._generic_stub.stream_stream(self._group, attr)
-        msg = f'_DynamicStub object has no attribute "{attr}"!'
-        raise AttributeError(
-            msg,
-        )
+        else:
+            raise AttributeError(
+                '_DynamicStub object has no attribute "%s"!' % attr
+            )
 
     def __enter__(self):
         return self

@@ -45,8 +45,7 @@ def _is_grpc_tools_importable() -> bool:
 
 
 def _call_with_lazy_import(
-    fn_name: str,
-    protobuf_path: str,
+    fn_name: str, protobuf_path: str
 ) -> Union[types.ModuleType, Tuple[types.ModuleType, types.ModuleType]]:
     """Calls one of the three functions, lazily importing grpc_tools.
 
@@ -56,18 +55,19 @@ def _call_with_lazy_import(
 
     Returns:
       The appropriate module object.
-
     """
     if sys.version_info < _MINIMUM_VERSION:
         raise NotImplementedError(_VERSION_ERROR_TEMPLATE.format(fn_name))
-    if not _is_grpc_tools_importable():
-        raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
-    import grpc_tools.protoc  # pytype: disable=import-error
+    else:
+        if not _is_grpc_tools_importable():
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
+        import grpc_tools.protoc  # pytype: disable=import-error
 
-    if _has_runtime_proto_symbols(grpc_tools.protoc):
-        fn = getattr(grpc_tools.protoc, "_" + fn_name)
-        return fn(protobuf_path)
-    raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
+        if _has_runtime_proto_symbols(grpc_tools.protoc):
+            fn = getattr(grpc_tools.protoc, "_" + fn_name)
+            return fn(protobuf_path)
+        else:
+            raise NotImplementedError(_UNINSTALLED_TEMPLATE.format(fn_name))
 
 
 def protos(protobuf_path):  # pylint: disable=unused-argument
@@ -102,7 +102,6 @@ def protos(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A module object corresponding to the message code for the indicated
       .proto file. Equivalent to a generated _pb2.py file.
-
     """
     return _call_with_lazy_import("protos", protobuf_path)
 
@@ -140,7 +139,6 @@ def services(protobuf_path):  # pylint: disable=unused-argument
     Returns:
       A module object corresponding to the stub/service code for the indicated
       .proto file. Equivalent to a generated _pb2_grpc.py file.
-
     """
     return _call_with_lazy_import("services", protobuf_path)
 
@@ -163,6 +161,5 @@ def protos_and_services(protobuf_path):  # pylint: disable=unused-argument
 
     Returns:
       A 2-tuple of module objects corresponding to (protos(path), services(path)).
-
     """
     return _call_with_lazy_import("protos_and_services", protobuf_path)

@@ -50,11 +50,10 @@ _LOGGER = logging.getLogger(__name__)
 _EVICTION_PERIOD_KEY = "GRPC_PYTHON_MANAGED_CHANNEL_EVICTION_SECONDS"
 if _EVICTION_PERIOD_KEY in os.environ:
     _EVICTION_PERIOD = datetime.timedelta(
-        seconds=float(os.environ[_EVICTION_PERIOD_KEY]),
+        seconds=float(os.environ[_EVICTION_PERIOD_KEY])
     )
     _LOGGER.debug(
-        "Setting managed channel eviction period to %s",
-        _EVICTION_PERIOD,
+        "Setting managed channel eviction period to %s", _EVICTION_PERIOD
     )
 else:
     _EVICTION_PERIOD = datetime.timedelta(minutes=10)
@@ -81,11 +80,8 @@ def _create_channel(
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
     _LOGGER.debug(
-        "Creating secure channel with credentials '%s', "
-        "options '%s' and compression '%s'",
-        channel_credentials,
-        options,
-        compression,
+        f"Creating secure channel with credentials '{channel_credentials}', "
+        + f"options '{options}' and compression '{compression}'"
     )
     return grpc.secure_channel(
         target,
@@ -105,11 +101,10 @@ class ChannelCache:
     _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
-    def __init__(self) -> None:
+    def __init__(self):
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
-            target=ChannelCache._perform_evictions,
-            daemon=True,
+            target=ChannelCache._perform_evictions, daemon=True
         )
         self._eviction_thread.start()
 
@@ -121,18 +116,16 @@ class ChannelCache:
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    def _evict_locked(self, key: CacheKey) -> None:
+    def _evict_locked(self, key: CacheKey):
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
-            "Evicting channel %s with configuration %s.",
-            channel,
-            key,
+            "Evicting channel %s with configuration %s.", channel, key
         )
         channel.close()
         del channel
 
     @staticmethod
-    def _perform_evictions() -> None:
+    def _perform_evictions():
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()
@@ -144,19 +137,20 @@ class ChannelCache:
                     # And immediately reevaluate.
                 else:
                     key, (_, eviction_time) = next(
-                        iter(ChannelCache._singleton._mapping.items()),
+                        iter(ChannelCache._singleton._mapping.items())
                     )
                     now = datetime.datetime.now()
                     if eviction_time <= now:
                         ChannelCache._singleton._evict_locked(key)
                         continue
-                    time_to_eviction = (eviction_time - now).total_seconds()
-                    # NOTE: We aim to *eventually* coalesce to a state in
-                    # which no overdue channels are in the cache and the
-                    # length of the cache is longer than _MAXIMUM_CHANNELS.
-                    # We tolerate momentary states in which these two
-                    # criteria are not met.
-                    ChannelCache._condition.wait(timeout=time_to_eviction)
+                    else:
+                        time_to_eviction = (eviction_time - now).total_seconds()
+                        # NOTE: We aim to *eventually* coalesce to a state in
+                        # which no overdue channels are in the cache and the
+                        # length of the cache is longer than _MAXIMUM_CHANNELS.
+                        # We tolerate momentary states in which these two
+                        # criteria are not met.
+                        ChannelCache._condition.wait(timeout=time_to_eviction)
 
     def get_channel(
         self,
@@ -177,16 +171,12 @@ class ChannelCache:
         Returns:
             A tuple with two items. The first item is the channel, second item is
               the call handle if the method is registered, None if it's not registered.
-
         """
         if insecure and channel_credentials:
-            msg = (
-                "The insecure option is mutually exclusive with "
-                "the channel_credentials option. Please use one "
-                "or the other."
-            )
             raise ValueError(
-                msg,
+                "The insecure option is mutually exclusive with "
+                + "the channel_credentials option. Please use one "
+                + "or the other."
             )
         if insecure:
             channel_credentials = (
@@ -211,24 +201,22 @@ class ChannelCache:
                     datetime.datetime.now() + _EVICTION_PERIOD,
                 )
                 return channel, call_handle
-            channel = _create_channel(
-                target,
-                options,
-                channel_credentials,
-                compression,
-            )
-            if _registered_method:
-                call_handle = channel._get_registered_call_handle(method)
-            self._mapping[key] = (
-                channel,
-                datetime.datetime.now() + _EVICTION_PERIOD,
-            )
-            if (
-                len(self._mapping) == 1
-                or len(self._mapping) >= _MAXIMUM_CHANNELS
-            ):
-                self._condition.notify()
-            return channel, call_handle
+            else:
+                channel = _create_channel(
+                    target, options, channel_credentials, compression
+                )
+                if _registered_method:
+                    call_handle = channel._get_registered_call_handle(method)
+                self._mapping[key] = (
+                    channel,
+                    datetime.datetime.now() + _EVICTION_PERIOD,
+                )
+                if (
+                    len(self._mapping) == 1
+                    or len(self._mapping) >= _MAXIMUM_CHANNELS
+                ):
+                    self._condition.notify()
+                return channel, call_handle
 
     def _test_only_channel_count(self) -> int:
         with self._lock:
@@ -304,7 +292,6 @@ def unary_unary(
 
     Returns:
       The response to the RPC.
-
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -316,10 +303,7 @@ def unary_unary(
         _registered_method,
     )
     multicallable = channel.unary_unary(
-        method,
-        request_serializer,
-        response_deserializer,
-        method_handle,
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -399,7 +383,6 @@ def unary_stream(
 
     Returns:
       An iterator of responses.
-
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -411,10 +394,7 @@ def unary_stream(
         _registered_method,
     )
     multicallable = channel.unary_stream(
-        method,
-        request_serializer,
-        response_deserializer,
-        method_handle,
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -494,7 +474,6 @@ def stream_unary(
 
     Returns:
       The response to the RPC.
-
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -506,10 +485,7 @@ def stream_unary(
         _registered_method,
     )
     multicallable = channel.stream_unary(
-        method,
-        request_serializer,
-        response_deserializer,
-        method_handle,
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(
@@ -589,7 +565,6 @@ def stream_stream(
 
     Returns:
       An iterator of responses.
-
     """
     channel, method_handle = ChannelCache.get().get_channel(
         target,
@@ -601,10 +576,7 @@ def stream_stream(
         _registered_method,
     )
     multicallable = channel.stream_stream(
-        method,
-        request_serializer,
-        response_deserializer,
-        method_handle,
+        method, request_serializer, response_deserializer, method_handle
     )
     wait_for_ready = wait_for_ready if wait_for_ready is not None else True
     return multicallable(

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Common types for gRPC Async API."""
+"""Common types for gRPC Async API"""
 
 from typing import (
     Any,
@@ -26,7 +26,9 @@ from typing import (
 
 from grpc._cython.cygrpc import EOF
 
-from ._metadata import Metadata, MetadataKey, MetadataValue
+from ._metadata import Metadata
+from ._metadata import MetadataKey
+from ._metadata import MetadataValue
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")

@@ -14,7 +14,6 @@
 """Constants and interfaces of the Beta API of gRPC Python."""
 
 import abc
-from typing import NoReturn
 
 import grpc
 
@@ -25,7 +24,7 @@ ChannelConnectivity.FATAL_FAILURE = ChannelConnectivity.SHUTDOWN
 StatusCode = grpc.StatusCode
 
 
-class GRPCCallOptions:
+class GRPCCallOptions(object):
     """A value encapsulating gRPC-specific options passed on RPC invocation.
 
     This class and its instances have no supported interface - it exists to
@@ -33,7 +32,7 @@ class GRPCCallOptions:
     other functions.
     """
 
-    def __init__(self, disable_compression, subcall_of, credentials) -> None:
+    def __init__(self, disable_compression, subcall_of, credentials):
         self.disable_compression = disable_compression
         self.subcall_of = subcall_of
         self.credentials = credentials
@@ -49,7 +48,6 @@ def grpc_call_options(disable_compression=False, credentials=None):
         be disabled for the request object of the RPC. Only valid for
         request-unary RPCs.
       credentials: A CallCredentials object to use for the invoked RPC.
-
     """
     return GRPCCallOptions(disable_compression, None, credentials)
 
@@ -63,35 +61,34 @@ class GRPCServicerContext(abc.ABC):
     """Exposes gRPC-specific options and behaviors to code servicing RPCs."""
 
     @abc.abstractmethod
-    def peer(self) -> NoReturn:
+    def peer(self):
         """Identifies the peer that invoked the RPC being serviced.
 
         Returns:
           A string identifying the peer that invoked the RPC being serviced.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def disable_next_response_compression(self) -> NoReturn:
+    def disable_next_response_compression(self):
         """Disables compression of the next response passed by the application."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class GRPCInvocationContext(abc.ABC):
     """Exposes gRPC-specific options and behaviors to code invoking RPCs."""
 
     @abc.abstractmethod
-    def disable_next_request_compression(self) -> NoReturn:
+    def disable_next_request_compression(self):
         """Disables compression of the next request passed by the application."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
 
 class Server(abc.ABC):
     """Services RPCs."""
 
     @abc.abstractmethod
-    def add_insecure_port(self, address) -> NoReturn:
+    def add_insecure_port(self, address):
         """Reserves a port for insecure RPC service once this Server becomes active.
 
         This method may only be called before calling this Server's start method is
@@ -105,12 +102,11 @@ class Server(abc.ABC):
             started. This is typically the same number as the port number contained
             in the passed address, but will likely be different if the port number
             contained in the passed address was zero.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_secure_port(self, address, server_credentials) -> NoReturn:
+    def add_secure_port(self, address, server_credentials):
         """Reserves a port for secure RPC service after this Server becomes active.
 
         This method may only be called before calling this Server's start method is
@@ -125,21 +121,20 @@ class Server(abc.ABC):
             started. This is typically the same number as the port number contained
             in the passed address, but will likely be different if the port number
             contained in the passed address was zero.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def start(self) -> NoReturn:
+    def start(self):
         """Starts this Server's service of RPCs.
 
         This method may only be called while the server is not serving RPCs (i.e. it
         is not idempotent).
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
-    def stop(self, grace) -> NoReturn:
+    def stop(self, grace):
         """Stops this Server's service of RPCs.
 
         All calls to this method immediately stop service of new RPCs. When existing
@@ -164,6 +159,5 @@ class Server(abc.ABC):
           of it may be set much sooner (such as if this Server had no RPCs underway
           at the time it was stopped or if all RPCs that it had underway completed
           very early in the grace period).
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()

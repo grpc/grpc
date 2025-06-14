@@ -18,19 +18,10 @@ import abc
 import contextlib
 import logging
 import threading
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Generator,
-    Generic,
-    TypeVar,
-)
+from typing import Any, Generator, Generic, List, Optional, TypeVar
 
 from grpc._cython import cygrpc as _cygrpc
-
-if TYPE_CHECKING:
-    from grpc import _channel as grpc_channel  # pylint: disable=cyclic-import
-    from grpc._typing import ChannelArgumentType
+from grpc._typing import ChannelArgumentType
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,7 +30,8 @@ ClientCallTracerCapsule = TypeVar("ClientCallTracerCapsule")
 ServerCallTracerFactoryCapsule = TypeVar("ServerCallTracerFactoryCapsule")
 
 _plugin_lock: threading.RLock = threading.RLock()
-_SERVICES_TO_EXCLUDE: list[bytes] = [
+_OBSERVABILITY_PLUGIN: Optional["ObservabilityPlugin"] = None
+_SERVICES_TO_EXCLUDE: List[bytes] = [
     b"google.monitoring.v3.MetricService",
     b"google.devtools.cloudtrace.v2.TraceService",
 ]
@@ -52,10 +44,10 @@ class ServerCallTracerFactory:
     grpc.experimental.server_call_tracer_factory option
     """
 
-    def __init__(self, address) -> None:
+    def __init__(self, address):
         self._address = address
 
-    def __int__(self) -> int:
+    def __int__(self):
         return self._address
 
 
@@ -80,7 +72,6 @@ class ObservabilityPlugin(
       _tracing_enabled: A bool indicates whether stats(metrics) is enabled.
       _registered_methods: A set which stores the registered method names in
         bytes.
-
     """
 
     _tracing_enabled: bool = False
@@ -88,9 +79,7 @@ class ObservabilityPlugin(
 
     @abc.abstractmethod
     def create_client_call_tracer(
-        self,
-        method_name: bytes,
-        target: bytes,
+        self, method_name: bytes, target: bytes
     ) -> ClientCallTracerCapsule:
         """Creates a ClientCallTracerCapsule.
 
@@ -108,16 +97,12 @@ class ObservabilityPlugin(
 
         Returns:
           A PyCapsule which stores a ClientCallTracer object.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def save_trace_context(
-        self,
-        trace_id: str,
-        span_id: str,
-        is_sampled: bool,
+        self, trace_id: str, span_id: str, is_sampled: bool
     ) -> None:
         """Saves the trace_id and span_id related to the current span.
 
@@ -133,16 +118,15 @@ class ObservabilityPlugin(
           span_id: The identifier for the span as a 16-character hexadecimal encoded
             string. e.g. 113ec879e62583bc
           is_sampled: A bool indicates whether the span is sampled.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def create_server_call_tracer_factory(
         self,
         *,
         xds: bool = False,
-    ) -> ServerCallTracerFactoryCapsule | None:
+    ) -> Optional[ServerCallTracerFactoryCapsule]:
         """Creates a ServerCallTracerFactoryCapsule.
 
         This method will be called at server initialization time to create a
@@ -154,21 +138,15 @@ class ObservabilityPlugin(
 
         Args:
           xds: Whether the server is xds server.
-
         Returns:
           A PyCapsule which stores a ServerCallTracerFactory object. Or None if
         plugin decides not to create ServerCallTracerFactory.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def record_rpc_latency(
-        self,
-        method: str,
-        target: str,
-        rpc_latency: float,
-        status_code: Any,
+        self, method: str, target: str, rpc_latency: float, status_code: Any
     ) -> None:
         """Record the latency of the RPC.
 
@@ -182,16 +160,14 @@ class ObservabilityPlugin(
             when the client invokes the RPC and when the client receives the status.
           status_code: An element of grpc.StatusCode in string format representing the
             final status for the RPC.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     def set_tracing(self, enable: bool) -> None:
         """Enable or disable tracing.
 
         Args:
           enable: A bool indicates whether tracing should be enabled.
-
         """
         self._tracing_enabled = enable
 
@@ -200,7 +176,6 @@ class ObservabilityPlugin(
 
         Args:
           enable: A bool indicates whether stats should be enabled.
-
         """
         self._stats_enabled = enable
 
@@ -212,9 +187,8 @@ class ObservabilityPlugin(
 
         Args:
           method_name: The method name in bytes.
-
         """
-        raise NotImplementedError
+        raise NotImplementedError()
 
     @property
     def tracing_enabled(self) -> bool:
@@ -229,23 +203,19 @@ class ObservabilityPlugin(
         return self.tracing_enabled or self.stats_enabled
 
 
-_OBSERVABILITY_PLUGIN: ObservabilityPlugin | None = None
-
-
 @contextlib.contextmanager
-def get_plugin() -> Generator[ObservabilityPlugin | None, None, None]:
+def get_plugin() -> Generator[Optional[ObservabilityPlugin], None, None]:
     """Get the ObservabilityPlugin in _observability module.
 
     Returns:
       The ObservabilityPlugin currently registered with the _observability
     module. Or None if no plugin exists at the time of calling this method.
-
     """
     with _plugin_lock:
         yield _OBSERVABILITY_PLUGIN
 
 
-def set_plugin(observability_plugin: ObservabilityPlugin | None) -> None:
+def set_plugin(observability_plugin: Optional[ObservabilityPlugin]) -> None:
     """Save ObservabilityPlugin to _observability module.
 
     Args:
@@ -254,13 +224,11 @@ def set_plugin(observability_plugin: ObservabilityPlugin | None) -> None:
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
-
     """
     global _OBSERVABILITY_PLUGIN  # pylint: disable=global-statement
     with _plugin_lock:
         if observability_plugin and _OBSERVABILITY_PLUGIN:
-            msg = "observability_plugin was already set!"
-            raise ValueError(msg)
+            raise ValueError("observability_plugin was already set!")
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
@@ -276,57 +244,41 @@ def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     Raises:
       ValueError: If an ObservabilityPlugin was already registered at the
     time of calling this method.
-
     """
     set_plugin(observability_plugin)
-    with get_plugin() as plugin:
-        if not plugin:
-            return
-        _cygrpc.set_observability_callbacks(
-            plugin.create_client_call_tracer,
-            plugin.save_trace_context,
-            plugin.create_server_call_tracer_factory,
-        )
 
 
 def observability_deinit() -> None:
     """Clear the observability context, including ObservabilityPlugin and
-    ServerCallTracerFactory.
+    ServerCallTracerFactory
 
     This method have to be called after exit observability context so that
     it's possible to re-initialize again.
     """
-    _cygrpc.set_observability_callbacks(None, None, None)
     set_plugin(None)
+    _cygrpc.clear_server_call_tracer_factory()
 
 
-def maybe_record_rpc_latency(state: grpc_channel._RPCState) -> None:
-    """Record the latency of the RPC if stats is enabled."""
-    with get_plugin() as plugin:
-        if not plugin or not plugin.stats_enabled:
-            return
-    # In some cases, we might not have the state object.
-    if (
-        not state
-        or not hasattr(state, "rpc_start_time")
-        or not state.rpc_start_time
-    ):
-        return
-    rpc_latency = state.rpc_end_time - state.rpc_start_time
-    # RPC is not finished yet, don't record latency.
-    if rpc_latency < 0:
-        return
+def maybe_record_rpc_latency(state: "_channel._RPCState") -> None:
+    """Record the latency of the RPC, if the plugin is registered and stats is enabled.
+
+    This method will be called at the end of each RPC.
+
+    Args:
+      state: a grpc._channel._RPCState object which contains the stats related to the
+    RPC.
+    """
     # TODO(xuanwn): use channel args to exclude those metrics.
     for exclude_prefix in _SERVICES_TO_EXCLUDE:
         if exclude_prefix in state.method.encode("utf8"):
             return
-    rpc_latency_ms = rpc_latency * 1000
-    plugin.record_rpc_latency(
-        state.method,
-        state.target,
-        rpc_latency_ms,
-        state.code,
-    )
+    with get_plugin() as plugin:
+        if plugin and plugin.stats_enabled:
+            rpc_latency_s = state.rpc_end_time - state.rpc_start_time
+            rpc_latency_ms = rpc_latency_s * 1000
+            plugin.record_rpc_latency(
+                state.method, state.target, rpc_latency_ms, state.code
+            )
 
 
 def create_server_call_tracer_factory_option(xds: bool) -> ChannelArgumentType:
@@ -340,7 +292,7 @@ def create_server_call_tracer_factory_option(xds: bool) -> ChannelArgumentType:
                     (
                         "grpc.experimental.server_call_tracer_factory",
                         ServerCallTracerFactory(
-                            server_call_tracer_factory_address,
+                            server_call_tracer_factory_address
                         ),
                     ),
                 )

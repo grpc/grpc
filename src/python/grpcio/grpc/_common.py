@@ -19,7 +19,8 @@ from typing import Any, AnyStr, Callable, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc
-from grpc._typing import DeserializingFunction, SerializingFunction
+from grpc._typing import DeserializingFunction
+from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +67,8 @@ _ERROR_MESSAGE_PORT_BINDING_FAILED = (
 def encode(s: AnyStr) -> bytes:
     if isinstance(s, bytes):
         return s
-    return s.encode("utf8")
+    else:
+        return s.encode("utf8")
 
 
 def decode(b: AnyStr) -> str:
@@ -82,11 +84,12 @@ def _transform(
 ) -> Any:
     if transformer is None:
         return message
-    try:
-        return transformer(message)
-    except Exception:  # pylint: disable=broad-except
-        _LOGGER.exception(exception_message)
-        return None
+    else:
+        try:
+            return transformer(message)
+        except Exception:  # pylint: disable=broad-except
+            _LOGGER.exception(exception_message)
+            return None
 
 
 def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
@@ -94,25 +97,22 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
 
 
 def deserialize(
-    serialized_message: bytes,
-    deserializer: Optional[DeserializingFunction],
+    serialized_message: bytes, deserializer: Optional[DeserializingFunction]
 ) -> Any:
     return _transform(
-        serialized_message,
-        deserializer,
-        "Exception deserializing message!",
+        serialized_message, deserializer, "Exception deserializing message!"
     )
 
 
 def fully_qualified_method(group: str, method: str) -> str:
-    return f"/{group}/{method}"
+    return "/{}/{}".format(group, method)
 
 
 def _wait_once(
     wait_fn: Callable[..., bool],
     timeout: float,
     spin_cb: Optional[Callable[[], None]],
-) -> None:
+):
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()
@@ -150,7 +150,6 @@ def wait(
 
     Returns:
       True if a timeout was supplied and it was reached. False otherwise.
-
     """
     if timeout is None:
         while not wait_complete_fn():
@@ -175,10 +174,10 @@ def validate_port_binding_result(address: str, port: int) -> int:
     Args:
         address: The address string to be bound.
         port: An int returned by core
-
     """
     if port == 0:
         # The Core API doesn't return a failure message. The best we can do
         # is raising an exception to prevent further confusion.
         raise RuntimeError(_ERROR_MESSAGE_PORT_BINDING_FAILED % address)
-    return port
+    else:
+        return port

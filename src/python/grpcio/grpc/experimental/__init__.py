@@ -23,24 +23,17 @@ import warnings
 
 import grpc
 from grpc._cython import cygrpc as _cygrpc
-from grpc._simple_stubs import (
-    stream_stream,
-    stream_unary,
-    unary_stream,
-    unary_unary,
-)
 
 _EXPERIMENTAL_APIS_USED = set()
 
 
-class ChannelOptions:
+class ChannelOptions(object):
     """Indicates a channel option unique to gRPC Python.
 
     This enumeration is part of an EXPERIMENTAL API.
 
     Attributes:
       SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
-
     """
 
     SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
@@ -53,7 +46,7 @@ class UsageError(Exception):
 # It's important that there be a single insecure credentials object so that its
 # hash is deterministic and can be used for indexing in the simple stubs cache.
 _insecure_channel_credentials = grpc.ChannelCredentials(
-    _cygrpc.channel_credentials_insecure(),
+    _cygrpc.channel_credentials_insecure()
 )
 
 
@@ -69,12 +62,14 @@ class ExperimentalApiWarning(Warning):
     """A warning that an API is experimental."""
 
 
-def _warn_experimental(api_name, stack_offset) -> None:
+def _warn_experimental(api_name, stack_offset):
     if api_name not in _EXPERIMENTAL_APIS_USED:
         _EXPERIMENTAL_APIS_USED.add(api_name)
         msg = (
-            f"'{api_name}' is an experimental API. It is subject to change or "
-            "removal between minor releases. Proceed with caution."
+            "'{}' is an experimental API. It is subject to change or ".format(
+                api_name
+            )
+            + "removal between minor releases. Proceed with caution."
         )
         warnings.warn(msg, ExperimentalApiWarning, stacklevel=2 + stack_offset)
 
@@ -102,7 +97,6 @@ def wrap_server_method_handler(wrapper, handler):
 
     Returns:
         A newly created RpcMethodHandler.
-
     """
     if not handler:
         return None
@@ -112,12 +106,15 @@ def wrap_server_method_handler(wrapper, handler):
             # NOTE(lidiz) _replace is a public API:
             #   https://docs.python.org/dev/library/collections.html
             return handler._replace(unary_unary=wrapper(handler.unary_unary))
-        return handler._replace(unary_stream=wrapper(handler.unary_stream))
-    if not handler.response_streaming:
-        return handler._replace(stream_unary=wrapper(handler.stream_unary))
-    return handler._replace(
-        stream_stream=wrapper(handler.stream_stream),
-    )
+        else:
+            return handler._replace(unary_stream=wrapper(handler.unary_stream))
+    else:
+        if not handler.response_streaming:
+            return handler._replace(stream_unary=wrapper(handler.stream_unary))
+        else:
+            return handler._replace(
+                stream_stream=wrapper(handler.stream_stream)
+            )
 
 
 __all__ = (
@@ -125,9 +122,13 @@ __all__ = (
     "ExperimentalApiWarning",
     "UsageError",
     "insecure_channel_credentials",
-    "stream_stream",
-    "stream_unary",
-    "unary_stream",
-    "unary_unary",
     "wrap_server_method_handler",
 )
+
+if sys.version_info > (3, 6):
+    from grpc._simple_stubs import stream_stream
+    from grpc._simple_stubs import stream_unary
+    from grpc._simple_stubs import unary_stream
+    from grpc._simple_stubs import unary_unary
+
+    __all__ = __all__ + (unary_unary, unary_stream, stream_unary, stream_stream)

@@ -15,10 +15,10 @@
 
 import asyncio
 import enum
+from functools import partial
 import inspect
 import logging
 import traceback
-from functools import partial
 from typing import (
     Any,
     AsyncIterator,
@@ -35,18 +35,16 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._metadata import Metadata
-from ._typing import (
-    DeserializingFunction,
-    DoneCallbackType,
-    EOFType,
-    MetadatumType,
-    RequestIterableType,
-    RequestType,
-    ResponseType,
-    SerializingFunction,
-)
+from ._typing import DeserializingFunction
+from ._typing import DoneCallbackType
+from ._typing import EOFType
+from ._typing import MetadatumType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
 
-__all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
+__all__ = "AioRpcError", "Call", "UnaryUnaryCall", "UnaryStreamCall"
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 _GC_CANCELLATION_DETAILS = "Cancelled upon garbage collection!"
@@ -100,8 +98,8 @@ class AioRpcError(grpc.RpcError):
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
-
         """
+
         super().__init__()
         self._code = code
         self._details = details
@@ -114,7 +112,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The `grpc.StatusCode` status code.
-
         """
         return self._code
 
@@ -123,7 +120,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The description of the error.
-
         """
         return self._details
 
@@ -132,7 +128,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The initial metadata received.
-
         """
         return self._initial_metadata
 
@@ -141,7 +136,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The trailing metadata received.
-
         """
         return self._trailing_metadata
 
@@ -150,7 +144,6 @@ class AioRpcError(grpc.RpcError):
 
         Returns:
           The debug error string received.
-
         """
         return self._debug_error_string
 
@@ -183,8 +176,7 @@ class AioRpcError(grpc.RpcError):
 
 
 def _create_rpc_error(
-    initial_metadata: Metadata,
-    status: cygrpc.AioRpcStatus,
+    initial_metadata: Metadata, status: cygrpc.AioRpcStatus
 ) -> AioRpcError:
     return AioRpcError(
         _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[status.code()],
@@ -236,7 +228,8 @@ class Call:
         if not self._cython_call.done():
             self._cython_call.cancel(details)
             return True
-        return False
+        else:
+            return False
 
     def cancel(self) -> bool:
         return self._cancel(_LOCAL_CANCELLATION_DETAILS)
@@ -273,12 +266,11 @@ class Call:
 
     async def _raise_for_status(self) -> None:
         if self._cython_call.is_locally_cancelled():
-            raise asyncio.CancelledError
+            raise asyncio.CancelledError()
         code = await self.code()
         if code != grpc.StatusCode.OK:
             raise _create_rpc_error(
-                await self.initial_metadata(),
-                await self._cython_call.status(),
+                await self.initial_metadata(), await self._cython_call.status()
             )
 
     def _repr(self) -> str:
@@ -300,14 +292,15 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
     _call_response: asyncio.Task
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task) -> None:
+    def _init_unary_response_mixin(self, response_task: asyncio.Task):
         self._call_response = response_task
 
     def cancel(self) -> bool:
         if super().cancel():
             self._call_response.cancel()
             return True
-        return False
+        else:
+            return False
 
     def __await__(self) -> Generator[Any, None, ResponseType]:
         """Wait till the ongoing RPC request finishes."""
@@ -329,7 +322,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         # we need to access the private instance variable.
         if response is cygrpc.EOF:
             if self._cython_call.is_locally_cancelled():
-                raise asyncio.CancelledError
+                raise asyncio.CancelledError()
             else:
                 raise _create_rpc_error(
                     self._cython_call._initial_metadata,
@@ -344,12 +337,12 @@ class _StreamResponseMixin(Call):
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task) -> None:
+    def _init_stream_response_mixin(self, preparation: asyncio.Task):
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
 
-    def _update_response_style(self, style: _APIStyle) -> None:
+    def _update_response_style(self, style: _APIStyle):
         if self._response_style is _APIStyle.UNKNOWN:
             self._response_style = style
         elif self._response_style is not style:
@@ -359,7 +352,8 @@ class _StreamResponseMixin(Call):
         if super().cancel():
             self._preparation.cancel()
             return True
-        return False
+        else:
+            return False
 
     async def _fetch_stream_responses(self) -> ResponseType:
         message = await self._read()
@@ -390,10 +384,10 @@ class _StreamResponseMixin(Call):
 
         if raw_response is cygrpc.EOF:
             return cygrpc.EOF
-        return _common.deserialize(
-            raw_response,
-            self._response_deserializer,
-        )
+        else:
+            return _common.deserialize(
+                raw_response, self._response_deserializer
+            )
 
     async def read(self) -> Union[EOFType, ResponseType]:
         if self.done():
@@ -416,23 +410,22 @@ class _StreamRequestMixin(Call):
     _request_style: _APIStyle
 
     def _init_stream_request_mixin(
-        self,
-        request_iterator: Optional[RequestIterableType],
-    ) -> None:
+        self, request_iterator: Optional[RequestIterableType]
+    ):
         self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
         # If user passes in an async iterator, create a consumer Task.
         if request_iterator is not None:
             self._async_request_poller = self._loop.create_task(
-                self._consume_request_iterator(request_iterator),
+                self._consume_request_iterator(request_iterator)
             )
             self._request_style = _APIStyle.ASYNC_GENERATOR
         else:
             self._async_request_poller = None
             self._request_style = _APIStyle.READER_WRITER
 
-    def _raise_for_different_style(self, style: _APIStyle) -> None:
+    def _raise_for_different_style(self, style: _APIStyle):
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
@@ -441,19 +434,18 @@ class _StreamRequestMixin(Call):
             if self._async_request_poller is not None:
                 self._async_request_poller.cancel()
             return True
-        return False
+        else:
+            return False
 
-    def _metadata_sent_observer(self) -> None:
+    def _metadata_sent_observer(self):
         self._metadata_sent.set()
 
     async def _consume_request_iterator(
-        self,
-        request_iterator: RequestIterableType,
+        self, request_iterator: RequestIterableType
     ) -> None:
         try:
             if inspect.isasyncgen(request_iterator) or hasattr(
-                request_iterator,
-                "__aiter__",
+                request_iterator, "__aiter__"
             ):
                 async for request in request_iterator:
                     try:
@@ -503,8 +495,7 @@ class _StreamRequestMixin(Call):
                 await self._raise_for_status()
 
         serialized_request = _common.serialize(
-            request,
-            self._request_serializer,
+            request, self._request_serializer
         )
         try:
             await self._cython_call.send_serialized_message(serialized_request)
@@ -585,8 +576,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
 
     async def _invoke(self) -> ResponseType:
         serialized_request = _common.serialize(
-            self._request,
-            self._request_serializer,
+            self._request, self._request_serializer
         )
 
         # NOTE(lidiz) asyncio.CancelledError is not a good transport for status,
@@ -594,9 +584,7 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         # https://github.com/python/cpython/blob/edad4d89e357c92f70c0324b937845d652b20afd/Lib/asyncio/tasks.py#L785
         try:
             serialized_response = await self._cython_call.unary_unary(
-                serialized_request,
-                self._metadata,
-                self._context,
+                serialized_request, self._metadata, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -604,10 +592,10 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
 
         if self._cython_call.is_ok():
             return _common.deserialize(
-                serialized_response,
-                self._response_deserializer,
+                serialized_response, self._response_deserializer
             )
-        return cygrpc.EOF
+        else:
+            return cygrpc.EOF
 
     async def wait_for_connection(self) -> None:
         await self._invocation_task
@@ -648,20 +636,17 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         self._request = request
         self._context = cygrpc.build_census_context()
         self._send_unary_request_task = loop.create_task(
-            self._send_unary_request(),
+            self._send_unary_request()
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
     async def _send_unary_request(self) -> ResponseType:
         serialized_request = _common.serialize(
-            self._request,
-            self._request_serializer,
+            self._request, self._request_serializer
         )
         try:
             await self._cython_call.initiate_unary_stream(
-                serialized_request,
-                self._metadata,
-                self._context,
+                serialized_request, self._metadata, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -676,10 +661,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
 
 # pylint: disable=too-many-ancestors
 class StreamUnaryCall(
-    _StreamRequestMixin,
-    _UnaryResponseMixin,
-    Call,
-    _base_call.StreamUnaryCall,
+    _StreamRequestMixin, _UnaryResponseMixin, Call, _base_call.StreamUnaryCall
 ):
     """Object for managing stream-unary RPC calls.
 
@@ -715,9 +697,7 @@ class StreamUnaryCall(
     async def _conduct_rpc(self) -> ResponseType:
         try:
             serialized_response = await self._cython_call.stream_unary(
-                self._metadata,
-                self._metadata_sent_observer,
-                self._context,
+                self._metadata, self._metadata_sent_observer, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():
@@ -726,17 +706,14 @@ class StreamUnaryCall(
 
         if self._cython_call.is_ok():
             return _common.deserialize(
-                serialized_response,
-                self._response_deserializer,
+                serialized_response, self._response_deserializer
             )
-        return cygrpc.EOF
+        else:
+            return cygrpc.EOF
 
 
 class StreamStreamCall(
-    _StreamRequestMixin,
-    _StreamResponseMixin,
-    Call,
-    _base_call.StreamStreamCall,
+    _StreamRequestMixin, _StreamResponseMixin, Call, _base_call.StreamStreamCall
 ):
     """Object for managing stream-stream RPC calls.
 
@@ -771,7 +748,7 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self) -> None:
+    async def _prepare_rpc(self):
         """This method prepares the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
@@ -779,9 +756,7 @@ class StreamStreamCall(
         """
         try:
             await self._cython_call.initiate_stream_stream(
-                self._metadata,
-                self._metadata_sent_observer,
-                self._context,
+                self._metadata, self._metadata_sent_observer, self._context
             )
         except asyncio.CancelledError:
             if not self.cancelled():

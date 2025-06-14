@@ -13,11 +13,11 @@
 # limitations under the License.
 """Utilities for working with callables."""
 
+from abc import ABC
 import collections
 import enum
 import functools
 import logging
-from abc import ABC
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +32,6 @@ class Outcome(ABC):
         Kind.RETURNED.
       exception: The exception raised by the call. Must be present if kind is
         Kind.RAISED.
-
     """
 
     @enum.unique
@@ -45,8 +44,7 @@ class Outcome(ABC):
 
 class _EasyOutcome(
     collections.namedtuple(
-        "_EasyOutcome",
-        ["kind", "return_value", "exception"],
+        "_EasyOutcome", ["kind", "return_value", "exception"]
     ),
     Outcome,
 ):
@@ -56,9 +54,7 @@ class _EasyOutcome(
 def _call_logging_exceptions(behavior, message, *args, **kwargs):
     try:
         return _EasyOutcome(
-            Outcome.Kind.RETURNED,
-            behavior(*args, **kwargs),
-            None,
+            Outcome.Kind.RETURNED, behavior(*args, **kwargs), None
         )
     except Exception as e:  # pylint: disable=broad-except
         _LOGGER.exception(message)
@@ -77,7 +73,6 @@ def with_exceptions_logged(behavior, message):
         callable takes the same arguments as the given behavior but returns a
         future.Outcome describing whether the given behavior returned a value or
         raised an exception.
-
     """
 
     @functools.wraps(behavior)
@@ -99,6 +94,5 @@ def call_logging_exceptions(behavior, message, *args, **kwargs):
     Returns:
       An Outcome describing whether the given behavior returned a value or raised
         an exception.
-
     """
     return _call_logging_exceptions(behavior, message, *args, **kwargs)

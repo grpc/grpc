@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Common types for gRPC Sync API."""
+"""Common types for gRPC Sync API"""
 
 from typing import (
     TYPE_CHECKING,
@@ -58,8 +58,7 @@ IntegratedCallFactory = Callable[
     cygrpc.IntegratedCall,
 ]
 ServerTagCallbackType = Tuple[
-    Optional["_RPCState"],
-    Sequence[NullaryCallbackType],
+    Optional["_RPCState"], Sequence[NullaryCallbackType]
 ]
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
@@ -91,7 +90,6 @@ ArityAgnosticMethodHandler = Union[
     Callable[[RequestType, "ServicerContext"], Iterator[ResponseType]],
     Callable[[Iterator[RequestType], "ServicerContext"], ResponseType],
     Callable[
-        [Iterator[RequestType], "ServicerContext"],
-        Iterator[ResponseType],
+        [Iterator[RequestType], "ServicerContext"], Iterator[ResponseType]
     ],
 ]

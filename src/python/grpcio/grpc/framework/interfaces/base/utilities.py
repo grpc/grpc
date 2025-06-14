@@ -49,11 +49,7 @@ class _Subscription(
 
 
 _NONE_SUBSCRIPTION = _Subscription(
-    base.Subscription.Kind.NONE,
-    None,
-    None,
-    None,
-    None,
+    base.Subscription.Kind.NONE, None, None, None, None
 )
 
 
@@ -67,7 +63,6 @@ def completion(terminal_metadata, code, message):
 
     Returns:
       A base.Completion aggregating the given operation values.
-
     """
     return _Completion(terminal_metadata, code, message)
 
@@ -82,12 +77,7 @@ def full_subscription(operator, protocol_receiver):
     Returns:
       A base.Subscription of kind base.Subscription.Kind.FULL wrapping the given
         base.Operator and base.ProtocolReceiver.
-
     """
     return _Subscription(
-        base.Subscription.Kind.FULL,
-        None,
-        None,
-        operator,
-        protocol_receiver,
+        base.Subscription.Kind.FULL, None, None, operator, protocol_receiver
     )

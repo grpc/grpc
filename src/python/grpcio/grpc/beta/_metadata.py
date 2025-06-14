@@ -42,13 +42,15 @@ def _metadatum(beta_key, beta_value):
 def beta(metadata):
     if metadata is None:
         return ()
-    return tuple(_beta_metadatum(key, value) for key, value in metadata)
+    else:
+        return tuple(_beta_metadatum(key, value) for key, value in metadata)
 
 
 def unbeta(beta_metadata):
     if beta_metadata is None:
         return ()
-    return tuple(
-        _metadatum(beta_key, beta_value)
-        for beta_key, beta_value in beta_metadata
-    )
+    else:
+        return tuple(
+            _metadatum(beta_key, beta_value)
+            for beta_key, beta_value in beta_metadata
+        )

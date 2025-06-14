@@ -17,8 +17,10 @@ import threading
 import time
 
 # implementations is referenced from specification in this module.
+from grpc.beta import implementations  # pylint: disable=unused-import
 from grpc.beta import interfaces
-from grpc.framework.foundation import callable_util, future
+from grpc.framework.foundation import callable_util
+from grpc.framework.foundation import future
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!'
@@ -26,7 +28,7 @@ _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
 
 
 class _ChannelReadyFuture(future.Future):
-    def __init__(self, channel) -> None:
+    def __init__(self, channel):
         self._condition = threading.Condition()
         self._channel = channel
 
@@ -34,23 +36,25 @@ class _ChannelReadyFuture(future.Future):
         self._cancelled = False
         self._done_callbacks = []
 
-    def _block(self, timeout) -> None:
+    def _block(self, timeout):
         until = None if timeout is None else time.time() + timeout
         with self._condition:
             while True:
                 if self._cancelled:
-                    raise future.CancelledError
-                if self._matured:
+                    raise future.CancelledError()
+                elif self._matured:
                     return
-                if until is None:
-                    self._condition.wait()
                 else:
-                    remaining = until - time.time()
-                    if remaining < 0:
-                        raise future.TimeoutError
-                    self._condition.wait(timeout=remaining)
+                    if until is None:
+                        self._condition.wait()
+                    else:
+                        remaining = until - time.time()
+                        if remaining < 0:
+                            raise future.TimeoutError()
+                        else:
+                            self._condition.wait(timeout=remaining)
 
-    def _update(self, connectivity) -> None:
+    def _update(self, connectivity):
         with self._condition:
             if (
                 not self._cancelled
@@ -66,12 +70,10 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback,
-                _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE,
-                self,
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
             )
 
-    def cancel(self) -> bool:
+    def cancel(self):
         with self._condition:
             if not self._matured:
                 self._cancelled = True
@@ -84,9 +86,7 @@ class _ChannelReadyFuture(future.Future):
 
         for done_callback in done_callbacks:
             callable_util.call_logging_exceptions(
-                done_callback,
-                _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE,
-                self,
+                done_callback, _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE, self
             )
 
         return True
@@ -95,7 +95,7 @@ class _ChannelReadyFuture(future.Future):
         with self._condition:
             return self._cancelled
 
-    def running(self) -> bool:
+    def running(self):
         with self._condition:
             return not self._cancelled and not self._matured
 
@@ -103,16 +103,19 @@ class _ChannelReadyFuture(future.Future):
         with self._condition:
             return self._cancelled or self._matured
 
-    def result(self, timeout=None) -> None:
+    def result(self, timeout=None):
         self._block(timeout)
+        return None
 
-    def exception(self, timeout=None) -> None:
+    def exception(self, timeout=None):
         self._block(timeout)
+        return None
 
-    def traceback(self, timeout=None) -> None:
+    def traceback(self, timeout=None):
         self._block(timeout)
+        return None
 
-    def add_done_callback(self, fn) -> None:
+    def add_done_callback(self, fn):
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._done_callbacks.append(fn)
@@ -120,11 +123,11 @@ class _ChannelReadyFuture(future.Future):
 
         fn(self)
 
-    def start(self) -> None:
+    def start(self):
         with self._condition:
             self._channel.subscribe(self._update, try_to_connect=True)
 
-    def __del__(self) -> None:
+    def __del__(self):
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._channel.unsubscribe(self._update)
@@ -144,7 +147,6 @@ def channel_ready_future(channel):
     Returns:
       A future.Future that matures when the given Channel has connectivity
         interfaces.ChannelConnectivity.READY.
-
     """
     ready_future = _ChannelReadyFuture(channel)
     ready_future.start()

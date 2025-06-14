@@ -19,7 +19,7 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-    'src/python/grpcio/grpc'
+    'src/python/grpcio/grpc/_decorator.py'
 )
 
 VIRTUALENV=venv_ruff
