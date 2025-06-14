@@ -459,14 +459,14 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def exception(
         self,
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
+        timeout: Optional[float] = None,  # noqa: ARG002 # pylint: disable=unused-argument
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
         self,
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
+        timeout: Optional[float] = None,  # noqa: ARG002 # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -477,8 +477,8 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def add_done_callback(
         self,
         fn: Callable[[grpc.Future], None],
-        timeout: Optional[float] = None,  # pylint: disable=unused-argument # noqa: ARG002
-    ) -> None:
+        timeout: Optional[float] = None,  # noqa: ARG002
+    ) -> None:  # pylint: disable=unused-argument
         """See grpc.Future.add_done_callback."""
         fn(self)
 
@@ -1016,7 +1016,7 @@ def _start_unary_request(
 def _end_unary_response_blocking(
     state: _RPCState,
     call: cygrpc.SegregatedCall,
-    with_call: bool,
+    with_call: bool,  # noqa: FBT001
     deadline: Optional[float],
 ) -> Union[ResponseType, Tuple[ResponseType, grpc.Call]]:
     if state.code is grpc.StatusCode.OK:
@@ -1064,8 +1064,8 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
         return parent_deadline
     if user_deadline is not None and parent_deadline is None:
         return user_deadline
-    assert parent_deadline is not None
-    assert user_deadline is not None
+    assert parent_deadline is not None  # noqa: S101
+    assert user_deadline is not None  # noqa: S101
     return min(parent_deadline, user_deadline)
 
 
@@ -1169,7 +1169,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             None,
             _determine_deadline(deadline),
             metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials,  # noqa: SLF001
             (
                 (
                     operations,
@@ -1195,7 +1195,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, call = self._blocking(
             request, timeout, metadata, credentials, wait_for_ready, compression,
         )
-        return _end_unary_response_blocking(state, call, False, None)
+        return _end_unary_response_blocking(state, call, False, None)  # noqa: FBT003
 
     def with_call(
         self,
@@ -1209,7 +1209,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state, call = self._blocking(
             request, timeout, metadata, credentials, wait_for_ready, compression,
         )
-        return _end_unary_response_blocking(state, call, True, None)
+        return _end_unary_response_blocking(state, call, True, None)  # noqa: FBT003
 
     def future(
         self,
@@ -1235,7 +1235,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             None,
             deadline,
             metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials,  # noqa: SLF001
             (operations,),
             event_handler,
             self._context,
@@ -1282,7 +1282,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         self._context = cygrpc.build_census_context()
         self._registered_call_handle = _registered_call_handle
 
-    def __call__(  # pylint: disable=too-many-locals
+    def __call__(  # pylint: disable=too-many-locals # noqa: PLR0913
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1307,7 +1307,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = (
-            None if credentials is None else credentials._credentials
+            None if credentials is None else credentials._credentials  # noqa: SLF001
         )
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready,
@@ -1429,7 +1429,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             None,
             _determine_deadline(deadline),
             metadata,
-            None if credentials is None else credentials._credentials,
+            None if credentials is None else credentials._credentials,  # noqa: SLF001
             operations,
             _event_handler(state, self._response_deserializer),
             self._context,
