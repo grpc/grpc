@@ -19,6 +19,7 @@ from typing import Any, Dict, Optional, Sequence
 import grpc
 from grpc import _common
 from grpc import _compression
+from grpc import _observability
 from grpc._cython import cygrpc
 
 from . import _base_server
@@ -30,8 +31,10 @@ def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
 ):
     compression_option = _compression.create_channel_option(compression)
-    return tuple(base_options) + compression_option
-
+    maybe_server_call_tracer_factory_option = (
+        _observability.create_server_call_tracer_factory_option(False)
+    )
+    return tuple(base_options) + compression_option + maybe_server_call_tracer_factory_option
 
 class Server(_base_server.Server):
     """Serves RPCs."""
