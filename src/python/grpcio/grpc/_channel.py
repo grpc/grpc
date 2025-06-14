@@ -2062,7 +2062,7 @@ class Channel(grpc.Channel):
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
     ) -> None:
-        """Constructor.
+        """Initialize the channel.
 
         Args:
           target: The target to which to connect.
