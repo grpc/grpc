@@ -1709,7 +1709,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
 class _InitialMetadataFlags(int):
     """Stores immutable initial metadata flags."""
 
-    def __new__(cls, value: int = _EMPTY_FLAGS):
+    def __new__(cls, value: int = _EMPTY_FLAGS):  # noqa: ANN204
         value &= cygrpc.InitialMetadataFlags.used_mask
         return super().__new__(cls, value)
 
@@ -1769,7 +1769,7 @@ def _run_channel_spin_thread(state: _ChannelCallState) -> None:
     channel_spin_thread.start()
 
 
-def _channel_managed_call_management(state: _ChannelCallState):
+def _channel_managed_call_management(state: _ChannelCallState):  # noqa: ANN202
     # pylint: disable=too-many-arguments
     def create(
         flags: int,
@@ -1926,7 +1926,7 @@ def _spawn_delivery(
 def _poll_connectivity(
     state: _ChannelConnectivityState,
     channel: grpc.Channel,
-    initial_try_to_connect: bool,
+    initial_try_to_connect: bool,  # noqa: FBT001
 ) -> None:
     try_to_connect = initial_try_to_connect
     connectivity = channel.check_connectivity_state(try_to_connect)
@@ -2134,7 +2134,7 @@ class Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> grpc.UnaryUnaryMultiCallable:
         _registered_call_handle = None
         if _registered_method:
@@ -2155,7 +2155,7 @@ class Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> grpc.UnaryStreamMultiCallable:
         _registered_call_handle = None
         if _registered_method:
@@ -2189,7 +2189,7 @@ class Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> grpc.StreamUnaryMultiCallable:
         _registered_call_handle = None
         if _registered_method:
@@ -2210,7 +2210,7 @@ class Channel(grpc.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> grpc.StreamStreamMultiCallable:
         _registered_call_handle = None
         if _registered_method:
@@ -2244,10 +2244,10 @@ class Channel(grpc.Channel):
             cygrpc.StatusCode.cancelled, "Channel closed due to fork",
         )
 
-    def __enter__(self):
+    def __enter__(self):  # noqa: ANN204
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # noqa: ANN204
         self._close()
         return False
 
