@@ -1208,20 +1208,20 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         state.method = _common.decode(self._method)
         state.target = _common.decode(self._target)
         call = self._channel.segregated_call(
-            cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
-            self._method,
-            None,
-            _determine_deadline(deadline),
-            metadata,
-            (None if credentials is None else credentials._credentials),
+          cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
+          self._method,
+          None,
+          _determine_deadline(deadline),
+          metadata,
+          None if credentials is None else credentials._credentials,
+          (
             (
-                (
-                    operations,
-                    None,
-                ),
+              operations,
+              None,
             ),
-            self._context,
-            self._registered_call_handle,
+          ),
+          self._context,
+          self._registered_call_handle,
         )
         event = call.next_event()
         _handle_event(event, state, self._response_deserializer)
@@ -1303,7 +1303,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             None,
             deadline,
             metadata,
-            (None if credentials is None else credentials._credentials),
+            None if credentials is None else credentials._credentials,
             (operations,),
             event_handler,
             self._context,
@@ -1483,41 +1483,40 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             raise rendezvous  # pylint: disable-msg=raising-bad-type
         augmented_metadata = _compression.augment_metadata(
-            metadata,
-            compression,
+          metadata, compression
         )
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         operations = (
-            (
-                cygrpc.SendInitialMetadataOperation(
-                    augmented_metadata,
-                    initial_metadata_flags,
-                ),
-                (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
-            )
+          (
+            cygrpc.SendInitialMetadataOperation(
+              augmented_metadata, initial_metadata_flags
+            ),
+            cygrpc.SendMessageOperation(
+              serialized_request, _EMPTY_FLAGS
+            ),
+            cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
+            cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
+          ),
+          (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
         )
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
         state.target = _common.decode(self._target)
         call = self._managed_call(
-            cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
-            self._method,
-            None,
-            _determine_deadline(deadline),
-            metadata,
-            (None if credentials is None else credentials._credentials),
-            operations,
-            _event_handler(state, self._response_deserializer),
-            self._context,
-            self._registered_call_handle,
+          cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS,
+          self._method,
+          None,
+          _determine_deadline(deadline),
+          metadata,
+          None if credentials is None else credentials._credentials,
+          operations,
+          _event_handler(state, self._response_deserializer),
+          self._context,
+          self._registered_call_handle,
         )
         return _MultiThreadedRendezvous(
-            state,
-            call,
-            self._response_deserializer,
-            deadline,
+          state, call, self._response_deserializer, deadline
         )
-
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
     _channel: cygrpc.Channel
@@ -1587,7 +1586,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            (None if credentials is None else credentials._credentials),
+            None if credentials is None else credentials._credentials,
             _stream_unary_invocation_operations_and_tags(
                 augmented_metadata,
                 initial_metadata_flags,
@@ -1687,7 +1686,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             None,
             deadline,
             augmented_metadata,
-            (None if credentials is None else credentials._credentials),
+            None if credentials is None else credentials._credentials,
             _stream_unary_invocation_operations(
                 metadata,
                 initial_metadata_flags,
@@ -1790,7 +1789,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             None,
             _determine_deadline(deadline),
             augmented_metadata,
-            (None if credentials is None else credentials._credentials),
+            None if credentials is None else credentials._credentials,
             operations,
             event_handler,
             self._context,
