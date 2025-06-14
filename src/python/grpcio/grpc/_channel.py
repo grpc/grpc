@@ -1975,7 +1975,7 @@ def _poll_connectivity(
 def _subscribe(
     state: _ChannelConnectivityState,
     callback: Callable[[grpc.ChannelConnectivity], None],
-    try_to_connect: bool,
+    try_to_connect: bool,  # noqa: FBT001
 ) -> None:
     with state.lock:
         if not state.callbacks_and_connectivities and not state.polling:
@@ -2108,7 +2108,7 @@ class Channel(grpc.Channel):
     def _process_python_options(
         self, python_options: Sequence[ChannelArgumentType],
     ) -> None:
-        """Sets channel attributes according to python-only channel options."""
+        """Set channel attributes according to python-only channel options."""
         for pair in python_options:
             if (
                 pair[0]
