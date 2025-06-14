@@ -47,7 +47,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/match.h"
 #include "test/core/test_util/build.h"
-#include "test/core/test_util/postmortem.h"
+#include "test/core/test_util/postmortem_emit.h"
 #include "test/core/test_util/test_config.h"
 
 // a set of metadata we expect to find on an event
@@ -311,13 +311,13 @@ std::string CrashMessage(const CqVerifier::Failure& failure) {
 
 void CqVerifier::FailUsingGprCrashWithStdio(const Failure& failure) {
   LOG(INFO) << CrashMessage(failure);
-  PostMortem::Emit();
+  PostMortemEmit();
   CrashWithStdio(CrashMessage(failure));
 }
 
 void CqVerifier::FailUsingGprCrash(const Failure& failure) {
   LOG(INFO) << CrashMessage(failure);
-  PostMortem::Emit();
+  PostMortemEmit();
   Crash(CrashMessage(failure));
 }
 

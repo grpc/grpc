@@ -238,11 +238,16 @@ TEST(ChannelTracerTest, ThreadSafety) {
   for (size_t i = 0; i < 10; ++i) {
     threads.push_back(std::make_unique<std::thread>([&]() {
       do {
-        tracer.NewNode("trace").Commit();
+        for (int i = 0; i < 100; i++) {
+          if (done.HasBeenNotified()) return;
+          tracer.NewNode("trace").Commit();
+        }
+        absl::SleepFor(absl::Milliseconds(1));
       } while (!done.HasBeenNotified());
     }));
   }
   for (size_t i = 0; i < 10; ++i) {
+    absl::SleepFor(absl::Milliseconds(1));
     tracer.RenderJson();
   }
   done.Notify();

@@ -2386,6 +2386,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:alt_grpc++_base_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2480,6 +2481,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -4528,6 +4530,7 @@ grpc_cc_library(
         "hpack_parse_result",
         "stats",
         "//src/core:hpack_constants",
+        "//src/core:http2_stats_collector",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
@@ -4750,6 +4753,7 @@ grpc_cc_library(
         "//src/core:bdp_estimator",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
