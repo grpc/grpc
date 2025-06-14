@@ -851,7 +851,7 @@ class _MultiThreadedRendezvous(
         """See grpc.Call.code."""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.code is not None
 
             _common.wait(self._state.condition.wait, _done)
@@ -861,7 +861,7 @@ class _MultiThreadedRendezvous(
         """See grpc.Call.details."""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.details is not None
 
             _common.wait(self._state.condition.wait, _done)
@@ -870,7 +870,7 @@ class _MultiThreadedRendezvous(
     def debug_error_string(self) -> Optional[str]:
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.debug_error_string is not None
 
             _common.wait(self._state.condition.wait, _done)
