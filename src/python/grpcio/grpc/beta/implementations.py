@@ -19,7 +19,9 @@
 # module.
 import grpc
 from grpc import _auth
-from grpc.beta import _client_adaptations, _metadata, _server_adaptations
+from grpc.beta import _client_adaptations
+from grpc.beta import _metadata
+from grpc.beta import _server_adaptations
 
 # pylint: disable=too-many-arguments
 

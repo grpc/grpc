@@ -19,9 +19,13 @@ from typing import NoReturn
 
 import grpc
 from grpc import _common
-from grpc.beta import _metadata, interfaces
-from grpc.framework.common import cardinality, style
-from grpc.framework.foundation import abandonment, logging_pool, stream
+from grpc.beta import _metadata
+from grpc.beta import interfaces
+from grpc.framework.common import cardinality
+from grpc.framework.common import style
+from grpc.framework.foundation import abandonment
+from grpc.framework.foundation import logging_pool
+from grpc.framework.foundation import stream
 from grpc.framework.interfaces.face import face
 
 # pylint: disable=too-many-return-statements

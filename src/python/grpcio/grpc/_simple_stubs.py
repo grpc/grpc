@@ -81,8 +81,11 @@ def _create_channel(
     compression: Optional[grpc.Compression],
 ) -> grpc.Channel:
     _LOGGER.debug(
-        f"Creating secure channel with credentials '{channel_credentials}', "
-        f"options '{options}' and compression '{compression}'",
+        "Creating secure channel with credentials '%s', "
+        "options '%s' and compression '%s'",
+        channel_credentials,
+        options,
+        compression,
     )
     return grpc.secure_channel(
         target,

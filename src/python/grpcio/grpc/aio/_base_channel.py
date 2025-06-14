@@ -19,14 +19,12 @@ from typing import Generic, Optional
 import grpc
 
 from . import _base_call
-from ._typing import (
-    DeserializingFunction,
-    MetadataType,
-    RequestIterableType,
-    RequestType,
-    ResponseType,
-    SerializingFunction,
-)
+from ._typing import DeserializingFunction
+from ._typing import MetadataType
+from ._typing import RequestIterableType
+from ._typing import RequestType
+from ._typing import ResponseType
+from ._typing import SerializingFunction
 
 
 class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):

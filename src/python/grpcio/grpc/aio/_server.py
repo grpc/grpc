@@ -17,7 +17,8 @@ from concurrent.futures import Executor
 from typing import Any, Dict, Optional, Sequence
 
 import grpc
-from grpc import _common, _compression
+from grpc import _common
+from grpc import _compression
 from grpc._cython import cygrpc
 
 from . import _base_server

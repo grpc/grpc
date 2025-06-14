@@ -16,7 +16,8 @@
 import collections
 
 # stream is referenced from specification in this module.
-from grpc.framework.common import cardinality, style
+from grpc.framework.common import cardinality
+from grpc.framework.common import style
 from grpc.framework.interfaces.face import face
 
 
