@@ -1493,14 +1493,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                     augmented_metadata,
                     initial_metadata_flags,
                 ),
-                cygrpc.SendMessageOperation(
-                    serialized_request,
-                    _EMPTY_FLAGS,
-                ),
-                cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-                cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),
-            ),
-            (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
+                (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
+            )
         )
         state.rpc_start_time = time.perf_counter()
         state.method = _common.decode(self._method)
