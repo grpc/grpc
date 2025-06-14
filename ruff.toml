@@ -64,6 +64,9 @@ ignore = [
     "PERF203", # Checks for uses of except handling via try-except within for and while loops.
 
     "SLF001", # Checks for accesses on "private" class members.
+
+    "IOO1", # De-duplicates, groups, and sorts imports based on the provided isort settings.
+    # This conflicts with isort
 ]
 
 # Select all rules by default, and then ignore the ones we don't want.
