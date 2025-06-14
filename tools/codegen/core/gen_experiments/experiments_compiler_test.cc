@@ -21,6 +21,7 @@
 #include "test/core/test_util/test_config.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 
@@ -81,27 +82,27 @@ class ExperimentsCompilerTest : public ::testing::Test {
   }
 
  private:
-  std::map<std::string, std::string> allowed_defaults_ = {
+  const absl::flat_hash_map<std::string, std::string> allowed_defaults_ = {
       {"broken", "false"},
       {"false", "false"},
       {"true", "true"},
       {"debug", "kDefaultForDebugOnly"}};
-  std::map<std::string, std::string> allowed_platforms_ = {
+  const std::map<std::string, std::string> allowed_platforms_ = {
       {"windows", "GPR_WINDOWS"}, {"ios", "GRPC_CFSTREAM"}, {"posix", ""}};
-  std::map<std::string, std::string> final_return_ = {
+  const absl::flat_hash_map<std::string, std::string> final_return_ = {
       {"broken", "return false;"},
       {"false", "return false;"},
       {"true", "return true;"},
       {"debug",
        "\n#ifdef NDEBUG\nreturn false;\n#else\nreturn true;\n#endif\n"},
   };
-  std::map<std::string, std::string> final_define_ = {
+  const absl::flat_hash_map<std::string, std::string> final_define_ = {
       {"broken", ""},
       {"false", ""},
       {"true", "#define %s"},
       {"debug", "#ifndef NDEBUG\n#define %s\n#endif\n"},
   };
-  std::map<std::string, std::string> bzl_list_for_defaults_ = {
+  const absl::flat_hash_map<std::string, std::string> bzl_list_for_defaults_ = {
       {"broken", ""},
       {"false", "off"},
       {"true", "on"},
