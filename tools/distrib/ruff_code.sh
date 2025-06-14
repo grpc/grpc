@@ -19,11 +19,11 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 DIRS=(
-    'src/python/grpcio/grpc/_decorator.py'
+    'src/python/grpcio/grpc'
 )
 
 VIRTUALENV=venv_ruff
-python3.11 -m virtualenv $VIRTUALENV
+python3.11 -m virutalenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 python3 -m pip install --upgrade ruff==0.11.13
