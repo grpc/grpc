@@ -13,7 +13,6 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
-import contextlib
 import copy
 import functools
 import logging
@@ -1856,11 +1855,13 @@ class _ChannelCallState:
         self.managed_calls = 0
 
     def __del__(self) -> None:
-        with contextlib.suppress(TypeError, AttributeError):
-            self.channel.close(
-                cygrpc.StatusCode.cancelled,
-                "Channel deallocated!",
-            )
+      try:
+        self.channel.close(
+            cygrpc.StatusCode.cancelled,
+            "Channel deallocated!",
+        )
+      except (TypeError, AttributeError):
+        pass
 
 
 def _run_channel_spin_thread(state: _ChannelCallState) -> None:
