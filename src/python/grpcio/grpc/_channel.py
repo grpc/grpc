@@ -272,9 +272,9 @@ def _consume_request_iterator(  # noqa: C901
 ) -> None:
     """Consume a request supplied by the user."""
 
-    def consume_request_iterator() -> (
+    def consume_request_iterator() -> ( # noqa: C901
         None
-    ):  # noqa: C901 # pylint: disable=too-many-branches
+    ):  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
         while True:
@@ -468,18 +468,18 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def exception(
         self,
-        timeout: Optional[
+        timeout: Optional[ # noqa: ARG002
             float
-        ] = None,  # noqa: ARG002 # pylint: disable=unused-argument
+        ] = None,  # pylint: disable=unused-argument
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
         self,
-        timeout: Optional[
+        timeout: Optional[ # noqa: ARG002
             float
-        ] = None,  # noqa: ARG002 # pylint: disable=unused-argument
+        ] = None,  # pylint: disable=unused-argument
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -490,9 +490,9 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     def add_done_callback(
         self,
         fn: Callable[[grpc.Future], None],
-        timeout: Optional[
+        timeout: Optional[ # noqa: ARG002
             float
-        ] = None,  # noqa: ARG002 # pylint: disable=unused-argument
+        ] = None,  # pylint: disable=unused-argument
     ) -> None:
         """See grpc.Future.add_done_callback."""
         fn(self)
@@ -1240,8 +1240,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, False, None
-        )  # noqa: FBT003
+            state, call, False, None, # noqa: FBT003
+        )
 
     def with_call(
         self,
@@ -1261,8 +1261,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, True, None
-        )  # noqa: FBT003
+            state, call, True, None, # noqa: FBT003
+        )
 
     def future(
         self,
@@ -1623,8 +1623,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, False, None
-        )  # noqa: FBT003
+            state, call, False, None, # noqa: FBT003
+        )
 
     def with_call(
         self,
@@ -1644,8 +1644,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
             compression,
         )
         return _end_unary_response_blocking(
-            state, call, True, None
-        )  # noqa: FBT003
+            state, call, True, None, # noqa: FBT003
+        )
 
     def future(
         self,
