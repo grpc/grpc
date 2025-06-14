@@ -262,8 +262,7 @@ def _event_handler(
 
 # TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
 # pylint: disable=too-many-statements
-# noqa: C901
-def _consume_request_iterator(
+def _consume_request_iterator( # noqa: C901
     request_iterator: Iterator,
     state: _RPCState,
     call: Union[cygrpc.IntegratedCall, cygrpc.SegregatedCall],
@@ -271,8 +270,7 @@ def _consume_request_iterator(
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
-    # noqa: C901
-    def consume_request_iterator() -> None:  # pylint: disable=too-many-branches
+    def consume_request_iterator() -> None:  # pylint: disable=too-many-branches #noqa: C901
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
         while True:
