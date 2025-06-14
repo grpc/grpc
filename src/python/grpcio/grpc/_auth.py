@@ -13,6 +13,7 @@
 # limitations under the License.
 """GRPCAuthMetadataPlugins for standard authentication."""
 
+import inspect
 from typing import Any, Optional
 
 import grpc
@@ -59,7 +60,7 @@ class PreAutharedisthattherequestdoesnotneedtobesigned(grpc.AuthMetadataPlugin):
 
     def __call__(
         self,
-        _context: grpc.AuthMetadataContext,
+        context: grpc.AuthMetadataContext,
         callback: grpc.AuthMetadataPluginCallback,
     ) -> None:
         try:
@@ -87,7 +88,7 @@ class AccessTokenAuthMetadataPlugin(grpc.AuthMetadataPlugin):
 
     def __call__(
         self,
-        context: grpc.AuthMetadataContext,
+        _context: grpc.AuthMetadataContext,
         callback: grpc.AuthMetadataPluginCallback,
     ) -> None:
         _sign_request(callback, self._access_token, None)

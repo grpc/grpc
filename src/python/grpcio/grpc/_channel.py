@@ -241,7 +241,7 @@ def _handle_event(
 def _event_handler(
     state: _RPCState, response_deserializer: Optional[DeserializingFunction],
 ) -> UserTag:
-    def handle_event(event):
+    def handle_event(event: cygrpc.BaseEvent) -> bool:
         with state.condition:
             callbacks = _handle_event(event, state, response_deserializer)
             state.condition.notify_all()
@@ -249,11 +249,11 @@ def _event_handler(
         for callback in callbacks:
             try:
                 callback()
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:  # pylint: disable=broad-except # noqa: PERF203
                 # NOTE(rbellevi): We suppress but log errors here so as not to
                 # kill the channel spin thread.
-                logging.exception(
-                    "Exception in callback %s: %s", repr(callback.func), repr(e),
+                logging.exception(  # noqa: LOG015,
+                    "Exception in callback %s: %s", repr(callback.func), repr(e), # noqa: TRY401
                 )
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
 
@@ -262,6 +262,7 @@ def _event_handler(
 
 # TODO(xuanwn): Create a base class for IntegratedCall and SegregatedCall.
 # pylint: disable=too-many-statements
+# noqa: C901
 def _consume_request_iterator(
     request_iterator: Iterator,
     state: _RPCState,
@@ -270,7 +271,7 @@ def _consume_request_iterator(
     event_handler: Optional[UserTag],
 ) -> None:
     """Consume a request supplied by the user."""
-
+    # noqa: C901
     def consume_request_iterator() -> None:  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
@@ -319,7 +320,7 @@ def _consume_request_iterator(
                         state.due.remove(cygrpc.OperationType.send_message)
                         return
 
-                    def _done():
+                    def _done() -> bool:
                         return (
                             state.code is not None
                             or cygrpc.OperationType.send_message
