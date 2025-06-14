@@ -7971,6 +7971,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata",
+        "metadata_batch",
         "mpsc",
         "ping_promise",
         "sync",
