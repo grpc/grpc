@@ -473,18 +473,18 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def exception(
         self,
-        timeout: Optional[  # noqa: ARG002
+        timeout: Optional[  # noqa: ARG002 # pylint: disable=unused-argument
             float
-        ] = None,  # pylint: disable=unused-argument
+        ] = None, # pylint: disable=C0326
     ) -> Optional[Exception]:
         """See grpc.Future.exception."""
         return self
 
     def traceback(
         self,
-        timeout: Optional[  # noqa: ARG002
+        timeout: Optional[  # noqa: ARG002 # pylint: disable=unused-argument
             float
-        ] = None,  # pylint: disable=unused-argument
+        ] = None,  # pylint: disable=C0326
     ) -> Optional[types.TracebackType]:
         """See grpc.Future.traceback."""
         try:
@@ -571,7 +571,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             return True
 
     def __iter__(self) -> Iterator[Any]:
-        return self
+        return iter([])
 
     def next(self) -> Any:
         return self._next()
