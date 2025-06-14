@@ -1099,7 +1099,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         _registered_call_handle: Optional[int],
-    ) -> None:
+    ) -> None:  # noqa: PLR0913
         self._channel = channel
         self._managed_call = managed_call
         self._method = method
@@ -1146,7 +1146,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return state, operations, deadline, None
 
-    def _blocking(
+    def _blocking(  # noqa: PLR0913
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1183,7 +1183,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         _handle_event(event, state, self._response_deserializer)
         return state, call
 
-    def __call__(
+    def __call__(  # noqa: PLR0913
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1197,7 +1197,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return _end_unary_response_blocking(state, call, False, None)  # noqa: FBT003
 
-    def with_call(
+    def with_call(  # noqa: PLR0913
         self,
         request: Any,
         timeout: Optional[float] = None,
@@ -1211,7 +1211,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         )
         return _end_unary_response_blocking(state, call, True, None)  # noqa: FBT003
 
-    def future(
+    def future(  # noqa: PLR0913
         self,
         request: Any,
         timeout: Optional[float] = None,
