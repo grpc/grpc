@@ -1863,7 +1863,6 @@ class _ChannelCallState:
       except (TypeError, AttributeError):
         pass
 
-
 def _run_channel_spin_thread(state: _ChannelCallState) -> None:
     def channel_spin() -> None:
         while True:
