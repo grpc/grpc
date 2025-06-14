@@ -32,6 +32,8 @@
 - script: tools/codegen/core/gen_grpc_tls_credentials_options.py --test
 - script: tools/distrib/clang_format_code.sh
   cpu_cost: 1000
+- script: tools/distrib/ruff_code.sh
+  cpu_cost: 1000
 - script: tools/codegen/core/gen_trace_flags_ci.sh
   cpu_cost: 1000
 - script: tools/distrib/gen_experiments_and_format.sh --check
