@@ -1595,10 +1595,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> Any:
-        (
-            state,
-            call,
-        ) = self._blocking(
+        state, call = self._blocking(
             request_iterator,
             timeout,
             metadata,
@@ -1617,10 +1614,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> Tuple[Any, grpc.Call]:
-        (
-            state,
-            call,
-        ) = self._blocking(
+        state, call = self._blocking(
             request_iterator,
             timeout,
             metadata,
@@ -1949,10 +1943,7 @@ def _deliveries(
 ) -> List[Callable[[grpc.ChannelConnectivity], None]]:
     callbacks_needing_update = []
     for callback_and_connectivity in state.callbacks_and_connectivities:
-        (
-            callback,
-            callback_connectivity,
-        ) = callback_and_connectivity
+        callback, callback_connectivity = callback_and_connectivity
         if callback_connectivity is not state.connectivity:
             callbacks_needing_update.append(callback)
             callback_and_connectivity[1] = state.connectivity

@@ -14,10 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Read from stdin a set of colon separated http headers:
-:path: /foo/bar
-content-type: application/grpc
+
+    :path: /foo/bar
+    content-type: application/grpc
+
 Write a set of strings containing a hpack encoded http2 frame that
-represents said headers."""
+represents said headers.
+"""
 
 import argparse
 import json
