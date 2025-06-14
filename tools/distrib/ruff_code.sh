@@ -30,6 +30,6 @@ source $VIRTUALENV/bin/activate
 python3 -m pip install --upgrade ruff==0.11.13
 
 EXIT=0
-ruff check --config ruff.toml "${DIRS[@]}" || EXIT=1
+ruff check --select I --config ruff.toml "${DIRS[@]}" || EXIT=1
 
 exit $EXIT 

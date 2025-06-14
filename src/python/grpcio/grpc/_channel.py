@@ -37,14 +37,14 @@ from typing import (
 
 import grpc  # pytype: disable=pyi-error
 import grpc.experimental  # pytype: disable=pyi-error
-from grpc import (  # pytype: disable=pyi-error
+from grpc import ( # pytype: disable=pyi-error
     _common,
     _compression,
     _grpcio_metadata,
     _observability,
 )
 from grpc._cython import cygrpc
-from grpc._typing import (
+from grpc._typing import ( # pytype: disable=pyi-error
     ChannelArgumentType,
     DeserializingFunction,
     IntegratedCallFactory,
@@ -466,8 +466,8 @@ class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def result(
         self,
-        timeout: Optional[float] = None,  # noqa: ARG002
-    ) -> Any:  # pylint: disable=unused-argument
+        timeout: Optional[float] = None,  # noqa: ARG002 # pylint: disable=unused-argument
+    ) -> Any:  
         """See grpc.Future.result."""
         raise self
 
@@ -571,7 +571,7 @@ class _Rendezvous(grpc.RpcError, grpc.RpcContext):
             return True
 
     def __iter__(self) -> Iterator[Any]:
-        return iter([])
+        return [self].__iter__()
 
     def next(self) -> Any:
         return self._next()
