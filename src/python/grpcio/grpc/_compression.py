@@ -14,7 +14,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Tuple
+from typing import Optional
 
 import grpc
 from grpc._cython import cygrpc
@@ -37,18 +37,14 @@ def _compression_algorithm_to_metadata_value(
     return _METADATA_STRING_MAPPING[compression]
 
 
-def compression_algorithm_to_metadata(
-    compression: grpc.Compression,
-) -> Tuple[str, str]:
+def compression_algorithm_to_metadata(compression: grpc.Compression):
     return (
         cygrpc.GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY,
         _compression_algorithm_to_metadata_value(compression),
     )
 
 
-def create_channel_option(
-    compression: Optional[grpc.Compression],
-) -> Tuple[Tuple[str, int], ...]:
+def create_channel_option(compression: Optional[grpc.Compression]):
     return (
         ((cygrpc.GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, int(compression)),)
         if compression
@@ -58,7 +54,7 @@ def create_channel_option(
 
 def augment_metadata(
     metadata: Optional[MetadataType], compression: Optional[grpc.Compression]
-) -> Optional[MetadataType]:
+):
     if not metadata and not compression:
         return None
     base_metadata = tuple(metadata) if metadata else ()
