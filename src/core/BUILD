@@ -9974,6 +9974,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "channelz_property_list",
+    hdrs = ["channelz/property_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/status",
+    ],
+    deps = [
+        "json",
+        "time",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
     name = "ssl_transport_security_utils",
     srcs = [
         "//src/core:tsi/ssl_transport_security_utils.cc",
