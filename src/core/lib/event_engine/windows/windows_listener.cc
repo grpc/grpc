@@ -80,15 +80,27 @@ void UnlinkIfUnixDomainSocket(
   if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
     return;
   }
+  // Convert UTF-8 path to Unicode.
+  std::wstring wide_path;
+  int needed = MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, NULL, 0);
+  if (needed <= 0) {
+    return;
+  }
+  wide_path.resize(needed, L'\0');
+  if (MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, wide_path.data(),
+                          needed) == 0) {
+    // Failed to convert UTF-8 path to wide char.
+    return;
+  }
   // For windows we need to remove the file instead of unlink.
-  DWORD attr = ::GetFileAttributesA(un->sun_path);
+  DWORD attr = ::GetFileAttributesW(wide_path.data());
   if (attr == INVALID_FILE_ATTRIBUTES) {
     return;
   }
   if (attr & FILE_ATTRIBUTE_DIRECTORY || attr & FILE_ATTRIBUTE_READONLY) {
     return;
   }
-  ::DeleteFileA(un->sun_path);
+  ::DeleteFileW(wide_path.data());
 #else
   (void)resolved_addr;
 #endif

@@ -29,6 +29,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <memory>
+
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "gmock/gmock.h"
@@ -41,6 +43,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
+#include "src/proto/grpc/channelz/channelz.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/port.h"
@@ -87,6 +90,7 @@ class Proxy : public grpc::testing::EchoTestService::Service {
 
   void AddChannelToBackend(const std::shared_ptr<Channel>& channel) {
     stubs_.push_back(grpc::testing::EchoTestService::NewStub(channel));
+    channels_.push_back(channel);
   }
 
   Status Echo(ServerContext* server_context, const EchoRequest* request,
@@ -118,8 +122,14 @@ class Proxy : public grpc::testing::EchoTestService::Service {
     return stream_to_backend->Finish();
   }
 
+  std::shared_ptr<Channel> channel(int i) {
+    if (i < 0 || i >= channels_.size()) return nullptr;
+    return channels_[i];
+  }
+
  private:
   std::vector<std::unique_ptr<grpc::testing::EchoTestService::Stub>> stubs_;
+  std::vector<std::shared_ptr<Channel>> channels_;
 };
 
 enum class CredentialsType {
@@ -213,6 +223,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     grpc_shutdown();
     proxy_server_.reset();
     echo_stub_.reset();
+    channelz_channel_.reset();
     channelz_stub_.reset();
     backends_.clear();
     proxy_service_.reset();
@@ -258,10 +269,10 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
-    std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
+    channelz_channel_ = grpc::CreateCustomChannel(
         target, GetChannelCredentials(GetParam(), &args), args);
-    channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channel);
-    echo_stub_ = grpc::testing::EchoTestService::NewStub(channel);
+    channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channelz_channel_);
+    echo_stub_ = grpc::testing::EchoTestService::NewStub(channelz_channel_);
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
@@ -343,6 +354,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
     std::unique_ptr<TestServiceImpl> service;
   };
 
+  std::shared_ptr<Channel> channelz_channel_;
   std::unique_ptr<grpc::channelz::v1::Channelz::Stub> channelz_stub_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> echo_stub_;
 
@@ -365,6 +377,22 @@ TEST_P(ChannelzServerTest, BasicTest) {
   Status s = channelz_stub_->GetTopChannels(&context, request, &response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(response.channel_size(), 1);
+}
+
+TEST_P(ChannelzServerTest, NamedChannelTest) {
+  ResetStubs();
+  ConfigureProxy(1);
+  // Channel created without channelz
+  EXPECT_EQ(experimental::ChannelGetChannelzUuid(channelz_channel_.get()), 0);
+  int64_t proxy_uuid =
+      experimental::ChannelGetChannelzUuid(proxy_service_->channel(0).get());
+  ASSERT_NE(proxy_uuid, 0);
+  GetChannelRequest request;
+  GetChannelResponse response;
+  request.set_channel_id(proxy_uuid);
+  ClientContext context;
+  Status s = channelz_stub_->GetChannel(&context, request, &response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
 }
 
 TEST_P(ChannelzServerTest, HighStartId) {
