@@ -356,7 +356,7 @@ def _consume_request_iterator( # noqa: C901
 
 
 def _rpc_state_string(class_name: str, rpc_state: _RPCState) -> str:
-    """Calculates error string for RPC."""
+    """Calculate error string for RPC."""
     with rpc_state.condition:
         if rpc_state.code is None:
             return f"<{class_name} object>"
