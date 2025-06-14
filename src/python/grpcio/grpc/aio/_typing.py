@@ -26,9 +26,7 @@ from typing import (
 
 from grpc._cython.cygrpc import EOF
 
-from ._metadata import Metadata
-from ._metadata import MetadataKey
-from ._metadata import MetadataValue
+from ._metadata import Metadata, MetadataKey, MetadataValue
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")

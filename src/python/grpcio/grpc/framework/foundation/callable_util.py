@@ -13,11 +13,11 @@
 # limitations under the License.
 """Utilities for working with callables."""
 
-from abc import ABC
 import collections
 import enum
 import functools
 import logging
+from abc import ABC
 
 _LOGGER = logging.getLogger(__name__)
 

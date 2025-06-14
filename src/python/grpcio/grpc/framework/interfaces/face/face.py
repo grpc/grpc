@@ -103,7 +103,7 @@ class AbortionError(Exception, metaclass=abc.ABCMeta):
     """
 
     def __init__(
-        self, initial_metadata, terminal_metadata, code, details
+        self, initial_metadata, terminal_metadata, code, details,
     ) -> None:
         super().__init__()
         self.initial_metadata = initial_metadata
@@ -402,7 +402,7 @@ class UnaryUnaryMultiCallable(abc.ABC):
 
     @abc.abstractmethod
     def future(
-        self, request, timeout, metadata=None, protocol_options=None
+        self, request, timeout, metadata=None, protocol_options=None,
     ) -> NoReturn:
         """Asynchronously invokes the underlying RPC.
 

@@ -18,8 +18,7 @@ import time
 
 # implementations is referenced from specification in this module.
 from grpc.beta import interfaces
-from grpc.framework.foundation import callable_util
-from grpc.framework.foundation import future
+from grpc.framework.foundation import callable_util, future
 
 _DONE_CALLBACK_EXCEPTION_LOG_MESSAGE = (
     'Exception calling connectivity future "done" callback!'

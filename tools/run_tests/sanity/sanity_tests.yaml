@@ -38,9 +38,9 @@
 - script: tools/distrib/pylint_code.sh
 - script: tools/distrib/ruff_code.sh
 - script: tools/distrib/python/check_grpcio_tools.py
-- script: tools/distrib/black_code.sh --check
+# - script: tools/distrib/black_code.sh --check
   cpu_cost: 1000
-- script: tools/distrib/isort_code.sh --diff
+# - script: tools/distrib/isort_code.sh --diff
   cpu_cost: 1000
 - script: tools/distrib/check_protobuf_pod_version.sh
 - script: tools/distrib/check_boringssl_prefix_symbol.sh

@@ -15,10 +15,10 @@
 
 import asyncio
 import enum
-from functools import partial
 import inspect
 import logging
 import traceback
+from functools import partial
 from typing import (
     Any,
     AsyncIterator,
@@ -35,14 +35,16 @@ from grpc._cython import cygrpc
 
 from . import _base_call
 from ._metadata import Metadata
-from ._typing import DeserializingFunction
-from ._typing import DoneCallbackType
-from ._typing import EOFType
-from ._typing import MetadatumType
-from ._typing import RequestIterableType
-from ._typing import RequestType
-from ._typing import ResponseType
-from ._typing import SerializingFunction
+from ._typing import (
+    DeserializingFunction,
+    DoneCallbackType,
+    EOFType,
+    MetadatumType,
+    RequestIterableType,
+    RequestType,
+    ResponseType,
+    SerializingFunction,
+)
 
 __all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 

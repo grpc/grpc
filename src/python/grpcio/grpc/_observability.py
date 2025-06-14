@@ -229,11 +229,11 @@ class ObservabilityPlugin(
         return self.tracing_enabled or self.stats_enabled
 
 
-_OBSERVABILITY_PLUGIN: "ObservabilityPlugin" | None = None
+_OBSERVABILITY_PLUGIN: ObservabilityPlugin | None = None
 
 
 @contextlib.contextmanager
-def get_plugin() -> Generator["ObservabilityPlugin" | None, None, None]:
+def get_plugin() -> Generator[ObservabilityPlugin | None, None, None]:
     """Get the ObservabilityPlugin in _observability module.
 
     Returns:
@@ -245,7 +245,7 @@ def get_plugin() -> Generator["ObservabilityPlugin" | None, None, None]:
         yield _OBSERVABILITY_PLUGIN
 
 
-def set_plugin(observability_plugin: "ObservabilityPlugin" | None) -> None:
+def set_plugin(observability_plugin: ObservabilityPlugin | None) -> None:
     """Save ObservabilityPlugin to _observability module.
 
     Args:
@@ -264,7 +264,7 @@ def set_plugin(observability_plugin: "ObservabilityPlugin" | None) -> None:
         _OBSERVABILITY_PLUGIN = observability_plugin
 
 
-def observability_init(observability_plugin: "ObservabilityPlugin") -> None:
+def observability_init(observability_plugin: ObservabilityPlugin) -> None:
     """Initialize observability with provided ObservabilityPlugin.
 
     This method have to be called at the start of a program, before any
@@ -300,7 +300,7 @@ def observability_deinit() -> None:
     set_plugin(None)
 
 
-def maybe_record_rpc_latency(state: "grpc_channel._RPCState") -> None:
+def maybe_record_rpc_latency(state: grpc_channel._RPCState) -> None:
     """Record the latency of the RPC if stats is enabled."""
     with get_plugin() as plugin:
         if not plugin or not plugin.stats_enabled:

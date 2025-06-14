@@ -18,10 +18,7 @@ from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
 
 import grpc
 
-from ._typing import DoneCallbackType
-from ._typing import MetadataType
-from ._typing import RequestType
-from ._typing import ResponseType
+from ._typing import DoneCallbackType, MetadataType, RequestType, ResponseType
 
 
 class Server(abc.ABC):
@@ -145,7 +142,7 @@ class Server(abc.ABC):
         """
 
     def add_registered_method_handlers(
-        self, service_name, method_handlers
+        self, service_name, method_handlers,
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 

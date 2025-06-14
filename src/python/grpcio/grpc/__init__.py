@@ -22,9 +22,7 @@ from typing import NoReturn
 
 from grpc import _compression
 from grpc._cython import cygrpc as _cygrpc
-from grpc._runtime_protos import protos
-from grpc._runtime_protos import protos_and_services
-from grpc._runtime_protos import services
+from grpc._runtime_protos import protos, protos_and_services, services
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -458,7 +456,7 @@ class UnaryUnaryClientInterceptor(abc.ABC):
 
     @abc.abstractmethod
     def intercept_unary_unary(
-        self, continuation, client_call_details, request
+        self, continuation, client_call_details, request,
     ) -> NoReturn:
         """Intercepts a unary-unary invocation asynchronously.
 
@@ -1528,7 +1526,7 @@ class Server(abc.ABC):
         raise NotImplementedError
 
     def add_registered_method_handlers(
-        self, service_name, method_handlers
+        self, service_name, method_handlers,
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -1869,8 +1867,10 @@ def access_token_call_credentials(access_token):
       A CallCredentials.
 
     """
-    from grpc import _auth  # pylint: disable=cyclic-import
-    from grpc import _plugin_wrapping  # pylint: disable=cyclic-import
+    from grpc import (
+        _auth,  # pylint: disable=cyclic-import
+        _plugin_wrapping,  # pylint: disable=cyclic-import
+    )
 
     return _plugin_wrapping.metadata_plugin_call_credentials(
         _auth.AccessTokenAuthMetadataPlugin(access_token),
