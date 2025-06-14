@@ -831,7 +831,7 @@ class _MultiThreadedRendezvous(
         """See grpc.Call.initial_metadata."""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.initial_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
@@ -841,7 +841,7 @@ class _MultiThreadedRendezvous(
         """See grpc.Call.trailing_metadata."""
         with self._state.condition:
 
-            def _done():
+            def _done() -> bool:
                 return self._state.trailing_metadata is not None
 
             _common.wait(self._state.condition.wait, _done)
