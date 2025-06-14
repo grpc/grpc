@@ -39,12 +39,16 @@ static void RunScenario() {
   Scenarios scenarios;
   ParseJson(json_str, "grpc.testing.Scenarios", &scenarios);
   LOG(INFO) << "Running " << scenarios.scenarios(0).name();
-  const auto result =
-      RunScenario(scenarios.scenarios(0).client_config(), 1,
-                  scenarios.scenarios(0).server_config(), 1,
-                  scenarios.scenarios(0).warmup_seconds(),
-                  scenarios.scenarios(0).benchmark_seconds(), -2, "",
-                  kInsecureCredentialsType, {}, false, 0);
+
+  RunScenarioOptions options(scenarios.scenarios(0).client_config(),
+                             scenarios.scenarios(0).server_config());
+  options.set_num_clients(1)
+      .set_num_servers(1)
+      .set_warmup_seconds(scenarios.scenarios(0).warmup_seconds())
+      .set_benchmark_seconds(scenarios.scenarios(0).benchmark_seconds())
+      .set_spawn_local_worker_count(-2)
+      .set_run_inproc(false);
+  const auto result = RunScenario(options);
   GetReporter()->ReportQPS(*result);
   GetReporter()->ReportLatency(*result);
   LOG(ERROR) << "Global Stats:\n"

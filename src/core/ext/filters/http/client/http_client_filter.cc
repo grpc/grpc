@@ -107,8 +107,7 @@ Slice UserAgentFromArgs(const ChannelArgs& args,
 
 void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
                                                      HttpClientFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "HttpClientFilter::Call::OnClientInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("HttpClientFilter::Call::OnClientInitialMetadata");
   if (filter->test_only_use_put_requests_) {
     md.Set(HttpMethodMetadata(), HttpMethodMetadata::kPut);
   } else {
@@ -122,15 +121,13 @@ void HttpClientFilter::Call::OnClientInitialMetadata(ClientMetadata& md,
 
 absl::Status HttpClientFilter::Call::OnServerInitialMetadata(
     ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "HttpClientFilter::Call::OnServerInitialMetadata");
+  GRPC_LATENT_SEE_SCOPE("HttpClientFilter::Call::OnServerInitialMetadata");
   return CheckServerMetadata(&md);
 }
 
 absl::Status HttpClientFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
-      "HttpClientFilter::Call::OnServerTrailingMetadata");
+  GRPC_LATENT_SEE_SCOPE("HttpClientFilter::Call::OnServerTrailingMetadata");
   return CheckServerMetadata(&md);
 }
 

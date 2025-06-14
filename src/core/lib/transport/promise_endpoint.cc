@@ -57,7 +57,7 @@ PromiseEndpoint::GetLocalAddress() const {
 
 void PromiseEndpoint::ReadState::Complete(absl::Status status,
                                           const size_t num_bytes_requested) {
-  GRPC_LATENT_SEE_INNER_SCOPE("PromiseEndpoint::ReadState::Complete");
+  GRPC_LATENT_SEE_SCOPE("PromiseEndpoint::ReadState::Complete");
   while (true) {
     if (!status.ok()) {
       // Invalidates all previous reads.
@@ -74,7 +74,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
                                                   buffer);
     DCHECK(pending_buffer.Count() == 0u);
     if (buffer.Length() < num_bytes_requested) {
-      GRPC_LATENT_SEE_INNER_SCOPE("PromiseEndpoint::ReadState::Continue");
+      GRPC_LATENT_SEE_SCOPE("PromiseEndpoint::ReadState::Continue");
       // A further read is needed.
       // Set read args with number of bytes needed as hint.
       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs

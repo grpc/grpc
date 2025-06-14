@@ -83,6 +83,8 @@ ABSL_FLAG(
     "Specifies the period between gathering latency medians in "
     "milliseconds. The medians will be logged out on the client at the "
     "end of the benchmark run. If 0, this periodic collection is disabled.");
+ABSL_FLAG(std::optional<std::string>, gather_latent_see_dir, std::nullopt,
+          "Enable latent-see collection and output to this directory.");
 
 namespace grpc {
 namespace testing {
@@ -123,16 +125,24 @@ static std::unique_ptr<ScenarioResult> RunAndReport(
     const std::map<std::string, std::string>& per_worker_credential_types,
     bool* success) {
   std::cerr << "RUNNING SCENARIO: " << scenario.name() << "\n";
-  auto result = RunScenario(
-      scenario.client_config(), scenario.num_clients(),
-      scenario.server_config(), scenario.num_servers(),
-      scenario.warmup_seconds(), scenario.benchmark_seconds(),
-      !absl::GetFlag(FLAGS_run_inproc) ? scenario.spawn_local_worker_count()
-                                       : -2,
-      absl::GetFlag(FLAGS_qps_server_target_override),
-      absl::GetFlag(FLAGS_credential_type), per_worker_credential_types,
-      absl::GetFlag(FLAGS_run_inproc),
-      absl::GetFlag(FLAGS_median_latency_collection_interval_millis));
+  RunScenarioOptions options(scenario.client_config(),
+                             scenario.server_config());
+  options.set_num_clients(scenario.num_clients())
+      .set_num_servers(scenario.num_servers())
+      .set_warmup_seconds(scenario.warmup_seconds())
+      .set_benchmark_seconds(scenario.benchmark_seconds())
+      .set_spawn_local_worker_count(!absl::GetFlag(FLAGS_run_inproc)
+                                        ? scenario.spawn_local_worker_count()
+                                        : -2)
+      .set_qps_server_target_override(
+          absl::GetFlag(FLAGS_qps_server_target_override))
+      .set_credential_type(absl::GetFlag(FLAGS_credential_type))
+      .set_per_worker_credential_types(per_worker_credential_types)
+      .set_run_inproc(absl::GetFlag(FLAGS_run_inproc))
+      .set_median_latency_collection_interval_millis(
+          absl::GetFlag(FLAGS_median_latency_collection_interval_millis))
+      .set_latent_see_directory(absl::GetFlag(FLAGS_gather_latent_see_dir));
+  auto result = RunScenario(options);
 
   // Amend the result with scenario config. Eventually we should adjust
   // RunScenario contract so we don't need to touch the result here.

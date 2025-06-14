@@ -187,7 +187,7 @@ void ClientMessageSizeFilter::Call::OnClientInitialMetadata(
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, filter->parsed_config_.max_recv_size(),
                       /*is_client=*/false, false);
@@ -195,7 +195,7 @@ ServerMetadataHandle ServerMessageSizeFilter::Call::OnClientToServerMessage(
 
 ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message, ServerMessageSizeFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, filter->parsed_config_.max_send_size(),
                       /*is_client=*/false, true);
@@ -203,7 +203,7 @@ ServerMetadataHandle ServerMessageSizeFilter::Call::OnServerToClientMessage(
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientMessageSizeFilter::Call::OnClientToServerMessage");
   return CheckPayload(message, limits_.max_send_size(), /*is_client=*/true,
                       true);
@@ -211,7 +211,7 @@ ServerMetadataHandle ClientMessageSizeFilter::Call::OnClientToServerMessage(
 
 ServerMetadataHandle ClientMessageSizeFilter::Call::OnServerToClientMessage(
     const Message& message) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ClientMessageSizeFilter::Call::OnServerToClientMessage");
   return CheckPayload(message, limits_.max_recv_size(), /*is_client=*/true,
                       false);
