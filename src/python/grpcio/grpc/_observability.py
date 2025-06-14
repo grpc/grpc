@@ -306,7 +306,11 @@ def maybe_record_rpc_latency(state: "grpc_channel._RPCState") -> None:
         if not plugin or not plugin.stats_enabled:
             return
     # In some cases, we might not have the state object.
-    if not state or not hasattr(state, "rpc_start_time") or not state.rpc_start_time:
+    if (
+        not state
+        or not hasattr(state, "rpc_start_time")
+        or not state.rpc_start_time
+    ):
         return
     rpc_latency = state.rpc_end_time - state.rpc_start_time
     # RPC is not finished yet, don't record latency.

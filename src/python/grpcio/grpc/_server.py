@@ -603,7 +603,7 @@ def _call_behavior(
     behavior: ArityAgnosticMethodHandler,
     argument: Any,
     request_deserializer: DeserializingFunction | None,
-    send_response_callback: Callable[[ResponseType], None] | None=None,
+    send_response_callback: Callable[[ResponseType], None] | None = None,
 ) -> tuple[ResponseType | Iterator[ResponseType], bool]:
     from grpc import _create_servicer_context  # pytype: disable=pyi-error
 
@@ -1559,7 +1559,7 @@ class _Server(grpc.Server):
     def start(self) -> None:
         _start(self._state)
 
-    def wait_for_termination(self, timeout: float | None=None) -> bool:
+    def wait_for_termination(self, timeout: float | None = None) -> bool:
         # NOTE(https://bugs.python.org/issue35935)
         # Remove this workaround once threading.Event.wait() is working with
         # CTRL+C across platforms.
