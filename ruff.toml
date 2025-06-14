@@ -67,6 +67,8 @@ ignore = [
 
     "I001", # De-duplicates, groups, and sorts imports based on the provided isort settings.
     # This conflicts with isort
+
+    "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
 ]
 
 # Select all rules by default, and then ignore the ones we don't want.
