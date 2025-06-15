@@ -29,3 +29,13 @@ grpc_internal_proto_library(
         "@com_google_protobuf//:timestamp_proto",
     ],
 )
+
+grpc_internal_proto_library(
+    name = "property_list_proto",
+    srcs = ["property_list.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
