@@ -32,6 +32,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -178,6 +179,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   ChannelTrace::Node NewTraceNode(Args&&... args) {
     return trace_.NewNode(std::forward<Args>(args)...);
   }
+  ChannelTrace& mutable_trace() { return trace_; }
 
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
@@ -206,6 +208,19 @@ class BaseNode : public DualRefCounted<BaseNode> {
   ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
   ChannelTrace trace_;
 };
+
+namespace detail {
+inline ChannelTrace* LogOutputFrom(BaseNode* n) {
+  if (n == nullptr) return nullptr;
+  return LogOutputFrom(n->mutable_trace());
+}
+
+template <typename N>
+inline std::enable_if_t<std::is_base_of_v<BaseNode, N>, ChannelTrace*>
+LogOutputFrom(const RefCountedPtr<N>& n) {
+  return LogOutputFrom(n.get());
+}
+}  // namespace detail
 
 class ZTrace {
  public:
