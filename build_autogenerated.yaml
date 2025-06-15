@@ -4404,6 +4404,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
@@ -6272,6 +6273,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -10368,6 +10370,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -12010,6 +12013,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
