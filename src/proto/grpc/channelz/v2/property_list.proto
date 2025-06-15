@@ -17,26 +17,22 @@ syntax = "proto3";
 package grpc.channelz.v2;
 
 import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
-message PropertyValue {
-  oneof kind {
-    string string_value = 1;
-    int64 int64_value = 2;
-    uint64 uint64_value = 3;
-    bool bool_value = 4;
-    google.protobuf.Any any_value = 5;
-    google.protobuf.Timestamp timestamp_value = 6;
-    google.protobuf.Duration duration_value = 7;
-    double double_value = 8;
-  }
-}
-
+// Key/value store for generic channelz properties
 message PropertyList {
   map<string, PropertyValue> properties = 1;
 }
 
+// Two-dimensional grid of channelz properties.
+// It's expected that each row will have the same number of value
+// entries as there are columns.
+// If there are more values in a row than columns, then the extra values
+// are ignored and a warning should be reported.
+// If there are fewer values in a row than columns, then the missing values
+// are filled with empty values.
 message PropertyGrid {
   message Row {
     string label = 1;
@@ -44,4 +40,23 @@ message PropertyGrid {
   }
   repeated string columns = 1;
   repeated Row rows = 2;
+}
+
+// One value: for simple/common types we inline them in here.
+// For anything more complicated we use a google.protobuf.Any.
+// Since channelz is used for debugging low level things, we
+// include both int64 and uint64 for full fidelity of whatever value
+// is being reported.
+message PropertyValue {
+  oneof kind {
+    google.protobuf.Empty empty_value = 1;
+    google.protobuf.Any any_value = 2;
+    string string_value = 3;
+    int64 int64_value = 4;
+    uint64 uint64_value = 5;
+    double double_value = 6;
+    bool bool_value = 7;
+    google.protobuf.Timestamp timestamp_value = 8;
+    google.protobuf.Duration duration_value = 9;
+  }
 }
