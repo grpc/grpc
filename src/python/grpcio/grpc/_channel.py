@@ -1097,7 +1097,6 @@ def _determine_deadline(user_deadline: Optional[float]) -> Optional[float]:
         return parent_deadline
     if user_deadline is not None and parent_deadline is None:
         return user_deadline
-    assert parent_deadline is not None and user_deadline is not None
     return min(parent_deadline, user_deadline)
 
 
