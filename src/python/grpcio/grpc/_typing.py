@@ -51,15 +51,16 @@ IntegratedCallFactory = Callable[
         Optional[float],
         Optional[MetadataType],
         Optional[cygrpc.CallCredentials],
-        Sequence[Sequence[cygrpc.Operation]],
+        Sequence[Union[Sequence[cygrpc.Operation], cygrpc.Operation]],
         UserTag,
         Any,
+        Optional[int],
     ],
     cygrpc.IntegratedCall,
 ]
 ServerTagCallbackType = Tuple[
     Optional["_RPCState"], Sequence[NullaryCallbackType]
-]
+]  # pytype: disable=invalid-annotation
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]
 ArityAgnosticMethodHandler = Union[
     Callable[
