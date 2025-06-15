@@ -2097,7 +2097,12 @@ def _subscribe(
             state.polling = True
             state.callbacks_and_connectivities.append([callback, None])
         elif not state.delivering and state.connectivity is not None:
-            _spawn_delivery(state, [callback,])
+            _spawn_delivery(
+                state,
+                [
+                    callback,
+                ],
+            )
             state.try_to_connect |= bool(try_to_connect)
             state.callbacks_and_connectivities.append(
                 [callback, state.connectivity],
