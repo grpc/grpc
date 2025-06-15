@@ -89,6 +89,12 @@ class ChannelzRegistry final {
             start_channel_id);
   }
 
+  static auto GetTopSockets(intptr_t start_socket_id) {
+    return Default()
+        ->InternalGetObjects<SocketNode, BaseNode::EntityType::kSocket>(
+            start_socket_id);
+  }
+
   static std::string GetTopChannelsJson(intptr_t start_channel_id);
   static std::string GetServersJson(intptr_t start_server_id);
 
