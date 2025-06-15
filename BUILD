@@ -1264,6 +1264,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_trace",
         "parse_address",
         "ref_counted_ptr",
         "sockaddr_utils",

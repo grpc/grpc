@@ -60,7 +60,7 @@ void FuzzChannelTrace(std::vector<Op> ops, size_t memory_limit) {
         [&](const AddChild& child) {
           auto it = nodes.find(child.parent);
           if (it == nodes.end()) return;
-          auto n = it->second.node.NewChild(child.message);
+          auto n = it->second.node.NewNode(child.message);
           nodes.emplace(
               index, Node{it->second.depth + 1, child.message, std::move(n)});
         },

@@ -161,9 +161,7 @@ LegacyChannel::LegacyChannel(bool is_client, std::string target,
     node = channelz_node()->RefAsSubclass<channelz::ChannelNode>();
   }
   *channel_stack_->on_destroy = [node = std::move(node)]() {
-    if (node != nullptr) {
-      node->NewTraceNode("Channel destroyed").Commit();
-    }
+    GRPC_CHANNELZ_LOG(node) << "Channel destroyed";
     ShutdownInternally();
   };
 }
