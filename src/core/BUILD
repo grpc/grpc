@@ -7752,8 +7752,8 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_args",
+        "channelz_property_list",
         "experiments",
-        "json",
         "match",
         "time",
         "//:channel_arg_names",
