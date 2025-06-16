@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -128,7 +129,7 @@ bool ExperimentDefinition::IsValid(bool check_expiry) const {
 }
 
 bool ExperimentDefinition::AddRolloutSpecification(
-    const std::map<std::string, std::string>& defaults,
+    const absl::flat_hash_map<std::string, std::string>& defaults,
     const std::map<std::string, std::string>& platforms_define,
     RolloutSpecification& rollout_attributes) {
   if (error_) {
