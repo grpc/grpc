@@ -61,7 +61,7 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
-// TODO(akshitpatel) : [PH2][P1] : Choose appropriate size later.
+// TODO(akshitpatel) : [PH2][P2] : Choose appropriate size later.
 // TODO(tjagtap) : [PH2][P1] : Consider moving to common code.
 constexpr int kMpscSize = 10;
 
@@ -90,7 +90,7 @@ void Http2ServerTransport::Orphan() {
 
 void Http2ServerTransport::AbortWithError() {
   HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  // TODO(tjagtap) : [PH2][P2] : Implement this function.
   HTTP2_SERVER_DLOG << "Http2ServerTransport AbortWithError End";
 }
 
@@ -167,7 +167,7 @@ Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
@@ -190,7 +190,7 @@ Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame) {
 
 Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame) {
   HTTP2_SERVER_DLOG << "Http2ServerTransport ProcessHttp2SecurityFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_SERVER_DLOG
       << "Http2ServerTransport ProcessHttp2SecurityFrame Promise { payload="
       << frame.payload.JoinIntoString() << " }";

@@ -116,8 +116,8 @@ class Http2ServerTransport final : public ServerTransport {
     explicit Stream(CallInitiator call) : call(std::move(call)) {}
     // Transport holds one CallHandler object for each Stream.
     CallInitiator call;
-    // TODO(tjagtap) : [PH2][P1] : Add more members as necessary
-    // TODO(tjagtap) : [PH2][P1] : May be add state of Stream - Idle , Open etc
+    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
+    // TODO(tjagtap) : [PH2][P2] : May be add state of Stream - Idle , Open etc
     // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
   };
   RefCountedPtr<UnstartedCallDestination> call_destination_;
@@ -125,7 +125,7 @@ class Http2ServerTransport final : public ServerTransport {
   MpscReceiver<Http2Frame> outgoing_frames_;
 
   Mutex transport_mutex_;
-  // TODO(tjagtap) : [PH2][P1] : Add to map in SetCallDestination and clean this
+  // TODO(tjagtap) : [PH2][P2] : Add to map in SetCallDestination and clean this
   // mapping up in the on_done of the CallInitiator or CallHandler
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
