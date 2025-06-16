@@ -128,7 +128,7 @@ class SpiffeBundleMap final {
   absl::StatusOr<absl::Span<const std::string>> GetRoots(
       absl::string_view trust_domain);
 
-  size_t size() { return bundles_.size(); }
+  size_t size() const { return bundles_.size(); }
 
   bool operator==(const SpiffeBundleMap& other) const {
     return bundles_ == other.bundles_;

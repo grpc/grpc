@@ -24,7 +24,6 @@
 #include <list>
 
 #include "absl/base/no_destructor.h"
-#include "absl/functional/overload.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gmock/gmock.h"
@@ -62,7 +61,7 @@ constexpr absl::string_view kMalformedSpiffeBundleMapPath =
     "test/core/credentials/transport/tls/test_data/spiffe/test_bundles/"
     "spiffebundle_malformed.json";
 
-std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap() {
+SpiffeBundleMap GetGoodSpiffeBundleMap() {
   static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
       kSpiffeBundleMap([] {
         auto spiffe_bundle_map =
@@ -70,10 +69,10 @@ std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap() {
         EXPECT_TRUE(spiffe_bundle_map.ok());
         return *spiffe_bundle_map;
       }());
-  return *kSpiffeBundleMap;
+  return **kSpiffeBundleMap;
 }
 
-std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap2() {
+SpiffeBundleMap GetGoodSpiffeBundleMap2() {
   static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
       kSpiffeBundleMap2([] {
         auto spiffe_bundle_map =
@@ -81,7 +80,7 @@ std::shared_ptr<SpiffeBundleMap> GetGoodSpiffeBundleMap2() {
         EXPECT_TRUE(spiffe_bundle_map.ok());
         return *spiffe_bundle_map;
       }());
-  return *kSpiffeBundleMap2;
+  return **kSpiffeBundleMap2;
 }
 }  // namespace
 
@@ -101,30 +100,23 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
   // if the status updates are correct.
   struct CredentialInfo {
     std::string root_certs;
-    std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map;
+    SpiffeBundleMap spiffe_bundle_map;
     PemKeyCertPairList key_cert_pairs;
-    CredentialInfo(
-        std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>> roots,
-        PemKeyCertPairList key_cert)
+    CredentialInfo(const RootCertInfo& roots, PemKeyCertPairList key_cert)
         : key_cert_pairs(std::move(key_cert)) {
-      Match(roots,
-          [&](const absl::string_view& pem_root_certs) {
+      Match(
+          roots,
+          [&](const std::string& pem_root_certs) {
             root_certs = pem_root_certs;
           },
-          [&](const std::shared_ptr<SpiffeBundleMap>& bundle_map) {
+          [&](const SpiffeBundleMap& bundle_map) {
             spiffe_bundle_map = bundle_map;
           });
     }
     bool operator==(const CredentialInfo& other) const {
-      bool spiffe_bundles_equal = false;
-      if (spiffe_bundle_map == nullptr && other.spiffe_bundle_map == nullptr) {
-        spiffe_bundles_equal = true;
-      } else if (spiffe_bundle_map != nullptr &&
-                 other.spiffe_bundle_map != nullptr) {
-        spiffe_bundles_equal = *spiffe_bundle_map == *other.spiffe_bundle_map;
-      }
       return root_certs == other.root_certs &&
-             key_cert_pairs == other.key_cert_pairs && spiffe_bundles_equal;
+             key_cert_pairs == other.key_cert_pairs &&
+             spiffe_bundle_map == other.spiffe_bundle_map;
     }
   };
 
@@ -175,14 +167,11 @@ class GrpcTlsCertificateProviderTest : public ::testing::Test {
     ~TlsCertificatesTestWatcher() override { state_->watcher = nullptr; }
 
     void OnCertificatesChanged(
-        std::optional<
-            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
-            roots,
+        std::shared_ptr<RootCertInfo> roots,
         std::optional<PemKeyCertPairList> key_cert_pairs) override {
       MutexLock lock(&state_->mu);
-      std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>
-          updated_root;
-      if (roots.has_value()) {
+      RootCertInfo updated_root;
+      if (roots != nullptr) {
         updated_root = *roots;
       }
       PemKeyCertPairList updated_identity;
@@ -339,7 +328,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 }
 
 TEST_F(GrpcTlsCertificateProviderTest,
-       FileWatcherCertificateProviderWithGoodPaths) {
+       FileWatcherCertificateProviderWithGoodPathsxkcd) {
+  std::cout << "GREG test start\n";
+  std::cout << "GREG test start2\n";
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
   // Watcher watching both root and identity certs.
@@ -687,9 +678,9 @@ TEST_F(GrpcTlsCertificateProviderTest, FailedKeyCertMatchOnInvalidPair) {
 
 TEST_F(GrpcTlsCertificateProviderTest,
        SpiffeFileWatcherCertificateProviderWithGoodPaths) {
-  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH,
-                                          kGoodSpiffeBundleMapPath, 1);
+  FileWatcherCertificateProvider provider(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+      std::string(kGoodSpiffeBundleMapPath), 1);
   // Watcher watching both root and identity certs.
   WatcherState* watcher_state_1 =
       MakeWatcher(provider.distributor(), kCertName, kCertName);
@@ -719,9 +710,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 TEST_F(
     GrpcTlsCertificateProviderTest,
     SpiffeFileWatcherCertificateProviderWithGoodPathsAndCredentialValidation) {
-  FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
-                                          CA_CERT_PATH,
-                                          kGoodSpiffeBundleMapPath, 1);
+  FileWatcherCertificateProvider provider(
+      SERVER_KEY_PATH, SERVER_CERT_PATH, CA_CERT_PATH,
+      std::string(kGoodSpiffeBundleMapPath), 1);
   EXPECT_EQ(provider.ValidateCredentials(), absl::OkStatus());
 }
 
@@ -736,9 +727,9 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        SpiffeFileWatcherCertificateProviderWithMalformedSpiffeBundlePath) {
-  FileWatcherCertificateProvider provider(SERVER_KEY_PATH_2, SERVER_CERT_PATH_2,
-                                          CA_CERT_PATH,
-                                          kMalformedSpiffeBundleMapPath, 1);
+  FileWatcherCertificateProvider provider(
+      SERVER_KEY_PATH_2, SERVER_CERT_PATH_2, CA_CERT_PATH,
+      std::string(kMalformedSpiffeBundleMapPath), 1);
   EXPECT_EQ(provider.ValidateCredentials(),
             absl::InvalidArgumentError(
                 "errors validating JSON: [field: error:is not an object]"));

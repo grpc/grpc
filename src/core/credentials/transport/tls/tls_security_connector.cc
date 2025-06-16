@@ -30,7 +30,6 @@
 #include <vector>
 
 #include "absl/functional/bind_front.h"
-#include "absl/functional/overload.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
@@ -314,7 +313,7 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   // hence no need to register the watcher.
   bool use_default_roots = !options_->watch_root_cert();
   if (use_default_roots && !options_->watch_identity_pair()) {
-    watcher_ptr->OnCertificatesChanged(std::nullopt, std::nullopt);
+    watcher_ptr->OnCertificatesChanged(nullptr, std::nullopt);
   } else {
     distributor->WatchTlsCertificates(std::move(watcher_ptr),
                                       watched_root_cert_name,
@@ -431,39 +430,18 @@ ArenaPromise<absl::Status> TlsChannelSecurityConnector::CheckCallHost(
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
-    OnCertificatesChanged(
-        std::optional<
-            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
-            root_certs,
-        std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
+                          std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
-// The compiler can't tell that the modifications in the absl::Overload are done
-// within the mutex lock. This can be logically verified: the visitor is defined
-// after the lock, and the lock is held until the end of the function when all
-// of this goes out of scope.
-// NOLINTBEGIN
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wthread-safety-analysis"
   MutexLock lock(&security_connector_->mu_);
-  // THe mutex lock is held when calling this
-  // NOLINTEND
-  if (root_certs.has_value()) {
-    Match(
-        *root_certs,
-        [&](const absl::string_view& pem_root_certs) {
-          security_connector_->pem_root_certs_ = pem_root_certs;
-        },
-        [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
-          security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
-        });
-#pragma clang diagnostic pop
+  if (root_certs != nullptr) {
+    security_connector_->root_cert_info_ = std::move(root_certs);
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   const bool root_ready = !security_connector_->options_->watch_root_cert() ||
-                          security_connector_->pem_root_certs_.has_value() ||
-                          security_connector_->spiffe_bundle_map_.has_value();
+                          security_connector_->root_cert_info_ != nullptr;
   const bool identity_ready =
       !security_connector_->options_->watch_identity_pair() ||
       security_connector_->pem_key_cert_pair_list_.has_value();
@@ -716,39 +694,19 @@ int TlsServerSecurityConnector::cmp(
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
-    OnCertificatesChanged(
-        std::optional<
-            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
-            roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) {
+    OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
+                          std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
 
   MutexLock lock(&security_connector_->mu_);
-// The compiler can't tell that the modifications in the absl::Overload are done
-// within the mutex lock. This can be logically verified: the visitor is defined
-// after the lock, and the lock is held until the end of the function when all
-// of this goes out of scope.
-// NOLINTBEGIN
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wthread-safety-analysis"
-  // NOLINTEND
-  if (roots.has_value()) {
-    Match(
-        *roots,
-        [&](const absl::string_view& pem_root_certs) {
-          security_connector_->pem_root_certs_ = pem_root_certs;
-        },
-        [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
-          security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
-        });
+  if (roots != nullptr) {
+    security_connector_->root_cert_info_ = std::move(roots);
   }
-#pragma clang diagnostic pop
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }
   bool root_being_watched = security_connector_->options_->watch_root_cert();
-  bool root_has_value = security_connector_->pem_root_certs_.has_value() ||
-                        security_connector_->spiffe_bundle_map_.has_value();
+  bool root_has_value = security_connector_->root_cert_info_ != nullptr;
   bool identity_being_watched =
       security_connector_->options_->watch_identity_pair();
   bool identity_has_value =

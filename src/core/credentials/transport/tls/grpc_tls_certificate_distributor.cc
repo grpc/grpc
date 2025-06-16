@@ -20,25 +20,14 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/functional/overload.h"
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/util/match.h"
 
-std::variant<absl::string_view, std::shared_ptr<grpc_core::SpiffeBundleMap>>
+std::shared_ptr<RootCertInfo>
 grpc_tls_certificate_distributor::CertificateInfo::GetRoots() {
-  std::variant<absl::string_view, std::shared_ptr<grpc_core::SpiffeBundleMap>>
-      roots_to_return;
-  Match(
-      roots,
-      [&](const absl::string_view& pem_root_certs) {
-        roots_to_return = pem_root_certs;
-      },
-      [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
-        roots_to_return = spiffe_bundle_map;
-      });
-  return roots_to_return;
+  return roots;
 }
 
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
@@ -46,26 +35,26 @@ bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
   // depends on the string pem root representation being the empty string as
   // equivalent to unset/default.  We need a way to safely see if the variant
   // has essentially been default constructed.
+  if (roots == nullptr) {
+    return true;
+  }
   return Match(
-      roots,
+      *roots,
       [&](const absl::string_view& pem_root_certs) {
         return pem_root_certs.empty();
       },
-      [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
-        return spiffe_bundle_map == nullptr || spiffe_bundle_map->size() == 0;
+      [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+        return spiffe_bundle_map.size() == 0;
       });
 }
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
-    const std::string& cert_name,
-    std::optional<std::variant<absl::string_view,
-                               std::shared_ptr<grpc_core::SpiffeBundleMap>>>
-        roots,
+    const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
     std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs) {
-  CHECK(roots.has_value() || pem_key_cert_pairs.has_value());
+  CHECK(roots != nullptr || pem_key_cert_pairs.has_value());
   grpc_core::MutexLock lock(&mu_);
   auto& cert_info = certificate_info_map_[cert_name];
-  if (roots.has_value()) {
+  if (roots != nullptr) {
     // Successful credential updates will clear any pre-existing error.
     cert_info.SetRootError(absl::OkStatus());
     for (auto* watcher_ptr : cert_info.root_cert_watchers) {
@@ -87,14 +76,7 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       watcher_ptr->OnCertificatesChanged(
           roots, std::move(pem_key_cert_pairs_to_report));
     }
-    Match(
-        *roots,
-        [&](const absl::string_view& pem_root_certs) {
-          cert_info.roots = std::string(pem_root_certs);
-        },
-        [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
-          cert_info.roots = spiffe_bundle_map;
-        });
+    cert_info.roots = roots;
   }
   if (pem_key_cert_pairs.has_value()) {
     // Successful credential updates will clear any pre-existing error.
@@ -104,10 +86,8 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       const auto watcher_it = watchers_.find(watcher_ptr);
       CHECK(watcher_it != watchers_.end());
       CHECK(watcher_it->second.identity_cert_name.has_value());
-      std::optional<std::variant<absl::string_view,
-                                 std::shared_ptr<grpc_core::SpiffeBundleMap>>>
-          roots_to_report;
-      if (roots.has_value() && watcher_it->second.root_cert_name == cert_name) {
+      std::shared_ptr<RootCertInfo> roots_to_report;
+      if (roots != nullptr && watcher_it->second.root_cert_name == cert_name) {
         // In this case, We've already sent the credential updates at the time
         // when checking pem_root_certs, so we will skip here.
         continue;
@@ -229,9 +209,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     CHECK(watcher_it == watchers_.end());
     watchers_[watcher_ptr] = {std::move(watcher), root_cert_name,
                               identity_cert_name};
-    std::optional<std::variant<absl::string_view,
-                               std::shared_ptr<grpc_core::SpiffeBundleMap>>>
-        updated_roots;
+    std::shared_ptr<RootCertInfo> updated_roots;
     std::optional<grpc_core::PemKeyCertPairList> updated_identity_pairs;
     grpc_error_handle root_error;
     grpc_error_handle identity_error;
@@ -264,7 +242,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
     // occurred while trying to fetch the latest cert, but the updated_*_certs
     // should always be valid. So we will send the updates regardless of
     // *_cert_error.
-    if (updated_roots.has_value() || updated_identity_pairs.has_value()) {
+    if (updated_roots != nullptr || updated_identity_pairs.has_value()) {
       watcher_ptr->OnCertificatesChanged(updated_roots,
                                          std::move(updated_identity_pairs));
     }

@@ -109,6 +109,11 @@ class TlsChannelSecurityConnector final
     return spiffe_bundle_map_;
   }
 
+  std::shared_ptr<RootCertInfo> RootCertInfoForTesting() {
+    MutexLock lock(&mu_);
+    return root_cert_info_;
+  }
+
  private:
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
@@ -119,11 +124,8 @@ class TlsChannelSecurityConnector final
     explicit TlsChannelCertificateWatcher(
         TlsChannelSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
-    void OnCertificatesChanged(
-        std::optional<
-            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
-            root_certs,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override;
+    void OnCertificatesChanged(std::shared_ptr<RootCertInfo> root_certs,
+                               std::optional<PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override;
 
@@ -177,6 +179,7 @@ class TlsChannelSecurityConnector final
       ABSL_GUARDED_BY(mu_);
   std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
@@ -228,6 +231,11 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return spiffe_bundle_map_;
   }
 
+  std::shared_ptr<RootCertInfo> RootCertInfoForTesting() {
+    MutexLock lock(&mu_);
+    return root_cert_info_;
+  }
+
  private:
   // A watcher that watches certificate updates from
   // grpc_tls_certificate_distributor. It will never outlive
@@ -238,11 +246,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     explicit TlsServerCertificateWatcher(
         TlsServerSecurityConnector* security_connector)
         : security_connector_(security_connector) {}
-    void OnCertificatesChanged(
-        std::optional<
-            std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>>>
-            roots,
-        std::optional<PemKeyCertPairList> key_cert_pairs) override;
+    void OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
+                               std::optional<PemKeyCertPairList> key_cert_pairs) override;
 
     void OnError(grpc_error_handle root_cert_error,
                  grpc_error_handle identity_cert_error) override;
@@ -293,6 +298,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
       ABSL_GUARDED_BY(mu_);
   std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map_
       ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   RefCountedPtr<TlsSessionKeyLogger> tls_session_key_logger_;
   std::map<grpc_closure* /*on_peer_checked*/, ServerPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);

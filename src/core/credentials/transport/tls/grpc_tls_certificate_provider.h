@@ -141,10 +141,8 @@ class FileWatcherCertificateProvider final
                                  int64_t refresh_interval_sec);
 
   FileWatcherCertificateProvider(std::string private_key_path,
-                                 std::string identity_certificate_path,
-                                 std::string root_cert_path,
-                                 absl::string_view spiffe_bundle_map_path,
-                                 int64_t refresh_interval_sec);
+                                 std::string identity_certificate_path, std::string root_cert_path,
+                                 std::string spiffe_bundle_map_path, int64_t refresh_interval_sec);
 
   ~FileWatcherCertificateProvider() override;
 
@@ -200,6 +198,7 @@ class FileWatcherCertificateProvider final
   std::string root_certificate_ ABSL_GUARDED_BY(mu_);
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
   std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map_ ABSL_GUARDED_BY(mu_);
+  std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
