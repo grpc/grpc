@@ -63,7 +63,6 @@ bazel_dep(name = "rules_shell", version = "0.4.0", dev_dependency = True)
 bazel_dep(name = "rules_python", version = "0.37.1")
 
 PYTHON_VERSIONS = [
-    "3.8",
     "3.9",
     "3.10",
     "3.11",
