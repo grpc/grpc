@@ -68,9 +68,7 @@ void FuzzChannelTrace(std::vector<Op> ops, size_t memory_limit) {
           auto n = trace.NewNode(top.message);
           nodes.emplace(index, Node{0, top.message, std::move(n)});
         });
-    trace.ForEachTraceEvent([](gpr_timespec, channelz::ChannelTrace::Severity,
-                               std::string,
-                               RefCountedPtr<channelz::BaseNode>) {});
+    trace.ForEachTraceEvent([](gpr_timespec, std::string) {});
     ++index;
   }
 }
