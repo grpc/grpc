@@ -258,8 +258,6 @@
       return '\n'.join(lines)
     return _func
 
-  %>
-  <%
   # These files are added to a set so that they are not duplicated if multiple
   # targets use them. Generating the same file multiple times with
   # add_custom_command() is not allowed in CMake.
@@ -528,7 +526,7 @@
     set(_gRPC_ALLTARGETS_LIBRARIES <%text>${_gRPC_ALLTARGETS_LIBRARIES}</%text> ws2_32 crypt32)
     set(_gRPC_STATIC_WIN32 STATIC)
   endif()
-    
+
   if(BUILD_SHARED_LIBS AND WIN32)
 
   # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code

@@ -21,7 +21,6 @@
 
 
 
-
 cmake_minimum_required(VERSION 3.16)
 
 set(PACKAGE_NAME          "grpc")
@@ -502,7 +501,7 @@ if(WIN32)
   set(_gRPC_ALLTARGETS_LIBRARIES ${_gRPC_ALLTARGETS_LIBRARIES} ws2_32 crypt32)
   set(_gRPC_STATIC_WIN32 STATIC)
 endif()
-  
+
 if(BUILD_SHARED_LIBS AND WIN32)
 
 # Currently for shared lib on Windows (i.e. a DLL) certain bits of source code
