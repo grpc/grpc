@@ -631,7 +631,8 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("last_window_update", t->last_window_update_time)
                   .Set("settings", t->settings.ToJsonObject())
                   .Set("flow_control", t->flow_control.stats().ToJsonObject())
-                  .Set("ping_rate_policy", t->ping_rate_policy.ToJson())
+                  .Set("ping_rate_policy",
+                       t->ping_rate_policy.ChannelzProperties())
                   .Set("ping_callbacks", t->ping_callbacks.ChannelzProperties())
                   .Set("goaway_error", t->goaway_error)
                   .Set("sent_goaway_state",

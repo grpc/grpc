@@ -22,8 +22,8 @@
 #include <string>
 #include <variant>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
 
@@ -80,16 +80,13 @@ class Chttp2PingRatePolicy {
     return max_pings_without_data_sent_;
   }
 
-  Json::Object ToJson() const {
-    Json::Object obj;
-    obj["max_pings_without_data_sent"] =
-        Json::FromNumber(max_pings_without_data_sent_);
-    obj["max_inflight_pings"] = Json::FromNumber(max_inflight_pings_);
-    obj["pings_before_data_sending_required"] =
-        Json::FromNumber(pings_before_data_sending_required_);
-    obj["last_ping_sent_time"] = Json::FromString(gpr_format_timespec(
-        last_ping_sent_time_.as_timespec(GPR_CLOCK_REALTIME)));
-    return obj;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("max_pings_without_data_sent", max_pings_without_data_sent_)
+        .Set("max_inflight_pings", max_inflight_pings_)
+        .Set("pings_before_data_sending_required",
+             pings_before_data_sending_required_)
+        .Set("last_ping_sent_time", last_ping_sent_time_);
   }
 
  private:
