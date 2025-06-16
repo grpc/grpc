@@ -200,6 +200,17 @@ class PropertyGrid {
   absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
 };
 
+namespace property_list_detail {
+
+template <>
+struct JsonFromValueHelper<PropertyGrid> {
+  static std::optional<Json> JsonFromValue(PropertyGrid value) {
+    return Json::FromObject(value.TakeJsonObject());
+  }
+};
+
+}  // namespace property_list_detail
+
 }  // namespace grpc_core::channelz
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_PROPERTY_LIST_H
