@@ -116,7 +116,9 @@ class ExperimentsCompiler {
 
   class ExperimentsOutputGenerator {
    public:
-    ExperimentsOutputGenerator(const ExperimentsCompiler& compiler)
+    // The compiler is not owned by the generator, and will always outlive the
+    // generator.
+    ExperimentsOutputGenerator(const ExperimentsCompiler* compiler)
         : compiler_(compiler) {}
     virtual ~ExperimentsOutputGenerator() = default;
     virtual void GenerateHeader(std::string& output) = 0;
@@ -138,7 +140,7 @@ class ExperimentsCompiler {
                                            std::string& output);
 
    private:
-    const ExperimentsCompiler& compiler_;
+    const ExperimentsCompiler* compiler_;
   };
 
   absl::Status GenerateExperimentsHdr(
@@ -255,7 +257,7 @@ class GrpcOssExperimentsOutputGenerator
     : public ExperimentsCompiler::ExperimentsOutputGenerator {
  public:
   explicit GrpcOssExperimentsOutputGenerator(
-      const ExperimentsCompiler& compiler, const std::string& mode,
+      const ExperimentsCompiler* compiler, const std::string& mode,
       const std::string& header_file_path = "")
       : ExperimentsOutputGenerator(compiler),
         mode_(mode),

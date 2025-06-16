@@ -429,11 +429,19 @@ std::string ExperimentsCompiler::ExperimentsOutputGenerator::SnakeToPascal(
 void ExperimentsCompiler::ExperimentsOutputGenerator::
     GenerateExperimentsHdrForPlatform(const std::string& platform,
                                       std::string& output) {
-  for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     ExperimentDefinition experiment =
-        compiler_.experiment_definitions().at(experiment_name);
+        compiler_->experiment_definitions().at(experiment_name);
+    CHECK(
+        compiler_->final_define().contains(experiment.default_value(platform)))
+        << "Final define not found for experiment: " << experiment.name()
+        << " platform: " << platform;
+    CHECK(
+        compiler_->final_return().contains(experiment.default_value(platform)))
+        << "Final return not found for experiment: " << experiment.name()
+        << " platform: " << platform;
     const std::string& define_fmt =
-        compiler_.final_define().at(experiment.default_value(platform));
+        compiler_->final_define().at(experiment.default_value(platform));
     // The define format is expected to either be empty or contain a single %s
     // specifier.
     if (!define_fmt.empty()) {
@@ -449,7 +457,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
     absl::StrAppend(
         &output, "inline bool Is", SnakeToPascal(experiment.name()),
         "Enabled() { ",
-        compiler_.final_return().at(experiment.default_value(platform)),
+        compiler_->final_return().at(experiment.default_value(platform)),
         " }\n");
   }
 }
@@ -467,7 +475,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
   absl::StrAppend(&output, "#ifdef GRPC_EXPERIMENTS_ARE_FINAL\n\n");
   // Generate the #if defined for each platform.
   bool first = true;
-  for (const auto& platform : compiler_.platforms_define()) {
+  for (const auto& platform : compiler_->platforms_define()) {
     if (platform.first == "posix") {
       continue;
     }
@@ -487,12 +495,12 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
   std::string num_experiments_var_name = "kNumExperiments";
   std::string experiments_metadata_var_name = "g_experiment_metadata";
   absl::StrAppend(&output, "enum ExperimentIds {\n");
-  for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     absl::StrAppend(&output, "  kExperimentId", SnakeToPascal(experiment_name),
                     ",\n");
   }
   absl::StrAppend(&output, "  ", num_experiments_var_name, "\n};\n");
-  for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     absl::StrAppend(&output, "#define GRPC_EXPERIMENT_IS_INCLUDED_",
                     absl::AsciiStrToUpper(experiment_name), "\n");
     absl::StrAppend(&output, "inline bool Is", SnakeToPascal(experiment_name),
@@ -513,9 +521,9 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
                                       std::string& output) {
   absl::StrAppend(&output, "namespace {\n");
   bool default_for_debug_only = false;
-  for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     ExperimentDefinition experiment =
-        compiler_.experiment_definitions().at(experiment_name);
+        compiler_->experiment_definitions().at(experiment_name);
     absl::StrAppend(
         &output, absl::StrFormat("const char* const description_%s = \"%s\";\n",
                                  experiment.name(),
@@ -539,7 +547,10 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
                           experiment.name(),
                           absl::StrJoin(required_experiments, ",")));
     }
-    if (compiler_.defaults().at(experiment.default_value(platform)) ==
+    CHECK(compiler_->defaults().contains(experiment.default_value(platform)))
+        << "Default value not found for experiment: " << experiment.name()
+        << " platform: " << platform;
+    if (compiler_->defaults().at(experiment.default_value(platform)) ==
         "kDefaultForDebugOnly") {
       default_for_debug_only = true;
     }
@@ -561,9 +572,9 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
   }
   absl::StrAppend(&output, "const ExperimentMetadata ",
                   experiments_metadata_var_name, "[] = {\n");
-  for (const auto& experiment_name : compiler_.sorted_experiment_names()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     ExperimentDefinition experiment =
-        compiler_.experiment_definitions().at(experiment_name);
+        compiler_->experiment_definitions().at(experiment_name);
     absl::StrAppend(
         &output,
         absl::StrFormat(
@@ -575,7 +586,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
                 ? "nullptr"
                 : absl::StrFormat("required_experiments_%s", experiment.name()),
             experiment.requirements().size(),
-            compiler_.defaults().at(experiment.default_value(platform)),
+            compiler_->defaults().at(experiment.default_value(platform)),
             experiment.allow_in_fuzzing_config() ? "true" : "false"));
   }
   absl::StrAppend(&output, "};\n\n");
@@ -586,7 +597,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateSourceInner(
     const std::string& header_file_path, const std::string& mode,
     std::string& output) {
   bool any_requires = false;
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment : compiler_->experiment_definitions()) {
     if (!experiment.second.requirements().empty()) {
       any_requires = true;
       break;
@@ -607,7 +618,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateSourceInner(
   absl::StrAppend(&output, "#ifndef GRPC_EXPERIMENTS_ARE_FINAL\n");
   // Generate the #if defined for each platform.
   bool first = true;
-  for (const auto& platform : compiler_.platforms_define()) {
+  for (const auto& platform : compiler_->platforms_define()) {
     if (platform.first == "posix") {
       continue;
     }
