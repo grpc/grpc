@@ -373,8 +373,7 @@ static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
   return call_creds;
 }
 
-grpc_channel_credentials*
-grpc_google_default_credentials_create_with_alts_option(
+grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* default_credentials,
     grpc_call_credentials* alts_credentials) {
   grpc_channel_credentials* result = nullptr;
@@ -422,12 +421,6 @@ grpc_google_default_credentials_create_with_alts_option(
                << grpc_core::StatusToString(error);
   }
   return result;
-}
-
-grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials) {
-  return grpc_google_default_credentials_create_with_alts_option(
-      call_credentials, nullptr);
 }
 
 namespace grpc_core {
