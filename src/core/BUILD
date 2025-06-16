@@ -7939,6 +7939,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata",
+        "metadata_batch",
         "mpsc",
         "ping_promise",
         "sync",
@@ -8551,6 +8552,7 @@ grpc_cc_library(
         "ext/transport/chaotic_good/scheduler.h",
     ],
     external_deps = [
+        "absl/log",
         "absl/strings",
     ],
     deps = [
