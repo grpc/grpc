@@ -64,7 +64,9 @@ def print_backtraces(pid):
     try:
         process.wait(timeout=_GDB_TIMEOUT_S)
     except subprocess.TimeoutExpired:
-        sys.stderr.write("{} stacktrace generation timed out.\n".format(debugger_name))
+        sys.stderr.write(
+            "{} stacktrace generation timed out.\n".format(debugger_name)
+        )
     finally:
         for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
             stream.seek(0)

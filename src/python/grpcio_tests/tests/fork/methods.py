@@ -193,7 +193,9 @@ class _ChildProcess(object):
             time.sleep(wait_interval)
             total += wait_interval
             if total > next_lifebeat:
-                sys.stderr.write("Child %d is still running\n" % self._child_pid)
+                sys.stderr.write(
+                    "Child %d is still running\n" % self._child_pid
+                )
                 next_lifebeat = total + _LIFEBEAT_PERIOD_S
         else:
             return False
@@ -204,10 +206,13 @@ class _ChildProcess(object):
         if not terminated:
             sys.stderr.write("Finishing child %d\n" % self._child_pid)
             debugger.print_backtraces(self._child_pid)
-            raise RuntimeError("Child process %d did not terminate" % self._child_pid)
+            raise RuntimeError(
+                "Child process %d did not terminate" % self._child_pid
+            )
         if self._rc != 0:
             raise ValueError(
-                "Child process %d failed with exitcode %d" % (self._child_pid, self._rc)
+                "Child process %d failed with exitcode %d"
+                % (self._child_pid, self._rc)
             )
         try:
             exception = self._exceptions.get(block=False)
@@ -223,7 +228,9 @@ def _async_unary_same_channel(channel):
     def child_target():
         try:
             _async_unary(stub)
-            raise Exception("Child should not be able to re-use channel after fork")
+            raise Exception(
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
@@ -254,7 +261,9 @@ def _blocking_unary_same_channel(channel):
     def child_target():
         try:
             _blocking_unary(stub)
-            raise Exception("Child should not be able to re-use channel after fork")
+            raise Exception(
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
@@ -364,7 +373,9 @@ def _ping_pong_with_child_processes_after_first_response(
     ):
         request = messages_pb2.StreamingOutputCallRequest(
             response_type=messages_pb2.COMPRESSABLE,
-            response_parameters=(messages_pb2.ResponseParameters(size=response_size),),
+            response_parameters=(
+                messages_pb2.ResponseParameters(size=response_size),
+            ),
             payload=messages_pb2.Payload(body=b"\x00" * payload_size),
         )
         pipe.add(request)
@@ -376,7 +387,9 @@ def _ping_pong_with_child_processes_after_first_response(
             child_processes.append(child_process)
         response = next(parent_bidi_call)
         first_message_received = True
-        child_process = _ChildProcess(child_target, (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(
+            child_target, (parent_bidi_call, channel, args)
+        )
         child_process.start()
         child_processes.append(child_process)
         _validate_payload_type_and_length(
@@ -384,7 +397,9 @@ def _ping_pong_with_child_processes_after_first_response(
         )
     pipe.close()
     if run_after_close:
-        child_process = _ChildProcess(child_target, (parent_bidi_call, channel, args))
+        child_process = _ChildProcess(
+            child_target, (parent_bidi_call, channel, args)
+        )
         child_process.start()
         child_processes.append(child_process)
     for child_process in child_processes:
@@ -396,7 +411,9 @@ def _in_progress_bidi_continue_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
-            raise Exception("Child should not be able to re-use channel after fork")
+            raise Exception(
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
         inherited_code = parent_bidi_call.code()
@@ -418,11 +435,15 @@ def _in_progress_bidi_same_channel_async_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _async_unary(stub)
-            raise Exception("Child should not be able to re-use channel after fork")
+            raise Exception(
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
-    _ping_pong_with_child_processes_after_first_response(channel, None, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target
+    )
 
 
 def _in_progress_bidi_same_channel_blocking_call(channel):
@@ -430,11 +451,15 @@ def _in_progress_bidi_same_channel_blocking_call(channel):
         stub = test_pb2_grpc.TestServiceStub(parent_channel)
         try:
             _blocking_unary(stub)
-            raise Exception("Child should not be able to re-use channel after fork")
+            raise Exception(
+                "Child should not be able to re-use channel after fork"
+            )
         except ValueError as expected_value_error:
             pass
 
-    _ping_pong_with_child_processes_after_first_response(channel, None, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, None, child_target
+    )
 
 
 def _in_progress_bidi_new_channel_async_call(channel, args):
@@ -443,7 +468,9 @@ def _in_progress_bidi_new_channel_async_call(channel, args):
             stub = test_pb2_grpc.TestServiceStub(channel)
             _async_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, args, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, args, child_target
+    )
 
 
 def _in_progress_bidi_new_channel_blocking_call(channel, args):
@@ -452,7 +479,9 @@ def _in_progress_bidi_new_channel_blocking_call(channel, args):
             stub = test_pb2_grpc.TestServiceStub(channel)
             _blocking_unary(stub)
 
-    _ping_pong_with_child_processes_after_first_response(channel, args, child_target)
+    _ping_pong_with_child_processes_after_first_response(
+        channel, args, child_target
+    )
 
 
 @enum.unique
@@ -470,7 +499,9 @@ class TestCase(enum.Enum):
     IN_PROGRESS_BIDI_SAME_CHANNEL_BLOCKING_CALL = (
         "in_progress_bidi_same_channel_blocking_call"
     )
-    IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL = "in_progress_bidi_new_channel_async_call"
+    IN_PROGRESS_BIDI_NEW_CHANNEL_ASYNC_CALL = (
+        "in_progress_bidi_new_channel_async_call"
+    )
     IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL = (
         "in_progress_bidi_new_channel_blocking_call"
     )
@@ -501,7 +532,9 @@ class TestCase(enum.Enum):
         elif self is TestCase.IN_PROGRESS_BIDI_NEW_CHANNEL_BLOCKING_CALL:
             _in_progress_bidi_new_channel_blocking_call(channel, args)
         else:
-            raise NotImplementedError('Test case "%s" not implemented!' % self.name)
+            raise NotImplementedError(
+                'Test case "%s" not implemented!' % self.name
+            )
         channel.close()
 
 
