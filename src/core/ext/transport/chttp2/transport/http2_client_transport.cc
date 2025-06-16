@@ -174,7 +174,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   // Load into this.settings_
   // Take necessary actions as per settings that have changed.
   HTTP2_TRANSPORT_DLOG
@@ -237,7 +237,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
@@ -375,7 +375,7 @@ auto Http2ClientTransport::ReadLoop() {
 auto Http2ClientTransport::OnReadLoopEnded() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Factory";
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Promise Status="
                       << status;
     GRPC_UNUSED absl::Status error =
@@ -491,8 +491,8 @@ Http2ClientTransport::Http2ClientTransport(
                                                 : Duration::Infinity()),
           keepalive_time_),
       keepalive_permit_without_calls_(false) {
-  // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
-  // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
+  // TODO(tjagtap) : [PH2][P2] : Save and apply channel_args.
+  // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
 
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
 
@@ -548,7 +548,7 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                       const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  // TODO(tjagtap) : [PH2][P1] Validate implementation.
+  // TODO(tjagtap) : [PH2][P2] Validate implementation.
 
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
   // function is always called under the stream_id_mutex_. The issue is the
