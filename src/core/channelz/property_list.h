@@ -39,7 +39,11 @@ class PropertyList {
   }
 
   PropertyList& Set(absl::string_view key, const char* value) {
-    property_list_.emplace(key, Json::FromString(std::string(value)));
+    if (value != nullptr) {
+      property_list_.emplace(key, Json::FromString(std::string(value)));
+    } else {
+      property_list_.erase(std::string(key));
+    }
     return *this;
   }
 
@@ -73,6 +77,16 @@ class PropertyList {
 
   PropertyList& Set(absl::string_view key, absl::Status status) {
     property_list_.emplace(key, Json::FromString(status.ToString()));
+    return *this;
+  }
+
+  template <typename T>
+  PropertyList& Set(absl::string_view key, std::optional<T> value) {
+    if (value.has_value()) {
+      Set(key, *std::move(value));
+    } else {
+      property_list_.erase(std::string(key));
+    }
     return *this;
   }
 
