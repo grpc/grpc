@@ -703,10 +703,10 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
+  src/proto/grpc/channelz/v2/latent_see.proto src/proto/grpc/channelz/v2/latent_see.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
-  src/proto/grpc/latent_see/latent_see.proto src/proto/grpc/latent_see/latent_see.proto
+  src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
@@ -20594,10 +20594,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latent_see_service_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   src/cpp/latent_see/latent_see_client.cc
   src/cpp/latent_see/latent_see_service.cc
   test/cpp/end2end/latent_see_service_test.cc
@@ -25200,10 +25200,10 @@ add_executable(qps_json_driver
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
@@ -25314,10 +25314,10 @@ add_executable(qps_worker
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/core/ext/transport/chaotic_good/chaotic_good_frame.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/latent_see/latent_see.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/latent_see.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h

@@ -13459,7 +13459,7 @@ targets:
   - src/cpp/latent_see/latent_see_client.h
   - src/cpp/latent_see/latent_see_service.h
   src:
-  - src/proto/grpc/latent_see/latent_see.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/cpp/latent_see/latent_see_client.cc
   - src/cpp/latent_see/latent_see_service.cc
   - test/cpp/end2end/latent_see_service_test.cc
@@ -15375,7 +15375,7 @@ targets:
   - test/cpp/qps/usage_timer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - src/proto/grpc/latent_see/latent_see.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
@@ -15487,7 +15487,7 @@ targets:
   - test/cpp/qps/usage_timer.h
   src:
   - src/core/ext/transport/chaotic_good/chaotic_good_frame.proto
-  - src/proto/grpc/latent_see/latent_see.proto
+  - src/proto/grpc/channelz/v2/latent_see.proto
   - src/proto/grpc/testing/benchmark_service.proto
   - src/proto/grpc/testing/control.proto
   - src/proto/grpc/testing/messages.proto
