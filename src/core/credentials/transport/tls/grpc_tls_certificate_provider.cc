@@ -250,12 +250,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       if (root_cert_info_ != nullptr) {
         roots = root_cert_info_;
       }
-
-      // if (spiffe_bundle_map_ != nullptr && spiffe_bundle_map_->size() != 0) {
-      //   roots = std::make_shared<RootCertInfo>(*spiffe_bundle_map_);
-      // } else if (!root_certificate_.empty()) {
-      //   roots = std::make_shared<RootCertInfo>(root_certificate_);
-      // }
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
