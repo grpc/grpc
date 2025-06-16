@@ -115,8 +115,9 @@ inline T SaturatingAdd(T a, T b) {
   return a + b;
 }
 
-template <typename T,
-          std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
 inline T SaturatingMul(T a, T b) {
   if (a == 0 || b == 0) return 0;
   if (b > std::numeric_limits<T>::max() / a) {
@@ -125,8 +126,9 @@ inline T SaturatingMul(T a, T b) {
   return a * b;
 }
 
-template <typename T,
-          std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+template <
+    typename T,
+    std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
 inline T SaturatingMul(T a, T b) {
   if (a == 0 || b == 0) return 0;
   if (a == std::numeric_limits<T>::min()) {
