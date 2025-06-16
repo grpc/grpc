@@ -38,15 +38,18 @@ class Http2FrameTestHelper {
   EventEngineSlice EventEngineSliceFromHttp2DataFrame(
       std::string_view payload, const uint32_t stream_id = 1,
       const bool end_stream = false) const {
+    SliceBuffer buffer;
+    AppendGrpcHeaderToSliceBuffer(buffer, 0, payload.size());
+    buffer.Append(Slice::FromCopiedString(payload));
     return EventEngineSliceFromHttp2Frame(
-        Http2DataFrame{stream_id, end_stream, SliceBufferFromString(payload)});
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
-  EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
-      std::string_view payload, const uint32_t stream_id = 1,
-      const bool end_headers = true, const bool end_stream = false) const {
-    return EventEngineSliceFromHttp2Frame(Http2HeaderFrame{
-        stream_id, end_headers, end_stream, SliceBufferFromString(payload)});
+  EventEngineSlice EventEngineSliceFromEmptyHttp2DataFrame(
+      const uint32_t stream_id = 1, const bool end_stream = false) const {
+    SliceBuffer buffer;
+    return EventEngineSliceFromHttp2Frame(
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
