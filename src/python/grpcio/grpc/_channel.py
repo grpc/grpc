@@ -23,12 +23,7 @@ import sys
 import threading
 import time
 import types
-from typing import (
-    Any,
-    Callable,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, Optional, Union
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
