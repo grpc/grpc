@@ -38,11 +38,11 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/credentials/call/dual/dual_call_credentials.h"
 #include "src/core/credentials/call/external/external_account_credentials.h"
 #include "src/core/credentials/call/jwt/json_token.h"
 #include "src/core/credentials/call/jwt/jwt_credentials.h"
 #include "src/core/credentials/call/oauth2/oauth2_credentials.h"
+#include "src/core/credentials/transport/alts/alts_security_connector.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -339,6 +339,60 @@ static bool metadata_server_available() {
   return static_cast<bool>(g_metadata_server_available);
 }
 
+class GoogleDefaultCallCredentialsWrapper : public grpc_call_credentials {
+ public:
+  GoogleDefaultCallCredentialsWrapper(
+      grpc_core::RefCountedPtr<grpc_call_credentials> tls_credentials,
+      grpc_core::RefCountedPtr<grpc_call_credentials> alts_credentials)
+      : tls_credentials_(std::move(tls_credentials)),
+        alts_credentials_(std::move(alts_credentials)) {};
+
+  ~GoogleDefaultCallCredentialsWrapper() override = default;
+
+  void Orphaned() override {}
+
+  static grpc_core::UniqueTypeName Type() {
+    static grpc_core::UniqueTypeName::Factory kFactory("Dual");
+    return kFactory.Create();
+  }
+
+  grpc_core::UniqueTypeName type() const override { return Type(); }
+
+  grpc_core::ArenaPromise<absl::StatusOr<grpc_core::ClientMetadataHandle>>
+  GetRequestMetadata(grpc_core::ClientMetadataHandle initial_metadata,
+                     const GetRequestMetadataArgs* args) override {
+    bool use_alts = false;
+    if (args != nullptr) {
+      auto auth_context = args->auth_context;
+      if (auth_context != nullptr &&
+          grpc_auth_context_peer_is_authenticated(auth_context.get()) == 1) {
+        // This channel is authenticated.
+        grpc_auth_property_iterator property_it =
+            grpc_auth_context_find_properties_by_name(
+                auth_context.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+        const grpc_auth_property* property =
+            grpc_auth_property_iterator_next(&property_it);
+        use_alts =
+            property != nullptr &&
+            strcmp(property->value, GRPC_ALTS_TRANSPORT_SECURITY_TYPE) == 0;
+      }
+    }
+    return (use_alts ? alts_credentials_ : tls_credentials_)
+        ->GetRequestMetadata(std::move(initial_metadata), args);
+  }
+
+ private:
+  int cmp_impl(const grpc_call_credentials* other) const override {
+    return QsortCompare(static_cast<const grpc_call_credentials*>(this), other);
+  }
+  std::string debug_string() override {
+    return "GoogleDefaultCallCredentialsWrapper";
+  }
+
+  grpc_core::RefCountedPtr<grpc_call_credentials> tls_credentials_;
+  grpc_core::RefCountedPtr<grpc_call_credentials> alts_credentials_;
+};
+
 static grpc_core::RefCountedPtr<grpc_call_credentials> make_default_call_creds(
     grpc_error_handle* error) {
   grpc_core::RefCountedPtr<grpc_call_credentials> call_creds;
@@ -407,8 +461,8 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
       grpc_core::RefCountedPtr<grpc_call_credentials> alts_creds(
           alts_credentials);
       auto dual_creds =
-          grpc_core::MakeRefCounted<grpc_core::DualCallCredentials>(call_creds,
-                                                                    alts_creds);
+          grpc_core::MakeRefCounted<GoogleDefaultCallCredentialsWrapper>(
+              call_creds, alts_creds);
       result = grpc_composite_channel_credentials_create(
           creds.get(), dual_creds.get(), nullptr);
     } else {
@@ -425,7 +479,6 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
 
 namespace grpc_core {
 namespace internal {
-
 void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
   g_gce_tenancy_checker = checker;
 }

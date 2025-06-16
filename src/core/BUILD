@@ -4484,7 +4484,6 @@ grpc_cc_library(
         "error",
         "error_utils",
         "event_engine_shim",
-        "grpc_dual_credentials",
         "grpc_external_account_credentials",
         "grpc_lb_xds_channel_args",
         "grpc_oauth2_credentials",
@@ -4627,37 +4626,6 @@ grpc_cc_library(
         "//:grpc_core_credentials_header",
         "//:grpc_security_base",
         "//:grpc_trace",
-        "//:promise",
-        "//:ref_counted_ptr",
-        "//:transport_auth_context",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_dual_credentials",
-    srcs = [
-        "credentials/call/dual/dual_call_credentials.cc",
-    ],
-    hdrs = [
-        "credentials/call/dual/dual_call_credentials.h",
-    ],
-    external_deps = [
-        "absl/log:check",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    deps = [
-        "arena_promise",
-        "channel_args",
-        "metadata_batch",
-        "ref_counted",
-        "unique_type_name",
-        "useful",
-        "//:gpr",
-        "//:grpc_alts_credentials",
-        "//:grpc_base",
-        "//:grpc_core_credentials_header",
-        "//:grpc_security_base",
         "//:promise",
         "//:ref_counted_ptr",
         "//:transport_auth_context",

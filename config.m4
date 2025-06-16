@@ -84,7 +84,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/config/load_config.cc \
     src/core/credentials/call/call_creds_util.cc \
     src/core/credentials/call/composite/composite_call_credentials.cc \
-    src/core/credentials/call/dual/dual_call_credentials.cc \
     src/core/credentials/call/external/aws_external_account_credentials.cc \
     src/core/credentials/call/external/aws_request_signer.cc \
     src/core/credentials/call/external/external_account_credentials.cc \
@@ -1441,7 +1440,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/config)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/composite)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/dual)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/external)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/gcp_service_account_identity)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/credentials/call/iam)

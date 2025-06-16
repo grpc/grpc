@@ -13,9 +13,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-
-#include "src/core/credentials/call/dual/dual_call_credentials.h"
-
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
@@ -36,7 +33,7 @@
 namespace grpc_core {
 namespace {
 
-class DualCredentialsTest : public ::testing::Test {
+class GoogleDefaultCallCredentialsTest : public ::testing::Test {
  protected:
   static void SetUpTestSuite() { grpc_init(); }
 
@@ -95,7 +92,7 @@ class DualCredentialsTest : public ::testing::Test {
   RefCountedPtr<grpc_composite_channel_credentials> channel_creds_;
 };
 
-TEST_F(DualCredentialsTest, UseAltsCredentials) {
+TEST_F(GoogleDefaultCallCredentialsTest, UseAltsCredentials) {
   ExecCtx exec_ctx;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args = {
       nullptr,
@@ -109,24 +106,11 @@ TEST_F(DualCredentialsTest, UseAltsCredentials) {
             GRPC_ALTS_TRANSPORT_SECURITY_TYPE);
 }
 
-TEST_F(DualCredentialsTest, UseTlsCredentials) {
+TEST_F(GoogleDefaultCallCredentialsTest, UseTlsCredentials) {
   ExecCtx exec_ctx;
   grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args = {
       nullptr,
       CreateAuthContextWithSecurityType(GRPC_TLS_TRANSPORT_SECURITY_TYPE)};
-
-  RunRequestMetadataTest(get_request_metadata_args);
-
-  std::string buffer;
-  EXPECT_EQ(expected_md_.GetStringValue(
-                GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, &buffer),
-            GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-}
-
-TEST_F(DualCredentialsTest, NoAuthContext) {
-  ExecCtx exec_ctx;
-  grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args = {
-      nullptr, nullptr};
 
   RunRequestMetadataTest(get_request_metadata_args);
 

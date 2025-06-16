@@ -1812,7 +1812,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsNotDefault) {
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds.release(), nullptr));
+          grpc_google_default_credentials_create(call_creds.release(),
+                                                 nullptr));
   CHECK_EQ(g_test_gce_tenancy_checker_called, false);
   CHECK_NE(channel_creds, nullptr);
   CHECK_NE(channel_creds->call_creds(), nullptr);

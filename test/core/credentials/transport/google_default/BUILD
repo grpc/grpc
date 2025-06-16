@@ -16,11 +16,11 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/credentials/call/dual")
+grpc_package(name = "test/core/transport/google_default")
 
 grpc_cc_test(
-    name = "dual_call_credentials_test",
-    srcs = ["dual_call_credentials_test.cc"],
+    name = "google_default_call_credentials_test",
+    srcs = ["google_default_call_credentials_test.cc"],
     external_deps = [
         "absl/log:check",
         "gtest",
