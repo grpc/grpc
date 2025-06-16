@@ -35,8 +35,8 @@ CORE_END2END_TEST(Http2SingleHopTests, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
   auto send_from_server = RandomSlice(kMessageSize);
-  InitServer(
-      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
+  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
+                                     kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();

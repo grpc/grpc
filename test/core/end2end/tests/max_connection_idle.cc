@@ -95,7 +95,7 @@ CORE_END2END_TEST(RetryHttp2Tests, MaxConnectionIdle) {
           // Avoid transparent retries for this test.
           .Set(GRPC_ARG_ENABLE_RETRIES, false));
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, kMaxConnectionIdle.millis())
           .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, kMaxConnectionAge.millis()));
   // check that we're still in idle, and start connecting
