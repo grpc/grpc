@@ -13,6 +13,8 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+from collections.abc import Iterator
+from collections.abc import Sequence
 import copy
 import functools
 import logging
@@ -21,7 +23,6 @@ import sys
 import threading
 import time
 import types
-from collections.abc import Iterator, Sequence
 from typing import (
     Any,
     Callable,
