@@ -4571,6 +4571,7 @@ grpc_cc_library(
         "error",
         "iomgr_fwd",
         "load_file",
+        "match",
         "ref_counted",
         "slice",
         "slice_refcount",
