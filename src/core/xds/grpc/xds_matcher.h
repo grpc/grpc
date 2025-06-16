@@ -38,7 +38,16 @@ namespace grpc_core {
 
 // Base class for xDS matchers.
 class XdsMatcher {
+
  public:
+
+   enum MatcherType {
+    MatcherList,
+    MatcherExactMap,
+    MatcherPrefixMap,
+  };
+
+  virtual MatcherType getType() = 0;
   // An interface implemented by the caller to provide the context from
   // which the inputs will extract data.  There can be different context
   // implementations for different use cases -- for example, there will
@@ -131,6 +140,9 @@ class XdsMatcher {
 // The first matching predicate wins.
 class XdsMatcherList : public XdsMatcher {
  public:
+
+  XdsMatcher::MatcherType getType() override {return  XdsMatcher::MatcherType::MatcherList; }
+  
   // Base class for predicates.
   class Predicate {
    public:
@@ -185,11 +197,11 @@ class XdsMatcherList : public XdsMatcher {
   class NotPredicate;
 
   struct FieldMatcher {
-    FieldMatcher(std::unique_ptr<Predicate> predicate, OnMatch on_match)
+    FieldMatcher(std::unique_ptr<Predicate> predicate, std::unique_ptr<OnMatch> on_match)
         : predicate(std::move(predicate)), on_match(std::move(on_match)) {}
 
     std::unique_ptr<Predicate> predicate;
-    OnMatch on_match;
+    std::unique_ptr<OnMatch> on_match;
   };
 
   XdsMatcherList(std::vector<FieldMatcher> matchers,
@@ -289,6 +301,7 @@ class XdsMatcherList::NotPredicate : public XdsMatcherList::Predicate {
 
 class XdsMatcherExactMap : public XdsMatcher {
  public:
+  XdsMatcher::MatcherType getType() override {return  XdsMatcher::MatcherType::MatcherExactMap; }
   XdsMatcherExactMap(std::unique_ptr<InputValue<absl::string_view>> input,
                      absl::flat_hash_map<std::string, std::unique_ptr<OnMatch>> map,
                      std::unique_ptr<OnMatch> on_no_match)
@@ -306,6 +319,7 @@ class XdsMatcherExactMap : public XdsMatcher {
 
 class XdsMatcherPrefixMap : public XdsMatcher {
  public:
+  XdsMatcher::MatcherType getType() override {return  XdsMatcher::MatcherType::MatcherPrefixMap; }
   XdsMatcherPrefixMap(
       std::unique_ptr<InputValue<absl::string_view>> input,
       absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>>

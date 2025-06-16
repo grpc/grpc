@@ -5663,6 +5663,104 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_matcher_context",
+    srcs = [
+        "xds/grpc/xds_matcher_context.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_context.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "xds_matcher",
+        "trie_lookup",
+        "unique_type_name",
+        "metadata_batch"
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_input",
+    srcs = [
+        "xds/grpc/xds_matcher_input.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_input.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "xds_matcher",
+        "xds_matcher_context",
+        "trie_lookup",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_action",
+    srcs = [
+        "xds/grpc/xds_matcher_action.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_action.h",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "xds_matcher",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_parse",
+    srcs = [
+        "xds/grpc/xds_matcher_parse.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_parse.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "xds_matcher",
+        "xds_matcher_context",
+        "trie_lookup",
+        "unique_type_name",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "envoy_common_config_matcher_upb",
+        "upb_utils",
+        "xds_matcher_action",
+        "xds_matcher_input",
+        "xds_common_types",
+        "grpc_xds_client",
+        "envoy_config_core_upb",
+        "envoy_extensions_http_rate_limit_quota_upb",
+        "envoy_extensions_http_rate_limit_quota_upbdefs",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     hdrs = [
         "xds/grpc/xds_http_filter.h",
@@ -10034,6 +10132,15 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_http_rate_limit_quota_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_rate_limit_quota_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
@@ -10137,6 +10244,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
     deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_common_config_matcher_upb",
+    deps = ["@envoy_api//envoy/config/common/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_library(

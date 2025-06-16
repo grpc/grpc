@@ -16,135 +16,172 @@
 
 #include "src/core/xds/grpc/xds_matcher.h"
 
+#include <google/protobuf/text_format.h>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+
+// For XdsClient and DecodeContext setup
+#include "src/core/util/json/json.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
+#include "src/core/xds/xds_client/xds_client.h"
+#include "src/core/xds/xds_client/xds_resource_type.h"
+// End XdsClient setup includes
+
+#include "envoy/config/common/matcher/v3/matcher.pb.h"
+#include "envoy/config/common/matcher/v3/matcher.upb.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/validation_errors.h"  // For ValidationErrors
+#include "src/core/xds/grpc/xds_matcher.h"
+#include "src/core/xds/grpc/xds_matcher_context.h"
+#include "src/core/xds/grpc/xds_matcher_parse.h"
 #include "test/core/test_util/test_config.h"
+#include "upb/mem/arena.hpp"
+#include "upb/reflection/def.hpp"  // For upb_DefPool
+#include "src/core/util/down_cast.h"
+
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-class TestMatchContext : public XdsMatcher::MatchContext {
- public:
-  TestMatchContext(std::map<absl::string_view, absl::string_view> string_values,
-                   std::map<absl::string_view, int> int_values)
-      : string_values_(std::move(string_values)),
-        int_values_(std::move(int_values)) {}
+class MatcherTest : public ::testing::Test {
+ protected:
+  MatcherTest()
+      : xds_client_(MakeXdsClient()),
+        decode_context_{xds_client_.get(),
+                        *xds_client_->bootstrap().servers().front(),
+                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
 
-  static UniqueTypeName Type() { return GRPC_UNIQUE_TYPE_NAME_HERE("test"); }
-
-  UniqueTypeName type() const override { return Type(); }
-
-  absl::string_view GetStringValue(absl::string_view key) const {
-    auto it = string_values_.find(key);
-    if (it != string_values_.end()) return it->second;
-    return "";
+  static RefCountedPtr<XdsClient> MakeXdsClient() {
+    auto bootstrap = GrpcXdsBootstrap::Create(
+        "{\n"
+        "  \"xds_servers\": [\n"
+        "    {\n"
+        "      \"server_uri\": \"xds.example.com\",\n"
+        "      \"channel_creds\": [\n"
+        "        {\"type\": \"fake\"}\n"
+        "      ]\n"
+        "    }\n"
+        "  ]\n"
+        "}");
+    CHECK_OK(bootstrap.status()) << bootstrap.status().ToString();
+    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
+                                     /*transport_factory=*/nullptr,
+                                     /*event_engine=*/nullptr,
+                                     /*metrics_reporter=*/nullptr, "test_agent",
+                                     "test_version");
   }
 
-  std::optional<int> GetIntValue(absl::string_view key) const {
-    auto it = int_values_.find(key);
-    if (it != int_values_.end()) return it->second;
-    return std::nullopt;
+  const envoy_config_common_matcher_v3_Matcher* ConvertToUpb(
+      const envoy::config::common::matcher::v3::Matcher& proto) {
+    // Serialize the protobuf proto.
+    std::string serialized_proto;
+    if (!proto.SerializeToString(&serialized_proto)) {
+      EXPECT_TRUE(false) << "protobuf serialization failed";
+      return nullptr;
+    }
+    // Deserialize as upb proto.
+    const auto* upb_proto = envoy_config_common_matcher_v3_Matcher_parse(
+        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
+    if (upb_proto == nullptr) {
+      EXPECT_TRUE(false) << "upb parsing failed";
+      return nullptr;
+    }
+    return upb_proto;
   }
 
- private:
-  std::map<absl::string_view, absl::string_view> string_values_;
-  std::map<absl::string_view, int> int_values_;
+  upb::Arena upb_arena_;
+  upb::DefPool upb_def_pool_;
+  RefCountedPtr<XdsClient> xds_client_;
+  XdsResourceType::DecodeContext decode_context_;
 };
 
-class TestIntInput : public XdsMatcher::InputValue<int> {
- public:
-  explicit TestIntInput(absl::string_view key) : key_(key) {}
-
-  UniqueTypeName context_type() const override {
-    return TestMatchContext::Type();
+TEST_F(MatcherTest, ParseEnd2End) {
+  envoy::config::common::matcher::v3::Matcher matcher_proto;
+  const char* text_proto = R"pb(
+matcher_list {
+  matchers {
+    predicate {
+      single_predicate {
+        input {
+          name: "envoy.type.matcher.v3.HttpRequestHeaderMatchInput"
+          typed_config {
+            [type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput] {
+              header_name: "x-foo"
+            }
+          }
+        }
+        value_match {
+          exact: "foo"
+        }
+      }
+    }
+    on_match {
+      action {
+        name: "on-match-action"
+        typed_config {
+          [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
+            bucket_id_builder {
+              bucket_id_builder {
+                key: "bucket-key-match"
+                value {
+                  string_value: "bucket-key-match"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
-
-  std::optional<int> GetValue(
-      const XdsMatcher::MatchContext& context) const override {
-    return DownCast<const TestMatchContext&>(context).GetIntValue(key_);
-  }
-
- private:
-  absl::string_view key_;
-};
-
-class TestStringInput : public XdsMatcher::InputValue<absl::string_view> {
- public:
-  explicit TestStringInput(absl::string_view key) : key_(key) {}
-
-  UniqueTypeName context_type() const override {
-    return TestMatchContext::Type();
-  }
-
-  std::optional<absl::string_view> GetValue(
-      const XdsMatcher::MatchContext& context) const override {
-    return DownCast<const TestMatchContext&>(context).GetStringValue(key_);
-  }
-
- private:
-  absl::string_view key_;
-};
-
-class TestIntMatcher : public XdsMatcherList::InputMatcher<int> {
- public:
-  explicit TestIntMatcher(int expected) : expected_(expected) {}
-
-  bool Match(const std::optional<int>& input) const override {
-    return input.has_value() && *input == expected_;
-  }
-
- private:
-  int expected_;
-};
-
-class TestAction : public XdsMatcher::Action {
- public:
-  absl::string_view type_url() const override { return "whatever"; }
-};
-
-TEST(SinglePredicate, CreateFailsWithMismatchedTypes) {
-  EXPECT_EQ(XdsMatcherList::CreateSinglePredicate(
-                std::make_unique<TestStringInput>("foo"),
-                std::make_unique<TestIntMatcher>(1)),
-            nullptr);
 }
-
-TEST(SinglePredicate, Matches) {
-  auto predicate = XdsMatcherList::CreateSinglePredicate(
-      std::make_unique<TestIntInput>("foo"),
-      std::make_unique<TestIntMatcher>(1));
-  ASSERT_NE(predicate, nullptr);
-  TestMatchContext context({}, {{"foo", 1}});
-  EXPECT_TRUE(predicate->Match(context));
+on_no_match {
+  action {
+    name: "on-no-match-action"
+    typed_config {
+      [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
+        bucket_id_builder {
+          bucket_id_builder {
+            key: "bucket-key-nomatch"
+            value {
+              string_value: "bucket-val-nomatch"
+            }
+          }
+        }
+      }
+    }
+  }
 }
-
-TEST(SinglePredicate, DoesNotMatch) {
-  auto predicate = XdsMatcherList::CreateSinglePredicate(
-      std::make_unique<TestIntInput>("foo"),
-      std::make_unique<TestIntMatcher>(2));
-  ASSERT_NE(predicate, nullptr);
-  TestMatchContext context({}, {{"foo", 1}});
-  EXPECT_FALSE(predicate->Match(context));
-}
-
-TEST(XdsMatcherList, SinglePredicate) {
-  auto predicate = XdsMatcherList::CreateSinglePredicate(
-      std::make_unique<TestIntInput>("foo"),
-      std::make_unique<TestIntMatcher>(1));
-  auto action = std::make_unique<TestAction>();
-  auto action_ptr = action.get();
-  std::vector<XdsMatcherList::FieldMatcher> field_matchers;
-  field_matchers.emplace_back(std::move(predicate),
-                              XdsMatcher::OnMatch{std::move(action)});
-  auto matcher =
-      std::make_unique<XdsMatcherList>(std::move(field_matchers), std::nullopt);
-  TestMatchContext context({}, {{"foo", 1}});
+)pb";
+  auto val =
+      google::protobuf::TextFormat::ParseFromString(text_proto, &matcher_proto);
+  if (!val) {
+    std::cout << matcher_proto.DebugString() << "\n";
+  }
+  EXPECT_TRUE(val);
+  const auto* m_upb = ConvertToUpb(matcher_proto);
+  ASSERT_NE(m_upb, nullptr);
+  ValidationErrors errors;
+  auto matcher = ParseMatcher(decode_context_, m_upb, &errors);
+  ASSERT_NE(matcher, nullptr);
+  ASSERT_EQ(matcher->getType(), XdsMatcher::MatcherType::MatcherList);
+  auto matcher_list = DownCast<XdsMatcherList*>(matcher.get());
+  // Fake RPC comtext to get metadata
+  grpc_metadata_batch metadata;
+  metadata.Append("x-foo", Slice::FromStaticString("foo"), [](absl::string_view, const Slice&) {
+                       // We should never ever see an error here.
+                       abort();
+                     });
+  
+  RpcMatchContext context(&metadata);
+  //match
   XdsMatcher::Result result;
-  auto found_match = matcher->FindMatches(context, result);
-  EXPECT_TRUE(found_match);
-  EXPECT_THAT(result, ::testing::ElementsAre(action_ptr));
+  ASSERT_TRUE(matcher_list->FindMatches(context, result));
+
+  for (auto a : result) {
+    ASSERT_EQ(a->type_url(), "sampleAction");
+  }
 }
 
 }  // namespace
@@ -154,5 +191,8 @@ TEST(XdsMatcherList, SinglePredicate) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  auto result = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return result;
 }

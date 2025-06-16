@@ -48,10 +48,10 @@ bool XdsMatcherList::FindMatches(const MatchContext& context,
                                  Result& result) const {
   for (const auto& [predicate, on_match] : matchers_) {
     if (predicate->Match(context)) {
-      if (on_match.FindMatches(context, result)) return true;
+      if (on_match->FindMatches(context, result)) return true;
     }
   }
-  if (on_no_match_.has_value()) {
+  if (on_no_match_ != nullptr) {
     if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
@@ -82,9 +82,9 @@ bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
   auto input = input_->GetValue(context);
   auto it = map_.find(input.value_or(""));
   if (it != map_.end()) {
-    if (it->second.FindMatches(context, result)) return true;
+    if (it->second->FindMatches(context, result)) return true;
   }
-  if (on_no_match_.has_value()) {
+  if (on_no_match_ != nullptr) {
     if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
@@ -95,7 +95,7 @@ bool XdsMatcherExactMap::FindMatches(const MatchContext& context,
 //
 
 void XdsMatcherPrefixMap::PopulateTrie(
-    absl::flat_hash_map<std::string, std::shared_ptr<XdsMatcher::OnMatch>>
+    absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>>
         map) {
   for (auto& [key, value] : map) {
     root_.addNode(key, std::move(value));
@@ -109,7 +109,7 @@ bool XdsMatcherPrefixMap::FindMatches(const MatchContext& context,
   if (value != nullptr) {
     if (value->FindMatches(context, result)) return true;
   }
-  if (on_no_match_.has_value()) {
+  if (on_no_match_ != nullptr) {
     if (on_no_match_->FindMatches(context, result)) return true;
   }
   return false;
