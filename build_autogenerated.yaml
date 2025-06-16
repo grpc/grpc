@@ -239,7 +239,6 @@ libs:
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
   - src/core/credentials/call/composite/composite_call_credentials.h
-  - src/core/credentials/call/dual/dual_call_credentials.h
   - src/core/credentials/call/external/aws_external_account_credentials.h
   - src/core/credentials/call/external/aws_request_signer.h
   - src/core/credentials/call/external/external_account_credentials.h
@@ -1330,7 +1329,6 @@ libs:
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
-  - src/core/credentials/call/dual/dual_call_credentials.cc
   - src/core/credentials/call/external/aws_external_account_credentials.cc
   - src/core/credentials/call/external/aws_request_signer.cc
   - src/core/credentials/call/external/external_account_credentials.cc
@@ -8248,18 +8246,6 @@ targets:
   - absl/base:config
   - gpr
   uses_polling: false
-- name: dual_call_credentials_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/test_util/test_call_creds.h
-  src:
-  - test/core/credentials/call/dual/dual_call_credentials_test.cc
-  - test/core/test_util/test_call_creds.cc
-  deps:
-  - gtest
-  - grpc_test_util
 - name: dual_ref_counted_test
   gtest: true
   build: test
