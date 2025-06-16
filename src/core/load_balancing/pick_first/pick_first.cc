@@ -508,82 +508,65 @@ class AddressFamilyIterator final {
 };
 
 absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
-  if (GRPC_TRACE_FLAG_ENABLED(pick_first)) {
-    if (args.addresses.ok()) {
-      LOG(INFO) << "Pick First " << this << " received update";
-    } else {
-      LOG(INFO) << "Pick First " << this
-                << " received update with address error: "
-                << args.addresses.status();
-    }
-  }
+  GRPC_TRACE_LOG(pick_first, INFO)
+      << "Pick First " << this << " received update";
   // Set return status based on the address list.
-  absl::Status status;
-  if (!args.addresses.ok()) {
-    status = args.addresses.status();
-  } else {
-    EndpointAddressesList endpoints;
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      endpoints.push_back(endpoint);
-    });
-    if (endpoints.empty()) {
-      status = absl::UnavailableError("address list must not be empty");
-    } else {
-      // Shuffle the list if needed.
-      auto config = static_cast<PickFirstConfig*>(args.config.get());
-      if (config->shuffle_addresses()) {
-        SharedBitGen g;
-        absl::c_shuffle(endpoints, g);
-      }
-      // Flatten the list so that we have one address per endpoint.
-      // While we're iterating, also determine the desired address family
-      // order and the index of the first element of each family, for use in
-      // the interleaving below.
-      std::set<absl::string_view> address_families;
-      std::vector<AddressFamilyIterator> address_family_order;
-      EndpointAddressesList flattened_endpoints;
-      for (const auto& endpoint : endpoints) {
-        for (const auto& address : endpoint.addresses()) {
-          flattened_endpoints.emplace_back(address, endpoint.args());
-          absl::string_view scheme = GetAddressFamily(address);
-          bool inserted = address_families.insert(scheme).second;
-          if (inserted) {
-            address_family_order.emplace_back(scheme,
-                                              flattened_endpoints.size() - 1);
-          }
+  EndpointAddressesList endpoints;
+  absl::Status status =
+      args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+        endpoints.push_back(endpoint);
+      });
+  if (status.ok()) {
+    // Shuffle the list if needed.
+    auto config = static_cast<PickFirstConfig*>(args.config.get());
+    if (config->shuffle_addresses()) {
+      SharedBitGen g;
+      absl::c_shuffle(endpoints, g);
+    }
+    // Flatten the list so that we have one address per endpoint.
+    // While we're iterating, also determine the desired address family
+    // order and the index of the first element of each family, for use in
+    // the interleaving below.
+    std::set<absl::string_view> address_families;
+    std::vector<AddressFamilyIterator> address_family_order;
+    EndpointAddressesList flattened_endpoints;
+    for (const auto& endpoint : endpoints) {
+      for (const auto& address : endpoint.addresses()) {
+        flattened_endpoints.emplace_back(address, endpoint.args());
+        absl::string_view scheme = GetAddressFamily(address);
+        bool inserted = address_families.insert(scheme).second;
+        if (inserted) {
+          address_family_order.emplace_back(scheme,
+                                            flattened_endpoints.size() - 1);
         }
       }
-      endpoints = std::move(flattened_endpoints);
-      // Interleave addresses as per RFC-8305 section 4.
-      EndpointAddressesList interleaved_endpoints;
-      interleaved_endpoints.reserve(endpoints.size());
-      std::vector<bool> endpoints_moved(endpoints.size());
-      size_t scheme_index = 0;
-      for (size_t i = 0; i < endpoints.size(); ++i) {
-        EndpointAddresses* endpoint;
-        do {
-          auto& iterator = address_family_order[scheme_index++ %
-                                                address_family_order.size()];
-          endpoint = iterator.Next(endpoints, &endpoints_moved);
-        } while (endpoint == nullptr);
-        interleaved_endpoints.emplace_back(std::move(*endpoint));
-      }
-      endpoints = std::move(interleaved_endpoints);
-      args.addresses =
-          std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
     }
+    endpoints = std::move(flattened_endpoints);
+    // Interleave addresses as per RFC-8305 section 4.
+    EndpointAddressesList interleaved_endpoints;
+    interleaved_endpoints.reserve(endpoints.size());
+    std::vector<bool> endpoints_moved(endpoints.size());
+    size_t scheme_index = 0;
+    for (size_t i = 0; i < endpoints.size(); ++i) {
+      EndpointAddresses* endpoint;
+      do {
+        auto& iterator = address_family_order[scheme_index++ %
+                                              address_family_order.size()];
+        endpoint = iterator.Next(endpoints, &endpoints_moved);
+      } while (endpoint == nullptr);
+      interleaved_endpoints.emplace_back(std::move(*endpoint));
+    }
+    endpoints = std::move(interleaved_endpoints);
+    args.addresses =
+        std::make_shared<EndpointAddressesListIterator>(std::move(endpoints));
   }
   // If the update contains a resolver error and we have a previous update
   // that was not a resolver error, keep using the previous addresses.
-  if ((IsPickFirstIgnoreEmptyUpdatesEnabled() ? !status.ok()
-                                              : !args.addresses.ok()) &&
-      latest_update_args_.config != nullptr) {
+  if (!status.ok() && latest_update_args_.config != nullptr) {
     args.addresses = std::move(latest_update_args_.addresses);
   }
-  if (status.ok() || !IsPickFirstIgnoreEmptyUpdatesEnabled()) {
-    // Update latest_update_args_.
-    latest_update_args_ = std::move(args);
-  }
+  // Update latest_update_args_.
+  latest_update_args_ = std::move(args);
   // If we are not in idle, start connection attempt immediately.
   // Otherwise, we defer the attempt into ExitIdleLocked().
   if (!IsIdle()) {

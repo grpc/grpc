@@ -665,7 +665,8 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
       std::shared_ptr<EndpointAddressesIterator> parent_it)
       : parent_it_(std::move(parent_it)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       XdsHealthStatus status = GetEndpointHealthStatus(endpoint);
@@ -678,7 +679,6 @@ class ChildEndpointIterator final : public EndpointAddressesIterator {
     });
   }
 
- private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
 };
 

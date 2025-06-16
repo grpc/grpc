@@ -329,7 +329,7 @@ absl::Status PriorityLb::UpdateLocked(UpdateArgs args) {
   // Update args.
   args_ = std::move(args.args);
   // Update addresses.
-  addresses_ = MakeHierarchicalAddressMap(args.addresses);
+  addresses_ = MakeHierarchicalAddressMap(std::move(args.addresses));
   resolution_note_ = std::move(args.resolution_note);
   // Check all existing children against the new config.
   update_in_progress_ = true;

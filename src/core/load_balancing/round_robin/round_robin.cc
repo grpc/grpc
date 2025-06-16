@@ -227,6 +227,7 @@ void RoundRobin::ResetBackoffLocked() {
 }
 
 absl::Status RoundRobin::UpdateLocked(UpdateArgs args) {
+// FIXME
   EndpointAddressesIterator* addresses = nullptr;
   if (args.addresses.ok()) {
     GRPC_TRACE_LOG(round_robin, INFO) << "[RR " << this << "] received update";

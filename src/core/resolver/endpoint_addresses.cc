@@ -141,4 +141,16 @@ std::string EndpointAddressSet::ToString() const {
   return absl::StrCat("{", absl::StrJoin(parts, ", "), "}");
 }
 
+absl::Status EndpointAddressesIterator::ForEach(
+    absl::FunctionRef<void(const EndpointAddresses&)> callback) const {
+  if (absl::Status status = Status(); !status.ok()) return status;
+  bool endpoint_seen = false;
+  ForEachImpl([&](const EndpointAddresses& endpoint) {
+    endpoint_seen = true;
+    callback(endpoint);
+  });
+  if (!endpoint_seen) return absl::InvalidArgumentError("endpoint list empty");
+  return absl::OkStatus();
+}
+
 }  // namespace grpc_core

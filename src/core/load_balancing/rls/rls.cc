@@ -717,7 +717,7 @@ class RlsLb final : public LoadBalancingPolicy {
   OrphanablePtr<RlsChannel> rls_channel_ ABSL_GUARDED_BY(mu_);
 
   // Accessed only from within WorkSerializer.
-  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses_;
+  std::shared_ptr<EndpointAddressesIterator> addresses_;
   ChannelArgs channel_args_;
   RefCountedPtr<RlsLbConfig> config_;
   RefCountedPtr<ChildPolicyWrapper> default_child_policy_;
@@ -1868,25 +1868,25 @@ RlsLb::RlsLb(Args args)
   GRPC_TRACE_LOG(rls_lb, INFO) << "[rlslb " << this << "] policy created";
 }
 
-bool EndpointsEqual(
-    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> endpoints1,
-    const absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>>
-        endpoints2) {
-  if (endpoints1.status() != endpoints2.status()) return false;
-  if (endpoints1.ok()) {
-    std::vector<EndpointAddresses> e1_list;
-    (*endpoints1)->ForEach([&](const EndpointAddresses& endpoint) {
-      e1_list.push_back(endpoint);
-    });
-    size_t i = 0;
-    bool different = false;
-    (*endpoints2)->ForEach([&](const EndpointAddresses& endpoint) {
-      if (endpoint != e1_list[i++]) different = true;
-    });
-    if (different) return false;
-    if (i != e1_list.size()) return false;
-  }
-  return true;
+bool EndpointsChanged(const EndpointAddressesIterator* old_endpoints,
+                      const EndpointAddressesIterator* new_endpoints) {
+  if (old_endpoints == nullptr) return true;
+  CHECK_NE(new_endpoints, nullptr);
+  std::vector<EndpointAddresses> old_list;
+  absl::Status old_status =
+      old_endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+        old_list.push_back(endpoint);
+      });
+  size_t i = 0;
+  bool different = false;
+  absl::Status new_status =
+      new_endpoints->ForEach([&](const EndpointAddresses& endpoint) {
+        if (endpoint != old_list[i++]) different = true;
+      });
+  if (different) return true;
+  if (i != old_list.size()) return true;
+  if (old_status != new_status) return true;
+  return false;
 }
 
 absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
@@ -1901,23 +1901,18 @@ absl::Status RlsLb::UpdateLocked(UpdateArgs args) {
     LOG(INFO) << "[rlslb " << this << "] updated child policy config: "
               << JsonDump(config_->child_policy_config());
   }
+  // Check whether the addresses changed.
+  const bool endpoints_changed =
+      EndpointsChanged(addresses_.get(), args.addresses.get());
   // Swap out addresses.
-  // If the new address list is an error and we have an existing address list,
-  // stick with the existing addresses.
-  absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> old_addresses;
-  if (args.addresses.ok()) {
-    old_addresses = std::move(addresses_);
-    addresses_ = std::move(args.addresses);
-  } else {
-    old_addresses = addresses_;
-  }
+  addresses_ = std::move(args.addresses);
   // Swap out channel args.
   channel_args_ = std::move(args.args);
   // Determine whether we need to update all child policies.
   bool update_child_policies =
       old_config == nullptr ||
       old_config->child_policy_config() != config_->child_policy_config() ||
-      !EndpointsEqual(old_addresses, addresses_) || args.args != channel_args_;
+      endpoints_changed || args.args != channel_args_;
   // If default target changes, swap out child policy.
   bool created_default_child = false;
   if (old_config == nullptr ||

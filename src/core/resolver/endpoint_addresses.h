@@ -125,7 +125,16 @@ class EndpointAddressesIterator {
   virtual ~EndpointAddressesIterator() = default;
 
   // Invokes callback once for each endpoint.
-  virtual void ForEach(
+  // If the returned status is not OK, the callback will not have been invoked.
+  absl::Status ForEach(
+      absl::FunctionRef<void(const EndpointAddresses&)> callback) const;
+
+ private:
+  // If this method returns non-OK status, ForEach() will immediately
+  // return this status without invoking the callback.
+  virtual absl::Status Status() const { return absl::OkStatus(); }
+
+  virtual void ForEachImpl(
       absl::FunctionRef<void(const EndpointAddresses&)> callback) const = 0;
 };
 
@@ -135,14 +144,14 @@ class EndpointAddressesListIterator final : public EndpointAddressesIterator {
   explicit EndpointAddressesListIterator(EndpointAddressesList endpoints)
       : endpoints_(std::move(endpoints)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     for (const auto& endpoint : endpoints_) {
       callback(endpoint);
     }
   }
 
- private:
   EndpointAddressesList endpoints_;
 };
 
@@ -152,13 +161,29 @@ class SingleEndpointIterator final : public EndpointAddressesIterator {
   explicit SingleEndpointIterator(EndpointAddresses endpoint)
       : endpoint_(std::move(endpoint)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     callback(endpoint_);
   }
 
- private:
   EndpointAddresses endpoint_;
+};
+
+// Iterator that returns a status.
+class StatusEndpointIterator final : public EndpointAddressesIterator {
+ public:
+  explicit StatusEndpointIterator(absl::Status status)
+      : status_(std::move(status)) {}
+
+ private:
+  absl::Status Status() const override { return status_; }
+
+  void ForEachImpl(
+      absl::FunctionRef<void(const EndpointAddresses&)> /*callback*/)
+      const override {}
+
+  absl::Status status_;
 };
 
 }  // namespace grpc_core

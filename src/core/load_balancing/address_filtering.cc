@@ -52,10 +52,11 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
       RefCountedStringValue child_name)
       : parent_it_(std::move(parent_it)), child_name_(std::move(child_name)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     RefCountedPtr<HierarchicalPathArg> remaining_path_attr;
-    parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
+    return parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
       if (path_arg == nullptr) return;
       const std::vector<RefCountedStringValue>& path = path_arg->path();
@@ -77,7 +78,6 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
     });
   }
 
- private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
   RefCountedStringValue child_name_;
 };
@@ -85,21 +85,22 @@ class HierarchicalAddressIterator final : public EndpointAddressesIterator {
 }  // namespace
 
 absl::StatusOr<HierarchicalAddressMap> MakeHierarchicalAddressMap(
-    absl::StatusOr<std::shared_ptr<EndpointAddressesIterator>> addresses) {
-  if (!addresses.ok()) return addresses.status();
+    std::shared_ptr<EndpointAddressesIterator> addresses) {
   HierarchicalAddressMap result;
-  (*addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-    const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
-    if (path_arg == nullptr) return;
-    const std::vector<RefCountedStringValue>& path = path_arg->path();
-    auto it = path.begin();
-    if (it == path.end()) return;
-    auto& target_list = result[*it];
-    if (target_list == nullptr) {
-      target_list =
-          std::make_shared<HierarchicalAddressIterator>(*addresses, *it);
-    }
-  });
+  absl::Status status = addresses.ForEach(
+      [&](const EndpointAddresses& endpoint) {
+        const auto* path_arg = endpoint.args().GetObject<HierarchicalPathArg>();
+        if (path_arg == nullptr) return;
+        const std::vector<RefCountedStringValue>& path = path_arg->path();
+        auto it = path.begin();
+        if (it == path.end()) return;
+        auto& target_list = result[*it];
+        if (target_list == nullptr) {
+          target_list =
+              std::make_shared<HierarchicalAddressIterator>(addresses, *it);
+        }
+      });
+  if (!status.ok()) return status;
   return result;
 }
 

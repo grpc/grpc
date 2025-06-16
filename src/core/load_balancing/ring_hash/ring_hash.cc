@@ -691,41 +691,45 @@ void RingHash::ResetBackoffLocked() {
 }
 
 absl::Status RingHash::UpdateLocked(UpdateArgs args) {
-  // Check address list.
-  if (args.addresses.ok()) {
-    GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
-    // De-dup endpoints, taking weight into account.
-    endpoints_.clear();
-    std::map<EndpointAddressSet, size_t> endpoint_indices;
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      const EndpointAddressSet key(endpoint.addresses());
-      auto [it, inserted] = endpoint_indices.emplace(key, endpoints_.size());
-      if (!inserted) {
-        // Duplicate endpoint.  Combine weights and skip the dup.
-        EndpointAddresses& prev_endpoint = endpoints_[it->second];
-        int weight_arg =
-            endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-        int prev_weight_arg =
-            prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
-        GRPC_TRACE_LOG(ring_hash_lb, INFO)
-            << "[RH " << this << "] merging duplicate endpoint for "
-            << key.ToString() << ", combined weight "
-            << weight_arg + prev_weight_arg;
-        prev_endpoint = EndpointAddresses(
-            prev_endpoint.addresses(),
-            prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
-                                     weight_arg + prev_weight_arg));
-      } else {
-        endpoints_.push_back(endpoint);
-      }
-    });
-  } else {
+  GRPC_TRACE_LOG(ring_hash_lb, INFO) << "[RH " << this << "] received update";
+  // De-dup endpoints, taking weight into account.
+  std::map<EndpointAddressSet, size_t> endpoint_indices;
+  bool endpoint_seen = false;
+  absl::Status status = args.addresses->ForEach([&](const EndpointAddresses& endpoint) {
+    // When we see the first endpoint, we know we're going to get an OK
+    // status, so clear the existing map, since we're going to rebuild it.
+    if (!endpoint_seen) {
+      endpoint_seen = true;
+      endpoints_.clear();
+    }
+    const EndpointAddressSet key(endpoint.addresses());
+    auto [it, inserted] = endpoint_indices.emplace(key, endpoints_.size());
+    if (!inserted) {
+      // Duplicate endpoint.  Combine weights and skip the dup.
+      EndpointAddresses& prev_endpoint = endpoints_[it->second];
+      int weight_arg =
+          endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+      int prev_weight_arg =
+          prev_endpoint.args().GetInt(GRPC_ARG_ADDRESS_WEIGHT).value_or(1);
+      GRPC_TRACE_LOG(ring_hash_lb, INFO)
+          << "[RH " << this << "] merging duplicate endpoint for "
+          << key.ToString() << ", combined weight "
+          << weight_arg + prev_weight_arg;
+      prev_endpoint = EndpointAddresses(
+          prev_endpoint.addresses(),
+          prev_endpoint.args().Set(GRPC_ARG_ADDRESS_WEIGHT,
+                                   weight_arg + prev_weight_arg));
+    } else {
+      endpoints_.push_back(endpoint);
+    }
+  });
+  if (!status.ok()) {
     GRPC_TRACE_LOG(ring_hash_lb, INFO)
         << "[RH " << this << "] received update with addresses error: "
-        << args.addresses.status();
+        << status;
     // If we already have an endpoint list, then keep using the existing
     // list, but still report back that the update was not accepted.
-    if (!endpoints_.empty()) return args.addresses.status();
+    if (!endpoints_.empty()) return status;
   }
   // Save channel args.
   args_ = std::move(args.args);

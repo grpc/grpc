@@ -640,51 +640,54 @@ absl::Status OutlierDetectionLb::UpdateLocked(UpdateArgs args) {
         RefAsSubclass<OutlierDetectionLb>(), ejection_timer_->StartTime());
   }
   // Update subchannel and endpoint maps.
-  if (args.addresses.ok()) {
-    std::set<EndpointAddressSet> current_endpoints;
-    std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
-    (*args.addresses)->ForEach([&](const EndpointAddresses& endpoint) {
-      EndpointAddressSet key(endpoint.addresses());
-      current_endpoints.emplace(key);
-      for (const grpc_resolved_address& address : endpoint.addresses()) {
-        current_addresses.emplace(address);
-      }
-      // Find the entry in the endpoint map.
-      auto it = endpoint_state_map_.find(key);
-      if (it == endpoint_state_map_.end()) {
-        GRPC_TRACE_LOG(outlier_detection_lb, INFO)
-            << "[outlier_detection_lb " << this
-            << "] adding endpoint entry for " << key.ToString();
-        // The endpoint is not present in the map, so we'll need to add it.
-        // Start by getting a pointer to the entry for each address in the
-        // subchannel map, creating the entry if needed.
-        std::set<SubchannelState*> subchannels;
+  std::set<EndpointAddressSet> current_endpoints;
+  std::set<grpc_resolved_address, ResolvedAddressLessThan> current_addresses;
+  absl::Status status = args.addresses->ForEach(
+      [&](const EndpointAddresses& endpoint) {
+        EndpointAddressSet key(endpoint.addresses());
+        current_endpoints.emplace(key);
         for (const grpc_resolved_address& address : endpoint.addresses()) {
-          auto it2 = subchannel_state_map_.find(address);
-          if (it2 == subchannel_state_map_.end()) {
-            if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
-              std::string address_str = grpc_sockaddr_to_string(&address, false)
-                                            .value_or("<unknown>");
-              LOG(INFO) << "[outlier_detection_lb " << this
-                        << "] adding address entry for " << address_str;
-            }
-            it2 = subchannel_state_map_
-                      .emplace(address, MakeRefCounted<SubchannelState>())
-                      .first;
-          }
-          subchannels.insert(it2->second.get());
+          current_addresses.emplace(address);
         }
-        // Now create the endpoint.
-        endpoint_state_map_.emplace(
-            key, MakeRefCounted<EndpointState>(std::move(subchannels)));
-      } else if (!config_->CountingEnabled()) {
-        // If counting is not enabled, reset state.
-        GRPC_TRACE_LOG(outlier_detection_lb, INFO)
-            << "[outlier_detection_lb " << this
-            << "] counting disabled; disabling ejection for " << key.ToString();
-        it->second->DisableEjection();
-      }
-    });
+        // Find the entry in the endpoint map.
+        auto it = endpoint_state_map_.find(key);
+        if (it == endpoint_state_map_.end()) {
+          GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+              << "[outlier_detection_lb " << this
+              << "] adding endpoint entry for " << key.ToString();
+          // The endpoint is not present in the map, so we'll need to add it.
+          // Start by getting a pointer to the entry for each address in the
+          // subchannel map, creating the entry if needed.
+          std::set<SubchannelState*> subchannels;
+          for (const grpc_resolved_address& address : endpoint.addresses()) {
+            auto it2 = subchannel_state_map_.find(address);
+            if (it2 == subchannel_state_map_.end()) {
+              if (GRPC_TRACE_FLAG_ENABLED(outlier_detection_lb)) {
+                std::string address_str =
+                    grpc_sockaddr_to_string(&address, false)
+                        .value_or("<unknown>");
+                LOG(INFO) << "[outlier_detection_lb " << this
+                          << "] adding address entry for " << address_str;
+              }
+              it2 = subchannel_state_map_
+                        .emplace(address, MakeRefCounted<SubchannelState>())
+                        .first;
+            }
+            subchannels.insert(it2->second.get());
+          }
+          // Now create the endpoint.
+          endpoint_state_map_.emplace(
+              key, MakeRefCounted<EndpointState>(std::move(subchannels)));
+        } else if (!config_->CountingEnabled()) {
+          // If counting is not enabled, reset state.
+          GRPC_TRACE_LOG(outlier_detection_lb, INFO)
+              << "[outlier_detection_lb " << this
+              << "] counting disabled; disabling ejection for "
+              << key.ToString();
+          it->second->DisableEjection();
+        }
+      });
+  if (status.ok()) {
     // Remove any entries we no longer need in the subchannel map.
     for (auto it = subchannel_state_map_.begin();
          it != subchannel_state_map_.end();) {

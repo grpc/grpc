@@ -571,10 +571,8 @@ class GrpcLb final : public LoadBalancingPolicy {
   // Whether we're in fallback mode.
   bool fallback_mode_ = false;
   // The backend addresses from the resolver.
-  absl::StatusOr<std::shared_ptr<NullLbTokenEndpointIterator>>
-      fallback_backend_addresses_;
+  std::shared_ptr<NullLbTokenEndpointIterator> fallback_backend_addresses_;
   // The last resolution note from our parent.
-  // To be passed to child policy when fallback_backend_addresses_ is empty.
   std::string resolution_note_;
   // State for fallback-at-startup checks.
   // Timeout after startup after which we will go into fallback mode if
@@ -649,7 +647,8 @@ class GrpcLb::Serverlist::AddressIterator final
       : serverlist_(std::move(serverlist)),
         client_stats_(std::move(client_stats)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     for (size_t i = 0; i < serverlist_->serverlist_.size(); ++i) {
       const GrpcLbServer& server = serverlist_->serverlist_[i];
@@ -676,7 +675,6 @@ class GrpcLb::Serverlist::AddressIterator final
     }
   }
 
- private:
   RefCountedPtr<Serverlist> serverlist_;
   RefCountedPtr<GrpcLbClientStats> client_stats_;
 };
@@ -1502,7 +1500,8 @@ class GrpcLb::NullLbTokenEndpointIterator final
       std::shared_ptr<EndpointAddressesIterator> parent_it)
       : parent_it_(std::move(parent_it)) {}
 
-  void ForEach(absl::FunctionRef<void(const EndpointAddresses&)> callback)
+ private:
+  void ForEachImpl(absl::FunctionRef<void(const EndpointAddresses&)> callback)
       const override {
     parent_it_->ForEach([&](const EndpointAddresses& endpoint) {
       GRPC_TRACE_LOG(glb, INFO)
@@ -1513,7 +1512,6 @@ class GrpcLb::NullLbTokenEndpointIterator final
     });
   }
 
- private:
   std::shared_ptr<EndpointAddressesIterator> parent_it_;
   RefCountedPtr<TokenAndClientStatsArg> empty_token_ =
       MakeRefCounted<TokenAndClientStatsArg>(
@@ -1527,12 +1525,8 @@ absl::Status GrpcLb::UpdateLocked(UpdateArgs args) {
   CHECK(config_ != nullptr);
   args_ = std::move(args.args);
   // Update fallback address list.
-  if (!args.addresses.ok()) {
-    fallback_backend_addresses_ = args.addresses.status();
-  } else {
-    fallback_backend_addresses_ = std::make_shared<NullLbTokenEndpointIterator>(
-        std::move(*args.addresses));
-  }
+  fallback_backend_addresses_ = std::make_shared<NullLbTokenEndpointIterator>(
+      std::move(args.addresses));
   resolution_note_ = std::move(args.resolution_note);
   // Update balancer channel.
   absl::Status status = UpdateBalancerChannelLocked();
@@ -1745,12 +1739,6 @@ OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
   return lb_policy;
 }
 
-bool EndpointIteratorIsEmpty(const EndpointAddressesIterator& endpoints) {
-  bool empty = true;
-  endpoints.ForEach([&](const EndpointAddresses&) { empty = false; });
-  return empty;
-}
-
 void GrpcLb::CreateOrUpdateChildPolicyLocked() {
   if (shutting_down_) return;
   // Construct update args.
@@ -1763,20 +1751,13 @@ void GrpcLb::CreateOrUpdateChildPolicyLocked() {
     // list may be empty, in which case the new child policy will fail the
     // picks.
     update_args.addresses = fallback_backend_addresses_;
-    if (fallback_backend_addresses_.ok() &&
-        EndpointIteratorIsEmpty(**fallback_backend_addresses_)) {
-      update_args.resolution_note = absl::StrCat(
-          "grpclb in fallback mode without any fallback addresses: ",
-          resolution_note_);
-    }
+    update_args.resolution_note =
+        absl::StrCat("grpclb fallback mode: ", resolution_note_);
   } else {
     update_args.addresses = serverlist_->GetServerAddressList(
         lb_calld_ == nullptr ? nullptr : lb_calld_->client_stats());
     is_backend_from_grpclb_load_balancer = true;
-    if (update_args.addresses.ok() &&
-        EndpointIteratorIsEmpty(**update_args.addresses)) {
-      update_args.resolution_note = "empty serverlist from grpclb balancer";
-    }
+    update_args.resolution_note = "serverlist from grpclb balancer";
   }
   update_args.args =
       CreateChildPolicyArgsLocked(is_backend_from_grpclb_load_balancer);
