@@ -7673,6 +7673,7 @@ grpc_cc_library(
     ],
     deps = [
         "bdp_estimator",
+        "channelz_property_list",
         "experiments",
         "http2_settings",
         "memory_quota",

@@ -630,7 +630,8 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                        t->ping_on_rst_stream_percent)
                   .Set("last_window_update", t->last_window_update_time)
                   .Set("settings", t->settings.ToJsonObject())
-                  .Set("flow_control", t->flow_control.stats().ToJsonObject())
+                  .Set("flow_control",
+                       t->flow_control.stats().ChannelzProperties())
                   .Set("ping_rate_policy",
                        t->ping_rate_policy.ChannelzProperties())
                   .Set("ping_callbacks", t->ping_callbacks.ChannelzProperties())
