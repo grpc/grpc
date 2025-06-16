@@ -23,6 +23,7 @@ import unittest
 
 from grpc._cython import cygrpc
 
+from tests.fork import debugger
 from tests.fork import methods
 
 
@@ -52,7 +53,6 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     native_debug.install_failure_signal_handler()
 
     cygrpc._GRPC_ENABLE_FORK_SUPPORT = True
-    os.environ['GRPC_POLL_STRATEGY'] = 'epoll1'
     os.environ['GRPC_ENABLE_FORK_SUPPORT'] = 'true'
     methods.TestCase.%s.run_test({
       'server_host': 'localhost',
@@ -61,7 +61,6 @@ _CLIENT_FORK_SCRIPT_TEMPLATE = """if True:
     })
 """
 _SUBPROCESS_TIMEOUT_S = 80
-_GDB_TIMEOUT_S = 60
 
 
 @unittest.skipUnless(
@@ -179,35 +178,6 @@ class ForkInteropTest(unittest.TestCase):
         for stream in self._streams:
             stream.close()
 
-    def _print_backtraces(self, pid):
-        cmd = [
-            "gdb",
-            "-ex",
-            "set confirm off",
-            "-ex",
-            "echo attaching",
-            "-ex",
-            "attach {}".format(pid),
-            "-ex",
-            "echo print_backtrace",
-            "-ex",
-            "thread apply all bt",
-            "-ex",
-            "echo printed_backtrace",
-            "-ex",
-            "quit",
-        ]
-        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-        sys.stderr.write("Invoking gdb\n")
-        sys.stderr.flush()
-        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
-        try:
-            process.wait(timeout=_GDB_TIMEOUT_S)
-        except subprocess.TimeoutExpired:
-            sys.stderr.write("gdb stacktrace generation timed out.\n")
-        finally:
-            _dump_streams("gdb", streams)
-
     def _verifyTestCase(self, test_case):
         script = _CLIENT_FORK_SCRIPT_TEMPLATE % (test_case.name, self._port)
         streams = tuple(tempfile.TemporaryFile() for _ in range(2))
@@ -218,7 +188,8 @@ class ForkInteropTest(unittest.TestCase):
             process.wait(timeout=_SUBPROCESS_TIMEOUT_S)
             self.assertEqual(0, process.returncode)
         except subprocess.TimeoutExpired:
-            self._print_backtraces(process.pid)
+            sys.stderr.write("Child %d timed out\n" % process.pid)
+            debugger.print_backtraces(process.pid)
             process.kill()
             raise AssertionError("Parent process timed out.")
         finally:

@@ -35,7 +35,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10
 _CHILD_FINISH_TIMEOUT_S = 20
-_GDB_TIMEOUT_S = 60
+_LIFEBEAT_PERIOD_S = 15
 
 
 def _channel(args):
@@ -133,7 +133,6 @@ class _ChildProcess(object):
         self._child_pid = None
         self._rc = None
         self._args = args
-
         self._task = task
 
     def _child_main(self):
@@ -179,10 +178,12 @@ class _ChildProcess(object):
             self._child_main()
         else:
             self._child_pid = ret
+            sys.stderr.write("Child %d started\n" % ret)
 
     def wait(self, timeout):
         total = 0.0
         wait_interval = 1.0
+        next_lifebeat = 0
         while total < timeout:
             ret, termination = os.waitpid(self._child_pid, os.WNOHANG)
             if ret == self._child_pid:
@@ -190,59 +191,26 @@ class _ChildProcess(object):
                 return True
             time.sleep(wait_interval)
             total += wait_interval
+            if total > next_lifebeat:
+                sys.stderr.write("Child %d is still running\n" % self._child_pid)
+                next_lifebeat = total + _LIFEBEAT_PERIOD_S
         else:
             return False
-
-    def _print_backtraces(self):
-        cmd = [
-            "gdb",
-            "-ex",
-            "set confirm off",
-            "-ex",
-            "echo attaching",
-            "-ex",
-            "attach {}".format(self._child_pid),
-            "-ex",
-            "echo print_backtrace",
-            "-ex",
-            "thread apply all bt",
-            "-ex",
-            "echo printed_backtrace",
-            "-ex",
-            "quit",
-        ]
-        streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-        sys.stderr.write("Invoking gdb\n")
-        sys.stderr.flush()
-        process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
-        try:
-            process.wait(timeout=_GDB_TIMEOUT_S)
-        except subprocess.TimeoutExpired:
-            sys.stderr.write("gdb stacktrace generation timed out.\n")
-        finally:
-            for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
-                stream.seek(0)
-                sys.stderr.write(
-                    "gdb {}:\n{}\n".format(
-                        stream_name, stream.read().decode("ascii")
-                    )
-                )
-                stream.close()
-            sys.stderr.flush()
 
     def finish(self):
         terminated = self.wait(_CHILD_FINISH_TIMEOUT_S)
         sys.stderr.write("Exit code: {}\n".format(self._rc))
         if not terminated:
-            self._print_backtraces()
-            raise RuntimeError("Child process did not terminate")
+            sys.stderr.write("Finishing child %d\n" % self._child_pid)
+            debugger.print_backtraces(self._child_pid)
+            raise RuntimeError("Child process %d did not terminate" % self._child_pid)
         if self._rc != 0:
-            raise ValueError("Child process failed with exitcode %d" % self._rc)
+            raise ValueError("Child process %d failed with exitcode %d" % (self._child_pid, self._rc))
         try:
             exception = self._exceptions.get(block=False)
             raise ValueError(
-                'Child process failed: "%s": "%s"'
-                % (repr(exception), exception)
+                'Child process %d failed: "%s": "%s"'
+                % (self._child_pid, repr(exception), exception)
             )
         except queue.Empty:
             pass
