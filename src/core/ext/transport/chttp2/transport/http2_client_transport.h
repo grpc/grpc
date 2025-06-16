@@ -226,10 +226,11 @@ class Http2ClientTransport final : public ClientTransport {
       stream_state = HttpStreamState::kOpen;
     }
 
-    void CloseWrites() {
+    void MarkHalfClosedLocal() {
       switch (stream_state) {
         case HttpStreamState::kIdle:
-          DCHECK(false) << "CloseWrites called for an idle stream";
+          DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
+          break;
         case HttpStreamState::kOpen:
           stream_state = HttpStreamState::kHalfClosedLocal;
           break;
@@ -243,10 +244,11 @@ class Http2ClientTransport final : public ClientTransport {
       }
     }
 
-    void CloseReads() {
+    void MarkHalfClosedRemote() {
       switch (stream_state) {
         case HttpStreamState::kIdle:
-          DCHECK(false) << "CloseReads called for an idle stream";
+          DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
+          break;
         case HttpStreamState::kOpen:
           stream_state = HttpStreamState::kHalfClosedRemote;
           break;
@@ -325,10 +327,10 @@ class Http2ClientTransport final : public ClientTransport {
     auto& stream = pair->second;
 
     if (args.close_reads) {
-      stream->CloseReads();
+      stream->MarkHalfClosedRemote();
     }
     if (args.close_writes) {
-      stream->CloseWrites();
+      stream->MarkHalfClosedLocal();
     }
 
     if (stream->IsClosed()) {
