@@ -30,7 +30,6 @@ EXPORTS
     grpc_metadata_credentials_create_from_plugin
     grpc_call_credentials_release
     grpc_google_default_credentials_create
-    grpc_google_default_credentials_create_with_alts_option
     grpc_ssl_server_certificate_config_create
     grpc_ssl_server_certificate_config_destroy
     grpc_ssl_credentials_create
