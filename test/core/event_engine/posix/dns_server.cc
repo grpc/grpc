@@ -349,11 +349,12 @@ std::string DnsServer::address() const {
   grpc_core::Crash("Unsupported platform");
 }
 
-DnsQuestion DnsServer::WaitForQuestion() const {
+DnsQuestion DnsServer::WaitForQuestion(absl::string_view /*host*/) const {
   grpc_core::Crash("Unsupported platform");
 }
 
-void DnsServer::SetIPv4Response(absl::Span<const uint8_t> /* ipv4_address */) {
+void DnsServer::SetIPv4Response(absl::Span<const uint8_t> /* ipv4_address */,
+                                absl::Span<const uint8_t> /*ipv4_address*/) {
   grpc_core::Crash("Unsupported platform");
 }
 

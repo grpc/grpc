@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <type_traits>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
@@ -119,6 +120,8 @@ struct JsonFromValueHelper<std::optional<T>> {
 
 }  // namespace property_list_detail
 
+class PropertyGrid;
+
 // PropertyList contains a bag of key->value (for mostly arbitrary value
 // types) for reporting out state from channelz - the big idea is that you
 // should be able to call `PropertyList().Set("a", this->a)` and generate
@@ -141,6 +144,8 @@ class PropertyList {
  private:
   void SetInternal(absl::string_view key, std::optional<Json> value);
 
+  friend class PropertyGrid;
+
   // TODO(ctiller): switch to a protobuf representation
   Json::Object property_list_;
 };
@@ -162,6 +167,45 @@ struct JsonFromValueHelper<std::vector<PropertyList>> {
       array.emplace_back(Json::FromObject(v.TakeJsonObject()));
     }
     return Json::FromArray(std::move(array));
+  }
+};
+
+}  // namespace property_list_detail
+
+// PropertyGrid is much the same as PropertyList, but it is two dimensional.
+// Each row and column can be set independently.
+// Rows and columns are ordered by the first setting of a value on them.
+class PropertyGrid {
+ public:
+  template <typename T>
+  PropertyGrid& Set(absl::string_view column, absl::string_view row, T value) {
+    SetInternal(
+        column, row,
+        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    return *this;
+  }
+
+  PropertyGrid& SetColumn(absl::string_view column, PropertyList values);
+  PropertyGrid& SetRow(absl::string_view row, PropertyList values);
+
+  Json::Object TakeJsonObject();
+
+ private:
+  void SetInternal(absl::string_view column, absl::string_view row,
+                   std::optional<Json> value);
+  size_t GetIndex(std::vector<std::string>& vec, absl::string_view value);
+
+  std::vector<std::string> columns_;
+  std::vector<std::string> rows_;
+  absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
+};
+
+namespace property_list_detail {
+
+template <>
+struct JsonFromValueHelper<PropertyGrid> {
+  static std::optional<Json> JsonFromValue(PropertyGrid value) {
+    return Json::FromObject(value.TakeJsonObject());
   }
 };
 
