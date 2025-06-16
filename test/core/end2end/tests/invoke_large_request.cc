@@ -35,8 +35,10 @@ CORE_END2END_TEST(Http2SingleHopTests, InvokeLargeRequest) {
   const size_t kMessageSize = 10 * 1024 * 1024;
   auto send_from_client = RandomSlice(kMessageSize);
   auto send_from_server = RandomSlice(kMessageSize);
-  InitServer(DefaultServerArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH,
-                                     kMessageSize));
+  // TODO(b/424667351): Not using the default server args since the default ping
+  // timeout is too aggressive for this test under UBSAN.
+  InitServer(
+      ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   InitClient(
       ChannelArgs().Set(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, kMessageSize));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(5)).Create();
@@ -71,6 +73,11 @@ CORE_END2END_TEST(Http2SingleHopTests, InvokeLargeRequest) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), send_from_client);
   EXPECT_EQ(server_message.payload(), send_from_server);
+  // TODO(b/424667351): Using an explicit shutdown with a larger timeout to
+  // avoid failing on graceful shutdown.
+  ShutdownServerAndNotify(104);
+  Expect(104, true);
+  Step(Duration::Minutes(1));
 }
 
 }  // namespace
