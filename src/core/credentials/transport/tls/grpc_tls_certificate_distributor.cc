@@ -24,20 +24,20 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
+#include "src/core/util/match.h"
 
 std::variant<absl::string_view, std::shared_ptr<grpc_core::SpiffeBundleMap>>
 grpc_tls_certificate_distributor::CertificateInfo::GetRoots() {
   std::variant<absl::string_view, std::shared_ptr<grpc_core::SpiffeBundleMap>>
       roots_to_return;
-  auto visitor = absl::Overload{
+  Match(
+      roots,
       [&](const absl::string_view& pem_root_certs) {
         roots_to_return = pem_root_certs;
       },
       [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
         roots_to_return = spiffe_bundle_map;
-      },
-  };
-  std::visit(visitor, roots);
+      });
   return roots_to_return;
 }
 
@@ -46,15 +46,14 @@ bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
   // depends on the string pem root representation being the empty string as
   // equivalent to unset/default.  We need a way to safely see if the variant
   // has essentially been default constructed.
-  auto visitor = absl::Overload{
+  return Match(
+      roots,
       [&](const absl::string_view& pem_root_certs) {
         return pem_root_certs.empty();
       },
       [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
         return spiffe_bundle_map == nullptr || spiffe_bundle_map->size() == 0;
-      },
-  };
-  return std::visit(visitor, roots);
+      });
 }
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
@@ -88,15 +87,14 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
       watcher_ptr->OnCertificatesChanged(
           roots, std::move(pem_key_cert_pairs_to_report));
     }
-    auto visitor = absl::Overload{
+    Match(
+        *roots,
         [&](const absl::string_view& pem_root_certs) {
           cert_info.roots = std::string(pem_root_certs);
         },
         [&](std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map) {
           cert_info.roots = spiffe_bundle_map;
-        },
-    };
-    std::visit(visitor, *roots);
+        });
   }
   if (pem_key_cert_pairs.has_value()) {
     // Successful credential updates will clear any pre-existing error.

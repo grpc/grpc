@@ -30,6 +30,7 @@
 #include "gmock/gmock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/match.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 
@@ -91,16 +92,16 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
         std::variant<absl::string_view, std::shared_ptr<SpiffeBundleMap>> roots,
         PemKeyCertPairList key_cert)
         : key_cert_pairs(std::move(key_cert)) {
-      auto visitor = absl::Overload{
+      Match(
+          roots,
           [&](const absl::string_view& pem_root_certs) {
             root_certs = pem_root_certs;
           },
           [&](const std::shared_ptr<SpiffeBundleMap>& bundle_map) {
             spiffe_bundle_map = *bundle_map;
-          },
-      };
-      std::visit(visitor, roots);
+          });
     }
+
     bool operator==(const CredentialInfo& other) const {
       return root_certs == other.root_certs &&
              spiffe_bundle_map == other.spiffe_bundle_map &&

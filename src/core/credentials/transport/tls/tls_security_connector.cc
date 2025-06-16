@@ -47,6 +47,7 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
+#include "src/core/util/match.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_core {
@@ -445,18 +446,17 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 #pragma clang diagnostic ignored "-Wthread-safety-analysis"
   MutexLock lock(&security_connector_->mu_);
   // THe mutex lock is held when calling this
-  auto visitor = absl::Overload{
-      [&](const absl::string_view& pem_root_certs) {
-        security_connector_->pem_root_certs_ = pem_root_certs;
-      },
-      [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
-        security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
-      },
-  };
-#pragma clang diagnostic pop
   // NOLINTEND
   if (root_certs.has_value()) {
-    std::visit(visitor, *root_certs);
+    Match(
+        *root_certs,
+        [&](const absl::string_view& pem_root_certs) {
+          security_connector_->pem_root_certs_ = pem_root_certs;
+        },
+        [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
+          security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
+        });
+#pragma clang diagnostic pop
   }
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
@@ -731,19 +731,18 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 // NOLINTBEGIN
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wthread-safety-analysis"
-  auto visitor = absl::Overload{
-      [&](const absl::string_view& pem_root_certs) {
-        security_connector_->pem_root_certs_ = pem_root_certs;
-      },
-      [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
-        security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
-      },
-  };
-#pragma clang diagnostic pop
   // NOLINTEND
   if (roots.has_value()) {
-    std::visit(visitor, *roots);
+    Match(
+        *roots,
+        [&](const absl::string_view& pem_root_certs) {
+          security_connector_->pem_root_certs_ = pem_root_certs;
+        },
+        [&](std::shared_ptr<SpiffeBundleMap> spiffe_bundle_map) {
+          security_connector_->spiffe_bundle_map_ = spiffe_bundle_map;
+        });
   }
+#pragma clang diagnostic pop
   if (key_cert_pairs.has_value()) {
     security_connector_->pem_key_cert_pair_list_ = std::move(key_cert_pairs);
   }

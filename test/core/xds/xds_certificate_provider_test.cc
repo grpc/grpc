@@ -29,6 +29,7 @@
 #include "gtest/gtest.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/match.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"
@@ -118,7 +119,8 @@ class TestCertificatesWatcher
           roots,
       std::optional<PemKeyCertPairList> key_cert_pairs) override {
     if (roots.has_value()) {
-      auto visitor = absl::Overload{
+      Match(
+          *roots,
           [&](const absl::string_view& pem_root_certs) {
             if (!root_certs_.has_value() ||
                 (root_certs_.has_value() &&
@@ -134,11 +136,8 @@ class TestCertificatesWatcher
               root_cert_error_ = absl::OkStatus();
             }
             spiffe_bundle_map_ = spiffe_bundle_map;
-          },
-      };
-      std::visit(visitor, *roots);
+          });
     }
-
     if (key_cert_pairs.has_value()) {
       if (key_cert_pairs != key_cert_pairs_) {
         identity_cert_error_ = absl::OkStatus();
