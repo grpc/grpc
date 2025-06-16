@@ -52,6 +52,13 @@ class Http2FrameTestHelper {
         Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
+  EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
+      std::string_view payload, const uint32_t stream_id = 1,
+      const bool end_headers = true, const bool end_stream = false) const {
+    return EventEngineSliceFromHttp2Frame(Http2HeaderFrame{
+        stream_id, end_headers, end_stream, SliceBufferFromString(payload)});
+  }
+
   EventEngineSlice EventEngineSliceFromHttp2RstStreamFrame(
       const uint32_t stream_id = 1,
       const uint32_t error_code =
