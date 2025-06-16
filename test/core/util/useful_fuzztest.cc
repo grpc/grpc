@@ -103,4 +103,4 @@ void SaturatingMulWorksUint16(uint16_t a, uint16_t b) {
 }
 FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint16);
 
-}
+}  // namespace grpc_core

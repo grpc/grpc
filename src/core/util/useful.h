@@ -118,13 +118,13 @@ template <typename T>
 inline T SaturatingMul(T a, T b) {
   if constexpr (std::is_integral_v<T>) {
     if constexpr (std::is_unsigned_v<T>) {
-      if (a==0 || b==0) return 0;
+      if (a == 0 || b == 0) return 0;
       if (b > std::numeric_limits<T>::max() / a) {
         return std::numeric_limits<T>::max();
       }
       return a * b;
     } else {
-      if (a==0 || b==0) return 0;
+      if (a == 0 || b == 0) return 0;
       if (a == std::numeric_limits<T>::min()) {
         // negation is ub
         if (b == -1) return std::numeric_limits<T>::max();
