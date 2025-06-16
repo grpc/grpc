@@ -121,8 +121,8 @@
   allow_in_fuzzing_config: false
 - name: event_engine_secure_endpoint
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2025/06/06
-  owner: ctiller@google.com
+  expiry: 2025/01/22
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
