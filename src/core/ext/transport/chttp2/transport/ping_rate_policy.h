@@ -23,6 +23,8 @@
 #include <variant>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/json/json.h"
+#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
@@ -76,6 +78,18 @@ class Chttp2PingRatePolicy {
 
   int TestOnlyMaxPingsWithoutData() const {
     return max_pings_without_data_sent_;
+  }
+
+  Json::Object ToJson() const {
+    Json::Object obj;
+    obj["max_pings_without_data_sent"] =
+        Json::FromNumber(max_pings_without_data_sent_);
+    obj["max_inflight_pings"] = Json::FromNumber(max_inflight_pings_);
+    obj["pings_before_data_sending_required"] =
+        Json::FromNumber(pings_before_data_sending_required_);
+    obj["last_ping_sent_time"] = Json::FromString(gpr_format_timespec(
+        last_ping_sent_time_.as_timespec(GPR_CLOCK_REALTIME)));
+    return obj;
   }
 
  private:

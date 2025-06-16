@@ -38,10 +38,6 @@ class ThreadPool {
 #if GRPC_ENABLE_FORK_SUPPORT
   virtual void PrepareFork() = 0;
   virtual void PostFork() = 0;
-
-  virtual void PreventFork() = 0;
-  virtual void AllowFork() = 0;
-
 #endif  // GRPC_ENABLE_FORK_SUPPORT
 };
 

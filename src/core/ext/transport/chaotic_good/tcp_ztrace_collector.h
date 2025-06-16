@@ -89,6 +89,47 @@ struct EndpointWriteMetricsTrace {
   }
 };
 
+struct TraceScheduledChannel {
+  uint32_t id;
+  bool ready;
+  double start_time;
+  double bytes_per_second;
+  double allowed_bytes;
+  Json ToJson() const {
+    return Json::FromObject({
+        {"id", Json::FromNumber(id)},
+        {"ready", Json::FromBool(ready)},
+        {"start_time", Json::FromNumber(start_time)},
+        {"bytes_per_second", Json::FromNumber(bytes_per_second)},
+        {"allowed_bytes", Json::FromNumber(allowed_bytes)},
+    });
+  }
+};
+
+struct TraceWriteSchedule {
+  std::vector<TraceScheduledChannel> channels;
+  double outstanding_bytes;
+  double end_time_requested;
+  double end_time_adjusted;
+  double min_tokens;
+  size_t num_ready;
+  size_t MemoryUsage() const {
+    return sizeof(*this) + sizeof(channels[0]) * channels.size();
+  }
+  void RenderJson(Json::Object& object) const {
+    Json::Array channels;
+    for (const auto& c : this->channels) {
+      channels.emplace_back(c.ToJson());
+    }
+    object["channels"] = Json::FromArray(std::move(channels));
+    object["end_time_requested"] = Json::FromNumber(end_time_requested);
+    object["end_time_adjusted"] = Json::FromNumber(end_time_adjusted);
+    object["min_tokens"] = Json::FromNumber(min_tokens);
+    object["outstanding_bytes"] = Json::FromNumber(outstanding_bytes);
+    object["num_ready"] = Json::FromNumber(num_ready);
+  }
+};
+
 struct LbDecision {
   struct CurrentSend {
     uint64_t bytes;
@@ -220,12 +261,12 @@ struct EndpointCloseTrace {
 
 using TcpZTraceCollector = channelz::ZTraceCollector<
     tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
-    ReadDataHeaderTrace, WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
-    EndpointWriteMetricsTrace, NoEndpointForWriteTrace,
-    WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
-    WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
-    TransportError<true>, TransportError<false>, OrphanTrace,
-    EndpointCloseTrace>;
+    ReadDataHeaderTrace, WriteFrameHeaderTrace, TraceWriteSchedule,
+    WriteLargeFrameHeaderTrace, EndpointWriteMetricsTrace,
+    NoEndpointForWriteTrace, WriteBytesToEndpointTrace,
+    FinishWriteBytesToEndpointTrace, WriteBytesToControlChannelTrace,
+    FinishWriteBytesToControlChannelTrace, TransportError<true>,
+    TransportError<false>, OrphanTrace, EndpointCloseTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

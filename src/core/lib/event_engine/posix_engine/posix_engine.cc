@@ -554,9 +554,6 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
       poller_manager_(poller),
 #endif
       timer_manager_(executor_) {
-#if GRPC_ENABLE_FORK_SUPPORT
-  executor_->PreventFork();
-#endif  // GRPC_ENABLE_FORK_SUPPORT
 }
 
 PosixEventEngine::PosixEventEngine()
@@ -571,9 +568,6 @@ PosixEventEngine::PosixEventEngine()
 #else   // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       timer_manager_(executor_) {
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-#if GRPC_ENABLE_FORK_SUPPORT
-  executor_->PreventFork();
-#endif  // GRPC_ENABLE_FORK_SUPPORT
 }
 
 #endif  // GRPC_POSIX_SOCKET_TCP
@@ -613,9 +607,6 @@ PosixEventEngine::~PosixEventEngine() {
   poller_manager_.TriggerShutdown();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   timer_manager_.Shutdown();
-#if GRPC_ENABLE_FORK_SUPPORT
-  executor_->AllowFork();
-#endif  // GRPC_ENABLE_FORK_SUPPORT
   executor_->Quiesce();
 }
 
@@ -907,7 +898,6 @@ PosixEventEngine::CreatePosixListener(
     GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
 
 void PosixEventEngine::AfterFork(OnForkRole on_fork_role) {
-  executor_->PreventFork();
   timer_manager_.PostFork();
   if (on_fork_role == OnForkRole::kChild) {
     if (grpc_core::IsEventEngineForkEnabled()) {
@@ -929,7 +919,6 @@ void PosixEventEngine::BeforeFork() {
   ResetPollCycle();
 #endif  // GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   timer_manager_.PrepareFork();
-  executor_->AllowFork();
 }
 
 void PosixEventEngine::AfterForkInChild() {
@@ -938,7 +927,7 @@ void PosixEventEngine::AfterForkInChild() {
   for (const auto& cb : resolver_handles_) {
     auto locked = cb.lock();
     if (locked != nullptr) {
-      locked->Reset();
+      locked->Reset(absl::CancelledError("Reset resolver on fork"));
     }
   }
 #endif

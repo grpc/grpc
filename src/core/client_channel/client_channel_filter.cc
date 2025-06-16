@@ -980,14 +980,10 @@ class ClientChannelFilter::ClientChannelControlHelper final
     return **chand_->owning_stack_->stats_plugin_group;
   }
 
-  void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
+  void AddTraceEvent(TraceSeverity, absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
-    if (chand_->channelz_node_ != nullptr) {
-      chand_->channelz_node_->AddTraceEvent(
-          ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_buffer(message.data(), message.size()));
-    }
+    GRPC_CHANNELZ_LOG(chand_->channelz_node_) << std::string(message);
   }
 
  private:
@@ -1333,12 +1329,8 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
   }
   // Add channel trace event.
   if (!trace_strings.empty()) {
-    std::string message =
-        absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
-    if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                    grpc_slice_from_cpp_string(message));
-    }
+    GRPC_CHANNELZ_LOG(channelz_node_)
+        << "Resolution event: " << absl::StrJoin(trace_strings, ", ");
   }
 }
 
@@ -1552,13 +1544,16 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    std::string trace =
-        channelz::ChannelNode::GetChannelConnectivityStateChangeString(state);
     if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      absl::StrAppend(&trace, " status:", status.ToString());
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state);
+    } else {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state)
+          << " status: " << status.ToString();
     }
-    channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                  grpc_slice_from_cpp_string(std::move(trace)));
   }
 }
 
