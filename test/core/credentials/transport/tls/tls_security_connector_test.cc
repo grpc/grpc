@@ -1139,8 +1139,9 @@ TEST_F(TlsSecurityConnectorTest,
   connector->check_peer(peer, nullptr, args, &auth_context, on_peer_checked);
 }
 
-TEST_F(TlsSecurityConnectorTest,
-       SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
+TEST_F(
+    TlsSecurityConnectorTest,
+    SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnectorxkcd) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,

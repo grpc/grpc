@@ -541,15 +541,13 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   bool use_default_roots = !options_->watch_root_cert();
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
       pem_key_cert_pair,
-      pem_root_certs.empty() || use_default_roots ? nullptr
-                                                  : pem_root_certs.c_str(),
+      root_cert_info_ == nullptr || use_default_roots ? nullptr
+                                                      : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
-      options_->crl_provider(),
-      spiffe_bundle_map_.has_value() ? *spiffe_bundle_map_ : nullptr,
-      &client_handshaker_factory_);
+      options_->crl_provider(), &client_handshaker_factory_);
   // Free memory.
   if (pem_key_cert_pair != nullptr) {
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
@@ -796,26 +794,24 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   // The identity certs on the server side shouldn't be empty.
   CHECK(pem_key_cert_pair_list_.has_value());
   CHECK(!(*pem_key_cert_pair_list_).empty());
-  std::string pem_root_certs;
-  if (spiffe_bundle_map_.has_value()) {
-    pem_root_certs = "";
-  } else if (pem_root_certs_.has_value()) {
-    // TODO(ZhenLian): update the underlying TSI layer to use C++ types like
-    // std::string and absl::string_view to avoid making another copy here.
-    pem_root_certs = std::string(*pem_root_certs_);
-  }
+  // std::string pem_root_certs;
+  // if (spiffe_bundle_map_.has_value()) {
+  //   pem_root_certs = "";
+  // } else if (pem_root_certs_.has_value()) {
+  //   // TODO(ZhenLian): update the underlying TSI layer to use C++ types like
+  //   // std::string and absl::string_view to avoid making another copy here.
+  //   pem_root_certs = std::string(*pem_root_certs_);
+  // }
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = nullptr;
   pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(*pem_key_cert_pair_list_);
   size_t num_key_cert_pairs = (*pem_key_cert_pair_list_).size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
-      pem_key_cert_pairs, num_key_cert_pairs,
-      pem_root_certs.empty() ? nullptr : pem_root_certs.c_str(),
+      pem_key_cert_pairs, num_key_cert_pairs, root_cert_info_,
       options_->cert_request_type(),
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()),
       tls_session_key_logger_.get(), options_->crl_directory().c_str(),
       options_->send_client_ca_list(), options_->crl_provider(),
-      spiffe_bundle_map_.has_value() ? *spiffe_bundle_map_ : nullptr,
       &server_handshaker_factory_);
   // Free memory.
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,

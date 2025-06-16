@@ -43,6 +43,9 @@
 
 // --- Util ---
 
+// Needed along with `RootCertInfo` defined in `grpc_tls_certificate_distributor.h` to avoid dependency cycle
+using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
+
 // Check ALPN information returned from SSL handshakes.
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
@@ -85,24 +88,21 @@ const char** ParseAlpnStringIntoArray(absl::string_view preferred_protocols,
 
 // Initialize TSI SSL server/client handshaker factory.
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* key_cert_pair, std::shared_ptr<RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
-    const char* crl_directory,
-    std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
-    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
+    const char* crl_directory, std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_client_handshaker_factory** handshaker_factory);
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
-    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
     tsi_ssl_server_handshaker_factory** handshaker_factory);
 
 // Free the memory occupied by key cert pairs.

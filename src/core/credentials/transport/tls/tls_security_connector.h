@@ -216,20 +216,20 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     return server_handshaker_factory_;
   };
 
-  std::optional<absl::string_view> RootCertsForTesting() {
-    MutexLock lock(&mu_);
-    return pem_root_certs_;
-  }
+  //   std::optional<absl::string_view> RootCertsForTesting() {
+  //     MutexLock lock(&mu_);
+  //     return pem_root_certs_;
+  //   }
 
   std::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
     MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
 
-  std::optional<std::shared_ptr<SpiffeBundleMap>> SpiffeBundleMapForTesting() {
-    MutexLock lock(&mu_);
-    return spiffe_bundle_map_;
-  }
+  //   std::optional<std::shared_ptr<SpiffeBundleMap>> SpiffeBundleMapForTesting() {
+  //     MutexLock lock(&mu_);
+  //     return spiffe_bundle_map_;
+  //   }
 
   std::shared_ptr<RootCertInfo> RootCertInfoForTesting() {
     MutexLock lock(&mu_);

@@ -48,6 +48,7 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
+#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 
@@ -428,19 +429,18 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 }
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
-    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const std::shared_ptr<RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
-    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
-  const char* root_certs;
+  const char* root_certs = nullptr;
   const tsi_ssl_root_certs_store* root_store;
-  bool roots_are_configured =
-      pem_root_certs != nullptr ||
-      (spiffe_bundle_map != nullptr && spiffe_bundle_map->size() != 0);
+  tsi_ssl_client_handshaker_options options;
+  bool roots_are_configured = root_cert_info != nullptr;
   if (!roots_are_configured && !skip_server_certificate_verification) {
     GRPC_TRACE_LOG(tsi, INFO)
         << "No root certificates specified; use ones stored in system "
@@ -453,16 +453,22 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
   } else {
-    root_certs = pem_root_certs;
+    Match(
+        *root_cert_info,
+        [&](const std::string& pem_root_certs) {
+          root_certs = pem_root_certs.c_str();
+        },
+        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+          options.spiffe_bundle_map =
+              std::make_shared<grpc_core::SpiffeBundleMap>(spiffe_bundle_map);
+        });
     root_store = nullptr;
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
-  tsi_ssl_client_handshaker_options options;
   options.pem_root_certs = root_certs;
   options.root_store = root_store;
-  options.spiffe_bundle_map = spiffe_bundle_map;
   options.alpn_protocols =
       grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
   if (has_key_cert_pair) {
@@ -491,13 +497,12 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
 
 grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
-    const char* pem_root_certs,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     grpc_ssl_client_certificate_request_type client_certificate_request,
     tsi_tls_version min_tls_version, tsi_tls_version max_tls_version,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
     const char* crl_directory, bool send_client_ca_list,
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
-    std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map,
     tsi_ssl_server_handshaker_factory** handshaker_factory) {
   size_t num_alpn_protocols = 0;
   const char** alpn_protocol_strings =
@@ -505,8 +510,17 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   tsi_ssl_server_handshaker_options options;
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
-  options.pem_client_root_certs = pem_root_certs;
-  options.spiffe_bundle_map = spiffe_bundle_map;
+  if (root_cert_info != nullptr) {
+    Match(
+        *root_cert_info,
+        [&](const std::string& pem_root_certs) {
+          options.pem_client_root_certs = pem_root_certs.c_str();
+        },
+        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+          options.spiffe_bundle_map =
+              std::make_shared<grpc_core::SpiffeBundleMap>(spiffe_bundle_map);
+        });
+  }
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
   options.cipher_suites = grpc_get_ssl_cipher_suites();
