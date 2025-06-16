@@ -74,8 +74,6 @@
   default: true
 - name: pollset_alternative
   default: false
-- name: posix_ee_skip_grpc_init
-  default: true
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
