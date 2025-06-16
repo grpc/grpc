@@ -48,6 +48,7 @@
 #include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -1164,8 +1165,12 @@ Server::MakeCallDestination(const ChannelArgs& args) {
 }
 
 Server::Server(const ChannelArgs& args)
-    : channel_args_(args),
-      channelz_node_(CreateChannelzNode(args)),
+    : channelz::DataSource(CreateChannelzNode(args)),
+      channel_args_(args),
+      channelz_node_(channelz::DataSource::channelz_node() == nullptr
+                         ? nullptr
+                         : channelz::DataSource::channelz_node()
+                               ->RefAsSubclass<channelz::ServerNode>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
       compression_options_(CompressionOptionsFromChannelArgs(args)),
       max_time_in_pending_queue_(Duration::Seconds(
@@ -1174,6 +1179,7 @@ Server::Server(const ChannelArgs& args)
               .value_or(30))) {}
 
 Server::~Server() {
+  ResetDataSource();
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -1185,6 +1191,44 @@ Server::~Server() {
   for (size_t i = 0; i < cqs_.size(); i++) {
     GRPC_CQ_INTERNAL_UNREF(cqs_[i], "server");
   }
+}
+
+void Server::AddData(channelz::DataSink sink) {
+  MutexLock global_lock(&mu_global_);
+  sink.AddAdditionalInfo(
+      "server",
+      channelz::PropertyList()
+          // TODO(ctiller): config_fetcher?
+          // TODO(ctiller): server_call_tracer_factory?
+          // TODO(ctiller): compression_options?
+          // TODO(ctiller): unregistered_request_matcher?
+          // TODO(ctiller): connection_manager?
+          .Set("registered_cqs", cqs_.size())
+          .Set("pollsets", pollsets_.size())
+          .Set("started", started_)
+          .Set("starting", starting_)
+          .Set("registered_methods",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (auto& [host_method, rm] : registered_methods_) {
+                   grid.Set("host", host_method.second, host_method.first)
+                       .Set("payload_handling", host_method.second,
+                            rm->payload_handling ==
+                                    GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+                                ? "READ_INITIAL_BYTE_BUFFER"
+                                : "PAYLOAD_NONE");
+                 }
+                 return grid;
+               }())
+          .Set("shutdown_refs", shutdown_refs_.load(std::memory_order_relaxed))
+          .Set("shutdown_published", shutdown_published_)
+          .Set("num_shutdown_tags", shutdown_tags_.size())
+          .Set("max_time_in_pending_queue", max_time_in_pending_queue_)
+          .Set("num_channels", channels_.size())
+          .Set("num_connections", connections_.size())
+          .Set("connections_open", connections_open_)
+          .Set("num_listener_states", listener_states_.size())
+          .Set("listeners_destroyed", listeners_destroyed_));
 }
 
 void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {

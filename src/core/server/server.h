@@ -120,6 +120,7 @@ class ListenerStateTestPeer;
 
 class Server : public ServerInterface,
                public InternallyRefCounted<Server>,
+               public channelz::DataSource,
                public CppImplOf<Server, grpc_server> {
  public:
   // Filter vtable.
@@ -317,6 +318,8 @@ class Server : public ServerInterface,
 
   explicit Server(const ChannelArgs& args);
   ~Server() override;
+
+  void AddData(channelz::DataSink sink) override;
 
   void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
