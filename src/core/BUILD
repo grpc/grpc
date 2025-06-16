@@ -4555,7 +4555,6 @@ grpc_cc_library(
         "absl/base:core_headers",
         "absl/container:inlined_vector",
         "absl/functional:bind_front",
-        "absl/functional:overload",
         "absl/log",
         "absl/log:check",
         "absl/status",
