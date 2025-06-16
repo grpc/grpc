@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <type_traits>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/json/json.h"
@@ -166,6 +167,31 @@ struct JsonFromValueHelper<std::vector<PropertyList>> {
 };
 
 }  // namespace property_list_detail
+
+// PropertyGrid is much the same as PropertyList, but it is two dimensional.
+// Each row and column can be set independently.
+// Rows and columns are ordered by the first setting of a value on them.
+class PropertyGrid {
+ public:
+  template <typename T>
+  PropertyGrid& Set(absl::string_view column, absl::string_view row, T value) {
+    SetInternal(
+        column, row,
+        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    return *this;
+  }
+
+  Json::Object TakeJsonObject();
+
+ private:
+  void SetInternal(absl::string_view column, absl::string_view row,
+                   std::optional<Json> value);
+  size_t GetIndex(std::vector<std::string>& vec, absl::string_view value);
+
+  std::vector<std::string> columns_;
+  std::vector<std::string> rows_;
+  absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
+};
 
 }  // namespace grpc_core::channelz
 

@@ -10029,6 +10029,7 @@ grpc_cc_library(
     external_deps = [
         "absl/strings",
         "absl/status",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         "json",
