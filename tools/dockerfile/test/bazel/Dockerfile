@@ -34,6 +34,18 @@ RUN apt-get update && apt-get -y install \
   vim \
   wget
 
+# Install python 3.9 and point python3 to python3.9
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3.9 \
+    python3.9-venv \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    # Clean up apt caches to reduce image size
+    && rm -rf /var/lib/apt/lists/*
+
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+
 #========================
 # Bazel installation
 
