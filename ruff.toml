@@ -32,6 +32,11 @@ ignore = [
     "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
 ]
 
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+pyupgrade.keep-runtime-typing = true
+
 # Select all rules by default, and then ignore the ones we don't want.
 # This is a good way to stay up-to-date with new rules in ruff.
 select = ["ALL"]
