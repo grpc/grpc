@@ -35,19 +35,18 @@ from grpc._cython import cygrpc
 import grpc.experimental  # pytype: disable=pyi-error
 
 if TYPE_CHECKING:
-    import types
     from collections.abc import Iterator
     from collections.abc import Sequence
-    from grpc._typing import (
-        ChannelArgumentType,
-        DeserializingFunction,
-        IntegratedCallFactory,
-        MetadataType,
-        NullaryCallbackType,
-        ResponseType,
-        SerializingFunction,
-        UserTag,
-    )
+    import types
+
+    from grpc._typing import ChannelArgumentType
+    from grpc._typing import DeserializingFunction
+    from grpc._typing import IntegratedCallFactory
+    from grpc._typing import MetadataType
+    from grpc._typing import NullaryCallbackType
+    from grpc._typing import ResponseType
+    from grpc._typing import SerializingFunction
+    from grpc._typing import UserTag
 
 CallbackType = Callable[[grpc.ChannelConnectivity], None]
 MixedTupleElementType = Union[CallbackType, grpc.ChannelConnectivity, None]
