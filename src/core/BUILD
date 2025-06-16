@@ -7796,8 +7796,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channelz_property_list",
         "http2_status",
-        "json",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
