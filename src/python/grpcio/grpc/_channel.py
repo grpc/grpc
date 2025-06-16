@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+# Standard library imports
 import copy
 import functools
 import logging
@@ -22,6 +23,7 @@ import os
 import sys
 import threading
 import time
+from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
 if TYPE_CHECKING:
@@ -39,6 +41,7 @@ if TYPE_CHECKING:
         UserTag,
     )
 
+# Third-party imports
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
