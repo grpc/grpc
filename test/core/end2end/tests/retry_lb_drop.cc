@@ -115,7 +115,7 @@ CORE_END2END_TEST(RetryTests, RetryLbDrop) {
   CoreConfiguration::RegisterEphemeralBuilder(RegisterDropPolicy);
   std::vector<PickArgsSeen> pick_args_seen;
   g_pick_args_vector = &pick_args_seen;
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

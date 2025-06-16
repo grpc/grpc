@@ -127,8 +127,8 @@ void HpackSize(CoreEnd2endTest& test, int encode_size, int decode_size) {
   // TODO(ctiller): right now the hpack encoder isn't compressing these, so this
   // test doesn't do what we want - which is to test overflow the hpack table
   // slot count.
-  test.InitServer(
-      ChannelArgs().Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, decode_size));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
+      GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_DECODER, decode_size));
   test.InitClient(
       ChannelArgs().Set(GRPC_ARG_HTTP2_HPACK_TABLE_SIZE_ENCODER, encode_size));
   for (size_t i = 0; i < 4 * hobbits->size(); i++) {
