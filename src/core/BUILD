@@ -10027,6 +10027,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "channelz_property_list",
+    srcs = ["channelz/property_list.cc"],
     hdrs = ["channelz/property_list.h"],
     external_deps = [
         "absl/strings",
