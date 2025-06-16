@@ -215,6 +215,51 @@ class Http2ClientTransport final : public ClientTransport {
           stream_id(stream_id1),
           header_assembler(stream_id1) {}
 
+    // Modify the stream state
+    // The possible stream transitions are as follows:
+    // kIdle -> kOpen
+    // kOpen -> kClosed/kHalfClosedLocal/kHalfClosedRemote
+    // kHalfClosedLocal/kHalfClosedRemote -> kClosed
+    // kClosed -> kClosed
+    void SentInitialMetadata() {
+      DCHECK(stream_state == HttpStreamState::kIdle);
+      stream_state = HttpStreamState::kOpen;
+    }
+
+    void CloseWrites() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "CloseWrites called for an idle stream";
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedLocal;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    void CloseReads() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "CloseReads called for an idle stream";
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedRemote;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
+
     CallHandler call;
     HttpStreamState stream_state;
     const uint32_t stream_id;
@@ -251,14 +296,60 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+
+  struct CloseStreamArgs {
+    bool close_reads;
+    bool close_writes;
+    bool send_rst_stream;
+    bool cancelled;
+  };
+
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {
+                   CloseStreamArgs args, DebugLocation whence = {}) {
     HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
                       << stream_id << " status=" << status
                       << " location=" << whence.file() << ":" << whence.line();
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+
+    // TODO(akshitpatel) : [PH2][P0] : There is a possibility of a race
+    // condition here. If the stream is cancelled by CallV3, then there might be
+    // frames enqueued after enqueuing the reset frame. This is still probably
+    // fine as we always dequeue reset frames first and then only look into the
+    // list of writable streams. The strighforward solution is to keep the
+    // stream list locked throughout this function. Another race is CloseStream
+    // called from Abort and somewhere from transport in parallel.
+    auto stream = LookupStream(stream_id);
+    if (stream == nullptr) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " stream not found";
+      return;
+    }
+
+    if (args.close_reads) {
+      stream->CloseReads();
+    }
+    if (args.close_writes) {
+      stream->CloseWrites();
+    }
+
+    if (stream->IsClosed()) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " closing stream.";
+      if (args.send_rst_stream) {
+        // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
+      }
+
+      if (!args.cancelled) {
+        stream->call.PushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+      }
+      {
+        MutexLock lock(&transport_mutex_);
+        stream_list_.erase(stream_id);
+      }
+    }
   }
+
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
   auto EndpointReadSlice(const size_t num_bytes) {
@@ -313,6 +404,12 @@ class Http2ClientTransport final : public ClientTransport {
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  CloseStreamArgs{
+                      /*close_reads=*/true,
+                      /*close_writes=*/true,
+                      /*send_rst_stream=*/true,
+                      /*cancelled=*/false,
+                  },
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
