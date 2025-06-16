@@ -279,6 +279,11 @@
       for dep in lib.transitive_deps:
         if is_absl_lib(dep):
           used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
+
+  cmake_libs = []
+  for lib in libs:
+    if not is_generate_cmake_target(lib): continue
+    cmake_libs.append(lib)
   %>
 
   cmake_minimum_required(VERSION 3.16)
@@ -751,12 +756,6 @@
     add_custom_target(buildtests
       DEPENDS buildtests_c buildtests_cxx)
   endif()
-  <%
-    cmake_libs = []
-    for lib in libs:
-      if not is_generate_cmake_target(lib): continue
-      cmake_libs.append(lib)
-  %>
 
   % for lib in cmake_libs:
   %   if lib.build in ["test", "private"]:
