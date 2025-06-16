@@ -1208,7 +1208,7 @@ void Server::AddData(channelz::DataSink sink) {
           .Set("started", started_)
           .Set("starting", starting_)
           .Set("registered_methods",
-               []() {
+               [this]() {
                  channelz::PropertyGrid grid;
                  for (auto& [host_method, rm] : registered_methods_) {
                    grid.Set("host", host_method.second, host_method.first)
