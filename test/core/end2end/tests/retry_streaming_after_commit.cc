@@ -34,7 +34,7 @@ namespace {
 // after retries are committed.
 CORE_END2END_TEST(RetryTests, RetryStreamingAfterCommit) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

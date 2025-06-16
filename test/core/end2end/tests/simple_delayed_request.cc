@@ -47,7 +47,7 @@ CORE_END2END_TEST(Http2SingleHopTests, SimpleDelayedRequestShort) {
       .RecvInitialMetadata(server_initial_metadata)
       .RecvStatusOnClient(server_status);
   LOG(ERROR) << "Start server";
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   auto s = RequestCall(101);
   Expect(101, true);
   Step();

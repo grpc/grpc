@@ -36,7 +36,7 @@ CORE_END2END_TEST(RetryHttp2Tests, BadPing) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
                  .Set(GRPC_ARG_HTTP2_BDP_PROBE, 0));
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS,
                       Duration::Minutes(5).millis())
                  .Set(GRPC_ARG_HTTP2_MAX_PING_STRIKES, MAX_PING_STRIKES)
