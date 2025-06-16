@@ -6274,7 +6274,7 @@ TEST_F(XdsClientTest, FallbackOnStartup) {
 
 TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
   testing::ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_FALLBACK_ON_REACHABILITY_ONLY");
+      "GRPC_EXPERIMENTAL_XDS_ENDPOINT_FALLBACK");
   constexpr char kAuthority[] = "xds.example.com";
   const std::string kXdstpResourceName = absl::StrCat(
       "xdstp://", kAuthority, "/", XdsFooResource::TypeUrl(), "/foo1");

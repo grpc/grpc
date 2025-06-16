@@ -72,8 +72,8 @@ namespace grpc_core {
 
 namespace {
 
-bool XdsFallbackOnReachabilityOnlyEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_FALLBACK_ON_REACHABILITY_ONLY");
+bool XdsEndpointFallbackEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_ENDPOINT_FALLBACK");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
@@ -509,7 +509,7 @@ bool XdsClient::XdsChannel::MaybeFallbackLocked(
     auto* bootstrap_authority =
         xds_client_->bootstrap().LookupAuthority(authority);
     xds_servers = bootstrap_authority->servers();
-    if (XdsFallbackOnReachabilityOnlyEnabled()) {
+    if (XdsEndpointFallbackEnabled()) {
       fallback_on_reachability_only =
           bootstrap_authority->FallbackOnReachabilityOnly();
     }
