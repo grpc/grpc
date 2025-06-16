@@ -2176,6 +2176,7 @@ add_library(grpc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -3298,6 +3299,7 @@ add_library(grpc_unsecure
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -15974,6 +15976,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
+  src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -24796,6 +24799,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(property_list_test
+  src/core/channelz/property_list.cc
   src/core/util/time.cc
   test/core/channelz/property_list_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc

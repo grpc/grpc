@@ -1289,6 +1289,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -2813,6 +2814,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -10982,6 +10984,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -11046,6 +11049,7 @@ targets:
   - src/core/util/time.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -15131,6 +15135,7 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/time.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/util/time.cc
   - test/core/channelz/property_list_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
