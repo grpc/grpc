@@ -25,4 +25,54 @@ void PropertyList::SetInternal(absl::string_view key,
   }
 }
 
+size_t PropertyGrid::GetIndex(std::vector<std::string>& vec,
+                              absl::string_view value) {
+  auto it = std::find(vec.begin(), vec.end(), value);
+  if (it == vec.end()) {
+    vec.emplace_back(value);
+    return vec.size() - 1;
+  } else {
+    return it - vec.begin();
+  }
+}
+
+Json::Object PropertyGrid::TakeJsonObject() {
+  Json::Object json;
+  Json::Array columns;
+  for (auto& c : columns_) {
+    columns.emplace_back(Json::FromString(std::string(c)));
+  }
+  json.emplace("columns", Json::FromArray(std::move(columns)));
+  Json::Array rows;
+  for (size_t r = 0; r < rows_.size(); ++r) {
+    Json::Object row;
+    row.emplace("name", Json::FromString(std::string(rows_[r])));
+    Json::Array cells;
+    cells.reserve(columns_.size());
+    for (size_t c = 0; c < columns_.size(); ++c) {
+      auto it = grid_.find(std::pair(c, r));
+      if (it != grid_.end()) {
+        cells.emplace_back(std::move(it->second));
+      } else {
+        cells.emplace_back(Json());
+      }
+    }
+    row.emplace("cells", Json::FromArray(std::move(cells)));
+    rows.emplace_back(Json::FromObject(std::move(row)));
+  }
+  json.emplace("rows", Json::FromArray(std::move(rows)));
+  return json;
+}
+
+void PropertyGrid::SetInternal(absl::string_view column, absl::string_view row,
+                               std::optional<Json> value) {
+  int c = GetIndex(columns_, column);
+  int r = GetIndex(rows_, row);
+  if (value.has_value()) {
+    grid_[std::pair(c, r)] = *std::move(value);
+  } else {
+    grid_.erase(std::pair(c, r));
+  }
+}
+
 }  // namespace grpc_core::channelz

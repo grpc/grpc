@@ -15195,6 +15195,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
   - absl/status:statusor
   - gpr
 - name: proto_buffer_reader_test

@@ -24895,6 +24895,7 @@ target_include_directories(property_list_test
 target_link_libraries(property_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::statusor
   gpr
 )
