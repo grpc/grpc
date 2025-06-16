@@ -13,6 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/channelz")
 
@@ -27,6 +28,7 @@ grpc_cc_test(
     tags = [
         # b/117517566.
         "grpc:no-internal-poller",
+        "channelz_test",
     ],
     deps = [
         "//:gpr",
@@ -39,6 +41,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "property_list_test",
+    srcs = ["property_list_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:channelz_property_list",
+    ],
+)
+
+grpc_cc_test(
     name = "channelz_test",
     srcs = ["channelz_test.cc"],
     external_deps = [
@@ -47,6 +61,7 @@ grpc_cc_test(
     tags = [
         # b/117517566.
         "grpc:no-internal-poller",
+        "channelz_test",
     ],
     deps = [
         "//:gpr",
@@ -65,6 +80,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    shard_count = 25,
+    tags = [
+        "channelz_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
@@ -72,5 +91,36 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "ztrace_collector_test",
+    srcs = ["ztrace_collector_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    tags = [
+        "channelz_test",
+        "no_windows",
+    ],
+    deps = [
+        "//:grpc",
+        "//src/core:notification",
+        "//src/core:ztrace_collector",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "channel_trace_fuzzer",
+    srcs = ["channel_trace_fuzzer.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//:channelz",
     ],
 )

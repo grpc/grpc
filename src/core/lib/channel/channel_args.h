@@ -91,6 +91,31 @@ struct IsRawPointerTagged<T,
                           absl::void_t<typename T::RawPointerChannelArgTag>> {
   static constexpr bool kValue = true;
 };
+
+// Define a check for shared_ptr supported types, which must extend
+// enable_shared_from_this.
+template <typename T>
+struct SupportedSharedPtrType
+    : std::integral_constant<
+          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
+template <>
+struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
+    : std::true_type {};
+
+// Specialization for shared_ptr
+// Incurs an allocation because shared_ptr.release is not a thing.
+template <typename T>
+struct is_shared_ptr : std::false_type {};
+template <typename T>
+struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+template <typename T, typename = void>
+struct has_channel_args_compare : std::false_type {};
+template <typename T>
+struct has_channel_args_compare<
+    T, absl::void_t<decltype(T::ChannelArgsCompare(std::declval<const T*>(),
+                                                   std::declval<const T*>()))>>
+    : std::true_type {};
 }  // namespace channel_args_detail
 
 // Specialization for ref-counted pointers.
@@ -133,25 +158,9 @@ struct ChannelArgTypeTraits<
   };
 };
 
-// Define a check for shared_ptr supported types, which must extend
-// enable_shared_from_this.
 template <typename T>
-struct SupportedSharedPtrType
-    : std::integral_constant<
-          bool, std::is_base_of<std::enable_shared_from_this<T>, T>::value> {};
-template <>
-struct SupportedSharedPtrType<grpc_event_engine::experimental::EventEngine>
-    : std::true_type {};
-
-// Specialization for shared_ptr
-// Incurs an allocation because shared_ptr.release is not a thing.
-template <typename T>
-struct is_shared_ptr : std::false_type {};
-template <typename T>
-struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
-template <typename T>
-struct ChannelArgTypeTraits<T,
-                            absl::enable_if_t<is_shared_ptr<T>::value, void>> {
+struct ChannelArgTypeTraits<
+    T, absl::enable_if_t<channel_args_detail::is_shared_ptr<T>::value, void>> {
   static void* TakeUnownedPointer(T* p) { return p; }
   static const grpc_arg_pointer_vtable* VTable() {
     static const grpc_arg_pointer_vtable tbl = {
@@ -161,8 +170,15 @@ struct ChannelArgTypeTraits<T,
         [](void* p) { delete static_cast<T*>(p); },
         // compare
         [](void* p1, void* p2) {
-          return QsortCompare(static_cast<const T*>(p1)->get(),
-                              static_cast<const T*>(p2)->get());
+          if constexpr (channel_args_detail::has_channel_args_compare<
+                            typename T::element_type>::value) {
+            return T::element_type::ChannelArgsCompare(
+                static_cast<const T*>(p1)->get(),
+                static_cast<const T*>(p2)->get());
+          } else {
+            return QsortCompare(static_cast<const T*>(p1)->get(),
+                                static_cast<const T*>(p2)->get());
+          }
         },
     };
     return &tbl;
@@ -209,9 +225,10 @@ struct GetObjectImpl;
 // std::shared_ptr implementation
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
-                             SupportedSharedPtrType<T>::value,
-                         void>> {
+    T,
+    absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
+                          channel_args_detail::SupportedSharedPtrType<T>::value,
+                      void>> {
   using Result = T*;
   using ReffedResult = std::shared_ptr<T>;
   using StoredType = std::shared_ptr<T>*;
@@ -232,9 +249,10 @@ struct GetObjectImpl<
 // RefCountedPtr
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<!ChannelArgPointerShouldBeConst<T>::kValue &&
-                             !SupportedSharedPtrType<T>::value,
-                         void>> {
+    T, absl::enable_if_t<
+           !ChannelArgPointerShouldBeConst<T>::kValue &&
+               !channel_args_detail::SupportedSharedPtrType<T>::value,
+           void>> {
   using Result = T*;
   using ReffedResult = RefCountedPtr<T>;
   using StoredType = Result;
@@ -252,9 +270,10 @@ struct GetObjectImpl<
 
 template <typename T>
 struct GetObjectImpl<
-    T, absl::enable_if_t<ChannelArgPointerShouldBeConst<T>::kValue &&
-                             !SupportedSharedPtrType<T>::value,
-                         void>> {
+    T, absl::enable_if_t<
+           ChannelArgPointerShouldBeConst<T>::kValue &&
+               !channel_args_detail::SupportedSharedPtrType<T>::value,
+           void>> {
   using Result = const T*;
   using ReffedResult = RefCountedPtr<const T>;
   using StoredType = Result;
@@ -469,7 +488,7 @@ class ChannelArgs {
           decltype(ChannelArgTypeTraits<std::shared_ptr<T>>::VTable())>::value,
       ChannelArgs>
   Set(absl::string_view name, std::shared_ptr<T> value) const {
-    static_assert(SupportedSharedPtrType<T>::value,
+    static_assert(channel_args_detail::SupportedSharedPtrType<T>::value,
                   "Type T must extend std::enable_shared_from_this to be added "
                   "into ChannelArgs as a shared_ptr<T>");
     auto* store_value = new std::shared_ptr<T>(value);
@@ -550,6 +569,10 @@ class ChannelArgs {
   bool operator!=(const ChannelArgs& other) const;
   bool operator<(const ChannelArgs& other) const;
   bool operator==(const ChannelArgs& other) const;
+
+  friend int QsortCompare(const ChannelArgs& lhs, const ChannelArgs& rhs) {
+    return QsortCompare(lhs.args_, rhs.args_);
+  }
 
   // Helpers for commonly accessed things
 

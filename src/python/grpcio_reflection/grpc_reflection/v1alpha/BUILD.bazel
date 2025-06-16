@@ -1,3 +1,5 @@
+load("@com_google_protobuf//bazel:proto_library.bzl", "proto_library")
+
 # Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,15 +18,19 @@ load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 package(default_visibility = ["//visibility:public"])
 
+proto_library(
+    name = "reflection_proto_descriptor",
+    srcs = ["reflection.proto"],
+)
+
 py_proto_library(
     name = "reflection_py_pb2",
-    imports = ["../../"],
-    deps = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
+    deps = [":reflection_proto_descriptor"],
 )
 
 py_grpc_library(
     name = "reflection_py_pb2_grpc",
-    srcs = ["//src/proto/grpc/reflection/v1alpha:reflection_proto_only"],
+    srcs = [":reflection_proto_descriptor"],
     strip_prefixes = ["src.python.grpcio_reflection."],
     deps = ["reflection_py_pb2"],
 )

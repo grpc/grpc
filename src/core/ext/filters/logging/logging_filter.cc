@@ -44,6 +44,7 @@
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/logging/logging_sink.h"
@@ -59,7 +60,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/telemetry/call_tracer.h"
@@ -503,16 +503,17 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterV2Filter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
-        // TODO(yashykt) : Figure out a good place to place this channel arg
-        .IfChannelArg("grpc.experimental.enable_observability", true);
-    builder->channel_init()
-        ->RegisterV2Filter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
-        // TODO(yashykt) : Figure out a good place to place this channel arg
-        .IfChannelArg("grpc.experimental.enable_observability", true);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterV2Filter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
+            // TODO(yashykt) : Figure out a good place to place this channel arg
+            .IfChannelArg("grpc.experimental.enable_observability", true);
+        builder->channel_init()
+            ->RegisterV2Filter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
+            // TODO(yashykt) : Figure out a good place to place this channel arg
+            .IfChannelArg("grpc.experimental.enable_observability", true);
+      });
 }
 
 }  // namespace grpc_core

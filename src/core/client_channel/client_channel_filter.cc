@@ -47,6 +47,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/client_channel/backup_poller.h"
@@ -85,7 +86,6 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/backend_metric_parser.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/lb_policy_registry.h"
@@ -501,7 +501,7 @@ class ClientChannelFilter::SubchannelWrapper final
       if (subchannel_node != nullptr) {
         auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
         if (it == chand_->subchannel_refcount_map_.end()) {
-          chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+          subchannel_node->AddParent(chand_->channelz_node_);
           it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
                    .first;
         }
@@ -533,8 +533,7 @@ class ClientChannelFilter::SubchannelWrapper final
           CHECK(it != chand_->subchannel_refcount_map_.end());
           --it->second;
           if (it->second == 0) {
-            chand_->channelz_node_->RemoveChildSubchannel(
-                subchannel_node->uuid());
+            subchannel_node->RemoveParent(chand_->channelz_node_);
             chand_->subchannel_refcount_map_.erase(it);
           }
         }
@@ -617,20 +616,18 @@ class ClientChannelFilter::SubchannelWrapper final
       parent_.reset(DEBUG_LOCATION, "WatcherWrapper");
     }
 
-    void OnConnectivityStateChange(
-        RefCountedPtr<ConnectivityStateWatcherInterface> self,
-        grpc_connectivity_state state, const absl::Status& status) override {
+    void OnConnectivityStateChange(grpc_connectivity_state state,
+                                   const absl::Status& status) override {
       GRPC_TRACE_LOG(client_channel, INFO)
           << "chand=" << parent_->chand_
           << ": connectivity change for subchannel wrapper " << parent_.get()
           << " subchannel " << parent_->subchannel_.get()
           << "hopping into work_serializer";
-      self.release();  // Held by callback.
+      auto self = RefAsSubclass<WatcherWrapper>();
       parent_->chand_->work_serializer_->Run(
-          [this, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-              *parent_->chand_->work_serializer_) {
-            ApplyUpdateInControlPlaneWorkSerializer(state, status);
-            Unref();
+          [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+              *self->parent_->chand_->work_serializer_) {
+            self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
           });
     }
 
@@ -980,27 +977,16 @@ class ClientChannelFilter::ClientChannelControlHelper final
   }
 
   GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup() override {
-    return *chand_->owning_stack_->stats_plugin_group;
+    return **chand_->owning_stack_->stats_plugin_group;
   }
 
-  void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
+  void AddTraceEvent(absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
-    if (chand_->channelz_node_ != nullptr) {
-      chand_->channelz_node_->AddTraceEvent(
-          ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_buffer(message.data(), message.size()));
-    }
+    GRPC_CHANNELZ_LOG(chand_->channelz_node_) << std::string(message);
   }
 
  private:
-  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
-      TraceSeverity severity) {
-    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
-    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
-    return channelz::ChannelTrace::Error;
-  }
-
   ClientChannelFilter* chand_;
 };
 
@@ -1029,7 +1015,11 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  return GlobalSubchannelPool::instance();
+  if (IsShardGlobalConnectionPoolEnabled()) {
+    return GlobalSubchannelPool::instance();
+  } else {
+    return LegacyGlobalSubchannelPool::instance();
+  }
 }
 
 }  // namespace
@@ -1332,12 +1322,8 @@ void ClientChannelFilter::OnResolverResultChangedLocked(
   }
   // Add channel trace event.
   if (!trace_strings.empty()) {
-    std::string message =
-        absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
-    if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                    grpc_slice_from_cpp_string(message));
-    }
+    GRPC_CHANNELZ_LOG(channelz_node_)
+        << "Resolution event: " << absl::StrJoin(trace_strings, ", ");
   }
 }
 
@@ -1551,11 +1537,16 @@ void ClientChannelFilter::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
+    if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state);
+    } else {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state)
+          << " status: " << status.ToString();
+    }
   }
 }
 
@@ -2428,9 +2419,7 @@ void ClientChannelFilter::LoadBalancedCall::RecordCallCompletion(
 void ClientChannelFilter::LoadBalancedCall::RecordLatency() {
   // Compute latency and report it to the tracer.
   if (call_attempt_tracer() != nullptr) {
-    gpr_timespec latency =
-        gpr_cycle_counter_sub(gpr_get_cycle_counter(), lb_call_start_time_);
-    call_attempt_tracer()->RecordEnd(latency);
+    call_attempt_tracer()->RecordEnd();
   }
 }
 

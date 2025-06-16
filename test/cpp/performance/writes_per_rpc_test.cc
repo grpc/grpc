@@ -128,7 +128,7 @@ class InProcessCHTTP2 {
       CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport",
           core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args(), nullptr)));
+                                      core_server->channel_args())));
       grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                           nullptr);
     }
@@ -218,18 +218,21 @@ static double UnaryPingPong(ThreadedFuzzingEventEngine* fuzzing_engine,
       EchoTestService::NewStub(fixture->channel()));
   auto baseline = grpc_core::global_stats().Collect();
   auto snapshot = grpc_core::global_stats().Collect();
+  auto http2_snapshot = grpc_core::http2_global_stats().Collect();
   auto last_snapshot = absl::Now();
   for (int iteration = 0; iteration < kIterations; iteration++) {
     if (iteration > 0 && iteration % kSnapshotEvery == 0) {
       auto new_snapshot = grpc_core::global_stats().Collect();
+      auto new_http2_snapshot = grpc_core::http2_global_stats().Collect();
       auto diff = new_snapshot->Diff(*snapshot);
+      auto http2_diff = new_http2_snapshot->Diff(*http2_snapshot);
       auto now = absl::Now();
       LOG(ERROR) << "  SNAPSHOT: UnaryPingPong(" << request_size << ", "
                  << response_size << "): writes_per_iteration="
                  << static_cast<double>(diff->syscall_write) /
                         static_cast<double>(kSnapshotEvery)
                  << " (total=" << diff->syscall_write << ", i=" << iteration
-                 << ") pings=" << diff->http2_pings_sent
+                 << ") pings=" << http2_diff->http2_pings_sent
                  << "; duration=" << now - last_snapshot;
       last_snapshot = now;
       snapshot = std::move(new_snapshot);

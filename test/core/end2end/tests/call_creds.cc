@@ -102,7 +102,7 @@ void TestRequestResponseWithPayloadAndCallCreds(CoreEnd2endTest& test,
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");
@@ -167,7 +167,7 @@ void TestRequestResponseWithPayloadAndOverriddenCallCreds(
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");
@@ -226,7 +226,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
   test.Expect(1, true);
   test.Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(client_message.payload(), "hello world");
@@ -241,7 +241,7 @@ void TestRequestResponseWithPayloadAndDeletedCallCreds(
 CORE_END2END_TEST(PerCallCredsOnInsecureTests,
                   RequestWithServerRejectingClientCreds) {
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
+  InitServer(DefaultServerArgs().Set(FAIL_AUTH_CHECK_SERVER_ARG_NAME, true));
   auto c = NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   auto* creds =
       grpc_md_only_test_credentials_create(fake_md_key, fake_md_value);

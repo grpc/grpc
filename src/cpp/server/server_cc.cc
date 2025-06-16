@@ -105,11 +105,18 @@ class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
 };
 
 std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
+Server::GlobalCallbacks* g_raw_callbacks = nullptr;
 gpr_once g_once_init_callbacks = GPR_ONCE_INIT;
 
 void InitGlobalCallbacks() {
-  if (!g_callbacks) {
-    g_callbacks = std::make_shared<DefaultGlobalCallbacks>();
+  if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+    if (!g_raw_callbacks) {
+      g_raw_callbacks = new DefaultGlobalCallbacks;
+    }
+  } else {
+    if (!g_callbacks) {
+      g_callbacks = std::make_shared<DefaultGlobalCallbacks>();
+    }
   }
 }
 
@@ -299,9 +306,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the executor (triggering a thread hop). This should
-    // only be used by internal callbacks like this and not by user application
-    // code.
+    // need to be run from the EventEngine (potentially triggering a thread
+    // hop). This should only be used by internal callbacks like this and not by
+    // user application code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
@@ -427,7 +434,9 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     ctx_->ctx.cq_ = &cq_;
     request_metadata_.count = 0;
 
-    global_callbacks_ = global_callbacks;
+    if (!grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+      global_callbacks_ = global_callbacks;
+    }
     resources_ = resources;
 
     interceptor_methods_.SetCall(&*wrapped_call_);
@@ -463,13 +472,21 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
   void ContinueRunAfterInterception() {
     ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
-    global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
+    if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+      g_raw_callbacks->PreSynchronousRequest(&ctx_->ctx);
+    } else {
+      global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
+    }
     auto* handler = resources_ ? method_->handler()
                                : server_->resource_exhausted_handler_.get();
     handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
         &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
         nullptr, nullptr));
-    global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
+    if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+      g_raw_callbacks->PostSynchronousRequest(&ctx_->ctx);
+    } else {
+      global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
+    }
 
     cq_.Shutdown();
 
@@ -618,10 +635,10 @@ class Server::CallbackRequest final
       functor_run = &CallbackCallTag::StaticRun;
       // Set inlineable to true since this callback is internally-controlled
       // without taking any locks, and thus does not need to be run from the
-      // executor (which triggers a thread hop). This should only be used by
-      // internal callbacks like this and not by user application code. The work
-      // here is actually non-trivial, but there is no chance of having user
-      // locks conflict with each other so it's ok to run inlined.
+      // EventEngine (which may trigger a thread hop). This should only be used
+      // by internal callbacks like this and not by user application code. The
+      // work here is actually non-trivial, but there is no chance of having
+      // user locks conflict with each other so it's ok to run inlined.
       inlineable = true;
     }
 
@@ -909,8 +926,12 @@ Server::Server(
       health_check_service_disabled_(false),
       server_metric_recorder_(server_metric_recorder) {
   gpr_once_init(&grpc::g_once_init_callbacks, grpc::InitGlobalCallbacks);
-  global_callbacks_ = grpc::g_callbacks;
-  global_callbacks_->UpdateArguments(args);
+  if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+    g_raw_callbacks->UpdateArguments(args);
+  } else {
+    global_callbacks_ = grpc::g_callbacks;
+    global_callbacks_->UpdateArguments(args);
+  }
 
   if (sync_server_cqs_ != nullptr) {
     bool default_rq_created = false;
@@ -995,9 +1016,15 @@ Server::~Server() {
 }
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
-  CHECK(!grpc::g_callbacks);
-  CHECK(callbacks);
-  grpc::g_callbacks.reset(callbacks);
+  if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+    CHECK(!g_raw_callbacks);
+    CHECK(callbacks);
+    g_raw_callbacks = callbacks;
+  } else {
+    CHECK(!g_callbacks);
+    CHECK(callbacks);
+    g_callbacks.reset(callbacks);
+  }
 }
 
 grpc_server* Server::c_server() { return server_; }
@@ -1124,7 +1151,11 @@ int Server::AddListeningPort(const std::string& addr,
                              grpc::ServerCredentials* creds) {
   CHECK(!started_);
   int port = creds->AddPortToServer(addr, server_);
-  global_callbacks_->AddPort(this, addr, creds, port);
+  if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+    g_raw_callbacks->AddPort(this, addr, creds, port);
+  } else {
+    global_callbacks_->AddPort(this, addr, creds, port);
+  }
   return port;
 }
 
@@ -1157,7 +1188,11 @@ void Server::UnrefAndWaitLocked() {
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   CHECK(!started_);
-  global_callbacks_->PreServerStart(this);
+  if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
+    g_raw_callbacks->PreServerStart(this);
+  } else {
+    g_callbacks->PreServerStart(this);
+  }
   started_ = true;
 
   // Only create default health check service when user did not provide an

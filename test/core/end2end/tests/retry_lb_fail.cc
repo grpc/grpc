@@ -40,12 +40,13 @@ std::atomic<int> g_num_lb_picks;
 //   starts recv_trailing_metadata op
 CORE_END2END_TEST(RetryTests, RetryLbFail) {
   SKIP_IF_V3();  // Not working yet
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    RegisterFailLoadBalancingPolicy(
-        builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        RegisterFailLoadBalancingPolicy(
+            builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);
+      });
   g_num_lb_picks.store(0, std::memory_order_relaxed);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_ENABLE_RETRIES, true)

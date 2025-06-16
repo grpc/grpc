@@ -294,6 +294,11 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND MutableSlice
     return MutableSlice(NoCheck{}, grpc_slice_split_head(c_slice_ptr(), n));
   }
 
+  MutableSlice TakeFirstNoInline(size_t n) {
+    return MutableSlice(NoCheck{},
+                        grpc_slice_split_head_no_inline(c_slice_ptr(), n));
+  }
+
   // Iterator access to the underlying bytes
   uint8_t* begin() { return mutable_data(); }
   uint8_t* end() { return mutable_data() + size(); }
@@ -431,6 +436,12 @@ class GPR_MSVC_EMPTY_BASE_CLASS_WORKAROUND Slice
 
   static Slice FromExternalString(absl::string_view str) {
     return FromStaticString(str);
+  }
+
+  static Slice ZeroContentsWithLength(size_t length) {
+    grpc_slice backing = grpc_slice_malloc(length);
+    memset(GRPC_SLICE_START_PTR(backing), 0, length);
+    return Slice(backing);
   }
 };
 

@@ -29,6 +29,7 @@
 #include "absl/types/span.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
+#include "src/core/ext/transport/chaotic_good/tcp_frame_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/varint.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -195,50 +196,51 @@ SliceBuffer SliceBufferFromHeaderPayload(const T& payload) {
 }
 
 SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
-  chaotic_good::FrameHeader h;
+  chaotic_good::TcpFrameHeader h;
   SliceBuffer suffix;
-  h.stream_id = frame.stream_id();
+  h.header.stream_id = frame.stream_id();
   switch (frame.frame_type_case()) {
     case fuzzer_input::ChaoticGoodFrame::kKnownType:
       switch (frame.known_type()) {
         case fuzzer_input::ChaoticGoodFrame::SETTINGS:
-          h.type = chaotic_good::FrameType::kSettings;
+          h.header.type = chaotic_good::FrameType::kSettings;
           break;
         case fuzzer_input::ChaoticGoodFrame::CLIENT_INITIAL_METADATA:
-          h.type = chaotic_good::FrameType::kClientInitialMetadata;
+          h.header.type = chaotic_good::FrameType::kClientInitialMetadata;
           break;
         case fuzzer_input::ChaoticGoodFrame::MESSAGE:
-          h.type = chaotic_good::FrameType::kMessage;
+          h.header.type = chaotic_good::FrameType::kMessage;
           break;
         case fuzzer_input::ChaoticGoodFrame::CLIENT_END_OF_STREAM:
-          h.type = chaotic_good::FrameType::kClientEndOfStream;
+          h.header.type = chaotic_good::FrameType::kClientEndOfStream;
           break;
         case fuzzer_input::ChaoticGoodFrame::SERVER_INITIAL_METADATA:
-          h.type = chaotic_good::FrameType::kServerInitialMetadata;
+          h.header.type = chaotic_good::FrameType::kServerInitialMetadata;
           break;
         case fuzzer_input::ChaoticGoodFrame::SERVER_TRAILING_METADATA:
-          h.type = chaotic_good::FrameType::kServerTrailingMetadata;
+          h.header.type = chaotic_good::FrameType::kServerTrailingMetadata;
           break;
         case fuzzer_input::ChaoticGoodFrame::CANCEL:
-          h.type = chaotic_good::FrameType::kCancel;
+          h.header.type = chaotic_good::FrameType::kCancel;
           break;
         default:
           break;
       }
       break;
     case fuzzer_input::ChaoticGoodFrame::kUnknownType:
-      h.type = static_cast<chaotic_good::FrameType>(frame.unknown_type());
+      h.header.type =
+          static_cast<chaotic_good::FrameType>(frame.unknown_type());
       break;
     case fuzzer_input::ChaoticGoodFrame::FRAME_TYPE_NOT_SET:
-      h.type = chaotic_good::FrameType::kMessage;
+      h.header.type = chaotic_good::FrameType::kMessage;
       break;
   }
-  h.stream_id = frame.stream_id();
-  h.payload_connection_id = 0;
-  h.payload_length = 0;
+  h.header.stream_id = frame.stream_id();
+  h.payload_tag = 0;
+  h.header.payload_length = 0;
   auto proto_payload = [&](auto payload) {
     std::string temp = payload.SerializeAsString();
-    h.payload_length = temp.length();
+    h.header.payload_length = temp.length();
     suffix.Append(Slice::FromCopiedString(temp));
   };
   switch (frame.payload_case()) {
@@ -247,19 +249,18 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadRawBytes:
       if (frame.payload_raw_bytes().empty()) break;
-      h.payload_length = frame.payload_raw_bytes().length();
+      h.header.payload_length = frame.payload_raw_bytes().length();
       suffix.Append(Slice::FromCopiedString(frame.payload_raw_bytes()));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadEmptyOfLength:
-      h.payload_length =
+      h.header.payload_length =
           std::min<uint32_t>(65536, frame.payload_empty_of_length());
       suffix.Append(
-          Slice::FromCopiedString(std::string(h.payload_length, 'a')));
+          Slice::FromCopiedString(std::string(h.header.payload_length, 'a')));
       break;
     case fuzzer_input::ChaoticGoodFrame::kPayloadOtherConnectionId:
-      h.payload_connection_id =
-          frame.payload_other_connection_id().connection_id();
-      h.payload_length = std::min<uint32_t>(
+      h.payload_tag = frame.payload_other_connection_id().connection_id();
+      h.header.payload_length = std::min<uint32_t>(
           32 * 1024 * 1024, frame.payload_other_connection_id().length());
       break;
     case fuzzer_input::ChaoticGoodFrame::kSettings:
@@ -272,11 +273,11 @@ SliceBuffer ChaoticGoodFrame(const fuzzer_input::ChaoticGoodFrame& frame) {
       proto_payload(frame.server_metadata());
       break;
   }
-  uint8_t bytes[chaotic_good::FrameHeader::kFrameHeaderSize];
+  uint8_t bytes[chaotic_good::TcpFrameHeader::kFrameHeaderSize];
   h.Serialize(bytes);
   SliceBuffer out;
   out.Append(Slice::FromCopiedBuffer(
-      bytes, chaotic_good::FrameHeader::kFrameHeaderSize));
+      bytes, chaotic_good::TcpFrameHeader::kFrameHeaderSize));
   out.Append(suffix);
   return out;
 }
@@ -478,7 +479,8 @@ void ReadForever(std::shared_ptr<EventEngine::Endpoint> ep) {
           if (!status.ok()) return;
           ReadForever(std::move(ep));
         },
-        buffer_ptr, nullptr);
+        buffer_ptr,
+        grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs());
   } while (finished);
 }
 
@@ -519,7 +521,9 @@ void ScheduleWritesForReads(
                       ExecCtx exec_ctx;
                       FinishWrite(std::move(status));
                     },
-                    &writing_, nullptr)) {
+                    &writing_,
+                    grpc_event_engine::experimental::EventEngine::Endpoint::
+                        WriteArgs())) {
               FinishWrite(absl::OkStatus());
             }
           });

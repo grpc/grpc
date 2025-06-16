@@ -174,7 +174,6 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
@@ -202,7 +201,7 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch in ("x86", "aarch64"):
+            if self.arch in ("x86"):
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
 
             if self.arch == "aarch64":
@@ -343,7 +342,7 @@ class ProtocArtifact:
             environ["LDFLAGS"] = ""
             if self.platform == "linux":
                 dockerfile_dir = (
-                    "tools/dockerfile/grpc_artifact_centos6_{}".format(
+                    "tools/dockerfile/grpc_artifact_manylinux2014_{}".format(
                         self.arch
                     )
                 )
@@ -351,7 +350,7 @@ class ProtocArtifact:
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
                     dockerfile_dir = (
-                        "tools/dockerfile/grpc_artifact_protoc_aarch64"
+                        "tools/dockerfile/grpc_artifact_manylinux2014_aarch64"
                     )
                 environ["LDFLAGS"] += " -static-libgcc -static-libstdc++ -s"
                 return create_docker_jobspec(
@@ -479,7 +478,6 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw32"),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
             RubyArtifact("linux", "x86-linux"),

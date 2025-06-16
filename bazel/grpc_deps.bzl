@@ -35,11 +35,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "cea4c77cd69279585ea53efa2bb2ae6eb5f31fb39c214213c5b7cdf3c44d7b52",
-            strip_prefix = "boringssl-c64b8fefbba9a9dadda73138062fc449bdf11e2a",
+            sha256 = "b717df72df0023933a729bac00fa422a222949cfa84eb8500f3a9af34441fb6e",
+            strip_prefix = "boringssl-c63fadbde60a2224c22189d14c4001bbd2a3a629",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
-                "https://github.com/google/boringssl/archive/c64b8fefbba9a9dadda73138062fc449bdf11e2a.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
+                "https://github.com/google/boringssl/archive/c63fadbde60a2224c22189d14c4001bbd2a3a629.tar.gz",
             ],
         )
 
@@ -47,23 +47,23 @@ def grpc_deps():
         http_archive(
             name = "zlib",
             build_file = "@com_github_grpc_grpc//third_party:zlib.BUILD",
-            sha256 = "18337cdb32562003c39d9f7322b9a166ad4abfb2b909566428e11f96d2385586",
-            strip_prefix = "zlib-09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851",
+            sha256 = "da8937719bb6e9600a671f320934c0db3b8020c9c30fecda60b5a5ebdc9a1ea0",
+            strip_prefix = "zlib-f1f503da85d52e56aae11557b4d79a42bcaa2b86",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851.tar.gz",
-                "https://github.com/madler/zlib/archive/09155eaa2f9270dc4ed1fa13e2b4b2613e6e4851.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
+                "https://github.com/madler/zlib/archive/f1f503da85d52e56aae11557b4d79a42bcaa2b86.tar.gz",
             ],
         )
 
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "000afdf8dd0af9f294726138eb4ea4dea28a84831e07f5edf6fff0fdf6d026f9",
-            strip_prefix = "protobuf-d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e",
+            sha256 = "2f92f74bf80f7d4a48d09056fb27dd237f82c57d2d505ec401f9c330729e3022",
+            strip_prefix = "protobuf-3d4adad5c4c4e6a6f9f038769b8c90716065b0e4",
             urls = [
-                # https://github.com/protocolbuffers/protobuf/commits/v30.0
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
-                "https://github.com/protocolbuffers/protobuf/archive/d295af5c3002c08e1bfd9d7f9e175d0a4d015f1e.tar.gz",
+                # https://github.com/protocolbuffers/protobuf/commits/v31.0
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
+                "https://github.com/protocolbuffers/protobuf/archive/3d4adad5c4c4e6a6f9f038769b8c90716065b0e4.tar.gz",
             ],
             patches = [
                 "@com_github_grpc_grpc//third_party:protobuf.patch",
@@ -78,12 +78,15 @@ def grpc_deps():
     if "com_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_google_googletest",
-            sha256 = "31bf78bd91b96dd5e24fab3bb1d7f3f7453ccbaceec9afb86d6e4816a15ab109",
-            strip_prefix = "googletest-2dd1c131950043a8ad5ab0d2dda0e0970596586a",
+            sha256 = "745c55415660044610f7fcd3af7a6420d5de16a7dbb9ebfe2e131275676232be",
+            strip_prefix = "googletest-52eb8108c5bdec04579160ae17225d66034bd723",
             urls = [
-                # 2023-10-09
-                "https://github.com/google/googletest/archive/2dd1c131950043a8ad5ab0d2dda0e0970596586a.tar.gz",
+                "https://github.com/google/googletest/archive/52eb8108c5bdec04579160ae17225d66034bd723.tar.gz",
             ],
+            repo_mapping = {
+                "@abseil-cpp": "@com_google_absl",
+                "@re2": "@com_googlesource_code_re2",
+            },
         )
 
     if "com_google_fuzztest" not in native.existing_rules():
@@ -148,11 +151,11 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "f50e5ac311a81382da7fa75b97310e4b9006474f9560ac46f54a9967f07d4ae3",
-            strip_prefix = "abseil-cpp-20240722.0",
+            sha256 = "b396401fd29e2e679cace77867481d388c807671dc2acc602a0259eeb79b7811",
+            strip_prefix = "abseil-cpp-20250127.1",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
-                "https://github.com/abseil/abseil-cpp/archive/20240722.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
+                "https://github.com/abseil/abseil-cpp/releases/download/20250127.1/abseil-cpp-20250127.1.tar.gz",
             ],
             repo_mapping = {
                 "@googletest": "@com_google_googletest",
@@ -363,9 +366,26 @@ def grpc_deps():
             ],
         )
 
+    # Building grpc with openssl is only supported when using bzlmod. Workspaces
+    # are deprecated, so just create a dummy repo so that the grpc targets build
+    # when using workspaces.
+    openssl = repository_rule(
+        implementation = _openssl_impl,
+    )
+    openssl(name = "openssl")
+
     grpc_module_deps()
 
     grpc_python_deps()
+
+def _openssl_impl(ctx):
+    ctx.file("BUILD", """
+package(default_visibility = ["//visibility:public"])
+
+cc_library(name = "ssl")
+
+cc_library(name = "crypto")
+""")
 
 # TODO: move some dependencies from "grpc_deps" here?
 # buildifier: disable=unnamed-macro
@@ -385,6 +405,16 @@ def grpc_test_only_deps():
             ],
             strip_prefix = "libprotobuf-mutator-1f95f8083066f5b38fd2db172e7e7f9aa7c49d2d",
             build_file = "@com_github_grpc_grpc//third_party:libprotobuf_mutator.BUILD",
+        )
+
+    if "yaml-cpp" not in native.existing_rules():
+        http_archive(
+            name = "yaml-cpp",
+            sha256 = "fbe74bbdcee21d656715688706da3c8becfd946d92cd44705cc6098bb23b3a16",
+            strip_prefix = "yaml-cpp-0.8.0",
+            urls = [
+                "https://github.com/jbeder/yaml-cpp/archive/refs/tags/0.8.0.tar.gz",
+            ],
         )
 
 def grpc_module_deps():

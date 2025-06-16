@@ -25,16 +25,14 @@
 
 #include <memory>
 #include <string>
-#include <vector>
 
 #include "absl/log/log.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
 #include "src/core/credentials/transport/fake/fake_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/port.h"
@@ -134,7 +132,20 @@ void test_bind_server_to_addr(const char* host, bool secure) {
 }
 
 static bool external_dns_works(const char* host) {
-  return grpc_core::GetDNSResolver()->LookupHostnameBlocking(host, "80").ok();
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() ||
+      grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
+    auto resolver =
+        grpc_event_engine::experimental::GetDefaultEventEngine()
+            ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
+                                 DNSResolver::ResolverOptions());
+    if (!resolver.ok()) return false;
+    return grpc_event_engine::experimental::LookupHostnameBlocking(
+               resolver->get(), host, "80")
+        .ok();
+  } else {
+    return grpc_core::GetDNSResolver()->LookupHostnameBlocking(host, "80").ok();
+  }
 }
 
 static void test_bind_server_to_addrs(const char** addrs, size_t n) {

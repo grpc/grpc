@@ -35,6 +35,7 @@
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good_legacy/client/chaotic_good_connector.h"
 #include "src/core/handshaker/handshaker.h"
+#include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -62,12 +63,13 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/promise_endpoint.h"
+#include "src/core/telemetry/metrics.h"
+#include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 
-using grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using grpc_event_engine::experimental::EventEngine;
 
 namespace grpc_core {
@@ -94,65 +96,52 @@ absl::StatusOr<ConnectPromiseEndpointResult> ResultFromHandshake(
   if (args->endpoint == nullptr) {
     return absl::InternalError("Handshake complete with empty endpoint.");
   }
-  return ConnectPromiseEndpointResult{
-      PromiseEndpoint(grpc_event_engine::experimental::
-                          grpc_take_wrapped_event_engine_endpoint(
-                              (*result)->endpoint.release()),
-                      std::move(args->read_buffer)),
-      args->args};
-}
-
-void OnConnect(absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint,
-               RefCountedPtr<HandshakeManager> handshake_mgr,
-               const ChannelArgs& channel_args, Timestamp deadline,
-               ConnectResultLatch result_latch) {
-  if (!endpoint.ok()) {
-    auto endpoint_status = endpoint.status();
-    auto error = GRPC_ERROR_CREATE_REFERENCING("connect endpoint failed",
-                                               &endpoint_status, 1);
-    result_latch->Set(error);
-    return;
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      endpoint = grpc_event_engine::experimental::
+          grpc_take_wrapped_event_engine_endpoint(
+              (*result)->endpoint.release());
+  if (endpoint == nullptr) {
+    LOG(ERROR) << "Failed to take endpoint.";
+    return absl::InternalError("Failed to take endpoint.");
   }
   auto* chaotic_good_ext = grpc_event_engine::experimental::QueryExtension<
-      grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint->get());
+      grpc_event_engine::experimental::ChaoticGoodExtension>(endpoint.get());
   if (chaotic_good_ext != nullptr) {
     chaotic_good_ext->EnableStatsCollection(/*is_control_channel=*/true);
     chaotic_good_ext->UseMemoryQuota(ResourceQuota::Default()->memory_quota());
   }
-  handshake_mgr->DoHandshake(
-      OrphanablePtr<grpc_endpoint>(
-          grpc_event_engine_endpoint_create(std::move(*endpoint))),
-      channel_args, deadline, nullptr /* acceptor */,
-      [result_latch = std::move(result_latch),
-       handshake_mgr](absl::StatusOr<HandshakerArgs*> result) {
-        result_latch->Set(ResultFromHandshake(std::move(result)));
-      });
+  return ConnectPromiseEndpointResult{
+      PromiseEndpoint(std::move(endpoint), std::move(args->read_buffer)),
+      args->args};
 }
 
-auto ConnectPromiseEndpoint(EventEngine::ResolvedAddress addr,
-                            const ChannelArgs& channel_args,
-                            Timestamp deadline) {
+Promise<absl::StatusOr<ConnectPromiseEndpointResult>> ConnectPromiseEndpoint(
+    EventEngine::ResolvedAddress addr, ChannelArgs channel_args,
+    Timestamp deadline) {
   auto event_engine = channel_args.GetObjectRef<EventEngine>();
   auto result_latch = std::make_shared<
       InterActivityLatch<absl::StatusOr<ConnectPromiseEndpointResult>>>();
   auto handshake_mgr = MakeRefCounted<HandshakeManager>();
-  auto connect_hdl = event_engine->Connect(
-      [result_latch, channel_args, handshake_mgr,
-       deadline](absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>>
-                     endpoint) mutable {
-        ExecCtx exec_ctx;
-        OnConnect(std::move(endpoint), std::move(handshake_mgr), channel_args,
-                  deadline, std::move(result_latch));
-      },
-      addr, ChannelArgsEndpointConfig(channel_args),
-      ResourceQuota::Default()->memory_quota()->CreateMemoryAllocator(
-          "data_endpoint_connection"),
-      std::chrono::seconds(kTimeoutSecs));
+  absl::StatusOr<std::string> address =
+      grpc_event_engine::experimental::ResolvedAddressToURI(addr);
+  if (!address.ok()) {
+    return Immediate<absl::StatusOr<ConnectPromiseEndpointResult>>(
+        address.status());
+  }
+  channel_args = channel_args.Set(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS,
+                                  address.value());
+  CoreConfiguration::Get().handshaker_registry().AddHandshakers(
+      HandshakerType::HANDSHAKER_CLIENT, channel_args, nullptr,
+      handshake_mgr.get());
+  handshake_mgr->DoHandshake(
+      nullptr, channel_args, deadline, nullptr /* acceptor */,
+      [result_latch, handshake_mgr](absl::StatusOr<HandshakerArgs*> result) {
+        result_latch->Set(ResultFromHandshake(std::move(result)));
+      });
   return OnCancel(
       [result_latch, await = result_latch->Wait()]() { return await(); },
-      [handshake_mgr, connect_hdl, event_engine]() {
+      [handshake_mgr, event_engine]() {
         handshake_mgr->Shutdown(absl::CancelledError());
-        event_engine->CancelConnect(connect_hdl);
       });
 }
 
@@ -170,21 +159,28 @@ class SettingsHandshake : public RefCounted<SettingsHandshake> {
     SettingsFrame frame;
     frame.body = client_settings;
     SliceBuffer send_buffer;
-    frame.MakeHeader().Serialize(
-        send_buffer.AddTiny(FrameHeader::kFrameHeaderSize));
+    TcpFrameHeader{frame.MakeHeader(), 0}.Serialize(
+        send_buffer.AddTiny(TcpFrameHeader::kFrameHeaderSize));
     frame.SerializePayload(send_buffer);
     return TrySeq(
-        connect_result_.endpoint.Write(std::move(send_buffer)),
+        connect_result_.endpoint.Write(std::move(send_buffer),
+                                       PromiseEndpoint::WriteArgs{}),
         [this]() {
           return connect_result_.endpoint.ReadSlice(
-              FrameHeader::kFrameHeaderSize);
+              TcpFrameHeader::kFrameHeaderSize);
         },
         [](Slice frame_header) {
-          return FrameHeader::Parse(frame_header.data());
+          return TcpFrameHeader::Parse(frame_header.data());
         },
-        [this](FrameHeader frame_header) {
-          server_header_ = frame_header;
-          return connect_result_.endpoint.Read(frame_header.payload_length);
+        [this](TcpFrameHeader frame_header) {
+          if (frame_header.payload_tag != 0) {
+            return absl::InternalError("Unexpected connection id in frame");
+          }
+          server_header_ = frame_header.header;
+          return absl::OkStatus();
+        },
+        [this]() {
+          return connect_result_.endpoint.Read(server_header_.payload_length);
         },
         [this](SliceBuffer payload) {
           return server_frame_.Deserialize(server_header_, std::move(payload));
@@ -245,10 +241,20 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
               if (!parse_status.ok()) {
                 return parse_status;
               }
-              auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
-                  result.connect_result.channel_args,
+              auto socket_node = TcpFrameTransport::MakeSocketNode(
+                  result_notifier_ptr->args.channel_args,
+                  result.connect_result.endpoint);
+              auto frame_transport = MakeOrphanable<TcpFrameTransport>(
+                  result_notifier_ptr->config.MakeTcpFrameTransportOptions(),
                   std::move(result.connect_result.endpoint),
-                  std::move(result_notifier_ptr->config), std::move(connector));
+                  result_notifier_ptr->config.TakePendingDataEndpoints(),
+                  MakeRefCounted<TransportContext>(
+                      result_notifier_ptr->args.channel_args,
+                      std::move(socket_node)));
+              auto transport = MakeOrphanable<ChaoticGoodClientTransport>(
+                  result_notifier_ptr->args.channel_args,
+                  std::move(frame_transport),
+                  result_notifier_ptr->config.MakeMessageChunker());
               result_notifier_ptr->result->transport = transport.release();
               result_notifier_ptr->result->channel_args =
                   result.connect_result.channel_args;
@@ -283,55 +289,25 @@ PendingConnection ChaoticGoodConnector::ConnectionCreator::Connect(
           }));
 }
 
-namespace {
-
-class ChaoticGoodChannelFactory final : public ClientChannelFactory {
- public:
-  RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& args) override {
-    return Subchannel::Create(MakeOrphanable<ChaoticGoodConnector>(), address,
-                              args);
-  }
-};
-
-}  // namespace
-}  // namespace chaotic_good
-}  // namespace grpc_core
-
-grpc_channel* grpc_chaotic_good_channel_create(const char* target,
-                                               const grpc_channel_args* args) {
-  if (!grpc_core::IsChaoticGoodFramingLayerEnabled()) {
-    return grpc_chaotic_good_legacy_channel_create(target, args);
+absl::StatusOr<grpc_channel*> CreateChaoticGoodChannel(
+    std::string target, const ChannelArgs& args) {
+  if (!IsChaoticGoodFramingLayerEnabled()) {
+    return chaotic_good_legacy::CreateLegacyChaoticGoodChannel(target, args);
   }
 
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_chaotic_good_channel_create(target=" << target
-      << ",  args=" << (void*)args << ")";
-  grpc_channel* channel = nullptr;
-  grpc_error_handle error;
   // Create channel.
-  auto r = grpc_core::ChannelCreate(
+  auto r = ChannelCreate(
       target,
-      grpc_core::CoreConfiguration::Get()
-          .channel_args_preconditioning()
-          .PreconditionChannelArgs(args)
-          .SetObject(grpc_core::NoDestructSingleton<
-                     grpc_core::chaotic_good::ChaoticGoodChannelFactory>::Get())
+      args.SetObject(
+              EndpointTransportClientChannelFactory<ChaoticGoodConnector>())
           .Set(GRPC_ARG_USE_V3_STACK, true),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
+  } else {
+    return r.status();
   }
-  LOG(ERROR) << "Failed to create chaotic good client channel: " << r.status();
-  error = absl_status_to_grpc_error(r.status());
-  intptr_t integer;
-  grpc_status_code status = GRPC_STATUS_INTERNAL;
-  if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                         &integer)) {
-    status = static_cast<grpc_status_code>(integer);
-  }
-  channel = grpc_lame_client_channel_create(
-      target, status, "Failed to create chaotic good client channel");
-  return channel;
 }
+
+}  // namespace chaotic_good
+}  // namespace grpc_core

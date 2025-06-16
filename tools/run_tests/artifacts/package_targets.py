@@ -134,7 +134,7 @@ class RubyPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_ruby.sh",
         )
 
@@ -165,15 +165,23 @@ class PythonPackage:
         dockerfile_dir = (
             "tools/dockerfile/grpc_artifact_python_manylinux2014_x64"
         )
+        environ = {
+            "PYTHON": "/opt/python/cp39-cp39/bin/python",
+            "ARTIFACT_PREFIX": "python_",
+            "EXCLUDE_PATTERN": "python_musllinux_1_1_aarch64_*",
+        }
         if "musllinux_1_1" in self.platform and "aarch64" in self.arch:
             dockerfile_dir = (
                 "tools/dockerfile/grpc_artifact_python_musllinux_1_1_aarch64"
             )
+            environ["ARTIFACT_PREFIX"] = "python_musllinux_1_1_aarch64_"
+            environ["EXCLUDE_PATTERN"] = ""
+
         return create_docker_jobspec(
             self.name,
             dockerfile_dir,
             "tools/run_tests/artifacts/build_package_python.sh",
-            environ={"PYTHON": "/opt/python/cp39-cp39/bin/python"},
+            environ=environ,
         )
 
 
@@ -191,7 +199,7 @@ class PHPPackage:
         del inner_jobs  # arg unused as this step simply collects preexisting artifacts
         return create_docker_jobspec(
             self.name,
-            "tools/dockerfile/grpc_artifact_centos6_x64",
+            "tools/dockerfile/grpc_artifact_manylinux2014_x64",
             "tools/run_tests/artifacts/build_package_php.sh",
         )
 

@@ -41,6 +41,7 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -57,7 +58,6 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/debug_location.h"
@@ -124,6 +124,10 @@ struct inproc_transport final : public grpc_core::FilterStackTransport {
   void SetPollsetSet(grpc_stream* stream,
                      grpc_pollset_set* pollset_set) override;
   void PerformOp(grpc_transport_op* op) override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return nullptr;
+  }
 
   size_t SizeOfStream() const override;
   bool HackyDisableStreamOpBatchCoalescingInConnectedChannel() const override {
@@ -1264,8 +1268,8 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
   inproc_transports_create(&server_transport, &client_transport);
 
   // TODO(ncteisen): design and support channelz GetSocket for inproc.
-  grpc_error_handle error = core_server->SetupTransport(
-      server_transport, nullptr, server_args, nullptr);
+  grpc_error_handle error =
+      core_server->SetupTransport(server_transport, nullptr, server_args);
   grpc_channel* channel = nullptr;
   if (error.ok()) {
     auto new_channel = grpc_core::ChannelCreate(

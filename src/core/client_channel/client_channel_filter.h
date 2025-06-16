@@ -34,6 +34,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_args.h"
 #include "src/core/client_channel/client_channel_factory.h"
@@ -53,7 +54,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/load_balancing/lb_policy.h"
@@ -437,8 +437,6 @@ class ClientChannelFilter::LoadBalancedCall
   ClientCallTracer::CallAttemptTracer* call_attempt_tracer_;
 
   absl::AnyInvocable<void()> on_commit_;
-
-  gpr_cycle_counter lb_call_start_time_ = gpr_get_cycle_counter();
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const BackendMetricData* backend_metric_data_ = nullptr;

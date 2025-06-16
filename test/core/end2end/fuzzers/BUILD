@@ -36,6 +36,7 @@ grpc_cc_proto_library(
 
 grpc_cc_library(
     name = "fuzzing_common",
+    testonly = True,
     srcs = ["fuzzing_common.cc"],
     hdrs = ["fuzzing_common.h"],
     external_deps = [
@@ -100,6 +101,7 @@ grpc_cc_proto_library(
 
 grpc_cc_library(
     name = "network_input",
+    testonly = True,
     srcs = ["network_input.cc"],
     hdrs = ["network_input.h"],
     external_deps = ["absl/log:log"],
@@ -107,6 +109,7 @@ grpc_cc_library(
         "fuzzer_input_cc_proto",
         "//:chttp2_frame",
         "//src/core:chaotic_good_frame_header",
+        "//src/core:chaotic_good_tcp_frame_transport",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:fuzzing_channel_args",
         "//test/core/test_util:grpc_test_util_base",

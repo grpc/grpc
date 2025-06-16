@@ -18,6 +18,8 @@
 #include <memory>
 #include <string>
 
+#include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "examples/protos/helloworld.grpc.pb.h"
 
 using grpc::Channel;
@@ -51,6 +53,8 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   std::string target_str("unix-abstract:grpc%00abstract");
   GreeterClient greeter(
       grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));

@@ -56,7 +56,7 @@
 #include "src/core/util/notification.h"
 
 extern absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory();
 
 ABSL_FLAG(std::string, target, "ipv4:127.0.0.1:50051", "Target string");
@@ -81,7 +81,7 @@ void SendMessage(EventEngine::Endpoint* endpoint, int message_id) {
         CHECK_OK(status);
         write_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::WriteArgs());
   write_done.WaitForNotification();
 }
 
@@ -99,7 +99,7 @@ void ReceiveAndEchoMessage(EventEngine::Endpoint* endpoint, int message_id) {
                    << received.as_string_view();
         read_done.Notify();
       },
-      &buf, nullptr);
+      &buf, EventEngine::Endpoint::ReadArgs());
   read_done.WaitForNotification();
 }
 

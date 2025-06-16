@@ -46,6 +46,7 @@
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -63,6 +64,7 @@
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/load_file.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
@@ -102,6 +104,7 @@ struct metadata_server_detector {
   int is_done;
   int success;
   grpc_http_response response;
+  grpc_core::Notification done;
 };
 
 namespace {
@@ -183,6 +186,10 @@ static void on_metadata_server_detection_http_response(
       }
     }
   }
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    detector->done.Notify();
+    return;
+  }
   gpr_mu_lock(g_polling_mu);
   detector->is_done = 1;
   GRPC_LOG_IF_ERROR(
@@ -210,9 +217,9 @@ static int is_metadata_server_reachable() {
   detector.is_done = 0;
   detector.success = 0;
   memset(&request, 0, sizeof(grpc_http_request));
-  auto uri =
-      grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
-                             {} /* query params */, "" /* fragment */);
+  auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
+                                    GRPC_COMPUTE_ENGINE_DETECTION_HOST, "/",
+                                    {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded
   auto http_request = grpc_core::HttpRequest::Get(
       std::move(*uri), nullptr /* channel args */, &detector.pollent, &request,
@@ -224,20 +231,25 @@ static int is_metadata_server_reachable() {
           grpc_insecure_credentials_create()));
   http_request->Start();
   grpc_core::ExecCtx::Get()->Flush();
-  // Block until we get the response. This is not ideal but this should only be
-  // called once for the lifetime of the process by the default credentials.
-  gpr_mu_lock(g_polling_mu);
-  while (!detector.is_done) {
-    grpc_pollset_worker* worker = nullptr;
-    if (!GRPC_LOG_IF_ERROR(
-            "pollset_work",
-            grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
-                              &worker, grpc_core::Timestamp::InfFuture()))) {
-      detector.is_done = 1;
-      detector.success = 0;
+  if (grpc_event_engine::experimental::UsePollsetAlternative()) {
+    detector.done.WaitForNotification();
+  } else {
+    // Block until we get the response. This is not ideal but this should only
+    // be called once for the lifetime of the process by the default
+    // credentials.
+    gpr_mu_lock(g_polling_mu);
+    while (!detector.is_done) {
+      grpc_pollset_worker* worker = nullptr;
+      if (!GRPC_LOG_IF_ERROR(
+              "pollset_work",
+              grpc_pollset_work(grpc_polling_entity_pollset(&detector.pollent),
+                                &worker, grpc_core::Timestamp::InfFuture()))) {
+        detector.is_done = 1;
+        detector.success = 0;
+      }
     }
+    gpr_mu_unlock(g_polling_mu);
   }
-  gpr_mu_unlock(g_polling_mu);
   http_request.reset();
   GRPC_CLOSURE_INIT(&destroy_closure, destroy_pollset,
                     grpc_polling_entity_pollset(&detector.pollent),

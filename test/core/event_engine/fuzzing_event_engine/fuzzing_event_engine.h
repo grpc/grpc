@@ -40,6 +40,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/no_destruct.h"
@@ -125,6 +126,9 @@ class FuzzingEventEngine : public EventEngine {
   Duration max_delay_write() const {
     return max_delay_[static_cast<int>(RunType::kWrite)];
   }
+
+  std::pair<std::unique_ptr<Endpoint>, std::unique_ptr<Endpoint>>
+  CreateEndpointPair();
 
  private:
   class IoToken {
@@ -262,20 +266,23 @@ class FuzzingEventEngine : public EventEngine {
   // other index 1, both pointing to the same EndpointMiddle.
   class FuzzingEndpoint final : public Endpoint {
    public:
+    class TelemetryInfo;
+
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}
     ~FuzzingEndpoint() override;
 
     bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-              SliceBuffer* buffer, const ReadArgs* args) override;
+              SliceBuffer* buffer, ReadArgs args) override;
     bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-               SliceBuffer* data, const WriteArgs* args) override;
+               SliceBuffer* data, WriteArgs args) override;
     const ResolvedAddress& GetPeerAddress() const override {
       return middle_->addrs[peer_index()];
     }
     const ResolvedAddress& GetLocalAddress() const override {
       return middle_->addrs[my_index()];
     }
+    std::shared_ptr<Endpoint::TelemetryInfo> GetTelemetryInfo() const override;
 
    private:
     int my_index() const { return index_; }
@@ -303,6 +310,9 @@ class FuzzingEventEngine : public EventEngine {
   TaskHandle RunAfterLocked(RunType run_type, Duration when,
                             absl::AnyInvocable<void()> closure)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  TaskHandle RunAfterExactlyLocked(Duration when,
+                                   absl::AnyInvocable<void()> closure)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Allocate a port. Considered fuzzer selected port orderings first, and then
   // falls back to an exhaustive incremental search from port #1.
@@ -320,15 +330,6 @@ class FuzzingEventEngine : public EventEngine {
   // at all.
   virtual void OnClockIncremented(Duration) {}
 
-  // We need everything EventEngine to do reasonable timer steps -- without it
-  // we need to do a bunch of evil to make sure both timer systems are ticking
-  // each step.
-  static bool IsSaneTimerEnvironment() {
-    return grpc_core::IsEventEngineClientEnabled() &&
-           grpc_core::IsEventEngineListenerEnabled() &&
-           grpc_core::IsEventEngineDnsEnabled();
-  }
-
   // For the next connection being built, query the list of fuzzer selected
   // write size limits.
   std::queue<size_t> WriteSizesForConnection()
@@ -338,6 +339,7 @@ class FuzzingEventEngine : public EventEngine {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(now_mu_);
   static gpr_timespec GlobalNowImpl(gpr_clock_type clock_type)
       ABSL_LOCKS_EXCLUDED(mu_);
+  absl::Time NowAsAbslTime() ABSL_LOCKS_EXCLUDED(now_mu_);
 
   static grpc_core::NoDestruct<grpc_core::Mutex> mu_;
   static grpc_core::NoDestruct<grpc_core::Mutex> now_mu_
@@ -351,6 +353,11 @@ class FuzzingEventEngine : public EventEngine {
   // epoch to allow for some fancy atomic stuff.
   Time now_ ABSL_GUARDED_BY(now_mu_) = Time() + std::chrono::seconds(5);
   std::queue<Duration> task_delays_ ABSL_GUARDED_BY(mu_);
+  const absl::Time epoch_ = absl::Now();
+  std::map<int, std::vector<fuzzing_event_engine::ReturnedEndpointMetrics>>
+      returned_endpoint_metrics_ ABSL_GUARDED_BY(mu_);
+  std::map<size_t, std::string> endpoint_metrics_by_id_;
+  std::map<std::string, size_t> endpoint_metrics_by_name_;
   std::map<intptr_t, std::shared_ptr<Task>> tasks_by_id_ ABSL_GUARDED_BY(mu_);
   std::multimap<Time, std::shared_ptr<Task>> tasks_by_time_
       ABSL_GUARDED_BY(mu_);
@@ -378,6 +385,7 @@ class FuzzingEventEngine : public EventEngine {
   grpc_core::Mutex run_after_duration_callback_mu_;
   absl::AnyInvocable<void(Duration)> run_after_duration_callback_
       ABSL_GUARDED_BY(run_after_duration_callback_mu_);
+  int next_write_id_ ABSL_GUARDED_BY(mu_) = 1;
 };
 
 class ThreadedFuzzingEventEngine : public FuzzingEventEngine {

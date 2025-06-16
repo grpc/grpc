@@ -43,6 +43,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/debug/trace.h"
@@ -52,7 +53,6 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/http_client/httpcli_ssl_credentials.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_reader.h"
@@ -314,7 +314,8 @@ class grpc_compute_engine_token_fetcher_credentials
     // TODO(ctiller): Carry the memory quota in ctx and share it with the host
     // channel. This would allow us to cancel an authentication query when under
     // extreme memory pressure.
-    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+    auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
+                                      GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
@@ -372,7 +373,8 @@ grpc_google_refresh_token_credentials::StartHttpRequest(
   // TODO(ctiller): Carry the memory quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
+  auto uri = grpc_core::URI::Create("https", /*user_info=*/"",
+                                    GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded

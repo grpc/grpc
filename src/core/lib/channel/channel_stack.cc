@@ -26,6 +26,7 @@
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -171,13 +172,43 @@ grpc_error_handle grpc_channel_stack_init(
         grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
+  stack->channelz_data_source.Init(
+      channel_args.GetObjectRef<grpc_core::channelz::BaseNode>());
   return first_error;
+}
+
+void grpc_channel_stack::ChannelStackDataSource::AddData(
+    grpc_core::channelz::DataSink sink) {
+  grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
+      reinterpret_cast<char*>(this) -
+      offsetof(grpc_channel_stack, channelz_data_source));
+  sink.AddAdditionalInfo(
+      "channel_stack",
+      grpc_core::channelz::PropertyList()
+          .Set("type", "v1")
+          .Set("call_stack_size", channel_stack->call_stack_size)
+          .Set("elements", [channel_stack]() {
+            std::vector<grpc_core::channelz::PropertyList> elements;
+            grpc_channel_element* elems =
+                CHANNEL_ELEMS_FROM_STACK(channel_stack);
+            elements.reserve(channel_stack->count);
+            for (size_t i = 0; i < channel_stack->count; i++) {
+              grpc_channel_element& e = elems[i];
+              elements.emplace_back()
+                  .Set("type", e.filter->name.name())
+                  .Set("call_data_size", e.filter->sizeof_call_data)
+                  .Set("channel_data_size", e.filter->sizeof_channel_data);
+            }
+            return elements;
+          }()));
 }
 
 void grpc_channel_stack_destroy(grpc_channel_stack* stack) {
   grpc_channel_element* channel_elems = CHANNEL_ELEMS_FROM_STACK(stack);
   size_t count = stack->count;
   size_t i;
+
+  stack->channelz_data_source.Destroy();
 
   // destroy per-filter data
   for (i = 0; i < count; i++) {

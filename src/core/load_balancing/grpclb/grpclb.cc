@@ -91,6 +91,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -111,7 +112,6 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/load_balancing/child_policy_handler.h"
 #include "src/core/load_balancing/delegating_helper.h"
 #include "src/core/load_balancing/grpclb/client_load_reporting_filter.h"
@@ -1475,7 +1475,7 @@ void GrpcLb::ShutdownLocked() {
     if (parent_channelz_node_ != nullptr) {
       channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
       CHECK_NE(child_channelz_node, nullptr);
-      parent_channelz_node_->RemoveChildChannel(child_channelz_node->uuid());
+      child_channelz_node->RemoveParent(parent_channelz_node_.get());
     }
     lb_channel_.reset();
   }
@@ -1602,7 +1602,7 @@ absl::Status GrpcLb::UpdateBalancerChannelLocked() {
     channelz::ChannelNode* child_channelz_node = lb_channel_->channelz_node();
     auto parent_channelz_node = args_.GetObjectRef<channelz::ChannelNode>();
     if (child_channelz_node != nullptr && parent_channelz_node != nullptr) {
-      parent_channelz_node->AddChildChannel(child_channelz_node->uuid());
+      child_channelz_node->AddParent(parent_channelz_node.get());
       parent_channelz_node_ = std::move(parent_channelz_node);
     }
   }

@@ -23,6 +23,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/inproc/legacy_inproc_transport.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -31,7 +32,6 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/surface/channel_create.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
 #include "src/core/util/crash.h"
@@ -73,6 +73,9 @@ class InprocServerTransport final : public ServerTransport {
   ClientTransport* client_transport() override { return nullptr; }
   ServerTransport* server_transport() override { return this; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op* op) override {
@@ -212,6 +215,9 @@ class InprocClientTransport final : public ClientTransport {
   ClientTransport* client_transport() override { return this; }
   ServerTransport* server_transport() override { return nullptr; }
   absl::string_view GetTransportName() const override { return "inproc"; }
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
   void SetPollset(grpc_stream*, grpc_pollset*) override {}
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override { Crash("unimplemented"); }
@@ -258,8 +264,7 @@ RefCountedPtr<Channel> MakeInprocChannel(Server* server,
       server->SetupTransport(server_transport.get(), nullptr,
                              server->channel_args()
                                  .Remove(GRPC_ARG_MAX_CONNECTION_IDLE_MS)
-                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS),
-                             nullptr);
+                                 .Remove(GRPC_ARG_MAX_CONNECTION_AGE_MS));
   if (!error.ok()) {
     return MakeLameChannel("Failed to create server channel", std::move(error));
   }

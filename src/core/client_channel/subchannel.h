@@ -29,6 +29,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/status/status.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/client_channel/connector.h"
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -44,7 +45,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
@@ -168,14 +168,8 @@ class Subchannel final : public DualRefCounted<Subchannel> {
     // Invoked whenever the subchannel's connectivity state changes.
     // There will be only one invocation of this method on a given watcher
     // instance at any given time.
-    // A ref to the watcher is passed in here so that the implementation
-    // can unref it in the appropriate synchronization context (e.g.,
-    // inside a WorkSerializer).
-    // TODO(roth): Figure out a cleaner way to guarantee that the ref is
-    // released in the right context.
-    virtual void OnConnectivityStateChange(
-        RefCountedPtr<ConnectivityStateWatcherInterface> self,
-        grpc_connectivity_state state, const absl::Status& status) = 0;
+    virtual void OnConnectivityStateChange(grpc_connectivity_state state,
+                                           const absl::Status& status) = 0;
 
     virtual grpc_pollset_set* interested_parties() = 0;
   };

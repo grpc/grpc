@@ -83,7 +83,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { ABSL_CHECK(false); }
 
-  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
+  CallbackWithStatusTag(grpc_call* call, std::function<void(Status)>&& f,
                         CompletionQueueTag* ops)
       : call_(call), func_(std::move(f)), ops_(ops) {
     grpc_call_ref(call);
@@ -127,18 +127,17 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
-    GetGlobalCallbackHook()->RunCallback(
-        call_, [func = std::move(func), status = std::move(status)]() {
+    GetGlobalCallbackHook()->RunCallback(call_, [&func, &status]() {
 #if GRPC_ALLOW_EXCEPTIONS
-          try {
-            func(status);
-          } catch (...) {
-            // nothing to return or change here, just don't crash the library
-          }
+      try {
+        func(status);
+      } catch (...) {
+        // nothing to return or change here, just don't crash the library
+      }
 #else   // GRPC_ALLOW_EXCEPTIONS
-  func(status);
+      func(status);
 #endif  // GRPC_ALLOW_EXCEPTIONS
-        });
+    });
     grpc_call_unref(call_);
   }
 };

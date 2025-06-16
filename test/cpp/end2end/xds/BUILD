@@ -29,7 +29,7 @@ grpc_cc_library(
         "absl/log:check",
         "absl/log:log",
     ],
-    visibility = ["@grpc:xds_end2end_test_utils"],
+    visibility = ["//bazel:xds_end2end_test_utils"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -50,7 +50,7 @@ grpc_cc_library(
     name = "xds_utils",
     srcs = ["xds_utils.cc"],
     hdrs = ["xds_utils.h"],
-    visibility = ["@grpc:xds_end2end_test_utils"],
+    visibility = ["//bazel:xds_end2end_test_utils"],
     deps = [
         ":xds_server",
         "//src/proto/grpc/testing/xds/v3:discovery_cc_proto",
@@ -324,7 +324,6 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//test/core/test_util:grpc_test_util",
-        "//test/core/test_util:scoped_env_var",
         "@envoy_api//envoy/config/cluster/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/gcp_authn/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/router/v3:pkg_cc_proto",

@@ -51,11 +51,11 @@ class ExtendedTestEndpoint
   ExtendedTestEndpoint() = default;
   ~ExtendedTestEndpoint() override = default;
   bool Read(absl::AnyInvocable<void(absl::Status)> /*on_read*/,
-            SliceBuffer* /*buffer*/, const ReadArgs* /*args*/) override {
+            SliceBuffer* /*buffer*/, ReadArgs /*args*/) override {
     grpc_core::Crash("Not implemented");
   };
   bool Write(absl::AnyInvocable<void(absl::Status)> /*on_writable*/,
-             SliceBuffer* /*data*/, const WriteArgs* /*args*/) override {
+             SliceBuffer* /*data*/, WriteArgs /*args*/) override {
     grpc_core::Crash("Not implemented");
   }
   /// Returns an address in the format described in DNSResolver. The returned
@@ -66,6 +66,9 @@ class ExtendedTestEndpoint
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
     grpc_core::Crash("Not implemented");
   };
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
+  }
 };
 
 TEST(QueryExtensionsTest, EndpointSupportsMultipleExtensions) {

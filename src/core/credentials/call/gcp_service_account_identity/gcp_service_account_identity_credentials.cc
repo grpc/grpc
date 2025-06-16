@@ -25,9 +25,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/status_conversion.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
@@ -180,7 +180,7 @@ GcpServiceAccountIdentityCallCredentials::StartHttpRequest(
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
   auto uri = URI::Create(
-      "http", "metadata.google.internal.",
+      "http", /*user_info=*/"", "metadata.google.internal.",
       "/computeMetadata/v1/instance/service-accounts/default/identity",
       {{"audience", audience_}}, /*fragment=*/"");
   CHECK_OK(uri);  // params are hardcoded

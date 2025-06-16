@@ -35,7 +35,7 @@ namespace grpc_core {
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, Retry) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"
@@ -109,7 +109,7 @@ CORE_END2END_TEST(RetryTests, Retry) {
   Step();
 
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   EXPECT_EQ(s.method(), "/service/method");
   EXPECT_FALSE(client_close2.was_cancelled());
 }

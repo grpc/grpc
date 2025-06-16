@@ -57,6 +57,7 @@
 #include "src/core/client_channel/subchannel_pool_interface.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/call/call_credentials.h"
+#include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -577,7 +578,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       return test_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity, absl::string_view) override {}
+    void AddTraceEvent(absl::string_view) override {}
 
     LoadBalancingPolicyTest* test_;
 

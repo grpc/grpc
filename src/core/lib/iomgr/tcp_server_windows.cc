@@ -70,8 +70,6 @@ using ::grpc_event_engine::experimental::MemoryAllocator;
 using ::grpc_event_engine::experimental::MemoryQuotaBasedMemoryAllocatorFactory;
 using ::grpc_event_engine::experimental::ResolvedAddressSetPort;
 using ::grpc_event_engine::experimental::RunEventEngineClosure;
-using ::grpc_event_engine::experimental::WindowsEventEngine;
-using ::grpc_event_engine::experimental::WindowsEventEngineListener;
 }  // namespace
 
 // one listening port
@@ -129,7 +127,7 @@ struct grpc_tcp_server {
   grpc_closure* shutdown_complete;
 
   // used for the EventEngine shim
-  WindowsEventEngineListener* ee_listener;
+  std::unique_ptr<EventEngine::Listener> ee_listener;
 };
 
 // TODO(hork): This may be refactored to share with posix engine and event
@@ -147,15 +145,27 @@ void unlink_if_unix_domain_socket(const grpc_resolved_address* resolved_addr) {
   if (un->sun_path[0] == '\0' && un->sun_path[1] != '\0') {
     return;
   }
+  // Convert UTF-8 path to Unicode.
+  std::wstring wide_path;
+  int needed = MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, NULL, 0);
+  if (needed <= 0) {
+    return;
+  }
+  wide_path.resize(needed, L'\0');
+  if (MultiByteToWideChar(CP_UTF8, 0, un->sun_path, -1, wide_path.data(),
+                          needed) == 0) {
+    // Failed to convert UTF-8 path to wide char.
+    return;
+  }
   // For windows we need to remove the file instead of unlink.
-  DWORD attr = ::GetFileAttributesA(un->sun_path);
+  DWORD attr = ::GetFileAttributesW(wide_path.data());
   if (attr == INVALID_FILE_ATTRIBUTES) {
     return;
   }
   if (attr & FILE_ATTRIBUTE_DIRECTORY || attr & FILE_ATTRIBUTE_READONLY) {
     return;
   }
-  ::DeleteFileA(un->sun_path);
+  ::DeleteFileW(wide_path.data());
 #else
   (void)resolved_addr;
 #endif
@@ -179,6 +189,7 @@ static grpc_error_handle tcp_server_create(grpc_closure* shutdown_complete,
   s->shutdown_starting.head = NULL;
   s->shutdown_starting.tail = NULL;
   s->shutdown_complete = shutdown_complete;
+  new (&s->ee_listener) std::unique_ptr<EventEngine::Listener>(nullptr);
   *server = s;
   return absl::OkStatus();
 }
@@ -197,6 +208,7 @@ static void destroy_server(void* arg, grpc_error_handle /* error */) {
     unlink_if_unix_domain_socket(&sp->resolved_addr);
     gpr_free(sp);
   }
+  std::destroy_at(&s->ee_listener);
   gpr_mu_destroy(&s->mu);
   gpr_free(s);
 }
@@ -641,11 +653,8 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
                                              grpc_tcp_server_cb on_accept_cb,
                                              void* on_accept_cb_arg,
                                              grpc_tcp_server** server) {
-  // On Windows, the event_engine_listener experiment only supports the
-  // default engine
-  WindowsEventEngine* engine_ptr = reinterpret_cast<WindowsEventEngine*>(
-      config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
   grpc_tcp_server* s = (grpc_tcp_server*)gpr_malloc(sizeof(grpc_tcp_server));
+  new (&s->ee_listener) std::unique_ptr<EventEngine::Listener>(nullptr);
   CHECK_NE(on_accept_cb, nullptr);
   auto accept_cb = [s, on_accept_cb, on_accept_cb_arg](
                        std::unique_ptr<EventEngine::Endpoint> endpoint,
@@ -674,11 +683,18 @@ static grpc_error_handle event_engine_create(grpc_closure* shutdown_complete,
   }
   gpr_ref_init(&s->refs, 1);
   gpr_mu_init(&s->mu);
-  s->ee_listener = new WindowsEventEngineListener(
-      engine_ptr->poller(), std::move(accept_cb), std::move(on_shutdown),
+  EventEngine* engine = reinterpret_cast<EventEngine*>(
+      config.GetVoidPointer(GRPC_INTERNAL_ARG_EVENT_ENGINE));
+  CHECK_NE(engine, nullptr);
+  auto listener = engine->CreateListener(
+      std::move(accept_cb), std::move(on_shutdown), config,
       std::make_unique<MemoryQuotaBasedMemoryAllocatorFactory>(
-          resource_quota->memory_quota()),
-      engine_ptr->shared_from_this(), engine_ptr->thread_pool(), config);
+          resource_quota->memory_quota()));
+  GRPC_RETURN_IF_ERROR(listener.status());
+  CHECK_NE(listener->get(), nullptr);
+  GRPC_TRACE_LOG(event_engine, INFO)
+      << "EventEngine::" << engine << ": created Listener::" << listener->get();
+  s->ee_listener = std::move(*listener);
   s->active_ports = -1;
   s->on_accept_cb = [](void* /* arg */, grpc_endpoint* /* ep */,
                        grpc_pollset* /* accepting_pollset */,
@@ -734,7 +750,13 @@ static grpc_tcp_server* event_engine_ref(grpc_tcp_server* s) {
 }
 
 static void event_engine_shutdown_listeners(grpc_tcp_server* s) {
-  s->ee_listener->ShutdownListeners();
+  auto* iomgr_compatible_listener =
+      grpc_event_engine::experimental::QueryExtension<
+          grpc_event_engine::experimental::IomgrCompatibleListener>(
+          s->ee_listener.get());
+  if (iomgr_compatible_listener != nullptr) {
+    iomgr_compatible_listener->Shutdown();
+  }
 }
 
 static void event_engine_unref(grpc_tcp_server* s) {
@@ -744,7 +766,7 @@ static void event_engine_unref(grpc_tcp_server* s) {
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     gpr_mu_unlock(&s->mu);
     gpr_mu_destroy(&s->mu);
-    delete s->ee_listener;
+    std::destroy_at(&s->ee_listener);
     gpr_free(s);
   }
 }

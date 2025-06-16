@@ -28,14 +28,14 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/message.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/call_final_info.h"
-#include "src/core/lib/transport/message.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/ref_counted_string.h"
 
@@ -126,7 +126,7 @@ class CallTracerInterface : public CallTracerAnnotationInterface {
   // Traces a new TCP transport attempt for this call attempt. Note the TCP
   // transport may finish tracing and unref the TCP tracer before or after the
   // call completion in gRPC core. No TCP tracing when null is returned.
-  virtual std::shared_ptr<TcpTracerInterface> StartNewTcpTrace() = 0;
+  virtual std::shared_ptr<TcpCallTracer> StartNewTcpTrace() = 0;
 };
 
 // Interface for a tracer that records activities on a call. Actual attempts for
@@ -162,7 +162,7 @@ class ClientCallTracer : public CallTracerAnnotationInterface {
         const grpc_transport_stream_stats* transport_stream_stats) = 0;
     // Should be the last API call to the object. Once invoked, the tracer
     // library is free to destroy the object.
-    virtual void RecordEnd(const gpr_timespec& latency) = 0;
+    virtual void RecordEnd() = 0;
 
     // Sets an optional label on the per-attempt metrics recorded at the end of
     // the attempt.

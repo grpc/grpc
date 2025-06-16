@@ -271,7 +271,7 @@ class Fuzzer {
               << "): " << status;
     const auto* xds_server = GetServer(authority);
     if (xds_server == nullptr) return;
-    transport_factory_->TriggerConnectionFailure(*xds_server,
+    transport_factory_->TriggerConnectionFailure(*xds_server->target(),
                                                  std::move(status));
   }
 
@@ -293,7 +293,7 @@ class Fuzzer {
     if (xds_server == nullptr) return nullptr;
     const char* method = StreamIdMethod(stream_id);
     if (method == nullptr) return nullptr;
-    return transport_factory_->WaitForStream(*xds_server, method);
+    return transport_factory_->WaitForStream(*xds_server->target(), method);
   }
 
   static std::string StreamIdString(

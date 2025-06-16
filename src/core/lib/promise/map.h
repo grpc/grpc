@@ -156,6 +156,13 @@ class Map {
     return Pending();
   }
 
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<Fn>()));
+    return Json::FromObject(std::move(obj));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +200,13 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<FusedFn>()));
+    return Json::FromObject(std::move(obj));
   }
 
  private:
@@ -277,6 +291,18 @@ auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   });
 }
 
+template <typename Gen, typename Promise>
+auto AddGeneratedErrorPrefix(Gen prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix(), status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
+
 // Input : A promise that resolves to Type T
 // Returns : A Map promise which contains the input promise and then discards
 // the return value of the input promise. the main use case for DiscardResult is
@@ -305,12 +331,17 @@ template <typename Promise, typename... Values>
 auto TryStaple(Promise promise, Values&&... values) {
   return Map(
       std::move(promise),
-      [values = std::tuple(std::forward<Values>(values)...)](
-          auto first_value) mutable
-          -> absl::StatusOr<std::tuple<decltype(*first_value), Values...>> {
+      [values = std::tuple(std::forward<std::remove_reference_t<Values>>(
+           values)...)](auto first_value) mutable
+          -> absl::StatusOr<
+              std::tuple<std::remove_reference_t<decltype(*first_value)>,
+                         std::remove_reference_t<Values>...>> {
+        using FirstValueType = std::remove_reference_t<decltype(*first_value)>;
         if (!first_value.ok()) return first_value.status();
-        return std::tuple_cat(std::tuple(std::move(*first_value)),
-                              std::move(values));
+        return absl::StatusOr<
+            std::tuple<FirstValueType, std::remove_reference_t<Values>...>>(
+            std::tuple_cat(std::tuple<FirstValueType>(std::move(*first_value)),
+                           std::move(values)));
       });
 }
 

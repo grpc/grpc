@@ -51,23 +51,6 @@ TEST(PingRatePolicy, ServerCanSendAtStart) {
             SendGranted());
 }
 
-TEST(PingRatePolicy, ClientBlockedUntilDataSent) {
-  if (IsMaxPingsWoDataThrottleEnabled()) {
-    GTEST_SKIP()
-        << "Pings are not blocked if max_pings_wo_data_throttle is enabled.";
-  }
-  Chttp2PingRatePolicy policy{ChannelArgs(), true};
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
-            TooManyRecentPings());
-  policy.ResetPingsBeforeDataRequired();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
-            SendGranted());
-  policy.SentPing();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), SendGranted());
-  policy.SentPing();
-  EXPECT_EQ(policy.RequestSendPing(Duration::Zero(), 0), TooManyRecentPings());
-}
-
 MATCHER_P2(IsWithinRange, lo, hi,
            absl::StrCat(negation ? "isn't" : "is", " between ",
                         PrintToString(lo), " and ", PrintToString(hi))) {
@@ -75,10 +58,6 @@ MATCHER_P2(IsWithinRange, lo, hi,
 }
 
 TEST(PingRatePolicy, ClientThrottledUntilDataSent) {
-  if (!IsMaxPingsWoDataThrottleEnabled()) {
-    GTEST_SKIP()
-        << "Throttling behavior is enabled with max_pings_wo_data_throttle.";
-  }
   Chttp2PingRatePolicy policy{ChannelArgs(), true};
   // First ping is allowed.
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(10), 0),
@@ -121,6 +100,24 @@ TEST(PingRatePolicy, RateThrottlingWorks) {
 
 TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPings) {
   Chttp2PingRatePolicy policy{ChannelArgs(), false};
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
+            TooManyRecentPings());
+}
+
+TEST(PingRatePolicy, TooManyPingsInflightBlocksSendingPingsStrictLimit) {
+  if (!IsMaxInflightPingsStrictLimitEnabled()) {
+    GTEST_SKIP() << "Strict limit is not enabled.";
+  }
+  int max_inflight_pings = 1;
+  auto channel_args =
+      ChannelArgs().Set(GRPC_ARG_HTTP2_MAX_INFLIGHT_PINGS, max_inflight_pings);
+  Chttp2PingRatePolicy policy{channel_args, false};
+
+  EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 0),
+            SendGranted());
+  EXPECT_EQ(
+      policy.RequestSendPing(Duration::Milliseconds(1), max_inflight_pings),
+      TooManyRecentPings());
   EXPECT_EQ(policy.RequestSendPing(Duration::Milliseconds(1), 100000000),
             TooManyRecentPings());
 }

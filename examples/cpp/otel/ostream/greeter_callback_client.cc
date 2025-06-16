@@ -29,11 +29,15 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/log/initialize.h"
 #include "opentelemetry/exporters/ostream/metric_exporter.h"
 #include "opentelemetry/exporters/ostream/metric_exporter_factory.h"
+#include "opentelemetry/exporters/ostream/span_exporter_factory.h"
 #include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader.h"
 #include "opentelemetry/sdk/metrics/export/periodic_exporting_metric_reader_factory.h"
 #include "opentelemetry/sdk/metrics/meter_provider.h"
+#include "opentelemetry/sdk/trace/simple_processor_factory.h"
+#include "opentelemetry/sdk/trace/tracer_provider.h"
 
 #ifdef BAZEL_BUILD
 #include "examples/cpp/otel/util.h"
@@ -45,9 +49,10 @@ ABSL_FLAG(std::string, target, "localhost:50051", "Server address");
 
 int main(int argc, char** argv) {
   absl::ParseCommandLine(argc, argv);
+  absl::InitializeLog();
   // Register a global gRPC OpenTelemetry plugin configured with an ostream
   // exporter.
-  auto ostream_exporter =
+  auto ostream_metrics_exporter =
       opentelemetry::exporter::metrics::OStreamMetricExporterFactory::Create();
   opentelemetry::sdk::metrics::PeriodicExportingMetricReaderOptions
       reader_options;
@@ -55,7 +60,7 @@ int main(int argc, char** argv) {
   reader_options.export_timeout_millis = std::chrono::milliseconds(500);
   auto reader =
       opentelemetry::sdk::metrics::PeriodicExportingMetricReaderFactory::Create(
-          std::move(ostream_exporter), reader_options);
+          std::move(ostream_metrics_exporter), reader_options);
   auto meter_provider =
       std::make_shared<opentelemetry::sdk::metrics::MeterProvider>();
   // The default histogram boundaries are not granular enough for RPCs. Override
@@ -63,9 +68,18 @@ int main(int argc, char** argv) {
   // https://github.com/grpc/proposal/blob/master/A66-otel-stats.md.
   AddLatencyView(meter_provider.get(), "grpc.client.attempt.duration", "s");
   meter_provider->AddMetricReader(std::move(reader));
-  auto status = grpc::OpenTelemetryPluginBuilder()
-                    .SetMeterProvider(std::move(meter_provider))
-                    .BuildAndRegisterGlobal();
+  auto tracer_provider =
+      std::make_shared<opentelemetry::sdk::trace::TracerProvider>(
+          opentelemetry::sdk::trace::SimpleSpanProcessorFactory::Create(
+              opentelemetry::exporter::trace::OStreamSpanExporterFactory::
+                  Create()));
+  auto status =
+      grpc::OpenTelemetryPluginBuilder()
+          .SetMeterProvider(std::move(meter_provider))
+          .SetTracerProvider(std::move(tracer_provider))
+          .SetTextMapPropagator(grpc::OpenTelemetryPluginBuilder::
+                                    MakeGrpcTraceBinTextMapPropagator())
+          .BuildAndRegisterGlobal();
   if (!status.ok()) {
     std::cerr << "Failed to register gRPC OpenTelemetry Plugin: "
               << status.ToString() << std::endl;

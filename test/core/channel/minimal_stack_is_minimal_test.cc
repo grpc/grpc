@@ -73,6 +73,10 @@ class FakeTransport final : public grpc_core::Transport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override {}
   void Orphan() override {}
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return nullptr;
+  }
 
  private:
   absl::string_view transport_name_;

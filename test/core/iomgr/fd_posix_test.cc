@@ -40,11 +40,10 @@
 #include <unistd.h>
 
 #include "absl/log/log.h"
-#include "absl/strings/str_format.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/ev_posix.h"
-#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/util/crash.h"
 #include "src/core/util/strerror.h"
 
 static gpr_mu* g_mu;
@@ -511,8 +510,19 @@ static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
 }
 
 TEST(FdPosixTest, MainTest) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
+    GTEST_SKIP() << "The event_engine_for_all_other_endpoints experiment is "
+                    "enabled, which replaces iomgr grpc_fds with minimal "
+                    "implementations. The full iomgr API is not supported, so "
+                    "this test needs to be disabled.";
+  }
   grpc_closure destroyed;
   grpc_init();
+  if (grpc_core::IsPollsetAlternativeEnabled()) {
+    GTEST_SKIP() << "Skipping test since we're using pollset alternative";
+  }
   {
     grpc_core::ExecCtx exec_ctx;
     g_pollset = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));

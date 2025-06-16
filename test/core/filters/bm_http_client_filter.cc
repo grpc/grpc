@@ -15,11 +15,13 @@
 #include <benchmark/benchmark.h>
 #include <grpc/grpc.h>
 
+#include <cstddef>
+
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata.h"
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/transport/connectivity_state.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/transport.h"
 #include "test/core/call/call_spine_benchmarks.h"
 
@@ -58,6 +60,9 @@ class HttpClientFilterTraits {
     void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
     void PerformOp(grpc_transport_op*) override {}
     void Orphan() override {}
+    RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+      return nullptr;
+    }
   };
 
   FakeTransport transport_;

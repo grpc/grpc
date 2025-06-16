@@ -61,32 +61,12 @@ build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
 build:asan --copt=-fno-omit-frame-pointer
-build:asan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan --copt=-DGRPC_ASAN
 build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
 build:asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
-
-build:fuzzer_asan --strip=never
-build:fuzzer_asan --define=grpc_build_fuzzers=true
-build:fuzzer_asan --copt=-fsanitize=fuzzer,address
-build:fuzzer_asan --copt=-fsanitize-coverage=edge
-build:fuzzer_asan --copt=-fsanitize-coverage=trace-cmp
-build:fuzzer_asan --copt=-O0
-build:fuzzer_asan --copt=-fno-omit-frame-pointer
-build:fuzzer_asan --copt=-DGPR_NO_DIRECT_SYSCALLS
-build:fuzzer_asan --copt=-DGRPC_ASAN
-build:fuzzer_asan --copt=-DADDRESS_SANITIZER  # used by absl
-# add a macro that can be used to determine that we're running under a fuzzer
-# allowing different code paths to be substituted under fuzzing (say, additional
-# checks)
-build:fuzzer_asan --copt=-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
-build:fuzzer_asan --linkopt=-fsanitize=fuzzer,address
-build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
-build:fuzzer_asan --action_env=LSAN_OPTIONS=suppressions=test/core/test_util/lsan_suppressions.txt:report_objects=1
-build:fuzzer_asan --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
 
 build:coverage --copt=-fprofile-instr-generate
 build:coverage --copt=-fcoverage-mapping
@@ -112,7 +92,6 @@ build:asan_macos --copt -D_FORTIFY_SOURCE=0
 build:asan_macos --copt=-fsanitize=address
 build:asan_macos --copt=-O0
 build:asan_macos --copt=-fno-omit-frame-pointer
-build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:asan_macos --linkopt=-fsanitize=address
 build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
 build:asan_macos --action_env=ASAN_OPTIONS=detect_odr_violation=0  # https://github.com/google/sanitizers/issues/1017
@@ -124,32 +103,19 @@ build:msan --copt=-O0
 build:msan --copt=-fsanitize-memory-track-origins
 build:msan --copt=-fsanitize-memory-use-after-dtor
 build:msan --copt=-fno-omit-frame-pointer
-build:msan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:msan --linkopt=-fsanitize=memory
 build:msan --action_env=MSAN_OPTIONS=poison_in_dtor=1
 
 build:tsan --strip=never
 build:tsan --copt=-fsanitize=thread
 build:tsan --copt=-fno-omit-frame-pointer
-build:tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan --copt=-DGRPC_TSAN
 build:tsan --linkopt=-fsanitize=thread
 build:tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
 
-# a TSAN build that tries to create new threads whenever possible
-build:thready_tsan --strip=never
-build:thready_tsan --copt=-fsanitize=thread
-build:thready_tsan --copt=-fno-omit-frame-pointer
-build:thready_tsan --copt=-DGPR_NO_DIRECT_SYSCALLS
-build:thready_tsan --copt=-DGRPC_TSAN
-build:thready_tsan --copt=-DGRPC_MAXIMIZE_THREADYNESS
-build:thready_tsan --linkopt=-fsanitize=thread
-build:thready_tsan --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
-
 build:tsan_macos --strip=never
 build:tsan_macos --copt=-fsanitize=thread
 build:tsan_macos --copt=-fno-omit-frame-pointer
-build:tsan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
 build:tsan_macos --copt=-DGRPC_TSAN
 build:tsan_macos --linkopt=-fsanitize=thread
 build:tsan_macos --action_env=TSAN_OPTIONS=suppressions=test/core/test_util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
@@ -178,6 +144,8 @@ build:ubsan --action_env=UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:suppre
 build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"
 
 build:python_poller_engine --test_env="GRPC_ASYNCIO_ENGINE=poller"
+
+build:python --copt=-DGRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
 
 # Compile database generation config
 build:compdb --build_tag_filters=-nocompdb --features=-layering_check

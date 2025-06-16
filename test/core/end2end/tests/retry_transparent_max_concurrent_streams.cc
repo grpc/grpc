@@ -40,7 +40,7 @@ namespace {
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   const auto server_args =
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
   InitServer(server_args);
@@ -101,7 +101,7 @@ CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message.payload(), "baz");
   EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status.message(), "xyz");
+  EXPECT_EQ(server_status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
   // Destroy server and then restart it.
   // TODO(hork): hack to solve PosixEventEngine Listener's async shutdown issue.
   absl::SleepFor(absl::Milliseconds(250));
@@ -137,7 +137,7 @@ CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   EXPECT_FALSE(client_close.was_cancelled());
   EXPECT_EQ(server_message2.payload(), "qux");
   EXPECT_EQ(server_status2.status(), GRPC_STATUS_OK);
-  EXPECT_EQ(server_status2.message(), "xyz");
+  EXPECT_EQ(server_status2.message(), IsErrorFlattenEnabled() ? "" : "xyz");
 }
 }  // namespace
 }  // namespace grpc_core

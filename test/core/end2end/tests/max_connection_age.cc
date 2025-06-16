@@ -52,7 +52,7 @@ namespace {
 CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS,
                       MAX_CONNECTION_AGE_GRACE_MS)
@@ -108,8 +108,7 @@ CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   // The connection should be closed immediately after the max age grace period,
   // the in-progress RPC should fail.
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_THAT(server_status.message(),
-              ::testing::MatchesRegex("max connection age"));
+  EXPECT_EQ(server_status.message(), "max connection age");
 }
 
 CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
@@ -117,7 +116,7 @@ CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
   SKIP_IF_FUZZING();
 
   InitClient(ChannelArgs());
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS, INT_MAX)
                  .Set(GRPC_ARG_MAX_CONNECTION_IDLE_MS, MAX_CONNECTION_IDLE_MS));

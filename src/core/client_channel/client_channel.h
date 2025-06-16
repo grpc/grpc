@@ -22,6 +22,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata.h"
 #include "src/core/client_channel/client_channel_factory.h"
 #include "src/core/client_channel/config_selector.h"
 #include "src/core/client_channel/subchannel.h"
@@ -29,7 +30,6 @@
 #include "src/core/filter/blackboard.h"
 #include "src/core/lib/promise/observable.h"
 #include "src/core/lib/surface/channel.h"
-#include "src/core/lib/transport/metadata.h"
 #include "src/core/load_balancing/lb_policy.h"
 #include "src/core/resolver/resolver.h"
 #include "src/core/service_config/service_config.h"
@@ -170,6 +170,9 @@ class ClientChannel : public Channel {
       ConfigSelector& config_selector,
       ClientMetadata& client_initial_metadata) const;
 
+  const std::string default_authority_;
+  const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_;
   const ChannelArgs channel_args_;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine_;
@@ -177,9 +180,7 @@ class ClientChannel : public Channel {
   const size_t service_config_parser_index_;
   const RefCountedPtr<ServiceConfig> default_service_config_;
   ClientChannelFactory* const client_channel_factory_;
-  const std::string default_authority_;
   channelz::ChannelNode* const channelz_node_;
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_;
 
   //
   // Idleness state.

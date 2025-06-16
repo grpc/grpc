@@ -23,18 +23,23 @@
 #include <atomic>
 #include <chrono>
 #include <limits>
+#include <optional>
 #include <vector>
 
 #include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/event_engine/extensions/blocking_dns.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
+#include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
 #include "test/core/test_util/port.h"
 
@@ -84,6 +89,20 @@ FuzzingEventEngine::FuzzingEventEngine(
     if (port == 0 || port > 65535) continue;
     free_ports_.push(port);
     fuzzer_mentioned_ports_.insert(port);
+  }
+
+  // Fill endpoint metrics data structures.
+  for (const auto& endpoint_metric : actions.endpoint_metrics()) {
+    if (endpoint_metrics_by_id_.count(endpoint_metric.key()) > 0) continue;
+    if (endpoint_metrics_by_name_.count(endpoint_metric.name()) > 0) continue;
+    endpoint_metrics_by_id_[endpoint_metric.key()] = endpoint_metric.name();
+    endpoint_metrics_by_name_[endpoint_metric.name()] = endpoint_metric.key();
+  }
+
+  for (const auto& returned_endpoint_metric :
+       actions.returned_endpoint_metrics()) {
+    returned_endpoint_metrics_[returned_endpoint_metric.write_id()].push_back(
+        returned_endpoint_metric);
   }
 
   // Fill the write sizes queue for future connections.
@@ -401,19 +420,85 @@ bool FuzzingEventEngine::EndpointMiddle::Write(SliceBuffer* data, int index) {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Write(
     absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-    const WriteArgs*) {
+    WriteArgs args) {
   grpc_core::global_stats().IncrementSyscallWrite();
   grpc_core::MutexLock lock(&*mu_);
+  const int write_id = g_fuzzing_event_engine->next_write_id_;
+  ++g_fuzzing_event_engine->next_write_id_;
   IoToken write_token({"WRITE", middle_.get(), my_index(),
                        &g_fuzzing_event_engine->outstanding_writes_});
   CHECK(!middle_->closed[my_index()]);
   CHECK(!middle_->writing[my_index()]);
+  if (auto m = args.TakeMetricsSink(); m.has_value()) {
+    auto it = g_fuzzing_event_engine->returned_endpoint_metrics_.find(write_id);
+    if (it != g_fuzzing_event_engine->returned_endpoint_metrics_.end()) {
+      std::shared_ptr<WriteEventCallback> write_event_callback =
+          std::make_shared<WriteEventCallback>(m->TakeEventCallback());
+      for (const auto& r : it->second) {
+        g_fuzzing_event_engine->RunAfterExactlyLocked(
+            std::chrono::microseconds(r.delay_us()),
+            [middle = middle_, index = my_index(), r, write_event_callback]() {
+              grpc_core::MutexLock lock(&*mu_);
+              if (middle->closed[index]) return;
+              std::vector<WriteMetric> metrics;
+              for (const auto& m : r.returned_endpoint_metrics()) {
+                metrics.push_back(WriteMetric{m.key(), m.value()});
+              }
+              (*write_event_callback)(static_cast<WriteEvent>(r.event()),
+                                      g_fuzzing_event_engine->NowAsAbslTime(),
+                                      std::move(metrics));
+            });
+      }
+    }
+  }
   // If the write succeeds immediately, then we return true.
   if (middle_->Write(data, my_index())) return true;
   middle_->writing[my_index()] = true;
   ScheduleDelayedWrite(middle_, my_index(), std::move(on_writable), data,
                        std::move(write_token));
   return false;
+}
+
+absl::Time FuzzingEventEngine::NowAsAbslTime() {
+  grpc_core::MutexLock lock(&*now_mu_);
+  return g_fuzzing_event_engine->epoch_ +
+         absl::Nanoseconds(
+             g_fuzzing_event_engine->now_.time_since_epoch().count());
+}
+
+class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
+    : public EventEngine::Endpoint::TelemetryInfo {
+  std::vector<size_t> AllWriteMetrics() const override {
+    std::vector<size_t> out;
+    out.reserve(g_fuzzing_event_engine->endpoint_metrics_by_id_.size());
+    for (const auto& [key, _] :
+         g_fuzzing_event_engine->endpoint_metrics_by_id_) {
+      out.push_back(key);
+    }
+    return out;
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_id_.find(key);
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_id_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) const override {
+    auto it = g_fuzzing_event_engine->endpoint_metrics_by_name_.find(
+        std::string(name));
+    if (it == g_fuzzing_event_engine->endpoint_metrics_by_name_.end()) {
+      return std::nullopt;
+    }
+    return it->second;
+  }
+};
+
+std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+FuzzingEventEngine::FuzzingEndpoint::GetTelemetryInfo() const {
+  return std::make_shared<TelemetryInfo>();
 }
 
 void FuzzingEventEngine::FuzzingEndpoint::ScheduleDelayedWrite(
@@ -490,7 +575,7 @@ FuzzingEventEngine::FuzzingEndpoint::~FuzzingEndpoint() {
 
 bool FuzzingEventEngine::FuzzingEndpoint::Read(
     absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-    const ReadArgs*) {
+    ReadArgs) {
   buffer->Clear();
   grpc_core::MutexLock lock(&*mu_);
   IoToken read_token({"READ", middle_.get(), my_index(),
@@ -582,6 +667,18 @@ EventEngine::ConnectionHandle FuzzingEventEngine::Connect(
   return ConnectionHandle{{task_handle.keys[0], task_handle.keys[1]}};
 }
 
+std::pair<std::unique_ptr<EventEngine::Endpoint>,
+          std::unique_ptr<EventEngine::Endpoint>>
+FuzzingEventEngine::CreateEndpointPair() {
+  grpc_core::MutexLock lock(&*mu_);
+  auto middle =
+      std::make_shared<EndpointMiddle>(g_fuzzing_event_engine->AllocatePort(),
+                                       g_fuzzing_event_engine->AllocatePort());
+  auto ep1 = std::make_unique<FuzzingEndpoint>(middle, 0);
+  auto ep2 = std::make_unique<FuzzingEndpoint>(middle, 1);
+  return {std::move(ep1), std::move(ep2)};
+}
+
 bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
   return Cancel(
       TaskHandle{{connection_handle.keys[0], connection_handle.keys[1]}});
@@ -589,9 +686,80 @@ bool FuzzingEventEngine::CancelConnect(ConnectionHandle connection_handle) {
 
 bool FuzzingEventEngine::IsWorkerThread() { abort(); }
 
+namespace {
+
+class FuzzerDNSResolver : public ExtendedType<EventEngine::DNSResolver,
+                                              ResolverSupportsBlockingLookups> {
+ public:
+  explicit FuzzerDNSResolver(std::shared_ptr<EventEngine> engine)
+      : engine_(std::move(engine)) {}
+
+  void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
+                      absl::string_view /* default_port */) override {
+    GetDefaultEventEngine()->RunAfter(
+        grpc_core::Duration::Seconds(1),
+        [name = std::string(name), cb = std::move(on_resolve)]() mutable {
+          cb(GetHostnameResponse(name));
+        });
+  }
+
+  void LookupSRV(LookupSRVCallback on_resolve,
+                 absl::string_view /* name */) override {
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The Fuzzing DNS resolver does not support looking up SRV records"));
+    });
+  };
+
+  void LookupTXT(LookupTXTCallback on_resolve,
+                 absl::string_view /* name */) override {
+    // Not supported
+    engine_->Run([on_resolve = std::move(on_resolve)]() mutable {
+      on_resolve(absl::UnimplementedError(
+          "The Fuzing DNS resolver does not support looking up TXT records"));
+    });
+  };
+
+  // Blocking resolution
+  absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+  LookupHostnameBlocking(absl::string_view name,
+                         absl::string_view /* default_port */) override {
+    return GetHostnameResponse(name);
+  }
+
+  absl::StatusOr<std::vector<EventEngine::DNSResolver::SRVRecord>>
+  LookupSRVBlocking(absl::string_view /* name */) override {
+    return absl::UnimplementedError(
+        "The Fuzing DNS resolver does not support looking up TXT records");
+  }
+
+  absl::StatusOr<std::vector<std::string>> LookupTXTBlocking(
+      absl::string_view /* name */) override {
+    return absl::UnimplementedError(
+        "The Fuzing DNS resolver does not support looking up TXT records");
+  }
+
+ private:
+  static absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
+  GetHostnameResponse(absl::string_view name) {
+    if (name == "server") {
+      return {{EventEngine::ResolvedAddress()}};
+    }
+    return absl::UnknownError("Resolution failed");
+  }
+
+  std::shared_ptr<EventEngine> engine_;
+};
+}  // namespace
+
 absl::StatusOr<std::unique_ptr<EventEngine::DNSResolver>>
 FuzzingEventEngine::GetDNSResolver(const DNSResolver::ResolverOptions&) {
 #if defined(GRPC_POSIX_SOCKET_TCP)
+  if (grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
+    return std::make_unique<FuzzerDNSResolver>(shared_from_this());
+  }
   return std::make_unique<NativePosixDNSResolver>(shared_from_this());
 #else
   grpc_core::Crash("FuzzingEventEngine::GetDNSResolver Not implemented");
@@ -631,6 +799,11 @@ EventEngine::TaskHandle FuzzingEventEngine::RunAfter(
 EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactly(
     Duration when, absl::AnyInvocable<void()> closure) {
   grpc_core::MutexLock lock(&*mu_);
+  return RunAfterExactlyLocked(when, std::move(closure));
+}
+
+EventEngine::TaskHandle FuzzingEventEngine::RunAfterExactlyLocked(
+    Duration when, absl::AnyInvocable<void()> closure) {
   // (b/258949216): Cap it to one year to avoid integer overflow errors.
   return RunAfterLocked(RunType::kExact, std::min(when, kOneYear),
                         std::move(closure));

@@ -42,6 +42,7 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/tags/tag_key.h"
 #include "src/core/call/call_finalization.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/lib/address_utils/parse_address.h"
@@ -56,7 +57,6 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/transport/auth_context.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/uri.h"
@@ -251,19 +251,20 @@ const grpc_channel_filter ServerLoadReportingFilter::kFilter =
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-      // Access measures to ensure they are initialized. Otherwise, we can't
-      // create any valid view before the first RPC.
-      grpc::load_reporter::MeasureStartCount();
-      grpc::load_reporter::MeasureEndCount();
-      grpc::load_reporter::MeasureEndBytesSent();
-      grpc::load_reporter::MeasureEndBytesReceived();
-      grpc::load_reporter::MeasureEndLatencyMs();
-      grpc::load_reporter::MeasureOtherCallMetric();
-      builder->channel_init()
-          ->RegisterFilter<ServerLoadReportingFilter>(GRPC_SERVER_CHANNEL)
-          .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
-    });
+    CoreConfiguration::RegisterEphemeralBuilder(
+        [](CoreConfiguration::Builder* builder) {
+          // Access measures to ensure they are initialized. Otherwise, we can't
+          // create any valid view before the first RPC.
+          grpc::load_reporter::MeasureStartCount();
+          grpc::load_reporter::MeasureEndCount();
+          grpc::load_reporter::MeasureEndBytesSent();
+          grpc::load_reporter::MeasureEndBytesReceived();
+          grpc::load_reporter::MeasureEndLatencyMs();
+          grpc::load_reporter::MeasureOtherCallMetric();
+          builder->channel_init()
+              ->RegisterFilter<ServerLoadReportingFilter>(GRPC_SERVER_CHANNEL)
+              .IfChannelArg(GRPC_ARG_ENABLE_LOAD_REPORTING, false);
+        });
   }
 } server_load_reporting_filter_static_registrar;
 

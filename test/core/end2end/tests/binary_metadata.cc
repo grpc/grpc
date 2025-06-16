@@ -31,8 +31,8 @@ namespace grpc_core {
 
 static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
                            bool client_true_binary) {
-  test.InitServer(
-      ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
+      GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
   test.InitClient(
       ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, client_true_binary));
 
@@ -76,7 +76,8 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   s.NewBatch(103)
       .RecvCloseOnServer(client_close)
       .SendMessage(response_payload.Ref())
-      .SendStatusFromServer(GRPC_STATUS_OK, status_string.as_string_view(),
+      .SendStatusFromServer(GRPC_STATUS_INVALID_ARGUMENT,
+                            status_string.as_string_view(),
                             {
                                 {"key5-bin", key5_payload.as_string_view()},
                                 {"key6-bin", key6_payload.as_string_view()},
@@ -85,7 +86,7 @@ static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
   test.Expect(1, true);
   test.Step();
 
-  EXPECT_EQ(server_status.status(), GRPC_STATUS_OK);
+  EXPECT_EQ(server_status.status(), GRPC_STATUS_INVALID_ARGUMENT);
   EXPECT_EQ(server_status.message(), status_string.as_string_view());
   EXPECT_EQ(s.method(), "/foo");
   EXPECT_FALSE(client_close.was_cancelled());

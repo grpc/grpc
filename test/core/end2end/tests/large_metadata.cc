@@ -36,7 +36,12 @@ class LargeMetadataTest {
   LargeMetadataTest(CoreEnd2endTest& test, const ChannelArgs& args)
       : test_(test) {
     test_.InitClient(args);
-    test_.InitServer(args);
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    test_.InitServer(args.Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
   }
 
   int PerformRequests(size_t metadata_size, int count) {
@@ -45,11 +50,11 @@ class LargeMetadataTest {
       auto status = PerformOneRequest(metadata_size);
       if (status.status() == GRPC_STATUS_RESOURCE_EXHAUSTED) {
         EXPECT_THAT(status.message(),
-                    ::testing::StartsWith("received metadata size exceeds"));
+                    ::testing::HasSubstr("received metadata size exceeds"));
       } else {
         num_requests_accepted++;
         EXPECT_EQ(status.status(), GRPC_STATUS_OK);
-        EXPECT_EQ(status.message(), "xyz");
+        EXPECT_EQ(status.message(), IsErrorFlattenEnabled() ? "" : "xyz");
       }
     }
     return num_requests_accepted;

@@ -16,7 +16,6 @@
 //
 //
 
-#include <grpc/impl/channel_arg_names.h>
 #include <grpc/status.h>
 
 #include <memory>
@@ -81,7 +80,7 @@ CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterRoundTrip) {
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterRoundTripWithServiceConfig) {
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrCat(

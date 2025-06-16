@@ -23,7 +23,6 @@ extern "C" {
 #endif
 
 typedef struct xds_core_v3_ContextParams { upb_Message UPB_PRIVATE(base); } xds_core_v3_ContextParams;
-typedef struct xds_core_v3_ContextParams_ParamsEntry { upb_Message UPB_PRIVATE(base); } xds_core_v3_ContextParams_ParamsEntry;
 
 
 
@@ -122,23 +121,6 @@ UPB_INLINE bool xds_core_v3_ContextParams_params_delete(xds_core_v3_ContextParam
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-
-/* xds.core.v3.ContextParams.ParamsEntry */
-
-UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_key(const xds_core_v3_ContextParams_ParamsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView xds_core_v3_ContextParams_ParamsEntry_value(const xds_core_v3_ContextParams_ParamsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void xds_core_v3_ContextParams_ParamsEntry_set_value(xds_core_v3_ContextParams_ParamsEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 #ifdef __cplusplus

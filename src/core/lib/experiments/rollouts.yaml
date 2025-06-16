@@ -40,65 +40,57 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: backoff_cap_initial_at_max
-  default: true
 - name: call_tracer_in_transport
   default: true
-- name: call_tracer_transport_fix
+- name: chaotic_good_framing_layer
   default: true
-- name: call_v3
+- name: error_flatten
   default: false
 - name: event_engine_callback_cq
   default: true
 - name: event_engine_client
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
 - name: event_engine_dns
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
+- name: event_engine_dns_non_client_channel
+  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
+- name: event_engine_fork
+  default: false
 - name: event_engine_listener
-  default:
-    # not tested on iOS at all
-    ios: broken
-    posix: true
-    windows: true
+  default: true
+- name: event_engine_secure_endpoint
+  default: true
 - name: free_large_allocator
   default: false
 - name: keep_alive_ping_timer_batch
   default: false
 - name: local_connector_secure
   default: false
-- name: max_pings_wo_data_throttle
+- name: max_inflight_pings_strict_limit
   default: true
 - name: monitoring_experiment
   default: true
-- name: posix_ee_skip_grpc_init
+- name: pollset_alternative
   default: false
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
   default: false
-- name: rst_stream_fix
-  default: true
-- name: rstpit
-  default: false
 - name: schedule_cancellation_over_write
   default: false
-- name: server_listener
+- name: server_global_callbacks_ownership
+  default: false
+- name: shard_global_connection_pool
   default: true
-- name: server_privacy
+- name: sleep_promise_exec_ctx_removal
   default: false
 - name: tcp_frame_size_tuning
   default: false
 - name: tcp_rcv_lowat
+  default: false
+- name: tsi_frame_protector_without_locks
   default: false
 - name: unconstrained_max_quota_buffer_size
   default: false

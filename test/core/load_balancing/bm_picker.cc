@@ -177,11 +177,10 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
 
     GlobalStatsPluginRegistry::StatsPluginGroup& GetStatsPluginGroup()
         override {
-      return helper_->stats_plugin_group_;
+      return *helper_->stats_plugin_group_;
     }
 
-    void AddTraceEvent(TraceSeverity severity,
-                       absl::string_view message) override {
+    void AddTraceEvent(absl::string_view message) override {
       LOG(FATAL) << "unimplemented";
     }
 
@@ -207,12 +206,13 @@ class BenchmarkHelper : public std::enable_shared_from_this<BenchmarkHelper> {
   absl::flat_hash_set<
       std::shared_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>>
       connectivity_watchers_ ABSL_GUARDED_BY(mu_);
-  GlobalStatsPluginRegistry::StatsPluginGroup stats_plugin_group_ =
-      GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
-          experimental::StatsPluginChannelScope(
-              "foo", "foo",
-              grpc_event_engine::experimental::ChannelArgsEndpointConfig{
-                  ChannelArgs{}}));
+  std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>
+      stats_plugin_group_ =
+          GlobalStatsPluginRegistry::GetStatsPluginsForChannel(
+              experimental::StatsPluginChannelScope(
+                  "foo", "foo",
+                  grpc_event_engine::experimental::ChannelArgsEndpointConfig{
+                      ChannelArgs{}}));
 };
 
 void BM_Pick(benchmark::State& state, BenchmarkHelper& helper) {

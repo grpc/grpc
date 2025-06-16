@@ -48,10 +48,7 @@ namespace {
 // Tests cancellation with multiple send op batches.
 void TestRetryCancelWithMultipleSendBatches(
     CoreEnd2endTest& test, std::unique_ptr<CancellationMode> mode) {
-  // This is a workaround for the flakiness that if the server ever enters
-  // GracefulShutdown for whatever reason while the client has already been
-  // shutdown, the test would not timeout and fail.
-  test.InitServer(ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(
       ChannelArgs()
           .Set(
@@ -175,13 +172,14 @@ grpc_channel_filter FailSendOpsFilter::kFilterVtable = {
 };
 
 void RegisterFilter() {
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailSendOpsFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &FailSendOpsFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
 }
 
 CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {

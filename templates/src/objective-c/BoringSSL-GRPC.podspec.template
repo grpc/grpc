@@ -70,7 +70,7 @@
 
   Pod::Spec.new do |s|
     s.name     = 'BoringSSL-GRPC'
-    version = '0.0.39'
+    version = '0.0.41'
     s.version  = version
     s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
     # Adapted from the homepage:
@@ -184,6 +184,7 @@
     s.pod_target_xcconfig = {
       # Do not let src/include/openssl/time.h override system API
       'USE_HEADERMAP' => 'NO',
+      'CLANG_CXX_LANGUAGE_STANDARD' => 'c++17',
     }
 
     s.prepare_command = <<-END_OF_COMMAND

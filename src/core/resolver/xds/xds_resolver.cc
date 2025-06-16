@@ -46,6 +46,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/strings/strip.h"
 #include "re2/re2.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/client_channel/client_channel_internal.h"
 #include "src/core/client_channel/config_selector.h"
@@ -62,7 +63,6 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/load_balancing/ring_hash/ring_hash.h"
 #include "src/core/resolver/endpoint_addresses.h"
@@ -78,6 +78,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/time.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/work_serializer.h"
@@ -690,7 +691,7 @@ absl::Status XdsResolver::XdsConfigSelector::GetCallConfig(
           XdsRouteConfigResource::Route::RouteAction::ClusterWeight>&
           /*weighted_clusters*/) {
         const uint32_t key = absl::Uniform<uint32_t>(
-            absl::BitGen(), 0, entry->weighted_cluster_state.back().range_end);
+            SharedBitGen(), 0, entry->weighted_cluster_state.back().range_end);
         // Find the index in weighted clusters corresponding to key.
         size_t mid = 0;
         size_t start_index = 0;

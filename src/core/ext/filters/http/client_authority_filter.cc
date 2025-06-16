@@ -27,11 +27,11 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/filter/auth/auth_filters.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
@@ -73,13 +73,11 @@ void RegisterClientAuthorityFilter(CoreConfiguration::Builder* builder) {
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_SUBCHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>()
-      .Before<LegacyClientAuthFilter>();
+      .Before<ClientAuthFilter>();
   builder->channel_init()
       ->RegisterFilter<ClientAuthorityFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
       .If(NeedsClientAuthorityFilter)
-      .Before<ClientAuthFilter>()
-      .Before<LegacyClientAuthFilter>();
+      .Before<ClientAuthFilter>();
 }
 
 }  // namespace grpc_core

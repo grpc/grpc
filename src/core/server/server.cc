@@ -44,9 +44,11 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
+#include "src/core/call/interception_chain.h"
 #include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -75,16 +77,18 @@
 #include "src/core/lib/surface/legacy_channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
-#include "src/core/lib/transport/interception_chain.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
+
+using http2::Http2ErrorCode;
 
 //
 // Server::ListenerState::ConfigFetcherWatcher
@@ -138,41 +142,35 @@ Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
 }
 
 void Server::ListenerState::Start() {
-  if (IsServerListenerEnabled()) {
-    if (server_->config_fetcher() != nullptr) {
-      auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
-      config_fetcher_watcher_ = watcher.get();
-      server_->config_fetcher()->StartWatch(
-          grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
-          std::move(watcher));
-    } else {
-      {
-        MutexLock lock(&mu_);
-        started_ = true;
-        is_serving_ = true;
-      }
-      listener_->Start();
-    }
+  if (server_->config_fetcher() != nullptr) {
+    auto watcher = std::make_unique<ConfigFetcherWatcher>(this);
+    config_fetcher_watcher_ = watcher.get();
+    server_->config_fetcher()->StartWatch(
+        grpc_sockaddr_to_string(listener_->resolved_address(), false).value(),
+        std::move(watcher));
   } else {
+    {
+      MutexLock lock(&mu_);
+      started_ = true;
+      is_serving_ = true;
+    }
     listener_->Start();
   }
 }
 
 void Server::ListenerState::Stop() {
-  if (IsServerListenerEnabled()) {
-    absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
-        connections;
-    {
-      MutexLock lock(&mu_);
-      // Orphan the connections so that they can start cleaning up.
-      connections = std::move(connections_);
-      connections_.clear();
-      is_serving_ = false;
-    }
-    if (config_fetcher_watcher_ != nullptr) {
-      CHECK_NE(server_->config_fetcher(), nullptr);
-      server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
-    }
+  absl::flat_hash_set<OrphanablePtr<ListenerInterface::LogicalConnection>>
+      connections;
+  {
+    MutexLock lock(&mu_);
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
+    connections_.clear();
+    is_serving_ = false;
+  }
+  if (config_fetcher_watcher_ != nullptr) {
+    CHECK_NE(server_->config_fetcher(), nullptr);
+    server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
   GRPC_CLOSURE_INIT(&destroy_done_, ListenerDestroyDone, server_.get(),
                     grpc_schedule_on_exec_ctx);
@@ -730,7 +728,7 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
       }
       if (rc == nullptr) {
         if (server_->pending_backlog_protector_.Reject(pending_promises_.size(),
-                                                       server_->bitgen_)) {
+                                                       SharedBitGen())) {
           return Immediate(absl::ResourceExhaustedError(
               "Too many pending requests for this server"));
         }
@@ -991,7 +989,8 @@ class ChannelBroadcaster {
     op->goaway_error =
         send_goaway
             ? grpc_error_set_int(GRPC_ERROR_CREATE("Server shutdown"),
-                                 StatusIntProperty::kRpcStatus, GRPC_STATUS_OK)
+                                 StatusIntProperty::kHttp2Error,
+                                 static_cast<int>(Http2ErrorCode::kNoError))
             : absl::OkStatus();
     sc->slice = grpc_slice_from_copied_string("Server shutdown");
     op->disconnect_with_error = send_disconnect;
@@ -1062,9 +1061,8 @@ RefCountedPtr<channelz::ServerNode> CreateChannelzNode(
                .value_or(GRPC_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE_DEFAULT));
     channelz_node =
         MakeRefCounted<channelz::ServerNode>(channel_tracer_max_memory);
-    channelz_node->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("Server created"));
+    GRPC_CHANNELZ_LOG(channelz_node) << "Server created";
+    channelz_node->SetChannelArgs(args);
   }
   return channelz_node;
 }
@@ -1167,8 +1165,12 @@ Server::MakeCallDestination(const ChannelArgs& args) {
 }
 
 Server::Server(const ChannelArgs& args)
-    : channel_args_(args),
-      channelz_node_(CreateChannelzNode(args)),
+    : channelz::DataSource(CreateChannelzNode(args)),
+      channel_args_(args),
+      channelz_node_(channelz::DataSource::channelz_node() == nullptr
+                         ? nullptr
+                         : channelz::DataSource::channelz_node()
+                               ->RefAsSubclass<channelz::ServerNode>()),
       server_call_tracer_factory_(ServerCallTracerFactory::Get(args)),
       compression_options_(CompressionOptionsFromChannelArgs(args)),
       max_time_in_pending_queue_(Duration::Seconds(
@@ -1177,6 +1179,7 @@ Server::Server(const ChannelArgs& args)
               .value_or(30))) {}
 
 Server::~Server() {
+  ResetDataSource();
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -1190,12 +1193,49 @@ Server::~Server() {
   }
 }
 
+void Server::AddData(channelz::DataSink sink) {
+  MutexLock global_lock(&mu_global_);
+  sink.AddAdditionalInfo(
+      "server",
+      channelz::PropertyList()
+          // TODO(ctiller): config_fetcher?
+          // TODO(ctiller): server_call_tracer_factory?
+          // TODO(ctiller): compression_options?
+          // TODO(ctiller): unregistered_request_matcher?
+          // TODO(ctiller): connection_manager?
+          .Set("registered_cqs", cqs_.size())
+          .Set("pollsets", pollsets_.size())
+          .Set("started", started_)
+          .Set("starting", starting_)
+          .Set("registered_methods",
+               [this]() {
+                 channelz::PropertyGrid grid;
+                 for (auto& [host_method, rm] : registered_methods_) {
+                   grid.Set("host", host_method.second, host_method.first)
+                       .Set("payload_handling", host_method.second,
+                            rm->payload_handling ==
+                                    GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+                                ? "READ_INITIAL_BYTE_BUFFER"
+                                : "PAYLOAD_NONE");
+                 }
+                 return grid;
+               }())
+          .Set("shutdown_refs", shutdown_refs_.load(std::memory_order_relaxed))
+          .Set("shutdown_published", shutdown_published_)
+          .Set("num_shutdown_tags", shutdown_tags_.size())
+          .Set("max_time_in_pending_queue", max_time_in_pending_queue_)
+          .Set("num_channels", channels_.size())
+          .Set("num_connections", connections_.size())
+          .Set("connections_open", connections_open_)
+          .Set("num_listener_states", listener_states_.size())
+          .Set("listeners_destroyed", listeners_destroyed_));
+}
+
 void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
   channelz::ListenSocketNode* listen_socket_node =
       listener->channelz_listen_socket_node();
   if (listen_socket_node != nullptr && channelz_node_ != nullptr) {
-    channelz_node_->AddChildListenSocket(
-        listen_socket_node->RefAsSubclass<channelz::ListenSocketNode>());
+    listen_socket_node->AddParent(channelz_node_.get());
   }
   ListenerInterface* ptr = listener.get();
   listener_states_.emplace_back(
@@ -1240,10 +1280,9 @@ void Server::Start() {
   starting_cv_.Signal();
 }
 
-grpc_error_handle Server::SetupTransport(
-    Transport* transport, grpc_pollset* accepting_pollset,
-    const ChannelArgs& args,
-    const RefCountedPtr<channelz::SocketNode>& socket_node) {
+grpc_error_handle Server::SetupTransport(Transport* transport,
+                                         grpc_pollset* accepting_pollset,
+                                         const ChannelArgs& args) {
   GRPC_LATENT_SEE_INNER_SCOPE("Server::SetupTransport");
   // Create channel.
   global_stats().IncrementServerChannelsCreated();
@@ -1253,11 +1292,12 @@ grpc_error_handle Server::SetupTransport(
     // TODO(ctiller): post-v3-transition make this method take an
     // OrphanablePtr<ServerTransport> directly.
     OrphanablePtr<ServerTransport> t(transport->server_transport());
-    auto destination = MakeCallDestination(args.SetObject(transport));
+    auto destination = MakeCallDestination(
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()));
     if (!destination.ok()) {
       return absl_status_to_grpc_error(destination.status());
     }
-    // TODO(ctiller): add channelz node
     t->SetCallDestination(std::move(*destination));
     MutexLock lock(&mu_global_);
     if (ShutdownCalled()) {
@@ -1265,13 +1305,19 @@ grpc_error_handle Server::SetupTransport(
     }
     t->StartConnectivityWatch(MakeOrphanable<TransportConnectivityWatcher>(
         t->RefAsSubclass<ServerTransport>(), Ref()));
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
+      socket_node->AddParent(channelz_node_.get());
+    }
     GRPC_TRACE_LOG(server_channel, INFO) << "Adding connection";
     connections_.emplace(std::move(t));
     ++connections_open_;
   } else {
     CHECK(transport->filter_stack_transport() != nullptr);
     absl::StatusOr<RefCountedPtr<Channel>> channel = LegacyChannel::Create(
-        "", args.SetObject(transport), GRPC_SERVER_CHANNEL);
+        "",
+        args.SetObject(transport).SetObject<channelz::BaseNode>(
+            transport->GetSocketNode()),
+        GRPC_SERVER_CHANNEL);
     if (!channel.ok()) {
       return absl_status_to_grpc_error(channel.status());
     }
@@ -1290,9 +1336,9 @@ grpc_error_handle Server::SetupTransport(
       cq_idx = static_cast<size_t>(rand()) % std::max<size_t>(1, cqs_.size());
     }
     intptr_t channelz_socket_uuid = 0;
-    if (socket_node != nullptr) {
+    if (auto socket_node = transport->GetSocketNode(); socket_node != nullptr) {
       channelz_socket_uuid = socket_node->uuid();
-      channelz_node_->AddChildSocket(socket_node);
+      socket_node->AddParent(channelz_node_.get());
     }
     // Initialize chand.
     chand->InitTransport(Ref(), std::move(*channel), cq_idx, transport,
@@ -1493,8 +1539,7 @@ void Server::StopListening() {
     channelz::ListenSocketNode* channelz_listen_socket_node =
         listener_state->listener()->channelz_listen_socket_node();
     if (channelz_node_ != nullptr && channelz_listen_socket_node != nullptr) {
-      channelz_node_->RemoveChildListenSocket(
-          channelz_listen_socket_node->uuid());
+      channelz_listen_socket_node->RemoveParent(channelz_node_.get());
     }
     listener_state->Stop();
   }
@@ -1646,17 +1691,12 @@ class Server::ChannelData::ConnectivityWatcher
 
 Server::ChannelData::~ChannelData() {
   if (server_ != nullptr) {
-    if (server_->channelz_node_ != nullptr && channelz_socket_uuid_ != 0) {
-      server_->channelz_node_->RemoveChildSocket(channelz_socket_uuid_);
+    MutexLock lock(&server_->mu_global_);
+    if (list_position_.has_value()) {
+      server_->channels_.erase(*list_position_);
+      list_position_.reset();
     }
-    {
-      MutexLock lock(&server_->mu_global_);
-      if (list_position_.has_value()) {
-        server_->channels_.erase(*list_position_);
-        list_position_.reset();
-      }
-      server_->MaybeFinishShutdown();
-    }
+    server_->MaybeFinishShutdown();
   }
 }
 

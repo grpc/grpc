@@ -40,6 +40,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_args_preconditioning.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -175,7 +176,10 @@ HttpRequest::HttpRequest(
       pollent_(pollent),
       pollset_set_(grpc_pollset_set_create()),
       test_only_generate_response_(std::move(test_only_generate_response)),
-      use_event_engine_dns_resolver_(IsEventEngineDnsNonClientChannelEnabled()),
+      use_event_engine_dns_resolver_(
+          IsEventEngineDnsNonClientChannelEnabled() &&
+          !grpc_event_engine::experimental::
+              EventEngineExperimentDisabledForPython()),
       resolver_(!use_event_engine_dns_resolver_ ? GetDNSResolver() : nullptr),
       ee_resolver_(
           use_event_engine_dns_resolver_
@@ -282,7 +286,7 @@ void HttpRequest::AppendError(grpc_error_handle error) {
     overall_error_ = GRPC_ERROR_CREATE("Failed HTTP/1 client request");
   }
   auto addr_text = ResolvedAddressToURI(addresses_[next_address_ - 1]);
-  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, std::move(error));
+  if (addr_text.ok()) error = AddMessagePrefix(*addr_text, error);
   overall_error_ = grpc_error_add_child(overall_error_, std::move(error));
 }
 
@@ -329,8 +333,9 @@ void HttpRequest::StartWrite() {
   CSliceRef(request_text_);
   grpc_slice_buffer_add(&outgoing_, request_text_);
   Ref().release();  // ref held by pending write
-  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, nullptr,
-                      /*max_frame_size=*/INT_MAX);
+  grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
+  args.set_max_frame_size(INT_MAX);
+  grpc_endpoint_write(ep_.get(), &outgoing_, &done_write_, std::move(args));
 }
 
 void HttpRequest::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {

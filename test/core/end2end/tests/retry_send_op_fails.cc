@@ -130,14 +130,15 @@ grpc_channel_filter FailFirstCallFilter::kFilterVtable = {
 //   attempts are allowed
 CORE_END2END_TEST(RetryTests, RetrySendOpFails) {
   SKIP_IF_V3();  // Need to convert filter
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
-                         &FailFirstCallFilter::kFilterVtable)
-        // Skip on proxy (which explicitly disables retries).
-        .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
-  });
-  InitServer(ChannelArgs());
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
+                             &FailFirstCallFilter::kFilterVtable)
+            // Skip on proxy (which explicitly disables retries).
+            .IfChannelArg(GRPC_ARG_ENABLE_RETRIES, true);
+      });
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

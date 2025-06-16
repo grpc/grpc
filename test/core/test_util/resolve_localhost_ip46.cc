@@ -26,6 +26,9 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/shim.h"
+#include "src/core/lib/event_engine/utils.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -38,16 +41,36 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
-      GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
-  CHECK_OK(addresses_or);
-  for (const auto& addr : *addresses_or) {
-    const grpc_sockaddr* sock_addr =
-        reinterpret_cast<const grpc_sockaddr*>(&addr);
-    if (sock_addr->sa_family == GRPC_AF_INET) {
-      localhost_to_ipv4 = true;
-    } else if (sock_addr->sa_family == GRPC_AF_INET6) {
-      localhost_to_ipv6 = true;
+  if (IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
+    auto resolver =
+        grpc_event_engine::experimental::GetDefaultEventEngine()
+            ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
+                                 DNSResolver::ResolverOptions());
+    CHECK_OK(resolver.status());
+    auto addresses = grpc_event_engine::experimental::LookupHostnameBlocking(
+        resolver->get(), "localhost", "https");
+    CHECK_OK(addresses.status());
+    for (const auto& addr : *addresses) {
+      if (addr.address()->sa_family == AF_INET) {
+        localhost_to_ipv4 = true;
+      } else if (addr.address()->sa_family == AF_INET6) {
+        localhost_to_ipv6 = true;
+      }
+    }
+  } else {
+    absl::StatusOr<std::vector<grpc_resolved_address>> addresses_or =
+        GetDNSResolver()->LookupHostnameBlocking("localhost", "https");
+    CHECK_OK(addresses_or);
+    for (const auto& addr : *addresses_or) {
+      const grpc_sockaddr* sock_addr =
+          reinterpret_cast<const grpc_sockaddr*>(&addr);
+      if (sock_addr->sa_family == GRPC_AF_INET) {
+        localhost_to_ipv4 = true;
+      } else if (sock_addr->sa_family == GRPC_AF_INET6) {
+        localhost_to_ipv6 = true;
+      }
     }
   }
 }

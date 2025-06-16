@@ -59,7 +59,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
@@ -156,7 +156,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
@@ -204,7 +204,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs());
@@ -253,7 +253,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsRejectOnClient) {
   SKIP_IF_MINSTACK();
   InitServer(
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false));
   InitClient(ChannelArgs()

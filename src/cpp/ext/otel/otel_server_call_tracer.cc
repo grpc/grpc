@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
@@ -34,14 +35,16 @@
 #include "absl/types/span.h"
 #include "opentelemetry/context/context.h"
 #include "opentelemetry/metrics/sync_instruments.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/call/status_util.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
@@ -49,6 +52,61 @@
 
 namespace grpc {
 namespace internal {
+
+class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
+    : public grpc_core::TcpCallTracer {
+ public:
+  explicit TcpCallTracer(
+      grpc_core::RefCountedPtr<OpenTelemetryPluginImpl::ServerCallTracer>
+          server_call_tracer)
+      : server_call_tracer_(server_call_tracer) {
+    // Take a ref on the call if tracing is enabled, since TCP traces might
+    // arrive after all the other refs on the call are gone.
+    server_call_tracer_->arena_->GetContext<grpc_core::Call>()->InternalRef(
+        "OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer");
+  }
+
+  ~TcpCallTracer() override {
+    grpc_core::ExecCtx exec_ctx;
+    auto* arena = server_call_tracer_->arena_;
+    // The ServerCallTracer is allocated on the arena and hence needs to be
+    // reset before unreffing the call.
+    server_call_tracer_.reset();
+    arena->GetContext<grpc_core::Call>()->InternalUnref(
+        "OpenTelemetryPluginImpl::ServerCallTracer::~TcpCallTracer");
+  }
+
+  void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
+                   absl::Time time, size_t byte_offset,
+                   const std::vector<TcpEventMetric>& metrics) override {
+    server_call_tracer_->RecordAnnotation(
+        absl::StrCat(
+            "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
+            " byte_offset=", byte_offset, " ",
+            grpc_core::TcpCallTracer::TcpEventMetricsToString(metrics)),
+        time);
+  }
+
+ private:
+  grpc_core::RefCountedPtr<OpenTelemetryPluginImpl::ServerCallTracer>
+      server_call_tracer_;
+};
+
+OpenTelemetryPluginImpl::ServerCallTracer::ServerCallTracer(
+    OpenTelemetryPluginImpl* otel_plugin, grpc_core::Arena* arena,
+    std::shared_ptr<OpenTelemetryPluginImpl::ServerScopeConfig> scope_config)
+    : start_time_(absl::Now()),
+      injected_labels_from_plugin_options_(
+          otel_plugin->plugin_options().size()),
+      otel_plugin_(otel_plugin),
+      arena_(arena),
+      scope_config_(std::move(scope_config)) {}
+
+OpenTelemetryPluginImpl::ServerCallTracer::~ServerCallTracer() {
+  if (span_ != nullptr) {
+    span_->End();
+  }
+}
 
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     grpc_metadata_batch* recv_initial_metadata) {
@@ -93,6 +151,9 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     // tracing systems active for the same call.
     grpc_core::SetContext<census_context>(
         reinterpret_cast<census_context*>(span_.get()));
+    if (IsSampled()) {
+      arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 
@@ -162,6 +223,7 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendMessage(
     span_->AddEvent("Outbound message", attributes);
   }
 }
+
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordSendCompressedMessage(
     const grpc_core::Message& send_compressed_message) {
   if (span_ != nullptr) {
@@ -228,8 +290,8 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordEnd(
                        final_info->error_string)
               .ToString());
     }
-    span_->End();
   }
+  Unref(DEBUG_LOCATION, "RecordEnd");
 }
 
 void OpenTelemetryPluginImpl::ServerCallTracer::RecordIncomingBytes(
@@ -247,6 +309,23 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordAnnotation(
   if (span_ != nullptr) {
     span_->AddEvent(AbslStringViewToNoStdStringView(annotation));
   }
+}
+
+void OpenTelemetryPluginImpl::ServerCallTracer::RecordAnnotation(
+    absl::string_view annotation, absl::Time time) {
+  if (span_ != nullptr) {
+    span_->AddEvent(AbslStringViewToNoStdStringView(annotation),
+                    absl::ToChronoTime(time));
+  }
+}
+
+std::shared_ptr<grpc_core::TcpCallTracer>
+OpenTelemetryPluginImpl::ServerCallTracer::StartNewTcpTrace() {
+  if (span_ != nullptr) {
+    return std::make_shared<TcpCallTracer>(
+        Ref(DEBUG_LOCATION, "StartNewTcpTrace"));
+  }
+  return nullptr;
 }
 
 }  // namespace internal

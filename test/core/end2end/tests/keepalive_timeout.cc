@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
@@ -37,7 +38,7 @@ namespace {
 // returning status.
 CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   // Disable ping ack to trigger the keepalive timeout
-  InitServer(ChannelArgs().Set("grpc.http2.ack_pings", false));
+  InitServer(DefaultServerArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, 10)
                  .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)
@@ -54,7 +55,7 @@ CORE_END2END_TEST(Http2SingleHopTests, KeepaliveTimeout) {
   Expect(1, true);
   Step();
   EXPECT_EQ(server_status.status(), GRPC_STATUS_UNAVAILABLE);
-  EXPECT_EQ(server_status.message(), "ping timeout");
+  EXPECT_THAT(server_status.message(), ::testing::HasSubstr("ping timeout"));
 }
 
 // Verify that reads reset the keepalive ping timer. The client sends 30 pings
@@ -70,7 +71,7 @@ CORE_END2END_TEST(Http2SingleHopTests, ReadDelaysKeepalive) {
 #endif  // GRPC_POSIX_SOCKET
   const auto kPingInterval = Duration::Milliseconds(100);
   // Disable ping ack to trigger the keepalive timeout
-  InitServer(ChannelArgs().Set("grpc.http2.ack_pings", false));
+  InitServer(DefaultServerArgs().Set("grpc.http2.ack_pings", false));
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_KEEPALIVE_TIME_MS, (20 * kPingInterval).millis())
                  .Set(GRPC_ARG_KEEPALIVE_TIMEOUT_MS, 0)

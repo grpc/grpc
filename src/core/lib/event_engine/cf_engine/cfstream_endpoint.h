@@ -44,9 +44,9 @@ class CFStreamEndpointImpl
   void Shutdown();
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const EventEngine::Endpoint::ReadArgs* args);
+            EventEngine::Endpoint::ReadArgs args);
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const EventEngine::Endpoint::WriteArgs* args);
+             SliceBuffer* data, EventEngine::Endpoint::WriteArgs args);
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const {
     return peer_address_;
@@ -109,12 +109,12 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
   ~CFStreamEndpoint() override { impl_->Shutdown(); }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* args) override {
-    return impl_->Read(std::move(on_read), buffer, args);
+            ReadArgs args) override {
+    return impl_->Read(std::move(on_read), buffer, std::move(args));
   }
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* args) override {
-    return impl_->Write(std::move(on_writable), data, args);
+             SliceBuffer* data, WriteArgs args) override {
+    return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
   const EventEngine::ResolvedAddress& GetPeerAddress() const override {
@@ -122,6 +122,10 @@ class CFStreamEndpoint : public EventEngine::Endpoint {
   }
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
     return impl_->GetLocalAddress();
+  }
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  public:

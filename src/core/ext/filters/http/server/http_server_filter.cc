@@ -30,6 +30,7 @@
 #include "absl/base/attributes.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/debug/trace.h"
@@ -42,7 +43,6 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/util/latent_see.h"
 
 namespace grpc_core {
@@ -153,7 +153,7 @@ void HttpServerFilter::Call::OnServerTrailingMetadata(ServerMetadata& md) {
 absl::StatusOr<std::unique_ptr<HttpServerFilter>> HttpServerFilter::Create(
     const ChannelArgs& args, ChannelFilter::Args) {
   return std::make_unique<HttpServerFilter>(
-      args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
+      args, args.GetBool(GRPC_ARG_SURFACE_USER_AGENT).value_or(true),
       args.GetBool(
               GRPC_ARG_DO_NOT_USE_UNLESS_YOU_HAVE_PERMISSION_FROM_GRPC_TEAM_ALLOW_BROKEN_PUT_REQUESTS)
           .value_or(false));

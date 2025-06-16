@@ -50,7 +50,7 @@ then
     # an emulator.
     # Perform a check that "qemu-user-static" with binfmt-misc hook
     # is installed, to give an early warning (otherwise building arm64 images won't work)
-    docker run --rm -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
+    docker run --rm --platform=linux/arm64 -it arm64v8/debian:11 bash -c 'echo "able to run arm64 docker images with an emulator!"' || \
         (echo "Error: can't run arm64 images under an emulator. Have you run 'sudo apt-get install qemu-user-static'?" && exit 1)
   fi
 fi
@@ -64,6 +64,12 @@ ALL_DOCKERFILE_DIRS=(
   tools/dockerfile/interoptest/*
   tools/dockerfile/distribtest/*
   third_party/rake-compiler-dock/*
+)
+
+# These Docker directories contain obsolete images that cannot be built.
+# They are excluded from build processes, but the Dockerfiles are retained for archival purposes.
+EXCLUDE_DIRS=(
+  tools/dockerfile/interoptest/grpc_interop_go1.8
 )
 
 # a list of docker directories that are based on ARM64 base images
@@ -109,6 +115,18 @@ do
     continue
   else
     DOCKER_IMAGE_TAG=$(sha1sum $DOCKERFILE_DIR/Dockerfile | cut -f1 -d\ )
+  fi
+
+  # Skip if DOCKERFILE_DIR is in EXCLUDE_DIRS
+  exclude=false
+  for exclude_dir in "${EXCLUDE_DIRS[@]}"; do
+    if [[ "$DOCKERFILE_DIR" == "$exclude_dir" ]]; then
+      exclude=true
+      break
+    fi
+  done
+  if $exclude; then
+    continue
   fi
 
   echo "* Visiting ${DOCKERFILE_DIR}"

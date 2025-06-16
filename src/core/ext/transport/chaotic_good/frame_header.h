@@ -29,6 +29,7 @@ namespace chaotic_good {
 // Remember to add new frame types to frame_fuzzer.cc
 enum class FrameType : uint8_t {
   kSettings = 0x00,
+  kTcpSecurityFrame = 0x01,  // For TcpFrameTransport
   kClientInitialMetadata = 0x80,
   kClientEndOfStream = 0x81,
   kServerInitialMetadata = 0x91,
@@ -52,34 +53,16 @@ void AbslStringify(Sink& sink, FrameType type) {
 
 struct FrameHeader {
   FrameType type = FrameType::kCancel;
-  uint16_t payload_connection_id = 0;
   uint32_t stream_id = 0;
   uint32_t payload_length = 0;
 
-  // Parses a frame header from a buffer of 12 bytes. All 12 bytes are consumed.
-  static absl::StatusOr<FrameHeader> Parse(const uint8_t* data);
-  // Serializes a frame header into a buffer of 12 bytes.
-  void Serialize(uint8_t* data) const;
   // Report contents as a string
   std::string ToString() const;
-  // Required padding to maintain alignment.
-  uint32_t Padding(uint32_t alignment) const {
-    if (payload_connection_id == 0) {
-      return 0;
-    }
-    if (payload_length % alignment == 0) {
-      return 0;
-    }
-    return alignment - (payload_length % alignment);
-  }
 
   bool operator==(const FrameHeader& h) const {
     return type == h.type && stream_id == h.stream_id &&
-           payload_connection_id == h.payload_connection_id &&
            payload_length == h.payload_length;
   }
-  // Frame header size is fixed to 12 bytes.
-  enum { kFrameHeaderSize = 12 };
 };
 
 inline std::ostream& operator<<(std::ostream& out, const FrameHeader& h) {

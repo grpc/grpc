@@ -48,6 +48,7 @@
 #include "opencensus/trace/span.h"
 #include "opencensus/trace/span_context.h"
 #include "opencensus/trace/status_code.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/experiments/experiments.h"
@@ -56,7 +57,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/sync.h"
@@ -247,8 +247,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordOutgoingBytes(
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd() {
   if (OpenCensusStatsEnabled()) {
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();
@@ -303,7 +302,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordAnnotation(
   }
 }
 
-std::shared_ptr<grpc_core::TcpTracerInterface>
+std::shared_ptr<grpc_core::TcpCallTracer>
 OpenCensusCallTracer::OpenCensusCallAttemptTracer::StartNewTcpTrace() {
   return nullptr;
 }

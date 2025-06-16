@@ -34,6 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chaotic_good_legacy/client_transport.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
@@ -50,7 +51,6 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
@@ -74,16 +74,14 @@ class MockEndpoint
       bool, Read,
       (absl::AnyInvocable<void(absl::Status)> on_read,
        grpc_event_engine::experimental::SliceBuffer* buffer,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args),
       (override));
 
   MOCK_METHOD(
       bool, Write,
       (absl::AnyInvocable<void(absl::Status)> on_writable,
        grpc_event_engine::experimental::SliceBuffer* data,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args),
       (override));
 
   MOCK_METHOD(
@@ -92,6 +90,9 @@ class MockEndpoint
   MOCK_METHOD(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const, override));
+
+  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
+              (const, override));
 };
 
 class MockClientConnectionFactory : public ClientConnectionFactory {

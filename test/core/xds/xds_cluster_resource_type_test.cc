@@ -944,7 +944,6 @@ TEST_F(TlsConfigTest, MinimumValidConfig) {
 }
 
 TEST_F(TlsConfigTest, SystemRootCerts) {
-  ScopedExperimentalEnvVar env_var("GRPC_EXPERIMENTAL_XDS_SYSTEM_ROOT_CERTS");
   Cluster cluster;
   cluster.set_name("foo");
   cluster.set_type(cluster.EDS);
@@ -1386,7 +1385,7 @@ TEST_F(LrsTest, Valid) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
 }
 
 TEST_F(LrsTest, NotSelfConfigSource) {
@@ -1430,7 +1429,7 @@ TEST_F(LrsTest, IgnoresPropagationWithoutEnvVar) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(), "{}");
 }
@@ -1461,7 +1460,7 @@ TEST_F(LrsTest, Propagation) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,mem_utilization,application_utilization,"
@@ -1490,7 +1489,7 @@ TEST_F(LrsTest, PropagationNamedMetricsAll) {
       static_cast<const XdsClusterResource&>(**decode_result.resource);
   ASSERT_NE(resource.lrs_load_reporting_server, nullptr);
   EXPECT_EQ(*resource.lrs_load_reporting_server,
-            *xds_client_->bootstrap().servers().front());
+            *xds_client_->bootstrap().servers().front()->target());
   ASSERT_NE(resource.lrs_backend_metric_propagation, nullptr);
   EXPECT_EQ(resource.lrs_backend_metric_propagation->AsString(),
             "{cpu_utilization,named_metrics.*}");
@@ -2016,8 +2015,6 @@ TEST_F(MetadataTest, UntypedMetadata) {
 // they're being passed through.  A complete set of tests for metadata
 // validation is in xds_metadata_test.cc.
 TEST_F(MetadataTest, MetadataUnparseable) {
-  ScopedExperimentalEnvVar env_var(
-      "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
   Cluster cluster;
   cluster.set_type(cluster.EDS);
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();

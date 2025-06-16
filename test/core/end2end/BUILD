@@ -19,6 +19,15 @@ licenses(["notice"])
 
 grpc_package(name = "test/core/end2end")
 
+# grpc_core_end2end_test_suite() currently needs to consume the source for tests directly.
+exports_files(
+    glob(["tests/**"]),
+    visibility = [
+        "//:__subpackages__",
+        "//bazel:core_end2end_tests",
+    ],
+)
+
 grpc_cc_library(
     name = "cq_verifier",
     testonly = 1,
@@ -41,6 +50,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem_emit",
     ],
 )
 
@@ -58,6 +68,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http_proxy",
+    testonly = 1,
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
@@ -93,6 +104,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy",
+    testonly = 1,
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
     external_deps = [
@@ -185,6 +197,7 @@ grpc_cc_library(
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:postmortem",
             "//test/core/test_util:test_call_creds",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,
@@ -313,6 +326,7 @@ grpc_cc_test(
         "//src/core:iomgr_fwd",
         "//src/core:resolved_address",
         "//src/core:time",
+        "//test/core/event_engine:delegating_event_engine",
         "//test/core/test_util:grpc_test_util",
     ],
 )

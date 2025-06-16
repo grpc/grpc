@@ -31,19 +31,20 @@
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/ares_resolver.h"
+#include "src/core/lib/event_engine/extensions/supports_win_sockets.h"
 #include "src/core/lib/event_engine/handle_containers.h"
 #include "src/core/lib/event_engine/posix_engine/timer_manager.h"
+#include "src/core/lib/event_engine/query_extensions.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
 namespace grpc_event_engine::experimental {
 
-class WindowsEventEngine : public EventEngine,
-                           public grpc_core::KeepsGrpcInitialized {
+class WindowsEventEngine
+    : public ExtendedType<EventEngine, EventEngineWindowsSocketSupport> {
  public:
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:
@@ -92,6 +93,9 @@ class WindowsEventEngine : public EventEngine,
   TaskHandle RunAfter(Duration when,
                       absl::AnyInvocable<void()> closure) override;
   bool Cancel(TaskHandle handle) override;
+
+  std::unique_ptr<EventEngine::Endpoint> CreateEndpointFromWinSocket(
+      SOCKET socket, const EndpointConfig& config) override;
 
   // Retrieve the base ThreadPool.
   // This is public because most classes that know the concrete

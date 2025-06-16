@@ -31,8 +31,8 @@ grpc_cc_library(
         "absl/log:log",
     ],
     visibility = [
+        "//bazel:endpoint_tests",
         "//test:__subpackages__",
-        "@grpc:endpoint_tests",
     ],
     deps = [
         "//:gpr",
@@ -86,6 +86,7 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
+    tags = ["error_tests"],
     uses_event_engine = False,
     uses_polling = False,
     deps = [

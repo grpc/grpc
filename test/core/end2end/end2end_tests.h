@@ -48,7 +48,9 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -62,6 +64,7 @@
 #include "test/core/end2end/end2end_test_fuzzer.pb.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/fuzz_config_vars.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/test_config.h"
 
 #ifdef GRPC_END2END_TEST_INCLUDE_FUZZER
@@ -456,6 +459,16 @@ class CoreEnd2endTest {
     client_ = f.MakeClient(args, cq_);
     CHECK_NE(client_, nullptr);
   }
+
+  static ChannelArgs DefaultServerArgs() {
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    return ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000);
+  }
+
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
   // will be provided).
@@ -550,9 +563,6 @@ class CoreEnd2endTest {
 
   bool fuzzing() const { return fuzzing_; }
 
- private:
-  void ForceInitialized();
-
   CoreTestFixture& fixture() {
     if (fixture_ == nullptr) {
       grpc_init();
@@ -562,6 +572,9 @@ class CoreEnd2endTest {
     }
     return *fixture_;
   }
+
+ private:
+  void ForceInitialized();
 
   CqVerifier& cq_verifier() {
     if (cq_verifier_ == nullptr) {
@@ -582,6 +595,7 @@ class CoreEnd2endTest {
     return *cq_verifier_;
   }
 
+  PostMortem post_mortem_;
   const CoreTestConfiguration* const test_config_;
   const bool fuzzing_;
   std::unique_ptr<CoreTestFixture> fixture_;
@@ -745,7 +759,9 @@ inline auto MaybeAddNullConfig(
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
     }                                                                          \
-    if (IsEventEngineDnsNonClientChannelEnabled()) {                           \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::                                     \
+            EventEngineExperimentDisabledForPython()) {                        \
       GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
                       "fuzzing currently";                                     \
     }                                                                          \

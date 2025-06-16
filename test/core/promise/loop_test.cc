@@ -132,6 +132,19 @@ TEST(LoopTest, CanAccessFactoryLambdaVariables) {
   EXPECT_EQ(i, 100);
 }
 
+TEST(LoopTest, NTimes) {
+  std::string execution_order;
+  auto x = NTimes(3, [&execution_order](int i) {
+    return [&execution_order, i]() {
+      absl::StrAppend(&execution_order, i);
+      return Empty{};
+    };
+  });
+  while (x().pending()) {
+  }
+  EXPECT_EQ(execution_order, "012");
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

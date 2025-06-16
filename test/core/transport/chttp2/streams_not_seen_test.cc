@@ -47,6 +47,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
+#include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
@@ -62,7 +63,6 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/channel_stack_type.h"
-#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
@@ -343,7 +343,8 @@ class StreamsNotSeenTest : public ::testing::Test {
   void SendGoaway(uint32_t last_stream_id) {
     grpc_slice_buffer buffer;
     grpc_slice_buffer_init(&buffer);
-    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer);
+    grpc_chttp2_goaway_append(last_stream_id, 0, grpc_empty_slice(), &buffer,
+                              &http2_ztrace_collector_);
     WriteBuffer(&buffer);
     grpc_slice_buffer_destroy(&buffer);
   }
@@ -355,8 +356,9 @@ class StreamsNotSeenTest : public ::testing::Test {
     {
       MutexLock lock(&tcp_destroy_mu_);
       if (tcp_ != nullptr) {
-        grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
-                            /*max_frame_size=*/INT_MAX);
+        grpc_endpoint_write(tcp_, buffer, &on_write_done_,
+                            grpc_event_engine::experimental::EventEngine::
+                                Endpoint::WriteArgs());
       }
     }
     ExecCtx::Get()->Flush();
@@ -449,6 +451,7 @@ class StreamsNotSeenTest : public ::testing::Test {
   Mutex mu_;
   CondVar read_cv_;
   std::atomic<bool> shutdown_{false};
+  Http2ZTraceCollector http2_ztrace_collector_;
 };
 
 // Client's HTTP2 transport starts a new stream, sends the request on the wire,
