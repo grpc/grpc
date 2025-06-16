@@ -23,8 +23,16 @@ import os
 import sys
 import threading
 import time
-from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
+
+# Third-party imports
+import grpc  # pytype: disable=pyi-error
+from grpc import _common  # pytype: disable=pyi-error
+from grpc import _compression  # pytype: disable=pyi-error
+from grpc import _grpcio_metadata  # pytype: disable=pyi-error
+from grpc import _observability  # pytype: disable=pyi-error
+from grpc._cython import cygrpc
+import grpc.experimental  # pytype: disable=pyi-error
 
 if TYPE_CHECKING:
     import types
@@ -40,15 +48,6 @@ if TYPE_CHECKING:
         SerializingFunction,
         UserTag,
     )
-
-# Third-party imports
-import grpc  # pytype: disable=pyi-error
-from grpc import _common  # pytype: disable=pyi-error
-from grpc import _compression  # pytype: disable=pyi-error
-from grpc import _grpcio_metadata  # pytype: disable=pyi-error
-from grpc import _observability  # pytype: disable=pyi-error
-from grpc._cython import cygrpc
-import grpc.experimental  # pytype: disable=pyi-error
 
 CallbackType = Callable[[grpc.ChannelConnectivity], None]
 MixedTupleElementType = Union[CallbackType, grpc.ChannelConnectivity, None]
