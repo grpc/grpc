@@ -6363,10 +6363,11 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
                /*error_detail=*/absl::OkStatus(),
                /*resource_names=*/{kXdstpResourceName});
   // Metrics should show primary channel failing and fallback channel working.
-  EXPECT_THAT(GetServerConnections(),
-              ::testing::ElementsAre(
-                  ::testing::Pair(kDefaultXdsServerUrl, false),
-                  ::testing::Pair(fallback_server.server_uri(), true)));
+  EXPECT_THAT(
+      GetServerConnections(),
+      ::testing::ElementsAre(
+          ::testing::Pair(kDefaultXdsServerUrl, false),
+          ::testing::Pair(fallback_server.target()->server_uri(), true)));
   EXPECT_TRUE(metrics_reporter_->WaitForMetricsReporterData(
       ::testing::_, ::testing::_,
       ::testing::ElementsAre(::testing::Pair(kDefaultXdsServerUrl, 1))));
@@ -6390,7 +6391,7 @@ TEST_F(XdsClientTest, FallbackOnReachabilityOnly) {
                               XdsFooResourceType::Get()->type_url()),
               1),
           ::testing::Pair(
-              ::testing::Pair(fallback_server.server_uri(),
+              ::testing::Pair(fallback_server.target()->server_uri(),
                               XdsFooResourceType::Get()->type_url()),
               1)),
       ::testing::_, ::testing::_));
