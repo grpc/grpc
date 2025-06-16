@@ -363,8 +363,10 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
       // 0 read size ==> end of stream
       incoming_buffer_->Clear();
       if (res.IsWrongGenerationError()) {
-        status = TcpAnnotateError(
-            absl::InternalError("Descriptor was opened before fork"));
+        status = absl::CancelledError("Closed on fork");
+        grpc_core::StatusSetInt(&status,
+                                grpc_core::StatusIntProperty::kRpcStatus,
+                                GRPC_STATUS_CANCELLED);
       } else if (read_bytes == 0) {
         status = TcpAnnotateError(absl::InternalError("Socket closed"));
       } else {
