@@ -67,6 +67,8 @@ absl::Status ValidateRootCertificates(
         return absl::OkStatus();
       },
       [&](const SpiffeBundleMap& spiffe_bundle_map) {
+        // SPIFFE Bundle Maps are validated when they are loaded
+        // TODO(gtcooke94) double check this
         return absl::OkStatus();
       });
 }
@@ -313,18 +315,14 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
 }
 
 void FileWatcherCertificateProvider::ForceUpdate() {
-  // std::optional<std::string> root_certificate;
-  // std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map;
   std::shared_ptr<RootCertInfo> root_cert_info;
   std::optional<PemKeyCertPairList> pem_key_cert_pairs;
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
       root_cert_info = std::make_shared<RootCertInfo>(std::move(**map));
-      // spiffe_bundle_map = *map;
       spiffe_load_status_ = absl::OkStatus();
     } else {
-      // spiffe_bundle_map = std::nullopt;
       spiffe_load_status_ = map.status();
     }
   } else if (!root_cert_path_.empty()) {
@@ -358,38 +356,6 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       root_cert_info_ = nullptr;
     }
   }
-  // // If the update has no value, but the existing map exists, then the update
-  // // is a delete
-  // const bool is_spiffe_bundle_update_a_delete =
-  //     !spiffe_bundle_map.has_value() && spiffe_bundle_map_ != nullptr &&
-  //     spiffe_bundle_map_->size() != 0;
-  // // If the update has a value, see if the existing map is nullptr OR has a
-  // // different value than the update.
-  // const bool did_spiffe_bundle_update_change_value =
-  //     spiffe_bundle_map.has_value() &&
-  //     (spiffe_bundle_map_ == nullptr ||
-  //      spiffe_bundle_map_ != *spiffe_bundle_map);
-  // // If either of the above cases are true, the spiffe bundle map changed
-  // const bool spiffe_bundle_map_changed =
-  //     is_spiffe_bundle_update_a_delete ||
-  //     did_spiffe_bundle_update_change_value;
-  // const bool root_cert_changed =
-  //     (!root_certificate.has_value() && !root_certificate_.empty()) ||
-  //     (root_certificate.has_value() && root_certificate_ !=
-  //     *root_certificate);
-  // if (spiffe_bundle_map_changed) {
-  //   if (spiffe_bundle_map.has_value()) {
-  //     spiffe_bundle_map_ = std::move(*spiffe_bundle_map);
-  //   } else {
-  //     spiffe_bundle_map_ = nullptr;
-  //   }
-  // } else if (root_cert_changed) {
-  //   if (root_certificate.has_value()) {
-  //     root_certificate_ = std::move(*root_certificate);
-  //   } else {
-  //     root_certificate_ = "";
-  //   }
-  // }
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||
       (pem_key_cert_pairs.has_value() &&
@@ -416,13 +382,6 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       if (info.root_being_watched && root_changed) {
         root_to_report = root_cert_info_;
       }
-      // if (info.root_being_watched && spiffe_bundle_map_changed &&
-      //     spiffe_bundle_map_ != nullptr && spiffe_bundle_map_->size() != 0) {
-      //   root_to_report = std::make_shared<RootCertInfo>(*spiffe_bundle_map_);
-      // } else if (info.root_being_watched && !root_certificate_.empty() &&
-      //            root_cert_changed) {
-      //   root_to_report = std::make_shared<RootCertInfo>(root_certificate_);
-      // }
       if (info.identity_being_watched && !pem_key_cert_pairs_.empty() &&
           identity_cert_changed) {
         identity_to_report = pem_key_cert_pairs_;

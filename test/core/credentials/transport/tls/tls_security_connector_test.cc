@@ -1141,7 +1141,7 @@ TEST_F(TlsSecurityConnectorTest,
 
 TEST_F(
     TlsSecurityConnectorTest,
-    SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnectorxkcd) {
+    SpiffeRootAndIdentityCertsObtainedWhenCreateChannelSecurityConnector) {
   RefCountedPtr<grpc_tls_certificate_distributor> distributor =
       MakeRefCounted<grpc_tls_certificate_distributor>();
   distributor->SetKeyMaterials(kRootCertName, spiffe_bundle_map_0_,
