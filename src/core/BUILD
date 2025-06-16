@@ -5678,10 +5678,10 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "match",
-        "xds_matcher",
+        "metadata_batch",
         "trie_lookup",
         "unique_type_name",
-        "metadata_batch"
+        "xds_matcher",
     ],
 )
 
@@ -5701,10 +5701,10 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "match",
-        "xds_matcher",
-        "xds_matcher_context",
         "trie_lookup",
         "unique_type_name",
+        "xds_matcher",
+        "xds_matcher_context",
     ],
 )
 
@@ -5720,8 +5720,8 @@ grpc_cc_library(
     deps = [
         "grpc_matchers",
         "match",
-        "xds_matcher",
         "unique_type_name",
+        "xds_matcher",
     ],
 )
 
@@ -5740,23 +5740,23 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
-        "grpc_matchers",
-        "match",
-        "xds_matcher",
-        "xds_matcher_context",
-        "trie_lookup",
-        "unique_type_name",
-        "envoy_type_matcher_upb",
-        "envoy_type_upb",
         "envoy_common_config_matcher_upb",
-        "upb_utils",
-        "xds_matcher_action",
-        "xds_matcher_input",
-        "xds_common_types",
-        "grpc_xds_client",
         "envoy_config_core_upb",
         "envoy_extensions_http_rate_limit_quota_upb",
         "envoy_extensions_http_rate_limit_quota_upbdefs",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "grpc_matchers",
+        "grpc_xds_client",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+        "upb_utils",
+        "xds_common_types",
+        "xds_matcher",
+        "xds_matcher_action",
+        "xds_matcher_context",
+        "xds_matcher_input",
     ],
 )
 
@@ -10135,6 +10135,7 @@ grpc_upb_proto_library(
     name = "envoy_extensions_http_rate_limit_quota_upb",
     deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
 )
+
 grpc_upb_proto_reflection_library(
     name = "envoy_extensions_http_rate_limit_quota_upbdefs",
     deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],

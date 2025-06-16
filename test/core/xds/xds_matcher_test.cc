@@ -38,8 +38,6 @@
 #include "test/core/test_util/test_config.h"
 #include "upb/mem/arena.hpp"
 #include "upb/reflection/def.hpp"  // For upb_DefPool
-#include "src/core/util/down_cast.h"
-
 
 namespace grpc_core {
 namespace testing {
@@ -100,33 +98,31 @@ class MatcherTest : public ::testing::Test {
 TEST_F(MatcherTest, ParseEnd2End) {
   envoy::config::common::matcher::v3::Matcher matcher_proto;
   const char* text_proto = R"pb(
-matcher_list {
-  matchers {
-    predicate {
-      single_predicate {
-        input {
-          name: "envoy.type.matcher.v3.HttpRequestHeaderMatchInput"
-          typed_config {
-            [type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput] {
-              header_name: "x-foo"
+    matcher_list {
+      matchers {
+        predicate {
+          single_predicate {
+            input {
+              name: "envoy.type.matcher.v3.HttpRequestHeaderMatchInput"
+              typed_config {
+                [type.googleapis.com/envoy.type.matcher.v3
+                     .HttpRequestHeaderMatchInput] { header_name: "x-foo" }
+              }
             }
+            value_match { exact: "foo" }
           }
         }
-        value_match {
-          exact: "foo"
-        }
-      }
-    }
-    on_match {
-      action {
-        name: "on-match-action"
-        typed_config {
-          [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
-            bucket_id_builder {
-              bucket_id_builder {
-                key: "bucket-key-match"
-                value {
-                  string_value: "bucket-key-match"
+        on_match {
+          action {
+            name: "on-match-action"
+            typed_config {
+              [type.googleapis.com/envoy.extensions.filters.http
+                   .rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
+                bucket_id_builder {
+                  bucket_id_builder {
+                    key: "bucket-key-match"
+                    value { string_value: "bucket-key-match" }
+                  }
                 }
               }
             }
@@ -134,26 +130,23 @@ matcher_list {
         }
       }
     }
-  }
-}
-on_no_match {
-  action {
-    name: "on-no-match-action"
-    typed_config {
-      [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
-        bucket_id_builder {
-          bucket_id_builder {
-            key: "bucket-key-nomatch"
-            value {
-              string_value: "bucket-val-nomatch"
+    on_no_match {
+      action {
+        name: "on-no-match-action"
+        typed_config {
+          [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3
+               .RateLimitQuotaBucketSettings] {
+            bucket_id_builder {
+              bucket_id_builder {
+                key: "bucket-key-nomatch"
+                value { string_value: "bucket-val-nomatch" }
+              }
             }
           }
         }
       }
     }
-  }
-}
-)pb";
+  )pb";
   auto val =
       google::protobuf::TextFormat::ParseFromString(text_proto, &matcher_proto);
   if (!val) {
@@ -169,13 +162,14 @@ on_no_match {
   auto matcher_list = DownCast<XdsMatcherList*>(matcher.get());
   // Fake RPC comtext to get metadata
   grpc_metadata_batch metadata;
-  metadata.Append("x-foo", Slice::FromStaticString("foo"), [](absl::string_view, const Slice&) {
-                       // We should never ever see an error here.
-                       abort();
-                     });
-  
+  metadata.Append("x-foo", Slice::FromStaticString("foo"),
+                  [](absl::string_view, const Slice&) {
+                    // We should never ever see an error here.
+                    abort();
+                  });
+
   RpcMatchContext context(&metadata);
-  //match
+  // match
   XdsMatcher::Result result;
   ASSERT_TRUE(matcher_list->FindMatches(context, result));
 

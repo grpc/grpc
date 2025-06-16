@@ -14,6 +14,9 @@
 // limitations under the License.
 //
 
+#ifndef GRPC_SRC_CORE_UTIL_TRIE_LOOKUP_H
+#define GRPC_SRC_CORE_UTIL_TRIE_LOOKUP_H
+
 #include <cstdint>
 #include <memory>
 
@@ -78,3 +81,5 @@ class TrieLookupTree {
 };
 
 }  // namespace grpc_core
+
+#endif  // GRPC_SRC_CORE_UTIL_TRIE_LOOKUP_H

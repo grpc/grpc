@@ -1,3 +1,16 @@
+// Copyright 2025 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 #include "src/core/xds/grpc/xds_matcher_parse.h"
 
@@ -313,7 +326,8 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
         envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_or_matcher(
             predicate),
         errors);
-    return std::make_unique<XdsMatcherList::OrPredicate>(std::move(predicate_list));
+    return std::make_unique<XdsMatcherList::OrPredicate>(
+        std::move(predicate_list));
   } else if (
       envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_and_matcher(
           predicate)) {
@@ -322,12 +336,18 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
         envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_and_matcher(
             predicate),
         errors);
-    return std::make_unique<XdsMatcherList::AndPredicate>(std::move(predicate_list));
+    return std::make_unique<XdsMatcherList::AndPredicate>(
+        std::move(predicate_list));
   } else if (
       envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_not_matcher(
           predicate)) {
-      auto not_predicate = ParsePredicate(context, envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_not_matcher(predicate), errors);
-    return std::make_unique<XdsMatcherList::NotPredicate>(std::move(not_predicate));
+    auto not_predicate = ParsePredicate(
+        context,
+        envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_not_matcher(
+            predicate),
+        errors);
+    return std::make_unique<XdsMatcherList::NotPredicate>(
+        std::move(not_predicate));
   }
   // Should not reach here
   errors->AddError("Unsupported value");
@@ -362,7 +382,8 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
         errors);
     // Create and add Field matcher in the list
     if (!on_match && !predicate) {
-      field_matcher_list.emplace_back(std::move(predicate), std::move(on_match));
+      field_matcher_list.emplace_back(std::move(predicate),
+                                      std::move(on_match));
     }
   }
   return field_matcher_list;
