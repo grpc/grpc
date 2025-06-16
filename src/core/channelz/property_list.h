@@ -90,6 +90,15 @@ class PropertyList {
     return *this;
   }
 
+  PropertyList& Set(absl::string_view key, std::vector<PropertyList> values) {
+    Json::Array array;
+    for (auto& v : values) {
+      array.emplace_back(Json::FromObject(v.TakeJsonObject()));
+    }
+    property_list_.emplace(key, Json::FromArray(std::move(array)));
+    return *this;
+  }
+
   // TODO(ctiller): remove soon, switch to something returning a protobuf.
   Json::Object TakeJsonObject() { return std::move(property_list_); }
 
