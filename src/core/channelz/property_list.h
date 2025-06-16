@@ -90,6 +90,11 @@ class PropertyList {
     return *this;
   }
 
+  PropertyList& Set(absl::string_view key, PropertyList value) {
+    property_list_.emplace(key, Json::FromObject(value.TakeJsonObject()));
+    return *this;
+  }
+
   PropertyList& Set(absl::string_view key, std::vector<PropertyList> values) {
     Json::Array array;
     for (auto& v : values) {
