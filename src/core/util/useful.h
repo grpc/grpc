@@ -115,8 +115,9 @@ inline T SaturatingAdd(T a, T b) {
   return a + b;
 }
 
-template <typename T>
-inline std::enable_if<std::is_integral_v<T> && std::is_unsigned_v<T>, T> SaturatingMul(T a, T b) {
+template <typename T,
+          std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
   if (a == 0 || b == 0) return 0;
   if (b > std::numeric_limits<T>::max() / a) {
     return std::numeric_limits<T>::max();
@@ -124,8 +125,9 @@ inline std::enable_if<std::is_integral_v<T> && std::is_unsigned_v<T>, T> Saturat
   return a * b;
 }
 
-template <typename T>
-inline std::enable_if<std::is_integral_v<T> && std::is_signed_v<T>, T> SaturatingMul(T a, T b) {
+template <typename T,
+          std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>, int> = 0>
+inline T SaturatingMul(T a, T b) {
   if (a == 0 || b == 0) return 0;
   if (a == std::numeric_limits<T>::min()) {
     // negation is ub
