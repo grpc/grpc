@@ -10409,16 +10409,6 @@ grpc_upb_proto_reflection_library(
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
 )
 
-grpc_upb_proto_library(
-    name = "channelz_upb",
-    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
-)
-
-grpc_upb_proto_reflection_library(
-    name = "channelz_upbdefs",
-    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
-)
-
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
     "duration",
