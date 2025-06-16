@@ -25,9 +25,6 @@
 #include <stddef.h>
 
 #ifdef __cplusplus
-
-#include <grpc/event_engine/event_engine.h>
-
 extern "C" {
 #endif
 
