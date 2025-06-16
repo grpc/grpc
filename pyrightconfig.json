@@ -4,13 +4,6 @@
         "src/python/grpcio/grpc/_channel.py"
     ],
     "exclude": [
-        "**/*_pb2.py",
-        "src/python/grpcio/grpc/framework",
-        "src/python/grpcio/grpc/aio",
-        "src/python/grpcio/grpc/beta",
-        "src/python/grpcio/grpc/__init__.py",
-        "src/python/grpcio/grpc/_simple_stubs.py",
-        "examples/python/"
     ],
     "ignore": [
         "import-error",
@@ -27,6 +20,6 @@
     "reportMissingModuleSource": false,
     "reportMissingTypeStubs": false,
     "reportGeneralTypeIssues": "warning",
-    "pythonVersion": "3.11",
+    "pythonVersion": "3.9",
     "typeCheckingMode": "basic"
 }

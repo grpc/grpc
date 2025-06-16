@@ -13,6 +13,8 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+from collections.abc import Iterator
+from collections.abc import Sequence
 import copy
 import functools
 import logging
@@ -24,13 +26,7 @@ import types
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Optional,
-    Sequence,
-    Set,
-    Tuple,
     Union,
 )
 
@@ -122,7 +118,7 @@ def _unknown_code_details(
 
 class _RPCState:
     condition: threading.Condition
-    due: Set[cygrpc.OperationType]
+    due: set[cygrpc.OperationType]
     initial_metadata: Optional[MetadataType]
     response: Any
     trailing_metadata: Optional[MetadataType]
@@ -130,7 +126,7 @@ class _RPCState:
     details: Optional[str]
     debug_error_string: Optional[str]
     cancelled: bool
-    callbacks: List[NullaryCallbackType]
+    callbacks: list[NullaryCallbackType]
     fork_epoch: Optional[int]
     rpc_start_time: Optional[float]  # In relative seconds
     rpc_end_time: Optional[float]  # In relative seconds
@@ -194,7 +190,7 @@ def _handle_event(
     event: cygrpc.BaseEvent,
     state: _RPCState,
     response_deserializer: Optional[DeserializingFunction],
-) -> List[NullaryCallbackType]:
+) -> list[NullaryCallbackType]:
     callbacks = []
     for batch_operation in event.batch_operations:
         operation_type = batch_operation.type()
@@ -1026,7 +1022,7 @@ def _start_unary_request(
     request: Any,
     timeout: Optional[float],
     request_serializer: Optional[SerializingFunction],
-) -> Tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
+) -> tuple[Optional[float], Optional[bytes], Optional[grpc.RpcError]]:
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
     if serialized_request is None:
@@ -1047,7 +1043,7 @@ def _end_unary_response_blocking(
     call: cygrpc.SegregatedCall,
     with_call: bool,  # noqa: FBT001
     deadline: Optional[float],
-) -> Union[ResponseType, Tuple[ResponseType, grpc.Call]]:
+) -> Union[ResponseType, tuple[ResponseType, grpc.Call]]:
     if state.code is grpc.StatusCode.OK:
         if with_call:
             rendezvous = _MultiThreadedRendezvous(state, call, None, deadline)
@@ -1076,7 +1072,7 @@ def _stream_unary_invocation_operations(
 def _stream_unary_invocation_operations_and_tags(
     metadata: Optional[MetadataType],
     initial_metadata_flags: int,
-) -> Sequence[Tuple[Sequence[cygrpc.Operation], Optional[UserTag]]]:
+) -> Sequence[tuple[Sequence[cygrpc.Operation], Optional[UserTag]]]:
     return tuple(
         (
             operations,
@@ -1147,7 +1143,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         metadata: Optional[MetadataType],
         wait_for_ready: Optional[bool],
         compression: Optional[grpc.Compression],
-    ) -> Tuple[
+    ) -> tuple[
         Optional[_RPCState],
         Optional[Sequence[cygrpc.Operation]],
         Optional[float],
@@ -1189,7 +1185,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[_RPCState, cygrpc.SegregatedCall]:
+    ) -> tuple[_RPCState, cygrpc.SegregatedCall]:
         state, operations, deadline, rendezvous = self._prepare(
             request,
             timeout,
@@ -1254,7 +1250,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         state, call = self._blocking(
             request,
             timeout,
@@ -1568,7 +1564,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         compression: Optional[grpc.Compression],
-    ) -> Tuple[_RPCState, cygrpc.SegregatedCall]:
+    ) -> tuple[_RPCState, cygrpc.SegregatedCall]:
         deadline = _deadline(timeout)
         state = _RPCState(_STREAM_UNARY_INITIAL_DUE, None, None, None, None)
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
@@ -1643,7 +1639,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
         credentials: Optional[grpc.CallCredentials] = None,
         wait_for_ready: Optional[bool] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Tuple[Any, grpc.Call]:
+    ) -> tuple[Any, grpc.Call]:
         state, call = self._blocking(
             request_iterator,
             timeout,
@@ -1948,8 +1944,8 @@ class _ChannelConnectivityState:
     connectivity: grpc.ChannelConnectivity
     try_to_connect: bool
     # TODO(xuanwn): Refactor this: https://github.com/grpc/grpc/issues/31704
-    callbacks_and_connectivities: List[
-        List[
+    callbacks_and_connectivities: list[
+        list[
             Union[
                 Callable[[grpc.ChannelConnectivity], None],
                 Optional[grpc.ChannelConnectivity],
@@ -1977,7 +1973,7 @@ class _ChannelConnectivityState:
 
 def _deliveries(
     state: _ChannelConnectivityState,
-) -> List[Callable[[grpc.ChannelConnectivity], None]]:
+) -> list[Callable[[grpc.ChannelConnectivity], None]]:
     callbacks_needing_update = []
     for callback_and_connectivity in state.callbacks_and_connectivities:
         callback, callback_connectivity = callback_and_connectivity
@@ -2014,7 +2010,7 @@ def _deliver(
 
 def _spawn_delivery(
     state: _ChannelConnectivityState,
-    callbacks: Union[List[CallbackType], Tuple[MixedTupleElementType, ...]],
+    callbacks: Union[list[CallbackType], tuple[MixedTupleElementType, ...]],
 ) -> None:
     delivering_thread = cygrpc.ForkManagedThread(
         target=_deliver,
@@ -2143,7 +2139,7 @@ def _augment_options(
 
 def _separate_channel_options(
     options: Sequence[ChannelArgumentType],
-) -> Tuple[Sequence[ChannelArgumentType], Sequence[ChannelArgumentType]]:
+) -> tuple[Sequence[ChannelArgumentType], Sequence[ChannelArgumentType]]:
     """Separates core channel options from Python channel options."""
     core_options = []
     python_options = []
@@ -2166,7 +2162,7 @@ class Channel(grpc.Channel):
     _call_state: _ChannelCallState
     _connectivity_state: _ChannelConnectivityState
     _target: str
-    _registered_call_handles: Dict[str, int]
+    _registered_call_handles: dict[str, int]
 
     def __init__(
         self,
