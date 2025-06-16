@@ -4,8 +4,7 @@
 
 # Same as Black.
 line-length = 100
-# Assume Python 3.7+
-target-version = "py37"
+target-version = "py39"
 
 [lint]
 ignore = [
