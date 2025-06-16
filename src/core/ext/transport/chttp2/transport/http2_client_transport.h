@@ -237,6 +237,7 @@ class Http2ClientTransport final : public ClientTransport {
           stream_state = HttpStreamState::kClosed;
           break;
         case HttpStreamState::kHalfClosedLocal:
+          break;
         case HttpStreamState::kClosed:
           break;
       }
@@ -253,6 +254,7 @@ class Http2ClientTransport final : public ClientTransport {
           stream_state = HttpStreamState::kClosed;
           break;
         case HttpStreamState::kHalfClosedRemote:
+          break;
         case HttpStreamState::kClosed:
           break;
       }
@@ -311,19 +313,16 @@ class Http2ClientTransport final : public ClientTransport {
                       << stream_id << " status=" << status
                       << " location=" << whence.file() << ":" << whence.line();
 
-    // TODO(akshitpatel) : [PH2][P0] : There is a possibility of a race
-    // condition here. If the stream is cancelled by CallV3, then there might be
-    // frames enqueued after enqueuing the reset frame. This is still probably
-    // fine as we always dequeue reset frames first and then only look into the
-    // list of writable streams. The strighforward solution is to keep the
-    // stream list locked throughout this function. Another race is CloseStream
-    // called from Abort and somewhere from transport in parallel.
-    auto stream = LookupStream(stream_id);
-    if (stream == nullptr) {
+    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
+    // throughout this function.
+    MutexLock lock(&transport_mutex_);
+    auto pair = stream_list_.find(stream_id);
+    if (pair == stream_list_.end()) {
       HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
                         << stream_id << " stream not found";
       return;
     }
+    auto& stream = pair->second;
 
     if (args.close_reads) {
       stream->CloseReads();
@@ -340,13 +339,10 @@ class Http2ClientTransport final : public ClientTransport {
       }
 
       if (!args.cancelled) {
-        stream->call.PushServerTrailingMetadata(
+        stream->call.SpawnPushServerTrailingMetadata(
             ServerMetadataFromStatus(status));
       }
-      {
-        MutexLock lock(&transport_mutex_);
-        stream_list_.erase(stream_id);
-      }
+      stream_list_.erase(stream_id);
     }
   }
 
