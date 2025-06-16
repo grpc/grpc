@@ -18,7 +18,7 @@ licenses(["notice"])
 
 grpc_package(
     name = "src/proto/grpc/channelz/v2",
-    visibility = "public",
+    visibility = "//:__subpackages__",
 )
 
 grpc_internal_proto_library(
