@@ -625,7 +625,7 @@ dotnet build
 
 ## <a name="proto-only-nuget"></a>Including `.proto` files in NuGet packages
 
-There might be occassions when you are given a NuGet package that contains
+There might be occasions when you are given a NuGet package that contains
 `.proto` files that you wish to use in your own project, or you may wish to 
 package your own `.proto` files in a NuGet package for others to use.
 
