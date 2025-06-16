@@ -516,13 +516,11 @@ grpc_fuzz_test(
     ],
 )
 
-grpc_fuzz_test(
+grpc_cc_test(
     name = "lock_based_mpsc_test",
     srcs = ["lock_based_mpsc_test.cc"],
     external_deps = [
         "gtest",
-        "fuzztest",
-        "fuzztest_main",
     ],
     tags = ["promise_test"],
     deps = [
