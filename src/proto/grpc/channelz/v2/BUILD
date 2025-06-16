@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_internal_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
