@@ -48,6 +48,7 @@
 #include "src/core/call/server_call.h"
 #include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -1193,41 +1194,41 @@ Server::~Server() {
 }
 
 void Server::AddData(channelz::DataSink sink) {
-  // TODO(ctiller): config_fetcher?
-  // TODO(ctiller): server_call_tracer_factory?
-  Json::Object obj;
-  obj["registered_cqs"] = Json::FromNumber(cqs_.size());
-  obj["pollsets"] = Json::FromNumber(pollsets_.size());
-  obj["started"] = Json::FromBool(started_);
-  // TODO(ctiller): compression_options?
   MutexLock global_lock(&mu_global_);
-  obj["starting"] = Json::FromBool(starting_);
-  Json::Array registered_methods;
-  for (auto& [host_method, rm] : registered_methods_) {
-    Json::Object rmobj;
-    rmobj["host"] = Json::FromString(host_method.first);
-    rmobj["method"] = Json::FromString(host_method.second);
-    rmobj["payload_handling"] = Json::FromString(
-        rm->payload_handling == GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
-            ? "READ_INITIAL_BYTE_BUFFER"
-            : "PAYLOAD_NONE");
-    registered_methods.push_back(Json::FromObject(std::move(rmobj)));
-  }
-  obj["registered_methods"] = Json::FromArray(std::move(registered_methods));
-  // TODO(ctiller): unregistered_request_matcher?
-  obj["shutdown_refs"] =
-      Json::FromNumber(shutdown_refs_.load(std::memory_order_relaxed));
-  obj["shutdown_published"] = Json::FromBool(shutdown_published_);
-  obj["num_shutdown_tags"] = Json::FromNumber(shutdown_tags_.size());
-  obj["max_time_in_pending_queue_ms"] =
-      Json::FromNumber(max_time_in_pending_queue_.millis());
-  obj["num_channels"] = Json::FromNumber(channels_.size());
-  obj["num_connections"] = Json::FromNumber(connections_.size());
-  // TODO(ctiller): connection_manager
-  obj["connections_open"] = Json::FromNumber(connections_open_);
-  obj["num_listener_states"] = Json::FromNumber(listener_states_.size());
-  obj["listeners_destroyed"] = Json::FromNumber(listeners_destroyed_);
-  sink.AddAdditionalInfo("server", std::move(obj));
+  sink.AddAdditionalInfo(
+      "server",
+      channelz::PropertyList()
+          // TODO(ctiller): config_fetcher?
+          // TODO(ctiller): server_call_tracer_factory?
+          // TODO(ctiller): compression_options?
+          // TODO(ctiller): unregistered_request_matcher?
+          // TODO(ctiller): connection_manager?
+          .Set("registered_cqs", cqs_.size())
+          .Set("pollsets", pollsets_.size())
+          .Set("started", started_)
+          .Set("starting", starting_)
+          .Set("registered_methods",
+               []() {
+                 channelz::PropertyGrid grid;
+                 for (auto& [host_method, rm] : registered_methods_) {
+                   grid.Set("host", host_method.second, host_method.first)
+                       .Set("payload_handling", host_method.second,
+                            rm->payload_handling ==
+                                    GRPC_SRM_PAYLOAD_READ_INITIAL_BYTE_BUFFER
+                                ? "READ_INITIAL_BYTE_BUFFER"
+                                : "PAYLOAD_NONE");
+                 }
+                 return grid;
+               }())
+          .Set("shutdown_refs", shutdown_refs_.load(std::memory_order_relaxed))
+          .Set("shutdown_published", shutdown_published_)
+          .Set("num_shutdown_tags", shutdown_tags_.size())
+          .Set("max_time_in_pending_queue", max_time_in_pending_queue_)
+          .Set("num_channels", channels_.size())
+          .Set("num_connections", connections_.size())
+          .Set("connections_open", connections_open_)
+          .Set("num_listener_states", listener_states_.size())
+          .Set("listeners_destroyed", listeners_destroyed_));
 }
 
 void Server::AddListener(OrphanablePtr<ListenerInterface> listener) {
