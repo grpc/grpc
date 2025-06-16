@@ -1289,6 +1289,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -2813,6 +2814,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -4404,6 +4406,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
@@ -4756,6 +4759,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -6272,6 +6276,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -6590,6 +6595,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -10368,6 +10374,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -10686,6 +10693,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -10979,6 +10987,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -11043,6 +11052,7 @@ targets:
   - src/core/util/time.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -12010,6 +12020,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -12348,6 +12359,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -13483,6 +13495,56 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: lock_based_mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
+  - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/latent_see.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
+  - test/core/promise/poll_matcher.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/wait_set.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - test/core/promise/lock_based_mpsc_test.cc
+  deps:
+  - gtest
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
 - name: log_too_many_open_files_test
   gtest: true
   build: test
@@ -15127,6 +15189,7 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/time.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/util/time.cc
   - test/core/channelz/property_list_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc

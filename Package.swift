@@ -160,6 +160,7 @@ let package = Package(
         "src/core/channelz/channelz.h",
         "src/core/channelz/channelz_registry.cc",
         "src/core/channelz/channelz_registry.h",
+        "src/core/channelz/property_list.cc",
         "src/core/channelz/property_list.h",
         "src/core/channelz/ztrace_collector.h",
         "src/core/client_channel/backup_poller.cc",
