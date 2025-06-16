@@ -1200,7 +1200,7 @@ void Server::AddData(channelz::DataSink sink) {
   obj["pollsets"] = Json::FromNumber(pollsets_.size());
   obj["started"] = Json::FromBool(started_);
   // TODO(ctiller): compression_options?
-  absl::MutexLock global_lock(&mu_global_);
+  MutexLock global_lock(&mu_global_);
   obj["starting"] = Json::FromBool(starting_);
   Json::Array registered_methods;
   for (auto& [host_method, rm] : registered_methods_) {
