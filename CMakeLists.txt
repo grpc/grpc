@@ -94,7 +94,6 @@ endif()
 
 set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
 set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
-
 set(gRPC_ABSL_USED_TARGETS
   absl_absl_check
   absl_absl_log

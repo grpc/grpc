@@ -271,6 +271,14 @@
     for src in lib.src:
       if proto_re.match(src):
         protobuf_gen_files.add(src)
+
+  # Collect all abseil rules used by gpr, grpc, so on.
+  used_abseil_rules = set()
+  for lib in libs:
+    if lib.get("baselib"):
+      for dep in lib.transitive_deps:
+        if is_absl_lib(dep):
+          used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
   %>
 
   cmake_minimum_required(VERSION 3.16)
@@ -346,15 +354,6 @@
 
   set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
   set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
-  <%
-    # Collect all abseil rules used by gpr, grpc, so on.
-    used_abseil_rules = set()
-    for lib in libs:
-      if lib.get("baselib"):
-        for dep in lib.transitive_deps:
-          if is_absl_lib(dep):
-            used_abseil_rules.add(lib_map[dep].cmake_target.replace("::", "_"))
-  %>
   set(gRPC_ABSL_USED_TARGETS
   % for rule in sorted(used_abseil_rules):
     ${rule}
