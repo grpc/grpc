@@ -10,7 +10,6 @@ target-version = "py39"
 ignore = [
     "FA100", # Checks for missing from __future__ import annotations 
     # imports upon detecting type annotations that can be written more succinctly under PEP 563. 
-    # only availabe in 3.9 and above, but we support 3.8 as well. 
 
     "TD003", # TD003 Missing issue link for this TODO 
     "FIX002", # Checks for "TODO" comments.

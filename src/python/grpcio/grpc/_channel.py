@@ -21,7 +21,7 @@ import sys
 import threading
 import time
 import types
-from colleactions.abc import Iterator, Sequence
+from collections.abc import Iterator, Sequence
 from typing import (
     Any,
     Callable,
