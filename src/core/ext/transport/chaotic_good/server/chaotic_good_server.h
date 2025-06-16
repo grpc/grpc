@@ -209,12 +209,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
         << "ChaoticGoodServerListener::LogConnectionFailure: " << what << ": "
         << (status.has_value() ? status->ToString() : "no status");
     auto* server_node = server_->channelz_node();
-    if (server_node != nullptr) {
-      if (status.has_value()) {
-        server_node->NewTraceNode(what, ": ", *status).Commit();
-      } else {
-        server_node->NewTraceNode(what).Commit();
-      }
+    if (status.has_value()) {
+      GRPC_CHANNELZ_LOG(server_node) << what << ": " << *status;
+    } else {
+      GRPC_CHANNELZ_LOG(server_node) << what;
     }
   }
 
