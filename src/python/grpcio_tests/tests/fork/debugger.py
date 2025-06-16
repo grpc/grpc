@@ -15,7 +15,6 @@ import os
 import platform
 import subprocess
 import sys
-
 import tempfile
 
 _GDB_TIMEOUT_S = 60

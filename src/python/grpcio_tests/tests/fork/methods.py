@@ -31,7 +31,6 @@ import grpc
 from src.proto.grpc.testing import empty_pb2
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
-
 from tests.fork import debugger
 
 _LOGGER = logging.getLogger(__name__)
