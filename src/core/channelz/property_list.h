@@ -120,6 +120,8 @@ struct JsonFromValueHelper<std::optional<T>> {
 
 }  // namespace property_list_detail
 
+class PropertyGrid;
+
 // PropertyList contains a bag of key->value (for mostly arbitrary value
 // types) for reporting out state from channelz - the big idea is that you
 // should be able to call `PropertyList().Set("a", this->a)` and generate
@@ -141,6 +143,8 @@ class PropertyList {
 
  private:
   void SetInternal(absl::string_view key, std::optional<Json> value);
+
+  friend class PropertyGrid;
 
   // TODO(ctiller): switch to a protobuf representation
   Json::Object property_list_;
@@ -180,6 +184,9 @@ class PropertyGrid {
         property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
     return *this;
   }
+
+  PropertyGrid& SetColumn(absl::string_view column, PropertyList values);
+  PropertyGrid& SetRow(absl::string_view row, PropertyList values);
 
   Json::Object TakeJsonObject();
 

@@ -75,4 +75,21 @@ void PropertyGrid::SetInternal(absl::string_view column, absl::string_view row,
   }
 }
 
+PropertyGrid& PropertyGrid::SetColumn(absl::string_view column,
+                                      PropertyList values) {
+  int c = GetIndex(columns_, column);
+  for (auto& [key, value] : values.TakeJsonObject()) {
+    grid_[std::pair(c, GetIndex(rows_, key))] = std::move(value);
+  }
+  return *this;
+}
+
+PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
+  int r = GetIndex(rows_, row);
+  for (auto& [key, value] : values.TakeJsonObject()) {
+    grid_[std::pair(GetIndex(columns_, key), r)] = std::move(value);
+  }
+  return *this;
+}
+
 }  // namespace grpc_core::channelz
