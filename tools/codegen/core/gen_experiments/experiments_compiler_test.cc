@@ -46,7 +46,7 @@ class ExperimentsCompilerTest : public ::testing::Test {
   absl::Status GenerateExperimentsHdr(const std::string& output_file,
                                       const std::string& mode) {
     if (mode == "production" || mode == "test") {
-      grpc_core::GrpcOssExperimentsOutputGenerator generator(compiler_, mode);
+      grpc_core::GrpcOssExperimentsOutputGenerator generator(&compiler_, mode);
       return compiler_.GenerateExperimentsHdr(output_file, generator);
     } else {
       return absl::InternalError("Unsupported mode: " + mode);
@@ -57,7 +57,7 @@ class ExperimentsCompilerTest : public ::testing::Test {
                                       const std::string& header_file_path,
                                       const std::string& mode) {
     if (mode == "production" || mode == "test") {
-      grpc_core::GrpcOssExperimentsOutputGenerator generator(compiler_, mode,
+      grpc_core::GrpcOssExperimentsOutputGenerator generator(&compiler_, mode,
                                                              header_file_path);
       return compiler_.GenerateExperimentsSrc(output_file, header_file_path,
                                               generator);
