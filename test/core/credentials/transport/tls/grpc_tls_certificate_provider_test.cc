@@ -329,8 +329,6 @@ TEST_F(GrpcTlsCertificateProviderTest,
 
 TEST_F(GrpcTlsCertificateProviderTest,
        FileWatcherCertificateProviderWithGoodPathsxkcd) {
-  std::cout << "GREG test start\n";
-  std::cout << "GREG test start2\n";
   FileWatcherCertificateProvider provider(SERVER_KEY_PATH, SERVER_CERT_PATH,
                                           CA_CERT_PATH, 1);
   // Watcher watching both root and identity certs.

@@ -211,7 +211,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
                "minimum.";
     refresh_interval_sec_ = kMinimumFileWatcherRefreshIntervalSeconds;
   }
-  std::cout << "GREG: ctor\n";
   // Private key and identity cert files must be both set or both unset.
   CHECK(private_key_path_.empty() == identity_certificate_path_.empty());
   // Must be watching either root or identity certs.
@@ -219,7 +218,6 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       !root_cert_path_.empty() || !spiffe_bundle_map_path_.empty();
   CHECK(!private_key_path_.empty() || watching_root);
   gpr_event_init(&shutdown_event_);
-  std::cout << "GREG: before force update\n";
   ForceUpdate();
   auto thread_lambda = [](void* arg) {
     FileWatcherCertificateProvider* provider =
@@ -319,7 +317,6 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   // std::optional<std::shared_ptr<SpiffeBundleMap>> spiffe_bundle_map;
   std::shared_ptr<RootCertInfo> root_cert_info;
   std::optional<PemKeyCertPairList> pem_key_cert_pairs;
-  std::cout << "GREG: top of force update\n";
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
@@ -348,13 +345,11 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   // is a delete
   const bool is_root_update_a_delete =
       root_cert_info == nullptr && root_cert_info_ != nullptr;
-  std::cout << "GREG: is root delete " << is_root_update_a_delete << "\n";
   // If the update has a value, see if the existing value is nullptr or has a
   // different value than the update.
   const bool did_root_change_value =
       root_cert_info != nullptr &&
       (root_cert_info_ == nullptr || *root_cert_info != *root_cert_info_);
-  std::cout << "GREG: did root change" << did_root_change_value << "\n";
   const bool root_changed = is_root_update_a_delete || did_root_change_value;
   if (root_changed) {
     if (root_cert_info != nullptr) {
