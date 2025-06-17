@@ -31,8 +31,10 @@
 #include "envoy/config/common/matcher/v3/matcher.pb.h"
 #include "envoy/config/common/matcher/v3/matcher.upb.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/match.h"
 #include "src/core/util/validation_errors.h"  // For ValidationErrors
 #include "src/core/xds/grpc/xds_matcher.h"
+#include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
 #include "src/core/xds/grpc/xds_matcher_parse.h"
 #include "test/core/test_util/test_config.h"
@@ -121,7 +123,7 @@ TEST_F(MatcherTest, ParseEnd2End) {
                 bucket_id_builder {
                   bucket_id_builder {
                     key: "bucket-key-match"
-                    value { string_value: "bucket-key-match" }
+                    value { string_value: "bucket-val-match" }
                   }
                 }
               }
@@ -132,7 +134,7 @@ TEST_F(MatcherTest, ParseEnd2End) {
     }
     on_no_match {
       action {
-        name: "on-no-match-action"
+        name: "on-match-action"
         typed_config {
           [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3
                .RateLimitQuotaBucketSettings] {
@@ -168,14 +170,32 @@ TEST_F(MatcherTest, ParseEnd2End) {
                     abort();
                   });
 
-  RpcMatchContext context(&metadata);
-  // match
+  RpcMatchContext context_match(&metadata);
+  // match case
   XdsMatcher::Result result;
-  ASSERT_TRUE(matcher_list->FindMatches(context, result));
+  ASSERT_TRUE(matcher_list->FindMatches(context_match, result));
+  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result[0]->type_url(),
+            "type.googleapis.com/"
+            "envoy.extensions.filters.http.rate_limit_quota.v3."
+            "RateLimitQuotaBucketSettings");
+  auto bucketSetting = DownCast<BucketingAction*>(result[0]);
+  ASSERT_EQ(bucketSetting->GetConfigValue("bucket-key-match"),
+            "bucket-val-match");
 
-  for (auto a : result) {
-    ASSERT_EQ(a->type_url(), "sampleAction");
-  }
+  // on_no_match case
+  metadata.Clear();
+  result.clear();
+  RpcMatchContext context_nomatch(&metadata);
+  ASSERT_TRUE(matcher_list->FindMatches(context_nomatch, result));
+  ASSERT_EQ(result.size(), 1);
+  ASSERT_EQ(result[0]->type_url(),
+            "type.googleapis.com/"
+            "envoy.extensions.filters.http.rate_limit_quota.v3."
+            "RateLimitQuotaBucketSettings");
+  auto bucketSetting_nomatch = DownCast<BucketingAction*>(result[0]);
+  ASSERT_EQ(bucketSetting_nomatch->GetConfigValue("bucket-key-nomatch"),
+            "bucket-val-nomatch");
 }
 
 }  // namespace

@@ -30,7 +30,11 @@ class BucketingAction : public XdsMatcher::Action {
   explicit BucketingAction(BucketConfig config)
       : bucket_config_(std::move(config)) {}
 
-  absl::string_view type_url() const override { return "sampleAction"; }
+  absl::string_view type_url() const override {
+    return "type.googleapis.com/"
+           "envoy.extensions.filters.http.rate_limit_quota.v3."
+           "RateLimitQuotaBucketSettings";
+  }
   absl::string_view GetConfigValue(absl::string_view key) {
     return bucket_config_.map[key];
   }

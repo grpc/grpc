@@ -110,30 +110,30 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   auto bucket_id_builder =
       envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_bucket_id_builder(
           rate_limit_quota_bucket_settings);
-  size_t map_size =
-      envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_bucket_id_builder_size(
-          bucket_id_builder);
   // parse map to get generate key:value pair
-  for (size_t iter = 0; iter < map_size; iter++) {
-    upb_StringView key;
-    const envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder*
-        value;
-    if (envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_bucket_id_builder_next(
-            bucket_id_builder, &key, &value, &iter)) {
-      // Checking only string value other values are also possible (May need to
-      // support)
-      if (envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_has_string_value(
-              value)) {
-        auto string_value =
-            envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_string_value(
-                value);
-        // Add to Map
-        config.map[UpbStringToStdString(key)] =
-            UpbStringToStdString(string_value);
-      }
+  size_t iter = kUpb_Map_Begin;
+  upb_StringView key;
+  const envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder*
+      value;
+   while (
+      envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_bucket_id_builder_next(
+          bucket_id_builder, &key, &value, &iter)) {
+    // Checking only string value other values are also possible (May need to
+    // support)
+    if (envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_has_string_value(
+            value)) {
+      auto string_value =
+          envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_string_value(
+              value);
+      // Add to Map
+      config.map[UpbStringToStdString(key)] =
+          UpbStringToStdString(string_value);
     }
   }
   // Create and return Bucketing Action
+  if (config.map.empty()) {
+    return nullptr;
+  }
   return std::make_unique<BucketingAction>(config);
 }
 
@@ -381,7 +381,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
             field_matchers[i]),
         errors);
     // Create and add Field matcher in the list
-    if (!on_match && !predicate) {
+    if (on_match && predicate) {
       field_matcher_list.emplace_back(std::move(predicate),
                                       std::move(on_match));
     }
