@@ -178,7 +178,8 @@ int main(int argc, char** argv) {
     int signal = WTERMSIG(result);
     LOG(FATAL) << "DNS test subprocess killed by signal: " << signal;
   } else {
-    LOG(FATAL) << "DNS test subprocess failed, neither WEXITSTATUS nor WTERMSIG is true";
+    LOG(FATAL) << "DNS test subprocess failed, neither WEXITSTATUS nor "
+                  "WTERMSIG is true";
   }
 #endif
   return result;
