@@ -168,7 +168,8 @@ class OutputBuffers final
 
       NextPromise(const NextPromise&) = delete;
       NextPromise& operator=(const NextPromise&) = delete;
-      NextPromise(NextPromise&& other) noexcept : reader_(std::exchange(other.reader_, nullptr)) {}
+      NextPromise(NextPromise&& other) noexcept
+          : reader_(std::exchange(other.reader_, nullptr)) {}
       NextPromise& operator=(NextPromise&& other) noexcept {
         std::swap(reader_, other.reader_);
         return *this;
@@ -270,7 +271,8 @@ class InputQueue final : public RefCounted<InputQueue> {
   struct Completion : public RefCounted<Completion, NonPolymorphicRefCount> {
     Completion(uint64_t payload_tag, absl::StatusOr<SliceBuffer> result)
         : payload_tag(payload_tag), result(std::move(result)), ready(true) {}
-    explicit Completion(uint64_t payload_tag) : payload_tag(payload_tag), ready(false) {}
+    explicit Completion(uint64_t payload_tag)
+        : payload_tag(payload_tag), ready(false) {}
     Mutex mu;
     const uint64_t payload_tag;
     absl::StatusOr<SliceBuffer> result ABSL_GUARDED_BY(mu);
