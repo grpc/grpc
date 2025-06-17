@@ -8552,6 +8552,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/cleanup",
+        "absl/container:inlined_vector",
         "absl/strings",
         "absl/time",
         "absl/log",
