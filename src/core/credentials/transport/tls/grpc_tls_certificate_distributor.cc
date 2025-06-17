@@ -92,11 +92,10 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
         // when checking pem_root_certs, so we will skip here.
         continue;
       } else if (watcher_it->second.root_cert_name.has_value()) {
-        auto root_cert_info =
-            certificate_info_map_.find(*watcher_it->second.root_cert_name);
-        if (root_cert_info != certificate_info_map_.end() &&
-            !root_cert_info->second.AreRootsEmpty()) {
-          roots_to_report = root_cert_info->second.GetRoots();
+        auto& root_cert_info =
+            certificate_info_map_[*watcher_it->second.root_cert_name];
+        if (!root_cert_info.AreRootsEmpty()) {
+          roots_to_report = root_cert_info.roots;
         }
       }
       watcher_ptr->OnCertificatesChanged(roots_to_report, pem_key_cert_pairs);
