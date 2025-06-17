@@ -884,7 +884,7 @@ class InterceptedStreamUnaryCall(
         interceptors: Sequence[StreamUnaryClientInterceptor],
         method: bytes,
         timeout: Optional[float],
-        metadata: Optional[Metadata],
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request_iterator: RequestIterableType,
@@ -894,13 +894,14 @@ class InterceptedStreamUnaryCall(
         """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
-            interceptors: Iterator[StreamUnaryClientInterceptor],
+            interceptors: Sequence[StreamUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
         ) -> _base_call.StreamUnaryCall:
             if interceptors:
+                next_interceptors = interceptors[1:]
                 continuation = functools.partial(
-                    _run_interceptor, interceptors[1:],
+                    _run_interceptor, next_interceptors,
                 )
 
                 return await interceptors[0].intercept_stream_unary(
@@ -923,7 +924,7 @@ class InterceptedStreamUnaryCall(
             method, timeout, metadata, credentials, wait_for_ready,
         )
         return await _run_interceptor(
-            list(interceptors), client_call_details, request_iterator,
+            interceptors, client_call_details, request_iterator,
         )
 
     def time_remaining(self) -> Optional[float]:

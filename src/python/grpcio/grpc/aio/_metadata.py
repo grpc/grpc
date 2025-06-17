@@ -88,17 +88,17 @@ class Metadata(abc.Collection):
             for value in values:
                 yield (key, value)
 
-    def keys(self) -> abc.KeysView:
-        return abc.KeysView(self)
+    def keys(self) -> abc.KeysView[MetadataKey]:
+        return abc.KeysView(self._metadata)
 
-    def values(self) -> abc.ValuesView:
-        return abc.ValuesView(self)
+    def values(self) -> abc.ValuesView[MetadataValue]:
+        return abc.ValuesView(self._metadata)
 
-    def items(self) -> abc.ItemsView:
-        return abc.ItemsView(self)
+    def items(self) -> abc.ItemsView[MetadataKey, MetadataValue]:
+        return abc.ItemsView(self._metadata)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None,
+        self, key: MetadataKey, default: Optional[MetadataValue] = None,
     ) -> Optional[MetadataValue]:
         try:
             return self[key]
