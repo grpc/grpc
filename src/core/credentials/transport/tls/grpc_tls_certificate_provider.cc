@@ -109,7 +109,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs,
-    grpc_core::SpiffeBundleMap* spiffe_bundle_map)
+    SpiffeBundleMap* spiffe_bundle_map)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {

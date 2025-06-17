@@ -129,8 +129,8 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//src/core:slice",
         "//src/core:match",
+        "//src/core:slice",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
     ],
