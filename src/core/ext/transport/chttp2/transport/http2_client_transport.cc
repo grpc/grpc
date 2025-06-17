@@ -208,7 +208,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
-    HeaderAssembler& assember, CallHandler& call,
+    RefCountedPtr<Stream>& stream, HeaderAssembler& assember, CallHandler& call,
     bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
   if (assember.IsReady()) {
@@ -225,6 +225,14 @@ Http2Status Http2ClientTransport::ProcessMetadata(
             << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
         did_push_trailing_metadata = true;
         call.SpawnPushServerTrailingMetadata(std::move(metadata));
+        stream->CloseStream(stream_id, absl::OkStatus(),
+                            CloseStreamArgs{
+                                /*close_reads=*/true,
+                                /*close_writes=*/true,
+                                /*send_rst_stream=*/false,
+                                /*cancelled=*/false,
+                            });
+
       } else {
         HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerInitialMetadata";
