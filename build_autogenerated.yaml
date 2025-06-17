@@ -5204,6 +5204,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: address_sorting_test
@@ -5437,6 +5438,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -5959,6 +5961,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: buffer_list_test
@@ -6179,6 +6182,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6240,6 +6244,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: call_tracer_test
@@ -6968,6 +6973,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: cel_authorization_engine_test
@@ -7604,6 +7610,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: cli_call_test
@@ -7879,6 +7886,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: completion_queue_threading_test
@@ -10026,6 +10034,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: endpoint_pair_test
@@ -10261,6 +10270,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: experiments_tag_test
@@ -11235,6 +11245,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: fork_test
@@ -13101,6 +13112,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: interception_chain_test
@@ -13220,6 +13232,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: interop_client
@@ -13336,6 +13349,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: json_object_loader_test
@@ -13457,6 +13471,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -13580,6 +13595,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: log_too_many_open_files_test
   gtest: true
@@ -13644,6 +13660,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: lru_cache_test
@@ -13773,6 +13790,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: match_promise_test
@@ -13860,6 +13878,7 @@ targets:
   - gtest
   - absl/status:statusor
   - absl/strings:string_view
+  - absl/types:span
   - gpr
 - name: message_allocator_end2end_test
   gtest: true
@@ -14227,6 +14246,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: oracle_event_engine_posix_test
@@ -14668,6 +14688,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: pick_first_test
@@ -15196,6 +15217,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: promise_test
   gtest: true
@@ -15233,6 +15255,7 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: proto_buffer_reader_test
   gtest: true
@@ -15550,6 +15573,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15827,6 +15851,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: resolve_address_using_ares_resolver_posix_test
@@ -16105,6 +16130,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: sequential_connectivity_test
@@ -16475,6 +16501,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -16932,6 +16959,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
@@ -16972,6 +17000,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17022,6 +17051,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
@@ -17272,6 +17302,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: timer_manager_test
@@ -17429,6 +17460,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17476,6 +17508,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: unique_ptr_with_bitset_test
@@ -17623,6 +17656,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: wait_for_single_owner_test
@@ -17762,6 +17796,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: writes_per_rpc_test

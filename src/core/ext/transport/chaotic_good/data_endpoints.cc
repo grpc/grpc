@@ -21,8 +21,10 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <utility>
 
 #include "absl/cleanup/cleanup.h"
+#include "absl/container/inlined_vector.h"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
@@ -574,12 +576,14 @@ class MetricsCollector
     if (!rtt_.has_value()) rtt_ = telemetry_info_->GetMetricKey("srtt");
     data_notsent_ = telemetry_info_->GetMetricKey("data_notsent");
     byte_offset_ = telemetry_info_->GetMetricKey("byte_offset");
+    absl::InlinedVector<size_t, 4> keys;
     if (delivery_rate_.has_value()) {
-      requested_metrics_.push_back(*delivery_rate_);
+      keys.push_back(*delivery_rate_);
     }
-    if (byte_offset_.has_value()) requested_metrics_.push_back(*byte_offset_);
-    if (rtt_.has_value()) requested_metrics_.push_back(*rtt_);
-    if (data_notsent_.has_value()) requested_metrics_.push_back(*data_notsent_);
+    if (byte_offset_.has_value()) keys.push_back(*byte_offset_);
+    if (rtt_.has_value()) keys.push_back(*rtt_);
+    if (data_notsent_.has_value()) keys.push_back(*data_notsent_);
+    requested_metrics_ = telemetry_info_->GetMetricsSet(keys);
   }
 
   bool HasAnyMetrics() const {
@@ -587,7 +591,9 @@ class MetricsCollector
            data_notsent_.has_value();
   }
 
-  absl::Span<const size_t> requested_metrics() const {
+  std::shared_ptr<
+      grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>
+  requested_metrics() const {
     return requested_metrics_;
   }
 
@@ -674,7 +680,9 @@ class MetricsCollector
   std::optional<size_t> rtt_;
   std::optional<size_t> data_notsent_;
   std::optional<size_t> byte_offset_;
-  std::vector<size_t> requested_metrics_;
+  std::shared_ptr<
+      grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>
+      requested_metrics_;
   std::shared_ptr<
       grpc_event_engine::experimental::EventEngine::Endpoint::TelemetryInfo>
       telemetry_info_;
