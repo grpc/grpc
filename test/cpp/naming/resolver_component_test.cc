@@ -514,6 +514,7 @@ void RunResolvesRelevantRecordsTest(
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   RunResolvesRelevantRecordsTest(CheckingResultHandler::Create,
                                  grpc_core::ChannelArgs());
+  ASSERT_TRUE(false);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
