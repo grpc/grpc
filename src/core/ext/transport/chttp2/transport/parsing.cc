@@ -74,6 +74,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 
 using grpc_core::HPackParser;
@@ -544,8 +545,7 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
-  grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
-      t->incoming_frame_size);
+  t->http2_stats->IncrementHttp2ReadDataFrameSize(t->incoming_frame_size);
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
@@ -630,6 +630,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
 
   t->ping_rate_policy.ReceivedDataFrame();
 
+  grpc_core::SharedBitGen g;
   // could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream
   s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
   if (s == nullptr) {
@@ -669,8 +670,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                         nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (grpc_core::IsRqFastRejectEnabled() &&
-               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       grpc_core::global_stats().IncrementRqCallsRejected();
@@ -701,7 +701,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                             grpc_core::RandomEarlyDetection(
                                 t->settings.local().max_concurrent_streams(),
                                 t->settings.acked().max_concurrent_streams())
-                                .Reject(t->stream_map.size(), t->bitgen))) {
+                                .Reject(t->stream_map.size(), g))) {
       // We are under the limit of max concurrent streams for the current
       // setting, but are over the next value that will be advertised.
       // Apply some backpressure by randomly not accepting new streams.
@@ -979,13 +979,11 @@ grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
   if (s != nullptr) {
     s->call_tracer_wrapper.RecordIncomingBytes(
         {0, 0, GRPC_SLICE_LENGTH(slice)});
-    call_tracer =
-        grpc_core::IsCallTracerTransportFixEnabled()
-            ? s->call_tracer
-            : s->arena->GetContext<grpc_core::CallTracerAnnotationInterface>();
+    call_tracer = s->call_tracer;
   }
-  grpc_error_handle error = parser->Parse(
-      slice, is_last != 0, absl::BitGenRef(t->bitgen), call_tracer);
+  grpc_core::SharedBitGen g;
+  grpc_error_handle error =
+      parser->Parse(slice, is_last != 0, absl::BitGenRef(g), call_tracer);
   if (!error.ok()) {
     return error;
   }

@@ -35,7 +35,7 @@ namespace {
 // - first attempt gets INVALID_ARGUMENT, so no retry is done
 CORE_END2END_TEST(RetryTests, RetryNonRetriableStatus) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

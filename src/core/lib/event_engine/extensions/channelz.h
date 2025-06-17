@@ -45,7 +45,8 @@ class ChannelzExtension {
         grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
         ChannelzExtension* ep)
         : grpc_core::channelz::DataSource(std::move(socket_node)), ep_(ep) {}
-    void AddData(grpc_core::channelz::DataSink& sink) override {
+    ~EndpointDataSource() { ResetDataSource(); }
+    void AddData(grpc_core::channelz::DataSink sink) override {
       ep_->AddJson(sink);
     }
 

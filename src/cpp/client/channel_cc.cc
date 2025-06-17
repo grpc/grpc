@@ -41,6 +41,7 @@
 
 #include "absl/log/check.h"
 #include "src/core/lib/iomgr/iomgr.h"
+#include "src/core/lib/surface/channel.h"
 
 namespace grpc {
 
@@ -103,6 +104,12 @@ namespace experimental {
 
 void ChannelResetConnectionBackoff(Channel* channel) {
   grpc_channel_reset_connect_backoff(channel->c_channel_);
+}
+
+int64_t ChannelGetChannelzUuid(Channel* channel) {
+  auto* node = grpc_channel_get_channelz_node(channel->c_channel_);
+  if (node == nullptr) return 0;
+  return node->uuid();
 }
 
 }  // namespace experimental
@@ -217,9 +224,9 @@ class ShutdownCallback : public grpc_completion_queue_functor {
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
     // Set inlineable to true since this callback is trivial and thus does not
-    // need to be run from the executor (triggering a thread hop). This should
-    // only be used by internal callbacks like this and not by user application
-    // code.
+    // need to be run from the EventEngine (potentially triggering a thread
+    // hop). This should only be used by internal callbacks like this and not by
+    // user application code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback

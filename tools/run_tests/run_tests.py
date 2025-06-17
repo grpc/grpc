@@ -521,15 +521,15 @@ class CLanguage(object):
         environ = {"GRPC_RUN_TESTS_CXX_LANGUAGE_SUFFIX": self.lang_suffix}
         if self.platform == "windows":
             environ["GRPC_CMAKE_GENERATOR"] = self._cmake_generator_windows
-            environ[
-                "GRPC_CMAKE_ARCHITECTURE"
-            ] = self._cmake_architecture_windows
-            environ[
-                "GRPC_BUILD_ACTIVATE_VS_TOOLS"
-            ] = self._activate_vs_tools_windows
-            environ[
-                "GRPC_BUILD_VS_TOOLS_ARCHITECTURE"
-            ] = self._vs_tools_architecture_windows
+            environ["GRPC_CMAKE_ARCHITECTURE"] = (
+                self._cmake_architecture_windows
+            )
+            environ["GRPC_BUILD_ACTIVATE_VS_TOOLS"] = (
+                self._activate_vs_tools_windows
+            )
+            environ["GRPC_BUILD_VS_TOOLS_ARCHITECTURE"] = (
+                self._vs_tools_architecture_windows
+            )
         elif self.platform == "linux":
             environ["GRPC_RUNTESTS_ARCHITECTURE"] = self.args.arch
         return environ
@@ -593,9 +593,9 @@ class CLanguage(object):
             return ("gcc_14", ["-DCMAKE_CXX_STANDARD=20"])
         elif compiler == "gcc_musl":
             return ("alpine", ["-DCMAKE_CXX_STANDARD=17"])
-        elif compiler == "clang7":
+        elif compiler == "clang11":
             return (
-                "clang_7",
+                "clang_11",
                 self._clang_cmake_configure_extra_args()
                 + [
                     "-DCMAKE_CXX_STANDARD=17",
@@ -943,7 +943,7 @@ class RubyLanguage(object):
         ]:
             tests.append(
                 self.config.job_spec(
-                    ["rspec", test],
+                    ["bundle", "exec", "rspec", test],
                     shortname=test,
                     timeout_seconds=20 * 60,
                     environ=_FORCE_ENVIRON_FOR_WRAPPERS,
@@ -953,7 +953,6 @@ class RubyLanguage(object):
         # https://bugs.ruby-lang.org/issues/15499 is fixed:
         # They previously worked on ruby 2.5 but needed to be disabled
         # after dropping support for ruby 2.5:
-        #   - src/ruby/end2end/channel_state_test.rb
         #   - src/ruby/end2end/sig_int_during_channel_watch_test.rb
         # TODO(apolcyn): the following test is skipped because it sometimes
         # hits "Bus Error" crashes while requiring the grpc/ruby C-extension.
@@ -963,6 +962,7 @@ class RubyLanguage(object):
         #   - src/ruby/end2end/load_grpc_with_gc_stress_test.rb
         for test in [
             "src/ruby/end2end/fork_test.rb",
+            "src/ruby/end2end/connectivity_watch_interrupted_test.rb",
             "src/ruby/end2end/simple_fork_test.rb",
             "src/ruby/end2end/prefork_without_using_grpc_test.rb",
             "src/ruby/end2end/prefork_postfork_loop_test.rb",
@@ -972,6 +972,7 @@ class RubyLanguage(object):
             "src/ruby/end2end/channel_closing_test.rb",
             "src/ruby/end2end/killed_client_thread_test.rb",
             "src/ruby/end2end/forking_client_test.rb",
+            "src/ruby/end2end/fork_test_repro_35489.rb",
             "src/ruby/end2end/multiple_killed_watching_threads_test.rb",
             "src/ruby/end2end/client_memory_usage_test.rb",
             "src/ruby/end2end/package_with_underscore_test.rb",
@@ -980,23 +981,24 @@ class RubyLanguage(object):
             "src/ruby/end2end/errors_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/logger_load_before_grpc_lib_test.rb",
             "src/ruby/end2end/status_codes_load_before_grpc_lib_test.rb",
+            "src/ruby/end2end/shell_out_from_server_test.rb",
             "src/ruby/end2end/call_credentials_timeout_test.rb",
             "src/ruby/end2end/call_credentials_returning_bad_metadata_doesnt_kill_background_thread_test.rb",
         ]:
-            if test in [
-                "src/ruby/end2end/fork_test.rb",
-                "src/ruby/end2end/simple_fork_test.rb",
-                "src/ruby/end2end/secure_fork_test.rb",
-                "src/ruby/end2end/bad_usage_fork_test.rb",
-                "src/ruby/end2end/prefork_without_using_grpc_test.rb",
-                "src/ruby/end2end/prefork_postfork_loop_test.rb",
-                "src/ruby/end2end/fork_test_repro_35489.rb",
-            ]:
-                # Skip fork tests in general until https://github.com/grpc/grpc/issues/34442
-                # is fixed. Otherwise we see too many flakes.
-                # After that's fixed, we should continue to skip on mac
-                # indefinitely, and on "dbg" builds until the Event Engine
-                # migration completes.
+            if (
+                test
+                in [
+                    "src/ruby/end2end/fork_test.rb",
+                    "src/ruby/end2end/simple_fork_test.rb",
+                    "src/ruby/end2end/secure_fork_test.rb",
+                    "src/ruby/end2end/bad_usage_fork_test.rb",
+                    "src/ruby/end2end/prefork_without_using_grpc_test.rb",
+                    "src/ruby/end2end/prefork_postfork_loop_test.rb",
+                    "src/ruby/end2end/fork_test_repro_35489.rb",
+                ]
+                and platform_string() == "mac"
+            ):
+                # Fork support only present on linux
                 continue
             tests.append(
                 self.config.job_spec(
@@ -1270,7 +1272,7 @@ class Sanity(object):
             return [
                 self.config.job_spec(
                     cmd["script"].split(),
-                    timeout_seconds=45 * 60,
+                    timeout_seconds=90 * 60,
                     environ=environ,
                     cpu_cost=cmd.get("cpu_cost", 1),
                 )
@@ -1721,7 +1723,7 @@ argp.add_argument(
         "gcc12_openssl309",
         "gcc14",
         "gcc_musl",
-        "clang7",
+        "clang11",
         "clang19",
         # TODO: Automatically populate from supported version
         "python3.9",

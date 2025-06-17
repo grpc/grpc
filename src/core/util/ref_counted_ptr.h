@@ -404,6 +404,7 @@ struct RefCountedPtrHash {
     return absl::Hash<WeakRefCountedPtr<T>>{}(p);
   }
   size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+  size_t operator()(const T* p) const { return absl::Hash<const T*>{}(p); }
 };
 template <typename T>
 struct RefCountedPtrEq {
@@ -432,6 +433,31 @@ struct RefCountedPtrEq {
   }
   bool operator()(const T* p1, const RefCountedPtr<T>& p2) const {
     return p2 == p1;
+  }
+  bool operator()(const T* p1, const WeakRefCountedPtr<T>& p2) const {
+    return p2 == p1;
+  }
+};
+
+// Heterogenous lookup support.
+template <typename T>
+struct WeakRefCountedPtrHash {
+  using is_transparent = void;
+  size_t operator()(const WeakRefCountedPtr<T>& p) const {
+    return absl::Hash<WeakRefCountedPtr<T>>{}(p);
+  }
+  size_t operator()(T* p) const { return absl::Hash<T*>{}(p); }
+  size_t operator()(const T* p) const { return absl::Hash<const T*>{}(p); }
+};
+template <typename T>
+struct WeakRefCountedPtrEq {
+  using is_transparent = void;
+  bool operator()(const WeakRefCountedPtr<T>& p1,
+                  const WeakRefCountedPtr<T>& p2) const {
+    return p1 == p2;
+  }
+  bool operator()(const WeakRefCountedPtr<T>& p1, const T* p2) const {
+    return p1 == p2;
   }
   bool operator()(const T* p1, const WeakRefCountedPtr<T>& p2) const {
     return p2 == p1;

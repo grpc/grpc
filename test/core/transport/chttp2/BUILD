@@ -486,6 +486,20 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "http2_common_test_inputs",
+    srcs = [
+        "http2_common_test_inputs.h",
+    ],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+    ],
+    deps = [
+        "//src/core:http2_status",
+    ],
+)
+
 grpc_cc_test(
     name = "http2_settings_test",
     srcs = [
@@ -515,11 +529,15 @@ grpc_cc_test(
     ],
     deps = [
         "//:chttp2_frame",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:header_assembler",
+        "//src/core:http2_status",
         "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -540,6 +558,7 @@ grpc_cc_test(
         "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -560,6 +579,7 @@ grpc_fuzz_test(
         "//src/core:message_assembler",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -602,6 +622,7 @@ grpc_cc_test(
     deps = [
         "//:chttp2_frame",
         "//src/core:http2_status",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -697,5 +718,41 @@ grpc_cc_library(
         "//src/core:http2_status",
         "//src/core:slice",
         "//src/core:slice_buffer",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "ping_promise_test",
+    srcs = [
+        "ping_promise_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:map",
+        "//src/core:ping_promise",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "keepalive_test",
+    srcs = [
+        "keepalive_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:keepalive",
+        "//src/core:map",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
     ],
 )

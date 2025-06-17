@@ -452,10 +452,8 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& watcher : watchers_) {
-    subchannel_->work_serializer_.Run([watcher = watcher->Ref(), state,
-                                       status]() mutable {
-      auto* watcher_ptr = watcher.get();
-      watcher_ptr->OnConnectivityStateChange(std::move(watcher), state, status);
+    subchannel_->work_serializer_.Run([watcher, state, status]() {
+      watcher->OnConnectivityStateChange(state, status);
     });
   }
 }
@@ -548,9 +546,7 @@ Subchannel::Subchannel(SubchannelKey key,
         grpc_sockaddr_to_uri(&key_.address())
             .value_or("<unknown address type>"),
         channel_tracer_max_memory);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("subchannel created"));
+    GRPC_CHANNELZ_LOG(channelz_node_) << "subchannel created";
     channelz_node_->SetChannelArgs(args_);
     args_ = args_.SetObject<channelz::BaseNode>(channelz_node_);
   }
@@ -558,9 +554,7 @@ Subchannel::Subchannel(SubchannelKey key,
 
 Subchannel::~Subchannel() {
   if (channelz_node_ != nullptr) {
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string("Subchannel destroyed"));
+    GRPC_CHANNELZ_LOG(channelz_node_) << "Subchannel destroyed";
     channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   connector_.reset();
@@ -614,10 +608,8 @@ void Subchannel::WatchConnectivityState(
     grpc_pollset_set_add_pollset_set(pollset_set_, interested_parties);
   }
   work_serializer_.Run(
-      [watcher = watcher->Ref(), state = state_, status = status_]() mutable {
-        auto* watcher_ptr = watcher.get();
-        watcher_ptr->OnConnectivityStateChange(std::move(watcher), state,
-                                               status);
+      [watcher, state = state_, status = status_]() {
+        watcher->OnConnectivityStateChange(state, status);
       },
       DEBUG_LOCATION);
   watcher_list_.AddWatcherLocked(std::move(watcher));
@@ -706,12 +698,15 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
   }
   if (channelz_node_ != nullptr) {
     channelz_node_->UpdateConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_cpp_string(absl::StrCat(
-            "Subchannel connectivity state changed to ",
-            ConnectivityStateName(state),
-            status.ok() ? "" : absl::StrCat(": ", status_.ToString()))));
+    if (status.ok()) {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << "Subchannel connectivity state changed to "
+          << ConnectivityStateName(state);
+    } else {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << "Subchannel connectivity state changed to "
+          << ConnectivityStateName(state) << ": " << status;
+    }
   }
   // Notify watchers.
   watcher_list_.NotifyLocked(state, status_);
@@ -794,7 +789,7 @@ void Subchannel::OnConnectingFinishedLocked(grpc_error_handle error) {
 }
 
 bool Subchannel::PublishTransportLocked() {
-  auto socket_node = std::move(connecting_result_.socket_node);
+  auto socket_node = connecting_result_.transport->GetSocketNode();
   if (connecting_result_.transport->filter_stack_transport() != nullptr) {
     // Construct channel stack.
     // Builder takes ownership of transport.

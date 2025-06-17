@@ -74,16 +74,14 @@ class MockEndpoint
       bool, Read,
       (absl::AnyInvocable<void(absl::Status)> on_read,
        grpc_event_engine::experimental::SliceBuffer* buffer,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs args),
       (override));
 
   MOCK_METHOD(
       bool, Write,
       (absl::AnyInvocable<void(absl::Status)> on_writable,
        grpc_event_engine::experimental::SliceBuffer* data,
-       const grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs*
-           args),
+       grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args),
       (override));
 
   MOCK_METHOD(
@@ -92,6 +90,9 @@ class MockEndpoint
   MOCK_METHOD(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress&,
       GetLocalAddress, (), (const, override));
+
+  MOCK_METHOD(std::shared_ptr<TelemetryInfo>, GetTelemetryInfo, (),
+              (const, override));
 };
 
 class MockClientConnectionFactory : public ClientConnectionFactory {

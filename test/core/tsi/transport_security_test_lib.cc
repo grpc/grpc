@@ -35,6 +35,7 @@
 #include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/memory.h"
 
@@ -784,4 +785,80 @@ X509_CRL* ReadCrl(absl::string_view crl_pem) {
   X509_CRL* crl = PEM_read_bio_X509_CRL(crl_bio, nullptr, nullptr, nullptr);
   BIO_free(crl_bio);
   return crl;
+}
+
+std::string Protect(tsi_frame_protector* protector, absl::string_view buffer) {
+  static constexpr size_t kMaxBufferSize = 4096;
+  CHECK(protector != nullptr);
+  CHECK(buffer.size() < kMaxBufferSize);
+  uint8_t* message_bytes =
+      const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(buffer.data()));
+  size_t message_size = buffer.size();
+  uint8_t protected_buffer[kMaxBufferSize];
+  uint8_t* cur = protected_buffer;
+  uint8_t* end = cur + sizeof(protected_buffer);
+  tsi_result result = TSI_OK;
+  while (message_size > 0) {
+    size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+    size_t processed_message_size = message_size;
+    result = tsi_frame_protector_protect(protector, message_bytes,
+                                         &processed_message_size, cur,
+                                         &protected_buffer_size_to_send);
+    if (result != TSI_OK) break;
+    message_bytes += processed_message_size;
+    message_size -= processed_message_size;
+    cur += protected_buffer_size_to_send;
+    if (cur == end) break;
+  }
+  size_t still_pending_size;
+  do {
+    size_t protected_buffer_size_to_send = static_cast<size_t>(end - cur);
+    result = tsi_frame_protector_protect_flush(
+        protector, cur, &protected_buffer_size_to_send, &still_pending_size);
+    if (result != TSI_OK) break;
+    cur += protected_buffer_size_to_send;
+    if (cur == end) break;
+  } while (still_pending_size > 0);
+  CHECK_EQ(result, TSI_OK);
+  std::string protected_bytes(reinterpret_cast<const char*>(protected_buffer),
+                              cur - protected_buffer);
+  return protected_bytes;
+}
+
+std::string Unprotect(tsi_frame_protector* protector,
+                      absl::string_view buffer) {
+  static constexpr size_t kMaxBufferSize = 4096;
+  CHECK(protector != nullptr);
+  CHECK(buffer.size() < kMaxBufferSize);
+  uint8_t* protected_bytes =
+      const_cast<uint8_t*>(reinterpret_cast<const uint8_t*>(buffer.data()));
+  size_t protected_size = buffer.size();
+  uint8_t message_buffer[kMaxBufferSize];
+  uint8_t* cur = message_buffer;
+  uint8_t* end = cur + sizeof(message_buffer);
+  tsi_result result = TSI_OK;
+  bool keep_looping = false;
+  while (protected_size > 0 || keep_looping) {
+    size_t unprotected_buffer_size_written = static_cast<size_t>(end - cur);
+    size_t processed_message_size = protected_size;
+    result = tsi_frame_protector_unprotect(protector, protected_bytes,
+                                           &processed_message_size, cur,
+                                           &unprotected_buffer_size_written);
+    if (result != TSI_OK) break;
+    protected_bytes += processed_message_size;
+    protected_size -= processed_message_size;
+    cur += unprotected_buffer_size_written;
+
+    if (cur == end) {
+      CHECK(false) << "message_buffer too small";
+    } else if (unprotected_buffer_size_written > 0) {
+      keep_looping = true;
+    } else {
+      keep_looping = false;
+    }
+  }
+  CHECK_EQ(result, TSI_OK);
+  std::string message_bytes(reinterpret_cast<const char*>(message_buffer),
+                            cur - message_buffer);
+  return message_bytes;
 }

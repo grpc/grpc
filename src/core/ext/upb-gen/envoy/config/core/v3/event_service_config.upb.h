@@ -75,6 +75,10 @@ UPB_INLINE envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneof
   return (envoy_config_core_v3_EventServiceConfig_config_source_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_core_v3_EventServiceConfig_clear_config_source_specifier(envoy_config_core_v3_EventServiceConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__core__v3__EventServiceConfig_msg_init, &field);
+}
 UPB_INLINE void envoy_config_core_v3_EventServiceConfig_clear_grpc_service(envoy_config_core_v3_EventServiceConfig* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

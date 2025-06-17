@@ -16,11 +16,15 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/extensible.h>
+#include <grpc/event_engine/internal/write_event.h>
 #include <grpc/event_engine/memory_allocator.h>
 #include <grpc/event_engine/port.h>
 #include <grpc/event_engine/slice_buffer.h>
 #include <grpc/support/port_platform.h>
 
+#include <bitset>
+#include <initializer_list>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -180,13 +184,26 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// EventEngine Endpoint Read API  call.
     ///
     /// Passed as argument to an Endpoint \a Read
-    struct ReadArgs {
+    class ReadArgs final {
+     public:
+      ReadArgs() = default;
+      ReadArgs(const ReadArgs&) = delete;
+      ReadArgs& operator=(const ReadArgs&) = delete;
+      ReadArgs(ReadArgs&&) = default;
+      ReadArgs& operator=(ReadArgs&&) = default;
+
       // A suggestion to the endpoint implementation to read at-least the
       // specified number of bytes over the network connection before marking
       // the endpoint read operation as complete. gRPC may use this argument
       // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
-      int64_t read_hint_bytes = 1;
+      void set_read_hint_bytes(int64_t read_hint_bytes) {
+        read_hint_bytes_ = read_hint_bytes;
+      }
+      int64_t read_hint_bytes() const { return read_hint_bytes_; }
+
+     private:
+      int64_t read_hint_bytes_ = 1;
     };
     /// Reads data from the Endpoint.
     ///
@@ -212,21 +229,158 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
     virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                      SliceBuffer* buffer, const ReadArgs* args) = 0;
+                      SliceBuffer* buffer, ReadArgs args) = 0;
+    //// The set of write events that can be reported by an Endpoint.
+    using WriteEvent = ::grpc_event_engine::experimental::internal::WriteEvent;
+    /// An output WriteMetric consists of a key and a value.
+    /// The space of keys can be queried from the endpoint via the
+    /// \a AllWriteMetrics, \a GetMetricName and \a GetMetricKey APIs.
+    /// The value is an int64_t that is implementation-defined. Check with the
+    /// endpoint implementation documentation for the semantics of each metric.
+    struct WriteMetric {
+      size_t key;
+      int64_t value;
+    };
+    // It is the responsibility of the caller of WriteEventCallback to make sure
+    // that the corresponding endpoint is still valid. HINT: Do NOT offload
+    // callbacks onto the EventEngine or other threads.
+    using WriteEventCallback = absl::AnyInvocable<void(
+        WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
+    // A bitmask of the events that the caller is interested in.
+    // Each bit corresponds to an entry in WriteEvent.
+    using WriteEventSet = std::bitset<static_cast<int>(WriteEvent::kCount)>;
+    // A sink to receive write events.
+    // The requested metrics are the keys of the metrics that the caller is
+    // interested in. The on_event callback will be called on each event
+    // requested.
+    class WriteEventSink final {
+     public:
+      WriteEventSink(absl::Span<const size_t> requested_metrics,
+                     std::initializer_list<WriteEvent> requested_events,
+                     WriteEventCallback on_event)
+          : requested_metrics_(requested_metrics),
+            on_event_(std::move(on_event)) {
+        for (auto event : requested_events) {
+          requested_events_mask_.set(static_cast<int>(event));
+        }
+      }
+
+      absl::Span<const size_t> requested_metrics() const {
+        return requested_metrics_;
+      }
+
+      bool requested_event(WriteEvent event) const {
+        return requested_events_mask_.test(static_cast<int>(event));
+      }
+
+      WriteEventSet requested_events_mask() const {
+        return requested_events_mask_;
+      }
+
+      /// Takes the callback. Ownership is transferred. It is illegal to destroy
+      /// the endpoint before this callback is invoked.
+      WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
+
+     private:
+      absl::Span<const size_t> requested_metrics_;
+      WriteEventSet requested_events_mask_;
+      // The callback to be called on each event.
+      WriteEventCallback on_event_;
+    };
     /// A struct representing optional arguments that may be provided to an
     /// EventEngine Endpoint Write API call.
     ///
     /// Passed as argument to an Endpoint \a Write
-    struct WriteArgs {
+    class WriteArgs final {
+     public:
+      WriteArgs() = default;
+
+      ~WriteArgs();
+
+      WriteArgs(const WriteArgs&) = delete;
+      WriteArgs& operator=(const WriteArgs&) = delete;
+
+      WriteArgs(WriteArgs&& other) noexcept
+          : metrics_sink_(std::move(other.metrics_sink_)),
+            google_specific_(other.google_specific_),
+            max_frame_size_(other.max_frame_size_) {
+        other.google_specific_ = nullptr;
+      }
+
+      WriteArgs& operator=(WriteArgs&& other) noexcept {
+        if (this != &other) {
+          metrics_sink_ = std::move(other.metrics_sink_);
+          google_specific_ = other.google_specific_;
+          other.google_specific_ = nullptr;  // Nullify source
+          max_frame_size_ = other.max_frame_size_;
+        }
+        return *this;
+      }
+
+      // A sink to receive write events.
+      std::optional<WriteEventSink> TakeMetricsSink() {
+        auto sink = std::move(metrics_sink_);
+        metrics_sink_.reset();
+        return sink;
+      }
+
+      bool has_metrics_sink() const { return metrics_sink_.has_value(); }
+
+      void set_metrics_sink(WriteEventSink sink) {
+        metrics_sink_ = std::move(sink);
+      }
+
       // Represents private information that may be passed by gRPC for
       // select endpoints expected to be used only within google.
-      void* google_specific = nullptr;
+      // TODO(ctiller): Remove this method once all callers are migrated to
+      // metrics sink.
+      void* GetDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return google_specific_;
+      }
+
+      void* TakeDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return std::exchange(google_specific_, nullptr);
+      }
+
+      void SetDeprecatedAndDiscouragedGoogleSpecificPointer(void* pointer) {
+        google_specific_ = pointer;
+      }
+
       // A suggestion to the endpoint implementation to group data to be written
       // into frames of the specified max_frame_size. gRPC may use this
       // argument to dynamically control the max sizes of frames sent to a
       // receiver in response to high receiver memory pressure.
-      int64_t max_frame_size = 1024 * 1024;
+      int64_t max_frame_size() const { return max_frame_size_; }
+
+      void set_max_frame_size(int64_t max_frame_size) {
+        max_frame_size_ = max_frame_size;
+      }
+
+     private:
+      std::optional<WriteEventSink> metrics_sink_;
+      void* google_specific_ = nullptr;
+      int64_t max_frame_size_ = 1024 * 1024;
     };
+
+    class TelemetryInfo {
+     public:
+      virtual ~TelemetryInfo() = default;
+
+      /// Returns the list of write metrics that the endpoint supports.
+      /// The keys are used to identify the metrics in the GetMetricName and
+      /// GetMetricKey APIs. The current value of the metric can be queried by
+      /// adding a WriteEventSink to the WriteArgs of a Write call.
+      virtual std::vector<size_t> AllWriteMetrics() const = 0;
+      /// Returns the name of the write metric with the given key.
+      /// If the key is not found, returns std::nullopt.
+      virtual std::optional<absl::string_view> GetMetricName(
+          size_t key) const = 0;
+      /// Returns the key of the write metric with the given name.
+      /// If the name is not found, returns std::nullopt.
+      virtual std::optional<size_t> GetMetricKey(
+          absl::string_view name) const = 0;
+    };
+
     /// Writes data out on the connection.
     ///
     /// If the write succeeds immediately, it returns true and the
@@ -248,11 +402,13 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
     virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                       SliceBuffer* data, const WriteArgs* args) = 0;
+                       SliceBuffer* data, WriteArgs args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
+
+    virtual std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const = 0;
   };
 
   /// Called when a new connection is established.

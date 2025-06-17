@@ -173,8 +173,6 @@ TEST_P(LogicalDNSClusterTest, FailedBackendConnectionCausesReresolution) {
 }
 
 TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -219,51 +217,7 @@ TEST_P(LogicalDNSClusterTest, AutoHostRewrite) {
   EXPECT_EQ(response.param().host(), absl::StrCat(kDnsName, ":443"));
 }
 
-TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteWithoutEnvVar) {
-  constexpr char kDnsName[] = "dns.example.com";
-  // Set auto_host_rewrite in the RouteConfig.
-  RouteConfiguration new_route_config = default_route_config_;
-  new_route_config.mutable_virtual_hosts(0)
-      ->mutable_routes(0)
-      ->mutable_route()
-      ->mutable_auto_host_rewrite()
-      ->set_value(true);
-  SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Create Logical DNS Cluster
-  auto cluster = default_cluster_;
-  cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = cluster.mutable_load_assignment()
-                      ->add_endpoints()
-                      ->add_lb_endpoints()
-                      ->mutable_endpoint()
-                      ->mutable_address()
-                      ->mutable_socket_address();
-  address->set_address(kDnsName);
-  address->set_port_value(443);
-  balancer_->ads_service()->SetCdsResource(cluster);
-  // Create client and server.
-  LogicalDnsInitClient(MakeBootstrapBuilder().SetTrustedXdsServer());
-  CreateAndStartBackends(1);
-  // Set Logical DNS result
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(GetBackendPorts());
-    logical_dns_cluster_resolver_response_generator_->SetResponseSynchronously(
-        std::move(result));
-  }
-  // Send RPC and verify the authority seen by the server.
-  EchoResponse response;
-  Status status = SendRpc(
-      RpcOptions().set_echo_host_from_authority_header(true), &response);
-  EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                           << " message=" << status.error_message();
-  EXPECT_EQ(response.param().host(), kServerName);
-}
-
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Set auto_host_rewrite in the RouteConfig.
   RouteConfiguration new_route_config = default_route_config_;
@@ -306,8 +260,6 @@ TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfServerNotTrustedInBootstrap) {
 }
 
 TEST_P(LogicalDNSClusterTest, NoAuthorityRewriteIfNotEnabledInRoute) {
-  grpc_core::testing::ScopedExperimentalEnvVar env(
-      "GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
   constexpr char kDnsName[] = "dns.example.com";
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
@@ -1072,6 +1024,45 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
   EXPECT_THAT(
       status.error_message(),
       ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
+}
+
+TEST_P(AggregateClusterTest, UnderlyingClusterDoesNotExist) {
+  CreateAndStartBackends(1);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  // Populate new EDS resource.
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resource.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster.
+  auto cluster = default_cluster_;
+  auto* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);  // Does not exist.
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  // Use a longer deadline to wait for xDS resource does-not-exist timeout.
+  WaitForBackend(DEBUG_LOCATION, 0, nullptr, WaitForBackendOptions(),
+                 RpcOptions().set_timeout_ms(20000));
+  // Shutdown backend 0.  RPCs should fail, and the error message should
+  // include the fact that kNewCluster2Name doesn't exist.
+  backends_[0]->StopListeningAndSendGoaways();
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       MakeConnectionFailureRegex(
+                           "connections to all backends failing; last error: ",
+                           "CDS resource new_cluster_2: does not exist "
+                           "\\(node ID:xds_end2end_test\\); "
+                           "xDS node ID:xds_end2end_test"));
 }
 
 }  // namespace

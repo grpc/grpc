@@ -52,6 +52,7 @@
 #include "src/core/ext/transport/chttp2/transport/hpack_parser.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/legacy_frame.h"
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
@@ -75,6 +76,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/context_list_entry.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/telemetry/tcp_tracer.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/ref_counted.h"
@@ -236,8 +238,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
           transport_(transport) {}
+    ~ChannelzDataSource() { ResetDataSource(); }
 
-    void AddData(grpc_core::channelz::DataSink& sink) override;
+    void AddData(grpc_core::channelz::DataSink sink) override;
     std::unique_ptr<grpc_core::channelz::ZTrace> GetZTrace(
         absl::string_view name) override;
 
@@ -266,6 +269,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::ServerTransport* server_transport() override { return nullptr; }
 
   absl::string_view GetTransportName() const override;
+  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> GetSocketNode()
+      const override {
+    return channelz_socket;
+  }
   void InitStream(grpc_stream* gs, grpc_stream_refcount* refcount,
                   const void* server_data, grpc_core::Arena* arena) override;
   void SetPollset(grpc_stream* stream, grpc_pollset* pollset) override;
@@ -277,6 +284,9 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   void WriteSecurityFrame(grpc_core::SliceBuffer* data);
   void WriteSecurityFrameLocked(grpc_core::SliceBuffer* data);
 
+  // We depend on the ep being available for the life of the transport in
+  // at least one place - event callback in WriteEventSink. Hence, this should
+  // only be orphaned in the destructor.
   grpc_core::OrphanablePtr<grpc_endpoint> ep;
   grpc_core::Mutex ep_destroy_mu;  // Guards endpoint destruction only.
 
@@ -291,7 +301,6 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;
   grpc_core::Combiner* combiner;
-  absl::BitGen bitgen;
 
   // On the client side, when the transport is first created, the
   // endpoint will already have been added to this pollset_set, and it
@@ -576,7 +585,7 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
   grpc_core::Timestamp last_window_update_time =
       grpc_core::Timestamp::InfPast();
 
-  grpc_core::Http2StatsCollector http2_stats;
+  std::shared_ptr<grpc_core::Http2StatsCollector> http2_stats;
   grpc_core::Http2ZTraceCollector http2_ztrace_collector;
 
   GPR_NO_UNIQUE_ADDRESS grpc_core::latent_see::Flow write_flow;
@@ -689,6 +698,8 @@ struct grpc_chttp2_stream {
   int64_t write_counter = 0;
 
   grpc_core::Chttp2CallTracerWrapper call_tracer_wrapper;
+  // null by default, set by the transport data source upon first query
+  grpc_core::RefCountedPtr<grpc_core::channelz::CallNode> channelz_call_node;
 
   // TODO(yashykt): Remove call_tracer field after transition to call v3. (See
   // https://github.com/grpc/grpc/pull/38729 for more information.)
@@ -726,8 +737,6 @@ struct grpc_chttp2_stream {
       grpc_core::Timestamp::InfPast();
 };
 
-#define GRPC_ARG_PING_TIMEOUT_MS "grpc.http2.ping_timeout_ms"
-
 // EXPERIMENTAL: provide protection against overloading a server with too many
 // requests: wait for streams to be deallocated before they stop counting
 // against MAX_CONCURRENT_STREAMS
@@ -754,6 +763,11 @@ struct grpc_chttp2_stream {
 void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
                                 grpc_chttp2_initiate_write_reason reason);
 
+struct TcpCallTracerWithOffset {
+  std::shared_ptr<grpc_core::TcpCallTracer> tcp_call_tracer;
+  size_t byte_offset;
+};
+
 struct grpc_chttp2_begin_write_result {
   /// are we writing?
   bool writing;
@@ -761,6 +775,8 @@ struct grpc_chttp2_begin_write_result {
   bool partial;
   /// did we queue any completions as part of beginning the write
   bool early_results_scheduled;
+  /// Tcp Call Tracers if any
+  std::vector<TcpCallTracerWithOffset> tcp_call_tracers;
 };
 grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
     grpc_chttp2_transport* t);

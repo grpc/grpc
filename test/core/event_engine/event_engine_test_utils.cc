@@ -36,6 +36,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/util/crash.h"
@@ -111,27 +112,31 @@ absl::Status SendValidatePayload(absl::string_view data,
   // fflush(stdout);
 
   AppendStringToSliceBuffer(&write_slice_buf, data);
-  EventEngine::Endpoint::ReadArgs args = {num_bytes_written};
+  size_t num_bytes_remaining = num_bytes_written;
   std::function<void(absl::Status)> read_cb;
   read_cb = [receive_endpoint, &read_slice_buf, &read_store_buf, &read_cb,
-             &read_signal, &args](absl::Status status) {
+             &read_signal, &num_bytes_remaining](absl::Status status) {
     CHECK_OK(status);
-    if (read_slice_buf.Length() == static_cast<size_t>(args.read_hint_bytes)) {
+    if (read_slice_buf.Length() == num_bytes_remaining) {
       read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                     read_store_buf);
       read_signal.Notify();
       return;
     }
-    args.read_hint_bytes -= read_slice_buf.Length();
+    num_bytes_remaining -= read_slice_buf.Length();
     read_slice_buf.MoveFirstNBytesIntoSliceBuffer(read_slice_buf.Length(),
                                                   read_store_buf);
-    if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+    EventEngine::Endpoint::ReadArgs args;
+    args.set_read_hint_bytes(num_bytes_remaining);
+    if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
       CHECK_NE(read_slice_buf.Length(), 0u);
       read_cb(absl::OkStatus());
     }
   };
   // Start asynchronous reading at the receive_endpoint.
-  if (receive_endpoint->Read(read_cb, &read_slice_buf, &args)) {
+  EventEngine::Endpoint::ReadArgs args;
+  args.set_read_hint_bytes(num_bytes_written);
+  if (receive_endpoint->Read(read_cb, &read_slice_buf, std::move(args))) {
     read_cb(absl::OkStatus());
   }
   // Start asynchronous writing at the send_endpoint.
@@ -140,7 +145,7 @@ absl::Status SendValidatePayload(absl::string_view data,
             CHECK_OK(status);
             write_signal.Notify();
           },
-          &write_slice_buf, nullptr)) {
+          &write_slice_buf, EventEngine::Endpoint::WriteArgs())) {
     write_signal.Notify();
   }
   write_signal.WaitForNotification();
@@ -245,7 +250,9 @@ bool IsSaneTimerEnvironment() {
   return grpc_core::IsEventEngineClientEnabled() &&
          grpc_core::IsEventEngineListenerEnabled() &&
          grpc_core::IsEventEngineDnsEnabled() &&
-         grpc_core::IsEventEngineDnsNonClientChannelEnabled();
+         grpc_core::IsEventEngineDnsNonClientChannelEnabled() &&
+         !grpc_event_engine::experimental::
+             EventEngineExperimentDisabledForPython();
 }
 
 }  // namespace experimental

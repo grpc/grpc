@@ -22,11 +22,10 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/statusor.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
-#include "src/core/lib/promise/arena_promise.h"
-#include "src/core/lib/transport/transport.h"
 
 namespace grpc_core {
 
@@ -46,12 +45,13 @@ class HttpServerFilter : public ImplementChannelFilter<HttpServerFilter>,
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
         surface_user_agent_(surface_user_agent),
         allow_put_requests_(allow_put_requests) {}
+  ~HttpServerFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
-    Json::Object object;
-    object["surfaceUserAgent"] = Json::FromBool(surface_user_agent_);
-    object["allowPutRequests"] = Json::FromBool(allow_put_requests_);
-    sink.AddAdditionalInfo("httpServerFilter", object);
+  void AddData(channelz::DataSink sink) override {
+    sink.AddAdditionalInfo("httpServerFilter",
+                           channelz::PropertyList()
+                               .Set("surface_user_agent", surface_user_agent_)
+                               .Set("allow_put_requests", allow_put_requests_));
   }
 
   class Call {

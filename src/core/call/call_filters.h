@@ -1316,7 +1316,7 @@ template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline OperationExecutor<
     T>::~OperationExecutor() {
   if (promise_data_ != nullptr) {
-    ops_->early_destroy(promise_data_);
+    if (ops_ != end_ops_) ops_->early_destroy(promise_data_);
     gpr_free_aligned(promise_data_);
   }
 }
@@ -1349,7 +1349,10 @@ OperationExecutor<T>::InitStep(T input, void* call_data) {
         ops_->promise_init(promise_data_, Offset(call_data, ops_->call_offset),
                            ops_->channel_data, std::move(input));
     if (auto* r = p.value_if_ready()) {
-      if (r->ok == nullptr) return std::move(*r);
+      if (r->ok == nullptr) {
+        ops_ = end_ops_;
+        return std::move(*r);
+      }
       input = std::move(r->ok);
       ++ops_;
       continue;
@@ -1667,7 +1670,9 @@ class CallFilters {
         }
         return FinishStep(executor_.Start(
             &(stack_current_->stack->data_.*layout),
-            std::move(filters_->*input_location), filters_->call_data_));
+            std::move(filters_->*input_location),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       } else {
         return FinishStep(executor_.Step(filters_->call_data_));
       }
@@ -1684,9 +1689,10 @@ class CallFilters {
           (filters_->call_state_.*on_done)();
           return ValueOrFailure<Output>{std::move(r->ok)};
         }
-        return FinishStep(
-            executor_.Start(&(stack_current_->stack->data_.*layout),
-                            std::move(r->ok), filters_->call_data_));
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout), std::move(r->ok),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       }
       (filters_->call_state_.*on_done)();
       filters_->PushServerTrailingMetadata(std::move(r->error));
@@ -1724,7 +1730,9 @@ class CallFilters {
         }
         return FinishStep(executor_.Start(
             &(stack_current_->stack->data_.*layout),
-            std::move(filters_->*input_location), filters_->call_data_));
+            std::move(filters_->*input_location),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       } else {
         return FinishStep(executor_.Step(filters_->call_data_));
       }
@@ -1739,9 +1747,10 @@ class CallFilters {
         if (stack_current_ == stack_end_) {
           return NextMsg{std::move(r->ok), &filters_->call_state_};
         }
-        return FinishStep(
-            executor_.Start(&(stack_current_->stack->data_.*layout),
-                            std::move(r->ok), filters_->call_data_));
+        return FinishStep(executor_.Start(
+            &(stack_current_->stack->data_.*layout), std::move(r->ok),
+            filters_detail::Offset(filters_->call_data_,
+                                   stack_current_->call_data_offset)));
       }
       (filters_->call_state_.*on_done)();
       filters_->PushServerTrailingMetadata(std::move(r->error));

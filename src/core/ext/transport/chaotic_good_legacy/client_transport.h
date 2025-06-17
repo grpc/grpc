@@ -48,8 +48,8 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/if.h"
 #include "src/core/lib/promise/inter_activity_pipe.h"
+#include "src/core/lib/promise/lock_based_mpsc.h"
 #include "src/core/lib/promise/loop.h"
-#include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/try_join.h"
@@ -79,6 +79,9 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   void SetPollsetSet(grpc_stream*, grpc_pollset_set*) override {}
   void PerformOp(grpc_transport_op*) override;
   void Orphan() override;
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
 
   void StartCall(CallHandler call_handler) override;
   void AbortWithError();
@@ -111,7 +114,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   grpc_event_engine::experimental::MemoryAllocator allocator_;
   // Max buffer is set to 4, so that for stream writes each time it will queue
   // at most 2 frames.
-  MpscReceiver<ClientFrame> outgoing_frames_;
+  LockBasedMpscReceiver<ClientFrame> outgoing_frames_;
   Mutex mu_;
   uint32_t next_stream_id_ ABSL_GUARDED_BY(mu_) = 1;
   // Map of stream incoming server frames, key is stream_id.

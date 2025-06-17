@@ -22,6 +22,7 @@
 #include <grpc/support/json.h>
 #include <grpc/support/port_platform.h>
 
+#include <atomic>
 #include <memory>
 #include <utility>
 
@@ -38,142 +39,27 @@ namespace grpc_core {
 namespace channelz {
 
 //
-// ChannelTrace::TraceEvent
-//
-
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data,
-                                     RefCountedPtr<BaseNode> referenced_entity)
-    : timestamp_(Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME)),
-      severity_(severity),
-      data_(data),
-      memory_usage_(sizeof(TraceEvent) + grpc_slice_memory_usage(data)),
-      referenced_entity_(std::move(referenced_entity)) {}
-
-ChannelTrace::TraceEvent::TraceEvent(Severity severity, const grpc_slice& data)
-    : TraceEvent(severity, data, nullptr) {}
-
-ChannelTrace::TraceEvent::~TraceEvent() { CSliceUnref(data_); }
-
-RefCountedPtr<BaseNode> ChannelTrace::TraceEvent::referenced_entity() const {
-  return referenced_entity_;
-}
-
-//
 // ChannelTrace
 //
 
-ChannelTrace::ChannelTrace(size_t max_event_memory)
-    : max_event_memory_(max_event_memory),
-      time_created_(Timestamp::Now().as_timespec(GPR_CLOCK_REALTIME)) {}
-
-ChannelTrace::~ChannelTrace() {
-  if (max_event_memory_ == 0) {
-    return;  // tracing is disabled if max_event_memory_ == 0
-  }
-  TraceEvent* it = head_trace_;
-  while (it != nullptr) {
-    TraceEvent* to_free = it;
-    it = it->next();
-    delete to_free;
-  }
-}
-
-void ChannelTrace::AddTraceEventHelper(TraceEvent* new_trace_event) {
-  MutexLock lock(&mu_);
-  ++num_events_logged_;
-  // first event case
-  if (head_trace_ == nullptr) {
-    head_trace_ = tail_trace_ = new_trace_event;
-  } else {
-    // regular event add case
-    tail_trace_->set_next(new_trace_event);
-    tail_trace_ = tail_trace_->next();
-  }
-  event_list_memory_usage_ += new_trace_event->memory_usage();
-  // maybe garbage collect the tail until we are under the memory limit.
-  while (event_list_memory_usage_ > max_event_memory_) {
-    TraceEvent* to_free = head_trace_;
-    event_list_memory_usage_ -= to_free->memory_usage();
-    head_trace_ = head_trace_->next();
-    delete to_free;
-  }
-}
-
-void ChannelTrace::AddTraceEvent(Severity severity, const grpc_slice& data) {
-  if (max_event_memory_ == 0) {
-    CSliceUnref(data);
-    return;  // tracing is disabled if max_event_memory_ == 0
-  }
-  AddTraceEventHelper(new TraceEvent(severity, data));
-}
-
-void ChannelTrace::AddTraceEventWithReference(
-    Severity severity, const grpc_slice& data,
-    RefCountedPtr<BaseNode> referenced_entity) {
-  if (max_event_memory_ == 0) {
-    CSliceUnref(data);
-    return;  // tracing is disabled if max_event_memory_ == 0
-  }
-  // create and fill up the new event
-  AddTraceEventHelper(
-      new TraceEvent(severity, data, std::move(referenced_entity)));
-}
-
-std::string ChannelTrace::TraceEvent::description() const {
-  char* description = grpc_slice_to_c_string(data_);
-  std::string s(description);
-  gpr_free(description);
-  return s;
-}
-
-void ChannelTrace::ForEachTraceEventLocked(
-    absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                           RefCountedPtr<BaseNode>)>
-        callback) const {
-  TraceEvent* it = head_trace_;
-  while (it != nullptr) {
-    callback(it->timestamp(), it->severity(), it->description(),
-             it->referenced_entity());
-    it = it->next();
-  }
-}
-
 Json ChannelTrace::RenderJson() const {
-  // Tracing is disabled if max_event_memory_ == 0.
-  if (max_event_memory_ == 0) {
-    return Json();  // JSON null
-  }
-  Json::Object object = {
-      {"creationTimestamp",
-       Json::FromString(gpr_format_timespec(time_created_))},
-  };
+  if (max_memory_ == 0) return Json();
+  Json::Array array;
   MutexLock lock(&mu_);
+  ForEachTraceEventLocked([&array](gpr_timespec timestamp, std::string line) {
+    Json::Object object = {
+        {"severity", Json::FromString("CT_INFO")},
+        {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
+        {"description", Json::FromString(std::move(line))},
+    };
+    array.push_back(Json::FromObject(std::move(object)));
+  });
+  Json::Object object;
+  object["creationTimestamp"] = Json::FromString(creation_timestamp());
   if (num_events_logged_ > 0) {
     object["numEventsLogged"] =
         Json::FromString(absl::StrCat(num_events_logged_));
   }
-  // Only add in the event list if it is non-empty.
-  Json::Array array;
-  ForEachTraceEventLocked([&array](gpr_timespec timestamp, Severity severity,
-                                   std::string description,
-                                   RefCountedPtr<BaseNode> referenced_entity) {
-    Json::Object object = {
-        {"description", Json::FromString(description)},
-        {"severity", Json::FromString(SeverityString(severity))},
-        {"timestamp", Json::FromString(gpr_format_timespec(timestamp))},
-    };
-    if (referenced_entity != nullptr) {
-      const bool is_channel =
-          (referenced_entity->type() ==
-               BaseNode::EntityType::kTopLevelChannel ||
-           referenced_entity->type() == BaseNode::EntityType::kInternalChannel);
-      object[is_channel ? "channelRef" : "subchannelRef"] = Json::FromObject({
-          {(is_channel ? "channelId" : "subchannelId"),
-           Json::FromString(absl::StrCat(referenced_entity->uuid()))},
-      });
-    }
-    array.emplace_back(Json::FromObject(std::move(object)));
-  });
   if (!array.empty()) {
     object["events"] = Json::FromArray(std::move(array));
   }
@@ -181,8 +67,176 @@ Json ChannelTrace::RenderJson() const {
 }
 
 std::string ChannelTrace::creation_timestamp() const {
-  return gpr_format_timespec(time_created_);
+  return gpr_format_timespec(time_created_.as_timespec(GPR_CLOCK_REALTIME));
 }
+
+ChannelTrace::EntryRef ChannelTrace::AppendEntry(
+    EntryRef parent, std::unique_ptr<Renderer> renderer) {
+  if (max_memory_ == 0) return EntryRef::Sentinel();
+  MutexLock lock(&mu_);
+  ++num_events_logged_;
+  const auto ref = NewEntry(parent, std::move(renderer));
+  while (current_memory_ > max_memory_ && first_entry_ != kSentinelId) {
+    DropEntryId(first_entry_);
+  }
+  if (GPR_UNLIKELY(current_memory_ > max_memory_)) {
+    entries_.shrink_to_fit();
+    current_memory_ = MemoryUsageOf(entries_);
+  }
+  return ref;
+}
+
+ChannelTrace::EntryRef ChannelTrace::NewEntry(
+    EntryRef parent, std::unique_ptr<Renderer> renderer) {
+  if (parent.id != kSentinelId) {
+    if (parent.id >= entries_.size()) return EntryRef::Sentinel();
+    if (parent.salt != entries_[parent.id].salt) {
+      // Parent no longer present: no point adding child
+      return EntryRef::Sentinel();
+    }
+  }
+  uint16_t id;
+  if (next_free_entry_ != kSentinelId) {
+    id = next_free_entry_;
+    next_free_entry_ = entries_[id].next_chronologically;
+  } else {
+    id = entries_.size();
+    DCHECK_NE(id, kSentinelId);
+    entries_.emplace_back();
+    current_memory_ = MemoryUsageOf(entries_);
+  }
+  Entry& e = entries_[id];
+  e.when = Timestamp::Now();
+  e.parent = parent.id;
+  e.first_child = kSentinelId;
+  e.last_child = kSentinelId;
+  e.prev_sibling = kSentinelId;
+  e.next_sibling = kSentinelId;
+  e.next_chronologically = kSentinelId;
+  e.renderer = std::move(renderer);
+  e.prev_chronologically = last_entry_;
+  if (last_entry_ == kSentinelId) {
+    DCHECK_EQ(first_entry_, kSentinelId);
+    first_entry_ = id;
+  } else {
+    Entry& last = entries_[last_entry_];
+    DCHECK_EQ(last.next_chronologically, kSentinelId);
+    last.next_chronologically = id;
+  }
+  last_entry_ = id;
+  if (parent.id != kSentinelId) {
+    Entry& p = entries_[parent.id];
+    e.prev_sibling = p.last_child;
+    if (p.last_child == kSentinelId) {
+      DCHECK_EQ(p.first_child, kSentinelId);
+      p.first_child = id;
+    } else {
+      Entry& last = entries_[p.last_child];
+      DCHECK_EQ(last.next_sibling, kSentinelId);
+      last.next_sibling = id;
+    }
+    p.last_child = id;
+  }
+  current_memory_ += e.renderer->MemoryUsage();
+  DCHECK_EQ(MemoryUsageOf(entries_), current_memory_);
+  return EntryRef{id, e.salt};
+}
+
+void ChannelTrace::DropEntry(EntryRef entry) {
+  if (entry.id == kSentinelId) return;
+  MutexLock lock(&mu_);
+  if (entry.id >= entries_.size()) return;
+  Entry& e = entries_[entry.id];
+  if (e.salt != entry.salt) return;
+  DropEntryId(entry.id);
+}
+
+void ChannelTrace::DropEntryId(uint16_t id) {
+  Entry& e = entries_[id];
+  while (e.first_child != kSentinelId) {
+    DropEntryId(e.first_child);
+  }
+  if (e.prev_chronologically != kSentinelId) {
+    Entry& prev = entries_[e.prev_chronologically];
+    DCHECK_EQ(prev.next_chronologically, id);
+    prev.next_chronologically = e.next_chronologically;
+  }
+  if (e.next_chronologically != kSentinelId) {
+    Entry& next = entries_[e.next_chronologically];
+    DCHECK_EQ(next.prev_chronologically, id);
+    next.prev_chronologically = e.prev_chronologically;
+  }
+  if (e.prev_sibling != kSentinelId) {
+    Entry& prev = entries_[e.prev_sibling];
+    DCHECK_EQ(prev.next_sibling, id);
+    prev.next_sibling = e.next_sibling;
+  }
+  if (e.next_sibling != kSentinelId) {
+    Entry& next = entries_[e.next_sibling];
+    DCHECK_EQ(next.prev_sibling, id);
+    next.prev_sibling = e.prev_sibling;
+  }
+  if (e.parent != kSentinelId) {
+    Entry& p = entries_[e.parent];
+    if (p.first_child == id) {
+      p.first_child = e.next_sibling;
+    }
+    if (p.last_child == id) {
+      p.last_child = e.prev_sibling;
+    }
+  }
+  if (first_entry_ == id) {
+    first_entry_ = e.next_chronologically;
+  }
+  if (last_entry_ == id) {
+    last_entry_ = e.prev_chronologically;
+  }
+  ++e.salt;
+  e.next_chronologically = next_free_entry_;
+  current_memory_ -= e.renderer->MemoryUsage();
+  e.renderer.reset();
+  DCHECK_EQ(current_memory_, MemoryUsageOf(entries_));
+  next_free_entry_ = id;
+}
+
+void ChannelTrace::ForEachTraceEvent(
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
+  MutexLock lock(&mu_);
+  ForEachTraceEventLocked(callback);
+}
+
+void ChannelTrace::ForEachTraceEventLocked(
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback) const {
+  uint16_t id = first_entry_;
+  while (id != kSentinelId) {
+    const Entry& e = entries_[id];
+    if (e.parent == kSentinelId) RenderEntry(e, callback, 0);
+    id = e.next_chronologically;
+  }
+}
+
+void ChannelTrace::RenderEntry(
+    const Entry& entry,
+    absl::FunctionRef<void(gpr_timespec, std::string)> callback,
+    int depth) const {
+  if (entry.renderer != nullptr) {
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             entry.renderer->Render());
+  } else if (entry.first_child != kSentinelId) {
+    callback(entry.when.as_timespec(GPR_CLOCK_REALTIME),
+             "?unknown parent entry?");
+  }
+  if (entry.first_child != kSentinelId) {
+    uint16_t id = entry.first_child;
+    while (id != kSentinelId) {
+      const Entry& e = entries_[id];
+      RenderEntry(e, callback, depth + 1);
+      id = e.next_sibling;
+    }
+  }
+}
+
+size_t testing::GetSizeofTraceEvent() { return sizeof(ChannelTrace::Entry); }
 
 }  // namespace channelz
 }  // namespace grpc_core
