@@ -1,5 +1,5 @@
 //
-// Copyright 2024 gRPC authors.
+// Copyright 2025 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -71,8 +71,7 @@ std::string JwtTokenFileCallCredentials::debug_string() {
 }
 
 UniqueTypeName JwtTokenFileCallCredentials::Type() {
-  static UniqueTypeName::Factory kFactory("JwtTokenFile");
-  return kFactory.Create();
+  return GRPC_UNIQUE_TYPE_NAME_HERE("JwtTokenFile");
 }
 
 OrphanablePtr<TokenFetcherCredentials::FetchRequest>
