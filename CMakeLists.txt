@@ -12986,6 +12986,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/data_endpoints.cc
     src/core/ext/transport/chaotic_good/frame.cc
     src/core/ext/transport/chaotic_good/frame_header.cc
+    src/core/ext/transport/chaotic_good/scheduler.cc
     src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13091,6 +13092,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/data_endpoints.cc
     src/core/ext/transport/chaotic_good/frame.cc
     src/core/ext/transport/chaotic_good/frame_header.cc
+    src/core/ext/transport/chaotic_good/scheduler.cc
     src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13283,6 +13285,7 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13386,6 +13389,7 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13489,6 +13493,7 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13680,6 +13685,7 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13871,6 +13877,7 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13974,6 +13981,7 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -14165,6 +14173,7 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -14268,6 +14277,7 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -18102,6 +18112,7 @@ add_executable(h2_ssl_cert_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -25201,6 +25212,7 @@ add_executable(qps_json_driver
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -25305,6 +25317,7 @@ add_executable(qps_worker
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
