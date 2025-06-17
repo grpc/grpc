@@ -193,6 +193,8 @@ struct tsi_ssl_client_handshaker_options {
 
   std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map;
 
+  // TODO(gtcooke94) this ctor is not needed
+  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_client_handshaker_options()
       : pem_key_cert_pair(nullptr),
         pem_root_certs(nullptr),
@@ -205,8 +207,7 @@ struct tsi_ssl_client_handshaker_options {
         skip_server_certificate_verification(false),
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
-        crl_directory(nullptr),
-        spiffe_bundle_map(nullptr) {}
+  {}
 };
 
 // Creates a client handshaker factory.
@@ -366,6 +367,8 @@ struct tsi_ssl_server_handshaker_options {
 
   std::shared_ptr<grpc_core::SpiffeBundleMap> spiffe_bundle_map;
 
+  // TODO(gtcooke94) this ctor is not needed
+  // https://github.com/grpc/grpc/pull/39708/files#r2143735662
   tsi_ssl_server_handshaker_options()
       : pem_key_cert_pairs(nullptr),
         num_key_cert_pairs(0),
@@ -379,9 +382,8 @@ struct tsi_ssl_server_handshaker_options {
         min_tls_version(tsi_tls_version::TSI_TLS1_2),
         max_tls_version(tsi_tls_version::TSI_TLS1_3),
         key_logger(nullptr),
-        crl_directory(nullptr),
         send_client_ca_list(true),
-        spiffe_bundle_map(nullptr) {}
+  {}
 };
 
 // Creates a server handshaker factory.

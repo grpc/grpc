@@ -687,7 +687,6 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
     OnCertificatesChanged(std::shared_ptr<RootCertInfo> roots,
                           std::optional<PemKeyCertPairList> key_cert_pairs) {
   CHECK_NE(security_connector_, nullptr);
-
   MutexLock lock(&security_connector_->mu_);
   if (roots != nullptr) {
     security_connector_->root_cert_info_ = std::move(roots);

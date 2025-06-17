@@ -89,9 +89,7 @@ class SpiffeBundle final {
     return roots_ == other.roots_;
   }
 
-  bool operator!=(const SpiffeBundle& other) const {
-    return !(roots_ == other.roots_);
-  }
+  bool operator!=(const SpiffeBundle& other) const { return roots_ != other.roots_; }
 
  private:
   std::vector<std::string> roots_;
@@ -133,9 +131,7 @@ class SpiffeBundleMap final {
     return bundles_ == other.bundles_;
   }
 
-  bool operator!=(const SpiffeBundleMap& other) const {
-    return !(bundles_ == other.bundles_);
-  }
+  bool operator!=(const SpiffeBundleMap& other) const { return bundles_ != other.bundles_; }
 
  private:
   struct StringCmp {
