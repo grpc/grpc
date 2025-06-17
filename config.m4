@@ -96,6 +96,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/credentials/call/jwt/json_token.cc \
     src/core/credentials/call/jwt/jwt_credentials.cc \
     src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \

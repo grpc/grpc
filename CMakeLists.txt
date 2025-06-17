@@ -1568,6 +1568,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx json_object_loader_test)
   add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx json_token_test)
+  add_dependencies(buildtests_cxx jwt_util_test)
   add_dependencies(buildtests_cxx jwt_verifier_test)
   add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx latch_test)
@@ -2212,6 +2213,7 @@ add_library(grpc
   src/core/credentials/call/jwt/json_token.cc
   src/core/credentials/call/jwt/jwt_credentials.cc
   src/core/credentials/call/jwt/jwt_verifier.cc
+  src/core/credentials/call/jwt_util.cc
   src/core/credentials/call/oauth2/oauth2_credentials.cc
   src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
@@ -9135,6 +9137,7 @@ add_executable(call_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   test/core/credentials/call/call_credentials_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -20425,6 +20428,48 @@ target_include_directories(json_token_test
 )
 
 target_link_libraries(json_token_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(jwt_util_test
+  test/core/credentials/call/jwt_util_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(jwt_util_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(jwt_util_test PUBLIC cxx_std_17)
+target_include_directories(jwt_util_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(jwt_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
