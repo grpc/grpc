@@ -119,7 +119,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -139,7 +139,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -196,7 +196,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -215,7 +215,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -257,7 +257,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -277,7 +277,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_FALSE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -334,7 +334,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_TRUE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -353,7 +353,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
-  EXPECT_FALSE(tls_connector->RootCertsForTesting().has_value());
+  EXPECT_EQ(tls_connector->RootCertInfoForTesting(), nullptr);
   EXPECT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
 }
 
@@ -420,8 +420,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       static_cast<TlsChannelSecurityConnector*>(connector.get());
   // Expect to see the credential data.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
-  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
+  ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
+              ::testing::VariantWith<std::string>(root_cert_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -437,8 +438,9 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
                                gpr_time_from_seconds(10, GPR_TIMESPAN)));
   // Expect to see new credential data loaded by the security connector.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
-  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_2_);
+  ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
+              ::testing::VariantWith<std::string>(root_cert_2_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_2_.c_str(), cert_chain_2_.c_str()));
@@ -469,8 +471,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   // The initial data is all good, so we expect to have successful credential
   // updates.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
-  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
+  ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(), ::testing::VariantWith<std::string>(root_cert_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -487,8 +489,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   // messages if we open the log.
   // The old certs should still being used.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
-  ASSERT_TRUE(tls_connector->RootCertsForTesting().has_value());
-  EXPECT_EQ(tls_connector->RootCertsForTesting(), root_cert_);
+  ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(), ::testing::VariantWith<std::string>(root_cert_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
