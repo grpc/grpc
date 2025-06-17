@@ -103,7 +103,7 @@ class ServerInterceptor(metaclass=ABCMeta):
 class ClientCallDetails(
     NamedTuple(
         "ClientCallDetails",
-        ("method", "timeout", "metadata", "credentials", "wait_for_ready"), # type: ignore
+        ("method", "timeout", "metadata", "credentials", "wait_for_ready"), # pyright: ignore[reportArgumentType]
     ),
     grpc.ClientCallDetails,
 ):
