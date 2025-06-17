@@ -19,8 +19,8 @@ import functools
 from typing import (
     Callable,
     Optional,
-    Union,
     NamedTuple,
+    Union,
 )
 from collections.abc import AsyncIterable, Awaitable, Iterator, Sequence
 
@@ -89,7 +89,7 @@ class ServerInterceptor(metaclass=ABCMeta):
 
 
 class ClientCallDetails(
-    typing.NamedTuple(
+    NamedTuple(
         "ClientCallDetails",
         ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
     ),
@@ -116,8 +116,8 @@ class ClientCallDetails(
     wait_for_ready: Optional[bool]
 
 
-class ClientInterceptor(metaclass=ABCMeta):
-    """Base class used for all Aio Client Interceptor classes"""
+class ClientInterceptor:
+    """Base class used for all Aio Client Interceptor classes."""
 
 
 class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
@@ -132,7 +132,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         client_call_details: ClientCallDetails,
         request: RequestType,
     ) -> Union[UnaryUnaryCall, ResponseType]:
-        """Intercepts a unary-unary invocation asynchronously.
+        """Intercept a unary-unary invocation asynchronously.
 
         Args:
           continuation: A coroutine that proceeds with the invocation by
@@ -158,7 +158,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
 
 
 class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
-    """Affords intercepting unary-stream invocations."""
+    """Afford intercepting unary-stream invocations."""
 
     @abstractmethod
     async def intercept_unary_stream(
@@ -210,7 +210,7 @@ class StreamUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
     ) -> StreamUnaryCall:
-        """Intercepts a stream-unary invocation asynchronously.
+        """Intercept a stream-unary invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
         even awaiting the call should be done carefully, since the caller
@@ -253,7 +253,7 @@ class StreamStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         client_call_details: ClientCallDetails,
         request_iterator: RequestIterableType,
     ) -> Union[ResponseIterableType, StreamStreamCall]:
-        """Intercepts a stream-stream invocation asynchronously.
+        """Intercept a stream-stream invocation asynchronously.
 
         Within the interceptor the usage of the call methods like `write` or
         even awaiting the call should be done carefully, since the caller
@@ -318,7 +318,7 @@ class InterceptedCall:
             self._fire_or_add_pending_done_callbacks,
         )
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.cancel()
 
     def _fire_or_add_pending_done_callbacks(
