@@ -769,8 +769,8 @@ class InterceptedUnaryStreamCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request: RequestType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> UnaryStreamCall:
         """Run the RPC call wrapped in interceptors."""
 
