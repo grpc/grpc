@@ -624,12 +624,12 @@ GRPC_XDS_TARGETS = [
     "//src/core:channel_creds_registry_init",
 ]
 
-grpc_cc_library(
-    name = "absl_init_log",
-    external_deps = [
-        "absl/log:initialize",
-    ],
-)
+# grpc_cc_library(
+#     name = "absl_init_log",
+#     external_deps = [
+#         "absl/log:initialize",
+#     ],
+# )
 
 grpc_cc_library(
     name = "grpc",
