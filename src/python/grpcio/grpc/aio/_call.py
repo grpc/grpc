@@ -25,6 +25,7 @@ from typing import (
     Optional,
     Union,
 )
+from collections.abc import AsyncGenerator
 from collections.abc import AsyncIterator, Generator
 
 import grpc
@@ -356,7 +357,7 @@ class _StreamResponseMixin(Call):
             return True
         return False
 
-    async def _fetch_stream_responses(self) -> ResponseType:
+    async def _fetch_stream_responses(self) -> AsyncGenerator[ResponseType]:
         message = await self._read()
         while message is not cygrpc.EOF:
             yield message
