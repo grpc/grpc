@@ -25,11 +25,6 @@
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/util/match.h"
 
-std::shared_ptr<RootCertInfo>
-grpc_tls_certificate_distributor::CertificateInfo::GetRoots() {
-  return roots;
-}
-
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
   // The existing code prior to using std::variant with SpiffeBundleMap heavily
   // depends on the string pem root representation being the empty string as
@@ -221,7 +216,7 @@ void grpc_tls_certificate_distributor::WatchTlsCertificates(
       root_error = cert_info.root_cert_error;
       // Empty credentials will be treated as no updates.
       if (!cert_info.AreRootsEmpty()) {
-        updated_roots = cert_info.GetRoots();
+        updated_roots = cert_info.roots;
       }
     }
     if (identity_cert_name.has_value()) {
