@@ -29,7 +29,7 @@ from ._typing import ChannelArgumentType
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
-):
+) -> tuple:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
 
@@ -45,7 +45,7 @@ class Server(_base_server.Server):
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
-    ):
+    ) -> None:
         self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
@@ -54,7 +54,10 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                msg = f"Interceptor must be ServerInterceptor, the following are invalid: {invalid_interceptors}"
+                msg = (
+                    f"Interceptor must be ServerInterceptor, the following are invalid: "
+                    f"{invalid_interceptors}"
+                )
                 raise ValueError(
                   msg,
                 )

@@ -50,14 +50,14 @@ class Metadata(abc.Collection):
         self._metadata[key].append(value)
 
     def __len__(self) -> int:
-        """Return the total number of elements that there are in the metadata,
-        including multiple values for the same key.
+        """Return the total number of elements that there are in the metadata.
+
+        Including multiple values for the same key.
         """
         return sum(map(len, self._metadata.values()))
 
     def __getitem__(self, key: MetadataKey) -> MetadataValue:
-        """When calling <metadata>[<key>], the first element of all those
-        mapped for <key> is returned.
+        """When calling <metadata>[<key>], return the first element of all those mapped for <key>.
         """
         try:
             return self._metadata[key][0]
