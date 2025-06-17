@@ -31,12 +31,15 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
+constexpr absl::string_view kSpiffeEnabledEnvVar =
+    "GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE";
 
 }  // namespace
 
