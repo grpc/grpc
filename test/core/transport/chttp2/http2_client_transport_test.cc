@@ -223,6 +223,56 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   event_engine()->UnsetGlobalHooks();
 }
 
+TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
+  MockPromiseEndpoint mock_endpoint(/*port=*/1000);
+  SliceBuffer grpc_header;
+
+  // Break the ReadLoop
+  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
+                                event_engine().get());
+
+  mock_endpoint.ExpectWrite(
+      {
+          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+      },
+      event_engine().get());
+
+  // Expect Client Initial Metadata to be sent.
+  mock_endpoint.ExpectWrite(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+          kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))},
+      event_engine().get());
+
+  auto client_transport = MakeOrphanable<Http2ClientTransport>(
+      std::move(mock_endpoint.promise_endpoint), GetChannelArgs(),
+      event_engine());
+  auto call = MakeCall(TestInitialMetadata());
+  client_transport->StartCall(call.handler.StartCall());
+
+  StrictMock<MockFunction<void()>> on_done;
+  EXPECT_CALL(on_done, Call());
+
+  call.initiator.SpawnGuarded(
+      "cancel-call", [initiator = call.initiator]() mutable {
+        return Seq(
+            [initiator]() mutable {
+              return initiator.Cancel(absl::CancelledError("Cancelled"));
+            },
+            []() { return absl::OkStatus(); });
+      });
+  call.initiator.SpawnInfallible(
+      "test-wait", [initator = call.initiator, &on_done]() mutable {
+        return Seq(initator.PullServerTrailingMetadata(),
+                   [&on_done](ServerMetadataHandle metadata) {
+                     on_done.Call();
+                     return Empty{};
+                   });
+      });
+  // Wait for Http2ClientTransport's internal activities to finish.
+  event_engine()->TickUntilIdle();
+  event_engine()->UnsetGlobalHooks();
+}
+
 // Ping tests
 TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
   // Simple test to validate a proper ping ack is sent out on receiving a ping
