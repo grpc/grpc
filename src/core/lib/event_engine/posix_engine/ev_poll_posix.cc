@@ -341,10 +341,11 @@ void PollEventHandle::ShutdownHandle(absl::Status why) {
     // only shutdown once
     if (!is_shutdown_) {
       is_shutdown_ = true;
-      shutdown_error_ = why;
-      grpc_core::StatusSetInt(&shutdown_error_,
-                              grpc_core::StatusIntProperty::kRpcStatus,
-                              GRPC_STATUS_UNAVAILABLE);
+      shutdown_error_ = std::move(why);
+      grpc_core::StatusSetInt(
+          &shutdown_error_, grpc_core::StatusIntProperty::kRpcStatus,
+          absl::IsCancelled(shutdown_error_) ? GRPC_STATUS_CANCELLED
+                                             : GRPC_STATUS_UNAVAILABLE);
       SetReadyLocked(&read_closure_);
       SetReadyLocked(&write_closure_);
     }
@@ -734,7 +735,7 @@ void PollPoller::HandleForkInChild() {
     handle = poll_handles_list_head_;
   }
   while (handle != nullptr) {
-    handle->ShutdownHandle(absl::UnavailableError("Closed on fork"));
+    handle->ShutdownHandle(absl::CancelledError("Closed on fork"));
     handle = handle->PollerHandlesListPos().next;
   }
 }

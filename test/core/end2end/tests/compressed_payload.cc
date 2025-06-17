@@ -289,7 +289,7 @@ class TestConfigurator {
   CoreEnd2endTest& test_;
   ChannelArgs client_args_ = ChannelArgs().Set(
       GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_NONE);
-  ChannelArgs server_args_ = ChannelArgs().Set(
+  ChannelArgs server_args_ = CoreEnd2endTest::DefaultServerArgs().Set(
       GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, GRPC_COMPRESS_NONE);
   grpc_compression_algorithm expected_algorithm_from_client_ =
       GRPC_COMPRESS_NONE;
