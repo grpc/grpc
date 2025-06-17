@@ -1,7 +1,8 @@
 {
     "include": [
         "src/python/grpcio/grpc/_auth.py",
-        "src/python/grpcio/grpc/_channel.py"
+        "src/python/grpcio/grpc/_channel.py",
+        "src/python/grpcio/grpc/aio"
     ],
     "exclude": [
     ],

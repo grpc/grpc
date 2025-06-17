@@ -21,6 +21,7 @@ cd "$(dirname "$0")/../.."
 DIRS=(
     'src/python/grpcio/grpc/_auth.py'
     'src/python/grpcio/grpc/_channel.py'
+    'src/python/grpcio/grpc/aio'
 )
 
 VIRTUALENV=venv_ruff
