@@ -546,9 +546,7 @@ PosixEventEngine::MakeTestOnlyPosixEventEngine(
 }
 
 PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
-    : grpc_core::KeepsGrpcInitialized(
-          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
-      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_manager_(poller),
@@ -557,9 +555,7 @@ PosixEventEngine::PosixEventEngine(std::shared_ptr<PosixEventPoller> poller)
 }
 
 PosixEventEngine::PosixEventEngine()
-    : grpc_core::KeepsGrpcInitialized(
-          /*enabled=*/!grpc_core::IsPosixEeSkipGrpcInitEnabled()),
-      connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
+    : connection_shards_(std::max(2 * gpr_cpu_num_cores(), 1u)),
       executor_(MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 4u, 16u))),
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
       poller_manager_(executor_),
