@@ -56,7 +56,7 @@ from ._typing import SerializingFunction
 from ._utils import _timeout_to_deadline
 
 Continuation = Callable[
-    [grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType]
+    [grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType],
 ]
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
@@ -588,7 +588,7 @@ class _InterceptedStreamRequestMixin:
             (
                 self._loop.create_task(
                     self._write_to_iterator_queue.put(
-                        request
+                        request,
                     ),  # pyright: ignore [reportOptionalMemberAccess]
                 ),
                 self._status_code_task,  # pyright: ignore [reportArgumentType]
@@ -607,7 +607,7 @@ class _InterceptedStreamRequestMixin:
             call = await self._interceptors_task
         except asyncio.CancelledError as err:
             raise asyncio.InvalidStateError(
-                _RPC_ALREADY_FINISHED_DETAILS
+                _RPC_ALREADY_FINISHED_DETAILS,
             ) from err
 
         if call.done():
@@ -635,7 +635,7 @@ class _InterceptedStreamRequestMixin:
             call = await self._interceptors_task
         except asyncio.CancelledError as err:
             raise asyncio.InvalidStateError(
-                _RPC_ALREADY_FINISHED_DETAILS
+                _RPC_ALREADY_FINISHED_DETAILS,
             ) from err
 
         await self._write_to_iterator_queue_interruptible(

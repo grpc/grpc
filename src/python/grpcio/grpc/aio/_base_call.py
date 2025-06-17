@@ -183,7 +183,7 @@ class UnaryStreamCall(
     async def read(
         self,
     ) -> Union[
-        EOFType, ResponseType
+        EOFType, ResponseType,
     ]:  # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 
@@ -255,7 +255,7 @@ class StreamStreamCall(
     async def read(
         self,
     ) -> Union[
-        EOFType, ResponseType
+        EOFType, ResponseType,
     ]:  # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 

@@ -202,8 +202,8 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     async def __aexit__(
-        self, exc_type, exc_val, exc_tb
-    ):  # noqa: ANN001, ANN204
+        self, exc_type, exc_val, exc_tb, # noqa: ANN001
+    ) -> None:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
