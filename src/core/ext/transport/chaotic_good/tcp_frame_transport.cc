@@ -202,11 +202,20 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
                   [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
                     return absl::UnavailableError("Frame transport closed");
                   }),
-              data_endpoints_.AwaitClosed(), std::move(promise));
+              std::move(promise));
 }
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
+  party_ = party->Ref();
+  party->Spawn(
+      "watch-data-endpoints",
+      [self = RefAsSubclass<TcpFrameTransport>()]() {
+        return self->data_endpoints_.AwaitClosed();
+      },
+      [self = RefAsSubclass<TcpFrameTransport>()](absl::Status) {
+        if (!self->closed_.is_set()) self->closed_.Set();
+      });
   party->Spawn(
       "tcp-write",
       [self = RefAsSubclass<TcpFrameTransport>(),
@@ -237,7 +246,22 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
 
 void TcpFrameTransport::Orphan() {
   ztrace_collector_->Append(OrphanTrace{});
-  closed_.Set();
+  LOG(INFO) << "Orphaning transport: party=" << party_.get();
+  data_endpoints_.Close();
+  if (party_ != nullptr) {
+    auto party = std::move(party_);
+    party->Spawn(
+        "close",
+        [self = RefAsSubclass<TcpFrameTransport>()]() {
+          LOG(INFO) << "set closed: prior=" << self->closed_.is_set();
+          if (!self->closed_.is_set()) self->closed_.Set();
+          return ImmediateOkStatus();
+        },
+        [party](absl::Status) mutable {
+          LOG(INFO) << "Drop party";
+          party.reset();
+        });
+  }
   Unref();
 }
 
