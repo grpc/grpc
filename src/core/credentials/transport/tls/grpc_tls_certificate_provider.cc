@@ -328,13 +328,14 @@ absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
 void FileWatcherCertificateProvider::ForceUpdate() {
   std::shared_ptr<RootCertInfo> root_cert_info;
   std::optional<PemKeyCertPairList> pem_key_cert_pairs;
+  absl::Status spiffe_load_status;
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
       root_cert_info = std::make_shared<RootCertInfo>(std::move(**map));
-      spiffe_load_status_ = absl::OkStatus();
+      spiffe_load_status = absl::OkStatus();
     } else {
-      spiffe_load_status_ = map.status();
+      spiffe_load_status = map.status();
     }
   } else if (!root_cert_path_.empty()) {
     std::optional<std::string> root_certificate =
@@ -349,7 +350,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
         private_key_path_, identity_certificate_path_);
   }
   MutexLock lock(&mu_);
-
+  spiffe_load_status_ = spiffe_load_status;
   // If update has no value, but the existing root has a value, then the update
   // is a delete
   const bool is_root_update_a_delete =

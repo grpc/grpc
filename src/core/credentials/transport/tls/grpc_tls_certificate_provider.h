@@ -96,6 +96,8 @@ namespace grpc_core {
 class StaticDataCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
+  // TODO(gtcooke94) - Remove duplicate ctors and change all instances to the ctor with
+  // spiffe_bundle_map_path
   StaticDataCertificateProvider(std::string root_certificate,
                                 PemKeyCertPairList pem_key_cert_pairs);
 
@@ -139,6 +141,8 @@ class StaticDataCertificateProvider final
 class FileWatcherCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
+  // TODO(gtcooke94) - Remove duplicate ctors and change all instances to the ctor with
+  // spiffe_bundle_map_path
   FileWatcherCertificateProvider(std::string private_key_path,
                                  std::string identity_certificate_path,
                                  std::string root_cert_path,
@@ -189,7 +193,6 @@ class FileWatcherCertificateProvider final
   std::string root_cert_path_;
   std::string spiffe_bundle_map_path_;
   int64_t refresh_interval_sec_ = 0;
-  absl::Status spiffe_load_status_;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   Thread refresh_thread_;
@@ -200,7 +203,13 @@ class FileWatcherCertificateProvider final
   // The most-recent credential data. It will be empty if the most recent read
   // attempt failed.
   PemKeyCertPairList pem_key_cert_pairs_ ABSL_GUARDED_BY(mu_);
+  // The most-recent root data. It will be empty if the most recent read
+  // attempt failed.
   std::shared_ptr<RootCertInfo> root_cert_info_ ABSL_GUARDED_BY(mu_);
+  // The status returned when loading the SPIFFE Bundle Map - unlike the std::string representations
+  // of the raw certificates, the SPIFFE bundle map is verified during creation, but the ctor cannot
+  // return a status.
+  absl::Status spiffe_load_status_ ABSL_GUARDED_BY(mu_);
   // Stores each cert_name we get from the distributor callback and its watcher
   // information.
   std::map<std::string, WatcherInfo> watcher_info_ ABSL_GUARDED_BY(mu_);
