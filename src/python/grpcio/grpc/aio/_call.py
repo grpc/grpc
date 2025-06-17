@@ -14,6 +14,10 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterator
+from collections.abc import Generator
+from collections.abc import Sequence
 import enum
 from functools import partial
 import inspect
@@ -24,12 +28,6 @@ from typing import (
     Generic,
     Optional,
     Union,
-)
-from collections.abc import (
-  AsyncGenerator,
-  AsyncIterator,
-  Generator,
-  Sequence,
 )
 
 import grpc

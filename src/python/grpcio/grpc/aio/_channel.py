@@ -14,9 +14,10 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+from collections.abc import Iterable
+from collections.abc import Sequence
 import sys
 from typing import Any, Optional, Union
-from collections.abc import Iterable, Sequence
 
 import grpc
 from grpc import _common
@@ -43,11 +44,11 @@ from ._metadata import Metadata
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
+from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._typing import MetadatumType
 from ._utils import _timeout_to_deadline
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"

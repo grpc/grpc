@@ -14,8 +14,8 @@
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Optional, Union
 from collections.abc import Iterator
+from typing import Any, Optional, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]

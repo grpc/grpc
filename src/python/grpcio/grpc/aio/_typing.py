@@ -13,13 +13,15 @@
 # limitations under the License.
 """Common types for gRPC Async API."""
 
+from collections.abc import AsyncIterable
+from collections.abc import Iterable
+from collections.abc import Sequence
 from typing import (
     Any,
     Callable,
     TypeVar,
     Union,
 )
-from collections.abc import AsyncIterable, Iterable, Sequence
 
 from grpc._cython.cygrpc import EOF as _EOF_INSTANCE
 

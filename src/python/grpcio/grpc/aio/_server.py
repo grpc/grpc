@@ -13,9 +13,9 @@
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
 
+from collections.abc import Sequence
 from concurrent.futures import Executor
 from typing import Any, Optional
-from collections.abc import Sequence
 
 import grpc
 from grpc import _common

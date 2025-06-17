@@ -15,22 +15,20 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
+from collections.abc import AsyncGenerator
+from collections.abc import AsyncIterable
+from collections.abc import AsyncIterator
+from collections.abc import Awaitable
+from collections.abc import Coroutine
+from collections.abc import Iterator
+from collections.abc import Sequence
 import functools
 from typing import (
-    Callable,
-    Optional,
-    NamedTuple,
-    Union,
     Any,
-)
-from collections.abc import (
-  AsyncIterator,
-  Iterator,
-  AsyncIterable,
-  Awaitable,
-  Sequence,
-  Coroutine,
-  AsyncGenerator,
+    Callable,
+    NamedTuple,
+    Optional,
+    Union,
 )
 
 import grpc
@@ -49,12 +47,12 @@ from ._metadata import Metadata
 from ._typing import DeserializingFunction
 from ._typing import DoneCallbackType
 from ._typing import EOFType
+from ._typing import MetadatumType
 from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-from ._typing import MetadatumType
 from ._utils import _timeout_to_deadline
 
 Continuation = Callable[[grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType]]
