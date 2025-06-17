@@ -601,8 +601,8 @@ class _InterceptedStreamRequestMixin:
 
         try:
             call = await self._interceptors_task
-        except asyncio.CancelledError:
-            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+        except asyncio.CancelledError as err:
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS) from err
 
         await self._write_to_iterator_queue_interruptible(
             _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL, call,
