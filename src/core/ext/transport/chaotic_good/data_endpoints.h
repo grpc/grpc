@@ -125,7 +125,7 @@ class OutputBuffers final
     }
   }
 
-  void Orphaned() { scheduling_party_.reset(); }
+  void Orphaned() override { scheduling_party_.reset(); }
 
   struct QueuedFrame final {
     uint64_t payload_tag;
@@ -168,9 +168,8 @@ class OutputBuffers final
 
       NextPromise(const NextPromise&) = delete;
       NextPromise& operator=(const NextPromise&) = delete;
-      NextPromise(NextPromise&& other)
-          : reader_(std::exchange(other.reader_, nullptr)) {}
-      NextPromise& operator=(NextPromise&& other) {
+      NextPromise(NextPromise&& other) noexcept : reader_(std::exchange(other.reader_, nullptr)) {}
+      NextPromise& operator=(NextPromise&& other) noexcept {
         std::swap(reader_, other.reader_);
         return *this;
       }
@@ -271,7 +270,7 @@ class InputQueue final : public RefCounted<InputQueue> {
   struct Completion : public RefCounted<Completion, NonPolymorphicRefCount> {
     Completion(uint64_t payload_tag, absl::StatusOr<SliceBuffer> result)
         : payload_tag(payload_tag), result(std::move(result)), ready(true) {}
-    Completion(uint64_t payload_tag) : payload_tag(payload_tag), ready(false) {}
+    explicit Completion(uint64_t payload_tag) : payload_tag(payload_tag), ready(false) {}
     Mutex mu;
     const uint64_t payload_tag;
     absl::StatusOr<SliceBuffer> result ABSL_GUARDED_BY(mu);
@@ -374,7 +373,7 @@ class InputQueue final : public RefCounted<InputQueue> {
     RefCountedPtr<InputQueue> input_queues_;
   };
 
-  explicit InputQueue(TransportContextPtr ctx) {
+  InputQueue() {
     read_requested_.Set(0);
     read_completed_.Set(0);
   }

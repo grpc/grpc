@@ -62,7 +62,7 @@ void SendRate::SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
                                  const NetworkMetrics& metrics) {
   bool updated = false;
   if (metrics.rtt_usec.has_value()) {
-    CHECK_GE(*metrics.rtt_usec, 0);
+    CHECK_GE(*metrics.rtt_usec, 0u);
     rtt_usec_ = *metrics.rtt_usec;
     updated = true;
   }
@@ -980,7 +980,7 @@ DataEndpoints::DataEndpoints(
       output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           clock, encode_alignment, ztrace_collector,
           std::move(scheduler_config), ctx)),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>(ctx)) {
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
         i, encode_alignment, decode_alignment, clock, output_buffers_,
