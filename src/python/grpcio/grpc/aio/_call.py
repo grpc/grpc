@@ -366,7 +366,7 @@ class _StreamResponseMixin(Call):
         # If the read operation failed, Core should explain why.
         await self._raise_for_status()
 
-    def __aiter__(self) -> AsyncIterator[ResponseType]:
+    def __aiter__(self) -> Optional[AsyncIterator[Any]]:
         self._update_response_style(_APIStyle.ASYNC_GENERATOR)
         if self._message_aiter is None:
             self._message_aiter = self._fetch_stream_responses()
