@@ -30,6 +30,7 @@ from collections.abc import (
   Awaitable,
   Sequence,
   Coroutine,
+  AsyncGenerator,
 )
 
 import grpc
@@ -102,7 +103,7 @@ class ServerInterceptor(metaclass=ABCMeta):
 class ClientCallDetails(
     NamedTuple(
         "ClientCallDetails",
-        ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
+        ("method", "timeout", "metadata", "credentials", "wait_for_ready"), # type: ignore
     ),
     grpc.ClientCallDetails,
 ):
@@ -452,7 +453,7 @@ class InterceptedCall:
 
         return await call.code()
 
-    async def details(self) -> str:
+    async def details(self) -> Optional[str]:
         try:
             call = await self._interceptors_task
         except AioRpcError as err:
@@ -545,7 +546,7 @@ class _InterceptedStreamRequestMixin:
         await self._interceptors_task
 
         while True:
-            value = await self._write_to_iterator_queue.get()
+            value = await self._write_to_iterator_queue.get()  # pyright: ignore [reportOptionalMemberAccess]
             if (
                 value
                 is _InterceptedStreamRequestMixin._FINISH_ITERATOR_SENTINEL
@@ -562,12 +563,12 @@ class _InterceptedStreamRequestMixin:
         if self._status_code_task is None:
             self._status_code_task = self._loop.create_task(call.code())
 
-        await asyncio.wait(
+        await asyncio.wait(  # pyright: ignore [reportCallIssue]
             (
                 self._loop.create_task(
-                    self._write_to_iterator_queue.put(request),
+                    self._write_to_iterator_queue.put(request), # pyright: ignore [reportOptionalMemberAccess]
                 ),
-                self._status_code_task,
+                self._status_code_task,  # pyright: ignore [reportArgumentType]
             ),
             return_when=asyncio.FIRST_COMPLETED,
         )
@@ -662,15 +663,15 @@ class InterceptedUnaryUnaryCall(
     # pylint: disable=too-many-arguments
     async def _invoke(
         self,
-        interceptors: Sequence[UnaryUnaryClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         method: bytes,
         timeout: Optional[float],
-        metadata: Optional[Metadata],
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request: RequestType,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
     ) -> UnaryUnaryCall:
         """Run the RPC call wrapped in interceptors."""
 
