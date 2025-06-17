@@ -160,13 +160,6 @@ class ChannelTrace {
 
   using Renderer = detail::Renderer;
 
-  enum Severity {
-    Unset = 0,  // never to be used
-    Info,       // we start at 1 to avoid using proto default values
-    Warning,
-    Error
-  };
-
   // Represents a node in the channel trace.
   // Nodes form a tree structure, allowing for hierarchical tracing.
   //
@@ -273,19 +266,6 @@ class ChannelTrace {
     bool committed_ = false;
   };
 
-  static const char* SeverityString(ChannelTrace::Severity severity) {
-    switch (severity) {
-      case ChannelTrace::Severity::Info:
-        return "CT_INFO";
-      case ChannelTrace::Severity::Warning:
-        return "CT_WARNING";
-      case ChannelTrace::Severity::Error:
-        return "CT_ERROR";
-      default:
-        GPR_UNREACHABLE_CODE(return "CT_UNKNOWN");
-    }
-  }
-
   [[nodiscard]] Node NewNode(std::unique_ptr<Renderer> render) {
     return Node(this, AppendEntry(EntryRef::Sentinel(), std::move(render)));
   }
@@ -301,9 +281,8 @@ class ChannelTrace {
   Json RenderJson() const;
 
   void ForEachTraceEvent(
-      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                             RefCountedPtr<BaseNode>)>
-          callback) const ABSL_LOCKS_EXCLUDED(mu_);
+      absl::FunctionRef<void(gpr_timespec, std::string)> callback) const
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   bool ProducesOutput() const { return max_memory_ > 0; }
 
@@ -317,9 +296,8 @@ class ChannelTrace {
   friend size_t testing::GetSizeofTraceEvent(void);
 
   void ForEachTraceEventLocked(
-      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                             RefCountedPtr<BaseNode>)>
-          callback) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      absl::FunctionRef<void(gpr_timespec, std::string)> callback) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static constexpr uint16_t kSentinelId = 65535;
 
@@ -374,9 +352,7 @@ class ChannelTrace {
   void DropEntryId(uint16_t id) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void RenderEntry(const Entry& entry,
-                   absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                                          RefCountedPtr<BaseNode>)>
-                       callback,
+                   absl::FunctionRef<void(gpr_timespec, std::string)> callback,
                    int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   mutable Mutex mu_;

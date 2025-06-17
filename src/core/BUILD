@@ -2718,7 +2718,6 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_utils",
         "experiments",
-        "init_internally",
         "iomgr_port",
         "native_posix_dns_resolver",
         "no_destruct",
@@ -2765,7 +2764,6 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
-        "init_internally",
         "iomgr_port",
         "posix_event_engine_timer_manager",
         "sync",
@@ -2920,7 +2918,6 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
-        "init_internally",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_lockfree_event",
@@ -7684,6 +7681,7 @@ grpc_cc_library(
     ],
     deps = [
         "bdp_estimator",
+        "channelz_property_list",
         "experiments",
         "http2_settings",
         "memory_quota",
@@ -7729,7 +7727,7 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
-        "json",
+        "channelz_property_list",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7763,8 +7761,8 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_args",
+        "channelz_property_list",
         "experiments",
-        "json",
         "match",
         "time",
         "//:channel_arg_names",
@@ -7809,8 +7807,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channelz_property_list",
         "http2_status",
-        "json",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
@@ -10006,10 +10004,12 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "channelz_property_list",
+    srcs = ["channelz/property_list.cc"],
     hdrs = ["channelz/property_list.h"],
     external_deps = [
         "absl/strings",
         "absl/status",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         "json",
