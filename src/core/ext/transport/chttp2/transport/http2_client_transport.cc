@@ -171,7 +171,8 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       << ", payload=" << frame.payload.JoinIntoString() << " }";
   ping_manager_.ReceivedDataFrame();
 
-  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  RefCountedPtr<Http2ClientTransport::Stream> stream =
+      LookupStream(frame.stream_id);
   if (stream == nullptr) {
     // TODO(tjagtap) : [PH2][P3] : Implement this.
     // RFC9113 : The identifier of a newly established stream MUST be
@@ -200,7 +201,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
   HeaderAssembler& assember = stream->header_assembler;
   Http2Status append_result = assember.AppendHeaderFrame(std::move(frame));
   if (append_result.IsOk()) {
-    return ProcessMetadata(assember, stream->call,
+    return ProcessMetadata(stream->stream_id, assember, stream->call,
                            stream->did_push_initial_metadata,
                            stream->did_push_trailing_metadata);
   }
@@ -208,7 +209,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
-    RefCountedPtr<Stream>& stream, HeaderAssembler& assember, CallHandler& call,
+    uint32_t stream_id, HeaderAssembler& assember, CallHandler& call,
     bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
   if (assember.IsReady()) {
@@ -225,13 +226,13 @@ Http2Status Http2ClientTransport::ProcessMetadata(
             << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
         did_push_trailing_metadata = true;
         call.SpawnPushServerTrailingMetadata(std::move(metadata));
-        stream->CloseStream(stream_id, absl::OkStatus(),
-                            CloseStreamArgs{
-                                /*close_reads=*/true,
-                                /*close_writes=*/true,
-                                /*send_rst_stream=*/false,
-                                /*cancelled=*/false,
-                            });
+        CloseStream(stream_id, absl::OkStatus(),
+                    CloseStreamArgs{
+                        /*close_reads=*/true,
+                        /*close_writes=*/true,
+                        /*send_rst_stream=*/false,
+                        /*cancelled=*/false,
+                    });
 
       } else {
         HTTP2_TRANSPORT_DLOG
@@ -370,7 +371,7 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
   HeaderAssembler& assember = stream->header_assembler;
   Http2Status result = assember.AppendContinuationFrame(std::move(frame));
   if (result.IsOk()) {
-    return ProcessMetadata(assember, stream->call,
+    return ProcessMetadata(stream->stream_id, assember, stream->call,
                            stream->did_push_initial_metadata,
                            stream->did_push_trailing_metadata);
   }

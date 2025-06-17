@@ -146,8 +146,8 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
-  Http2Status ProcessMetadata(RefCountedPtr<Stream>& stream,
-                              HeaderAssembler& assember, CallHandler& call,
+  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assember,
+                              CallHandler& call,
                               bool& did_push_initial_metadata,
                               bool& did_push_trailing_metadata);
 
