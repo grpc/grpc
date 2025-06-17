@@ -18,7 +18,6 @@ from typing import (
     Callable,
     TypeVar,
     Union,
-    Type,
 )
 from collections.abc import AsyncIterable, Iterable, Sequence
 
@@ -35,7 +34,7 @@ DeserializingFunction = Callable[[bytes], Any]
 MetadatumType = tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
 ChannelArgumentType = Sequence[tuple[str, Any]]
-EOFType = Type[_EOF_INSTANCE.__class__]
+EOFType = type[_EOF_INSTANCE.__class__]
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
 ResponseIterableType = AsyncIterable[Any]
