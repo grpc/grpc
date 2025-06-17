@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, NoReturn, Optional
+from typing import Generic, Optional
 from collections.abc import Iterable, Mapping, Sequence
 
 import grpc
