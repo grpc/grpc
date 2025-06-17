@@ -128,8 +128,9 @@ class _BaseMultiCallable:
         metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
     ) -> Metadata:
-        """Based on the provided values for <metadata> or <compression> initialise the final
-        metadata, as it should be used for the current call.
+        """Based on the provided values for <metadata> or <compression>.
+
+        Initialise the final metadata, as it should be used for the current call.
         """
         metadata = metadata or Metadata()
         if not isinstance(metadata, Metadata) and isinstance(metadata, tuple):
@@ -378,13 +379,13 @@ class Channel(_base_channel.Channel):
             self._loop,
         )
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> "Channel":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: # noqa : ANN001
         await self._close(None)
 
-    async def _close(self, grace):  # pylint: disable=too-many-branches
+    async def _close(self, grace) -> None:  # pylint: disable=too-many-branches # noqa: C901, PLR0912, ANN001
         if self._channel.closed():
             return
 
@@ -412,7 +413,7 @@ class Channel(_base_channel.Channel):
                 # the failure. It is fixed by https://github.com/python/cpython/pull/18669,
                 # but not available until 3.9 or 3.8.3. So, we have to keep it
                 # for a while.
-                # TODO(lidiz) drop this hack after 3.8 deprecation
+                # TODO(lidiz): drop this hack after 3.8 deprecation
                 if "frame" in str(attribute_error):
                     continue
                 raise
@@ -427,24 +428,26 @@ class Channel(_base_channel.Channel):
             # Explicitly check for a non-null candidate instead of the more pythonic 'if candidate:'
             # because doing 'if candidate:' assumes that the coroutine implements '__bool__' which
             # might not always be the case.
-            if candidate is not None:
-                if isinstance(candidate, _base_call.Call):
-                    if hasattr(candidate, "_channel"):
-                        # For intercepted Call object
-                        if candidate._channel is not self._channel:
-                            continue
-                    elif hasattr(candidate, "_cython_call"):
-                        # For normal Call object
-                        if candidate._cython_call._channel is not self._channel:
-                            continue
-                    else:
-                        # Unidentified Call object
-                        raise cygrpc.InternalError(
-                            f"Unrecognized call object: {candidate}",
-                        )
+            if candidate is not None and isinstance(candidate, _base_call.Call):
+                if hasattr(candidate, "_channel"):
+                    # For intercepted Call object
+                    if candidate._channel is not self._channel:
+                        continue
+                elif hasattr(candidate, "_cython_call"):
+                    # For normal Call object
+                    if candidate._cython_call._channel is not self._channel:
+                        continue
+                else:
+                    # Unidentified Call object
+                    msg = (
+                        f"Unrecognized call object: {candidate}",
+                    )
+                    raise cygrpc.InternalError(
+                        msg,
+                    )
 
-                    calls.append(candidate)
-                    call_tasks.append(task)
+                calls.append(candidate)
+                call_tasks.append(task)
 
         # If needed, try to wait for them to finish.
         # Call objects are not always awaitables.
@@ -458,16 +461,15 @@ class Channel(_base_channel.Channel):
         # Destroy the channel
         self._channel.close()
 
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         await self._close(grace)
 
-    def __del__(self):
-        if hasattr(self, "_channel"):
-            if not self._channel.closed():
-                self._channel.close()
+    def __del__(self) -> None:
+        if hasattr(self, "_channel") and not self._channel.closed():
+            self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False,
+        self, try_to_connect: bool = False, # noqa: FBT001, FBT002
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -499,7 +501,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(
             self._channel,
@@ -519,7 +521,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(
             self._channel,
@@ -539,7 +541,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(
             self._channel,
@@ -559,7 +561,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(
             self._channel,
@@ -578,7 +580,7 @@ def insecure_channel(
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
-    """Creates an insecure asynchronous Channel to a server.
+    """Create an insecure asynchronous Channel to a server.
 
     Args:
       target: The server address
@@ -608,8 +610,8 @@ def secure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
-    """Creates a secure asynchronous Channel to a server.
+) -> Channel:
+    """Create a secure asynchronous Channel to a server.
 
     Args:
       target: The server address.
