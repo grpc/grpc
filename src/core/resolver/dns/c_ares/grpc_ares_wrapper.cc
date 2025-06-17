@@ -426,6 +426,10 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
     int socks_bitmask =
         ares_getsock(ev_driver->channel, socks, ARES_GETSOCK_MAXNUM);
     for (size_t i = 0; i < ARES_GETSOCK_MAXNUM; i++) {
+      GRPC_TRACE_VLOG(cares_resolver, 2)
+          << "apolcyn (c-ares resolver) request:" << ev_driver->request
+          << " socks: " << i << " readable: " << ARES_GETSOCK_READABLE(socks_bitmask, i)
+          << " writable: " << ARES_GETSOCK_WRITABLE(socks_bitmask, i);
       if (ARES_GETSOCK_READABLE(socks_bitmask, i) ||
           ARES_GETSOCK_WRITABLE(socks_bitmask, i)) {
         fd_node* fdn = pop_fd_node_locked(&ev_driver->fds, socks[i]);
@@ -442,6 +446,10 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
           fdn->writable_registered = false;
           fdn->already_shutdown = false;
         }
+        GRPC_TRACE_VLOG(cares_resolver, 2)
+            << "apolcyn (c-ares resolver) request:" << ev_driver->request
+            << " socks: " << socks[i] << " writable_registered: " << fdn->writable_registered
+            << " readable_registered: " << fdn->readable_registered;
         fdn->next = new_list;
         new_list = fdn;
         // Register read_closure if the socket is readable and read_closure has
@@ -490,6 +498,9 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver)
   while (ev_driver->fds != nullptr) {
     fd_node* cur = ev_driver->fds;
     ev_driver->fds = ev_driver->fds->next;
+    GRPC_TRACE_VLOG(cares_resolver, 2)
+        << "apolcyn (c-ares resolver) request:" << ev_driver->request
+        << " shutdown fd: " << cur->grpc_polled_fd->GetName();
     fd_node_shutdown_locked(cur, "c-ares fd shutdown");
     if (!cur->readable_registered && !cur->writable_registered) {
       fd_node_destroy_locked(cur);
