@@ -625,6 +625,13 @@ GRPC_XDS_TARGETS = [
 ]
 
 grpc_cc_library(
+    name = "absl_init_log",
+    external_deps = [
+        "absl/log:initialize",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc",
     srcs = [
         "//src/core:lib/surface/init.cc",
@@ -638,7 +645,6 @@ grpc_cc_library(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
-        "absl/log:initialize",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",

@@ -2293,8 +2293,6 @@
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/check.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.cc" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/globals.h" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/initialize.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/initialize.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/append_truncated.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/check_impl.h" role="src" />
     <file baseinstalldir="/" name="third_party/abseil-cpp/absl/log/internal/check_op.cc" role="src" />

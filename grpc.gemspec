@@ -2289,8 +2289,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/log/check.h )
   s.files += %w( third_party/abseil-cpp/absl/log/globals.cc )
   s.files += %w( third_party/abseil-cpp/absl/log/globals.h )
-  s.files += %w( third_party/abseil-cpp/absl/log/initialize.cc )
-  s.files += %w( third_party/abseil-cpp/absl/log/initialize.h )
   s.files += %w( third_party/abseil-cpp/absl/log/internal/append_truncated.h )
   s.files += %w( third_party/abseil-cpp/absl/log/internal/check_impl.h )
   s.files += %w( third_party/abseil-cpp/absl/log/internal/check_op.cc )
