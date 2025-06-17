@@ -431,13 +431,12 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     grpc_call_credentials* call_credentials,
     grpc_call_credentials* alts_credentials) {
   grpc_channel_credentials* result = nullptr;
-  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(
-      default_credentials);
+  grpc_core::RefCountedPtr<grpc_call_credentials> call_creds(call_credentials);
   grpc_error_handle error;
   grpc_core::ExecCtx exec_ctx;
 
-  GRPC_TRACE_LOG(api, INFO) << "grpc_google_default_credentials_create("
-                            << default_credentials << ")";
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_google_default_credentials_create(" << call_credentials << ")";
 
   if (call_creds == nullptr) {
     call_creds = make_default_call_creds(&error);
