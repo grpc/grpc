@@ -168,5 +168,6 @@ int main(int argc, char** argv) {
         "test/cpp/naming/utils/tcp_connect.py");
   }
   grpc_shutdown();
+  if (result == 0) return 1;
   return result;
 }
