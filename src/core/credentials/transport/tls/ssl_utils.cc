@@ -438,7 +438,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider,
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs = nullptr;
-  const tsi_ssl_root_certs_store* root_store;
+  const tsi_ssl_root_certs_store* root_store = nullptr;
   tsi_ssl_client_handshaker_options options;
   bool roots_are_configured = root_cert_info != nullptr;
   if (!roots_are_configured && !skip_server_certificate_verification) {
@@ -452,7 +452,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
       return GRPC_SECURITY_ERROR;
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
-  } else {
+  } else if (roots_are_configured) {
     Match(
         *root_cert_info,
         [&](const std::string& pem_root_certs) {
@@ -462,7 +462,6 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
           options.spiffe_bundle_map =
               std::make_shared<grpc_core::SpiffeBundleMap>(spiffe_bundle_map);
         });
-    root_store = nullptr;
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
