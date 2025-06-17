@@ -121,8 +121,7 @@ class SpiffeBundleMap final {
   // returned value represents a valid and SPIFFE Bundle Map.
   // The only supported use is configuring X509 roots for a given trust domain -
   // no other SPIFFE Bundle configurations are supported.
-  static absl::StatusOr<std::shared_ptr<SpiffeBundleMap>> FromFile(
-      absl::string_view file_path);
+  static absl::StatusOr<SpiffeBundleMap> FromFile(absl::string_view file_path);
 
   // Returns the roots for a given trust domain in the SPIFFE Bundle Map.
   absl::StatusOr<absl::Span<const std::string>> GetRoots(

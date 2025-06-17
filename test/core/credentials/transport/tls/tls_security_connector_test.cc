@@ -78,10 +78,10 @@ class TlsSecurityConnectorTest : public ::testing::Test {
         testing::GetFileContents(SERVER_CERT_PATH_0));
     auto map0 = SpiffeBundleMap::FromFile(kSpiffeBundlePath0);
     CHECK(map0.ok());
-    spiffe_bundle_map_0_ = std::make_shared<RootCertInfo>(std::move(**map0));
+    spiffe_bundle_map_0_ = std::make_shared<RootCertInfo>(std::move(*map0));
     auto map1 = SpiffeBundleMap::FromFile(kSpiffeBundlePath1);
     CHECK(map1.ok());
-    spiffe_bundle_map_1_ = std::make_shared<RootCertInfo>(std::move(**map1));
+    spiffe_bundle_map_1_ = std::make_shared<RootCertInfo>(std::move(*map1));
   }
 
   static void VerifyExpectedErrorCallback(void* arg, grpc_error_handle error) {

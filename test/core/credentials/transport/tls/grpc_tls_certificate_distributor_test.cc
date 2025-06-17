@@ -69,13 +69,13 @@ constexpr absl::string_view kSpiffeBundleMapPath2 =
 std::shared_ptr<RootCertInfo> GetTestSpiffeBundleMap() {
   auto map = SpiffeBundleMap::FromFile(kSpiffeBundleMapPath);
   EXPECT_TRUE(map.ok()) << map.status();
-  return std::make_shared<RootCertInfo>(**map);
+  return std::make_shared<RootCertInfo>(std::move(*map));
 }
 
 std::shared_ptr<RootCertInfo> GetTestSpiffeBundleMap2() {
   auto map = SpiffeBundleMap::FromFile(kSpiffeBundleMapPath2);
   EXPECT_TRUE(map.ok()) << map.status();
-  return std::make_shared<RootCertInfo>(**map);
+  return std::make_shared<RootCertInfo>(std::move(*map));
 }
 
 class GrpcTlsCertificateDistributorTest : public ::testing::Test {

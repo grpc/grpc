@@ -332,7 +332,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   if (!spiffe_bundle_map_path_.empty()) {
     auto map = SpiffeBundleMap::FromFile(spiffe_bundle_map_path_);
     if (map.ok()) {
-      root_cert_info = std::make_shared<RootCertInfo>(std::move(**map));
+      root_cert_info = std::make_shared<RootCertInfo>(std::move(*map));
       spiffe_load_status = absl::OkStatus();
     } else {
       spiffe_load_status = map.status();

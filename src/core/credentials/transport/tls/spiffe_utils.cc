@@ -248,17 +248,13 @@ void SpiffeBundleMap::JsonPostLoad(const Json&, const JsonArgs&,
   }
 }
 
-absl::StatusOr<std::shared_ptr<SpiffeBundleMap>> SpiffeBundleMap::FromFile(
+absl::StatusOr<SpiffeBundleMap> SpiffeBundleMap::FromFile(
     absl::string_view file_path) {
   auto slice = LoadFile(file_path.data(), /*add_null_terminator=*/false);
   GRPC_RETURN_IF_ERROR(slice.status());
   auto json = JsonParse(slice->as_string_view());
   GRPC_RETURN_IF_ERROR(json.status());
-  auto map = LoadFromJson<SpiffeBundleMap>(*json);
-  if (!map.ok()) {
-    return map.status();
-  }
-  return std::make_shared<SpiffeBundleMap>(*map);
+  return LoadFromJson<SpiffeBundleMap>(*json);
 }
 
 absl::StatusOr<absl::Span<const std::string>> SpiffeBundleMap::GetRoots(

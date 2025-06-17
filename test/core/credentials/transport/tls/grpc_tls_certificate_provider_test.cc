@@ -62,25 +62,23 @@ constexpr absl::string_view kMalformedSpiffeBundleMapPath =
     "spiffebundle_malformed.json";
 
 SpiffeBundleMap GetGoodSpiffeBundleMap() {
-  static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
-      kSpiffeBundleMap([] {
-        auto spiffe_bundle_map =
-            SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath);
-        EXPECT_TRUE(spiffe_bundle_map.ok());
-        return *spiffe_bundle_map;
-      }());
-  return **kSpiffeBundleMap;
+  static const absl::NoDestructor<SpiffeBundleMap> kSpiffeBundleMap([] {
+    auto spiffe_bundle_map =
+        SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath);
+    EXPECT_TRUE(spiffe_bundle_map.ok());
+    return *spiffe_bundle_map;
+  }());
+  return *kSpiffeBundleMap;
 }
 
 SpiffeBundleMap GetGoodSpiffeBundleMap2() {
-  static const absl::NoDestructor<std::shared_ptr<SpiffeBundleMap>>
-      kSpiffeBundleMap2([] {
-        auto spiffe_bundle_map =
-            SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath2);
-        EXPECT_TRUE(spiffe_bundle_map.ok());
-        return *spiffe_bundle_map;
-      }());
-  return **kSpiffeBundleMap2;
+  static const absl::NoDestructor<SpiffeBundleMap> kSpiffeBundleMap2([] {
+    auto spiffe_bundle_map =
+        SpiffeBundleMap::FromFile(kGoodSpiffeBundleMapPath2);
+    EXPECT_TRUE(spiffe_bundle_map.ok());
+    return *spiffe_bundle_map;
+  }());
+  return *kSpiffeBundleMap2;
 }
 }  // namespace
 
