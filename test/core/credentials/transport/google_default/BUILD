@@ -16,7 +16,7 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
 
-grpc_package(name = "test/core/transport/google_default")
+grpc_package(name = "test/core/credentials/transport/google_default")
 
 grpc_cc_test(
     name = "google_default_call_credentials_test",
