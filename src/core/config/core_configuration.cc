@@ -50,7 +50,9 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
       certificate_provider_registry_(
           builder->certificate_provider_registry_.Build()),
       endpoint_transport_registry_(
-          builder->endpoint_transport_registry_.Build()) {}
+          builder->endpoint_transport_registry_.Build()),
+      auth_context_comparator_registry_(
+          builder->auth_context_comparator_registry_.Build()) {}
 
 void CoreConfiguration::RegisterBuilder(
     BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,
