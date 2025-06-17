@@ -37,7 +37,7 @@ namespace {
 // - retry attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInDelay) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_SERVICE_CONFIG,

@@ -53,6 +53,7 @@ template <typename T>
 void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
   auto start = Timestamp::Now();
   size_t last_check_period = 0;
+  bool reported_stall = false;
   while (obj.use_count() > 1) {
     auto elapsed = Timestamp::Now() - start;
     if (size_t current_check_period =
@@ -60,8 +61,11 @@ void WaitForSingleOwnerWithTimeout(std::shared_ptr<T> obj, Duration timeout) {
             kWaitForSingleOwnerStallCheckFrequency.seconds();
         current_check_period > last_check_period) {
       ++last_check_period;
-      LOG(INFO) << "Investigating stall...";
-      WaitForSingleOwnerStalled();
+      if (!reported_stall) {
+        LOG(INFO) << "Investigating stall...";
+        WaitForSingleOwnerStalled();
+        reported_stall = true;
+      }
     }
     auto remaining = timeout - elapsed;
     if (remaining < Duration::Zero()) {
