@@ -270,6 +270,8 @@ class ChannelInit {
       return *this;
     }
 
+    const UniqueTypeName& name() { return name_; }
+
    private:
     friend class ChannelInit;
     const UniqueTypeName name_;
@@ -328,23 +330,37 @@ class ChannelInit {
     // properties of the filter being registered.
     // TODO(ctiller): remove in favor of the version that does not mention
     // grpc_channel_filter
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, UniqueTypeName name,
-        const grpc_channel_filter* filter, FilterAdder filter_adder = nullptr,
-        SourceLocation registration_source = {});
+    void RegisterFusedFilter(grpc_channel_stack_type type, UniqueTypeName name,
+                             const grpc_channel_filter* filter,
+                             FilterAdder filter_adder = nullptr,
+                             SourceLocation registration_source = {});
 
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, const grpc_channel_filter* filter,
-        SourceLocation registration_source = {}) {
+    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
+                                     UniqueTypeName name,
+                                     const grpc_channel_filter* filter,
+                                     FilterAdder filter_adder = nullptr,
+                                     SourceLocation registration_source = {});
+
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             const grpc_channel_filter* filter,
+                             SourceLocation registration_source = {}) {
       CHECK(filter != nullptr);
-      return RegisterFusedFilter(type, NameFromChannelFilter(filter), filter,
-                                 nullptr, registration_source);
+      RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
+                          registration_source);
+    }
+
+    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
+                                     const grpc_channel_filter* filter,
+                                     SourceLocation registration_source = {}) {
+      CHECK(filter != nullptr);
+      RegisterTerminalFusedFilter(type, NameFromChannelFilter(filter), filter,
+                                  nullptr, registration_source);
     }
 
     template <typename Filter>
-    FilterRegistration& RegisterFusedFilter(
-        grpc_channel_stack_type type, SourceLocation registration_source = {}) {
-      return RegisterFusedFilter(
+    void RegisterFusedFilter(grpc_channel_stack_type type,
+                             SourceLocation registration_source = {}) {
+      RegisterFusedFilter(
           type, UniqueTypeNameFor<Filter>(), &Filter::kFilter,
           [](InterceptionChainBuilder& builder) { builder.Add<Filter>(); },
           registration_source);
@@ -389,7 +405,6 @@ class ChannelInit {
   using CreatedType =
       typename decltype(T::Create(ChannelArgs(), {}))::value_type;
 
-  template <bool fused>
   class DependencyTracker;
 
   struct Filter {
@@ -429,12 +444,16 @@ class ChannelInit {
 
   StackConfig stack_configs_[GRPC_NUM_CHANNEL_STACK_TYPES];
 
-  template <bool fused>
   static std::tuple<std::vector<Filter>, std::vector<Filter>>
   SortFilterRegistrationsByDependencies(
       const std::vector<std::unique_ptr<FilterRegistration>>&
           filter_registrations,
       grpc_channel_stack_type type);
+
+  static std::tuple<std::vector<Filter>, std::vector<Filter>>
+  SortFusedFilterRegistrations(
+      const std::vector<std::unique_ptr<FilterRegistration>>&
+          filter_registrations);
 
   static bool MergeFilters(ChannelStackBuilder* builder,
                            const std::vector<Filter>& filters,
@@ -448,13 +467,11 @@ class ChannelInit {
           fused_filter_registrations,
       PostProcessor* post_processors, grpc_channel_stack_type type);
 
-  template <bool fused>
   static void PrintChannelStackTrace(
       grpc_channel_stack_type type,
       const std::vector<std::unique_ptr<ChannelInit::FilterRegistration>>&
           registrations,
-      const DependencyTracker<fused>& dependencies,
-      const std::vector<Filter>& filters,
+      const DependencyTracker& dependencies, const std::vector<Filter>& filters,
       const std::vector<Filter>& terminal_filters);
 };
 
