@@ -169,11 +169,10 @@ class InterceptionChainBuilder final {
   using FinalDestination = std::variant<RefCountedPtr<UnstartedCallDestination>,
                                         RefCountedPtr<CallDestination>>;
 
-  explicit InterceptionChainBuilder(ChannelArgs args,
-                                    const Blackboard* old_blackboard = nullptr,
+  explicit InterceptionChainBuilder(ChannelArgs args, const Blackboard* old_blackboard = nullptr,
                                     Blackboard* new_blackboard = nullptr)
       : args_(std::move(args)),
-        memory_quota_(args.GetObject<ResourceQuota>()->memory_quota()),
+        memory_quota_(args_.GetObject<ResourceQuota>()->memory_quota()),
         old_blackboard_(old_blackboard),
         new_blackboard_(new_blackboard) {}
 

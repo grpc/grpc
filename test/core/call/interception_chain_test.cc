@@ -271,11 +271,17 @@ class InterceptionChainTest : public ::testing::Test {
           1024);
 };
 
+ChannelArgs DefaultChannelArgs() {
+  return CoreConfiguration::Get()
+      .channel_args_preconditioning()
+      .PreconditionChannelArgs(nullptr);
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Tests begin
 
 TEST_F(InterceptionChainTest, Empty) {
-  auto r = InterceptionChainBuilder(ChannelArgs()).Build(destination());
+  auto r = InterceptionChainBuilder(DefaultChannelArgs()).Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
   auto finished_call = RunCall(r.value().get());
   EXPECT_EQ(finished_call.server_metadata->get(GrpcStatusMetadata()),
@@ -287,7 +293,7 @@ TEST_F(InterceptionChainTest, Empty) {
 }
 
 TEST_F(InterceptionChainTest, PassThrough) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestPassThroughInterceptor<1>>()
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -301,7 +307,7 @@ TEST_F(InterceptionChainTest, PassThrough) {
 }
 
 TEST_F(InterceptionChainTest, Consumed) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestConsumingInterceptor<1>>()
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -315,7 +321,7 @@ TEST_F(InterceptionChainTest, Consumed) {
 }
 
 TEST_F(InterceptionChainTest, Hijacked) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestHijackingInterceptor<1>>()
                .Build(destination());
   ASSERT_TRUE(r.ok()) << r.status();
@@ -329,7 +335,7 @@ TEST_F(InterceptionChainTest, Hijacked) {
 }
 
 TEST_F(InterceptionChainTest, FiltersThenHijacked) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestFilter<1>>()
                .Add<TestHijackingInterceptor<2>>()
                .Build(destination());
@@ -348,7 +354,7 @@ TEST_F(InterceptionChainTest, FiltersThenHijacked) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestFailingInterceptor<1>>()
                .Build(destination());
   EXPECT_FALSE(r.ok());
@@ -357,7 +363,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestFilter<1>>()
                .Add<TestFailingInterceptor<2>>()
                .Build(destination());
@@ -367,7 +373,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateInterceptor2) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<FailsToInstantiateFilter<1>>()
                .Build(destination());
   EXPECT_FALSE(r.ok());
@@ -376,7 +382,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter) {
 }
 
 TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
-  auto r = InterceptionChainBuilder(ChannelArgs())
+  auto r = InterceptionChainBuilder(DefaultChannelArgs())
                .Add<TestFilter<1>>()
                .Add<FailsToInstantiateFilter<2>>()
                .Build(destination());
@@ -387,7 +393,7 @@ TEST_F(InterceptionChainTest, FailsToInstantiateFilter2) {
 
 TEST_F(InterceptionChainTest, CreationOrderCorrect) {
   CreationLog log;
-  auto r = InterceptionChainBuilder(ChannelArgs().SetObject(&log))
+  auto r = InterceptionChainBuilder(DefaultChannelArgs().SetObject(&log))
                .Add<TestFilter<1>>()
                .Add<TestFilter<2>>()
                .Add<TestFilter<3>>()
@@ -409,7 +415,7 @@ TEST_F(InterceptionChainTest, CreationOrderCorrect) {
 TEST_F(InterceptionChainTest, AddOnServerTrailingMetadataForEachInterceptor) {
   CreationLog log;
   auto r =
-      InterceptionChainBuilder(ChannelArgs())
+      InterceptionChainBuilder(DefaultChannelArgs())
           .AddOnServerTrailingMetadata([](ServerMetadata& md) {
             md.Set(
                 GrpcMessageMetadata(),

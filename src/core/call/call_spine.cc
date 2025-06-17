@@ -93,11 +93,15 @@ CallInitiatorAndHandler MakeCallPair(
 CallInitiatorAndHandler CallHandler::MakeChildCall(
     ClientMetadataHandle client_initial_metadata,
     CallArenaSource arena_source) {
-  auto result =
-      MakeCallPair(std::move(client_initial_metadata), std::move(arena_source));
-  result.handler.arena()->ForwardPropagateContextFrom(arena());
-  spine_->AddChildCall(result.handler.spine_);
-  return result;
+  auto arena = arena_source.Take();
+  DCHECK_NE(arena.get(), nullptr);
+  arena->ForwardPropagateContextFrom(this->arena());
+  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+            nullptr);
+  auto spine =
+      CallSpine::Create(std::move(client_initial_metadata), std::move(arena));
+  spine_->AddChildCall(spine);
+  return {CallInitiator(spine), UnstartedCallHandler(spine)};
 }
 
 }  // namespace grpc_core
