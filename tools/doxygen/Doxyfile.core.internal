@@ -932,6 +932,8 @@ src/core/channelz/channelz.cc \
 src/core/channelz/channelz.h \
 src/core/channelz/channelz_registry.cc \
 src/core/channelz/channelz_registry.h \
+src/core/channelz/property_list.cc \
+src/core/channelz/property_list.h \
 src/core/channelz/ztrace_collector.h \
 src/core/client_channel/README.md \
 src/core/client_channel/backup_poller.cc \
@@ -2581,6 +2583,7 @@ src/core/service_config/service_config_parser.cc \
 src/core/service_config/service_config_parser.h \
 src/core/telemetry/call_tracer.cc \
 src/core/telemetry/call_tracer.h \
+src/core/telemetry/context_list_entry.cc \
 src/core/telemetry/context_list_entry.h \
 src/core/telemetry/default_tcp_tracer.cc \
 src/core/telemetry/default_tcp_tracer.h \
@@ -2800,6 +2803,7 @@ src/core/util/uuid_v4.cc \
 src/core/util/uuid_v4.h \
 src/core/util/validation_errors.cc \
 src/core/util/validation_errors.h \
+src/core/util/wait_for_single_owner.cc \
 src/core/util/wait_for_single_owner.h \
 src/core/util/windows/cpu.cc \
 src/core/util/windows/directory_reader.cc \

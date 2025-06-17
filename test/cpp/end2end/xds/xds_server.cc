@@ -441,7 +441,10 @@ LrsServiceImpl::Reactor::Reactor(
 
 void LrsServiceImpl::Reactor::OnReadDone(bool ok) {
   if (!ok) return;
-  if (!seen_first_request_.exchange(true)) {
+  grpc_core::MutexLock lock(&mu_);
+  if (finished_) return;
+  if (!seen_first_request_) {
+    seen_first_request_ = true;
     // Handle initial request.
     LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
               << this << ": read initial request: " << request_.DebugString();
@@ -494,6 +497,8 @@ void LrsServiceImpl::Reactor::OnDone() {
 void LrsServiceImpl::Reactor::OnCancel() {
   LOG(INFO) << "LRS[" << lrs_service_impl_->debug_label_ << "]: reactor "
             << this << ": OnCancel()";
+  grpc_core::MutexLock lock(&mu_);
+  finished_ = true;
   Finish(Status::OK);
 }
 

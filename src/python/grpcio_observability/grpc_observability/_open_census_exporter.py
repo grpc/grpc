@@ -203,7 +203,7 @@ class OpenCensusExporter(_observability.Exporter):
 
 
 def _get_span_annotations(
-    span_annotations: List[Tuple[str, str]]
+    span_annotations: List[Tuple[str, str]],
 ) -> List[time_event.Annotation]:
     annotations = []
 
@@ -279,9 +279,9 @@ def _get_span_data(
             name=span_data.name,
             context=span_context,
             span_id=span_data.span_id,
-            parent_span_id=span_data.parent_span_id
-            if span_data.parent_span_id
-            else None,
+            parent_span_id=(
+                span_data.parent_span_id if span_data.parent_span_id else None
+            ),
             attributes=span_attributes,
             start_time=span_data.start_time,
             end_time=span_data.end_time,
@@ -291,9 +291,9 @@ def _get_span_data(
             message_events=None,
             links=None,
             status=span_status,
-            same_process_as_parent_span=True
-            if span_data.parent_span_id
-            else None,
+            same_process_as_parent_span=(
+                True if span_data.parent_span_id else None
+            ),
             span_kind=span.SpanKind.UNSPECIFIED,
         )
     ]

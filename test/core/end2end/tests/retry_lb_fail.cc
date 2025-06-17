@@ -46,7 +46,7 @@ CORE_END2END_TEST(RetryTests, RetryLbFail) {
             builder, absl::UnavailableError("LB pick failed"), &g_num_lb_picks);
       });
   g_num_lb_picks.store(0, std::memory_order_relaxed);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_ENABLE_RETRIES, true)

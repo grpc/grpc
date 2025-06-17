@@ -18,7 +18,6 @@
 
 EXPERIMENT_ENABLES = {
     "call_tracer_in_transport": "call_tracer_in_transport",
-    "callv3_client_auth_filter": "callv3_client_auth_filter",
     "chaotic_good_framing_layer": "chaotic_good_framing_layer",
     "chttp2_bound_write_size": "chttp2_bound_write_size",
     "error_flatten": "error_flatten",
@@ -34,16 +33,14 @@ EXPERIMENT_ENABLES = {
     "keep_alive_ping_timer_batch": "keep_alive_ping_timer_batch",
     "local_connector_secure": "local_connector_secure",
     "max_inflight_pings_strict_limit": "max_inflight_pings_strict_limit",
-    "max_pings_wo_data_throttle": "max_pings_wo_data_throttle",
     "monitoring_experiment": "monitoring_experiment",
     "multiping": "multiping",
+    "pick_first_ignore_empty_updates": "pick_first_ignore_empty_updates",
     "pollset_alternative": "event_engine_client,event_engine_listener,pollset_alternative",
-    "posix_ee_skip_grpc_init": "posix_ee_skip_grpc_init",
     "promise_based_http2_client_transport": "promise_based_http2_client_transport",
     "promise_based_http2_server_transport": "promise_based_http2_server_transport",
     "promise_based_inproc_transport": "promise_based_inproc_transport",
     "retry_in_callv3": "retry_in_callv3",
-    "rq_fast_reject": "rq_fast_reject",
     "schedule_cancellation_over_write": "schedule_cancellation_over_write",
     "secure_endpoint_offload_large_reads": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_reads",
     "secure_endpoint_offload_large_writes": "event_engine_client,event_engine_listener,event_engine_secure_endpoint,secure_endpoint_offload_large_writes",
@@ -72,7 +69,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -122,11 +118,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -147,7 +139,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -197,11 +188,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",
@@ -222,7 +209,6 @@ EXPERIMENTS = {
         },
         "off": {
             "core_end2end_test": [
-                "callv3_client_auth_filter",
                 "chttp2_bound_write_size",
                 "error_flatten",
                 "event_engine_fork",
@@ -272,11 +258,7 @@ EXPERIMENTS = {
                 "event_engine_for_all_other_endpoints",
                 "event_engine_listener",
                 "event_engine_secure_endpoint",
-                "posix_ee_skip_grpc_init",
                 "shard_global_connection_pool",
-            ],
-            "cpp_end2end_test": [
-                "posix_ee_skip_grpc_init",
             ],
             "event_engine_client_test": [
                 "event_engine_client",

@@ -71,21 +71,12 @@ static bool g_shutting_down ABSL_GUARDED_BY(g_init_mu) = false;
 
 namespace grpc_core {
 void RegisterSecurityFilters(CoreConfiguration::Builder* builder) {
-  if (IsCallv3ClientAuthFilterEnabled()) {
-    builder->channel_init()
-        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
-        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-    builder->channel_init()
-        ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
-        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  } else {
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
-        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-    builder->channel_init()
-        ->RegisterV2Filter<LegacyClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
-        .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
-  }
+  builder->channel_init()
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_SUBCHANNEL)
+      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
+  builder->channel_init()
+      ->RegisterFilter<ClientAuthFilter>(GRPC_CLIENT_DIRECT_CHANNEL)
+      .IfHasChannelArg(GRPC_ARG_SECURITY_CONNECTOR);
   builder->channel_init()
       ->RegisterFilter<ServerAuthFilter>(GRPC_SERVER_CHANNEL)
       .IfHasChannelArg(GRPC_SERVER_CREDENTIALS_ARG);

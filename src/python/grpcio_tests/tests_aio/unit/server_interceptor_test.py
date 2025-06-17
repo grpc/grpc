@@ -141,7 +141,7 @@ class _CacheInterceptor(aio.ServerInterceptor):
             behavior: Callable[
                 [messages_pb2.SimpleRequest, aio.ServicerContext],
                 messages_pb2.SimpleResponse,
-            ]
+            ],
         ):
             @functools.wraps(behavior)
             async def wrapper(

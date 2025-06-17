@@ -34,7 +34,7 @@ namespace {
 void TestRetryCancelDuringDelay(
     CoreEnd2endTest& test,
     std::unique_ptr<CancellationMode> cancellation_mode) {
-  test.InitServer(ChannelArgs());
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs());
   test.InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       absl::StrFormat(

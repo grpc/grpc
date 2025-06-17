@@ -684,6 +684,7 @@ LIBGRPC_SRC = \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
+    src/core/channelz/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -1401,6 +1402,7 @@ LIBGRPC_SRC = \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
     src/core/telemetry/metrics.cc \
@@ -1497,6 +1499,7 @@ LIBGRPC_SRC = \
     src/core/util/uri.cc \
     src/core/util/uuid_v4.cc \
     src/core/util/validation_errors.cc \
+    src/core/util/wait_for_single_owner.cc \
     src/core/util/windows/cpu.cc \
     src/core/util/windows/directory_reader.cc \
     src/core/util/windows/env.cc \

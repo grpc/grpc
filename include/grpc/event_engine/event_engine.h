@@ -24,6 +24,7 @@
 
 #include <bitset>
 #include <initializer_list>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -293,10 +294,28 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     class WriteArgs final {
      public:
       WriteArgs() = default;
+
+      ~WriteArgs();
+
       WriteArgs(const WriteArgs&) = delete;
       WriteArgs& operator=(const WriteArgs&) = delete;
-      WriteArgs(WriteArgs&&) = default;
-      WriteArgs& operator=(WriteArgs&&) = default;
+
+      WriteArgs(WriteArgs&& other) noexcept
+          : metrics_sink_(std::move(other.metrics_sink_)),
+            google_specific_(other.google_specific_),
+            max_frame_size_(other.max_frame_size_) {
+        other.google_specific_ = nullptr;
+      }
+
+      WriteArgs& operator=(WriteArgs&& other) noexcept {
+        if (this != &other) {
+          metrics_sink_ = std::move(other.metrics_sink_);
+          google_specific_ = other.google_specific_;
+          other.google_specific_ = nullptr;  // Nullify source
+          max_frame_size_ = other.max_frame_size_;
+        }
+        return *this;
+      }
 
       // A sink to receive write events.
       std::optional<WriteEventSink> TakeMetricsSink() {
@@ -317,6 +336,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       // metrics sink.
       void* GetDeprecatedAndDiscouragedGoogleSpecificPointer() {
         return google_specific_;
+      }
+
+      void* TakeDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return std::exchange(google_specific_, nullptr);
       }
 
       void SetDeprecatedAndDiscouragedGoogleSpecificPointer(void* pointer) {

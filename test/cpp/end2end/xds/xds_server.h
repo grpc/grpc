@@ -482,7 +482,9 @@ class LrsServiceImpl
 
     std::shared_ptr<LrsServiceImpl> lrs_service_impl_;
 
-    std::atomic<bool> seen_first_request_{false};
+    grpc_core::Mutex mu_;
+    bool seen_first_request_ ABSL_GUARDED_BY(&mu_) = false;
+    bool finished_ ABSL_GUARDED_BY(&mu_) = false;
 
     LoadStatsRequest request_;
     LoadStatsResponse response_;
