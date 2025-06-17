@@ -25,8 +25,12 @@ from typing import (
     Optional,
     Union,
 )
-from collections.abc import AsyncGenerator
-from collections.abc import AsyncIterator, Generator
+from collections.abc import (
+  AsyncGenerator,
+  AsyncIterator,
+  Generator,
+  Sequence
+)
 
 import grpc
 from grpc import _common
@@ -209,9 +213,9 @@ class Call:
     def __init__(
         self,
         cython_call: cygrpc._AioCall,
-        metadata: Metadata,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -553,13 +557,13 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         self,
         request: RequestType,
         deadline: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -616,13 +620,13 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         self,
         request: RequestType,
         deadline: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -639,7 +643,7 @@ class UnaryStreamCall(_StreamResponseMixin, Call, _base_call.UnaryStreamCall):
         )
         self._init_stream_response_mixin(self._send_unary_request_task)
 
-    async def _send_unary_request(self) -> ResponseType:
+    async def _send_unary_request(self) -> Optional[ResponseType]:
         serialized_request = _common.serialize(
             self._request, self._request_serializer,
         )
@@ -672,13 +676,13 @@ class StreamUnaryCall(
         self,
         request_iterator: Optional[RequestIterableType],
         deadline: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(
@@ -725,13 +729,13 @@ class StreamStreamCall(
         self,
         request_iterator: Optional[RequestIterableType],
         deadline: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         super().__init__(

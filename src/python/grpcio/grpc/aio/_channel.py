@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, Optional
+from typing import Any, Optional, Union
 from collections.abc import Iterable, Sequence
 
 import grpc
@@ -47,6 +47,7 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+from ._typing import MetadatumType
 from ._utils import _timeout_to_deadline
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
@@ -98,8 +99,8 @@ class _BaseMultiCallable:
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
     _method: bytes
-    _request_serializer: SerializingFunction
-    _response_deserializer: DeserializingFunction
+    _request_serializer: Optional[SerializingFunction]
+    _response_deserializer: Optional[DeserializingFunction]
     _interceptors: Optional[Sequence[ClientInterceptor]]
     _references: list[Any]
     _loop: asyncio.AbstractEventLoop
@@ -109,8 +110,8 @@ class _BaseMultiCallable:
         self,
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         interceptors: Optional[Sequence[ClientInterceptor]],
         references: list[Any],
         loop: asyncio.AbstractEventLoop,
@@ -127,7 +128,7 @@ class _BaseMultiCallable:
     def _init_metadata(
         metadata: Optional[MetadataType] = None,
         compression: Optional[grpc.Compression] = None,
-    ) -> Metadata:
+    ) -> Union[Metadata, Sequence[MetadatumType]]:
         """Based on the provided values for <metadata> or <compression>.
 
         Initialise the final metadata, as it should be used for the current call.
@@ -490,7 +491,7 @@ class Channel(_base_channel.Channel):
 
     # TODO(xuanwn): Implement this method after we have
     # observability for Asyncio.
-    def _get_registered_call_handle(self, method: str) -> int:
+    def _get_registered_call_handle(self, method: str) -> Optional[int]:
         pass
 
     # TODO(xuanwn): Implement _registered_method after we have

@@ -22,6 +22,7 @@ from typing import (
     NamedTuple,
     Union,
     Any,
+    Coroutine
 )
 from collections.abc import AsyncIterator
 from collections.abc import Iterator
@@ -48,6 +49,7 @@ from ._typing import RequestType
 from ._typing import ResponseIterableType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+from ._typing import MetadatumType
 from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
@@ -129,9 +131,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     @abstractmethod
     async def intercept_unary_unary(
         self,
-        continuation: Callable[
-            [ClientCallDetails, RequestType], UnaryUnaryCall,
-        ],
+        continuation: Callable[[grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType]],
         client_call_details: ClientCallDetails,
         request: RequestType,
     ) -> Union[UnaryUnaryCall, ResponseType]:
@@ -624,16 +624,16 @@ class InterceptedUnaryUnaryCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        interceptors: Sequence[UnaryUnaryClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         request: RequestType,
         timeout: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -721,16 +721,16 @@ class InterceptedUnaryStreamCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        interceptors: Sequence[UnaryStreamClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         request: RequestType,
         timeout: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -841,16 +841,16 @@ class InterceptedStreamUnaryCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        interceptors: Sequence[StreamUnaryClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         request_iterator: Optional[RequestIterableType],
         timeout: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -940,16 +940,16 @@ class InterceptedStreamStreamCall(
     # pylint: disable=too-many-arguments
     def __init__(
         self,
-        interceptors: Sequence[StreamStreamClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         request_iterator: Optional[RequestIterableType],
         timeout: Optional[float],
-        metadata: Metadata,
+        metadata: Union[Metadata, Sequence[MetadatumType]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
         method: bytes,
-        request_serializer: SerializingFunction,
-        response_deserializer: DeserializingFunction,
+        request_serializer: Optional[SerializingFunction],
+        response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -975,7 +975,7 @@ class InterceptedStreamStreamCall(
     # pylint: disable=too-many-arguments
     async def _invoke(
         self,
-        interceptors: Sequence[StreamStreamClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         method: bytes,
         timeout: Optional[float],
         metadata: Optional[Metadata],
