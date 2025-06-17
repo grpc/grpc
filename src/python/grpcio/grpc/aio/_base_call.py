@@ -20,7 +20,7 @@ RPC, e.g. cancellation.
 
 from abc import ABCMeta
 from abc import abstractmethod
-from typing import Any, Generic, Optional, Union
+from typing import Any, Generic, Optional, Union, TypeVar
 from collections.abc import AsyncIterator, Generator
 
 import grpc
@@ -33,6 +33,9 @@ from ._typing import ResponseType
 
 __all__ = "Call", "RpcContext", "UnaryStreamCall", "UnaryUnaryCall"
 
+# Type variables for request and response types
+RequestType = TypeVar('RequestType', bound=Any)
+ResponseType = TypeVar('ResponseType', bound=Any)
 
 class RpcContext(metaclass=ABCMeta):
     """Provides RPC-related information and action."""
@@ -44,8 +47,7 @@ class RpcContext(metaclass=ABCMeta):
         The RPC is cancelled when the cancellation was requested with cancel().
 
         Returns:
-          A bool indicates whether the RPC is cancelled or not.
-
+          A bool indicates if the RPC is cancelled.
         """
 
     @abstractmethod
@@ -56,7 +58,6 @@ class RpcContext(metaclass=ABCMeta):
 
         Returns:
           A bool indicates if the RPC is done.
-
         """
 
     @abstractmethod
@@ -67,7 +68,6 @@ class RpcContext(metaclass=ABCMeta):
           A nonnegative float indicating the length of allowed time in seconds
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
-
         """
 
     @abstractmethod
@@ -78,7 +78,6 @@ class RpcContext(metaclass=ABCMeta):
 
         Returns:
           A bool indicates if the cancellation is performed or not.
-
         """
 
     @abstractmethod
@@ -88,7 +87,6 @@ class RpcContext(metaclass=ABCMeta):
         Args:
           callback: A callable object will be called with the call object as
           its only argument.
-
         """
 
 
@@ -101,7 +99,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The initial :term:`metadata`.
-
         """
 
     @abstractmethod
@@ -110,7 +107,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The trailing :term:`metadata`.
-
         """
 
     @abstractmethod
@@ -119,7 +115,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The StatusCode value for the RPC.
-
         """
 
     @abstractmethod
@@ -128,7 +123,6 @@ class Call(RpcContext, metaclass=ABCMeta):
 
         Returns:
           The details string of the RPC.
-
         """
 
     @abstractmethod
@@ -175,7 +169,7 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 
         Read operations must be serialized when called from multiple
@@ -239,7 +233,7 @@ class StreamStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]:
+    async def read(self) -> Union[EOFType, ResponseType]: # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 
         Read operations must be serialized when called from multiple

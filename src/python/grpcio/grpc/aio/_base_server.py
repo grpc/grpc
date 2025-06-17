@@ -333,7 +333,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         """
 
-    def time_remaining(self) -> float:
+    def time_remaining(self) -> Optional[float]:
         """Describe the length of allowed time remaining for the RPC.
 
         Returns:
@@ -387,7 +387,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         """
 
-    def cancelled(self) -> bool:
+    def cancelled(self) -> Optional[bool]:
         """Return True if the RPC is cancelled.
 
         The RPC is cancelled when the cancellation was requested with cancel().
@@ -399,7 +399,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         """
 
-    def done(self) -> bool:
+    def done(self) -> Optional[bool]:
         """Return True if the RPC is done.
 
         An RPC is done if the RPC is completed, cancelled or aborted.
