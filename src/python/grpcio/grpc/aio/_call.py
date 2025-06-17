@@ -29,7 +29,7 @@ from collections.abc import (
   AsyncGenerator,
   AsyncIterator,
   Generator,
-  Sequence
+  Sequence,
 )
 
 import grpc

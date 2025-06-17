@@ -22,11 +22,15 @@ from typing import (
     NamedTuple,
     Union,
     Any,
-    Coroutine
 )
-from collections.abc import AsyncIterator
-from collections.abc import Iterator
-from collections.abc import AsyncIterable, Awaitable, Sequence
+from collections.abc import (
+  AsyncIterator,
+  Iterator,
+  AsyncIterable,
+  Awaitable,
+  Sequence,
+  Coroutine,
+)
 
 import grpc
 from grpc._cython import cygrpc
@@ -51,6 +55,8 @@ from ._typing import ResponseType
 from ._typing import SerializingFunction
 from ._typing import MetadatumType
 from ._utils import _timeout_to_deadline
+
+Continuation = Callable[[grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType]]
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 
@@ -131,7 +137,7 @@ class UnaryUnaryClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
     @abstractmethod
     async def intercept_unary_unary(
         self,
-        continuation: Callable[[grpc.ClientCallDetails, RequestType], Coroutine[Any, Any, ResponseType]],
+        continuation: Continuation,
         client_call_details: ClientCallDetails,
         request: RequestType,
     ) -> Union[UnaryUnaryCall, ResponseType]:
