@@ -2298,6 +2298,9 @@ grpc_cc_library(
     name = "grpc_core_credentials_header",
     hdrs = ["include/grpc/credentials.h"],
     visibility = ["//bazel:core_credentials"],
+    deps = [
+        "grpc_public_hdrs",
+    ],
 )
 
 grpc_cc_library(
