@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests that a channel will reconnect if a connection is dropped"""
+from __future__ import annotations
 
 from collections.abc import Sequence
 import contextlib
 import logging
 import socket
 import time
-from typing import Callable, Final, Optional
+from typing import Callable, Final, Optional, Tuple
 import unittest
 
 import grpc
@@ -38,7 +39,7 @@ _RPC_TIMEOUT = test_constants.SHORT_TIMEOUT / 10.0
 # Type aliases.
 # Set type to TypeAlias when typing_extensions installed.
 _CheckResultFnType = Callable[[Optional[str], Optional[grpc.RpcError]], bool]
-_CallRpcReturnType = tuple[Optional[str], Optional[grpc.RpcError]]
+_CallRpcReturnType = Tuple[Optional[str], Optional[grpc.RpcError]]
 
 
 class TestServer:
@@ -291,7 +292,7 @@ class ReconnectTest(unittest.TestCase):
         sleep_sec_check_pass: float = 0,
         sleep_sec_check_fail: float = 0,
         rpc_timeout: Optional[float] = None,
-    ) -> tuple[list[_CallRpcReturnType], bool]:
+    ) -> Tuple[list[_CallRpcReturnType], bool]:
         responses = []
         successes = 0
         for attempt in range(attempts):
