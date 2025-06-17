@@ -87,8 +87,9 @@ struct grpc_tls_certificate_distributor
   // @param roots The content of the roots, either the pem root certificates or
   // the SpiffeBundleMap.
   // @param pem_key_cert_pairs The content of identity key-cert pairs.
-  void SetKeyMaterials(const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
-                       std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
+  void SetKeyMaterials(
+      const std::string& cert_name, std::shared_ptr<RootCertInfo> roots,
+      std::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pairs);
 
   bool HasRootCerts(const std::string& root_cert_name);
 
@@ -178,8 +179,8 @@ struct grpc_tls_certificate_distributor
     // The contents of the identity key-certificate pairs.
     grpc_core::PemKeyCertPairList pem_key_cert_pairs;
     // TODO(gtcooke94) Swap to using absl::StatusOr<>
-    // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert reloading error
-    // propagated by the caller.
+    // https://github.com/grpc/grpc/pull/39708/files#r2144014200 The root cert
+    // reloading error propagated by the caller.
     grpc_error_handle root_cert_error;
     // The identity cert reloading error propagated by the caller.
     grpc_error_handle identity_cert_error;

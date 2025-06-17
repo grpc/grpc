@@ -472,7 +472,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   // updates.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(), ::testing::VariantWith<std::string>(root_cert_));
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
+              ::testing::VariantWith<std::string>(root_cert_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
@@ -490,7 +491,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   // The old certs should still being used.
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   ASSERT_NE(tls_connector->RootCertInfoForTesting(), nullptr);
-  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(), ::testing::VariantWith<std::string>(root_cert_));
+  EXPECT_THAT(*tls_connector->RootCertInfoForTesting(),
+              ::testing::VariantWith<std::string>(root_cert_));
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));

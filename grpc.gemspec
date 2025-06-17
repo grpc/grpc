@@ -2280,7 +2280,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/abseil-cpp/absl/functional/internal/any_invocable.h )
   s.files += %w( third_party/abseil-cpp/absl/functional/internal/front_binder.h )
   s.files += %w( third_party/abseil-cpp/absl/functional/internal/function_ref.h )
-  s.files += %w( third_party/abseil-cpp/absl/functional/overload.h )
   s.files += %w( third_party/abseil-cpp/absl/hash/hash.h )
   s.files += %w( third_party/abseil-cpp/absl/hash/internal/city.cc )
   s.files += %w( third_party/abseil-cpp/absl/hash/internal/city.h )

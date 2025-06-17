@@ -2119,7 +2119,6 @@ libs:
   - absl/container:inlined_vector
   - absl/functional:bind_front
   - absl/functional:function_ref
-  - absl/functional:overload
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
@@ -17824,6 +17823,7 @@ targets:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
   - gtest
+  - absl/functional:overload
   - grpc_test_util
   uses_polling: false
 - name: xds_client_test
