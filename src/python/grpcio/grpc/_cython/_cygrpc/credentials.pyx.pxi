@@ -488,7 +488,7 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
 
   cdef grpc_channel_credentials *c(self) except *:
     with nogil:
-      self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+      self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
       return self._c_creds
 
 
