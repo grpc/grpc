@@ -624,7 +624,6 @@ GRPC_XDS_TARGETS = [
     "//src/core:channel_creds_registry_init",
 ]
 
-
 grpc_cc_library(
     name = "grpc",
     srcs = [
