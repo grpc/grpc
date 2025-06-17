@@ -504,7 +504,7 @@ def cython_extensions_and_necessity():
                 + list(CYTHON_HELPER_C_FILES)
                 + core_c_files
                 + asm_files
-                + list(ABSL_INCLUDE)
+                + ["third_party/abseil-cpp/absl/log/initialize.cc"]
             ),
             include_dirs=list(EXTENSION_INCLUDE_DIRECTORIES),
             libraries=list(EXTENSION_LIBRARIES),
