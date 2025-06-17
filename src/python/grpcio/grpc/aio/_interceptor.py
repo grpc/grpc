@@ -21,8 +21,11 @@ from typing import (
     Optional,
     NamedTuple,
     Union,
+    Any,
 )
-from collections.abc import AsyncIterable, Awaitable, Iterator, Sequence
+from collections.abc import AsyncIterator
+from collections.abc import Iterator
+from collections.abc import AsyncIterable, Awaitable, Sequence
 
 import grpc
 from grpc._cython import cygrpc
@@ -169,7 +172,7 @@ class UnaryStreamClientInterceptor(ClientInterceptor, metaclass=ABCMeta):
         client_call_details: ClientCallDetails,
         request: RequestType,
     ) -> Union[ResponseIterableType, UnaryStreamCall]:
-        """Intercepts a unary-stream invocation asynchronously.
+        """Intercept a unary-stream invocation asynchronously.
 
         The function could return the call object or an asynchronous
         iterator, in case of being an asyncrhonous iterator this will
@@ -340,16 +343,16 @@ class InterceptedCall:
             for callback in self._pending_add_done_callbacks:
                 callback(self)
         else:
-            for callback in self._pending_add_done_callbacks:
-                callback = functools.partial(
-                    self._wrap_add_done_callback, callback,
+            for pending_callback in self._pending_add_done_callbacks:
+                wrapped_callback = functools.partial(
+                    self._wrap_add_done_callback, pending_callback,
                 )
-                call.add_done_callback(callback)
+                call.add_done_callback(wrapped_callback)
 
         self._pending_add_done_callbacks = []
 
     def _wrap_add_done_callback(
-        self, callback: DoneCallbackType, unused_call: _base_call.Call,
+        self, callback: DoneCallbackType, _unused_call: _base_call.Call,
     ) -> None:
         callback(self)
 
@@ -469,7 +472,7 @@ class InterceptedCall:
 
 
 class _InterceptedUnaryResponseMixin:
-    def __await__(self):
+    def __await__(self) -> Iterator[Any]:
         call = yield from self._interceptors_task.__await__()
         response = yield from call.__await__()
         return response
@@ -490,7 +493,7 @@ class _InterceptedStreamResponseMixin:
         async for response in call:
             yield response
 
-    def __aiter__(self) -> AsyncIterable[ResponseType]:
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         if self._response_aiter is None:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
@@ -532,7 +535,7 @@ class _InterceptedStreamRequestMixin:
 
         return request_iterator
 
-    async def _proxy_writes_as_request_iterator(self):
+    async def _proxy_writes_as_request_iterator(self) -> AsyncIterator[RequestType]:
         await self._interceptors_task
 
         while True:
@@ -572,8 +575,8 @@ class _InterceptedStreamRequestMixin:
 
         try:
             call = await self._interceptors_task
-        except (asyncio.CancelledError, AioRpcError):
-            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
+        except (asyncio.CancelledError, AioRpcError) as err:
+            raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS) from err
 
         if call.done():
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS)
