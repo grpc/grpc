@@ -23,7 +23,6 @@ from typing import (
     Any,
     Generic,
     Optional,
-    Tuple,
     Union,
 )
 from collections.abc import AsyncIterator, Generator
@@ -89,7 +88,7 @@ class AioRpcError(grpc.RpcError):
         details: Optional[str] = None,
         debug_error_string: Optional[str] = None,
     ) -> None:
-        """Constructor.
+        """Construct the class.
 
         Args:
           code: The status code with which the RPC has been finalized.
@@ -97,6 +96,8 @@ class AioRpcError(grpc.RpcError):
           initial_metadata: Optional initial metadata that could be sent by the
             Server.
           trailing_metadata: Optional metadata that could be sent by the Server.
+          details: Optional string
+          debug_error_string: Optional string
 
         """
         super().__init__()
@@ -107,7 +108,7 @@ class AioRpcError(grpc.RpcError):
         self._debug_error_string = debug_error_string
 
     def code(self) -> grpc.StatusCode:
-        """Accesses the status code sent by the server.
+        """Access the status code sent by the server.
 
         Returns:
           The `grpc.StatusCode` status code.
@@ -116,7 +117,7 @@ class AioRpcError(grpc.RpcError):
         return self._code
 
     def details(self) -> Optional[str]:
-        """Accesses the details sent by the server.
+        """Access the details sent by the server.
 
         Returns:
           The description of the error.
@@ -124,8 +125,8 @@ class AioRpcError(grpc.RpcError):
         """
         return self._details
 
-    def initial_metadata(self) -> Metadata:
-        """Accesses the initial metadata sent by the server.
+    def initial_metadata(self) -> Optional[Metadata]:
+        """Access the initial metadata sent by the server.
 
         Returns:
           The initial metadata received.
@@ -133,8 +134,8 @@ class AioRpcError(grpc.RpcError):
         """
         return self._initial_metadata
 
-    def trailing_metadata(self) -> Metadata:
-        """Accesses the trailing metadata sent by the server.
+    def trailing_metadata(self) -> Optional[Metadata]:
+        """Access the trailing metadata sent by the server.
 
         Returns:
           The trailing metadata received.
@@ -142,8 +143,8 @@ class AioRpcError(grpc.RpcError):
         """
         return self._trailing_metadata
 
-    def debug_error_string(self) -> str:
-        """Accesses the debug error string sent by the server.
+    def debug_error_string(self) -> Optional[str]:
+        """Access the debug error string sent by the server.
 
         Returns:
           The debug error string received.
@@ -166,7 +167,7 @@ class AioRpcError(grpc.RpcError):
     def __str__(self) -> str:
         return self._repr()
 
-    def __reduce__(self):
+    def __reduce__(self): # noqa: ANN204
         return (
             type(self),
             (
@@ -200,7 +201,7 @@ class Call:
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _metadata: Tuple[MetadatumType, ...]
+    _metadata: tuple[MetadatumType, ...]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
 
@@ -220,15 +221,14 @@ class Call:
 
     def __del__(self) -> None:
         # The '_cython_call' object might be destructed before Call object
-        if hasattr(self, "_cython_call"):
-            if not self._cython_call.done():
-                self._cancel(_GC_CANCELLATION_DETAILS)
+        if hasattr(self, "_cython_call") and not self._cython_call.done():
+            self._cancel(_GC_CANCELLATION_DETAILS)
 
     def cancelled(self) -> bool:
         return self._cython_call.cancelled()
 
     def _cancel(self, details: str) -> bool:
-        """Forwards the application cancellation reasoning."""
+        """Forward the application cancellation reasoning."""
         if not self._cython_call.done():
             self._cython_call.cancel(details)
             return True
@@ -269,7 +269,7 @@ class Call:
 
     async def _raise_for_status(self) -> None:
         if self._cython_call.is_locally_cancelled():
-            raise asyncio.CancelledError()
+            raise asyncio.CancelledError
         code = await self.code()
         if code != grpc.StatusCode.OK:
             raise _create_rpc_error(
@@ -295,7 +295,7 @@ class _APIStyle(enum.IntEnum):
 class _UnaryResponseMixin(Call, Generic[ResponseType]):
     _call_response: asyncio.Task
 
-    def _init_unary_response_mixin(self, response_task: asyncio.Task):
+    def _init_unary_response_mixin(self, response_task: asyncio.Task) -> None:
         self._call_response = response_task
 
     def cancel(self) -> bool:
@@ -324,7 +324,7 @@ class _UnaryResponseMixin(Call, Generic[ResponseType]):
         # we need to access the private instance variable.
         if response is cygrpc.EOF:
             if self._cython_call.is_locally_cancelled():
-                raise asyncio.CancelledError()
+                raise asyncio.CancelledError
             else:
                 raise _create_rpc_error(
                     self._cython_call._initial_metadata,
@@ -339,12 +339,12 @@ class _StreamResponseMixin(Call):
     _preparation: asyncio.Task
     _response_style: _APIStyle
 
-    def _init_stream_response_mixin(self, preparation: asyncio.Task):
+    def _init_stream_response_mixin(self, preparation: asyncio.Task) -> None:
         self._message_aiter = None
         self._preparation = preparation
         self._response_style = _APIStyle.UNKNOWN
 
-    def _update_response_style(self, style: _APIStyle):
+    def _update_response_style(self, style: _APIStyle) -> None:
         if self._response_style is _APIStyle.UNKNOWN:
             self._response_style = style
         elif self._response_style is not style:
@@ -411,7 +411,7 @@ class _StreamRequestMixin(Call):
 
     def _init_stream_request_mixin(
         self, request_iterator: Optional[RequestIterableType],
-    ):
+    ) -> None:
         self._metadata_sent = asyncio.Event()
         self._done_writing_flag = False
 
@@ -425,7 +425,7 @@ class _StreamRequestMixin(Call):
             self._async_request_poller = None
             self._request_style = _APIStyle.READER_WRITER
 
-    def _raise_for_different_style(self, style: _APIStyle):
+    def _raise_for_different_style(self, style: _APIStyle) -> None:
         if self._request_style is not style:
             raise cygrpc.UsageError(_API_STYLE_ERROR)
 
@@ -436,7 +436,7 @@ class _StreamRequestMixin(Call):
             return True
         return False
 
-    def _metadata_sent_observer(self):
+    def _metadata_sent_observer(self) -> None:
         self._metadata_sent.set()
 
     async def _consume_request_iterator(
@@ -473,7 +473,7 @@ class _StreamRequestMixin(Call):
                         return
 
             await self._done_writing()
-        except:  # pylint: disable=bare-except
+        except:  # pylint: disable=bare-except # noqa: E722
             # Client iterators can raise exceptions, which we should handle by
             # cancelling the RPC and logging the client's error. No exceptions
             # should escape this function.
@@ -745,8 +745,8 @@ class StreamStreamCall(
         self._init_stream_request_mixin(request_iterator)
         self._init_stream_response_mixin(self._initializer)
 
-    async def _prepare_rpc(self):
-        """This method prepares the RPC for receiving/sending messages.
+    async def _prepare_rpc(self) -> None:
+        """Prepare the RPC for receiving/sending messages.
 
         All other operations around the stream should only happen after the
         completion of this method.

@@ -15,7 +15,7 @@
 
 import asyncio
 import sys
-from typing import Any, List, Optional
+from typing import Any, Optional
 from collections.abc import Iterable, Sequence
 
 import grpc
@@ -93,7 +93,7 @@ class _BaseMultiCallable:
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
     _interceptors: Optional[Sequence[ClientInterceptor]]
-    _references: List[Any]
+    _references: list[Any]
     _loop: asyncio.AbstractEventLoop
 
     # pylint: disable=too-many-arguments
@@ -104,7 +104,7 @@ class _BaseMultiCallable:
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
         interceptors: Optional[Sequence[ClientInterceptor]],
-        references: List[Any],
+        references: list[Any],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
@@ -317,10 +317,10 @@ class StreamStreamMultiCallable(
 class Channel(_base_channel.Channel):
     _loop: asyncio.AbstractEventLoop
     _channel: cygrpc.AioChannel
-    _unary_unary_interceptors: List[UnaryUnaryClientInterceptor]
-    _unary_stream_interceptors: List[UnaryStreamClientInterceptor]
-    _stream_unary_interceptors: List[StreamUnaryClientInterceptor]
-    _stream_stream_interceptors: List[StreamStreamClientInterceptor]
+    _unary_unary_interceptors: list[UnaryUnaryClientInterceptor]
+    _unary_stream_interceptors: list[UnaryStreamClientInterceptor]
+    _stream_unary_interceptors: list[StreamUnaryClientInterceptor]
+    _stream_stream_interceptors: list[StreamStreamClientInterceptor]
 
     def __init__(
         self,

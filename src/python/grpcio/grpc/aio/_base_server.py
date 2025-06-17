@@ -141,8 +141,9 @@ class Server(abc.ABC):
 
         """
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
-        """Registers GenericRpcHandlers with this Server.
+    @abc.abstractmethod
+    def add_registered_method_handlers(self, service_name, method_handlers) -> None: # noqa: ANN001
+        """Register GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
 
@@ -160,7 +161,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def read(self) -> RequestType:
-        """Reads one message from the RPC.
+        """Read one message from the RPC.
 
         Only one read operation is allowed simultaneously.
 
@@ -174,7 +175,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     async def write(self, message: ResponseType) -> None:
-        """Writes one message to the RPC.
+        """Write one message to the RPC.
 
         Only one write operation is allowed simultaneously.
 
@@ -187,7 +188,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
     async def send_initial_metadata(
         self, initial_metadata: MetadataType,
     ) -> None:
-        """Sends the initial metadata value to the client.
+        """Send the initial metadata value to the client.
 
         This method need not be called by implementations if they have no
         metadata to add to what the gRPC runtime will transmit.
@@ -202,9 +203,9 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: MetadataType = tuple(),
+        trailing_metadata: MetadataType = (),
     ) -> NoReturn:
-        """Raises an exception to terminate the RPC with a non-OK status.
+        """Raise an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supersede any existing
         ones.
@@ -225,7 +226,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def set_trailing_metadata(self, trailing_metadata: MetadataType) -> None:
-        """Sends the trailing metadata for the RPC.
+        """Send the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no
         metadata to add to what the gRPC runtime will transmit.
@@ -237,7 +238,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def invocation_metadata(self) -> Optional[MetadataType]:
-        """Accesses the metadata sent by the client.
+        """Access the metadata sent by the client.
 
         Returns:
           The invocation :term:`metadata`.
@@ -246,7 +247,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def set_code(self, code: grpc.StatusCode) -> None:
-        """Sets the value to be used as status code upon RPC completion.
+        """Set the value to be used as status code upon RPC completion.
 
         This method need not be called by method implementations if they wish
         the gRPC runtime to determine the status code of the RPC.
@@ -258,7 +259,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def set_details(self, details: str) -> None:
-        """Sets the value to be used the as detail string upon RPC completion.
+        """Set the value to be used the as detail string upon RPC completion.
 
         This method need not be called by method implementations if they have
         no details to transmit.
@@ -289,7 +290,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def peer(self) -> str:
-        """Identifies the peer that invoked the RPC being serviced.
+        """Identify the peer that invoked the RPC being serviced.
 
         Returns:
           A string identifying the peer that invoked the RPC being serviced.
@@ -299,7 +300,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def peer_identities(self) -> Optional[Iterable[bytes]]:
-        """Gets one or more peer identity(s).
+        """Get one or more peer identity(s).
 
         Equivalent to
         servicer_context.auth_context().get(servicer_context.peer_identity_key())
@@ -312,7 +313,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def peer_identity_key(self) -> Optional[str]:
-        """The auth property used to identify the peer.
+        """Return the auth property used to identify the peer.
 
         For example, "x509_common_name" or "x509_subject_alternative_name" are
         used to identify an SSL peer.
@@ -325,7 +326,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
     @abc.abstractmethod
     def auth_context(self) -> Mapping[str, Iterable[bytes]]:
-        """Gets the auth context for the call.
+        """Get the auth context for the call.
 
         Returns:
           A map of strings to an iterable of bytes for each auth property.
@@ -333,7 +334,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     def time_remaining(self) -> float:
-        """Describes the length of allowed time remaining for the RPC.
+        """Describe the length of allowed time remaining for the RPC.
 
         Returns:
           A nonnegative float indicating the length of allowed time in seconds
@@ -342,7 +343,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         """
 
-    def trailing_metadata(self):
+    def trailing_metadata(self): # noqa: ANN202
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -353,8 +354,8 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def code(self):
-        """Accesses the value to be used as status code upon RPC completion.
+    def code(self): # noqa: ANN202
+        """Access the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
 
@@ -364,8 +365,8 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def details(self):
-        """Accesses the value to be used as detail string upon RPC completion.
+    def details(self) -> str:
+        """Access the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.
 
@@ -376,7 +377,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         raise NotImplementedError
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
-        """Registers a callback to be called on RPC termination.
+        """Register a callback to be called on RPC termination.
 
         This is an EXPERIMENTAL API.
 
