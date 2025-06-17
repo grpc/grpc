@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library","grpc_proto_library", "grpc_package")
 
 licenses(["notice"])
 
@@ -30,7 +30,12 @@ grpc_internal_proto_library(
     ],
 )
 
-grpc_internal_proto_library(
+# TODO(roth): Migrate this to use separate
+# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
+# rules when internal build system limitations are resolved.
+grpc_proto_library(
     name = "latent_see_proto",
     srcs = ["latent_see.proto"],
+    has_services = True,
+    well_known_protos = False,
 )
