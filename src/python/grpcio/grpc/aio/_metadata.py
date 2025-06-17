@@ -57,17 +57,15 @@ class Metadata(abc.Collection):
         return sum(map(len, self._metadata.values()))
 
     def __getitem__(self, key: MetadataKey) -> MetadataValue:
-        """When calling <metadata>[<key>], return the first element of all those mapped for <key>.
-        """
+        """When calling <metadata>[<key>], return the first value of all those mapped for <key>."""
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError(f"{key!r}") from e
+            msg = f"{key!r}"
+            raise KeyError(msg) from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
-        """Calling metadata[<key>] = <value>
-        Maps <value> to the first instance of <key>.
-        """
+        """When called metadata[<key>] = <value>, maps <value> to the first instance of <key>."""
         if key not in self:
             self._metadata[key] = [value]
         else:
@@ -108,7 +106,9 @@ class Metadata(abc.Collection):
             return default
 
     def get_all(self, key: MetadataKey) -> list[MetadataValue]:
-        """For compatibility with other Metadata abstraction objects (like in Java),
+        """Return list of Metadata Value.
+
+        For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
