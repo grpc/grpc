@@ -98,7 +98,9 @@ class Metadata(abc.Collection):
         return abc.ItemsView(self._metadata)
 
     def get(
-        self, key: MetadataKey, default: Optional[MetadataValue] = None,
+        self,
+        key: MetadataKey,
+        default: Optional[MetadataValue] = None,
     ) -> Optional[MetadataValue]:
         try:
             return self[key]

@@ -34,6 +34,7 @@ from ._typing import ResponseType
 
 __all__ = "Call", "RpcContext", "UnaryStreamCall", "UnaryUnaryCall"
 
+
 class RpcContext(metaclass=ABCMeta):
     """Provides RPC-related information and action."""
 
@@ -146,7 +147,9 @@ class Call(RpcContext, metaclass=ABCMeta):
 
 
 class UnaryUnaryCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
+    Generic[RequestType, ResponseType],
+    Call,
+    metaclass=ABCMeta,
 ):
     """The abstract base class of a unary-unary RPC on the client-side."""
 
@@ -161,7 +164,9 @@ class UnaryUnaryCall(
 
 
 class UnaryStreamCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
+    Generic[RequestType, ResponseType],
+    Call,
+    metaclass=ABCMeta,
 ):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
@@ -175,7 +180,11 @@ class UnaryStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]: # pyright: ignore [reportInvalidTypeForm]
+    async def read(
+        self,
+    ) -> Union[
+        EOFType, ResponseType
+    ]:  # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 
         Read operations must be serialized when called from multiple
@@ -192,7 +201,9 @@ class UnaryStreamCall(
 
 
 class StreamUnaryCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
+    Generic[RequestType, ResponseType],
+    Call,
+    metaclass=ABCMeta,
 ):
     @abstractmethod
     async def write(self, request: RequestType) -> None:
@@ -225,7 +236,9 @@ class StreamUnaryCall(
 
 
 class StreamStreamCall(
-    Generic[RequestType, ResponseType], Call, metaclass=ABCMeta,
+    Generic[RequestType, ResponseType],
+    Call,
+    metaclass=ABCMeta,
 ):
     @abstractmethod
     def __aiter__(self) -> AsyncIterator[ResponseType]:
@@ -239,7 +252,11 @@ class StreamStreamCall(
         """
 
     @abstractmethod
-    async def read(self) -> Union[EOFType, ResponseType]: # pyright: ignore [reportInvalidTypeForm]
+    async def read(
+        self,
+    ) -> Union[
+        EOFType, ResponseType
+    ]:  # pyright: ignore [reportInvalidTypeForm]
         """Read one message from the stream.
 
         Read operations must be serialized when called from multiple

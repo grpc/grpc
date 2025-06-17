@@ -201,14 +201,16 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb): # noqa: ANN001, ANN204
+    async def __aexit__(
+        self, exc_type, exc_val, exc_tb
+    ):  # noqa: ANN001, ANN204
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
         """
 
     @abc.abstractmethod
-    async def close(self, grace: Optional[float] = None): # noqa: ANN202
+    async def close(self, grace: Optional[float] = None):  # noqa: ANN202
         """Close this Channel and releases all resources held by it.
 
         This method immediately stops the channel from executing new RPCs in
@@ -225,7 +227,8 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False, # noqa: FBT001, FBT002
+        self,
+        try_to_connect: bool = False,  # noqa: FBT001, FBT002
     ) -> grpc.ChannelConnectivity:
         """Check the connectivity state of a channel.
 
@@ -280,7 +283,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> UnaryUnaryMultiCallable:
         """Create a UnaryUnaryMultiCallable for a unary-unary method.
 
@@ -305,7 +308,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> UnaryStreamMultiCallable:
         """Create a UnaryStreamMultiCallable for a unary-stream method.
 
@@ -330,7 +333,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> StreamUnaryMultiCallable:
         """Create a StreamUnaryMultiCallable for a stream-unary method.
 
@@ -355,7 +358,7 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> StreamStreamMultiCallable:
         """Create a StreamStreamMultiCallable for a stream-stream method.
 

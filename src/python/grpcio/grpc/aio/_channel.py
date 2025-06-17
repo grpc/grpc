@@ -61,7 +61,7 @@ _INVALID_INTERCEPTOR_MSG = (
     "{StreamStreamClientInterceptor.__name__}. "
 )
 
-if sys.version_info < (3, 7): # noqa: UP036
+if sys.version_info < (3, 7):  # noqa: UP036
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return asyncio.Task.all_tasks()  # pylint: disable=no-member
@@ -73,7 +73,8 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
+    base_options: ChannelArgumentType,
+    compression: Optional[grpc.Compression],
 ) -> tuple:
     compression_channel_argument = _compression.create_channel_option(
         compression,
@@ -145,7 +146,8 @@ class _BaseMultiCallable:
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -190,7 +192,8 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -236,7 +239,8 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -281,7 +285,8 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -370,7 +375,9 @@ class Channel(_base_channel.Channel):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
                     raise TypeError(
-                        _INVALID_INTERCEPTOR_MSG.format(interceptor=interceptor),
+                        _INVALID_INTERCEPTOR_MSG.format(
+                            interceptor=interceptor
+                        ),
                     )
 
         self._loop = cygrpc.get_working_loop()
@@ -384,10 +391,16 @@ class Channel(_base_channel.Channel):
     async def __aenter__(self) -> "Channel":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: # noqa : ANN001
+    async def __aexit__(
+        self, exc_type, exc_val, exc_tb
+    ) -> None:  # noqa : ANN001
         await self._close(None)
 
-    async def _close(self, grace) -> None:  # pylint: disable=too-many-branches # noqa: C901, PLR0912, ANN001
+    async def _close(
+        self, grace
+    ) -> (
+        None
+    ):  # pylint: disable=too-many-branches # noqa: C901, PLR0912, ANN001
         if self._channel.closed():
             return
 
@@ -441,9 +454,7 @@ class Channel(_base_channel.Channel):
                         continue
                 else:
                     # Unidentified Call object
-                    msg = (
-                        f"Unrecognized call object: {candidate}",
-                    )
+                    msg = (f"Unrecognized call object: {candidate}",)
                     raise cygrpc.InternalError(
                         msg,
                     )
@@ -471,7 +482,8 @@ class Channel(_base_channel.Channel):
             self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False, # noqa: FBT001, FBT002
+        self,
+        try_to_connect: bool = False,  # noqa: FBT001, FBT002
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -480,8 +492,9 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state( # noqa: S101
-            last_observed_state.value[0], None,
+        assert await self._channel.watch_connectivity_state(  # noqa: S101
+            last_observed_state.value[0],
+            None,
         )
 
     async def channel_ready(self) -> None:
@@ -503,7 +516,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> UnaryUnaryMultiCallable:
         return UnaryUnaryMultiCallable(
             self._channel,
@@ -523,7 +536,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> UnaryStreamMultiCallable:
         return UnaryStreamMultiCallable(
             self._channel,
@@ -543,7 +556,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> StreamUnaryMultiCallable:
         return StreamUnaryMultiCallable(
             self._channel,
@@ -563,7 +576,7 @@ class Channel(_base_channel.Channel):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False, # noqa: FBT002
+        _registered_method: Optional[bool] = False,  # noqa: FBT002
     ) -> StreamStreamMultiCallable:
         return StreamStreamMultiCallable(
             self._channel,
