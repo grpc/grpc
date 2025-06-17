@@ -39,7 +39,7 @@ _METHOD_HANDLERS = {
     _UNARY_UNARY: grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
 }
 
-
+@unittest.skip("https://github.com/grpc/grpc/issues/38290")
 class ReconnectTest(unittest.TestCase):
     def test_reconnect(self):
         server_pool = logging_pool.pool(test_constants.THREAD_CONCURRENCY)
