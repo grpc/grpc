@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,28 +12,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
+load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library", "grpc_package")
 
 licenses(["notice"])
 
 grpc_package(
     name = "src/proto/grpc/channelz/v2",
-    visibility = "public",
+    visibility = "grpc",
 )
 
-# TODO(roth): Migrate this to use separate
-# grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
-# rules when internal build system limitations are resolved.
-grpc_proto_library(
+grpc_internal_proto_library(
+    name = "channelz_proto",
+    srcs = ["channelz.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+grpc_internal_proto_library(
     name = "latent_see_proto",
     srcs = ["latent_see.proto"],
-    has_services = True,
-    well_known_protos = True,
-)
-
-filegroup(
-    name = "latent_see_proto_file",
-    srcs = [
-        "latent_see.proto",
-    ],
 )

@@ -1778,6 +1778,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:closure",
         "//src/core:connection_quota",
         "//src/core:connectivity_state",
@@ -1939,6 +1940,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:closure",
         "//src/core:compression",
         "//src/core:connectivity_state",
@@ -4353,6 +4355,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:compression",
         "//src/core:context",
         "//src/core:experiments",
@@ -5213,6 +5216,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_upb",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

@@ -148,6 +148,7 @@
     <file baseinstalldir="/" name="src/core/channelz/channelz.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/channelz_registry.h" role="src" />
+    <file baseinstalldir="/" name="src/core/channelz/property_list.cc" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/property_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/channelz/ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/client_channel/backup_poller.cc" role="src" />
@@ -228,6 +229,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.cc" role="src" />

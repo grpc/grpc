@@ -37,7 +37,7 @@ namespace {
 // - third attempt returns OK
 CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_EXPERIMENTAL_ENABLE_HEDGING, true)

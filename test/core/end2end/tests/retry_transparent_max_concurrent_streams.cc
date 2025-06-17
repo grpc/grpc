@@ -40,7 +40,7 @@ namespace {
 // will be transparently retried after the server starts up again.
 CORE_END2END_TEST(RetryHttp2Tests, RetryTransparentMaxConcurrentStreams) {
   const auto server_args =
-      ChannelArgs()
+      DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS_OVERLOAD_PROTECTION, false);
   InitServer(server_args);
