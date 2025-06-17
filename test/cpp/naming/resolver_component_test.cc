@@ -547,5 +547,6 @@ int main(int argc, char** argv) {
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
+  if (result == 0) return 1;
   return result;
 }
