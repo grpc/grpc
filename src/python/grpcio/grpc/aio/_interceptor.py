@@ -15,13 +15,12 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
-import collections
 import functools
 from typing import (
     Callable,
-    List,
     Optional,
     Union,
+    NamedTuple,
 )
 from collections.abc import AsyncIterable, Awaitable, Iterator, Sequence
 
@@ -65,7 +64,7 @@ class ServerInterceptor(metaclass=ABCMeta):
         ],
         handler_call_details: grpc.HandlerCallDetails,
     ) -> grpc.RpcMethodHandler:
-        """Intercepts incoming RPCs before handing them over to a handler.
+        """Intercept incoming RPCs before handing them over to a handler.
 
         State can be passed from an interceptor to downstream interceptors
         via contextvars. The first interceptor is called from an empty
@@ -90,7 +89,7 @@ class ServerInterceptor(metaclass=ABCMeta):
 
 
 class ClientCallDetails(
-    collections.namedtuple(
+    typing.NamedTuple(
         "ClientCallDetails",
         ("method", "timeout", "metadata", "credentials", "wait_for_ready"),
     ),
@@ -667,7 +666,7 @@ class InterceptedUnaryUnaryCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[UnaryUnaryClientInterceptor],
+            interceptors: list[UnaryUnaryClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryUnaryCall:
@@ -766,7 +765,7 @@ class InterceptedUnaryStreamCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[UnaryStreamClientInterceptor],
+            interceptors: list[UnaryStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryStreamCall:
@@ -986,7 +985,7 @@ class InterceptedStreamStreamCall(
         """Run the RPC call wrapped in interceptors"""
 
         async def _run_interceptor(
-            interceptors: List[StreamStreamClientInterceptor],
+            interceptors: list[StreamStreamClientInterceptor],
             client_call_details: ClientCallDetails,
             request_iterator: RequestIterableType,
         ) -> _base_call.StreamStreamCall:

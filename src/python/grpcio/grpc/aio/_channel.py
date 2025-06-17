@@ -478,7 +478,7 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state(
+        assert await self._channel.watch_connectivity_state( # noqa: S101
             last_observed_state.value[0], None,
         )
 
@@ -579,7 +579,7 @@ def insecure_channel(
     options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
-):
+) -> Channel:
     """Create an insecure asynchronous Channel to a server.
 
     Args:
