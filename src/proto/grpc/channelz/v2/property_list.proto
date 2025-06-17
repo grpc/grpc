@@ -14,6 +14,19 @@
 
 syntax = "proto3";
 
+///////////////////////////////////////////////////////////////////////////////
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+//
+// This protocol is under active development, and will change in backwards
+// incompatible ways in the future.
+//
+// DO NOT take a dependency on this without contacting the gRPC authors
+// (who will advise against taking such a dependency in as strong a fashion
+// as they are able)
+//
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+///////////////////////////////////////////////////////////////////////////////
+
 package grpc.channelz.v2;
 
 import "google/protobuf/any.proto";
