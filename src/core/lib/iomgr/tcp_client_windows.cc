@@ -128,8 +128,8 @@ static int64_t tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
                            const grpc_resolved_address* addr,
                            grpc_core::Timestamp deadline) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::event_engine_tcp_client_connect(
-        on_done, endpoint, config, addr, deadline);
+    grpc_core::Crash(
+        "tcp_connect should not be called when using EventEngine client");
   }
   SOCKET sock = INVALID_SOCKET;
   BOOL success;
@@ -256,8 +256,9 @@ failure:
 
 static bool tcp_cancel_connect(int64_t connection_handle) {
   if (grpc_event_engine::experimental::UseEventEngineClient()) {
-    return grpc_event_engine::experimental::
-        event_engine_tcp_client_cancel_connect(connection_handle);
+    grpc_core::Crash(
+        "tcp_cancel_connect should not be called when using EventEngine "
+        "client");
   }
   return false;
 }
