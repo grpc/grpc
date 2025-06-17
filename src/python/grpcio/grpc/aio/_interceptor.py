@@ -495,7 +495,7 @@ class _InterceptedStreamResponseMixin:
 
     async def _wait_for_interceptor_task_response_iterator(
         self,
-    ) -> ResponseType:
+    ) -> AsyncGenerator[ResponseType, Any]:
         call = await self._interceptors_task
         async for response in call:
             yield response
@@ -505,7 +505,7 @@ class _InterceptedStreamResponseMixin:
             self._response_aiter = (
                 self._wait_for_interceptor_task_response_iterator()
             )
-        return self._response_aiter
+        return self._response_aiter  # pyright: ignore [reportReturnType]
 
     async def read(self) -> Union[EOFType, ResponseType]:
         if self._response_aiter is None:
@@ -676,7 +676,7 @@ class InterceptedUnaryUnaryCall(
         """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
-            interceptors: list[UnaryUnaryClientInterceptor],
+            interceptors: list[ClientInterceptor],
             client_call_details: ClientCallDetails,
             request: RequestType,
         ) -> _base_call.UnaryUnaryCall:
@@ -685,7 +685,7 @@ class InterceptedUnaryUnaryCall(
                     _run_interceptor, interceptors[1:],
                 )
                 call_or_response = await interceptors[0].intercept_unary_unary(
-                    continuation, client_call_details, request,
+                    continuation, client_call_details, request,  # pyright: ignore [reportArgumentType]
                 )
 
                 if isinstance(call_or_response, _base_call.UnaryUnaryCall):
@@ -708,7 +708,7 @@ class InterceptedUnaryUnaryCall(
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready,
         )
-        return await _run_interceptor(
+        return await _run_interceptor(  # pyright: ignore [reportReturnType]
             list(interceptors), client_call_details, request,
         )
 
@@ -731,7 +731,7 @@ class InterceptedUnaryStreamCall(
         interceptors: Sequence[ClientInterceptor],
         request: RequestType,
         timeout: Optional[float],
-        metadata: Union[Metadata, Sequence[MetadatumType]],
+        metadata: Optional[Union[Metadata, Sequence[MetadatumType]]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
@@ -762,10 +762,10 @@ class InterceptedUnaryStreamCall(
     # pylint: disable=too-many-arguments
     async def _invoke(
         self,
-        interceptors: Sequence[UnaryStreamClientInterceptor],
+        interceptors: Sequence[ClientInterceptor],
         method: bytes,
         timeout: Optional[float],
-        metadata: Optional[Metadata],
+        metadata: Optional[Union[Sequence[MetadatumType], Metadata]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         request: RequestType,
@@ -787,7 +787,7 @@ class InterceptedUnaryStreamCall(
                 call_or_response_iterator = await interceptors[
                     0
                 ].intercept_unary_stream(
-                    continuation, client_call_details, request,
+                    continuation, client_call_details, request,  # pyright: ignore [reportArgumentType]
                 )
 
                 if isinstance(
@@ -822,7 +822,7 @@ class InterceptedUnaryStreamCall(
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready,
         )
-        return await _run_interceptor(
+        return await _run_interceptor(  # pyright: ignore [reportReturnType]
             list(interceptors), client_call_details, request,
         )
 
@@ -1041,7 +1041,7 @@ class InterceptedStreamStreamCall(
         client_call_details = ClientCallDetails(
             method, timeout, metadata, credentials, wait_for_ready,
         )
-        return await _run_interceptor(
+        return await _run_interceptor(  # pyright: ignore [reportReturnType]
             list(interceptors), client_call_details, request_iterator,
         )
 

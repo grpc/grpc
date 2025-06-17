@@ -206,21 +206,21 @@ class Call:
     _loop: asyncio.AbstractEventLoop
     _code: grpc.StatusCode
     _cython_call: cygrpc._AioCall
-    _metadata: tuple[MetadatumType, ...]
+    _metadata: tuple[Optional[Union[Metadata, Sequence[MetadatumType]]]]
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
 
     def __init__(
         self,
         cython_call: cygrpc._AioCall,
-        metadata: Union[Metadata, Sequence[MetadatumType]],
+        metadata: Optional[Union[Metadata, Sequence[MetadatumType]]],
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
     ) -> None:
         self._loop = loop
         self._cython_call = cython_call
-        self._metadata = tuple(metadata)
+        self._metadata = tuple(metadata) if metadata is not None else ()
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
 
@@ -557,11 +557,11 @@ class UnaryUnaryCall(_UnaryResponseMixin, Call, _base_call.UnaryUnaryCall):
         self,
         request: RequestType,
         deadline: Optional[float],
-        metadata: Union[Metadata, Sequence[MetadatumType]],
+        metadata: Optional[Union[Metadata, Sequence[MetadatumType]]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
-        method: bytes,
+        method: Union[str, bytes],
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
@@ -733,7 +733,7 @@ class StreamStreamCall(
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
-        method: bytes,
+        method: Union[str, bytes],
         request_serializer: Optional[SerializingFunction],
         response_deserializer: Optional[DeserializingFunction],
         loop: asyncio.AbstractEventLoop,
