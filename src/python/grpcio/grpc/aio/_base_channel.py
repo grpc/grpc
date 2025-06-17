@@ -62,6 +62,7 @@ class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -100,6 +101,7 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -138,6 +140,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -176,6 +179,7 @@ class StreamStreamMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -188,23 +192,24 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self):
-        """Starts an asynchronous context manager.
+    async def __aenter__(self) -> "Channel":
+        """Start an asynchronous context manager.
 
         Returns:
           Channel the channel that was instantiated.
+
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb): # noqa: ANN001, ANN204
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
         """
 
     @abc.abstractmethod
-    async def close(self, grace: Optional[float] = None):
-        """Closes this Channel and releases all resources held by it.
+    async def close(self, grace: Optional[float] = None): # noqa: ANN202
+        """Close this Channel and releases all resources held by it.
 
         This method immediately stops the channel from executing new RPCs in
         all cases.
@@ -220,9 +225,9 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False
+        self, try_to_connect: bool = False, # noqa: FBT001, FBT002
     ) -> grpc.ChannelConnectivity:
-        """Checks the connectivity state of a channel.
+        """Check the connectivity state of a channel.
 
         This is an EXPERIMENTAL API.
 
@@ -235,6 +240,7 @@ class Channel(abc.ABC):
             connect to peer or not.
 
         Returns: A ChannelConnectivity object.
+
         """
 
     @abc.abstractmethod
@@ -242,7 +248,7 @@ class Channel(abc.ABC):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        """Waits for a change in connectivity state.
+        """Wait for a change in connectivity state.
 
         This is an EXPERIMENTAL API.
 
@@ -261,11 +267,12 @@ class Channel(abc.ABC):
         Args:
           last_observed_state: A grpc.ChannelConnectivity object representing
             the last known state.
+
         """
 
     @abc.abstractmethod
     async def channel_ready(self) -> None:
-        """Creates a coroutine that blocks until the Channel is READY."""
+        """Create a coroutine that blocks until the Channel is READY."""
 
     @abc.abstractmethod
     def unary_unary(
@@ -273,9 +280,9 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> UnaryUnaryMultiCallable:
-        """Creates a UnaryUnaryMultiCallable for a unary-unary method.
+        """Create a UnaryUnaryMultiCallable for a unary-unary method.
 
         Args:
           method: The name of the RPC method.
@@ -289,6 +296,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
+
         """
 
     @abc.abstractmethod
@@ -297,9 +305,9 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> UnaryStreamMultiCallable:
-        """Creates a UnaryStreamMultiCallable for a unary-stream method.
+        """Create a UnaryStreamMultiCallable for a unary-stream method.
 
         Args:
           method: The name of the RPC method.
@@ -313,6 +321,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryStreamMultiCallable value for the named unary-stream method.
+
         """
 
     @abc.abstractmethod
@@ -321,9 +330,9 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> StreamUnaryMultiCallable:
-        """Creates a StreamUnaryMultiCallable for a stream-unary method.
+        """Create a StreamUnaryMultiCallable for a stream-unary method.
 
         Args:
           method: The name of the RPC method.
@@ -337,6 +346,7 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
+
         """
 
     @abc.abstractmethod
@@ -345,9 +355,9 @@ class Channel(abc.ABC):
         method: str,
         request_serializer: Optional[SerializingFunction] = None,
         response_deserializer: Optional[DeserializingFunction] = None,
-        _registered_method: Optional[bool] = False,
+        _registered_method: Optional[bool] = False, # noqa: FBT002
     ) -> StreamStreamMultiCallable:
-        """Creates a StreamStreamMultiCallable for a stream-stream method.
+        """Create a StreamStreamMultiCallable for a stream-stream method.
 
         Args:
           method: The name of the RPC method.
@@ -361,4 +371,5 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
+
         """

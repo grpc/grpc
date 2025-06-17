@@ -15,14 +15,12 @@
 
 from typing import (
     Any,
-    AsyncIterable,
     Callable,
-    Iterable,
-    Sequence,
     Tuple,
     TypeVar,
     Union,
 )
+from collections.abc import AsyncIterable, Iterable, Sequence
 
 from grpc._cython.cygrpc import EOF
 

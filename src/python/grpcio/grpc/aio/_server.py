@@ -14,7 +14,8 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional
+from collections.abc import Sequence
 
 import grpc
 from grpc import _common
@@ -27,7 +28,7 @@ from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
 ):
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
@@ -55,7 +56,7 @@ class Server(_base_server.Server):
             if invalid_interceptors:
                 raise ValueError(
                     "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}"
+                    f"following are invalid: {invalid_interceptors}",
                 )
         self._server = cygrpc.AioServer(
             self._loop,
@@ -67,7 +68,7 @@ class Server(_base_server.Server):
         )
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -76,6 +77,7 @@ class Server(_base_server.Server):
         Args:
           generic_rpc_handlers: A sequence of GenericRpcHandlers that will be
           used to service RPCs.
+
         """
         self._server.add_generic_rpc_handlers(generic_rpc_handlers)
 
@@ -98,13 +100,14 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
         return _common.validate_port_binding_result(
-            address, self._server.add_insecure_port(_common.encode(address))
+            address, self._server.add_insecure_port(_common.encode(address)),
         )
 
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials
+        self, address: str, server_credentials: grpc.ServerCredentials,
     ) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -118,11 +121,12 @@ class Server(_base_server.Server):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
         return _common.validate_port_binding_result(
             address,
             self._server.add_secure_port(
-                _common.encode(address), server_credentials
+                _common.encode(address), server_credentials,
             ),
         )
 
@@ -155,11 +159,12 @@ class Server(_base_server.Server):
 
         Args:
           grace: A duration of time in seconds or None.
+
         """
         await self._server.shutdown(grace)
 
     async def wait_for_termination(
-        self, timeout: Optional[float] = None
+        self, timeout: Optional[float] = None,
     ) -> bool:
         """Block current coroutine until the server stops.
 
@@ -180,6 +185,7 @@ class Server(_base_server.Server):
 
         Returns:
           A bool indicates if the operation times out.
+
         """
         return await self._server.wait_for_termination(timeout)
 
@@ -228,6 +234,7 @@ def server(
 
     Returns:
       A Server object.
+
     """
     return Server(
         migration_thread_pool,
