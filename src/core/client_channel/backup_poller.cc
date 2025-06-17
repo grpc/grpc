@@ -62,10 +62,15 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   // Disable backup polling if EventEngine is used everywhere.
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
                               grpc_core::IsEventEngineDnsEnabled();
+#else
+  // EventEngine polling not supported, keep using the backup poller.
+  g_backup_polling_disabled = false;
+#endif
   if (g_backup_polling_disabled) {
     return;
   }
@@ -155,11 +160,22 @@ static void g_poller_init_locked() {
   }
 }
 
+static bool g_can_poll_in_background() {
+#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+  return grpc_iomgr_run_in_background();
+#else
+  // When EventEngine polling is not supported, only consider polling via
+  // imogr backgroud when it's not backed by EventEngine Callback CQ.
+  return !grpc_core::IsEventEngineCallbackCqEnabled() &&
+         grpc_iomgr_run_in_background();
+#endif
+}
+
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
   if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
-      grpc_iomgr_run_in_background()) {
+      g_can_poll_in_background()) {
     return;
   }
   gpr_mu_lock(&g_poller_mu);
@@ -179,7 +195,7 @@ void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties) {
   if (g_backup_polling_disabled ||
       g_poll_interval == grpc_core::Duration::Zero() ||
-      grpc_iomgr_run_in_background()) {
+      g_can_poll_in_background()) {
     return;
   }
   grpc_pollset_set_del_pollset(interested_parties, g_poller->pollset);
