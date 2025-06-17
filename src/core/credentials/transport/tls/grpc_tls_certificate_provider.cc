@@ -104,19 +104,31 @@ absl::Status ValidatePemKeyCertPair(absl::string_view cert_chain,
 
 StaticDataCertificateProvider::StaticDataCertificateProvider(
     std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs)
+    : StaticDataCertificateProvider(root_certificate, pem_key_cert_pairs,
+                                    /*spiffe_bundle_map=*/nullptr) {}
+
+StaticDataCertificateProvider::StaticDataCertificateProvider(
+    std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs,
+    grpc_core::SpiffeBundleMap* spiffe_bundle_map)
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
+  if (spiffe_bundle_map != nullptr) {
+    root_cert_info_ = std::make_shared<RootCertInfo>(*spiffe_bundle_map);
+  } else {
+    root_cert_info_ = std::make_shared<RootCertInfo>(root_certificate_);
+  }
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::optional<std::string> root_certificate;
+    // std::optional<std::string> root_certificate;
+    std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
-        !root_certificate_.empty()) {
-      root_certificate = root_certificate_;
+        root_cert_info_ != nullptr) {
+      root_cert_info = root_cert_info_;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -127,13 +139,12 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    const bool root_has_update = root_certificate.has_value();
+    const bool root_has_update = root_cert_info != nullptr;
     const bool identity_has_update = pem_key_cert_pairs.has_value();
     // TODO(gtcooke94) impl for static data
     if (root_has_update || identity_has_update) {
-      distributor_->SetKeyMaterials(
-          cert_name, std::make_shared<RootCertInfo>(root_certificate_),
-          std::move(pem_key_cert_pairs));
+      distributor_->SetKeyMaterials(cert_name, root_cert_info_,
+                                    std::move(pem_key_cert_pairs));
     }
     grpc_error_handle root_cert_error;
     grpc_error_handle identity_cert_error;

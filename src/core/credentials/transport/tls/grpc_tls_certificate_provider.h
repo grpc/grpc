@@ -99,6 +99,9 @@ class StaticDataCertificateProvider final
   StaticDataCertificateProvider(std::string root_certificate,
                                 PemKeyCertPairList pem_key_cert_pairs);
 
+  StaticDataCertificateProvider(std::string root_certificate, PemKeyCertPairList pem_key_cert_pairs,
+                                grpc_core::SpiffeBundleMap* spiffe_bundle_map);
+
   ~StaticDataCertificateProvider() override;
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
@@ -123,6 +126,7 @@ class StaticDataCertificateProvider final
 
   RefCountedPtr<grpc_tls_certificate_distributor> distributor_;
   std::string root_certificate_;
+  std::shared_ptr<RootCertInfo> root_cert_info_;
   PemKeyCertPairList pem_key_cert_pairs_;
   // Guards members below.
   Mutex mu_;
