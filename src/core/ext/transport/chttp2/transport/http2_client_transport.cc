@@ -193,8 +193,8 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
     return Http2Status::Http2StreamError(
         Http2ErrorCode::kInternalError,
-        "A gRPC can send upto 1 intitial metadata followed by upto 1 "
-        "training metadata");
+        "gRPC Error : A gRPC server can send upto 1 intitial metadata followed "
+        "by upto 1 trailing metadata");
   }
 
   HeaderAssembler& assember = stream->header_assembler;
