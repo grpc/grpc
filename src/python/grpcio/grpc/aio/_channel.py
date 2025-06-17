@@ -51,7 +51,7 @@ from ._utils import _timeout_to_deadline
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
-if sys.version_info[1] < 7:
+if sys.version_info < (3, 7): # noqa: UP036
 
     def _all_tasks() -> Iterable[asyncio.Task]:
         return asyncio.Task.all_tasks()  # pylint: disable=no-member
@@ -64,7 +64,7 @@ else:
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
-):
+) -> tuple:
     compression_channel_argument = _compression.create_channel_option(
         compression,
     )
@@ -329,8 +329,8 @@ class Channel(_base_channel.Channel):
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
-    ):
-        """Constructor.
+    ) -> None:
+        """Construct the class.
 
         Args:
           target: The target to which to connect.
