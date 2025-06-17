@@ -21,7 +21,6 @@ from typing import (
     Iterator,
     Optional,
     Sequence,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -36,8 +35,8 @@ RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadataType = Sequence[Tuple[str, Union[str, bytes]]]
-ChannelArgumentType = Tuple[str, Any]
+MetadataType = Sequence[tuple[str, Union[str, bytes]]]
+ChannelArgumentType = tuple[str, Any]
 DoneCallbackType = Callable[[Any], None]
 NullaryCallbackType = Callable[[], None]
 RequestIterableType = Iterable[Any]
@@ -58,7 +57,7 @@ IntegratedCallFactory = Callable[
     ],
     cygrpc.IntegratedCall,
 ]
-ServerTagCallbackType = Tuple[
+ServerTagCallbackType = tuple[
     Optional["_RPCState"], Sequence[NullaryCallbackType]
 ]  # pytype: disable=invalid-annotation
 ServerCallbackTag = Callable[[cygrpc.BaseEvent], ServerTagCallbackType]

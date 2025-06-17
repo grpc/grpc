@@ -549,7 +549,7 @@ class _InterceptedStreamRequestMixin:
 
     async def _write_to_iterator_queue_interruptible(
         self, request: RequestType, call: InterceptedCall,
-    ):
+    ) -> None:
         # Write the specified 'request' to the request iterator queue using the
         # specified 'call' to allow for interruption of the write in the case
         # of abrupt termination of the call.
@@ -666,7 +666,7 @@ class InterceptedUnaryUnaryCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> UnaryUnaryCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: list[UnaryUnaryClientInterceptor],
@@ -765,7 +765,7 @@ class InterceptedUnaryStreamCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> UnaryStreamCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: list[UnaryStreamClientInterceptor],
@@ -884,7 +884,7 @@ class InterceptedStreamUnaryCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> StreamUnaryCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: Iterator[StreamUnaryClientInterceptor],
@@ -985,7 +985,7 @@ class InterceptedStreamStreamCall(
         request_serializer: SerializingFunction,
         response_deserializer: DeserializingFunction,
     ) -> StreamStreamCall:
-        """Run the RPC call wrapped in interceptors"""
+        """Run the RPC call wrapped in interceptors."""
 
         async def _run_interceptor(
             interceptors: list[StreamStreamClientInterceptor],
@@ -1059,7 +1059,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     def done(self) -> bool:
         return True
 
-    def add_done_callback(self, unused_callback) -> None:
+    def add_done_callback(self, unused_callback) -> None: # noqa: ANN001
         raise NotImplementedError
 
     def time_remaining(self) -> Optional[float]:
