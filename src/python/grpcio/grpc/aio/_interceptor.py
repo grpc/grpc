@@ -575,7 +575,7 @@ class _InterceptedStreamRequestMixin:
 
         try:
             call = await self._interceptors_task
-        except (asyncio.CancelledError, AioRpcError) as err:
+        except asyncio.CancelledError as err:
             raise asyncio.InvalidStateError(_RPC_ALREADY_FINISHED_DETAILS) from err
 
         if call.done():
@@ -1080,7 +1080,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     async def debug_error_string(self) -> Optional[str]:
         return None
 
-    def __await__(self):
+    def __await__(self) -> Iterator[Any]:
         if False:  # pylint: disable=using-constant-test
             # This code path is never used, but a yield statement is needed
             # for telling the interpreter that __await__ is a generator.
@@ -1112,7 +1112,7 @@ class _StreamCallResponseIterator:
     def done(self) -> bool:
         return self._call.done()
 
-    def add_done_callback(self, callback) -> None:
+    def add_done_callback(self, callback) -> None: # noqa: ANN001
         self._call.add_done_callback(callback)
 
     def time_remaining(self) -> Optional[float]:
@@ -1133,7 +1133,7 @@ class _StreamCallResponseIterator:
     async def debug_error_string(self) -> Optional[str]:
         return await self._call.debug_error_string()
 
-    def __aiter__(self):
+    def __aiter__(self) -> AsyncIterator[ResponseType]:
         return self._response_iterator.__aiter__()
 
     async def wait_for_connection(self) -> None:
