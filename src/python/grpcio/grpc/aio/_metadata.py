@@ -40,7 +40,7 @@ class Metadata(abc.Collection):
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: tuple) -> "Metadata":
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()

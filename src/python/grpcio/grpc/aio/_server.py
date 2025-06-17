@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from collections.abc import Sequence
 
 import grpc
@@ -54,9 +54,9 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
+                msg = f"Interceptor must be ServerInterceptor, the following are invalid: {invalid_interceptors}"
                 raise ValueError(
-                    "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}",
+                  msg,
                 )
         self._server = cygrpc.AioServer(
             self._loop,
@@ -70,7 +70,7 @@ class Server(_base_server.Server):
     def add_generic_rpc_handlers(
         self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
-        """Registers GenericRpcHandlers with this Server.
+        """Register GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
 
@@ -84,13 +84,13 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: dict[str, grpc.RpcMethodHandler],
     ) -> None:
         # TODO(xuanwn): Implement this for AsyncIO.
         pass
 
     def add_insecure_port(self, address: str) -> int:
-        """Opens an insecure port for accepting RPCs.
+        """Open an insecure port for accepting RPCs.
 
         This method may only be called before starting the server.
 
@@ -109,7 +109,7 @@ class Server(_base_server.Server):
     def add_secure_port(
         self, address: str, server_credentials: grpc.ServerCredentials,
     ) -> int:
-        """Opens a secure port for accepting RPCs.
+        """Open a secure port for accepting RPCs.
 
         This method may only be called before starting the server.
 
@@ -131,14 +131,14 @@ class Server(_base_server.Server):
         )
 
     async def start(self) -> None:
-        """Starts this Server.
+        """Start this Server.
 
         This method may only be called once. (i.e. it is not idempotent).
         """
         await self._server.start()
 
     async def stop(self, grace: Optional[float]) -> None:
-        """Stops this Server.
+        """Stop this Server.
 
         This method immediately stops the server from servicing new RPCs in
         all cases.
@@ -189,18 +189,17 @@ class Server(_base_server.Server):
         """
         return await self._server.wait_for_termination(timeout)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Schedules a graceful shutdown in current event loop.
 
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
-        if hasattr(self, "_server"):
-            if self._server.is_running():
-                cygrpc.schedule_coro_threadsafe(
-                    self._server.shutdown(None),
-                    self._loop,
-                )
+        if hasattr(self, "_server") and self._server.is_running():
+          cygrpc.schedule_coro_threadsafe(
+              self._server.shutdown(None),
+              self._loop,
+          )
 
 
 def server(
@@ -210,8 +209,8 @@ def server(
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
-):
-    """Creates a Server with which RPCs can be serviced.
+) -> Server:
+    """Create a Server with which RPCs can be serviced.
 
     Args:
       migration_thread_pool: A futures.ThreadPoolExecutor to be used by the
