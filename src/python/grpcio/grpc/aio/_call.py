@@ -729,7 +729,7 @@ class StreamStreamCall(
         self,
         request_iterator: Optional[RequestIterableType],
         deadline: Optional[float],
-        metadata: Union[Metadata, Sequence[MetadatumType]],
+        metadata: Optional[Union[Metadata, Sequence[MetadatumType]]],
         credentials: Optional[grpc.CallCredentials],
         wait_for_ready: Optional[bool],
         channel: cygrpc.AioChannel,
