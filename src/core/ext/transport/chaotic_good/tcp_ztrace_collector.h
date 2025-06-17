@@ -15,12 +15,14 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_ZTRACE_COLLECTOR_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_TCP_ZTRACE_COLLECTOR_H
 
+#include <cstddef>
 #include <cstdint>
 #include <map>
 #include <string>
 
 #include "src/core/channelz/ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
+#include "src/core/lib/event_engine/utils.h"
 
 namespace grpc_core::chaotic_good {
 namespace tcp_ztrace_collector_detail {
@@ -46,8 +48,6 @@ void MarkRead(bool read, Json::Object& object);
 struct ReadFrameHeaderTrace {
   TcpFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpFrameHeaderToJsonObject(header, object);
@@ -57,8 +57,6 @@ struct ReadFrameHeaderTrace {
 struct ReadDataHeaderTrace {
   TcpDataFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(header, object);
@@ -67,8 +65,6 @@ struct ReadDataHeaderTrace {
 
 struct WriteFrameHeaderTrace {
   TcpFrameHeader header;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
@@ -81,55 +77,149 @@ struct EndpointWriteMetricsTrace {
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent
       write_event;
   std::vector<std::pair<absl::string_view, int64_t>> metrics;
-
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(metrics[0]) * metrics.size();
-  }
+  size_t endpoint_id;
 
   void RenderJson(Json::Object& object) const {
-    std::string name;
-    switch (write_event) {
-      case grpc_event_engine::experimental::EventEngine::Endpoint::WriteEvent::
-          kSendMsg:
-        name = "SEND_MSG_METRICS";
-        break;
-      default:
-        name = absl::StrCat("ENDPOINT_WRITE_METRICS_TYPE_",
-                            static_cast<int>(write_event));
-    }
-    object["metadata_type"] = Json::FromString(name);
+    object["metadata_type"] = Json::FromString(absl::StrCat(
+        "Endpoint Write: ",
+        grpc_event_engine::experimental::WriteEventToString(write_event)));
     object["fathom_timestamp"] = Json::FromString(absl::StrCat(timestamp));
     for (const auto& [name, value] : metrics) {
       object.emplace(name, Json::FromNumber(value));
     }
+    object["endpoint_id"] = Json::FromNumber(endpoint_id);
+  }
+};
+
+struct TraceScheduledChannel {
+  uint32_t id;
+  bool ready;
+  double start_time;
+  double bytes_per_second;
+  double allowed_bytes;
+  Json ToJson() const {
+    return Json::FromObject({
+        {"id", Json::FromNumber(id)},
+        {"ready", Json::FromBool(ready)},
+        {"start_time", Json::FromNumber(start_time)},
+        {"bytes_per_second", Json::FromNumber(bytes_per_second)},
+        {"allowed_bytes", Json::FromNumber(allowed_bytes)},
+    });
+  }
+};
+
+struct TraceWriteSchedule {
+  std::vector<TraceScheduledChannel> channels;
+  double outstanding_bytes;
+  double end_time_requested;
+  double end_time_adjusted;
+  double min_tokens;
+  size_t num_ready;
+  size_t MemoryUsage() const {
+    return sizeof(*this) + sizeof(channels[0]) * channels.size();
+  }
+  void RenderJson(Json::Object& object) const {
+    Json::Array channels;
+    for (const auto& c : this->channels) {
+      channels.emplace_back(c.ToJson());
+    }
+    object["channels"] = Json::FromArray(std::move(channels));
+    object["end_time_requested"] = Json::FromNumber(end_time_requested);
+    object["end_time_adjusted"] = Json::FromNumber(end_time_adjusted);
+    object["min_tokens"] = Json::FromNumber(min_tokens);
+    object["outstanding_bytes"] = Json::FromNumber(outstanding_bytes);
+    object["num_ready"] = Json::FromNumber(num_ready);
   }
 };
 
 struct WriteLargeFrameHeaderTrace {
-  TcpDataFrameHeader data_header;
-  std::vector<double> lb_decisions;
-
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(double) * lb_decisions.size();
-  }
+  uint64_t payload_tag;
+  uint64_t payload_size;
+  uint32_t chosen_endpoint;
 
   void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("WRITE_LARGE_HEADER");
     tcp_ztrace_collector_detail::MarkRead(false, object);
-    tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(data_header,
-                                                                object);
-    Json::Array lb;
-    for (double d : lb_decisions) {
-      lb.emplace_back(Json::FromNumber(d));
-    }
-    object["lb_decisions"] = Json::FromArray(std::move(lb));
+    object["payload_tag"] = Json::FromNumber(payload_tag);
+    object["payload_size"] = Json::FromNumber(payload_size);
+    object["chosen_endpoint"] = Json::FromNumber(chosen_endpoint);
   }
 };
 
-using TcpZTraceCollector =
-    channelz::ZTraceCollector<tcp_ztrace_collector_detail::Config,
-                              ReadFrameHeaderTrace, ReadDataHeaderTrace,
-                              WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
-                              EndpointWriteMetricsTrace>;
+struct WriteBytesToEndpointTrace {
+  size_t bytes;
+  size_t endpoint_id;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("WRITE_BYTES");
+    object["bytes"] = Json::FromNumber(bytes);
+    object["endpoint_id"] = Json::FromNumber(endpoint_id);
+  }
+};
+
+struct FinishWriteBytesToEndpointTrace {
+  size_t endpoint_id;
+  absl::Status status;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("FINISH_WRITE");
+    object["endpoint_id"] = Json::FromNumber(endpoint_id);
+    object["status"] = Json::FromString(status.ToString());
+  }
+};
+
+struct WriteBytesToControlChannelTrace {
+  size_t bytes;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("WRITE_CTL_BYTES");
+    object["bytes"] = Json::FromNumber(bytes);
+  }
+};
+
+struct FinishWriteBytesToControlChannelTrace {
+  absl::Status status;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("FINISH_WRITE_CTL");
+    object["status"] = Json::FromString(status.ToString());
+  }
+};
+
+template <bool read>
+struct TransportError {
+  absl::Status status;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] =
+        Json::FromString(read ? "READ_ERROR" : "WRITE_ERROR");
+    object["status"] = Json::FromString(status.ToString());
+  }
+};
+
+struct OrphanTrace {
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("ORPHAN");
+  }
+};
+
+struct EndpointCloseTrace {
+  uint32_t id;
+
+  void RenderJson(Json::Object& object) const {
+    object["metadata_type"] = Json::FromString("ENDPOINT_CLOSE");
+    object["endpoint_id"] = Json::FromNumber(id);
+  }
+};
+
+using TcpZTraceCollector = channelz::ZTraceCollector<
+    tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
+    ReadDataHeaderTrace, WriteFrameHeaderTrace, TraceWriteSchedule,
+    WriteLargeFrameHeaderTrace, EndpointWriteMetricsTrace,
+    WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
+    WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
+    TransportError<true>, TransportError<false>, OrphanTrace,
+    EndpointCloseTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

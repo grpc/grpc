@@ -35,7 +35,7 @@ namespace grpc_core {
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, Retry) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

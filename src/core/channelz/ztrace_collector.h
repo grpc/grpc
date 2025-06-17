@@ -23,6 +23,9 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/lib/debug/trace.h"
+#include "src/core/util/json/json_writer.h"
+#include "src/core/util/memory_usage.h"
 #include "src/core/util/single_set_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"
@@ -124,6 +127,15 @@ class ZTraceCollector {
  public:
   template <typename X>
   void Append(X producer_or_value) {
+    GRPC_TRACE_LOG(ztrace, INFO) << "ZTRACE[" << this << "]: " << [&]() {
+      Json::Object obj;
+      if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
+        producer_or_value.RenderJson(obj);
+      } else {
+        producer_or_value().RenderJson(obj);
+      }
+      return JsonDump(Json::FromObject(std::move(obj)));
+    }();
     if (!impl_.is_set()) return;
     if constexpr (ztrace_collector_detail::kIsElement<X, Data...>) {
       AppendValue(std::move(producer_or_value));
@@ -152,11 +164,12 @@ class ZTraceCollector {
     using Collections = std::tuple<Collection<Data>...>;
     struct RemoveMostRecentState {
       void (*enact)(Instance*) = nullptr;
-      gpr_cycle_counter most_recent;
+      gpr_cycle_counter most_recent =
+          std::numeric_limits<gpr_cycle_counter>::max();
     };
     template <typename T>
     void Append(std::pair<gpr_cycle_counter, T> value) {
-      memory_used_ += value.second.MemoryUsage();
+      memory_used_ += MemoryUsageOf(value.second);
       while (memory_used_ > memory_cap_) RemoveMostRecent();
       std::get<Collection<T> >(data).push_back(std::move(value));
     }
@@ -165,16 +178,17 @@ class ZTraceCollector {
       (UpdateRemoveMostRecentState<Data>(&state), ...);
       CHECK(state.enact != nullptr);
       state.enact(this);
+      ++items_removed_;
     }
     template <typename T>
     void UpdateRemoveMostRecentState(RemoveMostRecentState* state) {
       auto& collection = std::get<Collection<T> >(data);
       if (collection.empty()) return;
       if (state->enact == nullptr ||
-          collection.front().first > state->most_recent) {
+          collection.front().first < state->most_recent) {
         state->enact = +[](Instance* instance) {
           auto& collection = std::get<Collection<T> >(instance->data);
-          const size_t ent_usage = collection.front().second.MemoryUsage();
+          const size_t ent_usage = MemoryUsageOf(collection.front().second);
           CHECK_GE(instance->memory_used_, ent_usage);
           instance->memory_used_ -= ent_usage;
           collection.pop_front();
@@ -184,8 +198,8 @@ class ZTraceCollector {
     }
     void Finish(absl::Status status) {
       event_engine->Run([data = std::move(data), done = std::move(done),
-                         status = std::move(status),
-                         memory_used = memory_used_]() mutable {
+                         status = std::move(status), memory_used = memory_used_,
+                         items_removed = items_removed_]() mutable {
         Json::Array entries;
         (ztrace_collector_detail::AppendResults(
              std::get<Collection<Data> >(data), entries),
@@ -195,11 +209,13 @@ class ZTraceCollector {
         result["status"] = Json::FromString(status.ToString());
         result["memory_used"] =
             Json::FromNumber(static_cast<uint64_t>(memory_used));
+        result["items_removed"] = Json::FromNumber(items_removed);
         done(Json::FromObject(std::move(result)));
       });
     }
     size_t memory_used_ = 0;
     size_t memory_cap_ = 0;
+    uint64_t items_removed_ = 0;
     Config config;
     const Timestamp start_time = Timestamp::Now();
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine;

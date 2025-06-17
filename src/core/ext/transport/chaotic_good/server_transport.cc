@@ -140,7 +140,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
               frame.stream_id = stream_id;
               return TrySeq(
                   outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}),
+                      OutgoingFrame{std::move(frame), call_tracer}, 1),
                   SendCallBody(stream_id, call_initiator, call_tracer));
             },
             []() { return StatusFlag(true); });
@@ -171,7 +171,7 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer});
+                OutgoingFrame{std::move(frame), call_tracer}, 1);
           }));
 }
 
@@ -268,7 +268,8 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
-    : ctx_(frame_transport->ctx()),
+    : channelz::DataSource(frame_transport->ctx()->socket_node),
+      ctx_(frame_transport->ctx()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -282,9 +283,21 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
       ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   incoming_frame_spawner_ = party_->MakeSpawnSerializer();
-  MpscReceiver<OutgoingFrame> outgoing_pipe(8);
+  MpscReceiver<OutgoingFrame> outgoing_pipe(256 * 1024 * 1024);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
+}
+
+void ChaoticGoodServerTransport::StreamDispatch::AddData(
+    channelz::DataSink sink) {
+  MutexLock lock(&mu_);
+  Json::Object state;
+  state["stream_map_size"] = Json::FromNumber(stream_map_.size());
+  state["last_seen_new_stream_id"] = Json::FromNumber(last_seen_new_stream_id_);
+  sink.AddAdditionalInfo("chaoticGoodServerTransportState", std::move(state));
+  party_->ToJson([sink](Json::Object obj) mutable {
+    sink.AddAdditionalInfo("transportParty", std::move(obj));
+  });
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(
@@ -307,7 +320,9 @@ void ChaoticGoodServerTransport::Orphan() {
 }
 
 void ChaoticGoodServerTransport::StreamDispatch::OnFrameTransportClosed(
-    absl::Status) {
+    absl::Status status) {
+  GRPC_TRACE_LOG(chaotic_good, INFO)
+      << "CHAOTIC_GOOD: OnFrameTransportClosed: " << status;
   // Mark transport as unavailable when the endpoint write/read failed.
   // Close all the available pipes.
   ReleasableMutexLock lock(&mu_);

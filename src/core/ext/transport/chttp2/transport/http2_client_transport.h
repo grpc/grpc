@@ -30,7 +30,9 @@
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/http2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/keepalive.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/ping_promise.h"
 #include "src/core/lib/promise/inter_activity_mutex.h"
 #include "src/core/lib/promise/mpsc.h"
 #include "src/core/lib/promise/party.h"
@@ -58,6 +60,16 @@ namespace http2 {
 // [PH2][EXT] This is a TODO related to a project unrelated to PH2 but happening
 //            in parallel.
 
+// Http2 Client Transport Spawns Overview
+
+// | Promise Spawn       | Max Duration | Promise Resolution    | Max Spawns |
+// |                     | for Spawn    |                       |            |
+// |---------------------|--------------|-----------------------|------------|
+// | Endpoint Read Loop  | Infinite     | On transport close    | One        |
+// | Endpoint Write Loop | Infinite     | On transport close    | One        |
+
+// Max Party Slots (Always): 2
+
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
 // Do not use or edit any of these functions unless you are
@@ -74,6 +86,10 @@ class Http2ClientTransport final : public ClientTransport {
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
           event_engine);
 
+  Http2ClientTransport(const Http2ClientTransport&) = delete;
+  Http2ClientTransport& operator=(const Http2ClientTransport&) = delete;
+  Http2ClientTransport(Http2ClientTransport&&) = delete;
+  Http2ClientTransport& operator=(Http2ClientTransport&&) = delete;
   ~Http2ClientTransport() override;
 
   FilterStackTransport* filter_stack_transport() override { return nullptr; }
@@ -99,27 +115,37 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
+    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
+    // and using that always would be more efficient.
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame)),
+        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [](StatusFlag status) {
           HTTP2_CLIENT_DLOG
-              << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
+              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
+              << status;
           return (status.ok()) ? absl::OkStatus()
                                : absl::InternalError("Failed to enqueue frame");
         }));
   }
+  auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
+    return ping_manager_.RequestPing(std::move(on_initiate));
+  }
+  template <typename Factory>
+  auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
+    return general_party_->Spawn(name, std::move(factory), [](auto) {});
+  }
 
  private:
   // Promise factory for processing each type of frame
-  auto ProcessHttp2DataFrame(Http2DataFrame frame);
-  auto ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
-  auto ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
-  auto ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
+  Http2Status ProcessHttp2DataFrame(Http2DataFrame frame);
+  Http2Status ProcessHttp2HeaderFrame(Http2HeaderFrame frame);
+  Http2Status ProcessHttp2RstStreamFrame(Http2RstStreamFrame frame);
+  Http2Status ProcessHttp2SettingsFrame(Http2SettingsFrame frame);
   auto ProcessHttp2PingFrame(Http2PingFrame frame);
-  auto ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
-  auto ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
-  auto ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
-  auto ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessHttp2GoawayFrame(Http2GoawayFrame frame);
+  Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
+  Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
+  Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
 
   // Reading from the endpoint.
 
@@ -156,39 +182,103 @@ class Http2ClientTransport final : public ClientTransport {
 
   // Returns a promise to enqueue a frame to MPSC
   auto EnqueueOutgoingFrame(Http2Frame frame) {
+    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
+    // and using that always would be more efficient.
     return AssertResultType<absl::Status>(Map(
-        outgoing_frames_.MakeSender().Send(std::move(frame)),
-        [](StatusFlag status) {
+        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
           HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
-          return (status.ok()) ? absl::OkStatus()
-                               : absl::InternalError("Failed to enqueue frame");
+          return (status.ok())
+                     ? absl::OkStatus()
+                     : self->HandleError(Http2Status::AbslConnectionError(
+                           absl::StatusCode::kInternal,
+                           "Failed to enqueue frame"));
         }));
   }
+
+  // Force triggers a transport write cycle
+  auto TriggerWriteCycle() { return EnqueueOutgoingFrame(Http2EmptyFrame{}); }
 
   RefCountedPtr<Party> general_party_;
 
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
 
-  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   // Managing the streams
   struct Stream : public RefCounted<Stream> {
-    explicit Stream(CallHandler call)
-        : call(std::move(call)), stream_state(HttpStreamState::kIdle) {}
+    explicit Stream(CallHandler call, const uint32_t stream_id1)
+        : call(std::move(call)),
+          stream_state(HttpStreamState::kIdle),
+          stream_id(stream_id1),
+          header_assembler(stream_id1) {}
+
+    // Modify the stream state
+    // The possible stream transitions are as follows:
+    // kIdle -> kOpen
+    // kOpen -> kClosed/kHalfClosedLocal/kHalfClosedRemote
+    // kHalfClosedLocal/kHalfClosedRemote -> kClosed
+    // kClosed -> kClosed
+    void SentInitialMetadata() {
+      DCHECK(stream_state == HttpStreamState::kIdle);
+      stream_state = HttpStreamState::kOpen;
+    }
+
+    void MarkHalfClosedLocal() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
+          break;
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedLocal;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+          break;
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    void MarkHalfClosedRemote() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
+          break;
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedRemote;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+          break;
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
 
     CallHandler call;
     HttpStreamState stream_state;
+    const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-    // TODO(tjagtap) : [PH2][P2] : Add more members as necessary
   };
+
   uint32_t NextStreamId(
       InterActivityMutex<uint32_t>::Lock& next_stream_id_lock) {
     const uint32_t stream_id = *next_stream_id_lock;
+    if (stream_id > RFC9113::kMaxStreamId31Bit) {
+      // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
+      // ids
+    }
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
     (*next_stream_id_lock) += 2;
@@ -210,7 +300,274 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+
+  struct CloseStreamArgs {
+    bool close_reads;
+    bool close_writes;
+    bool send_rst_stream;
+    bool cancelled;
+  };
+
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   CloseStreamArgs args, DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " status=" << status
+                      << " location=" << whence.file() << ":" << whence.line();
+
+    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
+    // throughout this function.
+    MutexLock lock(&transport_mutex_);
+    auto pair = stream_list_.find(stream_id);
+    if (pair == stream_list_.end()) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " stream not found";
+      return;
+    }
+    auto& stream = pair->second;
+
+    if (args.close_reads) {
+      stream->MarkHalfClosedRemote();
+    }
+    if (args.close_writes) {
+      stream->MarkHalfClosedLocal();
+    }
+
+    if (stream->IsClosed()) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " closing stream.";
+      if (args.send_rst_stream) {
+        // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
+      }
+
+      if (!args.cancelled) {
+        stream->call.SpawnPushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+      }
+      stream_list_.erase(stream_id);
+    }
+  }
+
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
+
+  auto EndpointReadSlice(const size_t num_bytes) {
+    return Map(endpoint_.ReadSlice(num_bytes),
+               [self = RefAsSubclass<Http2ClientTransport>()](
+                   absl::StatusOr<Slice> status) {
+                 // We are ignoring the case where the read fails and call
+                 // GotData() regardless. Reasoning:
+                 // 1. It is expected that if the read fails, the transport will
+                 //    close and the keepalive loop will be stopped.
+                 // 2. It does not seem worth to have an extra condition for the
+                 //    success cases which would be way more common.
+                 self->keepalive_manager_.GotData();
+                 return status;
+               });
+  }
+
+  auto EndpointRead(const size_t num_bytes) {
+    return Map(endpoint_.Read(num_bytes),
+               [self = RefAsSubclass<Http2ClientTransport>()](
+                   absl::StatusOr<SliceBuffer> status) {
+                 // We are ignoring the case where the read fails and call
+                 // GotData() regardless. Reasoning:
+                 // 1. It is expected that if the read fails, the transport will
+                 //    close and the keepalive loop will be stopped.
+                 // 2. It does not seem worth to have an extra condition for the
+                 //    success cases which would be way more common.
+                 self->keepalive_manager_.GotData();
+                 return status;
+               });
+  }
+
+  // This function MUST be idempotent.
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
+                      << status << " location=" << whence.file() << ":"
+                      << whence.line();
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  }
+
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  CloseStreamArgs{
+                      /*close_reads=*/true,
+                      /*close_writes=*/true,
+                      /*send_rst_stream=*/true,
+                      /*cancelled=*/false,
+                  },
+                  whence);
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(status, whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
+  bool bytes_sent_in_last_write_;
+
+  // Ping related members
+  // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
+  // members.
+  // Duration between two consecutive keepalive pings
+  const Duration keepalive_time_;
+  // Duration to wait for a keepalive ping ack before triggering timeout. This
+  // only takes effect if the assigned value is less than the ping timeout.
+  const Duration keepalive_timeout_;
+  // Duration to wait for ping ack before triggering timeout
+  const Duration ping_timeout_;
+  PingManager ping_manager_;
+  std::vector<uint64_t> pending_ping_acks_;
+  KeepaliveManager keepalive_manager_;
+
+  // Flags
+  bool keepalive_permit_without_calls_;
+
+  auto SendPing(absl::AnyInvocable<void()> on_initiate) {
+    return ping_manager_.RequestPing(std::move(on_initiate));
+  }
+  auto WaitForPingAck() { return ping_manager_.WaitForPingAck(); }
+
+  // Ping Helper functions
+  // Returns a promise that resolves once a ping frame is written to the
+  // endpoint.
+  auto CreateAndWritePing(bool ack, uint64_t opaque_data) {
+    Http2Frame frame = Http2PingFrame{ack, opaque_data};
+    SliceBuffer output_buf;
+    Serialize(absl::Span<Http2Frame>(&frame, 1), output_buf);
+    return endpoint_.Write(std::move(output_buf), {});
+  }
+
+  Duration NextAllowedPingInterval() {
+    MutexLock lock(&transport_mutex_);
+    return (!keepalive_permit_without_calls_ && stream_list_.empty())
+               ? Duration::Hours(2)
+               : Duration::Seconds(1);
+  }
+
+  auto MaybeSendPing() {
+    return ping_manager_.MaybeSendPing(NextAllowedPingInterval(),
+                                       ping_timeout_);
+  }
+
+  auto MaybeSendPingAcks() {
+    return AssertResultType<absl::Status>(If(
+        pending_ping_acks_.empty(), [] { return absl::OkStatus(); },
+        [this] {
+          std::vector<Http2Frame> frames;
+          frames.reserve(pending_ping_acks_.size());
+          for (auto& opaque_data : pending_ping_acks_) {
+            frames.emplace_back(Http2PingFrame{true, opaque_data});
+          }
+          pending_ping_acks_.clear();
+          SliceBuffer output_buf;
+          Serialize(absl::Span<Http2Frame>(frames), output_buf);
+          return endpoint_.Write(std::move(output_buf), {});
+        }));
+  }
+
+  class PingSystemInterfaceImpl : public PingInterface {
+   public:
+    static std::unique_ptr<PingInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<PingSystemInterfaceImpl>(
+          PingSystemInterfaceImpl(transport));
+    }
+
+    // Returns a promise that resolves once a ping frame is written to the
+    // endpoint.
+    Promise<absl::Status> SendPing(SendPingArgs args) override {
+      return transport_->CreateAndWritePing(args.ack, args.opaque_data);
+    }
+
+    Promise<absl::Status> TriggerWrite() override {
+      return transport_->TriggerWriteCycle();
+    }
+
+    Promise<absl::Status> PingTimeout() override {
+      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
+      // Returns a promise that resolves once goaway is sent.
+      LOG(INFO) << "Ping timeout at time: " << Timestamp::Now();
+
+      // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
+      // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
+      // to kRefusedStream). However looking at RFC9113, definition of
+      // kRefusedStream doesn't seem to fit this case. We should revisit this
+      // and update the error code.
+      return Immediate(
+          transport_->HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kRefusedStream, "Ping timeout")));
+    }
+
+   private:
+    // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
+    // counted struct/class passed to all the transport promises/members. This
+    // will help removing back references from the transport members to
+    // transport and greatly simpilfy the cleanup path.
+    Http2ClientTransport* transport_;
+    explicit PingSystemInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+  };
+
+  class KeepAliveInterfaceImpl : public KeepAliveInterface {
+   public:
+    static std::unique_ptr<KeepAliveInterface> Make(
+        Http2ClientTransport* transport) {
+      return std::make_unique<KeepAliveInterfaceImpl>(
+          KeepAliveInterfaceImpl(transport));
+    }
+
+   private:
+    explicit KeepAliveInterfaceImpl(Http2ClientTransport* transport)
+        : transport_(transport) {}
+    Promise<absl::Status> SendPingAndWaitForAck() override {
+      return TrySeq(transport_->TriggerWriteCycle(), [transport = transport_] {
+        return transport->WaitForPingAck();
+      });
+    }
+    Promise<absl::Status> OnKeepAliveTimeout() override {
+      // TODO(akshitpatel) : [PH2][P2] : Trigger goaway here.
+      LOG(INFO) << "Keepalive timeout triggered";
+
+      // TODO(akshitpatel) : [PH2][P2] : The error code here has been chosen
+      // based on CHTTP2's usage of GRPC_STATUS_UNAVAILABLE (which corresponds
+      // to kRefusedStream). However looking at RFC9113, definition of
+      // kRefusedStream doesn't seem to fit this case. We should revisit this
+      // and update the error code.
+      return Immediate(
+          transport_->HandleError(Http2Status::Http2ConnectionError(
+              Http2ErrorCode::kRefusedStream, "Keepalive timeout")));
+    }
+
+    bool NeedToSendKeepAlivePing() override {
+      bool need_to_send_ping = false;
+      {
+        MutexLock lock(&transport_->transport_mutex_);
+        need_to_send_ping = (transport_->keepalive_permit_without_calls_ ||
+                             !transport_->stream_list_.empty());
+      }
+      return need_to_send_ping;
+    }
+
+    // TODO(akshitpatel) : [PH2][P2] : Eventually there should be a separate ref
+    // counted struct/class passed to all the transport promises/members. This
+    // will help removing back references from the transport members to
+    // transport and greatly simpilfy the cleanup path.
+    Http2ClientTransport* transport_;
+  };
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

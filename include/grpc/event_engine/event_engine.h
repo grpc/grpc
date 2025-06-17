@@ -24,6 +24,7 @@
 
 #include <bitset>
 #include <initializer_list>
+#include <utility>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
@@ -240,6 +241,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       size_t key;
       int64_t value;
     };
+    // It is the responsibility of the caller of WriteEventCallback to make sure
+    // that the corresponding endpoint is still valid. HINT: Do NOT offload
+    // callbacks onto the EventEngine or other threads.
     using WriteEventCallback = absl::AnyInvocable<void(
         WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
     // A bitmask of the events that the caller is interested in.
@@ -273,6 +277,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
         return requested_events_mask_;
       }
 
+      /// Takes the callback. Ownership is transferred. It is illegal to destroy
+      /// the endpoint before this callback is invoked.
       WriteEventCallback TakeEventCallback() { return std::move(on_event_); }
 
      private:
@@ -288,10 +294,28 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     class WriteArgs final {
      public:
       WriteArgs() = default;
+
+      ~WriteArgs();
+
       WriteArgs(const WriteArgs&) = delete;
       WriteArgs& operator=(const WriteArgs&) = delete;
-      WriteArgs(WriteArgs&&) = default;
-      WriteArgs& operator=(WriteArgs&&) = default;
+
+      WriteArgs(WriteArgs&& other) noexcept
+          : metrics_sink_(std::move(other.metrics_sink_)),
+            google_specific_(other.google_specific_),
+            max_frame_size_(other.max_frame_size_) {
+        other.google_specific_ = nullptr;
+      }
+
+      WriteArgs& operator=(WriteArgs&& other) noexcept {
+        if (this != &other) {
+          metrics_sink_ = std::move(other.metrics_sink_);
+          google_specific_ = other.google_specific_;
+          other.google_specific_ = nullptr;  // Nullify source
+          max_frame_size_ = other.max_frame_size_;
+        }
+        return *this;
+      }
 
       // A sink to receive write events.
       std::optional<WriteEventSink> TakeMetricsSink() {
@@ -314,6 +338,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
         return google_specific_;
       }
 
+      void* TakeDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return std::exchange(google_specific_, nullptr);
+      }
+
       void SetDeprecatedAndDiscouragedGoogleSpecificPointer(void* pointer) {
         google_specific_ = pointer;
       }
@@ -333,6 +361,26 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       void* google_specific_ = nullptr;
       int64_t max_frame_size_ = 1024 * 1024;
     };
+
+    class TelemetryInfo {
+     public:
+      virtual ~TelemetryInfo() = default;
+
+      /// Returns the list of write metrics that the endpoint supports.
+      /// The keys are used to identify the metrics in the GetMetricName and
+      /// GetMetricKey APIs. The current value of the metric can be queried by
+      /// adding a WriteEventSink to the WriteArgs of a Write call.
+      virtual std::vector<size_t> AllWriteMetrics() const = 0;
+      /// Returns the name of the write metric with the given key.
+      /// If the key is not found, returns std::nullopt.
+      virtual std::optional<absl::string_view> GetMetricName(
+          size_t key) const = 0;
+      /// Returns the key of the write metric with the given name.
+      /// If the name is not found, returns std::nullopt.
+      virtual std::optional<size_t> GetMetricKey(
+          absl::string_view name) const = 0;
+    };
+
     /// Writes data out on the connection.
     ///
     /// If the write succeeds immediately, it returns true and the
@@ -359,17 +407,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
     virtual const ResolvedAddress& GetLocalAddress() const = 0;
-    /// Returns the list of write metrics that the endpoint supports.
-    /// The keys are used to identify the metrics in the GetMetricName and
-    /// GetMetricKey APIs. The current value of the metric can be queried by
-    /// adding a WriteEventSink to the WriteArgs of a Write call.
-    virtual std::vector<size_t> AllWriteMetrics() = 0;
-    /// Returns the name of the write metric with the given key.
-    /// If the key is not found, returns std::nullopt.
-    virtual std::optional<absl::string_view> GetMetricName(size_t key) = 0;
-    /// Returns the key of the write metric with the given name.
-    /// If the name is not found, returns std::nullopt.
-    virtual std::optional<size_t> GetMetricKey(absl::string_view name) = 0;
+
+    virtual std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const = 0;
   };
 
   /// Called when a new connection is established.

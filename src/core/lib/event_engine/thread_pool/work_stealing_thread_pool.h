@@ -53,11 +53,12 @@ class WorkStealingThreadPool final : public ThreadPool {
   void Run(absl::AnyInvocable<void()> callback) override;
   void Run(EventEngine::Closure* closure) override;
 
+#if GRPC_ENABLE_FORK_SUPPORT
   // Forkable
   // These methods are exposed on the public object to allow for testing.
   void PrepareFork() override;
-  void PostforkParent() override;
-  void PostforkChild() override;
+  void PostFork() override;
+#endif  // GRPC_ENABLE_FORK_SUPPORT
 
  private:
   // A basic communication mechanism to signal waiting threads that work is

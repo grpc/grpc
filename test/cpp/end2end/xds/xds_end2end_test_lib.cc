@@ -727,22 +727,26 @@ size_t XdsEnd2endTest::SendRpcsAndCountFailuresWithMessage(
 
 void XdsEnd2endTest::LongRunningRpc::StartRpc(
     grpc::testing::EchoTestService::Stub* stub, const RpcOptions& rpc_options) {
-  sender_thread_ = std::thread([this, stub, rpc_options]() {
-    EchoRequest request;
-    EchoResponse response;
-    rpc_options.SetupRpc(&context_, &request);
-    status_ = stub->Echo(&context_, request, &response);
+  LOG(INFO) << "Starting long-running RPC...";
+  rpc_options.SetupRpc(&context_, &request_);
+  stub->async()->Echo(&context_, &request_, &response_, [this](Status status) {
+    grpc_core::MutexLock lock(&mu_);
+    status_ = std::move(status);
+    cv_.Signal();
   });
 }
 
 void XdsEnd2endTest::LongRunningRpc::CancelRpc() {
   context_.TryCancel();
-  if (sender_thread_.joinable()) sender_thread_.join();
+  (void)GetStatus();
 }
 
 Status XdsEnd2endTest::LongRunningRpc::GetStatus() {
-  if (sender_thread_.joinable()) sender_thread_.join();
-  return status_;
+  grpc_core::MutexLock lock(&mu_);
+  while (!status_.has_value()) {
+    cv_.Wait(&mu_);
+  }
+  return *status_;
 }
 
 std::vector<std::unique_ptr<XdsEnd2endTest::ConcurrentRpc>>
@@ -848,7 +852,11 @@ void XdsEnd2endTest::SetProtoDuration(
 }
 
 std::string XdsEnd2endTest::MakeConnectionFailureRegex(
-    absl::string_view prefix, bool has_resolution_note) {
+    absl::string_view prefix, absl::string_view resolution_note) {
+  std::string resolution_note_str;
+  if (!resolution_note.empty()) {
+    resolution_note_str = absl::StrCat(" \\(", resolution_note, "\\)");
+  }
   return absl::StrCat(
       prefix,
       "(UNKNOWN|UNAVAILABLE): "
@@ -860,7 +868,7 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       // Parenthetical wrappers
       "( ?\\(*("
       "Secure read failed|"
-      "Handshake read failed|"
+      "Handshake (read|write) failed|"
       "Delayed close due to in-progress write|"
       // Syscall
       "((connect|sendmsg|recvmsg|getsockopt\\(SO\\_ERROR\\)): ?)?"
@@ -875,8 +883,8 @@ std::string XdsEnd2endTest::MakeConnectionFailureRegex(
       "( \\([0-9]+\\))?"
       // close paren from wrappers above
       ")\\)*)+",
-      // xDS node ID
-      has_resolution_note ? " \\(xDS node ID:xds_end2end_test\\)" : "");
+      // resolution note, if any
+      resolution_note_str);
 }
 
 std::string XdsEnd2endTest::MakeTlsHandshakeFailureRegex(

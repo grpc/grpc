@@ -48,7 +48,9 @@
 #include "absl/strings/string_view.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call_test_only.h"
@@ -457,6 +459,16 @@ class CoreEnd2endTest {
     client_ = f.MakeClient(args, cq_);
     CHECK_NE(client_, nullptr);
   }
+
+  static ChannelArgs DefaultServerArgs() {
+    // TODO(b/424667351) : Remove ping timeout channel arg after fixing.
+    // This is a workaround for the flakiness that arises when a server is
+    // trying to gracefully shutdown, and waiting for a ping response from the
+    // client. In the failure cases, the client sockets are already shutdown
+    // with the notification not reaching the server socket.
+    return ChannelArgs().Set(GRPC_ARG_PING_TIMEOUT_MS, 5000);
+  }
+
   // Initialize the server.
   // If called, then InitClient must be called to create a client (otherwise one
   // will be provided).
@@ -696,11 +708,6 @@ inline auto MaybeAddNullConfig(
     GTEST_SKIP() << "Disabled for Local TCP Connection";               \
   }
 
-#define SKIP_IF_CORE_CONFIGURATION_RESET_DISABLED() \
-  if (!core_configuration_reset()) {                \
-    GTEST_SKIP() << "Skipping test for fuzzing";    \
-  }
-
 #ifndef GRPC_END2END_TEST_INCLUDE_FUZZER
 #define CORE_END2END_FUZZER(suite, name)
 #else
@@ -751,6 +758,12 @@ inline auto MaybeAddNullConfig(
     if (!IsEventEngineListenerEnabled() || !IsEventEngineClientEnabled() ||    \
         !IsEventEngineDnsEnabled()) {                                          \
       GTEST_SKIP() << "fuzzers need event engine";                             \
+    }                                                                          \
+    if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
+        !grpc_event_engine::experimental::                                     \
+            EventEngineExperimentDisabledForPython()) {                        \
+      GTEST_SKIP() << "event_engine_dns_non_client_channel experiment breaks " \
+                      "fuzzing currently";                                     \
     }                                                                          \
     CoreEnd2endTest_##suite##_##name(config, &msg, #suite).RunTest();          \
     grpc_event_engine::experimental::ShutdownDefaultEventEngine();             \

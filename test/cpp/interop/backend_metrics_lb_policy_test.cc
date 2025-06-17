@@ -18,18 +18,18 @@
 
 #include "test/cpp/interop/backend_metrics_lb_policy.h"
 
+#include <gmock/gmock.h>
 #include <grpc/grpc.h>
 #include <grpcpp/ext/call_metric_recorder.h>
 #include <grpcpp/ext/orca_service.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/support/status.h>
+#include <gtest/gtest.h>
 
 #include <memory>
 #include <thread>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
-#include "src/core/config/config_vars.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/sync.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
@@ -55,21 +55,21 @@ class EchoServiceImpl : public grpc::testing::TestService::CallbackService {
 class Server {
  public:
   Server() : port_(grpc_pick_unused_port_or_die()) {
-    server_thread_ = std::thread(ServerLoop, this);
-    grpc_core::MutexLock lock(&mu_);
-    cond_.WaitWithTimeout(&mu_, absl::Seconds(1));
+    server_thread_ = std::thread(&Server::Run, this);
+    is_running_.WaitForNotification();
   }
 
   ~Server() {
-    server_->Shutdown();
+    {
+      grpc_core::MutexLock lock(&mu_);
+      server_->Shutdown();
+    }
     server_thread_.join();
   }
 
   std::string address() const { return absl::StrCat("localhost:", port_); }
 
  private:
-  static void ServerLoop(Server* server) { server->Run(); }
-
   void Run() {
     ServerBuilder builder;
     EchoServiceImpl service;
@@ -84,19 +84,19 @@ class Server {
     builder.RegisterService(&service);
     builder.AddListeningPort(address(), InsecureServerCredentials());
     auto grpc_server = builder.BuildAndStart();
-    server_ = grpc_server.get();
     {
       grpc_core::MutexLock lock(&mu_);
-      cond_.SignalAll();
+      server_ = grpc_server.get();
+      is_running_.Notify();
     }
     grpc_server->Wait();
   }
 
   int port_;
   grpc_core::Mutex mu_;
-  grpc_core::CondVar cond_;
+  grpc_core::Notification is_running_;
   std::thread server_thread_;
-  grpc::Server* server_;
+  grpc::Server* server_ ABSL_GUARDED_BY(mu_) = nullptr;
 };
 
 TEST(BackendMetricsLbPolicyTest, TestOobMetricsReceipt) {

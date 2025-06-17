@@ -107,6 +107,7 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@utf8_range//": "third_party/utf8_range",
     "@com_googlesource_code_re2//": "third_party/re2",
     "@com_google_googletest//": "third_party/googletest",
+    "@@googletest//": "third_party/googletest",
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
@@ -625,7 +626,7 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # so add the upb dependency manually
             bazel_rule["deps"] = [
                 "@com_google_protobuf//upb:descriptor_upb_proto",
-                "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "@com_google_protobuf//upb:generated_code_support",
             ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
@@ -1119,6 +1120,11 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_mem_lib",
     },
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib",
+    },
     "@com_google_protobuf//upb:message": {
         "language": "c",
         "build": "all",
@@ -1376,7 +1382,7 @@ _BAZEL_DEPS_QUERIES = [
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
-    'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
+    'deps("@com_google_protobuf//upb:generated_code_support")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
@@ -1531,9 +1537,9 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like[
-    "external_proto_libraries"
-] = _generate_external_proto_libraries()
+build_yaml_like["external_proto_libraries"] = (
+    _generate_external_proto_libraries()
+)
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)

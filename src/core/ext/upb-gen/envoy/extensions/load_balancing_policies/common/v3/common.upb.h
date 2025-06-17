@@ -86,6 +86,10 @@ UPB_INLINE envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_l
   return (envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_locality_config_specifier_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_locality_config_specifier(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__extensions__load_0balancing_0policies__common__v3__LocalityLbConfig_msg_init, &field);
+}
 UPB_INLINE void envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig_clear_zone_aware_lb_config(envoy_extensions_load_balancing_policies_common_v3_LocalityLbConfig* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

@@ -61,7 +61,6 @@
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -558,7 +557,8 @@ struct grpc_tcp {
 
 struct backup_poller {
   gpr_mu* pollset_mu;
-  grpc_closure run_poller;
+  grpc_closure done_poller;
+  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
 void LogCommonIOErrors(absl::string_view prefix, int error_no) {
@@ -619,11 +619,11 @@ static void done_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " destroy";
   grpc_pollset_destroy(BACKUP_POLLER_POLLSET(p));
+  p->engine.reset();
   gpr_free(p);
 }
 
-static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
-  backup_poller* p = static_cast<backup_poller*>(bp);
+static void run_poller(backup_poller* p) {
   GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " run";
   gpr_mu_lock(p->pollset_mu);
   grpc_core::Timestamp deadline =
@@ -641,14 +641,15 @@ static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " shutdown";
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
-                          GRPC_CLOSURE_INIT(&p->run_poller, done_poller, p,
+                          GRPC_CLOSURE_INIT(&p->done_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
   } else {
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " reschedule";
-    grpc_core::Executor::Run(&p->run_poller, absl::OkStatus(),
-                             grpc_core::ExecutorType::DEFAULT,
-                             grpc_core::ExecutorJobType::LONG);
+    p->engine->Run([p]() {
+      grpc_core::ExecCtx exec_ctx;
+      run_poller(p);
+    });
   }
 }
 
@@ -679,14 +680,15 @@ static void cover_self(grpc_tcp* tcp) {
     g_uncovered_notifications_pending = 2;
     p = static_cast<backup_poller*>(
         gpr_zalloc(sizeof(*p) + grpc_pollset_size()));
+    p->engine = grpc_event_engine::experimental::GetDefaultEventEngine();
     g_backup_poller = p;
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     g_backup_poller_mu->Unlock();
     GRPC_TRACE_LOG(tcp, INFO) << "BACKUP_POLLER:" << p << " create";
-    grpc_core::Executor::Run(
-        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, nullptr),
-        absl::OkStatus(), grpc_core::ExecutorType::DEFAULT,
-        grpc_core::ExecutorJobType::LONG);
+    p->engine->Run([p]() {
+      grpc_core::ExecCtx exec_ctx;
+      run_poller(p);
+    });
   } else {
     old_count = g_uncovered_notifications_pending++;
     p = g_backup_poller;
@@ -1793,8 +1795,9 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   }
 }
 
-static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
-                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
+static void tcp_write(
+    grpc_endpoint* ep, grpc_slice_buffer* buf, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
@@ -1833,8 +1836,9 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
   }
-  tcp->outgoing_buffer_arg = arg;
-  if (arg) {
+  tcp->outgoing_buffer_arg =
+      args.TakeDeprecatedAndDiscouragedGoogleSpecificPointer();
+  if (tcp->outgoing_buffer_arg) {
     CHECK(grpc_event_engine_can_track_errors());
   }
 
@@ -1913,7 +1917,9 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view peer_string) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     // Create an EventEngine endpoint when creating the transport.
     auto* engine =
         reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(
@@ -1941,7 +1947,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
       << "This function must not be called when the pollset_alternative "
          "experiment is enabled. This is a bug.";
-  CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
+  CHECK(
+      !grpc_core::IsEventEngineForAllOtherEndpointsEnabled() ||
+      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython())
       << "The event_engine_for_all_other_endpoints experiment should prevent "
          "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);

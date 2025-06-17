@@ -114,6 +114,8 @@ env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_NAME_SUFFIX="\"RUBY\""'
 require_relative '../../lib/grpc/version'
 env_append 'CPPFLAGS', '-DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="\"' + GRPC::VERSION + '\""'
 env_append 'CPPFLAGS', '-DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1'
+env_append 'CPPFLAGS', '-DGRPC_ENABLE_FORK_SUPPORT=1'
+env_append 'CPPFLAGS', '-DGRPC_ENABLE_FORK_SUPPORT_DEFAULT=false'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -231,7 +233,7 @@ File.rename('Makefile.new', 'Makefile')
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
-    o.puts 'hijack: all strip'
+    o.puts 'hijack: all strip remove_unused_artifacts'
     o.puts
     o.write(File.read('Makefile'))
     o.puts

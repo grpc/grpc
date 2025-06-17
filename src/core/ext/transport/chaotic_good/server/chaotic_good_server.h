@@ -28,6 +28,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/channelz/channel_trace.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/ext/transport/chaotic_good/config.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
@@ -36,11 +37,13 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_fwd.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
 #include "src/core/util/shared_bit_gen.h"
@@ -71,6 +74,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   // Bind address to EventEngine listener.
   absl::StatusOr<int> Bind(
       grpc_event_engine::experimental::EventEngine::ResolvedAddress addr);
+  absl::Status BindExternal(std::string addr, const ChannelArgs& args);
   absl::Status StartListening();
   const ChannelArgs& args() const { return args_; }
   void Orphan() override;
@@ -80,7 +84,8 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActiveConnection(
         RefCountedPtr<ChaoticGoodServerListener> listener,
         std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-            endpoint);
+            endpoint,
+        bool is_external, int listener_fd, grpc_byte_buffer* pending_data);
     ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
     const ChannelArgs& handshake_result_args() const {
@@ -137,6 +142,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
     std::optional<ChannelArgs> handshake_result_args_;
+    grpc_tcp_server_acceptor acceptor_;
   };
 
   class DataConnectionListener final : public ServerConnectionFactory {
@@ -197,6 +203,23 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   };
 
  private:
+  void LogConnectionFailure(absl::string_view what,
+                            std::optional<absl::Status> status) {
+    GRPC_TRACE_LOG(chaotic_good, ERROR)
+        << "ChaoticGoodServerListener::LogConnectionFailure: " << what << ": "
+        << (status.has_value() ? status->ToString() : "no status");
+    auto* server_node = server_->channelz_node();
+    if (status.has_value()) {
+      GRPC_CHANNELZ_LOG(server_node) << what << ": " << *status;
+    } else {
+      GRPC_CHANNELZ_LOG(server_node) << what;
+    }
+  }
+
+  absl::StatusOr<
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Listener>>
+  CreateListener(bool must_be_posix);
+
   Server* const server_;
   ChannelArgs args_;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine_;

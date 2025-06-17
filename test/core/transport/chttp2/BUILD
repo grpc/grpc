@@ -529,12 +529,15 @@ grpc_cc_test(
     ],
     deps = [
         "//:chttp2_frame",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:header_assembler",
         "//src/core:http2_status",
         "//src/core:message",
         "//src/core:slice",
         "//src/core:slice_buffer",
+        "//test/core/transport/chttp2:http2_common_test_inputs",
     ],
 )
 
@@ -731,6 +734,24 @@ grpc_fuzz_test(
     deps = [
         "//src/core:map",
         "//src/core:ping_promise",
+        "//src/core:try_seq",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "keepalive_test",
+    srcs = [
+        "keepalive_test.cc",
+    ],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:keepalive",
+        "//src/core:map",
         "//src/core:try_seq",
         "//test/core/call/yodel:yodel_test",
     ],

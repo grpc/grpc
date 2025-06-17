@@ -40,14 +40,8 @@
 #
 # Supported platforms: ios, windows, posix
 
-- name: backoff_cap_initial_at_max
-  default: true
 - name: call_tracer_in_transport
   default: true
-- name: call_tracer_transport_fix
-  default: true
-- name: call_v3
-  default: false
 - name: chaotic_good_framing_layer
   default: true
 - name: error_flatten
@@ -58,11 +52,15 @@
   default: true
 - name: event_engine_dns
   default: true
+- name: event_engine_dns_non_client_channel
+  default: true
 - name: event_engine_for_all_other_endpoints
   default: true
 - name: event_engine_fork
   default: false
 - name: event_engine_listener
+  default: true
+- name: event_engine_secure_endpoint
   default: true
 - name: free_large_allocator
   default: false
@@ -72,30 +70,20 @@
   default: false
 - name: max_inflight_pings_strict_limit
   default: true
-- name: max_pings_wo_data_throttle
-  default: true
 - name: monitoring_experiment
   default: true
 - name: pollset_alternative
   default: false
-- name: posix_ee_skip_grpc_init
-  default: true
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport
-  default: false
-- name: rst_stream_fix
-  default: true
-- name: rstpit
   default: false
 - name: schedule_cancellation_over_write
   default: false
 - name: server_global_callbacks_ownership
   default: false
-- name: server_privacy
-  default: false
-- name: shard_channelz_index
-  default: true
 - name: shard_global_connection_pool
   default: true
 - name: sleep_promise_exec_ctx_removal

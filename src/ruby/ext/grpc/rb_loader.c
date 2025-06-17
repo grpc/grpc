@@ -23,11 +23,7 @@
 
 int grpc_rb_load_core() {
 #if GPR_ARCH_64
-#if GRPC_RUBY_WINDOWS_UCRT
   TCHAR fname[] = _T("grpc_c.64-ucrt.ruby");
-#else
-  TCHAR fname[] = _T("grpc_c.64-msvcrt.ruby");
-#endif
 #else
   TCHAR fname[] = _T("grpc_c.32-msvcrt.ruby");
 #endif

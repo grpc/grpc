@@ -104,6 +104,16 @@ void HandshakeManager::DoHandshake(
   args_.args = channel_args;
   args_.event_engine = args_.args.GetObject<EventEngine>();
   args_.acceptor = acceptor;
+  // Add a channelz trace that we're performing a handshake.
+  // Note that we only commit this to the log if we see an error - otherwise
+  // it's ephemeral and is cleaned up when refs to it are released.
+  auto channelz_node = args_.args.GetObjectRef<channelz::BaseNode>();
+  args_.trace_node = channelz::TraceNode(
+      channelz_node.get() == nullptr
+          ? channelz::ChannelTrace::Node()
+          : channelz_node->NewTraceNode("Handshake connection"),
+      handshaker_trace,
+      [this]() { return absl::StrFormat("handshake manager %p: ", this); });
   if (acceptor != nullptr && acceptor->external_connection &&
       acceptor->pending_data != nullptr) {
     grpc_slice_buffer_swap(args_.read_buffer.c_slice_buffer(),
@@ -125,14 +135,12 @@ void HandshakeManager::DoHandshake(
 void HandshakeManager::Shutdown(absl::Status error) {
   MutexLock lock(&mu_);
   if (!is_shutdown_) {
-    GRPC_TRACE_LOG(handshaker, INFO)
-        << "handshake_manager " << this << ": Shutdown() called: " << error;
+    GRPC_CHANNELZ_LOG(args_.trace_node) << "Shutdown called: " << error;
     is_shutdown_ = true;
     // Shutdown the handshaker that's currently in progress, if any.
     if (index_ > 0) {
-      GRPC_TRACE_LOG(handshaker, INFO)
-          << "handshake_manager " << this
-          << ": shutting down handshaker at index " << index_ - 1;
+      GRPC_CHANNELZ_LOG(args_.trace_node)
+          << "Shutting down handshaker at index " << (index_ - 1);
       handshakers_[index_ - 1]->Shutdown(std::move(error));
     }
   }
@@ -140,7 +148,7 @@ void HandshakeManager::Shutdown(absl::Status error) {
 
 void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   GRPC_TRACE_LOG(handshaker, INFO)
-      << "handshake_manager " << this << ": error=" << error
+      << "CallNextHandshakerLocked: error=" << error
       << " shutdown=" << is_shutdown_ << " index=" << index_
       << ", args=" << HandshakerArgsString(&args_);
   CHECK(index_ <= handshakers_.size());
@@ -153,10 +161,13 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
       error = GRPC_ERROR_CREATE("handshaker shutdown");
       args_.endpoint.reset();
     }
-    GRPC_TRACE_LOG(handshaker, INFO) << "handshake_manager " << this
-                                     << ": handshaking complete -- scheduling "
-                                        "on_handshake_done with error="
-                                     << error;
+    // Since there was a handshaking error, commit this node with the reason.
+    // This will make it available for inspection after the handshaker
+    // completes.
+    if (!error.ok()) {
+      GRPC_CHANNELZ_LOG(args_.trace_node) << "Failed with error: " << error;
+    }
+    args_.trace_node.Commit();
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     args_.event_engine->Cancel(deadline_timer_handle_);
@@ -174,10 +185,8 @@ void HandshakeManager::CallNextHandshakerLocked(absl::Status error) {
   }
   // Call the next handshaker.
   auto handshaker = handshakers_[index_];
-  GRPC_TRACE_LOG(handshaker, INFO)
-      << "handshake_manager " << this << ": calling handshaker "
-      << handshaker->name() << " [" << handshaker.get() << "] at index "
-      << index_;
+  GRPC_CHANNELZ_LOG(args_.trace_node)
+      << " calling handshaker " << handshaker->name() << " at index " << index_;
   ++index_;
   handshaker->DoHandshake(&args_, [self = Ref()](absl::Status error) mutable {
     MutexLock lock(&self->mu_);

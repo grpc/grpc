@@ -30,9 +30,18 @@
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
+#include "src/core/lib/transport/transport_framing_endpoint_extension.h"
 
 namespace grpc_core {
 namespace chaotic_good {
+
+namespace {
+TransportFramingEndpointExtension* GetTransportFramingEndpointExtension(
+    grpc_event_engine::experimental::EventEngine::Endpoint& endpoint) {
+  return grpc_event_engine::experimental::QueryExtension<
+      TransportFramingEndpointExtension>(&endpoint);
+}
+}  // namespace
 
 ///////////////////////////////////////////////////////////////////////////////
 // TcpFrameTransport
@@ -43,13 +52,24 @@ TcpFrameTransport::TcpFrameTransport(
     TransportContextPtr ctx)
     : DataSource(ctx->socket_node),
       ctx_(ctx),
-      control_endpoint_(std::move(control_endpoint), ctx->event_engine.get()),
-      data_endpoints_(std::move(pending_data_endpoints), ctx, ztrace_collector_,
-                      options.enable_tracing),
-      options_(options) {}
+      control_endpoint_(std::move(control_endpoint), ctx, ztrace_collector_),
+      data_endpoints_(std::move(pending_data_endpoints), ctx,
+                      options.encode_alignment, options.decode_alignment,
+                      ztrace_collector_, options.enable_tracing,
+                      options.scheduler_config),
+      options_(options) {
+  auto* transport_framing_endpoint_extension =
+      GetTransportFramingEndpointExtension(
+          *control_endpoint_.GetEventEngineEndpoint());
+  if (transport_framing_endpoint_extension != nullptr) {
+    transport_framing_endpoint_extension->SetSendFrameCallback(
+        control_endpoint_.SecureFrameWriterCallback());
+  }
+}
 
-auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
-                                   std::shared_ptr<TcpCallTracer> call_tracer) {
+auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
+  const auto& frame =
+      absl::ConvertVariantTo<FrameInterface&>(queued_frame->payload);
   FrameHeader header = frame.MakeHeader();
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: WriteFrame to:"
@@ -72,33 +92,17 @@ auto TcpFrameTransport::WriteFrame(const FrameInterface& frame,
         return control_endpoint_.Write(std::move(output));
       },
       // ... otherwise write it to a data connection
-      [this, header, &frame, &call_tracer]() mutable {
+      [this, header, &queued_frame]() mutable {
         SliceBuffer control_bytes;
-        SliceBuffer data_bytes;
         auto tag = next_payload_tag_;
         ++next_payload_tag_;
         TcpFrameHeader hdr{header, tag};
         GRPC_TRACE_LOG(chaotic_good, INFO)
             << "CHAOTIC_GOOD: Send control frame " << hdr.ToString();
         hdr.Serialize(control_bytes.AddTiny(TcpFrameHeader::kFrameHeaderSize));
-        const size_t padding = DataConnectionPadding(
-            TcpFrameHeader::kFrameHeaderSize + header.payload_length,
-            options_.encode_alignment);
-        frame.SerializePayload(data_bytes);
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: Send " << data_bytes.Length()
-            << "b payload on data channel; add " << padding << " bytes for "
-            << options_.encode_alignment << " alignment";
-        if (padding != 0) {
-          auto slice = MutableSlice::CreateUninitialized(padding);
-          memset(slice.data(), 0, padding);
-          data_bytes.AppendIndexed(Slice(std::move(slice)));
-        }
         ztrace_collector_->Append(WriteFrameHeaderTrace{hdr});
-        return DiscardResult(
-            Join(control_endpoint_.Write(std::move(control_bytes)),
-                 data_endpoints_.Write(tag, std::move(data_bytes),
-                                       std::move(call_tracer))));
+        data_endpoints_.Write(tag, std::move(queued_frame));
+        return control_endpoint_.Write(std::move(control_bytes));
       });
 }
 
@@ -109,10 +113,8 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
         // Get next outgoing frame.
         frames.Next(),
         // Serialize and write it out.
-        [self = self.get()](OutgoingFrame outgoing_frame) {
-          return self->WriteFrame(
-              absl::ConvertVariantTo<FrameInterface&>(outgoing_frame.payload),
-              std::move(outgoing_frame.call_tracer));
+        [self = self.get()](MpscQueued<OutgoingFrame> outgoing_frame) {
+          return self->WriteFrame(std::move(outgoing_frame));
         },
         []() -> LoopCtl<absl::Status> {
           // The write failures will be caught in TrySeq and exit
@@ -124,70 +126,70 @@ auto TcpFrameTransport::WriteLoop(MpscReceiver<OutgoingFrame> frames) {
 }
 
 auto TcpFrameTransport::ReadFrameBytes() {
-  return TrySeq(
-      control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
-      [this](Slice read_buffer) {
-        auto frame_header =
-            TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
-                GRPC_SLICE_START_PTR(read_buffer.c_slice())));
-        GRPC_TRACE_LOG(chaotic_good, INFO)
-            << "CHAOTIC_GOOD: ReadHeader from:"
-            << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
-                   .value_or("<<unknown peer address>>")
-            << " "
-            << (frame_header.ok() ? frame_header->ToString()
-                                  : frame_header.status().ToString());
-        return frame_header;
-      },
-      [this](TcpFrameHeader frame_header) {
-        ztrace_collector_->Append(ReadFrameHeaderTrace{frame_header});
-        return If(
-            // If the payload is on the connection frame
-            frame_header.payload_tag == 0,
-            // ... then read the data immediately and return an IncomingFrame
-            //     that contains the payload.
-            // We need to do this here so that we do not create head of line
-            // blocking issues reading later control frames (but waiting for a
-            // call to get scheduled time to read the payload).
-            [this, frame_header]() {
-              return Map(
-                  control_endpoint_.Read(frame_header.header.payload_length),
-                  [frame_header](absl::StatusOr<SliceBuffer> payload)
-                      -> absl::StatusOr<IncomingFrame> {
-                    if (!payload.ok()) return payload.status();
-                    return IncomingFrame(frame_header.header,
-                                         std::move(payload));
-                  });
-            },
-            // ... otherwise issue a read to the appropriate data endpoint,
-            //     which will return a read ticket - which can be used later
-            //     in the call promise to asynchronously wait for those bytes
-            //     to be available.
-            [this, frame_header]() -> absl::StatusOr<IncomingFrame> {
-              const auto padding =
-                  frame_header.Padding(options_.decode_alignment);
-              return IncomingFrame(
-                  frame_header.header,
-                  Map(data_endpoints_.Read(frame_header.payload_tag).Await(),
-                      [padding,
-                       frame_header](absl::StatusOr<SliceBuffer> payload)
-                          -> absl::StatusOr<SliceBuffer> {
-                        if (payload.ok()) {
-                          if (payload->Length() !=
-                              frame_header.header.payload_length + padding) {
-                            return absl::UnavailableError(absl::StrCat(
-                                "Length mismatch on tagged payload: data "
-                                "channel received ",
-                                payload->Length(), " bytes, with padding ",
-                                padding, ", but got control channel header ",
-                                frame_header.ToString()));
-                          }
-                          payload->RemoveLastNBytesNoInline(padding);
+  return Loop([this]() {
+    return TrySeq(
+        control_endpoint_.ReadSlice(TcpFrameHeader::kFrameHeaderSize),
+        [this](Slice read_buffer) {
+          auto frame_header =
+              TcpFrameHeader::Parse(reinterpret_cast<const uint8_t*>(
+                  GRPC_SLICE_START_PTR(read_buffer.c_slice())));
+          GRPC_TRACE_LOG(chaotic_good, INFO)
+              << "CHAOTIC_GOOD: ReadHeader from:"
+              << ResolvedAddressToString(control_endpoint_.GetPeerAddress())
+                     .value_or("<<unknown peer address>>")
+              << " "
+              << (frame_header.ok() ? frame_header->ToString()
+                                    : frame_header.status().ToString());
+          return frame_header;
+        },
+        [this](TcpFrameHeader frame_header) {
+          ztrace_collector_->Append(ReadFrameHeaderTrace{frame_header});
+          return If(
+              // If the payload is on the connection frame
+              frame_header.payload_tag == 0,
+              // ... then read the data immediately and return an IncomingFrame
+              //     that contains the payload.
+              // We need to do this here so that we do not create head of line
+              // blocking issues reading later control frames (but waiting for a
+              // call to get scheduled time to read the payload).
+              [this, frame_header]() {
+                return Map(
+                    control_endpoint_.Read(frame_header.header.payload_length),
+                    [frame_header, this](absl::StatusOr<SliceBuffer> payload)
+                        -> absl::StatusOr<LoopCtl<IncomingFrame>> {
+                      if (!payload.ok()) return payload.status();
+                      if (frame_header.header.type ==
+                          FrameType::kTcpSecurityFrame) {
+                        auto* transport_framing_endpoint_extension =
+                            GetTransportFramingEndpointExtension(
+                                *control_endpoint_.GetEventEngineEndpoint());
+                        if (transport_framing_endpoint_extension != nullptr) {
+                          transport_framing_endpoint_extension->ReceiveFrame(
+                              std::move(*payload));
                         }
-                        return payload;
-                      }));
-            });
-      });
+                        // Loop around and read the next frame, since we're not
+                        // reporting the security frame to the upper layer.
+                        return Continue{};
+                      }
+                      return IncomingFrame(frame_header.header,
+                                           std::move(payload));
+                    });
+              },
+              // ... otherwise issue a read to the appropriate data endpoint,
+              //     which will return a read ticket - which can be used later
+              //     in the call promise to asynchronously wait for those bytes
+              //     to be available.
+              [this, frame_header]() -> absl::StatusOr<LoopCtl<IncomingFrame>> {
+                if (frame_header.header.type == FrameType::kTcpSecurityFrame) {
+                  return absl::UnavailableError(
+                      "Security frame sent with a payload tag");
+                }
+                return IncomingFrame(
+                    frame_header.header,
+                    data_endpoints_.Read(frame_header.payload_tag).Await());
+              });
+        });
+  });
 }
 
 template <typename Promise>
@@ -196,18 +198,21 @@ auto TcpFrameTransport::UntilClosed(Promise promise) {
                   [self = RefAsSubclass<TcpFrameTransport>()](Empty) {
                     return absl::UnavailableError("Frame transport closed");
                   }),
-              std::move(promise));
+              data_endpoints_.AwaitClosed(), std::move(promise));
 }
 
 void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
                               RefCountedPtr<FrameTransportSink> sink) {
-  party->Spawn(
+  data_endpoints_.SetMpscProbe(frames.MakeProbe());
+  auto write_party = Party::Make(party->arena()->Ref());
+  write_party->Spawn(
       "tcp-write",
       [self = RefAsSubclass<TcpFrameTransport>(),
        frames = std::move(frames)]() mutable {
         return self->UntilClosed(self->WriteLoop(std::move(frames)));
       },
-      [sink](absl::Status status) {
+      [sink, ztrace_collector = ztrace_collector_](absl::Status status) {
+        ztrace_collector->Append(TransportError</*read=*/false>{status});
         sink->OnFrameTransportClosed(std::move(status));
       });
   party->Spawn(
@@ -222,17 +227,20 @@ void TcpFrameTransport::Start(Party* party, MpscReceiver<OutgoingFrame> frames,
               });
         }));
       },
-      [sink](absl::Status status) {
+      [sink, ztrace_collector = ztrace_collector_,
+       write_party = std::move(write_party)](absl::Status status) {
+        ztrace_collector->Append(TransportError</*read=*/true>{status});
         sink->OnFrameTransportClosed(std::move(status));
       });
 }
 
 void TcpFrameTransport::Orphan() {
+  ztrace_collector_->Append(OrphanTrace{});
   closed_.Set();
   Unref();
 }
 
-void TcpFrameTransport::AddData(channelz::DataSink& sink) {
+void TcpFrameTransport::AddData(channelz::DataSink sink) {
   Json::Object options;
   options["encode_alignment"] = Json::FromNumber(options_.encode_alignment);
   options["decode_alignment"] = Json::FromNumber(options_.decode_alignment);

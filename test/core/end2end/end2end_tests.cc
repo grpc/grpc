@@ -21,19 +21,14 @@
 
 #include <memory>
 #include <optional>
-#include <regex>
-#include <tuple>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/util/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
@@ -66,7 +61,8 @@ Slice RandomBinarySlice(size_t length) {
 
 CoreEnd2endTest::CoreEnd2endTest(
     const CoreTestConfiguration* config,
-    const core_end2end_test_fuzzer::Msg* fuzzing_args, absl::string_view suite_name)
+    const core_end2end_test_fuzzer::Msg* fuzzing_args,
+    absl::string_view suite_name)
     : test_config_(config), fuzzing_(fuzzing_args != nullptr) {
   if (fuzzing_args != nullptr) {
     ConfigVars::Overrides overrides =
@@ -93,11 +89,7 @@ CoreEnd2endTest::CoreEnd2endTest(
           engine->Tick(max_step);
           grpc_timer_manager_tick();
         });
-    SetPostGrpcInitFunc([]() {
-      grpc_timer_manager_set_threading(false);
-      ExecCtx exec_ctx;
-      Executor::SetThreadingAll(false);
-    });
+    SetPostGrpcInitFunc([]() { grpc_timer_manager_set_threading(false); });
   } else {
     ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
@@ -209,7 +201,7 @@ std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    InitServer(ChannelArgs());
+    InitServer(DefaultServerArgs());
     InitClient(ChannelArgs());
   }
 }

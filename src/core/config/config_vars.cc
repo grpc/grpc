@@ -30,7 +30,9 @@
 #endif  // !GPR_DEFAULT_LOG_VERBOSITY_STRING
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
+#ifndef GRPC_ENABLE_FORK_SUPPORT_DEFAULT
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT true
+#endif  // !defined(GRPC_ENABLE_FORK_SUPPORT_DEFAULT)
 #else
 #define GRPC_ENABLE_FORK_SUPPORT_DEFAULT false
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -76,6 +78,11 @@ ABSL_FLAG(absl::optional<bool>, grpc_cpp_experimental_disable_reflection, {},
           "EXPERIMENTAL. Only respected when there is a dependency on "
           ":grpc++_reflection. If true, no reflection server will be "
           "automatically added.");
+ABSL_FLAG(
+    absl::optional<int32_t>, grpc_channelz_max_orphaned_nodes, {},
+    "EXPERIMENTAL: If non-zero, extend the lifetime of channelz nodes past the "
+    "underlying object lifetime, up to this many nodes. The value may be "
+    "adjusted slightly to account for implementation limits.");
 
 namespace grpc_core {
 
@@ -84,6 +91,10 @@ ConfigVars::ConfigVars(const Overrides& overrides)
           LoadConfig(FLAGS_grpc_client_channel_backup_poll_interval_ms,
                      "GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS",
                      overrides.client_channel_backup_poll_interval_ms, 5000)),
+      channelz_max_orphaned_nodes_(
+          LoadConfig(FLAGS_grpc_channelz_max_orphaned_nodes,
+                     "GRPC_CHANNELZ_MAX_ORPHANED_NODES",
+                     overrides.channelz_max_orphaned_nodes, 0)),
       enable_fork_support_(LoadConfig(
           FLAGS_grpc_enable_fork_support, "GRPC_ENABLE_FORK_SUPPORT",
           overrides.enable_fork_support, GRPC_ENABLE_FORK_SUPPORT_DEFAULT)),
@@ -146,7 +157,8 @@ std::string ConfigVars::ToString() const {
       ", not_use_system_ssl_roots: ", NotUseSystemSslRoots() ? "true" : "false",
       ", ssl_cipher_suites: ", "\"", absl::CEscape(SslCipherSuites()), "\"",
       ", cpp_experimental_disable_reflection: ",
-      CppExperimentalDisableReflection() ? "true" : "false");
+      CppExperimentalDisableReflection() ? "true" : "false",
+      ", channelz_max_orphaned_nodes: ", ChannelzMaxOrphanedNodes());
 }
 
 }  // namespace grpc_core
