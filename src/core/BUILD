@@ -101,6 +101,9 @@ grpc_cc_library(
         "absl/strings:string_view",
         "absl/log",
     ],
+    deps = [
+        "//src/core:time",
+    ],
 )
 
 grpc_cc_library(
@@ -156,6 +159,7 @@ grpc_cc_library(
         "absl/utility",
     ],
     deps = [
+        "context_list_entry",
         "resolved_address",
         "slice",
         "slice_buffer",
@@ -2006,6 +2010,7 @@ grpc_cc_library(
     ],
     external_deps = ["absl/strings"],
     deps = [
+        "event_engine_common",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
     ],
@@ -2713,7 +2718,6 @@ grpc_cc_library(
         "event_engine_thread_pool",
         "event_engine_utils",
         "experiments",
-        "init_internally",
         "iomgr_port",
         "native_posix_dns_resolver",
         "no_destruct",
@@ -2760,7 +2764,6 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
-        "init_internally",
         "iomgr_port",
         "posix_event_engine_timer_manager",
         "sync",
@@ -2915,7 +2918,6 @@ grpc_cc_library(
         "event_engine_tcp_socket_utils",
         "event_engine_thread_pool",
         "event_engine_utils",
-        "init_internally",
         "posix_event_engine_closure",
         "posix_event_engine_event_poller",
         "posix_event_engine_lockfree_event",
@@ -4434,6 +4436,7 @@ grpc_cc_library(
         "closure",
         "error",
         "iomgr_fwd",
+        "ssl_transport_security_utils",
         "sync",
         "unique_type_name",
         "useful",
@@ -4569,6 +4572,8 @@ grpc_cc_library(
         "ref_counted",
         "slice",
         "slice_refcount",
+        "ssl_key_logging",
+        "ssl_transport_security_utils",
         "status_helper",
         "sync",
         "unique_type_name",
@@ -4877,6 +4882,8 @@ grpc_cc_library(
         "closure",
         "error",
         "iomgr_fwd",
+        "ssl_key_logging",
+        "ssl_transport_security_utils",
         "unique_type_name",
         "//:channel_arg_names",
         "//:debug_location",
@@ -5616,6 +5623,7 @@ grpc_cc_library(
         "error",
         "grpc_matchers",
         "grpc_tls_credentials",
+        "ssl_transport_security_utils",
         "sync",
         "unique_type_name",
         "useful",
@@ -6140,6 +6148,7 @@ grpc_cc_library(
         "rls_config_upbdefs",
         "slice",
         "slice_refcount",
+        "ssl_transport_security_utils",
         "status_conversion",
         "status_helper",
         "sync",
@@ -7462,11 +7471,13 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "context_list_entry",
+    srcs = [
+        "telemetry/context_list_entry.cc",
+    ],
     hdrs = [
         "telemetry/context_list_entry.h",
     ],
     deps = [
-        "tcp_tracer",
         "//:gpr",
     ],
 )
@@ -7704,6 +7715,7 @@ grpc_cc_library(
     ],
     deps = [
         "bdp_estimator",
+        "channelz_property_list",
         "experiments",
         "http2_settings",
         "memory_quota",
@@ -7749,6 +7761,7 @@ grpc_cc_library(
         "absl/random:distributions",
     ],
     deps = [
+        "channelz_property_list",
         "time",
         "//:event_engine_base_hdrs",
         "//:gpr_platform",
@@ -7782,10 +7795,12 @@ grpc_cc_library(
     external_deps = ["absl/strings"],
     deps = [
         "channel_args",
+        "channelz_property_list",
         "experiments",
         "match",
         "time",
         "//:channel_arg_names",
+        "//:gpr",
         "//:gpr_platform",
     ],
 )
@@ -7826,8 +7841,8 @@ grpc_cc_library(
         "absl/strings",
     ],
     deps = [
+        "channelz_property_list",
         "http2_status",
-        "json",
         "useful",
         "//:chttp2_frame",
         "//:gpr_platform",
@@ -7967,6 +7982,7 @@ grpc_cc_library(
         "message",
         "message_assembler",
         "metadata",
+        "metadata_batch",
         "mpsc",
         "ping_promise",
         "sync",
@@ -8031,6 +8047,21 @@ grpc_cc_library(
         "//:hpack_parser",
         "//:promise",
         "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "http2_stats_collector",
+    srcs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/http2_stats_collector.h",
+    ],
+    deps = [
+        "stats_data",
+        "//:grpc_core_credentials_header",
+        "//:grpc_public_hdrs",
     ],
 )
 
@@ -8556,6 +8587,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "chaotic_good_scheduler",
+    srcs = [
+        "ext/transport/chaotic_good/scheduler.cc",
+    ],
+    hdrs = [
+        "ext/transport/chaotic_good/scheduler.h",
+    ],
+    external_deps = [
+        "absl/log",
+        "absl/strings",
+    ],
+    deps = [
+        "chaotic_good_tcp_ztrace_collector",
+        "shared_bit_gen",
+    ],
+)
+
+grpc_cc_library(
     name = "chaotic_good_tcp_frame_transport",
     srcs = [
         "ext/transport/chaotic_good/tcp_frame_transport.cc",
@@ -8769,6 +8818,7 @@ grpc_cc_library(
         "metadata",
         "metadata_batch",
         "metrics",
+        "posix_event_engine_base_hdrs",
         "race",
         "resource_quota",
         "shared_bit_gen",
@@ -9852,9 +9902,14 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "wait_for_single_owner",
+    srcs = ["util/wait_for_single_owner.cc"],
     hdrs = ["util/wait_for_single_owner.h"],
-    external_deps = ["absl/log"],
+    external_deps = [
+        "absl/log",
+        "absl/functional:any_invocable",
+    ],
     deps = [
+        "no_destruct",
         "time",
         "//:gpr",
     ],
@@ -9941,8 +9996,8 @@ grpc_cc_library(
         "json_object_loader",
         "json_reader",
         "load_file",
+        "ssl_transport_security_utils",
         "status_helper",
-        "//:tsi_ssl_credentials",
     ],
 )
 
@@ -9977,6 +10032,112 @@ grpc_cc_library(
     deps = [
         "ztrace_collector",
         "//:chttp2_frame",
+    ],
+)
+
+grpc_cc_library(
+    name = "channelz_property_list",
+    srcs = ["channelz/property_list.cc"],
+    hdrs = ["channelz/property_list.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/status",
+        "absl/container:flat_hash_map",
+    ],
+    deps = [
+        "json",
+        "time",
+        "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "ssl_transport_security_utils",
+    srcs = [
+        "//src/core:tsi/ssl_transport_security_utils.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl_transport_security_utils.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "ssl_key_logging",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_session_cache",
+    ],
+)
+
+grpc_cc_library(
+    name = "ssl_key_logging",
+    srcs = [
+        "//src/core:tsi/ssl/key_logging/ssl_key_logging.cc",
+    ],
+    hdrs = [
+        "//src/core:tsi/ssl/key_logging/ssl_key_logging.h",
+    ],
+    external_deps = [
+        "absl/base:core_headers",
+        "absl/log:check",
+        "absl/log:log",
+        "absl/status",
+        "absl/status:statusor",
+        "absl/strings",
+        "libcrypto",
+        "libssl",
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "channel_args",
+        "env",
+        "error",
+        "grpc_transport_chttp2_alpn",
+        "load_file",
+        "ref_counted",
+        "slice",
+        "sync",
+        "tsi_ssl_types",
+        "useful",
+        "//:channel_arg_names",
+        "//:config_vars",
+        "//:gpr",
+        "//:grpc_base",
+        "//:grpc_core_credentials_header",
+        "//:grpc_credentials_util",
+        "//:grpc_public_hdrs",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+        "//:transport_auth_context",
+        "//:tsi_base",
+        "//:tsi_ssl_session_cache",
     ],
 )
 

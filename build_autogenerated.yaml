@@ -209,6 +209,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -325,6 +326,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -1288,6 +1290,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -1406,6 +1409,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -1998,6 +2002,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -2067,6 +2072,7 @@ libs:
   - src/core/util/uri.cc
   - src/core/util/uuid_v4.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/windows/directory_reader.cc
   - src/core/util/work_serializer.cc
   - src/core/xds/grpc/certificate_provider_store.cc
@@ -2146,6 +2152,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2165,6 +2172,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -2194,6 +2202,7 @@ libs:
   - test/core/test_util/parse_hexstring.h
   - test/core/test_util/port.h
   - test/core/test_util/port_server_client.h
+  - test/core/test_util/postmortem_emit.h
   - test/core/test_util/reconnect_server.h
   - test/core/test_util/resolve_localhost_ip46.h
   - test/core/test_util/slice_splitter.h
@@ -2212,6 +2221,7 @@ libs:
   - test/core/test_util/port.cc
   - test/core/test_util/port_ci.cc
   - test/core/test_util/port_server_client.cc
+  - test/core/test_util/postmortem_emit.cc
   - test/core/test_util/reconnect_server.cc
   - test/core/test_util/resolve_localhost_ip46.cc
   - test/core/test_util/slice_splitter.cc
@@ -2296,6 +2306,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/client_channel/backup_poller.h
   - src/core/client_channel/client_channel.h
@@ -2376,6 +2387,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -2804,6 +2816,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/client_channel/backup_poller.cc
   - src/core/client_channel/client_channel.cc
   - src/core/client_channel/client_channel_factory.cc
@@ -2883,6 +2896,7 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
@@ -3155,6 +3169,7 @@ libs:
   - src/core/service_config/service_config_impl.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/default_tcp_tracer.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
@@ -3195,6 +3210,7 @@ libs:
   - src/core/util/uri.cc
   - src/core/util/uuid_v4.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   deps:
   - upb_mini_descriptor_lib
@@ -4392,6 +4408,7 @@ libs:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/call/call_credentials.h
   - src/core/credentials/call/call_creds_util.h
@@ -4665,6 +4682,7 @@ libs:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -4701,6 +4719,7 @@ libs:
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
   - src/core/util/matchers.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -4742,6 +4761,7 @@ libs:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/call/call_creds_util.cc
   - src/core/credentials/call/composite/composite_call_credentials.cc
@@ -4967,6 +4987,7 @@ libs:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -4998,6 +5019,7 @@ libs:
   - src/core/util/time_averaged_stats.cc
   - src/core/util/uri.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   deps:
   - upb_mini_descriptor_lib
@@ -5014,6 +5036,7 @@ libs:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -5446,14 +5469,12 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/postmortem.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/postmortem.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
@@ -5758,11 +5779,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5773,13 +5792,11 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5794,13 +5811,11 @@ targets:
   headers:
   - src/core/util/subprocess.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - src/core/util/subprocess_posix.cc
   - src/core/util/subprocess_windows.cc
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5815,12 +5830,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -5831,12 +5844,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -6269,6 +6280,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -6514,6 +6526,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -6545,6 +6558,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -6585,6 +6599,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -6781,6 +6796,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -6808,6 +6824,7 @@ targets:
   - src/core/util/time_averaged_stats.cc
   - src/core/util/uri.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   - test/core/call/call_utils_test.cc
   deps:
@@ -6824,6 +6841,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -6836,12 +6854,10 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/test_util/fake_udp_and_tcp_server.h
-  - test/core/test_util/postmortem.h
   - test/core/test_util/socket_use_after_close_detector.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/test_util/fake_udp_and_tcp_server.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/socket_use_after_close_detector.cc
   - test/cpp/naming/cancel_ares_query_test.cc
   deps:
@@ -7478,10 +7494,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/chttp2_server_listener_test.cc
   deps:
   - gtest
@@ -7778,7 +7792,6 @@ targets:
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
   - src/cpp/server/orca/orca_service.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_lb_policies.cc
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/connection_attempt_injector.cc
@@ -7929,12 +7942,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -7944,11 +7955,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8175,11 +8184,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8209,12 +8216,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -8334,7 +8339,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8554,7 +8558,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8686,7 +8689,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -8814,7 +8816,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9030,7 +9031,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9246,7 +9246,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9374,7 +9373,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9590,7 +9588,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9718,7 +9715,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -9934,7 +9930,6 @@ targets:
   - test/core/test_util/fail_first_call_filter.cc
   - test/core/test_util/fake_stats_plugin.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   - test/core/test_util/test_lb_policies.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -10383,6 +10378,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
   - src/core/credentials/transport/alts/grpc_alts_credentials_options.h
@@ -10628,6 +10624,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -10659,6 +10656,7 @@ targets:
   - src/core/util/load_file.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
@@ -10699,6 +10697,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -10895,6 +10894,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -10922,6 +10922,7 @@ targets:
   - src/core/util/time_averaged_stats.cc
   - src/core/util/uri.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   - test/core/call/filter_fusion_test.cc
   deps:
@@ -10938,6 +10939,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
   - absl/types:span
   - absl/utility:utility
   - cares
@@ -10989,6 +10991,7 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/flow_control.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
@@ -11053,6 +11056,7 @@ targets:
   - src/core/util/time.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/flow_control.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -11402,11 +11406,9 @@ targets:
   headers:
   - test/core/end2end/cq_verifier.h
   - test/core/event_engine/util/delegating_event_engine.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11439,10 +11441,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/graceful_shutdown_test.cc
   deps:
   - gtest
@@ -11928,7 +11928,6 @@ targets:
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/test_util/fuzz_config_vars.cc
-  - test/core/test_util/postmortem.cc
   - test/core/test_util/test_call_creds.cc
   deps:
   - gtest
@@ -11940,11 +11939,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11954,11 +11951,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/h2_tls_peer_property_external_verifier_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -11996,12 +11991,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12031,6 +12024,7 @@ targets:
   - src/core/channelz/channel_trace.h
   - src/core/channelz/channelz.h
   - src/core/channelz/channelz_registry.h
+  - src/core/channelz/property_list.h
   - src/core/channelz/ztrace_collector.h
   - src/core/config/core_configuration.h
   - src/core/credentials/transport/alts/check_gcp_environment.h
@@ -12048,6 +12042,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
@@ -12291,6 +12286,7 @@ targets:
   - src/core/service_config/service_config_call_data.h
   - src/core/service_config/service_config_parser.h
   - src/core/telemetry/call_tracer.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/telemetry/histogram_view.h
   - src/core/telemetry/metrics.h
   - src/core/telemetry/stats.h
@@ -12367,6 +12363,7 @@ targets:
   - src/core/channelz/channel_trace.cc
   - src/core/channelz/channelz.cc
   - src/core/channelz/channelz_registry.cc
+  - src/core/channelz/property_list.cc
   - src/core/config/core_configuration.cc
   - src/core/credentials/transport/alts/check_gcp_environment.cc
   - src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -12384,6 +12381,7 @@ targets:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
@@ -12573,6 +12571,7 @@ targets:
   - src/core/resolver/resolver_registry.cc
   - src/core/service_config/service_config_parser.cc
   - src/core/telemetry/call_tracer.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/telemetry/histogram_view.cc
   - src/core/telemetry/metrics.cc
   - src/core/telemetry/stats.cc
@@ -12601,6 +12600,7 @@ targets:
   - src/core/util/time_averaged_stats.cc
   - src/core/util/uri.cc
   - src/core/util/validation_errors.cc
+  - src/core/util/wait_for_single_owner.cc
   - src/core/util/work_serializer.cc
   - test/core/transport/chttp2/header_assembler_test.cc
   deps:
@@ -12632,12 +12632,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -12989,12 +12987,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13249,11 +13245,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13382,11 +13376,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -13517,6 +13509,56 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+- name: lock_based_mpsc_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/promise/activity.h
+  - src/core/lib/promise/context.h
+  - src/core/lib/promise/detail/promise_factory.h
+  - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/status.h
+  - src/core/lib/promise/lock_based_mpsc.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/status_flag.h
+  - src/core/lib/promise/wait_set.h
+  - src/core/util/atomic_utils.h
+  - src/core/util/down_cast.h
+  - src/core/util/dump_args.h
+  - src/core/util/function_signature.h
+  - src/core/util/glob.h
+  - src/core/util/json/json.h
+  - src/core/util/latent_see.h
+  - src/core/util/orphanable.h
+  - src/core/util/per_cpu.h
+  - src/core/util/ref_counted.h
+  - src/core/util/ref_counted_ptr.h
+  - src/core/util/ring_buffer.h
+  - test/core/promise/poll_matcher.h
+  src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/wait_set.cc
+  - src/core/util/dump_args.cc
+  - src/core/util/glob.cc
+  - src/core/util/latent_see.cc
+  - src/core/util/per_cpu.cc
+  - test/core/promise/lock_based_mpsc_test.cc
+  deps:
+  - gtest
+  - absl/base:config
+  - absl/container:flat_hash_map
+  - absl/functional:function_ref
+  - absl/hash:hash
+  - absl/meta:type_traits
+  - absl/status:statusor
+  - gpr
 - name: log_too_many_open_files_test
   gtest: true
   build: test
@@ -13787,16 +13829,16 @@ targets:
   language: c++
   headers:
   - src/core/util/memory_usage.h
+  - src/core/util/time.h
   src:
+  - src/core/util/time.cc
   - test/core/util/memory_usage_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/log:log
-  - absl/status:status
   - absl/status:statusor
   - absl/strings:string_view
-  - absl/time:time
+  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -14065,11 +14107,9 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -14393,12 +14433,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -15156,6 +15194,24 @@ targets:
   - absl/meta:type_traits
   - gpr
   uses_polling: false
+- name: property_list_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/property_list.h
+  - src/core/util/json/json.h
+  - src/core/util/time.h
+  src:
+  - src/core/channelz/property_list.cc
+  - src/core/util/time.cc
+  - test/core/channelz/property_list_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/container:flat_hash_map
+  - absl/status:statusor
+  - gpr
 - name: proto_buffer_reader_test
   gtest: true
   build: test
@@ -15434,12 +15490,41 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/lib/debug/trace.h
+  - src/core/lib/debug/trace_flags.h
+  - src/core/lib/debug/trace_impl.h
+  - src/core/lib/event_engine/extensions/can_track_errors.h
+  - src/core/lib/event_engine/handle_containers.h
   - src/core/lib/event_engine/query_extensions.h
+  - src/core/lib/event_engine/resolved_address_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/slice/slice.h
+  - src/core/lib/slice/slice_buffer.h
+  - src/core/lib/slice/slice_internal.h
+  - src/core/lib/slice/slice_refcount.h
+  - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
+  - src/core/util/glob.h
   src:
+  - src/core/lib/debug/trace.cc
+  - src/core/lib/debug/trace_flags.cc
+  - src/core/lib/event_engine/event_engine.cc
+  - src/core/lib/event_engine/resolved_address.cc
+  - src/core/lib/event_engine/slice.cc
+  - src/core/lib/event_engine/slice_buffer.cc
+  - src/core/lib/slice/slice.cc
+  - src/core/lib/slice/slice_buffer.cc
+  - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
+  - src/core/util/glob.cc
   - test/core/event_engine/query_extensions_test.cc
   deps:
   - gtest
+  - absl/container:flat_hash_map
+  - absl/hash:hash
   - absl/status:statusor
+  - absl/utility:utility
   - gpr
   uses_polling: false
 - name: race_test
@@ -16164,12 +16249,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16302,12 +16385,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -16598,10 +16679,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/streams_not_seen_test.cc
   deps:
   - gtest
@@ -16847,6 +16926,7 @@ targets:
   - src/core/lib/slice/slice_internal.h
   - src/core/lib/slice/slice_refcount.h
   - src/core/lib/slice/slice_string_helpers.h
+  - src/core/telemetry/context_list_entry.h
   - src/core/util/glob.h
   src:
   - src/core/lib/debug/trace.cc
@@ -16858,6 +16938,7 @@ targets:
   - src/core/lib/slice/slice.cc
   - src/core/lib/slice/slice_buffer.cc
   - src/core/lib/slice/slice_string_helpers.cc
+  - src/core/telemetry/context_list_entry.cc
   - src/core/util/glob.cc
   - test/core/event_engine/slice_buffer_test.cc
   deps:
@@ -16946,7 +17027,6 @@ targets:
   - third_party/googleapis/google/rpc/status.proto
   - third_party/protoc-gen-validate/validate/validate.proto
   - third_party/xds/xds/data/orca/v3/orca_load_report.proto
-  - test/core/test_util/postmortem.cc
   - test/cpp/end2end/ssl_credentials_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
@@ -17241,10 +17321,8 @@ targets:
   language: c++
   headers:
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
   - gtest
@@ -17410,12 +17488,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util
@@ -17527,16 +17603,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/util/time.h
-  - src/core/util/wait_for_single_owner.h
+  headers: []
   src:
-  - src/core/util/time.cc
   - test/core/util/wait_for_single_owner_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - gpr
+  - grpc
   uses_polling: false
 - name: wakeup_fd_posix_test
   gtest: true
@@ -17609,12 +17681,10 @@ targets:
   headers:
   - test/core/bad_client/bad_client.h
   - test/core/end2end/cq_verifier.h
-  - test/core/test_util/postmortem.h
   src:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
-  - test/core/test_util/postmortem.cc
   deps:
   - gtest
   - grpc_test_util

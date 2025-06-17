@@ -1026,6 +1026,45 @@ TEST_P(AggregateClusterTest, RecursionMaxDepth) {
       ::testing::HasSubstr("aggregate cluster graph exceeds max depth"));
 }
 
+TEST_P(AggregateClusterTest, UnderlyingClusterDoesNotExist) {
+  CreateAndStartBackends(1);
+  const char* kNewCluster1Name = "new_cluster_1";
+  const char* kNewEdsService1Name = "new_eds_service_name_1";
+  const char* kNewCluster2Name = "new_cluster_2";
+  // Populate new EDS resource.
+  EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends()}});
+  balancer_->ads_service()->SetEdsResource(
+      BuildEdsResource(args1, kNewEdsService1Name));
+  // Populate new CDS resource.
+  Cluster new_cluster1 = default_cluster_;
+  new_cluster1.set_name(kNewCluster1Name);
+  new_cluster1.mutable_eds_cluster_config()->set_service_name(
+      kNewEdsService1Name);
+  balancer_->ads_service()->SetCdsResource(new_cluster1);
+  // Create Aggregate Cluster.
+  auto cluster = default_cluster_;
+  auto* custom_cluster = cluster.mutable_cluster_type();
+  custom_cluster->set_name("envoy.clusters.aggregate");
+  ClusterConfig cluster_config;
+  cluster_config.add_clusters(kNewCluster1Name);
+  cluster_config.add_clusters(kNewCluster2Name);  // Does not exist.
+  custom_cluster->mutable_typed_config()->PackFrom(cluster_config);
+  balancer_->ads_service()->SetCdsResource(cluster);
+  // Wait for traffic to go to backend 0.
+  // Use a longer deadline to wait for xDS resource does-not-exist timeout.
+  WaitForBackend(DEBUG_LOCATION, 0, nullptr, WaitForBackendOptions(),
+                 RpcOptions().set_timeout_ms(20000));
+  // Shutdown backend 0.  RPCs should fail, and the error message should
+  // include the fact that kNewCluster2Name doesn't exist.
+  backends_[0]->StopListeningAndSendGoaways();
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                       MakeConnectionFailureRegex(
+                           "connections to all backends failing; last error: ",
+                           "CDS resource new_cluster_2: does not exist "
+                           "\\(node ID:xds_end2end_test\\); "
+                           "xDS node ID:xds_end2end_test"));
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc

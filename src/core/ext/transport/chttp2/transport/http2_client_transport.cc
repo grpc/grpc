@@ -30,8 +30,11 @@
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_spine.h"
+#include "src/core/call/message.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
+#include "src/core/ext/transport/chttp2/transport/message_assembler.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/for_each.h"
@@ -87,13 +90,58 @@ void Http2ClientTransport::AbortWithError() {
 
 Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2DataFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2DataFrame Promise { stream_id="
       << frame.stream_id << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << "}";
+
+  // TODO(akshitpatel) : [PH2][P3] : Investigate if we should do this even if
+  // the function returns a non-ok status?
   ping_manager_.ReceivedDataFrame();
+
+  // Lookup stream
+  RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
+  if (stream == nullptr) {
+    // TODO(tjagtap) : [PH2][P2] : Decide the correct behaviour later.
+    // RFC9113 : If a DATA frame is received whose stream is not in the "open"
+    // or "half-closed (local)" state, the recipient MUST respond with a stream
+    // error (Section 5.4.2) of type STREAM_CLOSED.
+    return Http2Status::Ok();
+  }
+
+  // Add frame to assembler
+  GrpcMessageAssembler& assembler = stream->assembler;
+  Http2Status status =
+      assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
+  if (!status.IsOk()) {
+    return status;
+  }
+
+  // Pass the messages up the stack if it is ready.
+  while (true) {
+    ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
+    if (!result.IsOk()) {
+      return ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
+    }
+    MessageHandle message = TakeValue(std::move(result));
+    if (message != nullptr) {
+      // TODO(tjagtap) : [PH2][P1] : Ask ctiller what is the right way to plumb
+      // with call V3. PushMessage or SpawnPushMessage.
+      stream->call.SpawnPushMessage(std::move(message));
+      continue;
+    }
+    break;
+  }
+
+  // TODO(tjagtap) : [PH2][P1] : List of Tests:
+  // 1. Data frame with unknown stream ID
+  // 2. Data frame with only half a message and then end stream
+  // 3. One data frame with a full message
+  // 4. Three data frames with one full message
+  // 5. One data frame with three full messages. All messages should be pushed.
+  // Will need to mock the call_handler object and test this along with the
+  // Header reading code. Because we need a stream in place for the lookup to
+  // work.
   return Http2Status::Ok();
 }
 
@@ -119,6 +167,18 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
+
+  Http2Status status = Http2Status::Http2StreamError(
+      static_cast<Http2ErrorCode>(frame.error_code),
+      "Reset stream frame received.");
+  CloseStream(frame.stream_id, status.GetAbslStreamError(),
+              CloseStreamArgs{
+                  /*close_reads=*/true,
+                  /*close_writes=*/true,
+                  /*send_rst_stream=*/false,
+                  /*cancelled=*/false,
+              });
+
   return Http2Status::Ok();
 }
 
@@ -126,7 +186,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2SettingsFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   // Load into this.settings_
   // Take necessary actions as per settings that have changed.
   HTTP2_TRANSPORT_DLOG
@@ -189,7 +249,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
+  // TODO(tjagtap) : [PH2][P2] : Implement this.
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
@@ -327,7 +387,7 @@ auto Http2ClientTransport::ReadLoop() {
 auto Http2ClientTransport::OnReadLoopEnded() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Factory";
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
+    // TODO(akshitpatel) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Promise Status="
                       << status;
     GRPC_UNUSED absl::Status error =
@@ -443,8 +503,8 @@ Http2ClientTransport::Http2ClientTransport(
                                                 : Duration::Infinity()),
           keepalive_time_),
       keepalive_permit_without_calls_(false) {
-  // TODO(tjagtap) : [PH2][P1] : Save and apply channel_args.
-  // TODO(tjagtap) : [PH2][P1] : Initialize settings_ to appropriate values.
+  // TODO(tjagtap) : [PH2][P2] : Save and apply channel_args.
+  // TODO(tjagtap) : [PH2][P2] : Initialize settings_ to appropriate values.
 
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor Begin";
 
@@ -478,6 +538,7 @@ Http2ClientTransport::Http2ClientTransport(
 Http2ClientTransport::~Http2ClientTransport() {
   // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
+  DCHECK(stream_list_.empty());
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
 }
 
@@ -500,7 +561,7 @@ RefCountedPtr<Http2ClientTransport::Stream> Http2ClientTransport::LookupStream(
 bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                       const uint32_t stream_id) {
   // https://datatracker.ietf.org/doc/html/rfc9113#name-stream-identifiers
-  // TODO(tjagtap) : [PH2][P1] Validate implementation.
+  // TODO(tjagtap) : [PH2][P2] Validate implementation.
 
   // TODO(akshitpatel) : [PH2][P1] : Probably do not need this lock. This
   // function is always called under the stream_id_mutex_. The issue is the
@@ -514,10 +575,24 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                           << " id=" << stream_id
                           << " done: cancelled=" << cancelled;
         if (cancelled) {
-          // TODO(tjagtap) : [PH2][P1] Cancel implementation.
+          // TODO(akshitpatel) : [PH2][P2] : There are two ways to handle
+          // cancellation.
+          // 1. Call CloseStream from the on_done callback as done here. This
+          //    will be invoked when PullServerTrailingMetadata resolves.
+          // 2. Call CloseStream from the OutboundLoop. When the call is
+          //    cancelled, for_each() should return with an error. The
+          //    WasCancelled() function can be used to determinie if the call
+          //    was cancelled.
+          // At this point, both the above mentioned approaches seem to be more
+          // or less the same as both are running on the call party.
+          self->CloseStream(stream_id, absl::CancelledError(),
+                            CloseStreamArgs{
+                                /*close_reads=*/true,
+                                /*close_writes=*/true,
+                                /*send_rst_stream=*/true,
+                                /*cancelled=*/true,
+                            });
         }
-        MutexLock lock(&self->transport_mutex_);
-        self->stream_list_.erase(stream_id);
       });
   if (!on_done_added) return false;
   stream_list_.emplace(
@@ -557,7 +632,19 @@ auto Http2ClientTransport::CallOutboundLoop(
   return GRPC_LATENT_SEE_PROMISE(
       "Ph2CallOutboundLoop",
       TrySeq(
-          EnqueueOutgoingFrame(std::move(frame)),
+          Map(EnqueueOutgoingFrame(std::move(frame)),
+              [self = RefAsSubclass<Http2ClientTransport>(),
+               stream_id](absl::Status status) {
+                if (status.ok()) {
+                  auto stream = self->LookupStream(stream_id);
+                  if (stream == nullptr) {
+                    return absl::InternalError(
+                        "Stream not found while sending initial metadata");
+                  }
+                  stream->SentInitialMetadata();
+                }
+                return status;
+              }),
           [call_handler, send_message, lock = std::move(lock)]() {
             // The lock will be released once the promise is constructed from
             // this factory. ForEach will be polled after the lock is
@@ -567,6 +654,13 @@ auto Http2ClientTransport::CallOutboundLoop(
           // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay
           // to send half close when the call is cancelled.
           [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
+            self->CloseStream(stream_id, absl::OkStatus(),
+                              CloseStreamArgs{
+                                  /*close_reads=*/false,
+                                  /*close_writes=*/true,
+                                  /*send_rst_stream=*/false,
+                                  /*cancelled=*/false,
+                              });
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
             Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
