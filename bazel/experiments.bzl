@@ -103,6 +103,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -135,9 +138,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -181,6 +181,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -213,9 +216,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
@@ -259,6 +259,9 @@ EXPERIMENTS = {
                 "tcp_frame_size_tuning",
                 "tcp_rcv_lowat",
             ],
+            "minimal_stack_test": [
+                "fuse_filters",
+            ],
             "promise_test": [
                 "sleep_promise_exec_ctx_removal",
             ],
@@ -291,9 +294,6 @@ EXPERIMENTS = {
             ],
             "event_engine_listener_test": [
                 "event_engine_listener",
-            ],
-            "minimal_stack_test": [
-                "fuse_filters",
             ],
             "resolver_component_tests_runner_invoker": [
                 "event_engine_dns",
