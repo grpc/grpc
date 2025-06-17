@@ -17,13 +17,14 @@
 // This filter reads GRPC_ARG_SERVICE_CONFIG and populates ServiceConfigCallData
 // in the call context per call for direct channels.
 
+#include "src/core/service_config/service_config_channel_arg_filter.h"
+
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>
 
 #include "src/core/call/metadata_batch.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/filters/message_size/message_size_filter.h"
-#include "src/core/service_config/service_config_channel_arg_filter.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/promise/context.h"
@@ -55,8 +56,6 @@ void ServiceConfigChannelArgFilter::Call::OnClientInitialMetadata(
 const grpc_channel_filter ServiceConfigChannelArgFilter::kFilter =
     MakePromiseBasedFilter<ServiceConfigChannelArgFilter,
                            FilterEndpoint::kClient>();
-
-
 
 void RegisterServiceConfigChannelArgFilter(
     CoreConfiguration::Builder* builder) {
