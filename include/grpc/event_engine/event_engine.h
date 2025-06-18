@@ -108,7 +108,8 @@ namespace experimental {
 /// application state synchronization must be managed by the application.
 ///
 ////////////////////////////////////////////////////////////////////////////////
-class EventEngine : public std::enable_shared_from_this<EventEngine>, public Extensible {
+class EventEngine : public std::enable_shared_from_this<EventEngine>,
+                    public Extensible {
  public:
   /// A duration between two events.
   ///
@@ -200,7 +201,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       // the endpoint read operation as complete. gRPC may use this argument
       // to minimize the number of endpoint read API calls over the lifetime
       // of a connection.
-      void set_read_hint_bytes(int64_t read_hint_bytes) { read_hint_bytes_ = read_hint_bytes; }
+      void set_read_hint_bytes(int64_t read_hint_bytes) {
+        read_hint_bytes_ = read_hint_bytes;
+      }
       int64_t read_hint_bytes() const { return read_hint_bytes_; }
 
      private:
@@ -229,8 +232,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     /// For failed read operations, implementations should pass the appropriate
     /// statuses to \a on_read. For example, callbacks might expect to receive
     /// CANCELLED on endpoint shutdown.
-    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-                      ReadArgs args) = 0;
+    virtual bool Read(absl::AnyInvocable<void(absl::Status)> on_read,
+                      SliceBuffer* buffer, ReadArgs args) = 0;
     //// The set of write events that can be reported by an Endpoint.
     using WriteEvent = ::grpc_event_engine::experimental::internal::WriteEvent;
     /// An output WriteMetric consists of a key and a value.
@@ -245,8 +248,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     // It is the responsibility of the caller of WriteEventCallback to make sure
     // that the corresponding endpoint is still valid. HINT: Do NOT offload
     // callbacks onto the EventEngine or other threads.
-    using WriteEventCallback =
-        absl::AnyInvocable<void(WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
+    using WriteEventCallback = absl::AnyInvocable<void(
+        WriteEvent, absl::Time, std::vector<WriteMetric>) const>;
     // A bitmask of the events that the caller is interested in.
     // Each bit corresponds to an entry in WriteEvent.
     using WriteEventSet = std::bitset<static_cast<int>(WriteEvent::kCount)>;
@@ -268,19 +271,24 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       WriteEventSink(std::shared_ptr<MetricsSet> requested_metrics,
                      std::initializer_list<WriteEvent> requested_events,
                      WriteEventCallback on_event)
-          : requested_metrics_(std::move(requested_metrics)), on_event_(std::move(on_event)) {
+          : requested_metrics_(std::move(requested_metrics)),
+            on_event_(std::move(on_event)) {
         for (auto event : requested_events) {
           requested_events_mask_.set(static_cast<int>(event));
         }
       }
 
-      const std::shared_ptr<MetricsSet>& requested_metrics() const { return requested_metrics_; }
+      const std::shared_ptr<MetricsSet>& requested_metrics() const {
+        return requested_metrics_;
+      }
 
       bool requested_event(WriteEvent event) const {
         return requested_events_mask_.test(static_cast<int>(event));
       }
 
-      WriteEventSet requested_events_mask() const { return requested_events_mask_; }
+      WriteEventSet requested_events_mask() const {
+        return requested_events_mask_;
+      }
 
       /// Takes the callback. Ownership is transferred. It is illegal to destroy
       /// the endpoint before this callback is invoked.
@@ -331,13 +339,17 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
 
       bool has_metrics_sink() const { return metrics_sink_.has_value(); }
 
-      void set_metrics_sink(WriteEventSink sink) { metrics_sink_ = std::move(sink); }
+      void set_metrics_sink(WriteEventSink sink) {
+        metrics_sink_ = std::move(sink);
+      }
 
       // Represents private information that may be passed by gRPC for
       // select endpoints expected to be used only within google.
       // TODO(ctiller): Remove this method once all callers are migrated to
       // metrics sink.
-      void* GetDeprecatedAndDiscouragedGoogleSpecificPointer() { return google_specific_; }
+      void* GetDeprecatedAndDiscouragedGoogleSpecificPointer() {
+        return google_specific_;
+      }
 
       void* TakeDeprecatedAndDiscouragedGoogleSpecificPointer() {
         return std::exchange(google_specific_, nullptr);
@@ -353,7 +365,9 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       // receiver in response to high receiver memory pressure.
       int64_t max_frame_size() const { return max_frame_size_; }
 
-      void set_max_frame_size(int64_t max_frame_size) { max_frame_size_ = max_frame_size; }
+      void set_max_frame_size(int64_t max_frame_size) {
+        max_frame_size_ = max_frame_size;
+      }
 
      private:
       std::optional<WriteEventSink> metrics_sink_;
@@ -369,15 +383,19 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
       /// The keys are used to identify the metrics in the GetMetricName and
       /// GetMetricKey APIs. The current value of the metric can be queried by
       /// adding a WriteEventSink to the WriteArgs of a Write call.
-      virtual std::shared_ptr<const std::vector<size_t>> AllWriteMetrics() const = 0;
+      virtual std::shared_ptr<const std::vector<size_t>> AllWriteMetrics()
+          const = 0;
       /// Returns the name of the write metric with the given key.
       /// If the key is not found, returns std::nullopt.
-      virtual std::optional<absl::string_view> GetMetricName(size_t key) const = 0;
+      virtual std::optional<absl::string_view> GetMetricName(
+          size_t key) const = 0;
       /// Returns the key of the write metric with the given name.
       /// If the name is not found, returns std::nullopt.
-      virtual std::optional<size_t> GetMetricKey(absl::string_view name) const = 0;
+      virtual std::optional<size_t> GetMetricKey(
+          absl::string_view name) const = 0;
       /// Returns a MetricsSet with all the keys from \a keys set.
-      virtual std::shared_ptr<MetricsSet> GetMetricsSet(absl::Span<const size_t> keys) const = 0;
+      virtual std::shared_ptr<MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const = 0;
       /// Returns a MetricsSet with all supported keys set.
       virtual std::shared_ptr<MetricsSet> GetFullMetricsSet() const = 0;
     };
@@ -402,8 +420,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     /// For failed write operations, implementations should pass the appropriate
     /// statuses to \a on_writable. For example, callbacks might expect to
     /// receive CANCELLED on endpoint shutdown.
-    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable, SliceBuffer* data,
-                       WriteArgs args) = 0;
+    virtual bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
+                       SliceBuffer* data, WriteArgs args) = 0;
     /// Returns an address in the format described in DNSResolver. The returned
     /// values are expected to remain valid for the life of the Endpoint.
     virtual const ResolvedAddress& GetPeerAddress() const = 0;
@@ -418,15 +436,16 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
   /// the appropriate statuses to this callback. For example, callbacks might
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
-  using OnConnectCallback = absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
+  using OnConnectCallback =
+      absl::AnyInvocable<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
 
   /// Listens for incoming connection requests from gRPC clients and initiates
   /// request processing once connections are established.
   class Listener : public Extensible {
    public:
     /// Called when the listener has accepted a new client connection.
-    using AcceptCallback =
-        absl::AnyInvocable<void(std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
+    using AcceptCallback = absl::AnyInvocable<void(
+        std::unique_ptr<Endpoint>, MemoryAllocator memory_allocator)>;
     virtual ~Listener() = default;
     /// Bind an address/port to this Listener.
     ///
@@ -453,7 +472,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
   /// The provided \a MemoryAllocatorFactory is used to create \a
   /// MemoryAllocators for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
-      Listener::AcceptCallback on_accept, absl::AnyInvocable<void(absl::Status)> on_shutdown,
+      Listener::AcceptCallback on_accept,
+      absl::AnyInvocable<void(absl::Status)> on_shutdown,
       const EndpointConfig& config,
       std::unique_ptr<MemoryAllocatorFactory> memory_allocator_factory) = 0;
   /// Creates a client network connection to a remote network listener.
@@ -467,8 +487,10 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
   /// This allows gRPC's \a ResourceQuota system to monitor and control memory
   /// usage with graceful degradation mechanisms. Please see the \a
   /// MemoryAllocator API for more information.
-  virtual ConnectionHandle Connect(OnConnectCallback on_connect, const ResolvedAddress& addr,
-                                   const EndpointConfig& args, MemoryAllocator memory_allocator,
+  virtual ConnectionHandle Connect(OnConnectCallback on_connect,
+                                   const ResolvedAddress& addr,
+                                   const EndpointConfig& args,
+                                   MemoryAllocator memory_allocator,
                                    Duration timeout) = 0;
 
   /// Request cancellation of a connection attempt.
@@ -507,9 +529,11 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     using LookupHostnameCallback =
         absl::AnyInvocable<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
     /// Called with a collection of SRV records.
-    using LookupSRVCallback = absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
+    using LookupSRVCallback =
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback = absl::AnyInvocable<void(absl::StatusOr<std::vector<std::string>>)>;
+    using LookupTXTCallback =
+        absl::AnyInvocable<void(absl::StatusOr<std::vector<std::string>>)>;
 
     virtual ~DNSResolver() = default;
 
@@ -523,18 +547,21 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
     /// lookup. Implementations should pass the appropriate statuses to the
     /// callback. For example, callbacks might expect to receive CANCELLED or
     /// NOT_FOUND.
-    virtual void LookupHostname(LookupHostnameCallback on_resolve, absl::string_view name,
+    virtual void LookupHostname(LookupHostnameCallback on_resolve,
+                                absl::string_view name,
                                 absl::string_view default_port) = 0;
     /// Asynchronously perform an SRV record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual void LookupSRV(LookupSRVCallback on_resolve, absl::string_view name) = 0;
+    virtual void LookupSRV(LookupSRVCallback on_resolve,
+                           absl::string_view name) = 0;
     /// Asynchronously perform a TXT record lookup.
     ///
     /// \a on_resolve has the same meaning and expectations as \a
     /// LookupHostname's \a on_resolve callback.
-    virtual void LookupTXT(LookupTXTCallback on_resolve, absl::string_view name) = 0;
+    virtual void LookupTXT(LookupTXTCallback on_resolve,
+                           absl::string_view name) = 0;
   };
 
   /// At time of destruction, the EventEngine must have no active
@@ -607,7 +634,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
   ///
   /// Implementations must not execute the closure in the calling thread before
   /// \a RunAfter returns.
-  virtual TaskHandle RunAfter(Duration when, absl::AnyInvocable<void()> closure) = 0;
+  virtual TaskHandle RunAfter(Duration when,
+                              absl::AnyInvocable<void()> closure) = 0;
   /// Request cancellation of a task.
   ///
   /// If the associated closure cannot be cancelled for any reason, this
@@ -629,7 +657,8 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>, public Ext
 /// created, applications must set a custom EventEngine factory method *before*
 /// grpc is initialized.
 // TODO(hork): delete once all known users have migrated away
-void SetEventEngineFactory(absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
+void SetEventEngineFactory(
+    absl::AnyInvocable<std::shared_ptr<EventEngine>()> factory);
 
 /// [DEPRECATED] Reset gRPC's EventEngine factory to the built-in default.
 ///
@@ -678,12 +707,18 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine();
 /// engine, call \a SetDefaultEventEngine(nullptr) instead.
 void ShutdownDefaultEventEngine();
 
-bool operator==(const EventEngine::TaskHandle& lhs, const EventEngine::TaskHandle& rhs);
-bool operator!=(const EventEngine::TaskHandle& lhs, const EventEngine::TaskHandle& rhs);
-std::ostream& operator<<(std::ostream& out, const EventEngine::TaskHandle& handle);
-bool operator==(const EventEngine::ConnectionHandle& lhs, const EventEngine::ConnectionHandle& rhs);
-bool operator!=(const EventEngine::ConnectionHandle& lhs, const EventEngine::ConnectionHandle& rhs);
-std::ostream& operator<<(std::ostream& out, const EventEngine::ConnectionHandle& handle);
+bool operator==(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+bool operator!=(const EventEngine::TaskHandle& lhs,
+                const EventEngine::TaskHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::TaskHandle& handle);
+bool operator==(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+bool operator!=(const EventEngine::ConnectionHandle& lhs,
+                const EventEngine::ConnectionHandle& rhs);
+std::ostream& operator<<(std::ostream& out,
+                         const EventEngine::ConnectionHandle& handle);
 
 namespace detail {
 std::string FormatHandleString(uint64_t key1, uint64_t key2);
