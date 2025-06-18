@@ -386,6 +386,68 @@ class ProtocArtifact:
         return self.name
 
 
+class PythonProtocPluginArtifact:
+    """Builds standalone gRPC Python protoc plugin"""
+
+    def __init__(self, platform, arch, presubmit=False):
+        self.name = "grpc_python_plugin_%s_%s" % (platform, arch)
+        self.platform = platform
+        self.arch = arch
+        self.labels = ["artifact", "protoc", "python_plugin", platform, arch]
+        if presubmit:
+            self.labels.append("presubmit")
+
+    def pre_build_jobspecs(self):
+        return []
+
+    def build_jobspec(self, inner_jobs=None):
+        environ = {}
+        if inner_jobs is not None:
+            environ["GRPC_PROTOC_BUILD_COMPILER_JOBS"] = str(inner_jobs)
+
+        if self.platform != "windows":
+            environ["CXXFLAGS"] = ""
+            environ["LDFLAGS"] = ""
+            if self.platform == "linux":
+                dockerfile_dir = "tools/dockerfile/grpc_artifact_linux_%s" % self.arch
+                if self.arch == "x64":
+                    environ["CXXFLAGS"] += " -static-libgcc -static-libstdc++"
+                    environ["LDFLAGS"] += " -static-libgcc -static-libstdc++"
+                elif self.arch == "x86":
+                    environ["CXXFLAGS"] += " -m32 -march=i386"
+                    environ["LDFLAGS"] += " -m32"
+                elif self.arch == "aarch64":
+                    pass  # handled by docker environment
+                environ["LDFLAGS"] += " -s"  # strip symbols
+                return create_docker_jobspec(
+                    self.name,
+                    dockerfile_dir,
+                    "tools/run_tests/artifacts/build_artifact_protoc_python.sh",
+                    environ=environ,
+                )
+            else:  # macos
+                environ["CXXFLAGS"] += " -std=c++17 -stdlib=libc++"
+                return create_jobspec(
+                    self.name,
+                    ["tools/run_tests/artifacts/build_artifact_protoc_python.sh"],
+                    environ=environ,
+                    timeout_seconds=60 * 60,
+                    use_workspace=True,
+                )
+        else:  # windows
+            vs_tools_architecture = _windows_arch_option(self.arch)
+            environ["ARCHITECTURE"] = vs_tools_architecture
+            return create_jobspec(
+                self.name,
+                ["tools\\run_tests\\artifacts\\build_artifact_protoc_python.bat"],
+                environ=environ,
+                use_workspace=True,
+            )
+
+    def __str__(self):
+        return self.name
+
+
 def _reorder_targets_for_build_speed(targets):
     """Reorder targets to achieve optimal build speed"""
     # ruby artifact build builds multiple artifacts at once, so make sure
@@ -409,6 +471,10 @@ def targets():
             ProtocArtifact("macos", "x64", presubmit=True),
             ProtocArtifact("windows", "x64", presubmit=True),
             ProtocArtifact("windows", "x86", presubmit=True),
+            PythonProtocPluginArtifact("linux", "x64", presubmit=True),
+            PythonProtocPluginArtifact("linux", "aarch64", presubmit=True),
+            PythonProtocPluginArtifact("macos", "x64", presubmit=True),
+            PythonProtocPluginArtifact("windows", "x64", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp39-cp39", presubmit=True),
             PythonArtifact("manylinux2014", "x64", "cp310-cp310"),
             PythonArtifact("manylinux2014", "x64", "cp311-cp311"),
