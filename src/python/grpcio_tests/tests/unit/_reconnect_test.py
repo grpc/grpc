@@ -40,6 +40,7 @@ _RPC_TIMEOUT = test_constants.SHORT_TIMEOUT / 10.0
 # Set type to TypeAlias when typing_extensions installed.
 _CheckResultFnType = Callable[[Optional[str], Optional[grpc.RpcError]], bool]
 
+
 class TestServer:
     SERVICE_NAME: Final[str] = "test"
     METHOD_NAME: Final[str] = "EchoServerId"
