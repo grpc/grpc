@@ -207,9 +207,6 @@ Json ParticipantBitmaskToJson(uint64_t mask) {
 Party::~Party() {}
 
 void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
-  auto event_engine =
-      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
-  CHECK(event_engine != nullptr);
   Spawn(
       "get-json",
       [f = std::move(f), self = Ref()]() mutable {
