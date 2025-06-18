@@ -221,6 +221,7 @@ class Handler(BaseHTTPRequestHandler):
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread"""
 
+
 ipv6_available = can_bind_ipv6()
 if not ipv6_available:
     print("IPv6 not supported on this system")
