@@ -33,7 +33,7 @@ namespace {
 // incorrectly attempt to replay the send op.
 CORE_END2END_TEST(RetryTests, RetrySendRecvBatch) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,
       "{\n"

@@ -109,11 +109,13 @@ class ChaoticGoodServerTransport final : public ServerTransport {
   };
   using StreamMap = absl::flat_hash_map<uint32_t, RefCountedPtr<Stream> >;
 
-  class StreamDispatch : public FrameTransportSink {
+  class StreamDispatch final : public FrameTransportSink,
+                               public channelz::DataSource {
    public:
     StreamDispatch(const ChannelArgs& args, FrameTransport* frame_transport,
                    MessageChunker message_chunker,
                    RefCountedPtr<UnstartedCallDestination> call_destination);
+    ~StreamDispatch() override { ResetDataSource(); }
 
     void OnIncomingFrame(IncomingFrame incoming_frame) override;
     void OnFrameTransportClosed(absl::Status status) override;
@@ -122,6 +124,8 @@ class ChaoticGoodServerTransport final : public ServerTransport {
         grpc_connectivity_state state,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
+
+    void AddData(channelz::DataSink sink) override;
 
    private:
     absl::Status NewStream(

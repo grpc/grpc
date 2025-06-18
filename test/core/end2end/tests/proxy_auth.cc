@@ -32,7 +32,7 @@ namespace {
 
 CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(ProxyAuthTests, InvokeProxyAuth) {
   // Indicate that the proxy requires user auth
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_HTTP_PROXY_AUTH_CREDS,
                                GRPC_TEST_HTTP_PROXY_AUTH_CREDS));
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();

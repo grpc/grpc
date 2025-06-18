@@ -22,7 +22,9 @@
 #include <string>
 #include <variant>
 
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/string.h"
 #include "src/core/util/time.h"
 
 namespace grpc_core {
@@ -76,6 +78,15 @@ class Chttp2PingRatePolicy {
 
   int TestOnlyMaxPingsWithoutData() const {
     return max_pings_without_data_sent_;
+  }
+
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("max_pings_without_data_sent", max_pings_without_data_sent_)
+        .Set("max_inflight_pings", max_inflight_pings_)
+        .Set("pings_before_data_sending_required",
+             pings_before_data_sending_required_)
+        .Set("last_ping_sent_time", last_ping_sent_time_);
   }
 
  private:

@@ -17,6 +17,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include <cstddef>
+#include <optional>
+#include <vector>
+
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
@@ -104,6 +110,14 @@ class MockTelemetryInfo : public grpc_event_engine::experimental::EventEngine::
               (const override));
   MOCK_METHOD(std::optional<size_t>, GetMetricKey, (absl::string_view name),
               (const override));
+  MOCK_METHOD(
+      std::shared_ptr<
+          grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>,
+      GetMetricsSet, (absl::Span<const size_t> keys), (const override));
+  MOCK_METHOD(
+      std::shared_ptr<
+          grpc_event_engine::experimental::EventEngine::Endpoint::MetricsSet>,
+      GetFullMetricsSet, (), (const override));
 };
 
 struct MockTransportFramingEndpointExtension

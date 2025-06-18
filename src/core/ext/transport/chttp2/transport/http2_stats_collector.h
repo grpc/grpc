@@ -25,7 +25,7 @@
 
 namespace grpc_core {
 
-std::unique_ptr<Http2StatsCollector> CreateHttp2StatsCollector(
+std::shared_ptr<Http2StatsCollector> CreateHttp2StatsCollector(
     grpc_auth_context* ctx);
 
 }  // namespace grpc_core
