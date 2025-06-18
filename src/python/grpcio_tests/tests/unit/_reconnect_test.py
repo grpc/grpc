@@ -39,8 +39,6 @@ _RPC_TIMEOUT = test_constants.SHORT_TIMEOUT / 10.0
 # Type aliases.
 # Set type to TypeAlias when typing_extensions installed.
 _CheckResultFnType = Callable[[Optional[str], Optional[grpc.RpcError]], bool]
-_CallRpcReturnType = tuple[Optional[str], Optional[grpc.RpcError]]
-
 
 class TestServer:
     SERVICE_NAME: Final[str] = "test"
@@ -259,7 +257,7 @@ class ReconnectTest(unittest.TestCase):
         self,
         rpc_callable: grpc.UnaryUnaryMultiCallable,
         timeout: Optional[float] = None,
-    ) -> _CallRpcReturnType:
+    ) -> tuple[Optional[str], Optional[grpc.RpcError]]:
         # Prep request.
         self.req_id += 1
         req = f"req{self.req_id}"
@@ -292,7 +290,7 @@ class ReconnectTest(unittest.TestCase):
         sleep_sec_check_pass: float = 0,
         sleep_sec_check_fail: float = 0,
         rpc_timeout: Optional[float] = None,
-    ) -> tuple[list[_CallRpcReturnType], bool]:
+    ) -> tuple[list[tuple[Optional[str], Optional[grpc.RpcError]]], bool]:
         responses = []
         successes = 0
         for attempt in range(attempts):
