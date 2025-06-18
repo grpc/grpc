@@ -12,12 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Tests that a channel will reconnect if a connection is dropped"""
+from __future__ import annotations
 
+from collections.abc import Sequence
 import contextlib
 import logging
 import socket
 import time
-from typing import Callable, Dict, Final, List, Optional, Sequence, Tuple
+from typing import Callable, Final, Optional
 import unittest
 
 import grpc
@@ -37,7 +39,7 @@ _RPC_TIMEOUT = test_constants.SHORT_TIMEOUT / 10.0
 # Type aliases.
 # Set type to TypeAlias when typing_extensions installed.
 _CheckResultFnType = Callable[[Optional[str], Optional[grpc.RpcError]], bool]
-_CallRpcReturnType = Tuple[Optional[str], Optional[grpc.RpcError]]
+_CallRpcReturnType = tuple[Optional[str], Optional[grpc.RpcError]]
 
 
 class TestServer:
@@ -102,7 +104,7 @@ class TestServer:
         cleanup.close()
         logging.debug("[SERVER #%s] Shutdown complete", self.server_id)
 
-    def _make_handlers(self) -> Dict[str, grpc.RpcMethodHandler]:
+    def _make_handlers(self) -> dict[str, grpc.RpcMethodHandler]:
         return {
             self.METHOD_NAME: grpc.unary_unary_rpc_method_handler(
                 self._handle_unary_unary
@@ -290,7 +292,7 @@ class ReconnectTest(unittest.TestCase):
         sleep_sec_check_pass: float = 0,
         sleep_sec_check_fail: float = 0,
         rpc_timeout: Optional[float] = None,
-    ) -> Tuple[List[_CallRpcReturnType], bool]:
+    ) -> tuple[list[_CallRpcReturnType], bool]:
         responses = []
         successes = 0
         for attempt in range(attempts):
