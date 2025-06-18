@@ -62,8 +62,6 @@ class PingInterface {
     // in any fashion.
     uint64_t opaque_data = 0;
   };
-  // TODO(tjagtap) : [PH2][P1] Change the return type of the promises to
-  // Promise<Http2Status> type when that is submitted.
 
   // Returns a promise that creates and sends a ping frame to the peer.
   virtual Promise<absl::Status> SendPing(SendPingArgs args) = 0;

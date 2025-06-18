@@ -323,6 +323,8 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
       data;
   auto deadline = absl::Now() + absl::Seconds(5);
   do {
+    // Give other threads a chance to run and potentially report metrics.
+    std::this_thread::yield();
     reader->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
       for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
            rm.scope_metric_data_) {

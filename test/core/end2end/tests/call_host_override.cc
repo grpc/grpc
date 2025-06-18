@@ -33,7 +33,7 @@ namespace {
 CORE_END2END_TEST(CoreClientChannelTests, CallHostOverride) {
   InitClient(ChannelArgs().Set(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG,
                                "foo.test.google.fr:1234"));
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   auto c = NewClientCall("/foo")
                .Timeout(Duration::Seconds(30))
                .Host("foo.test.google.fr:1234")

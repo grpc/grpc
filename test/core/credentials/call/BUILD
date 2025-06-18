@@ -31,10 +31,26 @@ grpc_cc_test(
         "//:grpc",
         "//src/core:channel_args",
         "//src/core:gcp_service_account_identity_credentials",
+        "//src/core:jwt_token_file_call_credentials",
         "//test/core/event_engine:event_engine_test_utils",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/test_util:grpc_test_util",
         "//test/core/test_util:grpc_test_util_base",
         "//test/core/test_util:test_call_creds",
+    ],
+)
+
+grpc_cc_test(
+    name = "jwt_util_test",
+    srcs = ["jwt_util_test.cc"],
+    external_deps = [
+        "absl/status",
+        "absl/strings",
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//src/core:jwt_util",
+        "//test/core/test_util:grpc_test_util",
     ],
 )

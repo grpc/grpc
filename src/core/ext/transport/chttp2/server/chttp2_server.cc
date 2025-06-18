@@ -223,8 +223,6 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
 
 void NewChttp2ServerListener::ActiveConnection::HandshakingState::
     OnHandshakeDoneLocked(absl::StatusOr<HandshakerArgs*> result) {
-  OrphanablePtr<HandshakingState> handshaking_state_ref;
-  RefCountedPtr<HandshakeManager> handshake_mgr;
   // If the handshaking succeeded but there is no endpoint, then the
   // handshaker may have handed off the connection to some external
   // code, so we can just clean up here without creating a transport.

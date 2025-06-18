@@ -55,7 +55,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
     ReinitHandle(const ReinitHandle& other) = delete;
     void OnResolverGone();
     // Clears resources (such as CARES handles) held by the associated resolver.
-    void Reset();
+    void Reset(const absl::Status& status);
     // Reinitializes the associated resolver after Reset.
     void Restart();
 
@@ -141,7 +141,7 @@ class AresResolver : public RefCountedDNSResolverInterface {
 #ifdef GRPC_ENABLE_FORK_SUPPORT
   // Is executed on fork before the poller is restarted. Cleans up the resources
   // from the previous generation.
-  void Reset();
+  void Reset(const absl::Status& reason);
   // Is executed on fork after the poller is restarted. Makes the resolver
   // usable once more.
   void Restart();

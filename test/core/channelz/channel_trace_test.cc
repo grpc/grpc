@@ -185,6 +185,36 @@ TEST(ChannelTracerTest, BasicTest) {
       << JsonDump(json);
 }
 
+TEST(ChannelTracerTest, StreamingOutputTest) {
+  ChannelTrace tracer(kEventListMemoryLimit);
+  GRPC_CHANNELZ_LOG(tracer) << "one";
+  GRPC_CHANNELZ_LOG(tracer) << "two";
+  GRPC_CHANNELZ_LOG(tracer) << "three";
+  GRPC_CHANNELZ_LOG(tracer) << "four";
+  Json json = tracer.RenderJson();
+  ValidateJsonProtoTranslation(json);
+  EXPECT_THAT(json,
+              IsChannelTraceWithEvents(
+                  4, ::testing::ElementsAre(IsTraceEvent("one", "CT_INFO"),
+                                            IsTraceEvent("two", "CT_INFO"),
+                                            IsTraceEvent("three", "CT_INFO"),
+                                            IsTraceEvent("four", "CT_INFO"))))
+      << JsonDump(json);
+  tracer.NewNode("five").Commit();
+  tracer.NewNode("six").Commit();
+  json = tracer.RenderJson();
+  ValidateJsonProtoTranslation(json);
+  EXPECT_THAT(
+      json,
+      IsChannelTraceWithEvents(
+          6,
+          ::testing::ElementsAre(
+              IsTraceEvent("one", "CT_INFO"), IsTraceEvent("two", "CT_INFO"),
+              IsTraceEvent("three", "CT_INFO"), IsTraceEvent("four", "CT_INFO"),
+              IsTraceEvent("five", "CT_INFO"), IsTraceEvent("six", "CT_INFO"))))
+      << JsonDump(json);
+}
+
 TEST(ChannelTracerTest, TestSmallMemoryLimit) {
   // Doesn't make sense in practice, but serves a testing purpose for the
   // channel tracing bookkeeping. All tracing events added should get
@@ -208,11 +238,16 @@ TEST(ChannelTracerTest, ThreadSafety) {
   for (size_t i = 0; i < 10; ++i) {
     threads.push_back(std::make_unique<std::thread>([&]() {
       do {
-        tracer.NewNode("trace").Commit();
+        for (int i = 0; i < 100; i++) {
+          if (done.HasBeenNotified()) return;
+          tracer.NewNode("trace").Commit();
+        }
+        absl::SleepFor(absl::Milliseconds(1));
       } while (!done.HasBeenNotified());
     }));
   }
   for (size_t i = 0; i < 10; ++i) {
+    absl::SleepFor(absl::Milliseconds(1));
     tracer.RenderJson();
   }
   done.Notify();

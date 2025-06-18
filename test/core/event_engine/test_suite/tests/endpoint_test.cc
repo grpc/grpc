@@ -130,15 +130,15 @@ TEST_F(EventEngineEndpointTest, WriteEventCallbackEndpointValidityTest) {
     WriteArgs client_write_args;
     auto client_telemetry_info = client_endpoint->GetTelemetryInfo();
     client_write_args.set_metrics_sink(WriteEventSink(
-        client_telemetry_info ? client_telemetry_info->AllWriteMetrics()
+        client_telemetry_info ? client_telemetry_info->GetFullMetricsSet()
                               : nullptr,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
         event_cb));
     WriteArgs server_write_args;
-    auto server_telemetry_info = client_endpoint->GetTelemetryInfo();
+    auto server_telemetry_info = server_endpoint->GetTelemetryInfo();
     server_write_args.set_metrics_sink(WriteEventSink(
-        server_telemetry_info ? server_telemetry_info->AllWriteMetrics()
+        server_telemetry_info ? server_telemetry_info->GetFullMetricsSet()
                               : nullptr,
         {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
          WriteEvent::kAcked, WriteEvent::kClosed},
