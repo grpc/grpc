@@ -6529,6 +6529,7 @@ target_link_libraries(activity_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -7283,6 +7284,7 @@ target_link_libraries(all_ok_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -8954,6 +8956,7 @@ target_link_libraries(blackboard_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -9269,6 +9272,7 @@ target_link_libraries(call_filters_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -9367,6 +9371,7 @@ target_link_libraries(call_state_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -9833,6 +9838,7 @@ target_link_libraries(cancel_callback_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -10897,6 +10903,7 @@ target_link_libraries(chunked_vector_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -11758,6 +11765,7 @@ target_link_libraries(common_closures_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -14611,6 +14619,7 @@ target_link_libraries(endpoint_config_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -15212,6 +15221,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -16143,6 +16153,7 @@ target_link_libraries(for_each_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -19903,6 +19914,7 @@ target_link_libraries(inter_activity_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20021,6 +20033,7 @@ target_link_libraries(interceptor_list_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20315,6 +20328,7 @@ target_link_libraries(join_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20622,6 +20636,7 @@ target_link_libraries(latch_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20936,6 +20951,7 @@ target_link_libraries(lock_based_mpsc_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21034,6 +21050,7 @@ target_link_libraries(loop_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21145,6 +21162,7 @@ target_link_libraries(map_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21392,6 +21410,7 @@ target_link_libraries(memory_usage_test
   gtest
   absl::statusor
   absl::string_view
+  absl::span
   gpr
 )
 
@@ -22276,6 +22295,7 @@ target_link_libraries(observable_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -23387,6 +23407,7 @@ target_link_libraries(periodic_update_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -24864,6 +24885,7 @@ target_link_libraries(promise_mutex_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -24953,6 +24975,7 @@ target_link_libraries(property_list_test
   gtest
   absl::flat_hash_map
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -25430,6 +25453,7 @@ target_link_libraries(query_extensions_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -25899,6 +25923,7 @@ target_link_libraries(request_buffer_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -26757,6 +26782,7 @@ target_link_libraries(seq_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -28021,6 +28047,7 @@ target_link_libraries(slice_string_helpers_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -29491,6 +29518,7 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -29546,6 +29574,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -29717,6 +29746,7 @@ target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -30526,6 +30556,7 @@ target_link_libraries(timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31037,6 +31068,7 @@ target_link_libraries(try_join_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -31128,6 +31160,7 @@ target_link_libraries(try_seq_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31498,6 +31531,7 @@ target_link_libraries(wait_for_callback_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31900,6 +31934,7 @@ target_link_libraries(write_size_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
