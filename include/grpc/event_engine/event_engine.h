@@ -383,8 +383,7 @@ class EventEngine : public std::enable_shared_from_this<EventEngine>,
       /// The keys are used to identify the metrics in the GetMetricName and
       /// GetMetricKey APIs. The current value of the metric can be queried by
       /// adding a WriteEventSink to the WriteArgs of a Write call.
-      virtual std::shared_ptr<const std::vector<size_t>> AllWriteMetrics()
-          const = 0;
+      virtual std::vector<size_t> AllWriteMetrics() const = 0;
       /// Returns the name of the write metric with the given key.
       /// If the key is not found, returns std::nullopt.
       virtual std::optional<absl::string_view> GetMetricName(
