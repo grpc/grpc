@@ -153,10 +153,10 @@ void OutputBuffers::Reader::EndReadNext() {
 
 Poll<std::vector<OutputBuffers::QueuedFrame>>
 OutputBuffers::Reader::PollReadNext() {
-  GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::PollReadNext");
+  GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext");
   mu_.Lock();
   while (true) {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::PollReadNext::loop");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::PollReadNext::loop");
     if (frames_.empty()) {
       if (!reading_) {
         reading_ = true;
@@ -244,7 +244,7 @@ void OutputBuffers::DestroyReader(uint32_t id) {
 }
 
 void OutputBuffers::WakeupScheduler() {
-  GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::WakeupScheduler");
+  GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
   auto state = scheduling_state_.load(std::memory_order_acquire);
   while (true) {
     switch (state) {
@@ -273,7 +273,7 @@ void OutputBuffers::WakeupScheduler() {
 }
 
 Poll<Empty> OutputBuffers::SchedulerPollForWork() {
-  GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::SchedulerPollForWork");
+  GRPC_LATENT_SEE_SCOPE("OutputBuffers::SchedulerPollForWork");
   auto state = scheduling_state_.load(std::memory_order_acquire);
   while (true) {
     switch (state) {
@@ -301,13 +301,13 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
 }
 
 void OutputBuffers::Schedule() {
-  GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule");
+  GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule");
   auto* first_message = frames_queue_.Peek();
   if (first_message == nullptr) return;
   std::vector<SchedulingData> scheduling_data;
   uint64_t queued_tokens = 0;
   {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::CollectData1");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData1");
     MutexLock lock(&mu_reader_data_);
     scheduling_data.reserve(readers_.size());
     for (const auto& reader : readers_) {
@@ -324,7 +324,7 @@ void OutputBuffers::Schedule() {
   const auto now = clock_->Now();
   bool any_readers = false;
   {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::CollectData2");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::CollectData2");
     for (size_t i = 0; i < scheduling_data.size(); ++i) {
       SchedulingData& scheduling = scheduling_data[i];
       if (scheduling.reader == nullptr) continue;
@@ -339,11 +339,11 @@ void OutputBuffers::Schedule() {
   }
   if (!any_readers) return;
   {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::MakePlan");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::MakePlan");
     scheduler_->MakePlan(*ztrace_collector_);
   }
   {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::PlaceMessages");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::PlaceMessages");
     while (true) {
       auto* message = frames_queue_.Peek();
       if (message == nullptr) break;
@@ -366,7 +366,7 @@ void OutputBuffers::Schedule() {
     }
   }
   {
-    GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::PublishSchedule");
+    GRPC_LATENT_SEE_SCOPE("OutputBuffers::Schedule::PublishSchedule");
     for (auto& scheduling : scheduling_data) {
       if (scheduling.frames.empty()) continue;
       auto& reader = scheduling.reader;
@@ -395,7 +395,7 @@ void OutputBuffers::Schedule() {
 
 void OutputBuffers::Write(uint64_t payload_tag,
                           MpscQueued<OutgoingFrame> output_buffer) {
-  GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Write");
+  GRPC_LATENT_SEE_SCOPE("OutputBuffers::Write");
   GRPC_TRACE_LOG(chaotic_good, INFO)
       << "CHAOTIC_GOOD: " << this
       << " Queue data frame write, payload_tag=" << payload_tag;
@@ -455,7 +455,7 @@ InputQueue::ReadTicket InputQueue::Read(uint64_t payload_tag) {
 }
 
 void InputQueue::CompleteRead(uint64_t payload_tag, SliceBuffer buffer) {
-  GRPC_LATENT_SEE_INNER_SCOPE("InputQueue::CompleteRead");
+  GRPC_LATENT_SEE_SCOPE("InputQueue::CompleteRead");
   if (payload_tag == 0) return;
   mu_.Lock();
   if (!closed_error_.ok()) {
@@ -704,7 +704,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             << " frames to data endpoint #" << ctx->id;
         using grpc_event_engine::experimental::EventEngine;
 
-        GRPC_LATENT_SEE_INNER_SCOPE("SerializePayload");
+        GRPC_LATENT_SEE_SCOPE("SerializePayload");
         // Frame everything into a slice buffer.
         SliceBuffer buffer;
         const size_t header_padding = DataConnectionPadding(
