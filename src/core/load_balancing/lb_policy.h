@@ -505,6 +505,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
 template <>
 struct ArenaContextType<LoadBalancingPolicy::SubchannelCallTrackerInterface> {
+  static constexpr ArenaContextPropagation kPropagation =
+      ArenaContextPropagation::kForward;
   static void Destroy(LoadBalancingPolicy::SubchannelCallTrackerInterface*) {}
 };
 
