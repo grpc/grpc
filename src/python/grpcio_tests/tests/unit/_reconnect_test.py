@@ -211,9 +211,11 @@ class ReconnectTest(unittest.TestCase):
         expected_recovery_after_sec: Final[float] = 5.1
         sleep_sec_check_fail: Final[float] = 0.5
         failed_call_approx_sec = sleep_sec_check_fail + _RPC_TIMEOUT
-        # Double the amount of success calls plus the expected time recovering.
-        attempts: int = num_consequent_successes * 2 + int(
-            expected_recovery_after_sec / failed_call_approx_sec
+        # The number of expected retries needed to recover plus number
+        # of expected successes. Multiply by two for some headroom.
+        attempts: int = 2 * (
+            int(expected_recovery_after_sec / failed_call_approx_sec)
+            + num_consequent_successes
         )
 
         logging.info("[TEST] Waiting for recovery, max_attempts: %r", attempts)
@@ -236,7 +238,7 @@ class ReconnectTest(unittest.TestCase):
             self.fail(
                 "[TEST] Recovery verification failed: didn't receive "
                 f"{num_consequent_successes} good calls in sequence. "
-                f"Failed calls: {num_failed_calls}"
+                f"Failed calls: {num_failed_calls} out of {attempts}"
             )
         self.assertEqual(
             responses[-1][0],
@@ -268,7 +270,7 @@ class ReconnectTest(unittest.TestCase):
         except grpc.RpcError as err:
             if isinstance(err, grpc_channel_internal._InactiveRpcError):
                 code = err.code()
-                logging.error(
+                logging.info(
                     "[CLIENT] Failed request=%s: code=%s, error=%s",
                     req,
                     code.name if code is not None else "(unknown)",
