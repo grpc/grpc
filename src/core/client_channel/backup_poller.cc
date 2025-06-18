@@ -62,7 +62,7 @@ static grpc_core::Duration g_poll_interval =
 static bool g_backup_polling_disabled;
 
 void grpc_client_channel_global_init_backup_polling() {
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   // Disable backup polling if EventEngine is used everywhere.
   g_backup_polling_disabled = grpc_core::IsEventEngineClientEnabled() &&
                               grpc_core::IsEventEngineListenerEnabled() &&
@@ -161,13 +161,12 @@ static void g_poller_init_locked() {
 }
 
 static bool g_can_poll_in_background() {
-#if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
+#ifndef GRPC_DO_NOT_INSTANTIATE_POSIX_POLLER
   return grpc_iomgr_run_in_background();
 #else
-  // When EventEngine polling is not supported, only consider polling via
-  // imogr backgroud when it's not backed by EventEngine Callback CQ.
-  return !grpc_core::IsEventEngineCallbackCqEnabled() &&
-         grpc_iomgr_run_in_background();
+  // No iomgr "event_engines" (not to be confused with the new EventEngine)
+  // are able to run in backgroung.
+  return false;
 #endif
 }
 
