@@ -15,23 +15,72 @@
 
 set -e
 
-# change to root directory
-cd $(dirname $0)/../../..
-REPO_ROOT=$(pwd)
+# directories to run against
+DIRS="examples/cpp src/core src/cpp test/core test/cpp include src/compiler src/ruby src/objective-c tools/distrib/python src/python/grpcio_observability"
 
-# Get number of CPU cores
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  NPROC=$(sysctl -n hw.ncpu)
-else
-  NPROC=$(nproc)
+# file matching patterns to check
+GLOB="*.h *.c *.cc *.m *.mm"
+
+# clang format command
+CLANG_FORMAT=${CLANG_FORMAT:-clang-format}
+
+# number of CPUs available
+CPU_COUNT=`nproc`
+
+files=
+for dir in $DIRS
+do
+  for glob in $GLOB
+  do
+    files="$files `find ${CLANG_FORMAT_ROOT}/$dir -name $glob \
+    -and -not -name '*.generated.*' \
+    -and -not -name '*.upb.h' \
+    -and -not -name '*.upbdefs.h' \
+    -and -not -name '*.upbdefs.c' \
+    -and -not -name '*.upb_minitable.h' \
+    -and -not -name '*.upb_minitable.c' \
+    -and -not -name '*.pb.h' \
+    -and -not -name '*.pb.c' \
+    -and -not -name '*.pb.cc' \
+    -and -not -name '*.pbobjc.h' \
+    -and -not -name '*.pbobjc.m' \
+    -and -not -name '*.pbrpc.h' \
+    -and -not -name '*.pbrpc.m' \
+    -and -not -name end2end_tests.cc \
+    -and -not -name grpc_shadow_boringssl.h \
+    -and -not -name grpc_tls_credentials_options.h \
+    -and -not -name grpc_tls_credentials_options_comparator_test.cc \
+    -and -not -path '*/cmake/build/*' \
+    -and -not -path '*/third_party/*' \
+    -and -not -path '*/src/python/grpcio_observability/grpc_root/*' \
+    `"
+  done
+done
+
+# The CHANGED_FILES variable is used to restrict the set of files to check.
+# Here we set files to the intersection of files and CHANGED_FILES
+if [ -n "$CHANGED_FILES" ]; then
+  files=$(comm -12 <(echo $files | tr ' ' '\n' | sort -u) <(echo $CHANGED_FILES | tr ' ' '\n' | sort -u))
 fi
 
-# Get the list of files to format
-if [ "$CHANGED_FILES" != "" ]; then
-  FILES_TO_FORMAT="$CHANGED_FILES"
-else
-  FILES_TO_FORMAT=$(find . -name "*.h" -o -name "*.cc" | grep -v "third_party" | grep -v "bazel-" | grep -v "build" | grep -v "cmake" | grep -v "protobuf" | grep -v "upb" | grep -v "utf8_range" | grep -v "xxhash" | grep -v "zlib" | grep -v "cares" | grep -v "re2" | grep -v "abseil-cpp" | grep -v "boringssl" | grep -v "benchmark" | grep -v "gtest" | grep -v "gmock" | grep -v "protoc" | grep -v "protobuf" | grep -v "upb" | grep -v "utf8_range" | grep -v "xxhash" | grep -v "zlib" | grep -v "cares" | grep -v "re2" | grep -v "abseil-cpp" | grep -v "boringssl" | grep -v "benchmark" | grep -v "gtest" | grep -v "gmock")
-fi
+files=`echo $files | sort -R`
 
-# Format the files
-clang-format -i -style=file $FILES_TO_FORMAT
+FILES_PER_PROCESS="$(expr $(echo "$files" | grep -o '\n' | wc -l) / $CPU_COUNT + 1)"
+
+if [ "$TEST" == "" ]
+then
+  echo $files | xargs -P $CPU_COUNT -n $FILES_PER_PROCESS $CLANG_FORMAT -i
+else
+  ok=yes
+  for file in $files
+  do
+    tmp=`mktemp`
+    $CLANG_FORMAT $file > $tmp
+    diff -u $file $tmp || ok=no
+    rm $tmp
+  done
+  if [ $ok == no ]
+  then
+    false
+  fi
+fi
