@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.73.0-dev'
+  version = '1.74.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -232,6 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency 'abseil/status/statusor', abseil_version
     ss.dependency 'abseil/strings/cord', abseil_version
     ss.dependency 'abseil/strings/str_format', abseil_version
+    ss.dependency 'abseil/strings/string_view', abseil_version
     ss.dependency 'abseil/strings/strings', abseil_version
     ss.dependency 'abseil/synchronization/synchronization', abseil_version
     ss.dependency 'abseil/time/time', abseil_version
@@ -282,6 +283,8 @@ Pod::Spec.new do |s|
                       'src/core/channelz/channelz.h',
                       'src/core/channelz/channelz_registry.cc',
                       'src/core/channelz/channelz_registry.h',
+                      'src/core/channelz/property_list.cc',
+                      'src/core/channelz/property_list.h',
                       'src/core/channelz/ztrace_collector.h',
                       'src/core/client_channel/backup_poller.cc',
                       'src/core/client_channel/backup_poller.h',
@@ -519,6 +522,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                       'src/core/ext/transport/chttp2/transport/http2_settings.cc',
                       'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                      'src/core/ext/transport/chttp2/transport/http2_stats_collector.cc',
+                      'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                       'src/core/ext/transport/chttp2/transport/http2_status.h',
                       'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                       'src/core/ext/transport/chttp2/transport/huffsyms.cc',
@@ -1438,8 +1443,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/extensions/supports_fd.h',
                       'src/core/lib/event_engine/extensions/supports_win_sockets.h',
                       'src/core/lib/event_engine/extensions/tcp_trace.h',
-                      'src/core/lib/event_engine/forkable.cc',
-                      'src/core/lib/event_engine/forkable.h',
                       'src/core/lib/event_engine/grpc_polled_fd.h',
                       'src/core/lib/event_engine/handle_containers.h',
                       'src/core/lib/event_engine/memory_allocator_factory.h',
@@ -1453,6 +1456,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/event_poller.h',
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc',
                       'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                      'src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc',
+                      'src/core/lib/event_engine/posix_engine/file_descriptor_collection.h',
                       'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.cc',
                       'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
@@ -1469,6 +1474,9 @@ Pod::Spec.new do |s|
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc',
                       'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
+                      'src/core/lib/event_engine/posix_engine/posix_interface.h',
+                      'src/core/lib/event_engine/posix_engine/posix_interface_posix.cc',
+                      'src/core/lib/event_engine/posix_engine/posix_interface_windows.cc',
                       'src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc',
                       'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
@@ -1909,6 +1917,7 @@ Pod::Spec.new do |s|
                       'src/core/service_config/service_config_parser.h',
                       'src/core/telemetry/call_tracer.cc',
                       'src/core/telemetry/call_tracer.h',
+                      'src/core/telemetry/context_list_entry.cc',
                       'src/core/telemetry/context_list_entry.h',
                       'src/core/telemetry/default_tcp_tracer.cc',
                       'src/core/telemetry/default_tcp_tracer.h',
@@ -2060,6 +2069,7 @@ Pod::Spec.new do |s|
                       'src/core/util/matchers.cc',
                       'src/core/util/matchers.h',
                       'src/core/util/memory.h',
+                      'src/core/util/memory_usage.h',
                       'src/core/util/mpscq.cc',
                       'src/core/util/mpscq.h',
                       'src/core/util/msys/tmpfile.cc',
@@ -2125,6 +2135,7 @@ Pod::Spec.new do |s|
                       'src/core/util/uuid_v4.h',
                       'src/core/util/validation_errors.cc',
                       'src/core/util/validation_errors.h',
+                      'src/core/util/wait_for_single_owner.cc',
                       'src/core/util/wait_for_single_owner.h',
                       'src/core/util/windows/cpu.cc',
                       'src/core/util/windows/directory_reader.cc',
@@ -2482,6 +2493,7 @@ Pod::Spec.new do |s|
                               'src/core/channelz/channel_trace.h',
                               'src/core/channelz/channelz.h',
                               'src/core/channelz/channelz_registry.h',
+                              'src/core/channelz/property_list.h',
                               'src/core/channelz/ztrace_collector.h',
                               'src/core/client_channel/backup_poller.h',
                               'src/core/client_channel/client_channel.h',
@@ -2599,6 +2611,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/transport/chttp2/transport/hpack_parser.h',
                               'src/core/ext/transport/chttp2/transport/hpack_parser_table.h',
                               'src/core/ext/transport/chttp2/transport/http2_settings.h',
+                              'src/core/ext/transport/chttp2/transport/http2_stats_collector.h',
                               'src/core/ext/transport/chttp2/transport/http2_status.h',
                               'src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h',
                               'src/core/ext/transport/chttp2/transport/huffsyms.h',
@@ -3149,7 +3162,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/extensions/supports_fd.h',
                               'src/core/lib/event_engine/extensions/supports_win_sockets.h',
                               'src/core/lib/event_engine/extensions/tcp_trace.h',
-                              'src/core/lib/event_engine/forkable.h',
                               'src/core/lib/event_engine/grpc_polled_fd.h',
                               'src/core/lib/event_engine/handle_containers.h',
                               'src/core/lib/event_engine/memory_allocator_factory.h',
@@ -3160,6 +3172,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/ev_poll_posix.h',
                               'src/core/lib/event_engine/posix_engine/event_poller.h',
                               'src/core/lib/event_engine/posix_engine/event_poller_posix_default.h',
+                              'src/core/lib/event_engine/posix_engine/file_descriptor_collection.h',
                               'src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h',
                               'src/core/lib/event_engine/posix_engine/internal_errqueue.h',
                               'src/core/lib/event_engine/posix_engine/lockfree_event.h',
@@ -3169,6 +3182,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/event_engine/posix_engine/posix_engine_closure.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_listener.h',
                               'src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h',
+                              'src/core/lib/event_engine/posix_engine/posix_interface.h',
                               'src/core/lib/event_engine/posix_engine/tcp_socket_utils.h',
                               'src/core/lib/event_engine/posix_engine/timer.h',
                               'src/core/lib/event_engine/posix_engine/timer_heap.h',
@@ -3480,6 +3494,7 @@ Pod::Spec.new do |s|
                               'src/core/util/match.h',
                               'src/core/util/matchers.h',
                               'src/core/util/memory.h',
+                              'src/core/util/memory_usage.h',
                               'src/core/util/mpscq.h',
                               'src/core/util/no_destruct.h',
                               'src/core/util/notification.h',

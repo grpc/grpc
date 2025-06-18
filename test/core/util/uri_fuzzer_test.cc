@@ -58,5 +58,9 @@ FUZZ_TEST(UriTest, ParseRoundTrips);
 
 TEST(UriTest, ParseRoundTripsRegression) { ParseRoundTrips("W:////\244"); }
 
+TEST(UriTest, UserInfoWithoutHostPort) {
+  ParseRoundTrips("foo://user_info@/path");
+}
+
 }  // namespace
 }  // namespace grpc_core

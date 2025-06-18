@@ -69,4 +69,38 @@ void SaturatingAddWorksUint8(uint8_t a, uint8_t b) {
 }
 FUZZ_TEST(MyTestSuite, SaturatingAddWorksUint8);
 
+template <typename T, typename Bigger>
+void SaturatingMulWorks(T a, T b) {
+  T result = SaturatingMul(a, b);
+  Bigger expect = Clamp<Bigger>(static_cast<Bigger>(a) * static_cast<Bigger>(b),
+                                std::numeric_limits<T>::min(),
+                                std::numeric_limits<T>::max());
+  EXPECT_EQ(result, expect);
+}
+
+void SaturatingMulWorksInt32(int32_t a, int32_t b) {
+  SaturatingMulWorks<int32_t, int64_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt32);
+void SaturatingMulWorksUint32(uint32_t a, uint32_t b) {
+  SaturatingMulWorks<uint32_t, uint64_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint32);
+void SaturatingMulWorksInt8(int8_t a, int8_t b) {
+  SaturatingMulWorks<int8_t, int16_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt8);
+void SaturatingMulWorksUint8(uint8_t a, uint8_t b) {
+  SaturatingMulWorks<uint8_t, uint16_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint8);
+void SaturatingMulWorksInt16(int16_t a, int16_t b) {
+  SaturatingMulWorks<int16_t, int32_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksInt16);
+void SaturatingMulWorksUint16(uint16_t a, uint16_t b) {
+  SaturatingMulWorks<uint16_t, uint32_t>(a, b);
+}
+FUZZ_TEST(MyTestSuite, SaturatingMulWorksUint16);
+
 }  // namespace grpc_core

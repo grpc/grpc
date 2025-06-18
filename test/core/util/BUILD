@@ -45,6 +45,18 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "memory_usage_test",
+    srcs = ["memory_usage_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:memory_usage",
+    ],
+)
+
+grpc_cc_test(
     name = "tdigest_test",
     srcs = ["tdigest_test.cc"],
     external_deps = [
@@ -788,6 +800,8 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "//:grpc",
+        "//src/core:notification",
         "//src/core:wait_for_single_owner",
     ],
 )

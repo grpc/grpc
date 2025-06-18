@@ -20,7 +20,7 @@ Pod::Spec.new do |s|
 
   protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
-  plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin"
+  plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin_binary"
 
   # Since we switched to importing full path, -I needs to be set to the directory
   # from which the imported file can be found, which is the grpc's root here

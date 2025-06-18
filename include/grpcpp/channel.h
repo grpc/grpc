@@ -48,6 +48,11 @@ namespace experimental {
 /// TODO(roth): Once we see whether this proves useful, either create a gRFC
 /// and change this to be a method of the Channel class, or remove it.
 void ChannelResetConnectionBackoff(Channel* channel);
+
+/// Retrieves a channel's channelz uuid
+/// TODO(ctiller): Once we see whether this proves useful, either create a gRFC
+/// and change this to be a method of the Channel class, or remove it.
+int64_t ChannelGetChannelzUuid(Channel* channel);
 }  // namespace experimental
 
 /// Channels represent a connection to an endpoint. Created by \a CreateChannel.
@@ -74,6 +79,7 @@ class Channel final : public grpc::ChannelInterface,
   friend class grpc::internal::BlockingUnaryCallImpl;
   friend class grpc::testing::ChannelTestPeer;
   friend void experimental::ChannelResetConnectionBackoff(Channel* channel);
+  friend int64_t experimental::ChannelGetChannelzUuid(Channel* channel);
   friend std::shared_ptr<Channel> grpc::CreateChannelInternal(
       const std::string& host, grpc_channel* c_channel,
       std::vector<std::unique_ptr<

@@ -46,14 +46,9 @@
   owner: roth@google.com
   test_tags: []
   allow_in_fuzzing_config: false
-- name: callv3_client_auth_filter
-  description: Use the CallV3 client auth filter.
-  expiry: 2025/06/01
-  owner: ctiller@google.com
-  test_tags: [core_end2end_test]
 - name: chaotic_good_framing_layer
   description: Enable the chaotic good framing layer.
-  expiry: 2025/06/01
+  expiry: 2025/09/01
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
   allow_in_fuzzing_config: false
@@ -126,8 +121,8 @@
   allow_in_fuzzing_config: false
 - name: event_engine_secure_endpoint
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2025/06/06
-  owner: ctiller@google.com
+  expiry: 2026/01/22
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
@@ -159,13 +154,6 @@
   expiry: 2025/06/30
   owner: akshitpatel@google.com
   test_tags: []
-- name: max_pings_wo_data_throttle
-  description: Experiment to throttle pings to a period of 1 min when
-    GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA limit has reached (instead of
-    completely blocking).
-  expiry: 2025/06/30
-  owner: yashkt@google.com
-  test_tags: []
 - name: monitoring_experiment
   description: Placeholder experiment to prove/disprove our monitoring is working
   expiry: never-ever
@@ -176,6 +164,10 @@
   expiry: 2025/09/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: pick_first_ignore_empty_updates
+  description: Ignore empty resolutions in pick_first
+  expiry: 2026/02/02
+  owner: ctiller@google.com
 - name: pollset_alternative
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
@@ -185,13 +177,6 @@
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
   allow_in_fuzzing_config: false
-- name: posix_ee_skip_grpc_init
-  description:
-    Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
-    creation and destruction.
-  expiry: 2025/07/01
-  owner: hork@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
 - name: promise_based_http2_client_transport
   description:
     Use promises for the http2 client transport. We have kept client and
@@ -218,21 +203,9 @@
   allow_in_fuzzing_config: false # experiment currently crashes if enabled
 - name: retry_in_callv3
   description: Support retries with call-v3
-  expiry: 2025/06/06
+  expiry: 2025/09/06
   owner: ctiller@google.com
   test_tags: [core_end2end_test]
-- name: rq_fast_reject
-  description:
-    Resource quota rejects requests immediately (before allocating the request
-    structure) under very high memory pressure.
-  expiry: 2025/06/06
-  owner: ctiller@google.com
-  test_tags: []
-- name: rst_stream_fix
-  description: Fix for RST_STREAM - do not send for idle streams (https://github.com/grpc/grpc/issues/38758)
-  expiry: 2025/06/06
-  owner: yashkt@google.com
-  test_tags: []
 - name: schedule_cancellation_over_write
   description: Allow cancellation op to be scheduled over a write
   expiry: 2025/10/01

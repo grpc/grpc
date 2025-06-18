@@ -48,8 +48,6 @@ void MarkRead(bool read, Json::Object& object);
 struct ReadFrameHeaderTrace {
   TcpFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpFrameHeaderToJsonObject(header, object);
@@ -59,8 +57,6 @@ struct ReadFrameHeaderTrace {
 struct ReadDataHeaderTrace {
   TcpDataFrameHeader header;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(true, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(header, object);
@@ -69,8 +65,6 @@ struct ReadDataHeaderTrace {
 
 struct WriteFrameHeaderTrace {
   TcpFrameHeader header;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
@@ -84,10 +78,6 @@ struct EndpointWriteMetricsTrace {
       write_event;
   std::vector<std::pair<absl::string_view, int64_t>> metrics;
 
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(metrics[0]) * metrics.size();
-  }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString(absl::StrCat(
         "Endpoint Write: ",
@@ -96,6 +86,47 @@ struct EndpointWriteMetricsTrace {
     for (const auto& [name, value] : metrics) {
       object.emplace(name, Json::FromNumber(value));
     }
+  }
+};
+
+struct TraceScheduledChannel {
+  uint32_t id;
+  bool ready;
+  double start_time;
+  double bytes_per_second;
+  double allowed_bytes;
+  Json ToJson() const {
+    return Json::FromObject({
+        {"id", Json::FromNumber(id)},
+        {"ready", Json::FromBool(ready)},
+        {"start_time", Json::FromNumber(start_time)},
+        {"bytes_per_second", Json::FromNumber(bytes_per_second)},
+        {"allowed_bytes", Json::FromNumber(allowed_bytes)},
+    });
+  }
+};
+
+struct TraceWriteSchedule {
+  std::vector<TraceScheduledChannel> channels;
+  double outstanding_bytes;
+  double end_time_requested;
+  double end_time_adjusted;
+  double min_tokens;
+  size_t num_ready;
+  size_t MemoryUsage() const {
+    return sizeof(*this) + sizeof(channels[0]) * channels.size();
+  }
+  void RenderJson(Json::Object& object) const {
+    Json::Array channels;
+    for (const auto& c : this->channels) {
+      channels.emplace_back(c.ToJson());
+    }
+    object["channels"] = Json::FromArray(std::move(channels));
+    object["end_time_requested"] = Json::FromNumber(end_time_requested);
+    object["end_time_adjusted"] = Json::FromNumber(end_time_adjusted);
+    object["min_tokens"] = Json::FromNumber(min_tokens);
+    object["outstanding_bytes"] = Json::FromNumber(outstanding_bytes);
+    object["num_ready"] = Json::FromNumber(num_ready);
   }
 };
 
@@ -130,10 +161,6 @@ struct WriteLargeFrameHeaderTrace {
   size_t chosen_endpoint;
   std::vector<std::optional<LbDecision>> lb_decisions;
 
-  size_t MemoryUsage() const {
-    return sizeof(*this) + sizeof(lb_decisions[0]) * lb_decisions.size();
-  }
-
   void RenderJson(Json::Object& object) const {
     tcp_ztrace_collector_detail::MarkRead(false, object);
     tcp_ztrace_collector_detail::TcpDataFrameHeaderToJsonObject(data_header,
@@ -155,8 +182,6 @@ struct NoEndpointForWriteTrace {
   size_t bytes;
   uint64_t payload_tag;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("NO_ENDPOINT_FOR_WRITE");
     object["payload_tag"] = Json::FromNumber(payload_tag);
@@ -168,8 +193,6 @@ struct WriteBytesToEndpointTrace {
   size_t bytes;
   size_t endpoint_id;
   bool trace;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("WRITE_BYTES");
@@ -185,12 +208,6 @@ struct FinishWriteBytesToEndpointTrace {
   size_t endpoint_id;
   absl::Status status;
 
-  size_t MemoryUsage() const {
-    size_t size = sizeof(*this);
-    if (!status.ok()) size += status.message().size();
-    return size;
-  }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("FINISH_WRITE");
     object["endpoint_id"] = Json::FromNumber(endpoint_id);
@@ -201,8 +218,6 @@ struct FinishWriteBytesToEndpointTrace {
 struct WriteBytesToControlChannelTrace {
   size_t bytes;
 
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("WRITE_CTL_BYTES");
     object["bytes"] = Json::FromNumber(bytes);
@@ -211,8 +226,6 @@ struct WriteBytesToControlChannelTrace {
 
 struct FinishWriteBytesToControlChannelTrace {
   absl::Status status;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("FINISH_WRITE_CTL");
@@ -224,12 +237,6 @@ template <bool read>
 struct TransportError {
   absl::Status status;
 
-  size_t MemoryUsage() const {
-    size_t size = sizeof(*this);
-    if (!status.ok()) size += status.message().size();
-    return size;
-  }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] =
         Json::FromString(read ? "READ_ERROR" : "WRITE_ERROR");
@@ -238,8 +245,6 @@ struct TransportError {
 };
 
 struct OrphanTrace {
-  size_t MemoryUsage() const { return sizeof(*this); }
-
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("ORPHAN");
   }
@@ -247,8 +252,6 @@ struct OrphanTrace {
 
 struct EndpointCloseTrace {
   uint32_t id;
-
-  size_t MemoryUsage() const { return sizeof(*this); }
 
   void RenderJson(Json::Object& object) const {
     object["metadata_type"] = Json::FromString("ENDPOINT_CLOSE");
@@ -258,12 +261,12 @@ struct EndpointCloseTrace {
 
 using TcpZTraceCollector = channelz::ZTraceCollector<
     tcp_ztrace_collector_detail::Config, ReadFrameHeaderTrace,
-    ReadDataHeaderTrace, WriteFrameHeaderTrace, WriteLargeFrameHeaderTrace,
-    EndpointWriteMetricsTrace, NoEndpointForWriteTrace,
-    WriteBytesToEndpointTrace, FinishWriteBytesToEndpointTrace,
-    WriteBytesToControlChannelTrace, FinishWriteBytesToControlChannelTrace,
-    TransportError<true>, TransportError<false>, OrphanTrace,
-    EndpointCloseTrace>;
+    ReadDataHeaderTrace, WriteFrameHeaderTrace, TraceWriteSchedule,
+    WriteLargeFrameHeaderTrace, EndpointWriteMetricsTrace,
+    NoEndpointForWriteTrace, WriteBytesToEndpointTrace,
+    FinishWriteBytesToEndpointTrace, WriteBytesToControlChannelTrace,
+    FinishWriteBytesToControlChannelTrace, TransportError<true>,
+    TransportError<false>, OrphanTrace, EndpointCloseTrace>;
 
 }  // namespace grpc_core::chaotic_good
 

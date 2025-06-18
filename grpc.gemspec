@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 3.0'
+  s.required_ruby_version = '>= 3.1'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -167,6 +167,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/channelz/channelz.h )
   s.files += %w( src/core/channelz/channelz_registry.cc )
   s.files += %w( src/core/channelz/channelz_registry.h )
+  s.files += %w( src/core/channelz/property_list.cc )
+  s.files += %w( src/core/channelz/property_list.h )
   s.files += %w( src/core/channelz/ztrace_collector.h )
   s.files += %w( src/core/client_channel/backup_poller.cc )
   s.files += %w( src/core/client_channel/backup_poller.h )
@@ -404,6 +406,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/transport/chttp2/transport/hpack_parser_table.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.cc )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_settings.h )
+  s.files += %w( src/core/ext/transport/chttp2/transport/http2_stats_collector.cc )
+  s.files += %w( src/core/ext/transport/chttp2/transport/http2_stats_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_status.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h )
   s.files += %w( src/core/ext/transport/chttp2/transport/huffsyms.cc )
@@ -1323,8 +1327,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/extensions/supports_fd.h )
   s.files += %w( src/core/lib/event_engine/extensions/supports_win_sockets.h )
   s.files += %w( src/core/lib/event_engine/extensions/tcp_trace.h )
-  s.files += %w( src/core/lib/event_engine/forkable.cc )
-  s.files += %w( src/core/lib/event_engine/forkable.h )
   s.files += %w( src/core/lib/event_engine/grpc_polled_fd.h )
   s.files += %w( src/core/lib/event_engine/handle_containers.h )
   s.files += %w( src/core/lib/event_engine/memory_allocator_factory.h )
@@ -1338,6 +1340,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/event_poller_posix_default.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/file_descriptor_collection.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/grpc_polled_fd_posix.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/internal_errqueue.h )
@@ -1354,6 +1358,9 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface.h )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_posix.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_windows.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.h )
@@ -1794,6 +1801,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/service_config/service_config_parser.h )
   s.files += %w( src/core/telemetry/call_tracer.cc )
   s.files += %w( src/core/telemetry/call_tracer.h )
+  s.files += %w( src/core/telemetry/context_list_entry.cc )
   s.files += %w( src/core/telemetry/context_list_entry.h )
   s.files += %w( src/core/telemetry/default_tcp_tracer.cc )
   s.files += %w( src/core/telemetry/default_tcp_tracer.h )
@@ -1945,6 +1953,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/matchers.cc )
   s.files += %w( src/core/util/matchers.h )
   s.files += %w( src/core/util/memory.h )
+  s.files += %w( src/core/util/memory_usage.h )
   s.files += %w( src/core/util/mpscq.cc )
   s.files += %w( src/core/util/mpscq.h )
   s.files += %w( src/core/util/msys/tmpfile.cc )
@@ -2010,6 +2019,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/uuid_v4.h )
   s.files += %w( src/core/util/validation_errors.cc )
   s.files += %w( src/core/util/validation_errors.h )
+  s.files += %w( src/core/util/wait_for_single_owner.cc )
   s.files += %w( src/core/util/wait_for_single_owner.h )
   s.files += %w( src/core/util/windows/cpu.cc )
   s.files += %w( src/core/util/windows/directory_reader.cc )

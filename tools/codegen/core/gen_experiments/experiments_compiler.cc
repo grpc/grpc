@@ -17,11 +17,16 @@
 #include <cctype>
 #include <cstddef>
 #include <fstream>
+#include <iomanip>
+#include <ios>
 #include <map>
+#include <optional>
+#include <set>
 #include <sstream>
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
@@ -46,7 +51,7 @@ ExperimentDefinition::ExperimentDefinition(
     const std::string& name, const std::string& description,
     const std::string& owner, const std::string& expiry, bool uses_polling,
     bool allow_in_fuzzing_config, const std::vector<std::string>& test_tags,
-    const std::vector<std::string>& requirements)
+    const std::set<std::string>& requirements)
     : error_(false),
       name_(name),
       description_(description),
@@ -124,7 +129,7 @@ bool ExperimentDefinition::IsValid(bool check_expiry) const {
 }
 
 bool ExperimentDefinition::AddRolloutSpecification(
-    const std::map<std::string, std::string>& defaults,
+    const absl::flat_hash_map<std::string, std::string>& defaults,
     const std::map<std::string, std::string>& platforms_define,
     RolloutSpecification& rollout_attributes) {
   if (error_) {
@@ -138,7 +143,7 @@ bool ExperimentDefinition::AddRolloutSpecification(
   }
   if (!rollout_attributes.requirements.empty()) {
     for (const auto& requirement : rollout_attributes.requirements) {
-      requires_.push_back(requirement);
+      requires_.insert(requirement);
     }
   }
   if (rollout_attributes.default_value.empty() &&
@@ -156,11 +161,10 @@ bool ExperimentDefinition::AddRolloutSpecification(
     } else {
       if (rollout_attributes.platform_value.find(platform.first) ==
           rollout_attributes.platform_value.end()) {
-        LOG(ERROR) << "ERROR: no value set for experiment "
-                   << rollout_attributes.name << " on platform "
-                   << platform.first;
-        error_ = true;
-        return false;
+        LOG(WARNING) << "WARNING: no value set for experiment "
+                     << rollout_attributes.name << " on platform "
+                     << platform.first;
+        default_value = "false";
       } else {
         std::string platform_value =
             rollout_attributes.platform_value.at(platform.first);
@@ -197,17 +201,23 @@ absl::StatusOr<ExperimentDefinition> CreateExperimentDefinition(
     return absl::InvalidArgumentError(absl::StrCat(
         "Experiment definition is missing expiry: ", YAML::Dump(value)));
   }
-  bool uses_polling =
-      value["uses_polling"].IsDefined() && value["uses_polling"].as<bool>();
-  bool allow_in_fuzzing_config = value["allow_in_fuzzing_config"].IsDefined() &&
-                                 value["allow_in_fuzzing_config"].as<bool>();
+  bool uses_polling = value["uses_polling"].IsDefined()
+                          ? value["uses_polling"].as<bool>()
+                          : false;
+  bool allow_in_fuzzing_config =
+      value["allow_in_fuzzing_config"].IsDefined()
+          ? value["allow_in_fuzzing_config"].as<bool>()
+          : true;
   std::vector<std::string> test_tags;
   if (value["test_tags"].IsDefined()) {
     test_tags = value["test_tags"].as<std::vector<std::string>>();
   }
-  std::vector<std::string> requirements;
-  if (value["requirements"].IsDefined()) {
-    requirements = value["requirements"].as<std::vector<std::string>>();
+  std::set<std::string> requirements;
+  if (value["requires"].IsDefined()) {
+    for (const auto& requirement :
+         value["requires"].as<std::vector<std::string>>()) {
+      requirements.insert(requirement);
+    }
   }
   ExperimentDefinition experiment_definition(
       value["name"].as<std::string>(), value["description"].as<std::string>(),
@@ -290,8 +300,55 @@ absl::Status ExperimentsCompiler::WriteToFile(const std::string& output_file,
   return absl::OkStatus();
 }
 
+bool AreAllRequirementsSatisfied(const std::set<std::string>& done_experiments,
+                                 const std::set<std::string>& requirements) {
+  for (const auto& req : requirements) {
+    if (done_experiments.find(req) == done_experiments.end()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+std::optional<std::string> FindExperimentWithAllRequirementsSatisfied(
+    const std::map<std::string, std::set<std::string>>& queue,
+    const std::set<std::string>& done_experiments) {
+  for (const auto& [name, requirements] : queue) {
+    // Check if all required experiments are in the 'done_experiments' set.
+    if (AreAllRequirementsSatisfied(done_experiments, requirements)) {
+      return name;
+    }
+  }
+  return std::nullopt;
+}
+
+absl::Status ExperimentsCompiler::FinalizeExperiments() {
+  std::map<std::string, std::set<std::string>> queue;
+  for (const auto& [name, definition] : experiment_definitions_) {
+    queue[name] = definition.requirements();
+  }
+  std::set<std::string> done_experiments;
+  std::vector<std::string> sorted_experiment_names;
+  while (!queue.empty()) {
+    auto take_name =
+        FindExperimentWithAllRequirementsSatisfied(queue, done_experiments);
+    if (!take_name.has_value()) {
+      // If no experiment was found whose requirements are met, there's a
+      // circular dependency.
+      return absl::InvalidArgumentError(
+          "Circular dependency found in experiment dependencies.");
+    }
+    done_experiments.insert(*take_name);
+    sorted_experiment_names.push_back(*take_name);
+    queue.erase(*take_name);
+  }
+  sorted_experiment_names_.swap(sorted_experiment_names);
+  return absl::OkStatus();
+}
+
 absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
     const std::string& output_file, ExperimentsOutputGenerator& generator) {
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateHeader(output);
   absl::Status status = WriteToFile(output_file, output);
@@ -306,6 +363,7 @@ absl::Status ExperimentsCompiler::GenerateExperimentsHdr(
 absl::Status ExperimentsCompiler::GenerateExperimentsSrc(
     const std::string& output_file, const std::string& header_file_path,
     ExperimentsCompiler::ExperimentsOutputGenerator& generator) {
+  GRPC_EXPERIMENTS_RETURN_IF_ERROR(FinalizeExperiments());
   std::string output;
   generator.GenerateSource(output);
   absl::Status status = WriteToFile(output_file, output);
@@ -330,6 +388,25 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::PutBanner(
   }
 }
 
+std::string ExperimentsCompiler::ExperimentsOutputGenerator::ToAsciiCStr(
+    const std::string& s) {
+  std::ostringstream result_stream;
+  for (const char ch_char : s) {
+    const unsigned char c = static_cast<const unsigned char>(ch_char);
+    // Check if character is printable ASCII (32 to 126 inclusive).
+    // AND not a backslash or double quote.
+    if ((c >= 32 && c <= 126) && c != '\\' && c != '"') {
+      result_stream << c;
+    } else {
+      // Escape with 3 digits, zero-padded, octal representation.
+      result_stream << "\\" << std::oct << std::setw(3) << std::setfill('0')
+                    << static_cast<int>(c);
+      result_stream << std::dec;
+    }
+  }
+  return result_stream.str();
+}
+
 std::string ExperimentsCompiler::ExperimentsOutputGenerator::SnakeToPascal(
     const std::string& snake_case) {
   std::stringstream pascal_case;
@@ -352,15 +429,24 @@ std::string ExperimentsCompiler::ExperimentsOutputGenerator::SnakeToPascal(
 void ExperimentsCompiler::ExperimentsOutputGenerator::
     GenerateExperimentsHdrForPlatform(const std::string& platform,
                                       std::string& output) {
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
+    ExperimentDefinition experiment =
+        compiler_->experiment_definitions().at(experiment_name);
+    CHECK(
+        compiler_->final_define().contains(experiment.default_value(platform)))
+        << "Final define not found for experiment: " << experiment.name()
+        << " platform: " << platform;
+    CHECK(
+        compiler_->final_return().contains(experiment.default_value(platform)))
+        << "Final return not found for experiment: " << experiment.name()
+        << " platform: " << platform;
     const std::string& define_fmt =
-        compiler_.final_define().at(experiment.second.default_value(platform));
+        compiler_->final_define().at(experiment.default_value(platform));
     // The define format is expected to either be empty or contain a single %s
     // specifier.
     if (!define_fmt.empty()) {
       std::string define_str = "GRPC_EXPERIMENT_IS_INCLUDED_" +
-                               absl::AsciiStrToUpper(experiment.second.name()) +
-                               "\n";
+                               absl::AsciiStrToUpper(experiment.name()) + "\n";
       auto format = absl::ParsedFormat<'s'>::New(define_fmt);
       if (format) {
         absl::StrAppend(&output, absl::StrFormat(*format, define_str));
@@ -369,9 +455,9 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
       }
     }
     absl::StrAppend(
-        &output, "inline bool Is", SnakeToPascal(experiment.second.name()),
+        &output, "inline bool Is", SnakeToPascal(experiment.name()),
         "Enabled() { ",
-        compiler_.final_return().at(experiment.second.default_value(platform)),
+        compiler_->final_return().at(experiment.default_value(platform)),
         " }\n");
   }
 }
@@ -380,7 +466,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
     const std::string& mode, std::string& output) {
   // Generate the #include for the header file.
   std::string include_guard = "GRPC_SRC_CORE_LIB_EXPERIMENTS_EXPERIMENTS_H";
-  absl::StrAppend(&output, "\n#ifndef ", include_guard, "\n");
+  absl::StrAppend(&output, "\n\n#ifndef ", include_guard, "\n");
   absl::StrAppend(&output, "#define ", include_guard, "\n\n");
   absl::StrAppend(&output, "#include <grpc/support/port_platform.h>\n\n");
   absl::StrAppend(&output,
@@ -389,7 +475,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
   absl::StrAppend(&output, "#ifdef GRPC_EXPERIMENTS_ARE_FINAL\n\n");
   // Generate the #if defined for each platform.
   bool first = true;
-  for (const auto& platform : compiler_.platforms_define()) {
+  for (const auto& platform : compiler_->platforms_define()) {
     if (platform.first == "posix") {
       continue;
     }
@@ -408,19 +494,18 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateHeaderInner(
   absl::StrAppend(&output, "\n#else\n");
   std::string num_experiments_var_name = "kNumExperiments";
   std::string experiments_metadata_var_name = "g_experiment_metadata";
-  absl::StrAppend(&output, " enum ExperimentIds {\n");
-  for (const auto& experiment : compiler_.experiment_definitions()) {
-    absl::StrAppend(&output, "  kExperimentId",
-                    SnakeToPascal(experiment.second.name()), ",\n");
+  absl::StrAppend(&output, "enum ExperimentIds {\n");
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
+    absl::StrAppend(&output, "  kExperimentId", SnakeToPascal(experiment_name),
+                    ",\n");
   }
   absl::StrAppend(&output, "  ", num_experiments_var_name, "\n};\n");
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
     absl::StrAppend(&output, "#define GRPC_EXPERIMENT_IS_INCLUDED_",
-                    absl::AsciiStrToUpper(experiment.second.name()), "\n");
-    absl::StrAppend(&output, "inline bool Is",
-                    SnakeToPascal(experiment.second.name()),
+                    absl::AsciiStrToUpper(experiment_name), "\n");
+    absl::StrAppend(&output, "inline bool Is", SnakeToPascal(experiment_name),
                     "Enabled() { return IsExperimentEnabled<kExperimentId",
-                    SnakeToPascal(experiment.second.name()), ">(); }\n");
+                    SnakeToPascal(experiment_name), ">(); }\n");
   }
   absl::StrAppend(&output, "\nextern const ExperimentMetadata ",
                   experiments_metadata_var_name, "[", num_experiments_var_name,
@@ -436,20 +521,22 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
                                       std::string& output) {
   absl::StrAppend(&output, "namespace {\n");
   bool default_for_debug_only = false;
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
+    ExperimentDefinition experiment =
+        compiler_->experiment_definitions().at(experiment_name);
     absl::StrAppend(
         &output, absl::StrFormat("const char* const description_%s = \"%s\";\n",
-                                 experiment.second.name(),
-                                 experiment.second.description()));
+                                 experiment.name(),
+                                 ToAsciiCStr(experiment.description())));
     absl::StrAppend(
         &output,
         absl::StrFormat(
             "const char* const additional_constraints_%s = \"{%s}\";\n",
-            experiment.second.name(),
-            experiment.second.additional_constraints(platform)));
-    if (!experiment.second.requirements().empty()) {
+            experiment.name(),
+            ToAsciiCStr(experiment.additional_constraints(platform))));
+    if (!experiment.requirements().empty()) {
       std::vector<std::string> required_experiments;
-      for (const auto& requirement : experiment.second.requirements()) {
+      for (const auto& requirement : experiment.requirements()) {
         required_experiments.push_back(
             absl::StrFormat("static_cast<uint8_t>(grpc_core::kExperimentId%s)",
                             SnakeToPascal(requirement)));
@@ -457,10 +544,13 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
       absl::StrAppend(
           &output,
           absl::StrFormat("const uint8_t required_experiments_%s[] = {%s};\n",
-                          experiment.second.name(),
+                          experiment.name(),
                           absl::StrJoin(required_experiments, ",")));
     }
-    if (compiler_.defaults().at(experiment.second.default_value(platform)) ==
+    CHECK(compiler_->defaults().contains(experiment.default_value(platform)))
+        << "Default value not found for experiment: " << experiment.name()
+        << " platform: " << platform;
+    if (compiler_->defaults().at(experiment.default_value(platform)) ==
         "kDefaultForDebugOnly") {
       default_for_debug_only = true;
     }
@@ -482,21 +572,22 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::
   }
   absl::StrAppend(&output, "const ExperimentMetadata ",
                   experiments_metadata_var_name, "[] = {\n");
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment_name : compiler_->sorted_experiment_names()) {
+    ExperimentDefinition experiment =
+        compiler_->experiment_definitions().at(experiment_name);
     absl::StrAppend(
         &output,
         absl::StrFormat(
             "  {\"%s\", description_%s, additional_constraints_%s, %s, %d, %s, "
-            "%s},",
-            experiment.second.name().c_str(), experiment.second.name(),
-            experiment.second.name(),
-            experiment.second.requirements().empty()
+            "%s},\n",
+            ToAsciiCStr(experiment.name()), experiment.name(),
+            experiment.name(),
+            experiment.requirements().empty()
                 ? "nullptr"
-                : absl::StrFormat("required_experiments_%s",
-                                  experiment.second.name()),
-            experiment.second.requirements().size(),
-            compiler_.defaults().at(experiment.second.default_value(platform)),
-            experiment.second.allow_in_fuzzing_config() ? "true" : "false"));
+                : absl::StrFormat("required_experiments_%s", experiment.name()),
+            experiment.requirements().size(),
+            compiler_->defaults().at(experiment.default_value(platform)),
+            experiment.allow_in_fuzzing_config() ? "true" : "false"));
   }
   absl::StrAppend(&output, "};\n\n");
   absl::StrAppend(&output, "}  // namespace grpc_core\n");
@@ -506,13 +597,13 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateSourceInner(
     const std::string& header_file_path, const std::string& mode,
     std::string& output) {
   bool any_requires = false;
-  for (const auto& experiment : compiler_.experiment_definitions()) {
+  for (const auto& experiment : compiler_->experiment_definitions()) {
     if (!experiment.second.requirements().empty()) {
       any_requires = true;
       break;
     }
   }
-  absl::StrAppend(&output, "\n#include <grpc/support/port_platform.h>\n\n");
+  absl::StrAppend(&output, "\n\n#include <grpc/support/port_platform.h>\n\n");
   if (any_requires) {
     absl::StrAppend(&output, "#include <stdint.h>\n\n");
   }
@@ -527,7 +618,7 @@ void ExperimentsCompiler::ExperimentsOutputGenerator::GenerateSourceInner(
   absl::StrAppend(&output, "#ifndef GRPC_EXPERIMENTS_ARE_FINAL\n");
   // Generate the #if defined for each platform.
   bool first = true;
-  for (const auto& platform : compiler_.platforms_define()) {
+  for (const auto& platform : compiler_->platforms_define()) {
     if (platform.first == "posix") {
       continue;
     }
