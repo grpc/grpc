@@ -26,9 +26,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -96,6 +93,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -103,10 +103,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -124,10 +124,6 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -183,8 +179,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -229,11 +223,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -248,8 +247,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -294,9 +291,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -364,6 +358,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -371,10 +368,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -392,10 +389,6 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -451,8 +444,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -497,11 +488,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -516,8 +512,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,
@@ -562,9 +556,6 @@ namespace {
 const char* const description_call_tracer_in_transport =
     "Transport directly passes byte counts to CallTracer.";
 const char* const additional_constraints_call_tracer_in_transport = "{}";
-const char* const description_callv3_client_auth_filter =
-    "Use the CallV3 client auth filter.";
-const char* const additional_constraints_callv3_client_auth_filter = "{}";
 const char* const description_chaotic_good_framing_layer =
     "Enable the chaotic good framing layer.";
 const char* const additional_constraints_chaotic_good_framing_layer = "{}";
@@ -632,6 +623,9 @@ const char* const additional_constraints_monitoring_experiment = "{}";
 const char* const description_multiping =
     "Allow more than one ping to be in flight at a time by default.";
 const char* const additional_constraints_multiping = "{}";
+const char* const description_pick_first_ignore_empty_updates =
+    "Ignore empty resolutions in pick_first";
+const char* const additional_constraints_pick_first_ignore_empty_updates = "{}";
 const char* const description_pollset_alternative =
     "Code outside iomgr that relies directly on pollsets will use non-pollset "
     "alternatives when enabled.";
@@ -639,10 +633,10 @@ const char* const additional_constraints_pollset_alternative = "{}";
 const uint8_t required_experiments_pollset_alternative[] = {
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineClient),
     static_cast<uint8_t>(grpc_core::kExperimentIdEventEngineListener)};
-const char* const description_posix_ee_skip_grpc_init =
-    "Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on "
-    "creation and destruction.";
-const char* const additional_constraints_posix_ee_skip_grpc_init = "{}";
+const char* const description_prioritize_finished_requests =
+    "Prioritize flushing out finished requests over other in-flight requests "
+    "during transport writes.";
+const char* const additional_constraints_prioritize_finished_requests = "{}";
 const char* const description_promise_based_http2_client_transport =
     "Use promises for the http2 client transport. We have kept client and "
     "server transport experiments separate to help with smoother roll outs and "
@@ -660,10 +654,6 @@ const char* const description_promise_based_inproc_transport =
 const char* const additional_constraints_promise_based_inproc_transport = "{}";
 const char* const description_retry_in_callv3 = "Support retries with call-v3";
 const char* const additional_constraints_retry_in_callv3 = "{}";
-const char* const description_rq_fast_reject =
-    "Resource quota rejects requests immediately (before allocating the "
-    "request structure) under very high memory pressure.";
-const char* const additional_constraints_rq_fast_reject = "{}";
 const char* const description_schedule_cancellation_over_write =
     "Allow cancellation op to be scheduled over a write";
 const char* const additional_constraints_schedule_cancellation_over_write =
@@ -719,8 +709,6 @@ namespace grpc_core {
 const ExperimentMetadata g_experiment_metadata[] = {
     {"call_tracer_in_transport", description_call_tracer_in_transport,
      additional_constraints_call_tracer_in_transport, nullptr, 0, true, false},
-    {"callv3_client_auth_filter", description_callv3_client_auth_filter,
-     additional_constraints_callv3_client_auth_filter, nullptr, 0, false, true},
     {"chaotic_good_framing_layer", description_chaotic_good_framing_layer,
      additional_constraints_chaotic_good_framing_layer, nullptr, 0, true,
      false},
@@ -765,11 +753,16 @@ const ExperimentMetadata g_experiment_metadata[] = {
      additional_constraints_monitoring_experiment, nullptr, 0, true, true},
     {"multiping", description_multiping, additional_constraints_multiping,
      nullptr, 0, false, true},
+    {"pick_first_ignore_empty_updates",
+     description_pick_first_ignore_empty_updates,
+     additional_constraints_pick_first_ignore_empty_updates, nullptr, 0, false,
+     true},
     {"pollset_alternative", description_pollset_alternative,
      additional_constraints_pollset_alternative,
      required_experiments_pollset_alternative, 2, false, false},
-    {"posix_ee_skip_grpc_init", description_posix_ee_skip_grpc_init,
-     additional_constraints_posix_ee_skip_grpc_init, nullptr, 0, true, true},
+    {"prioritize_finished_requests", description_prioritize_finished_requests,
+     additional_constraints_prioritize_finished_requests, nullptr, 0, false,
+     true},
     {"promise_based_http2_client_transport",
      description_promise_based_http2_client_transport,
      additional_constraints_promise_based_http2_client_transport, nullptr, 0,
@@ -784,8 +777,6 @@ const ExperimentMetadata g_experiment_metadata[] = {
      false},
     {"retry_in_callv3", description_retry_in_callv3,
      additional_constraints_retry_in_callv3, nullptr, 0, false, true},
-    {"rq_fast_reject", description_rq_fast_reject,
-     additional_constraints_rq_fast_reject, nullptr, 0, false, true},
     {"schedule_cancellation_over_write",
      description_schedule_cancellation_over_write,
      additional_constraints_schedule_cancellation_over_write, nullptr, 0, false,

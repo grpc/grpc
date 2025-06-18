@@ -528,6 +528,9 @@ absl::Status PickFirst::UpdateLocked(UpdateArgs args) {
     });
     if (endpoints.empty()) {
       status = absl::UnavailableError("address list must not be empty");
+      // TODO(roth): Replace this one-off special case with a more
+      // general solution.
+      if (IsPickFirstIgnoreEmptyUpdatesEnabled()) args.addresses = status;
     } else {
       // Shuffle the list if needed.
       auto config = static_cast<PickFirstConfig*>(args.config.get());

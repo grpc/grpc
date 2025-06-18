@@ -44,7 +44,6 @@
 #include "src/core/lib/event_engine/windows/windows_listener.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dump_args.h"
 #include "src/core/util/sync.h"

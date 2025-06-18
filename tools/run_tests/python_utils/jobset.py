@@ -145,16 +145,20 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
                     % (
                         _BEGINNING_OF_LINE,
                         _CLEAR_LINE,
-                        "\n%s" % explanatory_text
-                        if explanatory_text is not None
-                        else "",
+                        (
+                            "\n%s" % explanatory_text
+                            if explanatory_text is not None
+                            else ""
+                        ),
                         _COLORS[_TAG_COLOR[tag]][1],
                         _COLORS[_TAG_COLOR[tag]][0],
                         tag,
                         msg,
-                        "\n"
-                        if do_newline or explanatory_text is not None
-                        else "",
+                        (
+                            "\n"
+                            if do_newline or explanatory_text is not None
+                            else ""
+                        ),
                     )
                 )
             sys.stdout.flush()
@@ -676,9 +680,11 @@ def run(
     js = Jobset(
         check_cancelled,
         maxjobs if maxjobs is not None else _DEFAULT_MAX_JOBS,
-        maxjobs_cpu_agnostic
-        if maxjobs_cpu_agnostic is not None
-        else _DEFAULT_MAX_JOBS,
+        (
+            maxjobs_cpu_agnostic
+            if maxjobs_cpu_agnostic is not None
+            else _DEFAULT_MAX_JOBS
+        ),
         newline_on_success,
         travis,
         stop_on_failure,

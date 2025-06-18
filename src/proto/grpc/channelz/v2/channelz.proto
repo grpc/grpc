@@ -1,0 +1,57 @@
+// Copyright 2025 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+///////////////////////////////////////////////////////////////////////////////
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+//
+// This protocol is under active development, and will change in backwards
+// incompatible ways in the future.
+//
+// DO NOT take a dependency on this without contacting the gRPC authors
+// (who will advise against taking such a dependency in as strong a fashion
+// as they are able)
+//
+// 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨 🚨
+///////////////////////////////////////////////////////////////////////////////
+
+package grpc.channelz.v2;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
+
+message Entity {
+    // The identifier for this entity.
+    int64 id = 1;
+    // The kind of this entity.
+    string kind = 2;
+    // Parents for this entity.
+    repeated int64 parents = 3;
+    // Has this entity been orphaned?
+    bool orphaned = 4;
+    // Instantaneous data for this entity.
+    repeated google.protobuf.Any data = 5;
+    // Historical trace information for the entity.
+    repeated TraceEvent trace = 6;
+}
+
+message TraceEvent {
+    // High level description of the event.
+    string description = 1;
+    // When this event occurred.
+    google.protobuf.Timestamp timestamp = 2;
+    // Any additional supporting data.
+    repeated google.protobuf.Any data = 3;
+}
