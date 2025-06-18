@@ -150,6 +150,7 @@ bloaty-build/
 
 # cmake build files
 **/cmake/build/
+cmake/install/
 
 # Visual Studio Code artifacts
 .cache/*
