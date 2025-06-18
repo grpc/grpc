@@ -20,6 +20,7 @@
 
 #ifdef GPR_WINDOWS
 
+#include <memory>
 #include <windows.h>
 
 #include <cstdint>

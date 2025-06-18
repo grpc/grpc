@@ -21,6 +21,7 @@
 #ifdef GPR_WINDOWS_SUBPROCESS
 
 #include <grpc/support/alloc.h>
+#include <memory>
 #include <string.h>
 #include <tchar.h>
 #include <windows.h>

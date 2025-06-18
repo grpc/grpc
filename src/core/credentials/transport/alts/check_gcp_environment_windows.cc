@@ -22,6 +22,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/sync.h>
+#include <memory>
 #include <shellapi.h>
 #include <stdio.h>
 #include <tchar.h>
