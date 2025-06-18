@@ -728,7 +728,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return buffer;
+        return std::move(buffer);
       });
 }
 
