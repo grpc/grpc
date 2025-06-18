@@ -14,6 +14,8 @@
 
 #include "src/core/xds/grpc/xds_matcher_parse.h"
 
+#include <upb/message/map.h>
+
 #include <memory>
 
 #include "envoy/config/common/matcher/v3/matcher.upb.h"
@@ -27,21 +29,34 @@
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_input.h"
-
-// ValidationErrors::ScopedField field(errors, ".loadBalancingConfig");
+#include "xds/core/v3/extension.upb.h"
+#include "xds/type/matcher/v3/http_inputs.upb.h"
+#include "xds/type/matcher/v3/matcher.upb.h"
+#include "xds/type/matcher/v3/regex.upb.h"
+#include "xds/type/matcher/v3/string.upb.h"
 
 namespace grpc_core {
 
-// Function to parse "envoy_config_core_v3_TypedExtensionConfig" to generate
+// Forward declaration for ParseMatcher to resolve circular dependency.
+std::unique_ptr<XdsMatcher> ParseMatcher(
+    const XdsResourceType::DecodeContext& context,
+    const xds_type_matcher_v3_Matcher* matcher, ValidationErrors* errors);
+
+// Forward declaration for ParsePredicate to resolve circular dependency.
+std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
+    const XdsResourceType::DecodeContext& context,
+    const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
+    ValidationErrors* errors);
+
+// Function to parse "xds_core_v3_TypedExtensionConfig" to generate
 // XdsMatcher::Input<T>
 // The parsing is for input which return absl::string_view
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_TypedExtensionConfig* input,
-    ValidationErrors* errors) {
+    const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".input");
   const google_protobuf_Any* any =
-      envoy_config_core_v3_TypedExtensionConfig_typed_config(input);
+      xds_core_v3_TypedExtensionConfig_typed_config(input);
   auto extension = ExtractXdsExtension(context, any, errors);
   if (!extension.has_value()) {
     errors->AddError("Fail to extract XdsExtenstion");
@@ -67,25 +82,21 @@ std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
   return std::make_unique<MetadataInput>(header_name);
 }
 
-// Function to parse "envoy_config_core_v3_TypedExtensionConfig"  to generate
+// Function to parse "xds_core_v3_TypedExtensionConfig"  to generate
 // supported Actions
 std::unique_ptr<XdsMatcher::Action> ParseAction(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_core_v3_TypedExtensionConfig* action,
-    ValidationErrors* errors) {
-  if (action == nullptr) {
-    return nullptr;
-  }
+    const xds_core_v3_TypedExtensionConfig* action, ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".action");
   const google_protobuf_Any* any =
-      envoy_config_core_v3_TypedExtensionConfig_typed_config(action);
+      xds_core_v3_TypedExtensionConfig_typed_config(action);
   auto extension = ExtractXdsExtension(context, any, errors);
   if (!extension.has_value()) {
     errors->AddError("Fail to extract XdsExtenstion");
     return nullptr;
   }
   // Supported Extension check
-  // Add other supported Actions here (switch case ??)
+  // Add other supported Actions here (switch case or registery ??)
   if (extension->type !=
       "envoy.extensions.filters.http.rate_limit_quota.v3."
       "RateLimitQuotaBucketSettings") {
@@ -132,52 +143,49 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   }
   // Create and return Bucketing Action
   if (config.map.empty()) {
+    errors->AddError("bucket_id_builder map parsing failed");
     return nullptr;
   }
   return std::make_unique<BucketingAction>(config);
 }
 
 // Parse and generate input matcher with type string_view
-// Parsing "envoy_type_matcher_v3_StringMatcher" to generate StringMatcher
+// Parsing "xds_type_matcher_v3_StringMatcher" to generate StringMatcher
 std::unique_ptr<XdsMatcherList::InputMatcher<absl::string_view>>
 ParseStringMatcher(const XdsResourceType::DecodeContext& /*context*/,
-                   const envoy_type_matcher_v3_StringMatcher* string_matcher,
+                   const xds_type_matcher_v3_StringMatcher* string_matcher,
                    ValidationErrors* errors) {
-  if (string_matcher == nullptr) {
-    return nullptr;
-  }
   ValidationErrors::ScopedField field(errors, ".string_matcher");
   std::string matcher;
   StringMatcher::Type type;
-  if (envoy_type_matcher_v3_StringMatcher_has_exact(string_matcher)) {
+  if (xds_type_matcher_v3_StringMatcher_has_exact(string_matcher)) {
     type = StringMatcher::Type::kExact;
     matcher = UpbStringToStdString(
-        envoy_type_matcher_v3_StringMatcher_exact(string_matcher));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(string_matcher)) {
+        xds_type_matcher_v3_StringMatcher_exact(string_matcher));
+  } else if (xds_type_matcher_v3_StringMatcher_has_prefix(string_matcher)) {
     type = StringMatcher::Type::kPrefix;
     matcher = UpbStringToStdString(
-        envoy_type_matcher_v3_StringMatcher_prefix(string_matcher));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(string_matcher)) {
+        xds_type_matcher_v3_StringMatcher_prefix(string_matcher));
+  } else if (xds_type_matcher_v3_StringMatcher_has_suffix(string_matcher)) {
     type = StringMatcher::Type::kSuffix;
     matcher = UpbStringToStdString(
-        envoy_type_matcher_v3_StringMatcher_suffix(string_matcher));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_contains(string_matcher)) {
+        xds_type_matcher_v3_StringMatcher_suffix(string_matcher));
+  } else if (xds_type_matcher_v3_StringMatcher_has_contains(string_matcher)) {
     type = StringMatcher::Type::kContains;
     matcher = UpbStringToStdString(
-        envoy_type_matcher_v3_StringMatcher_contains(string_matcher));
-  } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
-                 string_matcher)) {
+        xds_type_matcher_v3_StringMatcher_contains(string_matcher));
+  } else if (xds_type_matcher_v3_StringMatcher_has_safe_regex(string_matcher)) {
     type = StringMatcher::Type::kSafeRegex;
     auto* regex_matcher =
-        envoy_type_matcher_v3_StringMatcher_safe_regex(string_matcher);
+        xds_type_matcher_v3_StringMatcher_safe_regex(string_matcher);
     matcher = UpbStringToStdString(
-        envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+        xds_type_matcher_v3_RegexMatcher_regex(regex_matcher));
   } else {
     errors->AddError("invalid StringMatcher specified");
     return nullptr;
   }
   bool ignore_case =
-      envoy_type_matcher_v3_StringMatcher_ignore_case(string_matcher);
+      xds_type_matcher_v3_StringMatcher_ignore_case(string_matcher);
   auto matcher_result = StringMatcher::Create(type, matcher, ignore_case);
   if (!matcher_result.ok()) {
     errors->AddError(absl::StrCat("Failed to create StringMatcher: ",
@@ -191,29 +199,30 @@ ParseStringMatcher(const XdsResourceType::DecodeContext& /*context*/,
 // Parse OnMatch components of the matcher
 std::unique_ptr<XdsMatcher::OnMatch> ParseOnMatch(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher_OnMatch* on_match,
+    const xds_type_matcher_v3_Matcher_OnMatch* on_match,
     ValidationErrors* errors) {
-  if (on_match == nullptr) {
-    return nullptr;
-  }
-  // To be supported in envoy APIs, add parsing logic after that
+  ValidationErrors::ScopedField field(errors, ".OnMatch");
+  // Parse keep matching once we move to latest xds protos
   bool keep_matching = false;
   // action is a variant which can have Action or a Nested Matcher
-  if (envoy_config_common_matcher_v3_Matcher_OnMatch_has_action(on_match)) {
-    return std::make_unique<XdsMatcher::OnMatch>(
-        ParseAction(
-            context,
-            envoy_config_common_matcher_v3_Matcher_OnMatch_action(on_match),
-            errors),
-        keep_matching);
-  } else if (envoy_config_common_matcher_v3_Matcher_OnMatch_has_matcher(
-                 on_match)) {
-    return std::make_unique<XdsMatcher::OnMatch>(
-        ParseMatcher(
-            context,
-            envoy_config_common_matcher_v3_Matcher_OnMatch_matcher(on_match),
-            errors),
-        keep_matching);
+  if (xds_type_matcher_v3_Matcher_OnMatch_has_action(on_match)) {
+    auto action = ParseAction(
+        context, xds_type_matcher_v3_Matcher_OnMatch_action(on_match), errors);
+    if (!action) {
+      errors->AddError("Failed to parse action");
+      return nullptr;
+    }
+    return std::make_unique<XdsMatcher::OnMatch>(std::move(action),
+                                                 keep_matching);
+  } else if (xds_type_matcher_v3_Matcher_OnMatch_has_matcher(on_match)) {
+    auto nested_matcher = ParseMatcher(
+        context, xds_type_matcher_v3_Matcher_OnMatch_matcher(on_match), errors);
+    if (!nested_matcher) {
+      errors->AddError("Failed to parse nested matcher");
+      return nullptr;
+    }
+    return std::make_unique<XdsMatcher::OnMatch>(std::move(nested_matcher),
+                                                 keep_matching);
   } else {
     errors->AddError("Unknown field in OnMatch");
     return nullptr;
@@ -224,24 +233,23 @@ std::unique_ptr<XdsMatcher::OnMatch> ParseOnMatch(
 // Parse MatchTree Map
 absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>>
 ParseMatchMap(const XdsResourceType::DecodeContext& context,
-              const envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap*
-                  match_map,
+              const xds_type_matcher_v3_Matcher_MatcherTree_MatchMap* match_map,
               ValidationErrors* errors) {
   absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> result;
-  if (!match_map) {
-    return result;
-  }
   ValidationErrors::ScopedField field(errors, ".match_map");
-  size_t map_size =
-      envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_size(
-          match_map);
-  for (size_t i = 0; i < map_size; i++) {
-    upb_StringView upb_key;
-    const envoy_config_common_matcher_v3_Matcher_OnMatch* on_match;
-    envoy_config_common_matcher_v3_Matcher_MatcherTree_MatchMap_map_next(
-        match_map, &upb_key, &on_match, &i);
+  auto iter = kUpb_Map_Begin;
+  upb_StringView upb_key;
+  const xds_type_matcher_v3_Matcher_OnMatch* value;
+  while (xds_type_matcher_v3_Matcher_MatcherTree_MatchMap_map_next(
+      match_map, &upb_key, &value, &iter)) {
+    auto on_match = ParseOnMatch(context, value, errors);
+    if (!on_match) {
+      // should we break here with error or ignore this error
+      errors->AddError("Failed to parse OnMatch");
+      continue;
+    }
     std::string key(UpbStringToStdString(upb_key));
-    result[key] = ParseOnMatch(context, on_match, errors);
+    result[key] = std::move(on_match);
   }
   return result;
 }
@@ -249,27 +257,24 @@ ParseMatchMap(const XdsResourceType::DecodeContext& context,
 // Parse SinglePredicate
 std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate*
+    const xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate*
         single_predicate,
     ValidationErrors* errors) {
-  if (single_predicate == nullptr) {
-    return nullptr;
-  }
   ValidationErrors::ScopedField field(errors, ".single_predicate");
-  // Supporting value match now , need to add custom match
-  if (!envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_has_value_match(
+  // Supporting value match now, need to add custom match
+  if (!xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_has_value_match(
           single_predicate)) {
     return nullptr;
   }
   // StringMatcher creation from value match
   auto input_string_matcher = ParseStringMatcher(
       context,
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
+      xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_value_match(
           single_predicate),
       errors);
   auto input_string_value = ParseStringInput(
       context,
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
+      xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_input(
           single_predicate),
       errors);
   return XdsMatcherList::CreateSinglePredicate(std::move(input_string_value),
@@ -278,74 +283,76 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
 
 std::vector<std::unique_ptr<XdsMatcherList::Predicate>> ParsePredicateList(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList*
+    const xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList*
         predicate_list,
     ValidationErrors* errors) {
   std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
-  if (predicate_list == nullptr) {
-    return predicates;
-  }
   ValidationErrors::ScopedField field(errors, ".predicate_list");
   size_t predicate_list_size;
   auto list =
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_predicate(
+      xds_type_matcher_v3_Matcher_MatcherList_Predicate_PredicateList_predicate(
           predicate_list, &predicate_list_size);
+  // check bpawan
   for (size_t i = 0; i < predicate_list_size; i++) {
     // Parse and push each predicate
     auto predicate = ParsePredicate(context, list[i], errors);
     if (predicate) {
       predicates.push_back(std::move(predicate));
+    } else {
+      // Should we break from here or ignore one of the error ??
+      errors->AddError("Failed to parse predicate");
     }
   }
   return predicates;
 }
 
-// Parse PRedicate field of the Matcher
+// Parse Predicate field of the Matcher
 std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate*
-        predicate,
+    const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
     ValidationErrors* errors) {
-  if (predicate == nullptr) {
-    return nullptr;
-  }
   ValidationErrors::ScopedField field(errors, ".predicate");
   // Predicate can be Single, Or, And and Not
-  if (envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_single_predicate(
+  if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_single_predicate(
           predicate)) {
     return ParseSinglePredicate(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_single_predicate(
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_single_predicate(
             predicate),
         errors);
-  } else if (
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_or_matcher(
-          predicate)) {
+  } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_or_matcher(
+                 predicate)) {
     auto predicate_list = ParsePredicateList(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_or_matcher(
-            predicate),
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_or_matcher(predicate),
         errors);
+    if (predicate_list.empty()) {
+      return nullptr;
+    }
     return std::make_unique<XdsMatcherList::OrPredicate>(
         std::move(predicate_list));
-  } else if (
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_and_matcher(
-          predicate)) {
+  } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_and_matcher(
+                 predicate)) {
     auto predicate_list = ParsePredicateList(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_and_matcher(
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_and_matcher(
             predicate),
         errors);
+    if (predicate_list.empty()) {
+      return nullptr;
+    }
     return std::make_unique<XdsMatcherList::AndPredicate>(
         std::move(predicate_list));
-  } else if (
-      envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_has_not_matcher(
-          predicate)) {
+  } else if (xds_type_matcher_v3_Matcher_MatcherList_Predicate_has_not_matcher(
+                 predicate)) {
     auto not_predicate = ParsePredicate(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_Predicate_not_matcher(
+        xds_type_matcher_v3_Matcher_MatcherList_Predicate_not_matcher(
             predicate),
         errors);
+    if (!not_predicate) {
+      return nullptr;
+    }
     return std::make_unique<XdsMatcherList::NotPredicate>(
         std::move(not_predicate));
   }
@@ -357,33 +364,33 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
 // Parse Field Matchers (List of Predicate-OnMatch pairs)
 std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher_MatcherList* matcher_list,
+    const xds_type_matcher_v3_Matcher_MatcherList* matcher_list,
     ValidationErrors* errors) {
   auto field_matcher_list = std::vector<XdsMatcherList::FieldMatcher>();
-  if (matcher_list == nullptr) {
-    return field_matcher_list;
-  }
   size_t matcher_list_size;
-  auto field_matchers =
-      envoy_config_common_matcher_v3_Matcher_MatcherList_matchers(
-          matcher_list, &matcher_list_size);
+  ValidationErrors::ScopedField field(errors, ".FieldMatcher");
+  auto field_matchers = xds_type_matcher_v3_Matcher_MatcherList_matchers(
+      matcher_list, &matcher_list_size);
   for (size_t i = 0; i < matcher_list_size; i++) {
     // Parse OnMatch component
     auto on_match = ParseOnMatch(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_on_match(
+        xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_on_match(
             field_matchers[i]),
         errors);
     // Parse Predicate
     auto predicate = ParsePredicate(
         context,
-        envoy_config_common_matcher_v3_Matcher_MatcherList_FieldMatcher_predicate(
+        xds_type_matcher_v3_Matcher_MatcherList_FieldMatcher_predicate(
             field_matchers[i]),
         errors);
     // Create and add Field matcher in the list
     if (on_match && predicate) {
       field_matcher_list.emplace_back(std::move(predicate),
                                       std::move(on_match));
+    } else {
+      // should we break from error
+      errors->AddError("Error in parsing field matcher");
     }
   }
   return field_matcher_list;
@@ -393,67 +400,66 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
 // This the top level function expected to be called for the matcher.proto
 std::unique_ptr<XdsMatcher> ParseMatcher(
     const XdsResourceType::DecodeContext& context,
-    const envoy_config_common_matcher_v3_Matcher* matcher,
-    ValidationErrors* errors) {
-  if (matcher == nullptr) {
-    return nullptr;
-  }
+    const xds_type_matcher_v3_Matcher* matcher, ValidationErrors* errors) {
   ValidationErrors::ScopedField field(errors, ".Matcher");
   std::unique_ptr<XdsMatcher::OnMatch> on_no_match = nullptr;
   // Parse on_no_match if present (optional field)
-  if (envoy_config_common_matcher_v3_Matcher_has_on_no_match(matcher)) {
+  if (xds_type_matcher_v3_Matcher_has_on_no_match(matcher)) {
     on_no_match = ParseOnMatch(
-        context, envoy_config_common_matcher_v3_Matcher_on_no_match(matcher),
-        errors);
+        context, xds_type_matcher_v3_Matcher_on_no_match(matcher), errors);
+    // Should we bail if parsing fail for on_no_match ??
   }
   // Matcher can be of type List, Map, or Custom
-  if (envoy_config_common_matcher_v3_Matcher_has_matcher_list(matcher)) {
+  if (xds_type_matcher_v3_Matcher_has_matcher_list(matcher)) {
     // Case Matcher List
-    auto matcher_list =
-        envoy_config_common_matcher_v3_Matcher_matcher_list(matcher);
+    auto matcher_list = xds_type_matcher_v3_Matcher_matcher_list(matcher);
     auto field_matcher_list =
         ParseFieldMatcherList(context, matcher_list, errors);
+    if (field_matcher_list.empty()) {
+      errors->AddError("Field Matcher list is empty");
+      return nullptr;
+    }
     return std::make_unique<XdsMatcherList>(std::move(field_matcher_list),
                                             std::move(on_no_match));
-  } else if (envoy_config_common_matcher_v3_Matcher_has_matcher_tree(matcher)) {
+  } else if (xds_type_matcher_v3_Matcher_has_matcher_tree(matcher)) {
     // Matcher Tree can be exact Match map ,Prefix match Map tree or Custom
-    auto matcher_tree =
-        envoy_config_common_matcher_v3_Matcher_matcher_tree(matcher);
+    auto matcher_tree = xds_type_matcher_v3_Matcher_matcher_tree(matcher);
     // Exact Match Map Matcher
-    if (envoy_config_common_matcher_v3_Matcher_MatcherTree_has_exact_match_map(
+    if (xds_type_matcher_v3_Matcher_MatcherTree_has_exact_match_map(
             matcher_tree)) {
       auto map = ParseMatchMap(
           context,
-          envoy_config_common_matcher_v3_Matcher_MatcherTree_exact_match_map(
-              matcher_tree),
+          xds_type_matcher_v3_Matcher_MatcherTree_exact_match_map(matcher_tree),
           errors);
       auto input = ParseStringInput(
-          context,
-          envoy_config_common_matcher_v3_Matcher_MatcherTree_input(
-              matcher_tree),
+          context, xds_type_matcher_v3_Matcher_MatcherTree_input(matcher_tree),
           errors);
+      if (map.empty() || !input) {
+        errors->AddError("Failed to parse exact match map");
+        return nullptr;
+      }
       return std::make_unique<XdsMatcherExactMap>(
           std::move(input), std::move(map), std::move(on_no_match));
-    } else if (
-        envoy_config_common_matcher_v3_Matcher_MatcherTree_has_prefix_match_map(
-            matcher_tree)) {
+    } else if (xds_type_matcher_v3_Matcher_MatcherTree_has_prefix_match_map(
+                   matcher_tree)) {
       // PRefix Match Map matcher
-      auto map = ParseMatchMap(
-          context,
-          envoy_config_common_matcher_v3_Matcher_MatcherTree_exact_match_map(
-              matcher_tree),  // TODO(bpawan): This should likely be
-                              // prefix_match_map
-          errors);
+      auto map =
+          ParseMatchMap(context,
+                        xds_type_matcher_v3_Matcher_MatcherTree_exact_match_map(
+                            matcher_tree),  // TODO(bpawan): This should likely
+                                            // be prefix_match_map
+                        errors);
       auto input = ParseStringInput(
-          context,
-          envoy_config_common_matcher_v3_Matcher_MatcherTree_input(
-              matcher_tree),
+          context, xds_type_matcher_v3_Matcher_MatcherTree_input(matcher_tree),
           errors);
+      if (map.empty() || !input) {
+        errors->AddError("Failed to parse prefix match map");
+        return nullptr;
+      }
       return std::make_unique<XdsMatcherPrefixMap>(
           std::move(input), std::move(map), std::move(on_no_match));
-    } else if (
-        envoy_config_common_matcher_v3_Matcher_MatcherTree_has_custom_match(
-            matcher_tree)) {
+    } else if (xds_type_matcher_v3_Matcher_MatcherTree_has_custom_match(
+                   matcher_tree)) {
       errors->AddError("Custom match in MatcherTree is not yet supported.");
       return nullptr;
     } else {

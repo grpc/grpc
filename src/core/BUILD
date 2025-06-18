@@ -5753,10 +5753,12 @@ grpc_cc_library(
         "unique_type_name",
         "upb_utils",
         "xds_common_types",
+        "xds_extension_upb",
         "xds_matcher",
         "xds_matcher_action",
         "xds_matcher_context",
         "xds_matcher_input",
+        "xds_matcher_upb",
     ],
 )
 
@@ -10270,6 +10272,16 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "xds_extension_upb",
+    deps = ["@com_github_cncf_xds//xds/core/v3:pkg"],
 )
 
 grpc_upb_proto_library(

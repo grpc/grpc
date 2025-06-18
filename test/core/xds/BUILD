@@ -267,8 +267,8 @@ grpc_cc_test(
     srcs = ["bm_xds_matcher_test.cc"],
     external_deps = [
         "gtest",
-        "benchmark"
-    ],                
+        "benchmark",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
