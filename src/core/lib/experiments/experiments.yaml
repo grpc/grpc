@@ -121,8 +121,8 @@
   allow_in_fuzzing_config: false
 - name: event_engine_secure_endpoint
   description: Use EventEngine secure endpoint wrapper instead of iomgr when available
-  expiry: 2025/06/06
-  owner: ctiller@google.com
+  expiry: 2026/01/22
+  owner: alishananda@google.com
   test_tags: ["core_end2end_test", "secure_endpoint_test"]
   uses_polling: true
   allow_in_fuzzing_config: false
@@ -158,6 +158,10 @@
   expiry: 2025/09/03
   owner: ctiller@google.com
   test_tags: [flow_control_test]
+- name: pick_first_ignore_empty_updates
+  description: Ignore empty resolutions in pick_first
+  expiry: 2026/02/02
+  owner: ctiller@google.com
 - name: pollset_alternative
   description:
     Code outside iomgr that relies directly on pollsets will use non-pollset alternatives when
@@ -167,13 +171,12 @@
   test_tags: ["core_end2end_test"]
   requires: ["event_engine_client", "event_engine_listener"]
   allow_in_fuzzing_config: false
-- name: posix_ee_skip_grpc_init
-  description:
-    Prevent the PosixEventEngine from calling grpc_init & grpc_shutdown on
-    creation and destruction.
-  expiry: 2025/07/01
-  owner: hork@google.com
-  test_tags: ["core_end2end_test", "cpp_end2end_test"]
+- name: prioritize_finished_requests
+  description: Prioritize flushing out finished requests over other in-flight
+    requests during transport writes.
+  expiry: 2025/09/01
+  owner: vigneshbabu@google.com
+  test_tags: []
 - name: promise_based_http2_client_transport
   description:
     Use promises for the http2 client transport. We have kept client and
