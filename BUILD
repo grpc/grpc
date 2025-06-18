@@ -873,6 +873,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     tags = [
         "avoid_dep",
@@ -1223,6 +1224,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:span",
         "absl/functional:any_invocable",
     ],
     tags = [
@@ -1498,6 +1500,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
     ],
     linkopts = select({
@@ -1890,6 +1893,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
         "madler_zlib",
     ],
@@ -2211,6 +2215,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["//visibility:public"],
@@ -5166,6 +5171,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_upb",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

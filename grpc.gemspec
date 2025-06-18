@@ -247,6 +247,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/credentials/call/jwt/jwt_credentials.h )
   s.files += %w( src/core/credentials/call/jwt/jwt_verifier.cc )
   s.files += %w( src/core/credentials/call/jwt/jwt_verifier.h )
+  s.files += %w( src/core/credentials/call/jwt_util.cc )
+  s.files += %w( src/core/credentials/call/jwt_util.h )
   s.files += %w( src/core/credentials/call/oauth2/oauth2_credentials.cc )
   s.files += %w( src/core/credentials/call/oauth2/oauth2_credentials.h )
   s.files += %w( src/core/credentials/call/plugin/plugin_credentials.cc )
