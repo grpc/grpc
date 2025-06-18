@@ -231,7 +231,7 @@ Http2Status Http2ClientTransport::ProcessMetadata(
                         /*close_reads=*/true,
                         /*close_writes=*/true,
                         /*send_rst_stream=*/false,
-                        /*cancelled=*/false,
+                        /*should_not_push_trailers=*/true,
                     });
 
       } else {
