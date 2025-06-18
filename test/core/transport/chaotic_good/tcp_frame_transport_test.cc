@@ -265,7 +265,7 @@ auto ParseFrameProto(const std::string& proto) {
 TEST(TcpFrameTransportTest, CanSendFramesRegression1) {
   std::vector<Frame> send_on_client_frames;
   send_on_client_frames.emplace_back(
-      grpc_core::chaotic_good::FrameFromTestFrame(
+      chaotic_good::FrameFromTestFrame(
           ParseFrameProto(R"pb(
             settings {
               max_chunk_size: 2147483647
@@ -273,11 +273,10 @@ TEST(TcpFrameTransportTest, CanSendFramesRegression1) {
             })pb")));
   std::vector<Frame> send_on_server_frames;
   send_on_server_frames.emplace_back(
-      grpc_core::chaotic_good::FrameFromTestFrame(ParseFrameProto(
+      chaotic_good::FrameFromTestFrame(ParseFrameProto(
           R"pb(settings { alignment: 1 supported_features: UNSPECIFIED })pb")));
-  send_on_server_frames.emplace_back(
-      grpc_core::chaotic_good::FrameFromTestFrame(
-          ParseFrameProto(R"pb(begin_message { stream_id: 4294967295 })pb")));
+  send_on_server_frames.emplace_back(chaotic_good::FrameFromTestFrame(
+      ParseFrameProto(R"pb(begin_message { stream_id: 4294967295 })pb")));
   CanSendFrames(
       33, 1, 567, 0, 3878004, 36, 10, ParseFuzzingEventEngineProto(R"pb(
         run_delay: 9223372036854775807
