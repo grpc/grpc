@@ -40,6 +40,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
+#include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/util/orphanable.h"
 
 namespace grpc_core {
 namespace http2 {
@@ -106,6 +108,10 @@ class Http2ClientTransport final : public ClientTransport {
   void StartCall(CallHandler call_handler) override;
 
   void PerformOp(grpc_transport_op*) override;
+  void StartConnectivityWatch(
+      grpc_connectivity_state state,
+      OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+  void StopConnectivityWatch(ConnectivityStateWatcherInterface* watcher);
 
   void Orphan() override;
   void AbortWithError();
@@ -315,6 +321,9 @@ class Http2ClientTransport final : public ClientTransport {
   HPackCompressor encoder_;
   HPackParser parser_;
 
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
+      "http2_client", GRPC_CHANNEL_READY};
+
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
 
   struct CloseStreamArgs {
@@ -397,12 +406,7 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // This function MUST be idempotent.
-  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status="
-                      << status << " location=" << whence.file() << ":"
-                      << whence.line();
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
-  }
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {});
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
