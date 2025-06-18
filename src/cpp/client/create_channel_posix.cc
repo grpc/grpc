@@ -16,6 +16,7 @@
 //
 //
 
+#include <grpc/create_channel_from_endpoint.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>

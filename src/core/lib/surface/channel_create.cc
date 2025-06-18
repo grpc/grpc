@@ -16,6 +16,7 @@
 
 #include "src/core/lib/surface/channel_create.h"
 
+#include <grpc/create_channel_from_endpoint.h>
 #include <grpc/grpc.h>
 #include <grpc/impl/channel_arg_names.h>
 #include <grpc/support/port_platform.h>

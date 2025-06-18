@@ -45,6 +45,7 @@ let package = Package(
         "include/grpc/byte_buffer_reader.h",
         "include/grpc/census.h",
         "include/grpc/compression.h",
+        "include/grpc/create_channel_from_endpoint.h",
         "include/grpc/credentials.h",
         "include/grpc/event_engine/endpoint_config.h",
         "include/grpc/event_engine/event_engine.h",
