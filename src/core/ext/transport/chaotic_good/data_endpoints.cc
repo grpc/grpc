@@ -421,7 +421,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
            frame_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
-  all_frames_.Append(std::move(buffer));
+  all_frames_.TakeAndAppend(buffer);
   if (frame_padding != 0) {
     auto padding = MutableSlice::CreateUninitialized(frame_padding);
     memset(padding.data(), 0, frame_padding);
@@ -993,7 +993,7 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
   output_buffers_->AddData(sink);
   input_queues_->AddData(sink);
   struct EndpointInfoCollector {
-    EndpointInfoCollector(int remaining)
+    explicit EndpointInfoCollector(int remaining)
         : remaining(remaining), endpoints(remaining) {}
     Mutex mu;
     int remaining ABSL_GUARDED_BY(mu) = 0;
