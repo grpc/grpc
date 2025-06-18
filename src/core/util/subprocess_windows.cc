@@ -24,6 +24,7 @@
 #include <string.h>
 #include <tchar.h>
 #include <windows.h>
+#include <memory>
 
 #include "absl/log/log.h"
 #include "absl/strings/str_join.h"
