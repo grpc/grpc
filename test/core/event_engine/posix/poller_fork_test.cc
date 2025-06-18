@@ -368,15 +368,16 @@ TEST_F(PollerForkTest, ListenerInChild) {
   ee()->AfterFork(PosixEventEngine::OnForkRole::kChild);
   LOG(INFO) << "After fork in child";
   EXPECT_THAT(read_status.AwaitStatus(),
-              StatusIs(absl::StatusCode::kUnavailable));
+              StatusIs(absl::StatusCode::kCancelled));
   EXPECT_THAT(write_status.AwaitStatus(),
-              StatusIs(absl::StatusCode::kUnavailable));
+              StatusIs(absl::StatusCode::kCancelled));
   // Starting read and write post-fork will fail asynchronously and return the
   // status.
   ASSERT_FALSE(endpoint->Read(read_status.Setter(), &read_buffer, ReadArgs()));
   ASSERT_FALSE(
       endpoint->Write(write_status.Setter(), &write_buffer, WriteArgs()));
-  EXPECT_THAT(read_status.AwaitStatus(), StatusIs(absl::StatusCode::kInternal));
+  EXPECT_THAT(read_status.AwaitStatus(),
+              StatusIs(absl::StatusCode::kCancelled));
   EXPECT_THAT(write_status.AwaitStatus(), ::testing::Not(IsOk()));
 }
 

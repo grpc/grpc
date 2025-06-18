@@ -1568,6 +1568,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx json_object_loader_test)
   add_dependencies(buildtests_cxx json_test)
   add_dependencies(buildtests_cxx json_token_test)
+  add_dependencies(buildtests_cxx jwt_util_test)
   add_dependencies(buildtests_cxx jwt_verifier_test)
   add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx latch_test)
@@ -1577,6 +1578,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx load_config_test)
   add_dependencies(buildtests_cxx load_file_test)
   add_dependencies(buildtests_cxx local_security_connector_test)
+  add_dependencies(buildtests_cxx lock_based_mpsc_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx log_too_many_open_files_test)
   endif()
@@ -2176,6 +2178,7 @@ add_library(grpc
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -2210,6 +2213,7 @@ add_library(grpc
   src/core/credentials/call/jwt/json_token.cc
   src/core/credentials/call/jwt/jwt_credentials.cc
   src/core/credentials/call/jwt/jwt_verifier.cc
+  src/core/credentials/call/jwt_util.cc
   src/core/credentials/call/oauth2/oauth2_credentials.cc
   src/core/credentials/call/plugin/plugin_credentials.cc
   src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
@@ -3298,6 +3302,7 @@ add_library(grpc_unsecure
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/client_channel/backup_poller.cc
   src/core/client_channel/client_channel.cc
   src/core/client_channel/client_channel_factory.cc
@@ -5746,6 +5751,7 @@ add_library(grpc_authorization_provider
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/config/core_configuration.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
@@ -6523,6 +6529,7 @@ target_link_libraries(activity_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -7277,6 +7284,7 @@ target_link_libraries(all_ok_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -8948,6 +8956,7 @@ target_link_libraries(blackboard_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -9131,6 +9140,7 @@ add_executable(call_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   test/core/credentials/call/call_credentials_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -9262,6 +9272,7 @@ target_link_libraries(call_filters_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -9360,6 +9371,7 @@ target_link_libraries(call_state_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -9426,6 +9438,7 @@ add_executable(call_utils_test
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -9825,6 +9838,7 @@ target_link_libraries(cancel_callback_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -10889,6 +10903,7 @@ target_link_libraries(chunked_vector_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -11750,6 +11765,7 @@ target_link_libraries(common_closures_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -12978,6 +12994,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/data_endpoints.cc
     src/core/ext/transport/chaotic_good/frame.cc
     src/core/ext/transport/chaotic_good/frame_header.cc
+    src/core/ext/transport/chaotic_good/scheduler.cc
     src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13083,6 +13100,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good/data_endpoints.cc
     src/core/ext/transport/chaotic_good/frame.cc
     src/core/ext/transport/chaotic_good/frame_header.cc
+    src/core/ext/transport/chaotic_good/scheduler.cc
     src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good/server_transport.cc
     src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13275,6 +13293,7 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13378,6 +13397,7 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13481,6 +13501,7 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13672,6 +13693,7 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13863,6 +13885,7 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -13966,6 +13989,7 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -14157,6 +14181,7 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -14260,6 +14285,7 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -14593,6 +14619,7 @@ target_link_libraries(endpoint_config_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -15194,6 +15221,7 @@ target_link_libraries(exec_ctx_wakeup_scheduler_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -15563,6 +15591,7 @@ add_executable(filter_fusion_test
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -15974,6 +16003,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(flow_control_test
+  src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/flow_control.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
@@ -16123,6 +16153,7 @@ target_link_libraries(for_each_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -18092,6 +18123,7 @@ add_executable(h2_ssl_cert_test
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -18400,6 +18432,7 @@ add_executable(header_assembler_test
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/config/core_configuration.cc
   src/core/credentials/transport/alts/check_gcp_environment.cc
   src/core/credentials/transport/alts/check_gcp_environment_linux.cc
@@ -19881,6 +19914,7 @@ target_link_libraries(inter_activity_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -19999,6 +20033,7 @@ target_link_libraries(interceptor_list_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20293,6 +20328,7 @@ target_link_libraries(join_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20417,6 +20453,48 @@ target_include_directories(json_token_test
 )
 
 target_link_libraries(json_token_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(jwt_util_test
+  test/core/credentials/call/jwt_util_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(jwt_util_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(jwt_util_test PUBLIC cxx_std_17)
+target_include_directories(jwt_util_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(jwt_util_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
@@ -20558,6 +20636,7 @@ target_link_libraries(latch_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20823,6 +20902,62 @@ target_link_libraries(local_security_connector_test
 
 endif()
 if(gRPC_BUILD_TESTS)
+
+add_executable(lock_based_mpsc_test
+  src/core/lib/debug/trace.cc
+  src/core/lib/debug/trace_flags.cc
+  src/core/lib/promise/activity.cc
+  src/core/lib/promise/wait_set.cc
+  src/core/util/dump_args.cc
+  src/core/util/glob.cc
+  src/core/util/latent_see.cc
+  src/core/util/per_cpu.cc
+  test/core/promise/lock_based_mpsc_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(lock_based_mpsc_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(lock_based_mpsc_test PUBLIC cxx_std_17)
+target_include_directories(lock_based_mpsc_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(lock_based_mpsc_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::config
+  absl::flat_hash_map
+  absl::function_ref
+  absl::hash
+  absl::type_traits
+  absl::statusor
+  absl::span
+  gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(log_too_many_open_files_test
@@ -20915,6 +21050,7 @@ target_link_libraries(loop_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21026,6 +21162,7 @@ target_link_libraries(map_pipe_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21273,6 +21410,7 @@ target_link_libraries(memory_usage_test
   gtest
   absl::statusor
   absl::string_view
+  absl::span
   gpr
 )
 
@@ -22157,6 +22295,7 @@ target_link_libraries(observable_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -23268,6 +23407,7 @@ target_link_libraries(periodic_update_test
   absl::function_ref
   absl::hash
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -24745,6 +24885,7 @@ target_link_libraries(promise_mutex_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -24796,6 +24937,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(property_list_test
+  src/core/channelz/property_list.cc
   src/core/util/time.cc
   test/core/channelz/property_list_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -24831,7 +24973,9 @@ target_include_directories(property_list_test
 target_link_libraries(property_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  absl::flat_hash_map
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -25091,6 +25235,7 @@ add_executable(qps_json_driver
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -25195,6 +25340,7 @@ add_executable(qps_worker
   src/core/ext/transport/chaotic_good/data_endpoints.cc
   src/core/ext/transport/chaotic_good/frame.cc
   src/core/ext/transport/chaotic_good/frame_header.cc
+  src/core/ext/transport/chaotic_good/scheduler.cc
   src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good/server_transport.cc
   src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -25307,6 +25453,7 @@ target_link_libraries(query_extensions_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -25776,6 +25923,7 @@ target_link_libraries(request_buffer_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -26634,6 +26782,7 @@ target_link_libraries(seq_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -27898,6 +28047,7 @@ target_link_libraries(slice_string_helpers_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -29368,6 +29518,7 @@ target_link_libraries(test_core_event_engine_posix_timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -29423,6 +29574,7 @@ target_link_libraries(test_core_event_engine_slice_buffer_test
   absl::flat_hash_map
   absl::hash
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -29594,6 +29746,7 @@ target_link_libraries(test_core_util_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -30403,6 +30556,7 @@ target_link_libraries(timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -30914,6 +31068,7 @@ target_link_libraries(try_join_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   absl::utility
   gpr
 )
@@ -31005,6 +31160,7 @@ target_link_libraries(try_seq_test
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31375,6 +31531,7 @@ target_link_libraries(wait_for_callback_test
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31777,6 +31934,7 @@ target_link_libraries(write_size_policy_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   absl::statusor
+  absl::span
   gpr
 )
 

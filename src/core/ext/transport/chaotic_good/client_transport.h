@@ -66,7 +66,8 @@
 namespace grpc_core {
 namespace chaotic_good {
 
-class ChaoticGoodClientTransport final : public ClientTransport {
+class ChaoticGoodClientTransport final : public ClientTransport,
+                                         public channelz::DataSource {
  public:
   ChaoticGoodClientTransport(const ChannelArgs& args,
                              OrphanablePtr<FrameTransport> frame_transport,
@@ -84,6 +85,7 @@ class ChaoticGoodClientTransport final : public ClientTransport {
   RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
     return ctx_->socket_node;
   }
+  void AddData(channelz::DataSink sink) override;
 
   void StartCall(CallHandler call_handler) override;
 
