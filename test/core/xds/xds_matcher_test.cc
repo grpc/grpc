@@ -16,197 +16,322 @@
 
 #include "src/core/xds/grpc/xds_matcher.h"
 
-#include <google/protobuf/text_format.h>
+#include <memory>
+#include <string>
+#include <vector>
 
-#include "gmock/gmock.h"
-#include "gtest/gtest.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
-// For XdsClient and DecodeContext setup
-#include "src/core/util/json/json.h"
-#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
-#include "src/core/xds/xds_client/xds_client.h"
-#include "src/core/xds/xds_client/xds_resource_type.h"
-// End XdsClient setup includes
-
-#include "envoy/config/common/matcher/v3/matcher.pb.h"
-#include "envoy/config/common/matcher/v3/matcher.upb.h"
-#include "src/core/util/down_cast.h"
-#include "src/core/util/match.h"
-#include "src/core/util/validation_errors.h"  // For ValidationErrors
-#include "src/core/xds/grpc/xds_matcher.h"
-#include "src/core/xds/grpc/xds_matcher_action.h"
-#include "src/core/xds/grpc/xds_matcher_context.h"
-#include "src/core/xds/grpc/xds_matcher_parse.h"
-#include "test/core/test_util/test_config.h"
-#include "upb/mem/arena.hpp"
-#include "upb/reflection/def.hpp"  // For upb_DefPool
+#include "absl/strings/string_view.h"
+#include "src/core/util/matchers.h"
 
 namespace grpc_core {
 namespace testing {
 namespace {
 
-class MatcherTest : public ::testing::Test {
- protected:
-  MatcherTest()
-      : xds_client_(MakeXdsClient()),
-        decode_context_{xds_client_.get(),
-                        *xds_client_->bootstrap().servers().front(),
-                        upb_def_pool_.ptr(), upb_arena_.ptr()} {}
+// A concrete implementation of MatchContext for testing purposes.
+class TestMatchContext : public XdsMatcher::MatchContext {
+ public:
+  explicit TestMatchContext(absl::string_view path) : path_(path) {}
 
-  static RefCountedPtr<XdsClient> MakeXdsClient() {
-    auto bootstrap = GrpcXdsBootstrap::Create(
-        "{\n"
-        "  \"xds_servers\": [\n"
-        "    {\n"
-        "      \"server_uri\": \"xds.example.com\",\n"
-        "      \"channel_creds\": [\n"
-        "        {\"type\": \"fake\"}\n"
-        "      ]\n"
-        "    }\n"
-        "  ]\n"
-        "}");
-    CHECK_OK(bootstrap.status()) << bootstrap.status().ToString();
-    return MakeRefCounted<XdsClient>(std::move(*bootstrap),
-                                     /*transport_factory=*/nullptr,
-                                     /*event_engine=*/nullptr,
-                                     /*metrics_reporter=*/nullptr, "test_agent",
-                                     "test_version");
+  UniqueTypeName type() const override {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
   }
 
-  const envoy_config_common_matcher_v3_Matcher* ConvertToUpb(
-      const envoy::config::common::matcher::v3::Matcher& proto) {
-    // Serialize the protobuf proto.
-    std::string serialized_proto;
-    if (!proto.SerializeToString(&serialized_proto)) {
-      EXPECT_TRUE(false) << "protobuf serialization failed";
-      return nullptr;
-    }
-    // Deserialize as upb proto.
-    const auto* upb_proto = envoy_config_common_matcher_v3_Matcher_parse(
-        serialized_proto.data(), serialized_proto.size(), upb_arena_.ptr());
-    if (upb_proto == nullptr) {
-      EXPECT_TRUE(false) << "upb parsing failed";
-      return nullptr;
-    }
-    return upb_proto;
-  }
+  absl::string_view path() const { return path_; }
 
-  upb::Arena upb_arena_;
-  upb::DefPool upb_def_pool_;
-  RefCountedPtr<XdsClient> xds_client_;
-  XdsResourceType::DecodeContext decode_context_;
+ private:
+  absl::string_view path_;
 };
 
-TEST_F(MatcherTest, ParseEnd2End) {
-  envoy::config::common::matcher::v3::Matcher matcher_proto;
-  const char* text_proto = R"pb(
-    matcher_list {
-      matchers {
-        predicate {
-          single_predicate {
-            input {
-              name: "envoy.type.matcher.v3.HttpRequestHeaderMatchInput"
-              typed_config {
-                [type.googleapis.com/envoy.type.matcher.v3
-                     .HttpRequestHeaderMatchInput] { header_name: "x-foo" }
-              }
-            }
-            value_match { exact: "foo" }
-          }
-        }
-        on_match {
-          action {
-            name: "on-match-action"
-            typed_config {
-              [type.googleapis.com/envoy.extensions.filters.http
-                   .rate_limit_quota.v3.RateLimitQuotaBucketSettings] {
-                bucket_id_builder {
-                  bucket_id_builder {
-                    key: "bucket-key-match"
-                    value { string_value: "bucket-val-match" }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-    on_no_match {
-      action {
-        name: "on-match-action"
-        typed_config {
-          [type.googleapis.com/envoy.extensions.filters.http.rate_limit_quota.v3
-               .RateLimitQuotaBucketSettings] {
-            bucket_id_builder {
-              bucket_id_builder {
-                key: "bucket-key-nomatch"
-                value { string_value: "bucket-val-nomatch" }
-              }
-            }
-          }
-        }
-      }
-    }
-  )pb";
-  auto val =
-      google::protobuf::TextFormat::ParseFromString(text_proto, &matcher_proto);
-  if (!val) {
-    std::cout << matcher_proto.DebugString() << "\n";
+// A concrete implementation of InputValue for testing.
+class TestPathInput : public XdsMatcher::InputValue<absl::string_view> {
+ public:
+  UniqueTypeName context_type() const override {
+    return GRPC_UNIQUE_TYPE_NAME_HERE("TestMatchContext");
   }
-  EXPECT_TRUE(val);
-  const auto* m_upb = ConvertToUpb(matcher_proto);
-  ASSERT_NE(m_upb, nullptr);
-  ValidationErrors errors;
-  auto matcher = ParseMatcher(decode_context_, m_upb, &errors);
-  ASSERT_NE(matcher, nullptr);
-  ASSERT_EQ(matcher->getType(), XdsMatcher::MatcherType::MatcherList);
-  auto matcher_list = DownCast<XdsMatcherList*>(matcher.get());
-  // Fake RPC comtext to get metadata
-  grpc_metadata_batch metadata;
-  metadata.Append("x-foo", Slice::FromStaticString("foo"),
-                  [](absl::string_view, const Slice&) {
-                    // We should never ever see an error here.
-                    abort();
-                  });
 
-  RpcMatchContext context_match(&metadata);
-  // match case
+  std::optional<absl::string_view> GetValue(
+      const XdsMatcher::MatchContext& context) const override {
+    const auto* test_context =
+        static_cast<const TestMatchContext*>(&context);
+    return test_context->path();
+  }
+};
+
+// A concrete implementation of Action for testing.
+class TestAction : public XdsMatcher::Action {
+ public:
+  explicit TestAction(absl::string_view name) : name_(name) {}
+  absl::string_view type_url() const override { return "test.TestAction"; }
+  absl::string_view name() const { return name_; }
+
+ private:
+  std::string name_;
+};
+
+// A mock predicate for testing complex predicate structures.
+class MockPredicate : public XdsMatcherList::Predicate {
+ public:
+  MOCK_METHOD(bool, Match, (const XdsMatcher::MatchContext& context),
+              (const, override));
+};
+
+TEST(XdsMatcherTest, OnMatchWithAction) {
+  TestMatchContext context("/foo");
   XdsMatcher::Result result;
-  ASSERT_TRUE(matcher_list->FindMatches(context_match, result));
+  auto action = std::make_unique<TestAction>("test_action");
+  XdsMatcher::OnMatch on_match(std::move(action), false);
+  EXPECT_TRUE(on_match.FindMatches(context, result));
   ASSERT_EQ(result.size(), 1);
-  ASSERT_EQ(result[0]->type_url(),
-            "type.googleapis.com/"
-            "envoy.extensions.filters.http.rate_limit_quota.v3."
-            "RateLimitQuotaBucketSettings");
-  auto bucketSetting = DownCast<BucketingAction*>(result[0]);
-  ASSERT_EQ(bucketSetting->GetConfigValue("bucket-key-match"),
-            "bucket-val-match");
-
-  // on_no_match case
-  metadata.Clear();
-  result.clear();
-  RpcMatchContext context_nomatch(&metadata);
-  ASSERT_TRUE(matcher_list->FindMatches(context_nomatch, result));
-  ASSERT_EQ(result.size(), 1);
-  ASSERT_EQ(result[0]->type_url(),
-            "type.googleapis.com/"
-            "envoy.extensions.filters.http.rate_limit_quota.v3."
-            "RateLimitQuotaBucketSettings");
-  auto bucketSetting_nomatch = DownCast<BucketingAction*>(result[0]);
-  ASSERT_EQ(bucketSetting_nomatch->GetConfigValue("bucket-key-nomatch"),
-            "bucket-val-nomatch");
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "test_action");
 }
 
-}  // namespace
+TEST(XdsMatcherTest, OnMatchWithActionAndKeepMatching) {
+  TestMatchContext context("/foo");
+  XdsMatcher::Result result;
+  auto action = std::make_unique<TestAction>("test_action");
+  XdsMatcher::OnMatch on_match(std::move(action), true);
+  EXPECT_FALSE(on_match.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "test_action");
+}
+
+TEST(XdsMatcherListTest, BasicMatch) {
+  TestMatchContext context("/foo/bar");
+  XdsMatcher::Result result;
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo/bar")
+                  .value())),
+      std::make_unique<XdsMatcher::OnMatch>(
+          std::make_unique<TestAction>("match"), false));
+  XdsMatcherList matcher_list(std::move(matchers), nullptr);
+  EXPECT_TRUE(matcher_list.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "match");
+}
+
+TEST(XdsMatcherListTest, NoMatch) {
+  TestMatchContext context("/baz");
+  XdsMatcher::Result result;
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo/bar")
+                  .value())),
+      std::make_unique<XdsMatcher::OnMatch>(
+          std::make_unique<TestAction>("match"), false));
+  XdsMatcherList matcher_list(std::move(matchers), nullptr);
+  EXPECT_FALSE(matcher_list.FindMatches(context, result));
+  EXPECT_TRUE(result.empty());
+}
+
+TEST(XdsMatcherListTest, OnNoMatch) {
+  TestMatchContext context("/baz");
+  XdsMatcher::Result result;
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  matchers.emplace_back(
+      XdsMatcherList::CreateSinglePredicate(
+          std::make_unique<TestPathInput>(),
+          std::make_unique<XdsMatcherList::StringInputMatcher>(
+              StringMatcher::Create(StringMatcher::Type::kExact, "/foo/bar")
+                  .value())),
+      std::make_unique<XdsMatcher::OnMatch>(
+          std::make_unique<TestAction>("match"), false));
+  auto on_no_match = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("no_match"), false);
+  XdsMatcherList matcher_list(std::move(matchers), std::move(on_no_match));
+  EXPECT_TRUE(matcher_list.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "no_match");
+}
+
+TEST(XdsMatcherListTest, AndPredicate) {
+  TestMatchContext context("/foo");
+  auto predicate1 = std::make_unique<MockPredicate>();
+  auto predicate2 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_)).WillOnce(::testing::Return(true));
+  EXPECT_CALL(*predicate2, Match(::testing::_)).WillOnce(::testing::Return(true));
+  std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
+  predicates.push_back(std::move(predicate1));
+  predicates.push_back(std::move(predicate2));
+  XdsMatcherList::AndPredicate and_predicate(std::move(predicates));
+  EXPECT_TRUE(and_predicate.Match(context));
+}
+
+TEST(XdsMatcherListTest, AndPredicateFail) {
+  TestMatchContext context("/foo");
+  auto predicate1 = std::make_unique<MockPredicate>();
+  auto predicate2 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_))
+      .WillOnce(::testing::Return(true));
+  EXPECT_CALL(*predicate2, Match(::testing::_))
+      .WillOnce(::testing::Return(false));
+  std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
+  predicates.push_back(std::move(predicate1));
+  predicates.push_back(std::move(predicate2));
+  XdsMatcherList::AndPredicate and_predicate(std::move(predicates));
+  EXPECT_FALSE(and_predicate.Match(context));
+}
+
+TEST(XdsMatcherListTest, OrPredicate) {
+  TestMatchContext context("/foo");
+  auto predicate1 = std::make_unique<MockPredicate>();
+  auto predicate2 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_))
+      .WillOnce(::testing::Return(false));
+  EXPECT_CALL(*predicate2, Match(::testing::_))
+      .WillOnce(::testing::Return(true));
+  std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
+  predicates.push_back(std::move(predicate1));
+  predicates.push_back(std::move(predicate2));
+  XdsMatcherList::OrPredicate or_predicate(std::move(predicates));
+  EXPECT_TRUE(or_predicate.Match(context));
+}
+
+TEST(XdsMatcherListTest, OrPredicateFail) {
+  TestMatchContext context("/foo");
+  auto predicate1 = std::make_unique<MockPredicate>();
+  auto predicate2 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_))
+      .WillOnce(::testing::Return(false));
+  EXPECT_CALL(*predicate2, Match(::testing::_))
+      .WillOnce(::testing::Return(false));
+  std::vector<std::unique_ptr<XdsMatcherList::Predicate>> predicates;
+  predicates.push_back(std::move(predicate1));
+  predicates.push_back(std::move(predicate2));
+  XdsMatcherList::OrPredicate or_predicate(std::move(predicates));
+  EXPECT_FALSE(or_predicate.Match(context));
+}
+
+TEST(XdsMatcherListTest, NotPredicate) {
+  TestMatchContext context("/foo");
+  auto predicate = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate, Match(::testing::_)).WillOnce(::testing::Return(false));
+  XdsMatcherList::NotPredicate not_predicate(std::move(predicate));
+  EXPECT_TRUE(not_predicate.Match(context));
+}
+
+TEST(XdsMatcherExactMapTest, Match) {
+  TestMatchContext context("/foo");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("foo_action"), false);
+  XdsMatcherExactMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                             nullptr);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "foo_action");
+}
+
+TEST(XdsMatcherExactMapTest, NoMatch) {
+  TestMatchContext context("/bar");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("foo_action"), false);
+  XdsMatcherExactMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                             nullptr);
+  EXPECT_FALSE(matcher.FindMatches(context, result));
+  EXPECT_TRUE(result.empty());
+}
+
+TEST(XdsMatcherExactMapTest, OnNoMatch) {
+  TestMatchContext context("/bar");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("foo_action"), false);
+  auto on_no_match = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("no_match_action"), false);
+  XdsMatcherExactMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                             std::move(on_no_match));
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "no_match_action");
+}
+
+TEST(XdsMatcherPrefixMapTest, ExactMatch) {
+  TestMatchContext context("/foo/bar");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo/bar"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("exact_match_action"), false);
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              nullptr);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "exact_match_action");
+}
+
+TEST(XdsMatcherPrefixMapTest, PrefixMatch) {
+  TestMatchContext context("/foo/bar/baz");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo/"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("prefix_match_action"), false);
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              nullptr);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "prefix_match_action");
+}
+
+TEST(XdsMatcherPrefixMapTest, LongestPrefixMatch) {
+  TestMatchContext context("/foo/bar/baz");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo/"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("shorter_prefix"), false);
+  map["/foo/bar/"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("longer_prefix"), false);
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              nullptr);
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "longer_prefix");
+}
+
+TEST(XdsMatcherPrefixMapTest, NoMatch) {
+  TestMatchContext context("/qux");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo/"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("foo_action"), false);
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              nullptr);
+  EXPECT_FALSE(matcher.FindMatches(context, result));
+  EXPECT_TRUE(result.empty());
+}
+
+TEST(XdsMatcherPrefixMapTest, OnNoMatch) {
+  TestMatchContext context("/qux");
+  XdsMatcher::Result result;
+  absl::flat_hash_map<std::string, std::unique_ptr<XdsMatcher::OnMatch>> map;
+  map["/foo/"] = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("foo_action"), false);
+  auto on_no_match = std::make_unique<XdsMatcher::OnMatch>(
+      std::make_unique<TestAction>("no_match_action"), false);
+  XdsMatcherPrefixMap matcher(std::make_unique<TestPathInput>(), std::move(map),
+                              std::move(on_no_match));
+  EXPECT_TRUE(matcher.FindMatches(context, result));
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "no_match_action");
+}
+} // namespace
 }  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::TestEnvironment env(&argc, argv);
-  grpc_init();
   auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

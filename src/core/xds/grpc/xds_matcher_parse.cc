@@ -115,7 +115,7 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   upb_StringView key;
   const envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder*
       value;
-   while (
+  while (
       envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_bucket_id_builder_next(
           bucket_id_builder, &key, &value, &iter)) {
     // Checking only string value other values are also possible (May need to

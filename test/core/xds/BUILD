@@ -263,8 +263,43 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "bm_xds_matcher_test",
+    srcs = ["bm_xds_matcher_test.cc"],
+    external_deps = [
+        "gtest",
+        "benchmark"
+    ],                
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
+        "//src/core:xds_matcher",
+        "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
     name = "xds_matcher_test",
     srcs = ["xds_matcher_test.cc"],
+    external_deps = ["gtest"],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:down_cast",
+        "//src/core:xds_matcher",
+        "//test/core/test_util:grpc_test_util",
+        "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
+        "@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg_cc_proto",
+        "@envoy_api//envoy/type/matcher/v3:pkg_cc_proto",
+    ],
+)
+
+grpc_cc_test(
+    name = "xds_matcher_e2e_test",
+    srcs = ["xds_matcher_e2e_test.cc"],
     external_deps = ["gtest"],
     uses_event_engine = False,
     uses_polling = False,
