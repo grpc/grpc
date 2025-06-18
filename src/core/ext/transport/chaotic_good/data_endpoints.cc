@@ -736,7 +736,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return buffer;
+        return std::move(buffer);
       });
 }
 
@@ -753,7 +753,9 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](auto x) -> ValueOrFailure<SliceBuffer> { return x; }))),
+                     [](auto x) -> ValueOrFailure<SliceBuffer> {
+                       return std::move(x);
+                     }))),
         [ctx, metrics_collector](SliceBuffer buffer) {
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
