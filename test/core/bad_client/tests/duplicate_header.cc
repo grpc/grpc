@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/slice.h>
 #include <grpc/status.h>
+#include <gtest/gtest.h>
 #include <string.h>
 
 #include "absl/log/check.h"
@@ -135,6 +136,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
   /* Verify that sending multiple headers doesn't segfault */

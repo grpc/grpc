@@ -17,6 +17,7 @@
 //
 
 #include <grpc/grpc.h>
+#include <gtest/gtest.h>
 
 #include "absl/log/check.h"
 #include "src/core/server/server.h"
@@ -38,6 +39,7 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
+  ::testing::InitGoogleTest(&argc, argv);
   grpc_init();
 
   // invalid content type
