@@ -15,11 +15,11 @@ exclude = [
 
 output = "~/.cache/pytype"
 
-# NOTE(lidiz)
-# import-error: C extension triggers import-error.
-# module-attr: pytype cannot understand the namespace packages by Google.
-# attribute-error: Data classes in grpc module doesn't specify attributes.
-disable = "import-error,module-attr,attribute-error"
+disable = [
+  "import-error",
+  "module-attr",
+  "attribute-error",
+]
 
 # Added strict_import and keep_going
 strict_import = true
