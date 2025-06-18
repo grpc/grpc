@@ -15,11 +15,9 @@
 
 JOBS=$(nproc) || JOBS=4
 
-mkdir -p ~/.cache/pytype
-
 VIRTUALENV=.venv_check_pytype_updated
-python3.11 -m virtualenv $VIRTUALENV
+python3.11 -m venv --upgrade-deps $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 pip install pytype==2024.10.11
-pytype --keep-going -j auto --strict-import --config "setup_updated.cfg"
+pytype -j auto --config=pytype.toml
