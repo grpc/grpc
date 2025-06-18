@@ -260,7 +260,7 @@ void OutputBuffers::WakeupScheduler() {
         // Idle: value is a pointer to a waker.
         Waker* waker = reinterpret_cast<Waker*>(state);
         if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_release)) {
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
         waker->Wakeup();
