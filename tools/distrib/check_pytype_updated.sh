@@ -16,7 +16,7 @@
 JOBS=$(nproc) || JOBS=4
 
 VIRTUALENV=.venv_check_pytype_updated
-python3.11 -m virtualenv --upgrade-deps $VIRTUALENV
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 pip install pytype==2024.10.11
