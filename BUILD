@@ -873,6 +873,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     tags = [
         "avoid_dep",
@@ -1223,6 +1224,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:span",
         "absl/functional:any_invocable",
     ],
     tags = [
@@ -1498,6 +1500,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
     ],
     linkopts = select({
@@ -1890,6 +1893,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
         "madler_zlib",
     ],
@@ -2211,6 +2215,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["//visibility:public"],
