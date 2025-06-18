@@ -80,7 +80,7 @@ std::pair<PendingConnection, PendingConnection> CreatePendingConnectionPair(
                      })));
 }
 
-class PartyExposer : public channelz::DataSource {
+class PartyExposer final : public channelz::DataSource {
  public:
   PartyExposer(absl::string_view name, RefCountedPtr<channelz::BaseNode> node,
                RefCountedPtr<Party> party)
