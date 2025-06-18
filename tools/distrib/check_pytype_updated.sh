@@ -1,5 +1,5 @@
 #! /bin/bash -ex
-# Copyright 2019 The gRPC Authors
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,11 +15,9 @@
 
 JOBS=$(nproc) || JOBS=4
 
-mkdir -p ~/.cache/pytype
-
-VIRTUALENV=venv_check_pytype_updated
-python3.11 -m virtualenv $VIRTUALENV
+VIRTUALENV=.venv_check_pytype_updated
+python3.11 -m venv --upgrade-deps $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-python3 -m pip install pytype==2024.10.11
-python3 -m pytype --keep-going -j "$JOBS" --strict-import --config "setup_updated.cfg"
+pip install pytype==2024.10.11
+pytype -j auto --config=pytype.toml

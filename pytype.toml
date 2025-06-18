@@ -1,0 +1,24 @@
+# Setup settings for GRPC Python
+[tool.pytype]
+
+inputs = [
+    "src/python/grpcio/grpc",
+]
+exclude = [
+    "**/*_pb2.py",
+    "src/python/grpcio/grpc/framework",
+    "src/python/grpcio/grpc/aio",
+    "src/python/grpcio/grpc/beta",
+    "src/python/grpcio/grpc/__init__.py",
+    "src/python/grpcio/grpc/_simple_stubs.py",
+]
+
+# NOTE(lidiz)
+# import-error: C extension triggers import-error.
+# module-attr: pytype cannot understand the namespace packages by Google.
+# attribute-error: Data classes in grpc module doesn't specify attributes.
+disable = "import-error,module-attr,attribute-error"
+
+# Added strict_import and keep_going
+strict_import = true
+keep_going = true
