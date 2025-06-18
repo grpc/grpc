@@ -105,14 +105,13 @@ void RegisterFusedFilters(CoreConfiguration::Builder* builder) {
   if (!IsFuseFiltersEnabled()) {
     return;
   }
-  if (IsCallv3ClientAuthFilterEnabled()) {
-    builder->channel_init()->RegisterFusedFilter(
-        GRPC_CLIENT_SUBCHANNEL,
-        &FusedClientSubchannelMinimalHttp2StackFilterExtendedV3::kFilter);
-    builder->channel_init()->RegisterFusedFilter(
-        GRPC_CLIENT_DIRECT_CHANNEL,
-        &FusedClientDirectChannelMinimalHttp2StackFilterExtendedV3::kFilter);
-  }
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_SUBCHANNEL,
+      &FusedClientSubchannelMinimalHttp2StackFilterExtendedV3::kFilter);
+  builder->channel_init()->RegisterFusedFilter(
+      GRPC_CLIENT_DIRECT_CHANNEL,
+      &FusedClientDirectChannelMinimalHttp2StackFilterExtendedV3::kFilter);
+
   // CLIENT_SUBCHANNEL
   builder->channel_init()->RegisterFusedFilter(
       GRPC_CLIENT_SUBCHANNEL,
