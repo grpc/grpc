@@ -64,7 +64,7 @@ void SendRate::SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
                                  const NetworkMetrics& metrics) {
   bool updated = false;
   if (metrics.rtt_usec.has_value()) {
-    CHECK_GE(*metrics.rtt_usec, 0);
+    CHECK_GE(*metrics.rtt_usec, 0u);
     rtt_usec_ = *metrics.rtt_usec;
     updated = true;
   }
@@ -423,7 +423,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
            frame_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
-  all_frames_.Append(std::move(buffer));
+  all_frames_.TakeAndAppend(buffer);
   if (frame_padding != 0) {
     auto padding = MutableSlice::CreateUninitialized(frame_padding);
     memset(padding.data(), 0, frame_padding);
@@ -988,7 +988,7 @@ DataEndpoints::DataEndpoints(
       output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           clock, encode_alignment, ztrace_collector,
           std::move(scheduler_config), ctx)),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>(ctx)) {
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
         i, encode_alignment, decode_alignment, clock, output_buffers_,
@@ -1001,7 +1001,7 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
   output_buffers_->AddData(sink);
   input_queues_->AddData(sink);
   struct EndpointInfoCollector {
-    EndpointInfoCollector(int remaining)
+    explicit EndpointInfoCollector(int remaining)
         : remaining(remaining), endpoints(remaining) {}
     Mutex mu;
     int remaining ABSL_GUARDED_BY(mu) = 0;
