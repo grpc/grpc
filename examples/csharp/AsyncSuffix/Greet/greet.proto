@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+service Greeter {
+  // Standard unary method
+  rpc SayHello (HelloRequest) returns (HelloReply);
+  
+  // Method that already ends with Async
+  rpc SayHelloAsync (HelloRequest) returns (HelloReply);
+  
+  // Server streaming
+  rpc LotsOfReplies (HelloRequest) returns (stream HelloReply);
+  
+  // Client streaming
+  rpc LotsOfGreetings (stream HelloRequest) returns (HelloReply);
+  
+  // Bidirectional streaming
+  rpc BidiHello (stream HelloRequest) returns (stream HelloReply);
+  
+  // Deprecated method
+  rpc OldHello (HelloRequest) returns (HelloReply) {
+    option deprecated = true;
+  }
+}
+
+message HelloRequest {
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+}

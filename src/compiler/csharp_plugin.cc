@@ -56,7 +56,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool generate_client = true;
     bool generate_server = true;
     bool internal_access = false;
-    bool append_async_suffix = true;
+    bool append_async_suffix = false;
     std::string base_namespace = "";
     bool base_namespace_present = false;
 
@@ -78,7 +78,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         // in the future.
         base_namespace = options[i].second;
         base_namespace_present = true;
-      } else if (options[i].first == "appendasyncsuffix"){
+      } else if (options[i].first == "append_async_suffix"){
         append_async_suffix = (options[i].second == "true");
       } else {
         *error = "Unknown generator option: " + options[i].first;
