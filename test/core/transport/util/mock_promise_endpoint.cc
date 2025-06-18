@@ -16,6 +16,8 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include <cstddef>
+
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/util/notification.h"
@@ -55,14 +57,47 @@ void MockPromiseEndpoint::ExpectRead(
           }));
 }
 
+namespace {
+
+class DelayedRead {
+ public:
+  explicit DelayedRead(EventEngine* event_engine, absl::Status status)
+      : status_(status), event_engine_(event_engine->shared_from_this()) {}
+
+  void GotOnRead(absl::AnyInvocable<void(absl::Status)> on_read) {
+    on_read_ = std::move(on_read);
+    if (state_.fetch_add(1) == 1) {
+      Done();
+    }
+  }
+
+  void AllowOnRead() {
+    if (state_.fetch_add(1) == 1) {
+      Done();
+    }
+  }
+
+ private:
+  void Done() {
+    event_engine_->Run([event_engine = event_engine_,
+                        on_read = std::move(on_read_),
+                        status = status_]() mutable { on_read(status); });
+    event_engine_.reset();
+  }
+
+  absl::AnyInvocable<void(absl::Status)> on_read_;
+  absl::Status status_;
+  std::shared_ptr<EventEngine> event_engine_;
+  std::atomic<int> state_{0};
+};
+
+}  // namespace
+
 absl::AnyInvocable<void()> MockPromiseEndpoint::ExpectDelayedRead(
     std::initializer_list<EventEngineSlice> slices_init,
     EventEngine* schedule_on_event_engine) {
-  struct DelayedRead {
-    Notification ready;
-    absl::AnyInvocable<void(absl::Status)> on_read;
-  };
-  std::shared_ptr<DelayedRead> delayed_read = std::make_shared<DelayedRead>();
+  std::shared_ptr<DelayedRead> delayed_read =
+      std::make_shared<DelayedRead>(schedule_on_event_engine, absl::OkStatus());
   std::vector<EventEngineSlice> slices;
   for (auto&& slice : slices_init) slices.emplace_back(slice.Copy());
   EXPECT_CALL(*endpoint, Read)
@@ -74,16 +109,10 @@ absl::AnyInvocable<void()> MockPromiseEndpoint::ExpectDelayedRead(
             for (auto& slice : slices) {
               buffer->Append(std::move(slice));
             }
-            delayed_read->on_read = std::move(on_read);
-            delayed_read->ready.Notify();
+            delayed_read->GotOnRead(std::move(on_read));
             return false;
           }));
-  return [delayed_read, schedule_on_event_engine]() {
-    schedule_on_event_engine->Run([delayed_read]() mutable {
-      delayed_read->ready.WaitForNotification();
-      delayed_read->on_read(absl::OkStatus());
-    });
-  };
+  return [delayed_read]() { delayed_read->AllowOnRead(); };
 }
 
 void MockPromiseEndpoint::ExpectReadClose(
@@ -109,12 +138,8 @@ void MockPromiseEndpoint::ExpectReadClose(
 absl::AnyInvocable<void()> MockPromiseEndpoint::ExpectDelayedReadClose(
     absl::Status status,
     grpc_event_engine::experimental::EventEngine* schedule_on_event_engine) {
-  struct DelayedReadClose {
-    Notification ready;
-    absl::AnyInvocable<void(absl::Status)> on_read;
-  };
-  std::shared_ptr<DelayedReadClose> delayed_read_close =
-      std::make_shared<DelayedReadClose>();
+  std::shared_ptr<DelayedRead> delayed_read_close =
+      std::make_shared<DelayedRead>(schedule_on_event_engine, status);
   DCHECK_NE(schedule_on_event_engine, nullptr);
   EXPECT_CALL(*endpoint, Read)
       .InSequence(read_sequence)
@@ -123,14 +148,12 @@ absl::AnyInvocable<void()> MockPromiseEndpoint::ExpectDelayedReadClose(
               absl::AnyInvocable<void(absl::Status)> on_read,
               GRPC_UNUSED grpc_event_engine::experimental::SliceBuffer*
                   buffer) {
-            delayed_read_close->on_read = std::move(on_read);
-            delayed_read_close->ready.Notify();
+            delayed_read_close->GotOnRead(std::move(on_read));
             return false;
           }));
   return [delayed_read_close, status, schedule_on_event_engine]() {
     schedule_on_event_engine->Run([delayed_read_close, status]() mutable {
-      delayed_read_close->ready.WaitForNotification();
-      delayed_read_close->on_read(status);
+      delayed_read_close->AllowOnRead();
     });
   };
 }

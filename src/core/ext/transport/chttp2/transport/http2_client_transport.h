@@ -146,6 +146,10 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
+  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assember,
+                              CallHandler& call,
+                              bool& did_push_initial_metadata,
+                              bool& did_push_trailing_metadata);
 
   // Reading from the endpoint.
 
@@ -213,7 +217,58 @@ class Http2ClientTransport final : public ClientTransport {
         : call(std::move(call)),
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
-          header_assembler(stream_id1) {}
+          header_assembler(stream_id1),
+          did_push_initial_metadata(false),
+          did_push_trailing_metadata(false) {}
+
+    // Modify the stream state
+    // The possible stream transitions are as follows:
+    // kIdle -> kOpen
+    // kOpen -> kClosed/kHalfClosedLocal/kHalfClosedRemote
+    // kHalfClosedLocal/kHalfClosedRemote -> kClosed
+    // kClosed -> kClosed
+    void SentInitialMetadata() {
+      DCHECK(stream_state == HttpStreamState::kIdle);
+      stream_state = HttpStreamState::kOpen;
+    }
+
+    void MarkHalfClosedLocal() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "MarkHalfClosedLocal called for an idle stream";
+          break;
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedLocal;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+          break;
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    void MarkHalfClosedRemote() {
+      switch (stream_state) {
+        case HttpStreamState::kIdle:
+          DCHECK(false) << "MarkHalfClosedRemote called for an idle stream";
+          break;
+        case HttpStreamState::kOpen:
+          stream_state = HttpStreamState::kHalfClosedRemote;
+          break;
+        case HttpStreamState::kHalfClosedLocal:
+          stream_state = HttpStreamState::kClosed;
+          break;
+        case HttpStreamState::kHalfClosedRemote:
+          break;
+        case HttpStreamState::kClosed:
+          break;
+      }
+    }
+
+    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
 
     CallHandler call;
     HttpStreamState stream_state;
@@ -221,6 +276,9 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
+
+    bool did_push_initial_metadata;
+    bool did_push_trailing_metadata;
   };
 
   uint32_t NextStreamId(
@@ -229,6 +287,13 @@ class Http2ClientTransport final : public ClientTransport {
     if (stream_id > RFC9113::kMaxStreamId31Bit) {
       // TODO(tjagtap) : [PH2][P3] : Handle case if transport runs out of stream
       // ids
+      // RFC9113 : Stream identifiers cannot be reused. Long-lived connections
+      // can result in an endpoint exhausting the available range of stream
+      // identifiers. A client that is unable to establish a new stream
+      // identifier can establish a new connection for new streams. A server
+      // that is unable to establish a new stream identifier can send a GOAWAY
+      // frame so that the client is forced to open a new connection for new
+      // streams.
     }
     // RFC9113 : Streams initiated by a client MUST use odd-numbered stream
     // identifiers.
@@ -251,14 +316,54 @@ class Http2ClientTransport final : public ClientTransport {
   HPackParser parser_;
 
   bool MakeStream(CallHandler call_handler, uint32_t stream_id);
+
+  struct CloseStreamArgs {
+    bool close_reads;
+    bool close_writes;
+    bool send_rst_stream;
+    bool cancelled;
+  };
+
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
-                   DebugLocation whence = {}) {
+                   CloseStreamArgs args, DebugLocation whence = {}) {
     HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
                       << stream_id << " status=" << status
                       << " location=" << whence.file() << ":" << whence.line();
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
+
+    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
+    // throughout this function.
+    MutexLock lock(&transport_mutex_);
+    auto pair = stream_list_.find(stream_id);
+    if (pair == stream_list_.end()) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " stream not found";
+      return;
+    }
+    auto& stream = pair->second;
+
+    if (args.close_reads) {
+      stream->MarkHalfClosedRemote();
+    }
+    if (args.close_writes) {
+      stream->MarkHalfClosedLocal();
+    }
+
+    if (stream->IsClosed()) {
+      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                        << stream_id << " closing stream.";
+      if (args.send_rst_stream) {
+        // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
+      }
+
+      if (!args.cancelled) {
+        stream->call.SpawnPushServerTrailingMetadata(
+            ServerMetadataFromStatus(status));
+      }
+      stream_list_.erase(stream_id);
+    }
   }
+
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
   auto EndpointReadSlice(const size_t num_bytes) {
@@ -312,17 +417,28 @@ class Http2ClientTransport final : public ClientTransport {
     DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
 
     if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      LOG(ERROR) << "Stream Error: " << status.DebugString();
       CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  CloseStreamArgs{
+                      /*close_reads=*/true,
+                      /*close_writes=*/true,
+                      /*send_rst_stream=*/true,
+                      /*cancelled=*/false,
+                  },
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      LOG(ERROR) << "Connection Error: " << status.DebugString();
       CloseTransport(status, whence);
       return status.GetAbslConnectionError();
     }
-
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
+
   bool bytes_sent_in_last_write_;
+  bool incoming_header_in_progress_;
+  bool incoming_header_end_stream_;
+  uint32_t incoming_header_stream_id_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related

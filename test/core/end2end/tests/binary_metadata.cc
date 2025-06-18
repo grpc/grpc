@@ -31,8 +31,8 @@ namespace grpc_core {
 
 static void BinaryMetadata(CoreEnd2endTest& test, bool server_true_binary,
                            bool client_true_binary) {
-  test.InitServer(
-      ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
+      GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, server_true_binary));
   test.InitClient(
       ChannelArgs().Set(GRPC_ARG_HTTP2_ENABLE_TRUE_BINARY, client_true_binary));
 

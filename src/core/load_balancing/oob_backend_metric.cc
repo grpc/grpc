@@ -145,9 +145,7 @@ class OrcaProducer::OrcaStreamEventHandler final
           "Orca stream returned UNIMPLEMENTED; disabling";
       LOG(ERROR) << kErrorMessage;
       auto* channelz_node = producer_->subchannel_->channelz_node();
-      if (channelz_node != nullptr) {
-        channelz_node->NewTraceNode(kErrorMessage).Commit();
-      }
+      GRPC_CHANNELZ_LOG(channelz_node) << kErrorMessage;
     }
   }
 
