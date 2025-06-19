@@ -100,7 +100,7 @@ Pod::Spec.new do |s|
   s.preserve_paths = plugin
 
   # Restrict the protoc version to the one supported by this plugin.
-  s.dependency '!ProtoCompiler', '6.31.1'
+  s.dependency '!ProtoCompiler', '4.31.1'
 
   s.ios.deployment_target = '15.0'
   s.osx.deployment_target = '11.0'
