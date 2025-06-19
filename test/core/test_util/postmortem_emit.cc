@@ -20,18 +20,18 @@
 namespace grpc_core {
 
 void PostMortemEmit() {
-  LOG(INFO) << "===========================================================";
-  LOG(INFO) << "🛑 gRPC Test Postmortem Analysis 🛑";
-  LOG(INFO) << "===========================================================";
+  std::cerr << "===========================================================\n";
+  std::cerr << "🛑 gRPC Test Postmortem Analysis 🛑\n";
+  std::cerr << "===========================================================\n";
 
-  LOG(INFO) << "❗ gRPC Statistics:\n"
-            << StatsAsJson(global_stats().Collect().get());
+  std::cerr << "❗ gRPC Statistics:\n"
+            << StatsAsJson(global_stats().Collect().get()) << "\n";
 
-  LOG(INFO) << "❗ channelz entities:";
+  std::cerr << "❗ channelz entities:\n";
   for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
-    LOG(INFO) << "  🔴 [" << node->uuid() << ":"
+    std::cerr << "  🔴 [" << node->uuid() << ":"
               << channelz::BaseNode::EntityTypeString(node->type())
-              << "]: " << node->RenderJsonString();
+              << "]: " << node->RenderJsonString() << "\n";
   }
 }
 
