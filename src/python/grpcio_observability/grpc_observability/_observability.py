@@ -106,10 +106,10 @@ class TracingData:
     end_time: str
     trace_id: str
     span_id: str
+    parent_span_id: Optional[str] = None
     status: str
     should_sample: bool
     child_span_count: int
-    parent_span_id: Optional[str] = None
     span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
     span_annotations: List[Tuple[str, str]] = field(default_factory=list)
 
