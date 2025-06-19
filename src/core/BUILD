@@ -8169,7 +8169,6 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
-        "endpoint_channel_arg_wrapper",
         "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
