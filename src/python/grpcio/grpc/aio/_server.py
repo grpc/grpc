@@ -23,11 +23,11 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._interceptor import ServerInterceptor
-from ._typing import ChannelArgumentType
+from ._typing import ChannelArgumentType, ChannelArgsType
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: Sequence[ChannelArgumentType], compression: Optional[grpc.Compression]
 ):
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
@@ -41,7 +41,7 @@ class Server(_base_server.Server):
         thread_pool: Optional[Executor],
         generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
         interceptors: Optional[Sequence[Any]],
-        options: Sequence[ChannelArgumentType],
+        options: ChannelArgsType,
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
     ):
@@ -201,7 +201,7 @@ def server(
     migration_thread_pool: Optional[Executor] = None,
     handlers: Optional[Sequence[grpc.GenericRpcHandler]] = None,
     interceptors: Optional[Sequence[Any]] = None,
-    options: Optional[Sequence[ChannelArgumentType]] = None,
+    options: Optional[ChannelArgsType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
 ):
@@ -233,7 +233,7 @@ def server(
         migration_thread_pool,
         () if handlers is None else handlers,
         () if interceptors is None else interceptors,
-        () if options is None else options,
+        () if options is None else tuple(options),
         maximum_concurrent_rpcs,
         compression,
     )

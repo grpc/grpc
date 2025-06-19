@@ -39,7 +39,7 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import ChannelArgumentType
+from ._typing import ChannelArgumentType, ChannelArgsType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
@@ -62,7 +62,7 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
+    base_options: Sequence[ChannelArgumentType], compression: Optional[grpc.Compression]
 ):
     compression_channel_argument = _compression.create_channel_option(
         compression
@@ -324,7 +324,7 @@ class Channel(_base_channel.Channel):
     def __init__(
         self,
         target: str,
-        options: ChannelArgumentType,
+        options: ChannelArgsType,
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
@@ -569,7 +569,7 @@ class Channel(_base_channel.Channel):
 
 def insecure_channel(
     target: str,
-    options: Optional[Sequence[ChannelArgumentType]] = None,
+    options: Optional[ChannelArgsType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -589,7 +589,7 @@ def insecure_channel(
     """
     return Channel(
         target,
-        () if options is None else options,
+        () if options is None else tuple(options),
         None,
         compression,
         interceptors,
@@ -599,7 +599,7 @@ def insecure_channel(
 def secure_channel(
     target: str,
     credentials: grpc.ChannelCredentials,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[ChannelArgsType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -620,7 +620,7 @@ def secure_channel(
     """
     return Channel(
         target,
-        () if options is None else options,
+        () if options is None else tuple(options),
         credentials._credentials,
         compression,
         interceptors,
