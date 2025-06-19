@@ -214,9 +214,7 @@ void OutputBuffers::AddData(channelz::DataSink sink) {
           .Set("scheduling_state",
                scheduling_state_.load(std::memory_order_relaxed))
           .Set("scheduler", scheduler_->Config()));
-  scheduling_party_->ToJson([sink](Json::Object obj) mutable {
-    sink.AddAdditionalInfo("schedulingParty", std::move(obj));
-  });
+  scheduling_party_->ExportToChannelz("scheduling_party", sink);
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
