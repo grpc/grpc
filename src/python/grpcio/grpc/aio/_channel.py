@@ -569,7 +569,7 @@ class Channel(_base_channel.Channel):
 
 def insecure_channel(
     target: str,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):

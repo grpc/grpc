@@ -201,7 +201,7 @@ def server(
     migration_thread_pool: Optional[Executor] = None,
     handlers: Optional[Sequence[grpc.GenericRpcHandler]] = None,
     interceptors: Optional[Sequence[Any]] = None,
-    options: Optional[ChannelArgumentType] = None,
+    options: Optional[Sequence[ChannelArgumentType]] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
 ):
