@@ -45,8 +45,7 @@ def simple_method(stub):
     )
     response = stub.SimpleMethod(request)
     print(
-        "resp from server(%d), the message=%s"
-        % (response.server_id, response.response_data)
+        f"resp from server({response.server_id}), the message={response.response_data}"
     )
     print("--------------Call SimpleMethod Over---------------")
 
@@ -63,14 +62,13 @@ def client_streaming_method(stub):
         for i in range(5):
             request = demo_pb2.Request(
                 client_id=CLIENT_ID,
-                request_data="called by Python client, message:%d" % i,
+                request_data=f"called by Python client, message:{i}",
             )
             yield request
 
     response = stub.ClientStreamingMethod(request_messages())
     print(
-        "resp from server(%d), the message=%s"
-        % (response.server_id, response.response_data)
+        f"resp from server({response.server_id}), the message={response.response_data}"
     )
     print("--------------Call ClientStreamingMethod Over---------------")
 
@@ -86,8 +84,7 @@ def server_streaming_method(stub):
     response_iterator = stub.ServerStreamingMethod(request)
     for response in response_iterator:
         print(
-            "recv from server(%d), message=%s"
-            % (response.server_id, response.response_data)
+            f"recv from server({response.server_id}), message={response.response_data}"
         )
 
     print("--------------Call ServerStreamingMethod Over---------------")
@@ -107,7 +104,7 @@ def bidirectional_streaming_method(stub):
         for i in range(5):
             request = demo_pb2.Request(
                 client_id=CLIENT_ID,
-                request_data="called by Python client, message: %d" % i,
+                request_data=f"called by Python client, message: {i}",
             )
             yield request
             time.sleep(1)
@@ -115,8 +112,7 @@ def bidirectional_streaming_method(stub):
     response_iterator = stub.BidirectionalStreamingMethod(request_messages())
     for response in response_iterator:
         print(
-            "recv from server(%d), message=%s"
-            % (response.server_id, response.response_data)
+            f"recv from server({response.server_id}), message={response.response_data}"
         )
 
     print("--------------Call BidirectionalStreamingMethod Over---------------")

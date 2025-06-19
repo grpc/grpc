@@ -39,7 +39,7 @@ _SERVER_HOST = "localhost"
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def __init__(self, no_compress_every_n):
-        super(Greeter, self).__init__()
+        super().__init__()
         self._no_compress_every_n = no_compress_every_n
         self._request_counter = 0
         self._counter_lock = threading.RLock()
@@ -58,7 +58,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, context):
         if self._should_suppress_compression():
             context.set_compression(grpc.Compression.NoCompression)
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 def run_server(server_compression, no_compress_every_n, port):
@@ -70,10 +70,10 @@ def run_server(server_compression, no_compress_every_n, port):
     helloworld_pb2_grpc.add_GreeterServicer_to_server(
         Greeter(no_compress_every_n), server
     )
-    address = "{}:{}".format(_SERVER_HOST, port)
+    address = f"{_SERVER_HOST}:{port}"
     server.add_insecure_port(address)
     server.start()
-    print("Server listening at '{}'".format(address))
+    print(f"Server listening at '{address}'")
     server.wait_for_termination()
 
 

@@ -1,10 +1,9 @@
 [MASTER]
 ignore=
-	src/python/grpcio/grpc/beta,
-	src/python/grpcio/grpc/framework,
-	src/python/grpcio/grpc/framework/common,
-	src/python/grpcio/grpc/framework/foundation,
-	src/python/grpcio/grpc/framework/interfaces,
+	src/python/grpcio_tests/tests/unit/beta,
+	src/python/grpcio_tests/tests/unit/framework,
+	src/python/grpcio_tests/tests/unit/framework/common,
+	src/python/grpcio_tests/tests/unit/framework/foundation,
 
 [VARIABLES]
 
@@ -28,12 +27,37 @@ notes=FIXME,XXX
 
 [MESSAGES CONTROL]
 
+extension-pkg-whitelist=grpc._cython.cygrpc
+
 disable=
-	# -- START OF EXAMPLE-SPECIFIC SUPPRESSIONS --
-	no-self-use,
+	# These suppressions are specific to tests:
+	#
+	# TODO(https://github.com/grpc/grpc/issues/261): investigate
+	# each of the following one by one and consider eliminating
+	# the suppression category.
+	# Eventually, the hope is to eliminate the .pylintrc-tests
+	# altogether and rely on .pylintrc for everything.
+	pointless-statement,
+	no-member,
+	attribute-defined-outside-init,
 	unused-argument,
 	unused-variable,
-	# -- END OF EXAMPLE-SPECIFIC SUPPRESSIONS --
+	unused-import,
+	redefined-builtin,
+	too-many-public-methods,
+	too-many-locals,
+	redefined-outer-name,
+	ungrouped-imports,
+	too-many-branches,
+	too-many-arguments,
+	too-many-format-args,
+	too-many-return-statements,
+	too-many-statements,
+	line-too-long,
+	wrong-import-position,
+	wrong-import-order,
+	invalid-overridden-method,
+	# -- END OF TEST-SPECIFIC SUPPRESSIONS --
 
 	# TODO(https://github.com/PyCQA/pylint/issues/59#issuecomment-283774279):
 	# Enable cyclic-import after a 1.7-or-later pylint release that
@@ -52,20 +76,9 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): This doesn't seem to
 	# work for now? Try with a later pylint?
 	locally-disabled,
-	# NOTE(nathaniel): What even is this? *Enabling* an inspection results
-	# in a warning? How does that encourage more analysis and coverage?
-	locally-enabled,
 	# NOTE(nathaniel): We don't write doc strings for most private code
 	# elements.
 	missing-docstring,
-	# NOTE(nathaniel): In numeric comparisons it is better to have the
-	# lesser (or lesser-or-equal-to) quantity on the left when the
-	# expression is true than it is to worry about which is an identifier
-	# and which a literal value.
-	misplaced-comparison-constant,
-	# NOTE(nathaniel): Our completely abstract interface classes don't have
-	# constructors.
-	no-init,
 	# TODO(https://github.com/grpc/grpc/issues/261): Doesn't yet play
 	# nicely with some of our code being implemented in Cython. Maybe in a
 	# later version?
@@ -102,8 +115,3 @@ disable=
 	wrong-import-order,
 	# TODO(https://github.com/PyCQA/pylint/issues/3882): Upgrade Pylint
 	unsubscriptable-object,
-	# NOTE(rbellevi): Pylint doesn't understand .pyi files.
-	no-member,
-  # NOTE(sergiitk): yapf compatibility, ref #25071
-  bad-continuation,
-

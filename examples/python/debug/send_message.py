@@ -31,9 +31,9 @@ def process(stub, request):
     try:
         response = stub.SayHello(request)
     except grpc.RpcError as rpc_error:
-        print("Received error: %s" % rpc_error)
+        print(f"Received error: {rpc_error}")
     else:
-        print("Received message: %s" % response)
+        print(f"Received message: {response}")
 
 
 def run(addr, n):

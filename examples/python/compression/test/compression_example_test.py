@@ -54,7 +54,7 @@ class CompressionExampleTest(unittest.TestCase):
                 )
             )
             try:
-                server_target = "localhost:{}".format(test_port)
+                server_target = f"localhost:{test_port}"
                 client_process = subprocess.Popen(
                     (
                         _CLIENT_PATH,

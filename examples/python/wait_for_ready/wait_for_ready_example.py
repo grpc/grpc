@@ -37,13 +37,13 @@ def get_free_loopback_tcp_port():
         tcp_socket = socket.socket(socket.AF_INET)
     tcp_socket.bind(("", 0))
     address_tuple = tcp_socket.getsockname()
-    yield "localhost:%s" % (address_tuple[1])
+    yield f"localhost:{address_tuple[1]}"
     tcp_socket.close()
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
     def SayHello(self, request, unused_context):
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 def create_server(server_address):

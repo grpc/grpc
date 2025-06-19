@@ -46,7 +46,7 @@ class FaultInjectGreeter(helloworld_pb2_grpc.GreeterServicer):
             context.abort(
                 grpc.StatusCode.UNAVAILABLE, "Randomly injected failure."
             )
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 def create_server(addr, failure_rate):

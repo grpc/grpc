@@ -27,7 +27,7 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
         request: helloworld_pb2.HelloRequest,
         context: grpc.aio.ServicerContext,
     ) -> helloworld_pb2.HelloReply:
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 async def serve() -> None:

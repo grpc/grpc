@@ -62,7 +62,7 @@ class SimpleGreeter(helloworld_pb2_grpc.GreeterServicer):
     async def SayHello(
         self, request: helloworld_pb2.HelloRequest, unused_context
     ) -> helloworld_pb2.HelloReply:
-        return helloworld_pb2.HelloReply(message="Hello, %s!" % request.name)
+        return helloworld_pb2.HelloReply(message=f"Hello, {request.name}!")
 
 
 async def run_server(port: int) -> Tuple[grpc.aio.Server, int]:
