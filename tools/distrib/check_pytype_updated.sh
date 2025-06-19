@@ -13,11 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-JOBS=$(nproc) || JOBS=4
-
 VIRTUALENV=.venv_check_pytype_updated
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 pip install pytype==2024.10.11
-pytype -j auto --config=pytype.toml
+pytype --output=~/.cache/pytype --config=grpc-style-config.toml
