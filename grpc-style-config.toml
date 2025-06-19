@@ -70,8 +70,6 @@ exclude = [
   "src/python/grpcio/grpc/_simple_stubs.py",
 ]
 
-output = "~/.cache/pytype"
-
 disable = [
   "import-error",
   "module-attr",
