@@ -102,6 +102,8 @@ class TracingData:
     """
 
     name: str
+    start_time: str
+    end_time: str
     trace_id: str
     span_id: str
     status: str
