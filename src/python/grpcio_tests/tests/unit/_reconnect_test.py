@@ -270,17 +270,23 @@ class ReconnectTest(unittest.TestCase):
             logging.info("[CLIENT] Received response=%r", resp)
             return resp, None
         except grpc.RpcError as err:
-            if isinstance(err, grpc_channel_internal._InactiveRpcError):
-                code = err.code()
-                logging.info(
-                    "[CLIENT] Failed request=%s: code=%s, error=%s",
-                    req,
-                    code.name if code is not None else "(unknown)",
-                    err.debug_error_string(),
-                )
-                return None, err
-            else:
-                raise
+            logging.info(
+                "[CLIENT] Failed request=%s: %s",
+                req,
+                self._pretty_print_rpc_error(err),
+            )
+            return None, err
+
+    @classmethod
+    def _pretty_print_rpc_error(cls, err: grpc.RpcError) -> str:
+        if hasattr(grpc_channel_internal, "_InactiveRpcError") and isinstance(
+            err, grpc_channel_internal._InactiveRpcError
+        ):
+            code = err.code()
+            code_name = code.name if code is not None else "(unknown)"
+            return f"code={code_name}, error={err.debug_error_string()}"
+
+        return f"{err!r}"
 
     def _call_until(
         self,
