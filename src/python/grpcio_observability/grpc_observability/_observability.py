@@ -106,7 +106,7 @@ class TracingData:
     end_time: str
     trace_id: str
     span_id: str
-    parent_span_id: Optional[str] = None
+    parent_span_id: str
     status: str
     should_sample: bool
     child_span_count: int
