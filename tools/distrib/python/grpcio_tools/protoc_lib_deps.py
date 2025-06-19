@@ -297,6 +297,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/generated_message_util.cc',
     'third_party/protobuf/src/google/protobuf/implicit_weak_message.cc',
     'third_party/protobuf/src/google/protobuf/inlined_string_field.cc',
+    'third_party/protobuf/src/google/protobuf/internal_feature_helper.cc',
     'third_party/protobuf/src/google/protobuf/io/coded_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/gzip_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/io_win32.cc',
