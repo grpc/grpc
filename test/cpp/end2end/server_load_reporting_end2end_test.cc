@@ -121,8 +121,6 @@ class ServerLoadReportingEnd2endTest : public ::testing::Test {
   EchoTestServiceImpl echo_service_;
 };
 
-TEST_F(ServerLoadReportingEnd2endTest, NoCall) {}
-
 TEST_F(ServerLoadReportingEnd2endTest, BasicReport) {
   auto channel =
       grpc::CreateChannel(server_address_, InsecureChannelCredentials());
