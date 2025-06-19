@@ -16,12 +16,14 @@
 //
 //
 
+#include <grpc/create_channel_from_endpoint.h>
 #include <grpc/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/grpc_posix.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/impl/grpc_library.h>
+#include <grpcpp/security/credentials.h>
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/client_interceptor.h>
 
@@ -81,6 +83,29 @@ std::shared_ptr<Channel> CreateCustomInsecureChannelWithInterceptorsFromFd(
       std::move(interceptor_creators));
   grpc_channel_credentials_release(creds);
   return channel;
+}
+
+std::shared_ptr<Channel> CreateChannelFromEndpoint(
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        endpoint,
+    const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args) {
+  grpc_channel_args channel_args = args.c_channel_args();
+  return CreateChannelInternal(
+      "",
+      grpc_core::experimental::CreateChannelFromEndpoint(
+          std::move(endpoint), creds->c_creds(), &channel_args),
+      {});
+}
+
+std::shared_ptr<Channel> CreateChannelFromFd(
+    int fd, const std::shared_ptr<ChannelCredentials>& creds,
+    const ChannelArguments& args) {
+  grpc_channel_args channel_args = args.c_channel_args();
+  return CreateChannelInternal("",
+                               grpc_core::experimental::CreateChannelFromFd(
+                                   fd, creds->c_creds(), &channel_args),
+                               {});
 }
 
 }  // namespace experimental
