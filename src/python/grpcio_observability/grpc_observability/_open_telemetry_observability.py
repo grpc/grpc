@@ -366,7 +366,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     def __init__(
         self,
         *,
-        plugins: Optional[[_OpenTelemetryPlugin]] = None,
+        plugins: Optional[Iterable[_OpenTelemetryPlugin]] = None,
     ):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
