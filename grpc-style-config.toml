@@ -54,3 +54,31 @@ skip_glob = [
 single_line_exclusions = ["typing"]
 force_single_line = true
 force_sort_within_sections = true
+
+# Setup settings for Pytype
+[tool.pytype]
+
+inputs = [
+  "src/python/grpcio/grpc",
+]
+exclude = [
+  "**/*_pb2.py",
+  "src/python/grpcio/grpc/framework",
+  "src/python/grpcio/grpc/aio",
+  "src/python/grpcio/grpc/beta",
+  "src/python/grpcio/grpc/__init__.py",
+  "src/python/grpcio/grpc/_simple_stubs.py",
+]
+
+output = "~/.cache/pytype"
+
+disable = [
+  "import-error",
+  "module-attr",
+  "attribute-error",
+]
+
+jobs = 'auto'
+
+strict_import = true
+keep_going = true
