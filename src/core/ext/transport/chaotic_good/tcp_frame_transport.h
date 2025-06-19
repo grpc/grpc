@@ -42,7 +42,7 @@ class TcpFrameTransport final : public FrameTransport,
     uint32_t encode_alignment = 64;
     uint32_t decode_alignment = 64;
     uint32_t inlined_payload_size_threshold = 8 * 1024;
-    std::string scheduler_config = "span";
+    std::string scheduler_config = "spanrr";
     bool enable_tracing = false;
   };
 
