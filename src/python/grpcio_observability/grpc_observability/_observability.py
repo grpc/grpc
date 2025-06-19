@@ -17,10 +17,9 @@ import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
-from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
+from typing import Dict, List, Mapping, Set, Tuple, Union
 
-from python.grpcio_observability import grpc_observability
-
+from python.grpcio_observability import grpc_observability # pylint: disable=unused-import
 
 class Exporter(metaclass=abc.ABCMeta):
     """Abstract base class for census data exporters."""
