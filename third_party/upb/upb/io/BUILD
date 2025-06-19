@@ -4,7 +4,7 @@ cc_library(
     name = "string",
     hdrs = ["string.h"],
     deps = [
-        "//upb:mem",
+        "//upb/mem",
         "//upb:port",
     ],
 )
@@ -16,8 +16,8 @@ cc_library(
     deps = [
         ":string",
         ":zero_copy_stream",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
         "//upb/lex",
     ],
@@ -30,8 +30,8 @@ cc_library(
         "zero_copy_output_stream.h",
     ],
     deps = [
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:port",
     ],
 )
@@ -51,7 +51,7 @@ cc_library(
     ],
     deps = [
         ":zero_copy_stream",
-        "//upb:mem",
+        "//upb/mem",
         "//upb:port",
     ],
 )
@@ -62,7 +62,7 @@ cc_test(
     srcs = ["string_test.cc"],
     deps = [
         ":string",
-        "//upb:mem",
+        "//upb/mem",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
@@ -77,7 +77,7 @@ cc_test(
         ":string",
         ":tokenizer",
         ":zero_copy_stream",
-        "//upb:mem",
+        "//upb/mem",
         "//upb:port",
         "//upb/lex",
         "@abseil-cpp//absl/strings",
@@ -96,8 +96,8 @@ cc_test(
     deps = [
         ":chunked_stream",
         ":zero_copy_stream",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "@googletest//:gtest",
         "@googletest//:gtest_main",
     ],
