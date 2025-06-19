@@ -359,22 +359,20 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     _exporter: "grpc_observability.Exporter"
     _plugins: List[_OpenTelemetryPlugin]
-    _registered_method: Set[bytes]
+    _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
 
     def __init__(
         self,
         *,
-        plugins: Optional[Iterable[_OpenTelemetryPlugin]] = None,
+        plugins: Optional[[_OpenTelemetryPlugin]] = None,
     ):
-        self._plugins: List[_OpenTelemetryPlugin] = (
-            list(plugins) if plugins else []
-        )
-        self._registered_method = set()
+        self._exporter = _OpenTelemetryExporterDelegator(plugins)
+        self._registered_methods = set()
         self._client_option_activated = False
         self._server_option_activated = False
-        self._exporter = _OpenTelemetryExporterDelegator(plugins)
+        self._plugins = plugins
 
     def observability_init(self):
         try:
@@ -423,7 +421,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._get_identifier(),
             exchange_labels,
             enabled_optional_labels,
-            method_name in self._registered_method,
+            method_name in self._registered_methods,
         )
         return capsule
 
@@ -461,7 +459,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             rpc_latency,
             status_code,
             self._get_identifier(),
-            encoded_method in self._registered_method,
+            encoded_method in self._registered_methods,
         )
 
     def save_registered_method(self, method_name: bytes) -> None:
