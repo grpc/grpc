@@ -359,7 +359,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     _exporter: "grpc_observability.Exporter"
     _plugins: List[_OpenTelemetryPlugin]
-    _registered_method: Set[bytes]
+    _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
 
@@ -369,7 +369,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         plugins: Optional[Iterable[_OpenTelemetryPlugin]],
     ):
         self._exporter = _OpenTelemetryExporterDelegator(plugins)
-        self._registered_method = set()
+        self._registered_methods = set()
         self._plugins = list(plugins)
         self._client_option_activated = False
         self._server_option_activated = False
@@ -421,7 +421,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             self._get_identifier(),
             exchange_labels,
             enabled_optional_labels,
-            method_name in self._registered_method,
+            method_name in self._registered_methods,
         )
         return capsule
 
@@ -459,11 +459,11 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
             rpc_latency,
             status_code,
             self._get_identifier(),
-            encoded_method in self._registered_method,
+            encoded_method in self._registered_methods,
         )
 
     def save_registered_method(self, method_name: bytes) -> None:
-        self._registered_method.add(method_name)
+        self._registered_methods.add(method_name)
 
     def _get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         client_exchange_labels = {}
