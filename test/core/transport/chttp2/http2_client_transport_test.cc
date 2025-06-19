@@ -173,8 +173,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
   std::string data_payload = "Hello!";
 
   // Break the ReadLoop
-  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
-                                event_engine().get());
+  auto read_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError("Connection closed"), event_engine().get());
 
   mock_endpoint.ExpectWrite(
       {
@@ -214,10 +214,13 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
         []() { return absl::OkStatus(); });
   });
   call.initiator.SpawnInfallible(
-      "test-wait", [initator = call.initiator, &on_done]() mutable {
+      "test-wait", [initator = call.initiator, &on_done,
+                    read_close = std::move(read_close)]() mutable {
         return Seq(initator.PullServerTrailingMetadata(),
-                   [&on_done](ServerMetadataHandle metadata) {
+                   [&on_done, read_close = std::move(read_close)](
+                       ServerMetadataHandle metadata) mutable {
                      on_done.Call();
+                     read_close();
                      return Empty{};
                    });
       });
@@ -231,8 +234,8 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
   SliceBuffer grpc_header;
 
   // Break the ReadLoop
-  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
-                                event_engine().get());
+  auto read_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError("Connection closed"), event_engine().get());
 
   mock_endpoint.ExpectWrite(
       {
@@ -259,15 +262,18 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
       "cancel-call", [initiator = call.initiator]() mutable {
         return Seq(
             [initiator]() mutable {
-              return initiator.Cancel(absl::CancelledError("Cancelled"));
+              return initiator.Cancel(absl::CancelledError("CANCELLED"));
             },
             []() { return absl::OkStatus(); });
       });
   call.initiator.SpawnInfallible(
-      "test-wait", [initator = call.initiator, &on_done]() mutable {
+      "test-wait", [initator = call.initiator, &on_done,
+                    read_close = std::move(read_close)]() mutable {
         return Seq(initator.PullServerTrailingMetadata(),
-                   [&on_done](ServerMetadataHandle metadata) {
+                   [&on_done, read_close = std::move(read_close)](
+                       ServerMetadataHandle metadata) mutable {
                      on_done.Call();
+                     read_close();
                      return Empty{};
                    });
       });
@@ -395,15 +401,12 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
   // 1. The ping request promise is never resolved as there is no ping ack.
   // 2. Transport is closed when ping times out.
 
-  // TODO(akshitpatel)[P1] : CloseTransport is not yet implemented, and hence
-  // read loop is broken for the test to finish. Once close transport is
-  // implemented, read loop should not be explicitly broken.
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   StrictMock<MockFunction<void()>> ping_ack_received;
 
   // Break the read loop
-  mock_endpoint.ExpectReadClose(absl::UnavailableError("Connection closed"),
-                                event_engine().get());
+  auto read_close = mock_endpoint.ExpectDelayedReadClose(
+      absl::UnavailableError("Connection closed"), event_engine().get());
   mock_endpoint.ExpectWrite(
       {
           helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),

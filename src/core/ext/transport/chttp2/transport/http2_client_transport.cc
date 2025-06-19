@@ -109,8 +109,11 @@ void Http2ClientTransport::StopConnectivityWatch(
 
 void Http2ClientTransport::Orphan() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
-  general_party_.reset();
+  // Accessing general_party here is not advisable. It may so happen that
+  // the party is already freed/may free up any time. The only guarantee here
+  // is that the transport is still valid.
+  MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
+      absl::StatusCode::kUnavailable, "Orphaned"));
   Unref();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
 }
@@ -286,23 +289,24 @@ Http2Status Http2ClientTransport::ProcessMetadata(
 Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
     Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
   HTTP2_TRANSPORT_DLOG
-      << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
+      << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
 
+  // TODO(akshitpatel) : [PH2][P2] : This would fail in case of a rst frame
+  // with NoError. Handle this case.
   Http2Status status = Http2Status::Http2StreamError(
-      static_cast<Http2ErrorCode>(frame.error_code),
+      GetErrorCodeFromRstFrameErrorCode(frame.error_code),
       "Reset stream frame received.");
   CloseStream(frame.stream_id, status.GetAbslStreamError(),
               CloseStreamArgs{
                   /*close_reads=*/true,
                   /*close_writes=*/true,
                   /*send_rst_stream=*/false,
-                  /*cancelled=*/false,
+                  /*push_trailing_metadata=*/true,
               });
-
+  // In case of stream error, we do not want the Read Loop to be broken. Hence
+  // returning an ok status.
   return Http2Status::Ok();
 }
 
@@ -694,15 +698,68 @@ Http2ClientTransport::Http2ClientTransport(
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
-void Http2ClientTransport::CloseTransport(const Http2Status& status,
-                                          DebugLocation whence) {
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status=" << status
-                    << " location=" << whence.file() << ":" << whence.line();
-  MutexLock lock(&transport_mutex_);
+void Http2ClientTransport::CloseTransport(
+    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
+    Http2Status http2_status) {
+  for (const auto& pair : stream_list) {
+    // There is no merit in transitioning the stream to
+    // closed state here as the subsequent lookups would
+    // fail. Also, as this is running on the transport
+    // party, there would not be concurrent access to the stream.
+    auto stream = std::move(pair.second);
+    stream->call.SpawnPushServerTrailingMetadata(
+        ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
+  }
+  // This is the only place where the general_party_ is
+  // reset.
+  general_party_.reset();
+}
+
+void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
+                                                    DebugLocation whence) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
+                       "status="
+                    << http2_status << " location=" << whence.file() << ":"
+                    << whence.line();
+
+  // Free up the stream_list at this point. This would still allow the frames
+  // in the MPSC to be drained and block any additional frames from being
+  // enqueued or read.
+  ReleasableMutexLock lock(&transport_mutex_);
+  if (is_transport_closed_) {
+    lock.Release();
+    return;
+  }
+  is_transport_closed_ = true;
+  auto stream_list = std::move(stream_list_);
+  stream_list_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
-                          absl::UnavailableError("transport closed"),
+                          http2_status.GetAbslConnectionError(),
                           "transport closed");
-  // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  lock.Release();
+
+  general_party_->Spawn(
+      "CloseTransport",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       stream_list = std::move(stream_list),
+       http2_status = std::move(http2_status)]() mutable {
+        // RFC9113 : A GOAWAY frame might not immediately precede closing of
+        // the connection; a receiver of a GOAWAY that has no more use for the
+        // connection SHOULD still send a GOAWAY frame before terminating the
+        // connection.
+        // TODO(akshitpatel) : [PH2][P2] : There would a timer for sending
+        // goaway here. Once goaway is sent or timer is expired, close the
+        // transport.
+        return Map(Immediate(absl::OkStatus()),
+                   [self, stream_list = std::move(stream_list),
+                    http2_status = std::move(http2_status)](
+                       GRPC_UNUSED absl::Status) mutable {
+                     self->CloseTransport(std::move(stream_list),
+                                          std::move(http2_status));
+                     return Empty{};
+                   });
+      },
+      [](Empty) {});
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
@@ -760,7 +817,7 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                 /*close_reads=*/true,
                                 /*close_writes=*/true,
                                 /*send_rst_stream=*/true,
-                                /*cancelled=*/true,
+                                /*push_trailing_metadata=*/false,
                             });
         }
       });
@@ -806,8 +863,13 @@ auto Http2ClientTransport::CallOutboundLoop(
               [self = RefAsSubclass<Http2ClientTransport>(),
                stream_id](absl::Status status) {
                 if (status.ok()) {
+                  // TODO(akshitpatel) : [PH2][P3] : Investigate if stream
+                  // lookup can be done once outside the promise and all the
+                  // promises can hold a reference to the stream.
                   auto stream = self->LookupStream(stream_id);
-                  if (stream == nullptr) {
+                  if (GPR_UNLIKELY(stream == nullptr)) {
+                    LOG(ERROR)
+                        << "Stream not found while sending initial metadata";
                     return absl::InternalError(
                         "Stream not found while sending initial metadata");
                   }
@@ -821,20 +883,22 @@ auto Http2ClientTransport::CallOutboundLoop(
             // released.
             return ForEach(MessagesFrom(call_handler), send_message);
           },
-          // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay
-          // to send half close when the call is cancelled.
           [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
-            self->CloseStream(stream_id, absl::OkStatus(),
-                              CloseStreamArgs{
-                                  /*close_reads=*/false,
-                                  /*close_writes=*/true,
-                                  /*send_rst_stream=*/false,
-                                  /*cancelled=*/false,
-                              });
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
             Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
-            return self->EnqueueOutgoingFrame(std::move(frame));
+            return Map(self->EnqueueOutgoingFrame(std::move(frame)),
+                       [self, stream_id](absl::Status status) {
+                         auto stream = self->LookupStream(stream_id);
+                         if (GPR_UNLIKELY(stream == nullptr)) {
+                           LOG(ERROR)
+                               << "Stream not found while sending end stream";
+                           return absl::InternalError(
+                               "Stream not found while sending end stream");
+                         }
+                         stream->SentEndStreamFrame();
+                         return status;
+                       });
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {

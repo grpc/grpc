@@ -51,6 +51,7 @@ enum class Http2ErrorCode : uint8_t {
   kConnectError = 0xa,
   kEnhanceYourCalm = 0xb,
   kInadequateSecurity = 0xc,
+  kHTTP11Required = 0xd,
   kDoNotUse = 0xffu  // Force use of a default clause
 };
 
