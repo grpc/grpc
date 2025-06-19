@@ -19,6 +19,8 @@ from dataclasses import field
 import enum
 from typing import Dict, List, Mapping, Optional, Set, Tuple, Union
 
+from python.grpcio_observability import grpc_observability
+
 
 class Exporter(metaclass=abc.ABCMeta):
     """Abstract base class for census data exporters."""
@@ -62,7 +64,7 @@ class StatsData:
         in stubs.
     """
 
-    name: str
+    name: "grpc_observability._cyobservability.MetricsName"
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
