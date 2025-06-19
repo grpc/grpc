@@ -67,7 +67,7 @@ class SendRate {
   void SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
                          const NetworkMetrics& metrics);
   bool IsRateMeasurementStale() const;
-  void AddData(Json::Object& obj) const;
+  channelz::PropertyList ChannelzProperties() const;
   void PerformRateProbe() { last_rate_measurement_ = Timestamp::Now(); }
 
   struct DeliveryData {
@@ -147,7 +147,7 @@ class OutputBuffers final
     void SetNetworkMetrics(
         const std::optional<SendRate::NetworkSend>& network_send,
         const SendRate::NetworkMetrics& metrics);
-    Json::Object ToJson();
+    channelz::PropertyList ChannelzProperties();
     void Drop() {
       CHECK(!dropped_);
       dropped_ = true;
@@ -461,7 +461,7 @@ class Endpoint final {
     ctx_->reader->Drop();
   }
 
-  void ToJson(absl::AnyInvocable<void(Json::Object)> sink);
+  void AddData(channelz::DataSink sink);
 
  private:
   struct EndpointContext : public RefCounted<EndpointContext> {

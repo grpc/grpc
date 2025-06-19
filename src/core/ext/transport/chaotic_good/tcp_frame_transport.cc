@@ -241,13 +241,13 @@ void TcpFrameTransport::Orphan() {
 }
 
 void TcpFrameTransport::AddData(channelz::DataSink sink) {
-  Json::Object options;
-  options["encode_alignment"] = Json::FromNumber(options_.encode_alignment);
-  options["decode_alignment"] = Json::FromNumber(options_.decode_alignment);
-  options["inlined_payload_size_threshold"] =
-      Json::FromNumber(options_.inlined_payload_size_threshold);
-  options["enable_tracing"] = Json::FromBool(options_.enable_tracing);
-  sink.AddAdditionalInfo("chaoticGoodTcpOptions", std::move(options));
+  sink.AddAdditionalInfo("tcp_options",
+                         channelz::PropertyList()
+                             .Set("encode_alignment", options_.encode_alignment)
+                             .Set("decode_alignment", options_.decode_alignment)
+                             .Set("inlined_payload_size_threshold",
+                                  options_.inlined_payload_size_threshold)
+                             .Set("enable_tracing", options_.enable_tracing));
 }
 
 RefCountedPtr<channelz::SocketNode> TcpFrameTransport::MakeSocketNode(
