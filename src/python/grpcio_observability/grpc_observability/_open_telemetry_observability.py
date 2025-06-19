@@ -330,7 +330,7 @@ def end_open_telemetry_observability() -> None:
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
     _plugins: Iterable[_OpenTelemetryPlugin]
 
-    def __init__(self, plugins: Iterable[_OpenTelemetryPlugin]):
+    def __init__(self, plugins: Optional[Iterable[_OpenTelemetryPlugin]]):
         self._plugins = plugins
 
     def export_stats_data(
