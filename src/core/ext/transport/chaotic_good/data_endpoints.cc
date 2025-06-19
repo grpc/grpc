@@ -246,11 +246,13 @@ void OutputBuffers::DestroyReader(uint32_t id) {
 void OutputBuffers::WakeupScheduler() {
   GRPC_LATENT_SEE_SCOPE("OutputBuffers::WakeupScheduler");
   auto state = scheduling_state_.load(std::memory_order_acquire);
+  // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
+  // which point we may be loading a Waker pointer).
   while (true) {
     switch (state) {
       case kSchedulingProcessing:
         if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_release)) {
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
         return;
@@ -260,7 +262,7 @@ void OutputBuffers::WakeupScheduler() {
         // Idle: value is a pointer to a waker.
         Waker* waker = reinterpret_cast<Waker*>(state);
         if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_release)) {
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
         waker->Wakeup();
@@ -280,6 +282,7 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
       case kSchedulingProcessing: {
         // We were processing, now we're done.
         Waker* waker = new Waker(GetContext<Activity>()->MakeNonOwningWaker());
+        // CAS acq rel to make sure we acquire waker pointers on failure.
         if (!scheduling_state_.compare_exchange_weak(
                 state, reinterpret_cast<uintptr_t>(waker),
                 std::memory_order_acq_rel)) {
@@ -289,6 +292,7 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
         return Pending{};
       }
       case kSchedulingWorkAvailable: {
+        // No pointer exchange here, no need for barriers.
         scheduling_state_.store(kSchedulingProcessing,
                                 std::memory_order_relaxed);
         return Empty{};
