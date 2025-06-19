@@ -56,25 +56,6 @@ GRPCAPI void grpc_server_add_channel_from_fd(grpc_server* server, int fd,
 
 #ifdef __cplusplus
 }
-
-namespace grpc_core::experimental {
-
-/**
- * EXPERIMENTAL API - Subject to change
- *
- * This function creates a gRPC channel using a raw file descriptor
- * that represents an open socket. This API supports both secure and insecure
- * channel credentials.
- *
- * \param fd The file descriptor representing the connection.
- * \param creds The channel credentials used to secure the connection.
- * \param args Optional channel arguments to configure the channel behavior.
- */
-grpc_channel* CreateChannelFromFd(int fd, grpc_channel_credentials* creds,
-                                  const grpc_channel_args* args);
-
-}  // namespace grpc_core::experimental
-
-#endif  // __cplusplus
+#endif
 
 #endif /* GRPC_GRPC_POSIX_H */

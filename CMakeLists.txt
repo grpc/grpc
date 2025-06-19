@@ -2667,7 +2667,6 @@ add_library(grpc
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -3077,7 +3076,6 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
-  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -3451,7 +3449,6 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/channel_args_endpoint_config.cc
   src/core/lib/event_engine/default_event_engine.cc
   src/core/lib/event_engine/default_event_engine_factory.cc
-  src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc
   src/core/lib/event_engine/event_engine.cc
   src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc
   src/core/lib/event_engine/posix_engine/ev_poll_posix.cc
@@ -3779,7 +3776,6 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
-  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -6085,7 +6081,6 @@ foreach(_hdr
   include/grpc/byte_buffer.h
   include/grpc/byte_buffer_reader.h
   include/grpc/compression.h
-  include/grpc/create_channel_from_endpoint.h
   include/grpc/credentials.h
   include/grpc/event_engine/endpoint_config.h
   include/grpc/event_engine/event_engine.h
@@ -13076,7 +13071,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
-    test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13271,7 +13265,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     test/core/test_util/fail_first_call_filter.cc
     test/core/test_util/fake_stats_plugin.cc
     test/core/test_util/fuzz_config_vars.cc
-    test/core/test_util/passthrough_endpoint.cc
     test/core/test_util/test_call_creds.cc
     test/core/test_util/test_lb_policies.cc
     third_party/googletest/googlemock/src/gmock_main.cc
@@ -13377,7 +13370,6 @@ add_executable(end2end_http2_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13482,7 +13474,6 @@ add_executable(end2end_http2_security_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13675,7 +13666,6 @@ add_executable(end2end_http2_security_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13868,7 +13858,6 @@ add_executable(end2end_http2_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -13973,7 +13962,6 @@ add_executable(end2end_inproc_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14166,7 +14154,6 @@ add_executable(end2end_inproc_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14271,7 +14258,6 @@ add_executable(end2end_posix_no_logging_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -14464,7 +14450,6 @@ add_executable(end2end_posix_test
   test/core/test_util/fail_first_call_filter.cc
   test/core/test_util/fake_stats_plugin.cc
   test/core/test_util/fuzz_config_vars.cc
-  test/core/test_util/passthrough_endpoint.cc
   test/core/test_util/test_call_creds.cc
   test/core/test_util/test_lb_policies.cc
   third_party/googletest/googlemock/src/gmock_main.cc

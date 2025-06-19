@@ -87,7 +87,6 @@ _DEPS = [
     "//test/core/test_util:grpc_test_util",
     "//test/core/test_util:test_call_creds",
     "//test/core/test_util:test_lb_policies",
-    "//test/core/test_util:passthrough_endpoint",
 ]
 
 _EXTERNAL_DEPS = [
