@@ -3086,17 +3086,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "endpoint_channel_arg_wrapper",
-    srcs = ["lib/event_engine/endpoint_channel_arg_wrapper.cc"],
-    hdrs = ["lib/event_engine/endpoint_channel_arg_wrapper.h"],
-    deps = [
-        "ref_counted",
-        "useful",
-        "//:grpc_public_hdrs",
-    ],
-)
-
-grpc_cc_library(
     name = "ref_counted_dns_resolver_interface",
     hdrs = ["lib/event_engine/ref_counted_dns_resolver_interface.h"],
     external_deps = ["absl/strings"],
@@ -8169,7 +8158,6 @@ grpc_cc_library(
         "channel_args_preconditioning",
         "channel_stack_type",
         "closure",
-        "endpoint_channel_arg_wrapper",
         "endpoint_transport_client_channel_factory",
         "error",
         "error_utils",
