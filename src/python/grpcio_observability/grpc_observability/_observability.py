@@ -19,9 +19,8 @@ from dataclasses import field
 import enum
 from typing import Dict, List, Mapping, Set, Tuple, Union
 
-from python.grpcio_observability import (
-    grpc_observability,  # pylint: disable=unused-import
-)
+# pylint: disable=unused-import
+from python.grpcio_observability import grpc_observability
 
 
 class Exporter(metaclass=abc.ABCMeta):
