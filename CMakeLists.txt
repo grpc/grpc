@@ -20766,6 +20766,7 @@ target_link_libraries(latent_see_test
   absl::flat_hash_map
   absl::function_ref
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -21035,12 +21036,16 @@ if(gRPC_BUILD_TESTS)
 add_executable(lock_based_mpsc_test
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
+  src/core/lib/experiments/config.cc
+  src/core/lib/experiments/experiments.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/wait_set.cc
+  src/core/util/backoff.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
   src/core/util/latent_see.cc
-  src/core/util/per_cpu.cc
+  src/core/util/shared_bit_gen.cc
+  src/core/util/time.cc
   test/core/promise/lock_based_mpsc_test.cc
 )
 if(WIN32 AND MSVC)
