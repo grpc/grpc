@@ -90,6 +90,8 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
   // Refer src/core/ext/transport/chttp2/transport/chttp2_transport.cc
   // perform_transport_op_locked
   // Maybe more operations needed to be implemented.
+  // TODO(tjagtap) : [PH2][P2] : Consider either not using a transport level
+  // lock, or making this run on the Transport party - whatever is better.
 }
 
 void Http2ClientTransport::StartConnectivityWatch(
