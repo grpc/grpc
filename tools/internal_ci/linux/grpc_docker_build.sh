@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,23 +15,9 @@
 
 set -ex
 
-ACTION="${1:-}"
-[[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-# change to root directory
-cd "$(dirname "${0}")/../.."
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-DIRS=(
-    'examples'
-    'src'
-    'test'
-    'tools'
-    'setup.py'
-)
-
-VIRTUALENV=venv_black_code
-python3 -m virtualenv $VIRTUALENV
-source $VIRTUALENV/bin/activate
-
-python3 -m pip install black==25.1.0
-python3 -m black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+LOCAL_ONLY_MODE=1 ALWAYS_BUILD=1 HOST_ARCH_ONLY=1 KEEP_GOING=1 tools/dockerfile/push_testing_images.sh

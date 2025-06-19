@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2015 gRPC authors.
+#! /bin/bash -ex
+# Copyright 2025 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,25 +13,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
-
-ACTION="${1:-}"
-[[ $ACTION == '' ]] || [[ $ACTION == '--diff' ]] || [[ $ACTION == '--check' ]]
-
-# change to root directory
-cd "$(dirname "${0}")/../.."
-
-DIRS=(
-    'examples'
-    'src'
-    'test'
-    'tools'
-    'setup.py'
-)
-
-VIRTUALENV=venv_black_code
-python3 -m virtualenv $VIRTUALENV
+VIRTUALENV=.venv_check_pytype_updated
+python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-python3 -m pip install black==25.1.0
-python3 -m black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+pip install pytype==2024.10.11
+pytype --output=~/.cache/pytype --config=grpc-style-config.toml

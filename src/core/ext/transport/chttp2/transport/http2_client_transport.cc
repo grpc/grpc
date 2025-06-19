@@ -67,10 +67,44 @@ using grpc_event_engine::experimental::EventEngine;
 // TODO(tjagtap) : [PH2][P3] : Delete this comment when http2
 // rollout begins
 
-void Http2ClientTransport::PerformOp(GRPC_UNUSED grpc_transport_op* op) {
+void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
+  // Notes : Refer : src/core/ext/transport/chaotic_good/client_transport.cc
+  // Functions : StartConnectivityWatch, StopConnectivityWatch, PerformOp
   HTTP2_CLIENT_DLOG << "Http2ClientTransport PerformOp Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement this function.
+  bool did_stuff = false;
+  if (op->start_connectivity_watch != nullptr) {
+    StartConnectivityWatch(op->start_connectivity_watch_state,
+                           std::move(op->start_connectivity_watch));
+    did_stuff = true;
+  }
+  if (op->stop_connectivity_watch != nullptr) {
+    StopConnectivityWatch(op->stop_connectivity_watch);
+    did_stuff = true;
+  }
+  CHECK(op->set_accept_stream) << "Set_accept_stream not supported on clients";
+  DCHECK(did_stuff) << "Unimplemented transport perform op ";
+
+  ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
   HTTP2_CLIENT_DLOG << "Http2ClientTransport PerformOp End";
+  // TODO(tjagtap) : [PH2][P2] :
+  // Refer src/core/ext/transport/chttp2/transport/chttp2_transport.cc
+  // perform_transport_op_locked
+  // Maybe more operations needed to be implemented.
+  // TODO(tjagtap) : [PH2][P2] : Consider either not using a transport level
+  // lock, or making this run on the Transport party - whatever is better.
+}
+
+void Http2ClientTransport::StartConnectivityWatch(
+    grpc_connectivity_state state,
+    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  MutexLock lock(&transport_mutex_);
+  state_tracker_.AddWatcher(state, std::move(watcher));
+}
+
+void Http2ClientTransport::StopConnectivityWatch(
+    ConnectivityStateWatcherInterface* watcher) {
+  MutexLock lock(&transport_mutex_);
+  state_tracker_.RemoveWatcher(watcher);
 }
 
 void Http2ClientTransport::Orphan() {
@@ -658,6 +692,17 @@ Http2ClientTransport::Http2ClientTransport(
         [](GRPC_UNUSED absl::Status status) {});
   }
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+}
+
+void Http2ClientTransport::CloseTransport(const Http2Status& status,
+                                          DebugLocation whence) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status=" << status
+                    << " location=" << whence.file() << ":" << whence.line();
+  MutexLock lock(&transport_mutex_);
+  state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
+                          absl::UnavailableError("transport closed"),
+                          "transport closed");
+  // TODO(akshitpatel) : [PH2][P1] : Implement this.
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
