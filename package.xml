@@ -33,6 +33,7 @@
     <file baseinstalldir="/" name="include/grpc/byte_buffer_reader.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/census.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/compression.h" role="src" />
+    <file baseinstalldir="/" name="include/grpc/create_channel_from_endpoint.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/credentials.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/endpoint_config.h" role="src" />
     <file baseinstalldir="/" name="include/grpc/event_engine/event_engine.h" role="src" />
@@ -1299,6 +1300,8 @@
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/default_event_engine_factory.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_channel_arg_wrapper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/endpoint_channel_arg_wrapper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine_context.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/extensions/blocking_dns.h" role="src" />

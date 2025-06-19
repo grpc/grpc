@@ -37,6 +37,10 @@ absl::StatusOr<RefCountedPtr<Channel>> ChannelCreate(
     std::string target, ChannelArgs args,
     grpc_channel_stack_type channel_stack_type, Transport* optional_transport);
 
+absl::StatusOr<grpc_channel*> CreateClientEndpointChannel(
+    const char* target, grpc_channel_credentials* creds,
+    const ChannelArgs& args);
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_SURFACE_CHANNEL_CREATE_H

@@ -263,6 +263,7 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/byte_buffer.h",
     "include/grpc/byte_buffer_reader.h",
     "include/grpc/compression.h",
+    "include/grpc/create_channel_from_endpoint.h",
     "include/grpc/fork.h",
     "include/grpc/grpc.h",
     "include/grpc/grpc_posix.h",
@@ -1719,11 +1720,18 @@ grpc_cc_library(
         "grpc_security_base",
         "legacy_channel",
         "stats",
+        "//:grpc_resolver_fake",
         "//src/core:channel_args",
+        "//src/core:channel_args_endpoint_config",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_stack_type",
         "//src/core:direct_channel",
+        "//src/core:endpoint_channel_arg_wrapper",
         "//src/core:endpoint_transport",
+        "//src/core:event_engine_common",
+        "//src/core:event_engine_extensions",
+        "//src/core:event_engine_query_extensions",
+        "//src/core:event_engine_tcp_socket_utils",
         "//src/core:experiments",
         "//src/core:stats_data",
     ],
@@ -5181,6 +5189,16 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "channelz_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_property_list_upb",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_property_list_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
