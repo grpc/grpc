@@ -41,7 +41,7 @@ class Server(_base_server.Server):
         thread_pool: Optional[Executor],
         generic_handlers: Optional[Sequence[grpc.GenericRpcHandler]],
         interceptors: Optional[Sequence[Any]],
-        options: ChannelArgumentType,
+        options: Sequence[ChannelArgumentType],
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
     ):
