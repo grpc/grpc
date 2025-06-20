@@ -41,7 +41,7 @@ call bazel_rbe/bazel_wrapper.bat ^
   test ^
   %BAZEL_FLAGS% ^
   --define=protobuf_allow_msvc=true ^
-  --test_filter='*TestQueryFailsBecauseTcpServerClosesSocket*' ^
+  --test_filter="*TestQueryFailsBecauseTcpServerClosesSocket*" ^
   --runs_per_test=20 ^
   -- ^
   //test/cpp/naming:cancel_ares_query_test ^
