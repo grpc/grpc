@@ -31,15 +31,16 @@
 #include <tuple>
 #include <type_traits>
 
-#include "absl/base/thread_annotations.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
 #include "src/core/lib/debug/trace_flags.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -284,6 +285,8 @@ class ChannelTrace {
       absl::FunctionRef<void(gpr_timespec, std::string)> callback) const
       ABSL_LOCKS_EXCLUDED(mu_);
 
+  void Render(grpc_channelz_v2_Entity* entity, upb_Arena* arena) const;
+
   bool ProducesOutput() const { return max_memory_ > 0; }
 
   std::string creation_timestamp() const;
@@ -354,6 +357,8 @@ class ChannelTrace {
   void RenderEntry(const Entry& entry,
                    absl::FunctionRef<void(gpr_timespec, std::string)> callback,
                    int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void RenderEntry(const Entry& entry, grpc_channelz_v2_TraceEvent* trace_event,
+                   upb_Arena* arena) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   mutable Mutex mu_;
   const Timestamp time_created_ = Timestamp::Now();
