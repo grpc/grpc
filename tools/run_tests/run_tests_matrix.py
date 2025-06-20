@@ -92,21 +92,23 @@ def _docker_jobspec(
     if not timeout_seconds:
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = "run_tests_%s" % name
+    go_mod_download_cmd = ["go", "mod", "download"]
+    go_run_cmd = [
+       "go",
+       "run",
+       "tools/run_tests/run_tests.go", # This path is relative to the Go module root inside the container
+       "--use_docker",
+       "-t",
+       "-j",
+       str(inner_jobs),
+       "-x",
+       "run_tests/%s" % _report_filename(name),
+       "--report_suite_name",
+       "%s" % _safe_report_name(name),
+    ] + runtests_args
+    chained_cmd_str = " ".join(go_mod_download_cmd) + " && " + " ".join(go_run_cmd)
     test_job = jobset.JobSpec(
-        cmdline=[
-            "go",
-            "run",
-            "tools/run_tests/run_tests.go",
-            "--use_docker",
-            "-t",
-            "-j",
-            str(inner_jobs),
-            "-x",
-            "run_tests/%s" % _report_filename(name),
-            "--report_suite_name",
-            "%s" % _safe_report_name(name),
-        ]
-        + runtests_args,
+        cmdline=["bash", "-c", chained_cmd_str],
         environ=runtests_envs,
         shortname=shortname,
         timeout_seconds=timeout_seconds,
