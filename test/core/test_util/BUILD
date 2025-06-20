@@ -127,7 +127,6 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
-        "postmortem_emit",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -149,6 +148,7 @@ grpc_cc_library(
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
         "//src/core:load_file",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:slice",
         "//src/core:slice_refcount",
@@ -176,7 +176,6 @@ grpc_cc_library(
     deps = [
         "build",
         "grpc_test_util_base",
-        "postmortem_emit",
         "stack_tracer",
         "//:config",
         "//:exec_ctx",
@@ -195,6 +194,7 @@ grpc_cc_library(
         "//src/core:grpc_sockaddr",
         "//src/core:iomgr_fwd",
         "//src/core:iomgr_port",
+        "//src/core:postmortem",
         "//src/core:resolved_address",
         "//src/core:status_helper",
         "//src/core:time",
