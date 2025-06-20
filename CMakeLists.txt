@@ -2951,6 +2951,7 @@ add_library(grpc
   src/core/util/matchers.cc
   src/core/util/per_cpu.cc
   src/core/util/posix/directory_reader.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
@@ -3144,7 +3145,6 @@ add_library(grpc_test_util
   test/core/test_util/port.cc
   test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
-  test/core/test_util/postmortem_emit.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
@@ -3220,7 +3220,6 @@ add_library(grpc_test_util_unsecure
   test/core/test_util/port.cc
   test/core/test_util/port_ci.cc
   test/core/test_util/port_server_client.cc
-  test/core/test_util/postmortem_emit.cc
   test/core/test_util/reconnect_server.cc
   test/core/test_util/resolve_localhost_ip46.cc
   test/core/test_util/slice_splitter.cc
@@ -3687,6 +3686,7 @@ add_library(grpc_unsecure
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
@@ -6002,6 +6002,7 @@ add_library(grpc_authorization_provider
   src/core/util/load_file.cc
   src/core/util/matchers.cc
   src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
@@ -9656,6 +9657,7 @@ add_executable(call_utils_test
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
@@ -15809,6 +15811,7 @@ add_executable(filter_fusion_test
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
@@ -18661,6 +18664,7 @@ add_executable(header_assembler_test
   src/core/util/latent_see.cc
   src/core/util/load_file.cc
   src/core/util/per_cpu.cc
+  src/core/util/postmortem_emit.cc
   src/core/util/random_early_detection.cc
   src/core/util/ref_counted_string.cc
   src/core/util/shared_bit_gen.cc
