@@ -424,3 +424,6 @@
 /* Type to use in place of in_addr_t when system does not provide it. */
 #undef in_addr_t
 
+/* gRPC manual edits here! */
+#define HAVE_IPHLPAPI_H
+#define HAVE_NETIOAPI_H
