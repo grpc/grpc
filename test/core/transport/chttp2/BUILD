@@ -756,3 +756,19 @@ grpc_fuzz_test(
         "//test/core/call/yodel:yodel_test",
     ],
 )
+
+grpc_fuzz_test(
+    name = "stream_data_queue_test",
+    srcs = ["stream_data_queue_test.cc"],
+    external_deps = [
+        "fuzztest",
+        "fuzztest_main",
+        "gtest",
+    ],
+    deps = [
+        "//src/core:loop",
+        "//src/core:sleep",
+        "//src/core:stream_data_queue",
+        "//test/core/call/yodel:yodel_test",
+    ],
+)
