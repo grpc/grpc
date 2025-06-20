@@ -23,6 +23,7 @@
 #include <queue>
 
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/ext/transport/chaotic_good/pending_connection.h"
 #include "src/core/ext/transport/chaotic_good/scheduler.h"
