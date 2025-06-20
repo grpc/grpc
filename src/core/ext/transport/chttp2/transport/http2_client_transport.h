@@ -279,6 +279,7 @@ class Http2ClientTransport final : public ClientTransport {
     }
 
     CallHandler call;
+    // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
     HttpStreamState stream_state;
     const uint32_t stream_id;
     TransportSendQeueue send_queue;
