@@ -80,3 +80,55 @@ jobs = 'auto'
 
 strict_import = true
 keep_going = true
+
+[tool.ruff]
+# See https://docs.astral.sh/ruff/configuration/
+# For a full list of supported rules, see https://docs.astral.sh/ruff/rules/
+# For a full list of options, see https://docs.astral.sh/ruff/settings/
+
+line-length = 100
+target-version = "py39"
+
+[tool.ruff.lint]
+ignore = [
+  "FA100", # Checks for missing from __future__ import annotations
+  # imports upon detecting type annotations that can be written more succinctly under PEP 563.
+
+  "TD003", # TD003 Missing issue link for this TODO
+  "FIX002", # Checks for "TODO" comments.
+  "FIX004", # Checks for "HACK" comments.
+
+  "ANN401", # Checks that function arguments are annotated with a more specific type than Any.
+
+  "S105", # Checks for potential uses of hardcoded passwords in strings.
+
+  "BLE001", # Checks for except clauses that catch all exceptions. This includes bare except, except BaseException and except Exception.
+
+  "PLR0913", # Checks for function definitions that include too many arguments.
+  "PERF203", # Checks for uses of except handling via try-except within for and while loops.
+
+  "SLF001", # Checks for accesses on "private" class members.
+
+  "I001", # De-duplicates, groups, and sorts imports based on the provided isort settings.
+  # This conflicts with isort
+
+  "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
+]
+
+# This is to suppress
+# https://docs.astral.sh/ruff/rules/non-pep585-annotation/
+# https://docs.astral.sh/ruff/rules/non-pep604-annotation-union/#non-pep604-annotation-union-up007
+pyupgrade.keep-runtime-typing = true
+
+# Select all rules by default, and then ignore the ones we don't want.
+# This is a good way to stay up-to-date with new rules in ruff.
+select = ["ALL"]
+
+# Allow unused variables that match these patterns.
+dummy-variable-rgx = "^(_+|ignored_)"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with 4 spaces.
+indent-style = "space"
