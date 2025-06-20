@@ -62,6 +62,7 @@ class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -100,6 +101,7 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -138,6 +140,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -176,6 +179,7 @@ class StreamStreamMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -193,6 +197,7 @@ class Channel(abc.ABC):
 
         Returns:
           Channel the channel that was instantiated.
+
         """
 
     @abc.abstractmethod
@@ -220,7 +225,7 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False
+        self, try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         """Checks the connectivity state of a channel.
 
@@ -235,6 +240,7 @@ class Channel(abc.ABC):
             connect to peer or not.
 
         Returns: A ChannelConnectivity object.
+
         """
 
     @abc.abstractmethod
@@ -261,6 +267,7 @@ class Channel(abc.ABC):
         Args:
           last_observed_state: A grpc.ChannelConnectivity object representing
             the last known state.
+
         """
 
     @abc.abstractmethod
@@ -289,6 +296,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
+
         """
 
     @abc.abstractmethod
@@ -313,6 +321,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryStreamMultiCallable value for the named unary-stream method.
+
         """
 
     @abc.abstractmethod
@@ -337,6 +346,7 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
+
         """
 
     @abc.abstractmethod
@@ -361,4 +371,5 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
+
         """

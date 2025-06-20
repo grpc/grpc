@@ -14,11 +14,11 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, Iterable, Mapping, NoReturn, Optional, Sequence
+from typing import Generic, NoReturn, Optional
+from collections.abc import Iterable, Mapping, Sequence
 
 import grpc
 
-from ._metadata import Metadata  # pylint: disable=unused-import
 from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestType
@@ -30,7 +30,7 @@ class Server(abc.ABC):
 
     @abc.abstractmethod
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler]
+        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -39,6 +39,7 @@ class Server(abc.ABC):
         Args:
           generic_rpc_handlers: A sequence of GenericRpcHandlers that will be
           used to service RPCs.
+
         """
 
     @abc.abstractmethod
@@ -56,11 +57,12 @@ class Server(abc.ABC):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
 
     @abc.abstractmethod
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials
+        self, address: str, server_credentials: grpc.ServerCredentials,
     ) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -77,6 +79,7 @@ class Server(abc.ABC):
 
         Returns:
           An integer port on which the server will accept RPC requests.
+
         """
 
     @abc.abstractmethod
@@ -109,11 +112,12 @@ class Server(abc.ABC):
 
         Args:
           grace: A duration of time in seconds or None.
+
         """
 
     @abc.abstractmethod
     async def wait_for_termination(
-        self, timeout: Optional[float] = None
+        self, timeout: Optional[float] = None,
     ) -> bool:
         """Continues current coroutine once the server stops.
 
@@ -134,6 +138,7 @@ class Server(abc.ABC):
 
         Returns:
           A bool indicates if the operation times out.
+
         """
 
     def add_registered_method_handlers(self, service_name, method_handlers):
@@ -145,6 +150,7 @@ class Server(abc.ABC):
           service_name: The service name.
           method_handlers: A dictionary that maps method names to corresponding
             RpcMethodHandler.
+
         """
 
 
@@ -163,6 +169,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Raises:
           An RpcError exception if the read failed.
+
         """
 
     @abc.abstractmethod
@@ -173,11 +180,12 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Raises:
           An RpcError exception if the write failed.
+
         """
 
     @abc.abstractmethod
     async def send_initial_metadata(
-        self, initial_metadata: MetadataType
+        self, initial_metadata: MetadataType,
     ) -> None:
         """Sends the initial metadata value to the client.
 
@@ -186,6 +194,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Args:
           initial_metadata: The initial :term:`metadata`.
+
         """
 
     @abc.abstractmethod
@@ -211,6 +220,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Raises:
           Exception: An exception is always raised to signal the abortion the
             RPC to the gRPC runtime.
+
         """
 
     @abc.abstractmethod
@@ -222,6 +232,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Args:
           trailing_metadata: The trailing :term:`metadata`.
+
         """
 
     @abc.abstractmethod
@@ -230,6 +241,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           The invocation :term:`metadata`.
+
         """
 
     @abc.abstractmethod
@@ -241,6 +253,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Args:
           code: A StatusCode object to be sent to the client.
+
         """
 
     @abc.abstractmethod
@@ -253,6 +266,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Args:
           details: A UTF-8-encodable string to be sent to the client upon
             termination of the RPC.
+
         """
 
     @abc.abstractmethod
@@ -262,6 +276,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Args:
           compression: An element of grpc.compression, e.g.
             grpc.compression.Gzip.
+
         """
 
     @abc.abstractmethod
@@ -279,6 +294,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           A string identifying the peer that invoked the RPC being serviced.
           The string format is determined by gRPC runtime.
+
         """
 
     @abc.abstractmethod
@@ -291,6 +307,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           An iterable of the identities, or None if the call is not
           authenticated. Each identity is returned as a raw bytes type.
+
         """
 
     @abc.abstractmethod
@@ -303,6 +320,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Returns:
           The auth property (string) that indicates the
           peer identity, or None if the call is not authenticated.
+
         """
 
     @abc.abstractmethod
@@ -311,6 +329,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           A map of strings to an iterable of bytes for each auth property.
+
         """
 
     def time_remaining(self) -> float:
@@ -320,6 +339,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           A nonnegative float indicating the length of allowed time in seconds
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
+
         """
 
     def trailing_metadata(self):
@@ -329,8 +349,9 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           The trailing :term:`metadata` for the RPC.
+
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
@@ -339,8 +360,9 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           The StatusCode value for the RPC.
+
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
@@ -349,8 +371,9 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           The details string of the RPC.
+
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def add_done_callback(self, callback: DoneCallbackType) -> None:
         """Registers a callback to be called on RPC termination.
@@ -360,6 +383,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         Args:
           callback: A callable object will be called with the servicer context
             object as its only argument.
+
         """
 
     def cancelled(self) -> bool:
@@ -371,6 +395,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           A bool indicates whether the RPC is cancelled or not.
+
         """
 
     def done(self) -> bool:
@@ -382,4 +407,5 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           A bool indicates if the RPC is done.
+
         """
