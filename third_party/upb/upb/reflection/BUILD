@@ -44,8 +44,8 @@ bootstrap_cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:message",
         "//upb:mini_descriptor",
         "//upb:mini_table",
@@ -115,8 +115,8 @@ bootstrap_cc_library(
     copts = UPB_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:message",
         "//upb:message_copy",
         "//upb:mini_descriptor",
@@ -144,7 +144,7 @@ cc_library(
     visibility = ["//upb:__pkg__"],
     deps = [
         ":internal",
-        "//upb:mem",
+        "//upb/mem",
         "//upb:mini_descriptor",
     ],
 )
@@ -160,8 +160,8 @@ cc_test(
     deps = [
         ":descriptor_upb_proto",
         ":internal",
-        "//upb:base",
-        "//upb:mem",
+        "//upb/base",
+        "//upb/mem",
         "//upb:mini_descriptor",
         "//upb:mini_table",
         "//upb:port",

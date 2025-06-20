@@ -81,9 +81,8 @@ class LoadBalancingPolicy::DelegatingChannelControlHelper
     return parent_helper()->GetStatsPluginGroup();
   }
 
-  void AddTraceEvent(TraceSeverity severity,
-                     absl::string_view message) override {
-    parent_helper()->AddTraceEvent(severity, message);
+  void AddTraceEvent(absl::string_view message) override {
+    parent_helper()->AddTraceEvent(message);
   }
 
  private:

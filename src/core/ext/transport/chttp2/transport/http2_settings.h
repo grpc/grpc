@@ -25,9 +25,9 @@
 
 #include "absl/functional/function_ref.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
-#include "src/core/util/json/json.h"
 #include "src/core/util/useful.h"
 
 namespace grpc_core {
@@ -133,20 +133,18 @@ class Http2Settings {
 
   bool operator!=(const Http2Settings& rhs) const { return !operator==(rhs); }
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    object["headerTableSize"] = Json::FromNumber(header_table_size());
-    object["maxConcurrentStreams"] = Json::FromNumber(max_concurrent_streams());
-    object["initialWindowSize"] = Json::FromNumber(initial_window_size());
-    object["maxFrameSize"] = Json::FromNumber(max_frame_size());
-    object["maxHeaderListSize"] = Json::FromNumber(max_header_list_size());
-    object["preferredReceiveCryptoMessageSize"] =
-        Json::FromNumber(preferred_receive_crypto_message_size());
-    object["enablePush"] = Json::FromBool(enable_push());
-    object["allowTrueBinaryMetadata"] =
-        Json::FromBool(allow_true_binary_metadata());
-    object["allowSecurityFrame"] = Json::FromBool(allow_security_frame());
-    return object;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set(header_table_size_name(), header_table_size())
+        .Set(max_concurrent_streams_name(), max_concurrent_streams())
+        .Set(initial_window_size_name(), initial_window_size())
+        .Set(max_frame_size_name(), max_frame_size())
+        .Set(max_header_list_size_name(), max_header_list_size())
+        .Set(preferred_receive_crypto_message_size_name(),
+             preferred_receive_crypto_message_size())
+        .Set(enable_push_name(), enable_push())
+        .Set(allow_true_binary_metadata_name(), allow_true_binary_metadata())
+        .Set(allow_security_frame_name(), allow_security_frame());
   }
 
  private:
@@ -169,13 +167,12 @@ class Http2SettingsManager {
   Http2Settings& mutable_peer() { return peer_; }
   const Http2Settings& peer() const { return peer_; }
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    object["local"] = Json::FromObject(local_.ToJsonObject());
-    object["sent"] = Json::FromObject(sent_.ToJsonObject());
-    object["peer"] = Json::FromObject(peer_.ToJsonObject());
-    object["acked"] = Json::FromObject(acked_.ToJsonObject());
-    return object;
+  channelz::PropertyGrid ChannelzProperties() const {
+    return channelz::PropertyGrid()
+        .SetColumn("local", local_.ChannelzProperties())
+        .SetColumn("sent", sent_.ChannelzProperties())
+        .SetColumn("peer", peer_.ChannelzProperties())
+        .SetColumn("acked", acked_.ChannelzProperties());
   }
 
   std::optional<Http2SettingsFrame> MaybeSendUpdate();

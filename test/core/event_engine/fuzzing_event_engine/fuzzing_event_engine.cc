@@ -23,6 +23,7 @@
 #include <atomic>
 #include <chrono>
 #include <limits>
+#include <memory>
 #include <optional>
 #include <vector>
 
@@ -30,6 +31,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
+#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/extensions/blocking_dns.h"
 #include "src/core/lib/event_engine/shim.h"
@@ -158,6 +160,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       grpc_core::MutexLock now_lock(&*now_mu_);
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+      } else {
+        GRPC_TRACE_LOG(fuzzing_ee_timers, INFO) << "no timers scheduled";
       }
       const auto max_incr =
           std::numeric_limits<
@@ -436,7 +440,9 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
           std::make_shared<WriteEventCallback>(m->TakeEventCallback());
       for (const auto& r : it->second) {
         g_fuzzing_event_engine->RunAfterExactlyLocked(
-            std::chrono::microseconds(r.delay_us()),
+            std::min(std::chrono::duration_cast<Duration>(
+                         std::chrono::microseconds(r.delay_us())),
+                     g_fuzzing_event_engine->max_delay_write()),
             [middle = middle_, index = my_index(), r, write_event_callback]() {
               grpc_core::MutexLock lock(&*mu_);
               if (middle->closed[index]) return;
@@ -466,6 +472,29 @@ absl::Time FuzzingEventEngine::NowAsAbslTime() {
              g_fuzzing_event_engine->now_.time_since_epoch().count());
 }
 
+class FuzzingEventEngine::FuzzingEndpoint::MetricsSet
+    : public EventEngine::Endpoint::MetricsSet {
+ public:
+  explicit MetricsSet(absl::Span<const size_t> keys) {
+    keys_.assign(keys.begin(), keys.end());
+  }
+
+  bool IsSet(size_t key) const override {
+    return std::find(keys_.begin(), keys_.end(), key) != keys_.end();
+  }
+
+ private:
+  std::vector<size_t> keys_;
+};
+
+class FuzzingEventEngine::FuzzingEndpoint::FullMetricsSet
+    : public EventEngine::Endpoint::MetricsSet {
+ public:
+  bool IsSet(size_t key) const override {
+    return key < g_fuzzing_event_engine->endpoint_metrics_by_id_.size();
+  }
+};
+
 class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
     : public EventEngine::Endpoint::TelemetryInfo {
   std::vector<size_t> AllWriteMetrics() const override {
@@ -493,6 +522,16 @@ class FuzzingEventEngine::FuzzingEndpoint::TelemetryInfo
       return std::nullopt;
     }
     return it->second;
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+      absl::Span<const size_t> keys) const override {
+    return std::make_shared<MetricsSet>(keys);
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+      const override {
+    return std::make_shared<FullMetricsSet>();
   }
 };
 

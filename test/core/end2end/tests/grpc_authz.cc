@@ -73,7 +73,7 @@ void TestDenyUnauthorizedRequest(CoreEnd2endTest& test) {
 
 void InitWithPolicy(CoreEnd2endTest& test,
                     grpc_authorization_policy_provider* provider) {
-  test.InitServer(ChannelArgs().Set(
+  test.InitServer(CoreEnd2endTest::DefaultServerArgs().Set(
       GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
       ChannelArgs::Pointer(provider,
                            grpc_authorization_policy_provider_arg_vtable())));
