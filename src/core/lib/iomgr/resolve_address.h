@@ -120,7 +120,13 @@ void ResetDNSResolver(std::shared_ptr<DNSResolver> resolver);
 
 // Get the singleton DNS resolver instance which should be used for all
 // DNS resolution in gRPC.
-std::shared_ptr<DNSResolver> GetDNSResolver();
+std::shared_ptr<DNSResolver> GetDNSResolver(
+    SourceLocation location = SourceLocation());
+
+// DO NOT USE
+// This is exclusively for the iomgr ares resolver backup.
+// TODO(hork): remove when iomgr dns can be deleted.
+std::shared_ptr<DNSResolver> GetDNSResolverForAresBackupOnly();
 
 }  // namespace grpc_core
 
