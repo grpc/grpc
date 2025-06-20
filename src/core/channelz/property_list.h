@@ -138,6 +138,8 @@ class PropertyList {
     return *this;
   }
 
+  PropertyList& Merge(PropertyList other);
+
   // TODO(ctiller): remove soon, switch to something returning a protobuf.
   Json::Object TakeJsonObject() { return std::move(property_list_); }
 
@@ -193,7 +195,6 @@ class PropertyGrid {
  private:
   void SetInternal(absl::string_view column, absl::string_view row,
                    std::optional<Json> value);
-  size_t GetIndex(std::vector<std::string>& vec, absl::string_view value);
 
   std::vector<std::string> columns_;
   std::vector<std::string> rows_;
@@ -205,6 +206,45 @@ namespace property_list_detail {
 template <>
 struct JsonFromValueHelper<PropertyGrid> {
   static std::optional<Json> JsonFromValue(PropertyGrid value) {
+    return Json::FromObject(value.TakeJsonObject());
+  }
+};
+
+}  // namespace property_list_detail
+
+// PropertyTable is much the same as PropertyGrid, but has numbered rows
+// instead of named rows.
+class PropertyTable {
+ public:
+  template <typename T>
+  PropertyTable& Set(absl::string_view column, size_t row, T value) {
+    SetInternal(
+        column, row,
+        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    return *this;
+  }
+
+  PropertyTable& SetRow(size_t row, PropertyList values);
+  PropertyTable& AppendRow(PropertyList values) {
+    return SetRow(num_rows_, std::move(values));
+  }
+
+  Json::Object TakeJsonObject();
+
+ private:
+  void SetInternal(absl::string_view column, size_t row,
+                   std::optional<Json> value);
+
+  std::vector<std::string> columns_;
+  size_t num_rows_ = 0;
+  absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
+};
+
+namespace property_list_detail {
+
+template <>
+struct JsonFromValueHelper<PropertyTable> {
+  static std::optional<Json> JsonFromValue(PropertyTable value) {
     return Json::FromObject(value.TakeJsonObject());
   }
 };
