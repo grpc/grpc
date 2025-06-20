@@ -75,8 +75,7 @@ struct grpc_channel_element_args {
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
-  const grpc_core::Blackboard* old_blackboard;
-  grpc_core::Blackboard* new_blackboard;
+  grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
@@ -268,9 +267,7 @@ grpc_error_handle grpc_channel_stack_init(
     int initial_refs, grpc_iomgr_cb_func destroy, void* destroy_arg,
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& args, const char* name,
-    grpc_channel_stack* stack,
-    const grpc_core::Blackboard* old_blackboard = nullptr,
-    grpc_core::Blackboard* new_blackboard = nullptr);
+    grpc_channel_stack* stack, grpc_core::Blackboard* blackboard = nullptr);
 // Destroy a channel stack
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

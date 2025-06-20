@@ -37,24 +37,28 @@ class BarEntry : public Blackboard::Entry {
 };
 
 TEST(Blackboard, Basic) {
-  Blackboard blackboard;
+  auto blackboard = MakeRefCounted<Blackboard>();
   // No entry for type FooEntry key "foo".
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), nullptr);
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), nullptr);
   // Set entry for type FooEntry key "foo".
   auto foo_entry = MakeRefCounted<FooEntry>();
-  blackboard.Set("a", foo_entry);
+  auto foo_entry_actual = blackboard->Set("a", foo_entry);
+  EXPECT_EQ(foo_entry_actual, foo_entry);
   // Get the entry we just added.
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), foo_entry);
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), foo_entry);
+  // Re-add the entry, which should return the original entry.
+  EXPECT_EQ(blackboard->Set("a", MakeRefCounted<FooEntry>()), foo_entry);
   // A different key for the same type is still unset.
-  EXPECT_EQ(blackboard.Get<FooEntry>("b"), nullptr);
+  EXPECT_EQ(blackboard->Get<FooEntry>("b"), nullptr);
   // The same key for a different type is still unset.
-  EXPECT_EQ(blackboard.Get<BarEntry>("a"), nullptr);
+  EXPECT_EQ(blackboard->Get<BarEntry>("a"), nullptr);
   // Set entry for type BarEntry key "foo".
   auto bar_entry = MakeRefCounted<BarEntry>();
-  blackboard.Set("a", bar_entry);
-  EXPECT_EQ(blackboard.Get<BarEntry>("a"), bar_entry);
+  auto bar_entry_actual = blackboard->Set("a", bar_entry);
+  EXPECT_EQ(bar_entry_actual, bar_entry);
+  EXPECT_EQ(blackboard->Get<BarEntry>("a"), bar_entry);
   // This should not have replaced the same key for FooEntry.
-  EXPECT_EQ(blackboard.Get<FooEntry>("a"), foo_entry);
+  EXPECT_EQ(blackboard->Get<FooEntry>("a"), foo_entry);
 }
 
 }  // namespace

@@ -35,11 +35,7 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
  public:
   using ChannelStackBuilder::ChannelStackBuilder;
 
-  void SetBlackboards(const Blackboard* old_blackboard,
-                      Blackboard* new_blackboard) {
-    old_blackboard_ = old_blackboard;
-    new_blackboard_ = new_blackboard;
-  }
+  void SetBlackboard(Blackboard* blackboard) { blackboard_ = blackboard; }
 
   // Build the channel stack.
   // After success, *result holds the new channel stack,
@@ -49,8 +45,7 @@ class ChannelStackBuilderImpl final : public ChannelStackBuilder {
   absl::StatusOr<RefCountedPtr<grpc_channel_stack>> Build() override;
 
  private:
-  const Blackboard* old_blackboard_ = nullptr;
-  Blackboard* new_blackboard_ = nullptr;
+  Blackboard* blackboard_ = nullptr;
 };
 
 }  // namespace grpc_core
