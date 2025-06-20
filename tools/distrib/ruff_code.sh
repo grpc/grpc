@@ -26,7 +26,7 @@ VIRTUALENV=.venv_ruff
 python3.11 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
-pip install ruff==0.11.13
+pip install ruff==0.12.0
 
 EXIT=0
 ruff check --config ruff.toml "${DIRS[@]}" || EXIT=1
