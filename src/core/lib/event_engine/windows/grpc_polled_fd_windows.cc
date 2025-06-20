@@ -14,14 +14,9 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
 #include "absl/log/check.h"
-
-#define GRPC_CHECK(cond) \
-  if (!cond) {           \
-    PostMortemEmit();    \
-    CHECK(cond);         \
-  }
+#include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
+#include "src/core/util/grpc_check.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
@@ -451,8 +446,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
               GRPC_SLICE_LENGTH(write_buf_));
         ares_ssize_t total_sent = 0;
         for (size_t i = 0; i < GRPC_SLICE_LENGTH(write_buf_); i++) {
-          GRPC_CHECK(GRPC_SLICE_START_PTR(currently_attempted)[i] ==
-                     GRPC_SLICE_START_PTR(write_buf_)[i]);
+          GRPC_CHECK_EQ(GRPC_SLICE_START_PTR(currently_attempted)[i],
+                        GRPC_SLICE_START_PTR(write_buf_)[i]);
           total_sent++;
         }
         grpc_core::CSliceUnref(currently_attempted);
