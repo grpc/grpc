@@ -241,7 +241,7 @@ std::string GetMarshallerFieldName(const Descriptor* message) {
 }
 
 std::string GetMethodFieldName(const MethodDescriptor* method) {
-  return "__Method_" + std::string(method->name());
+  return std::string("__Method_") + std::string(method->name());
 }
 
 std::string GetMethodRequestParamMaybe(const MethodDescriptor* method,
@@ -449,7 +449,7 @@ void GenerateServiceDescriptorProperty(Printer* out,
   out->Print("\n");
 }
 
-void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
+void GenerateServerClass(Printer* out, const ServiceDescriptor* service, bool append_async_suffix) {
   out->Print(
       "/// <summary>Base class for server-side implementations of "
       "$servicename$</summary>\n",
@@ -465,6 +465,14 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    std::string method_name(method->name());
+    if (append_async_suffix == true) {
+      if (!method->client_streaming() && !method->server_streaming() && method_name.size() >= 5 &&
+          method_name.compare(method_name.size() - 5, 5, "Async") != 0) {
+        method_name += "Async";
+      }
+    }
+
     GenerateDocCommentServerMethod(out, method);
     GenerateObsoleteAttribute(out, method->options().deprecated());
     GenerateGeneratedCodeAttribute(out);
@@ -472,7 +480,7 @@ void GenerateServerClass(Printer* out, const ServiceDescriptor* service) {
         "public virtual $returntype$ "
         "$methodname$($request$$response_stream_maybe$, "
         "grpc::ServerCallContext context)\n",
-        "methodname", method->name(), "returntype",
+        "methodname", method_name, "returntype",
         GetMethodReturnTypeServer(method), "request",
         GetMethodRequestParamServer(method), "response_stream_maybe",
         GetMethodResponseStreamMaybe(method));
@@ -681,7 +689,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
   out->Print("\n");
 }
 
-void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
+void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service, bool append_async_suffix) {
   out->Print(
       "/// <summary>Creates service definition that can be registered with a "
       "server</summary>\n");
@@ -701,9 +709,17 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
   out->Indent();
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    std::string method_name(method->name());
+    if (append_async_suffix == true) {
+      if (!method->client_streaming() && !method->server_streaming() && method_name.size() >= 5 &&
+          method_name.compare(method_name.size() - 5, 5, "Async") != 0) {
+        method_name += "Async";
+      }
+    }
+
     out->Print("\n.AddMethod($methodfield$, serviceImpl.$methodname$)",
                "methodfield", GetMethodFieldName(method), "methodname",
-               method->name());
+               method_name);
   }
   out->Print(".Build();\n");
   out->Outdent();
@@ -715,7 +731,8 @@ void GenerateBindServiceMethod(Printer* out, const ServiceDescriptor* service) {
 }
 
 void GenerateBindServiceWithBinderMethod(Printer* out,
-                                         const ServiceDescriptor* service) {
+                                         const ServiceDescriptor* service, 
+                                         bool append_async_suffix) {
   out->Print(
       "/// <summary>Register service method with a service "
       "binder with or without implementation. Useful when customizing the "
@@ -741,6 +758,14 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
+    std::string method_name(method->name());
+    if (append_async_suffix == true) {
+      if (!method->client_streaming() && !method->server_streaming() && method_name.size() >= 5 &&
+          method_name.compare(method_name.size() - 5, 5, "Async") != 0) {
+        method_name += "Async";
+      }
+    }
+
     out->Print(
         "serviceBinder.AddMethod($methodfield$, serviceImpl == null ? null : "
         "new $servermethodtype$<$inputtype$, $outputtype$>("
@@ -749,7 +774,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
         GetCSharpServerMethodType(method), "inputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
-        method->name());
+        method_name);
   }
 
   out->Outdent();
@@ -759,7 +784,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 
 void GenerateService(Printer* out, const ServiceDescriptor* service,
                      bool generate_client, bool generate_server,
-                     bool internal_access) {
+                     bool internal_access, bool append_async_suffix) {
   GenerateDocCommentBody(out, service);
 
   GenerateObsoleteAttribute(out, service->options().deprecated());
@@ -780,14 +805,14 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
   GenerateServiceDescriptorProperty(out, service);
 
   if (generate_server) {
-    GenerateServerClass(out, service);
+    GenerateServerClass(out, service, append_async_suffix);
   }
   if (generate_client) {
     GenerateClientStub(out, service);
   }
   if (generate_server) {
-    GenerateBindServiceMethod(out, service);
-    GenerateBindServiceWithBinderMethod(out, service);
+    GenerateBindServiceMethod(out, service, append_async_suffix);
+    GenerateBindServiceWithBinderMethod(out, service, append_async_suffix);
   }
 
   out->Outdent();
@@ -797,7 +822,8 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 }  // anonymous namespace
 
 std::string GetServices(const FileDescriptor* file, bool generate_client,
-                        bool generate_server, bool internal_access) {
+                        bool generate_server, bool internal_access, 
+                        bool append_async_suffix) {
   std::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -839,7 +865,7 @@ std::string GetServices(const FileDescriptor* file, bool generate_client,
     }
     for (int i = 0; i < file->service_count(); i++) {
       GenerateService(&out, file->service(i), generate_client, generate_server,
-                      internal_access);
+                      internal_access, append_async_suffix);
     }
     if (file_namespace != "") {
       out.Outdent();
