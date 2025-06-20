@@ -8540,6 +8540,7 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "channelz_property_list",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_scheduler",
