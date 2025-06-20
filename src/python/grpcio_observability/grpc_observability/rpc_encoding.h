@@ -19,9 +19,7 @@
 #include <stdint.h>
 #include <string.h>
 
-// TODO(xuanwn): Use absl::endian/absl::byteswap when abseil-cpp is upgraded
-// to 202507.
-#include "absl/base/internal/endian.h"
+#include "absl/numeric/bits.h"
 #include "absl/strings/string_view.h"
 
 namespace grpc_observability {
@@ -54,8 +52,15 @@ class RpcServerStatsEncoding {
       *time = 0;
       return kEncodeDecodeFailure;
     }
-    *time = absl::little_endian::Load64(
-        &buf[kServerElapsedTimeOffset + kFieldIdSize]);
+    uint64_t little_endian_time;
+    memcpy(reinterpret_cast<void*>(&little_endian_time),
+           &buf[kServerElapsedTimeOffset + kFieldIdSize],
+           kServerElapsedTimeSize);
+    if constexpr (absl::endian::native == absl::endian::little) {
+      *time = little_endian_time;
+    } else {
+      *time = absl::byteswap(little_endian_time);
+    }
     return kRpcServerStatsSize;
   }
 
@@ -70,8 +75,15 @@ class RpcServerStatsEncoding {
 
     buf[kVersionIdOffset] = kVersionId;
     buf[kServerElapsedTimeOffset] = kServerElapsedTimeField;
-    absl::little_endian::Store64(&buf[kServerElapsedTimeOffset + kFieldIdSize],
-                                 time);
+    uint64_t little_endian_time;
+    if constexpr (absl::endian::native == absl::endian::little) {
+      little_endian_time = time;
+    } else {
+      little_endian_time = absl::byteswap(time);
+    }
+    memcpy(&buf[kServerElapsedTimeOffset + kFieldIdSize],
+           reinterpret_cast<void*>(&little_endian_time),
+           kServerElapsedTimeSize);
     return kRpcServerStatsSize;
   }
 
