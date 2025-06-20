@@ -650,7 +650,7 @@ class MetricsCollector
         [reader, ztrace_collector, write_size, self = Ref()](
             EventEngine::Endpoint::WriteEvent event, absl::Time timestamp,
             std::vector<EventEngine::Endpoint::WriteMetric> metrics) {
-          GRPC_LATENT_SEE_PARENT_SCOPE("MetricsCollector::WriteEventSink");
+          GRPC_LATENT_SEE_SCOPE("MetricsCollector::WriteEventSink");
           ztrace_collector->Append([event, timestamp, &metrics,
                                     telemetry_info = self->telemetry_info_,
                                     &reader]() {
