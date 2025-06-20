@@ -20,17 +20,17 @@ import unittest
 import weakref
 
 import grpc
+from grpc import AbortError
 
 from tests.unit import test_common
-from tests.unit.framework.common import test_constants
 
 _SERVICE_NAME = "test"
 _ABORT = "abort"
 _ABORT_WITH_STATUS = "AbortWithStatus"
+_ABORT_WITH_SERVER_ERROR = "AbortWithServerError"
 _INVALID_CODE = "InvalidCode"
 
 _REQUEST = b"\x00\x00\x00"
-_RESPONSE = b"\x00\x00\x00"
 
 _ABORT_DETAILS = "Abandon ship!"
 _ABORT_METADATA = (("a-trailing-metadata", "42"),)
@@ -59,6 +59,20 @@ def abort_unary_unary(request, servicer_context):
     raise Exception("This line should not be executed!")
 
 
+def abort_unary_unary_with_server_error(request, servicer_context):
+    try:
+        servicer_context.abort(
+            grpc.StatusCode.INTERNAL,
+            _ABORT_DETAILS,
+        )
+    except AbortError as err:
+        servicer_context.abort(
+            grpc.StatusCode.INTERNAL,
+            str(type(err).__name__),
+        )
+    raise Exception("This line should not be executed!")
+
+
 def abort_with_status_unary_unary(request, servicer_context):
     servicer_context.abort_with_status(
         _Status(
@@ -81,6 +95,9 @@ RPC_METHOD_HANDLERS = {
     _ABORT: grpc.unary_unary_rpc_method_handler(abort_unary_unary),
     _ABORT_WITH_STATUS: grpc.unary_unary_rpc_method_handler(
         abort_with_status_unary_unary
+    ),
+    _ABORT_WITH_SERVER_ERROR: grpc.unary_unary_rpc_method_handler(
+        abort_unary_unary_with_server_error
     ),
     _INVALID_CODE: grpc.stream_stream_rpc_method_handler(
         invalid_code_unary_unary
@@ -113,6 +130,19 @@ class AbortTest(unittest.TestCase):
 
         self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
         self.assertEqual(rpc_error.details(), _ABORT_DETAILS)
+
+    def test_server_abort_code(self):
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            self._channel.unary_unary(
+                grpc._common.fully_qualified_method(
+                    _SERVICE_NAME, _ABORT_WITH_SERVER_ERROR
+                ),
+                _registered_method=True,
+            )(_REQUEST)
+        rpc_error = exception_context.exception
+
+        self.assertEqual(rpc_error.code(), grpc.StatusCode.INTERNAL)
+        self.assertEqual(rpc_error.details(), str(AbortError.__name__))
 
     # This test ensures that abort() does not store the raised exception, which
     # on Python 3 (via the `__traceback__` attribute) holds a reference to

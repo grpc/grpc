@@ -30,6 +30,7 @@ from typing import (
 
 import grpc
 from grpc._cython import cygrpc
+from grpc._errors import UsageError
 
 from . import _base_call
 from ._call import AioRpcError
@@ -566,7 +567,7 @@ class _InterceptedStreamRequestMixin:
         # should be expected through an iterators provided
         # by the caller.
         if self._write_to_iterator_queue is None:
-            raise cygrpc.UsageError(_API_STYLE_ERROR)
+            raise UsageError(_API_STYLE_ERROR)
 
         try:
             call = await self._interceptors_task
@@ -592,7 +593,7 @@ class _InterceptedStreamRequestMixin:
         # should be expected through an iterators provided
         # by the caller.
         if self._write_to_iterator_queue is None:
-            raise cygrpc.UsageError(_API_STYLE_ERROR)
+            raise UsageError(_API_STYLE_ERROR)
 
         try:
             call = await self._interceptors_task

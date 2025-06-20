@@ -369,7 +369,9 @@ def _rpc_state_string(class_name: str, rpc_state: _RPCState) -> str:
             )
 
 
-class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
+class _InactiveRpcError(
+    grpc.RpcError, grpc.Call, grpc.Future
+):  # pylint: disable=too-many-ancestors
     """An RPC error not tied to the execution of a particular RPC.
 
     The RPC represented by the state object must not be in-progress or
