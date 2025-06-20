@@ -218,6 +218,13 @@ void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
       [](absl::Status) {});
 }
 
+void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
+  ToJson([name = std::move(name),
+          sink = std::move(sink)](Json::Object obj) mutable {
+    sink.AddAdditionalInfo(std::move(name), std::move(obj));
+  });
+}
+
 Json::Object Party::ToJsonLocked() {
   Json::Object obj;
   auto state = state_.load(std::memory_order_relaxed);
