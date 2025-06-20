@@ -14,8 +14,8 @@
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Optional, Union
 from collections.abc import Iterator
+from typing import Any, Optional, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
@@ -42,7 +42,7 @@ class Metadata(abc.Collection):
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple) ->  "Metadata":
+    def from_tuple(cls, raw_metadata: tuple) -> "Metadata":
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -103,7 +103,9 @@ class Metadata(abc.Collection):
         return abc.ItemsView(self)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None,
+        self,
+        key: MetadataKey,
+        default: MetadataValue = None,
     ) -> Optional[MetadataValue]:
         try:
             return self[key]

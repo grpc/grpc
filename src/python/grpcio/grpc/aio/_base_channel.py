@@ -201,7 +201,9 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: # noqa: ANN001
+    async def __aexit__(
+        self, exc_type, exc_val, exc_tb
+    ) -> None:  # noqa: ANN001
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
@@ -225,7 +227,8 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False,
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         """Checks the connectivity state of a channel.
 

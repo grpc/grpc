@@ -13,9 +13,9 @@
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
 
+from collections.abc import Sequence
 from concurrent.futures import Executor
 from typing import Any, Optional
-from collections.abc import Sequence
 
 import grpc
 from grpc import _common
@@ -28,7 +28,8 @@ from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
+    base_options: ChannelArgumentType,
+    compression: Optional[grpc.Compression],
 ) -> tuple:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
@@ -59,7 +60,7 @@ class Server(_base_server.Server):
                     f"{invalid_interceptors}"
                 )
                 raise TypeError(
-                  msg,
+                    msg,
                 )
         self._server = cygrpc.AioServer(
             self._loop,
@@ -71,7 +72,8 @@ class Server(_base_server.Server):
         )
 
     def add_generic_rpc_handlers(
-        self, generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
+        self,
+        generic_rpc_handlers: Sequence[grpc.GenericRpcHandler],
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 
@@ -106,11 +108,14 @@ class Server(_base_server.Server):
 
         """
         return _common.validate_port_binding_result(
-            address, self._server.add_insecure_port(_common.encode(address)),
+            address,
+            self._server.add_insecure_port(_common.encode(address)),
         )
 
     def add_secure_port(
-        self, address: str, server_credentials: grpc.ServerCredentials,
+        self,
+        address: str,
+        server_credentials: grpc.ServerCredentials,
     ) -> int:
         """Opens a secure port for accepting RPCs.
 
@@ -129,7 +134,8 @@ class Server(_base_server.Server):
         return _common.validate_port_binding_result(
             address,
             self._server.add_secure_port(
-                _common.encode(address), server_credentials,
+                _common.encode(address),
+                server_credentials,
             ),
         )
 
@@ -167,7 +173,8 @@ class Server(_base_server.Server):
         await self._server.shutdown(grace)
 
     async def wait_for_termination(
-        self, timeout: Optional[float] = None,
+        self,
+        timeout: Optional[float] = None,
     ) -> bool:
         """Block current coroutine until the server stops.
 

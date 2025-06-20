@@ -14,9 +14,10 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+from collections.abc import Iterable
+from collections.abc import Sequence
 import sys
 from typing import Any, Optional, Union
-from collections.abc import Iterable, Sequence
 
 import grpc
 from grpc import _common
@@ -71,7 +72,8 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
+    base_options: ChannelArgumentType,
+    compression: Optional[grpc.Compression],
 ) -> tuple[tuple[str, Union[str, bytes, int]], ...]:
     compression_channel_argument = _compression.create_channel_option(
         compression,
@@ -142,7 +144,8 @@ class _BaseMultiCallable:
 
 
 class UnaryUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -187,7 +190,8 @@ class UnaryUnaryMultiCallable(
 
 
 class UnaryStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.UnaryStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.UnaryStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -233,7 +237,8 @@ class UnaryStreamMultiCallable(
 
 
 class StreamUnaryMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamUnaryMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamUnaryMultiCallable,
 ):
     def __call__(
         self,
@@ -278,7 +283,8 @@ class StreamUnaryMultiCallable(
 
 
 class StreamStreamMultiCallable(
-    _BaseMultiCallable, _base_channel.StreamStreamMultiCallable,
+    _BaseMultiCallable,
+    _base_channel.StreamStreamMultiCallable,
 ):
     def __call__(
         self,
@@ -383,10 +389,16 @@ class Channel(_base_channel.Channel):
     async def __aenter__(self) -> "Channel":
         return self
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: # noqa: ANN001
+    async def __aexit__(
+        self, exc_type, exc_val, exc_tb
+    ) -> None:  # noqa: ANN001
         await self._close(None)
 
-    async def _close(self, grace) -> None:  # pylint: disable=too-many-branches # noqa: C901, ANN001, PLR0912
+    async def _close(
+        self, grace
+    ) -> (
+        None
+    ):  # pylint: disable=too-many-branches # noqa: C901, ANN001, PLR0912
         if self._channel.closed():
             return
 
@@ -468,7 +480,8 @@ class Channel(_base_channel.Channel):
             self._channel.close()
 
     def get_state(
-        self, try_to_connect: bool = False,
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         result = self._channel.check_connectivity_state(try_to_connect)
         return _common.CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY[result]
@@ -477,8 +490,9 @@ class Channel(_base_channel.Channel):
         self,
         last_observed_state: grpc.ChannelConnectivity,
     ) -> None:
-        assert await self._channel.watch_connectivity_state( # noqa: S101
-            last_observed_state.value[0], None,
+        assert await self._channel.watch_connectivity_state(  # noqa: S101
+            last_observed_state.value[0],
+            None,
         )
 
     async def channel_ready(self) -> None:
