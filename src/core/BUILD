@@ -764,6 +764,7 @@ grpc_cc_library(
         "promise_factory",
         "ref_counted",
         "sync",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
