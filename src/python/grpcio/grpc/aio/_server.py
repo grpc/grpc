@@ -23,7 +23,8 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._interceptor import ServerInterceptor
-from ._typing import ChannelArgumentType, ChannelArgsType
+from ._typing import ChannelArgsType
+from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(

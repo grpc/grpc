@@ -39,7 +39,8 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import ChannelArgumentType, ChannelArgsType
+from ._typing import ChannelArgsType
+from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType
