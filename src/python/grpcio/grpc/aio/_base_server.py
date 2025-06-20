@@ -150,8 +150,8 @@ class Server(abc.ABC):
     @abc.abstractmethod
     def add_registered_method_handlers(
         self,
-        service_name, # noqa: ANN001
-        method_handlers, # noqa: ANN001
+        service_name,  # noqa: ANN001
+        method_handlers,  # noqa: ANN001
     ) -> None:
         """Registers GenericRpcHandlers with this Server.
 

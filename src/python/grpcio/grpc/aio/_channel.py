@@ -391,8 +391,8 @@ class Channel(_base_channel.Channel):
 
     async def __aexit__(
         self,
-        exc_type, # noqa: ANN001
-        exc_val, # noqa: ANN001
+        exc_type,  # noqa: ANN001
+        exc_val,  # noqa: ANN001
         exc_tb,  # noqa: ANN001
     ) -> None:
         await self._close(None)
