@@ -83,6 +83,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "trie_lookup",
+    srcs = [
+        "util/trie_lookup.cc",
+    ],
+    hdrs = [
+        "util/trie_lookup.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/types:optional",
+    ],
+)
+
+grpc_cc_library(
     name = "slice_cast",
     hdrs = [
         "//:include/grpc/event_engine/internal/slice_cast.h",
@@ -5763,6 +5777,125 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "xds_matcher",
+    srcs = [
+        "xds/grpc/xds_matcher.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_context",
+    srcs = [
+        "xds/grpc/xds_matcher_context.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_context.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "metadata_batch",
+        "trie_lookup",
+        "unique_type_name",
+        "xds_matcher",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_input",
+    srcs = [
+        "xds/grpc/xds_matcher_input.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_input.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+        "xds_matcher",
+        "xds_matcher_context",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_action",
+    srcs = [
+        "xds/grpc/xds_matcher_action.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_action.h",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "grpc_matchers",
+        "match",
+        "unique_type_name",
+        "xds_matcher",
+    ],
+)
+
+grpc_cc_library(
+    name = "xds_matcher_parse",
+    srcs = [
+        "xds/grpc/xds_matcher_parse.cc",
+    ],
+    hdrs = [
+        "xds/grpc/xds_matcher_parse.h",
+    ],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/container:inlined_vector",
+        "absl/strings",
+    ],
+    tags = ["nofixdeps"],
+    deps = [
+        "envoy_common_config_matcher_upb",
+        "envoy_config_core_upb",
+        "envoy_extensions_http_rate_limit_quota_upb",
+        "envoy_extensions_http_rate_limit_quota_upbdefs",
+        "envoy_type_matcher_upb",
+        "envoy_type_upb",
+        "grpc_matchers",
+        "grpc_xds_client",
+        "match",
+        "trie_lookup",
+        "unique_type_name",
+        "upb_utils",
+        "xds_common_types",
+        "xds_matcher",
+        "xds_matcher_action",
+        "xds_matcher_context",
+        "xds_matcher_input",
+    ],
+)
+
+grpc_cc_library(
     name = "xds_http_filter",
     hdrs = [
         "xds/grpc/xds_http_filter.h",
@@ -10301,6 +10434,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_http_rate_limit_quota_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_rate_limit_quota_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "envoy_type_http_upb",
     deps = ["@envoy_api//envoy/type/http/v3:pkg"],
 )
@@ -10404,6 +10547,11 @@ grpc_upb_proto_reflection_library(
 grpc_upb_proto_library(
     name = "envoy_type_matcher_upb",
     deps = ["@envoy_api//envoy/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_common_config_matcher_upb",
+    deps = ["@envoy_api//envoy/config/common/matcher/v3:pkg"],
 )
 
 grpc_upb_proto_library(
