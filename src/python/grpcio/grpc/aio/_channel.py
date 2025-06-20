@@ -397,10 +397,10 @@ class Channel(_base_channel.Channel):
     ) -> None:
         await self._close(None)
 
-    async def _close(  # noqa: C901, PLR0912
+    async def _close( # pylint: disable=too-many-branches  # noqa: C901, PLR0912
         self,
         grace,  # noqa: ANN001
-    ) -> None:  # pylint: disable=too-many-branches
+    ) -> None:
         if self._channel.closed():
             return
 

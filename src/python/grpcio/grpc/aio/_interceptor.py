@@ -94,7 +94,7 @@ class ClientCallDetails(
         (
             "method",
             "timeout",
-            "metadata",
+            "metadata", # pylint: disable=E0239
             "credentials",
             "wait_for_ready",
         ),
