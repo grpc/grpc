@@ -214,6 +214,7 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
     }
   }
   grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
+  trace_.Render(entity, arena);
 }
 
 //
