@@ -390,15 +390,17 @@ class Channel(_base_channel.Channel):
         return self
 
     async def __aexit__(
-        self, exc_type, exc_val, exc_tb, # noqa: ANN001
+        self,
+        exc_type,
+        exc_val,
+        exc_tb,  # noqa: ANN001
     ) -> None:
         await self._close(None)
 
-    async def _close( # noqa: C901, PLR0912
-        self, grace, # noqa: ANN001
-    ) -> (
-        None
-    ):  # pylint: disable=too-many-branches
+    async def _close(  # noqa: C901, PLR0912
+        self,
+        grace,  # noqa: ANN001
+    ) -> None:  # pylint: disable=too-many-branches
         if self._channel.closed():
             return
 
