@@ -14,9 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/port.h"  // IWYU pragma: keep
-#include "src/core/util/grpc_check.h"
 
 #if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
@@ -35,6 +33,7 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 
 // TODO(apolcyn): remove this hack after fixing upstream.

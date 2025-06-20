@@ -3173,6 +3173,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "error",
         "event_engine_time_util",
+        "grpc_check",
         "grpc_sockaddr",
         "iomgr_port",
         "posix_event_engine_closure",
