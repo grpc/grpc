@@ -19,10 +19,10 @@
 #include "src/core/util/postmortem_emit.h"
 
 #ifdef GRPC_POSTMORTEM_CHECKS
-#define GRPC_CHECK(a) \
-  if (!a) {           \
-    PostMortemEmit(); \
-    CHECK(a);         \
+#define GRPC_CHECK(a)            \
+  if (!a) {                      \
+    grpc_core::PostMortemEmit(); \
+    CHECK(a);                    \
   }
 
 #define GRPC_CHECK_EQ(a, b) \
