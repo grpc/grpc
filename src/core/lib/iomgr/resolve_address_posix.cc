@@ -17,6 +17,12 @@
 //
 
 #include <grpc/support/port_platform.h>
+#if defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||     \
+    defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
+    defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
+    defined(GPR_NETBSD) || defined(GRPC_POSIX_SOCKET)
+#include <netdb.h>
+#endif
 
 #include "src/core/lib/iomgr/port.h"
 #ifdef GRPC_POSIX_SOCKET_RESOLVE_ADDRESS
