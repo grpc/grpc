@@ -45,8 +45,10 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -196,6 +198,23 @@ void BaseNode::RunZTrace(
     return;
   }
   ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
+}
+
+void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
+                               upb_Arena* arena) {
+  grpc_channelz_v2_Entity_set_id(entity, uuid());
+  grpc_channelz_v2_Entity_set_kind(
+      entity, StdStringToUpbString(EntityTypeToKind(type_)));
+  {
+    MutexLock lock(&parent_mu_);
+    auto* parents =
+        grpc_channelz_v2_Entity_resize_parents(entity, parents_.size(), arena);
+    for (const auto& parent : parents_) {
+      *parents++ = parent->uuid();
+    }
+  }
+  grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
+  trace_.Render(entity, arena);
 }
 
 //
