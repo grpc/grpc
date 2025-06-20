@@ -76,6 +76,10 @@ inline absl::StatusCode ErrorCodeToAbslStatusCode(
   GPR_UNREACHABLE_CODE(return absl::StatusCode::kUnknown);
 }
 
+inline uint8_t GetMaxHttp2ErrorCode() {
+  return static_cast<uint8_t>(Http2ErrorCode::kHTTP11Required);
+}
+
 inline Http2ErrorCode AbslStatusCodeToErrorCode(const absl::StatusCode status) {
   switch (status) {
     case absl::StatusCode::kOk:
@@ -324,7 +328,7 @@ class GRPC_MUST_USE_RESULT Http2Status {
 };
 
 // We can add more methods and helpers as needed.
-// This class is similar to ValueOrFailure but a more minamilasit version.
+// This class is similar to ValueOrFailure but a more minimalist version.
 // Reference :
 // https://github.com/grpc/grpc/blob/master/src/core/lib/promise/status_flag.h
 

@@ -69,8 +69,10 @@ namespace http2 {
 // |---------------------|--------------|-----------------------|------------|
 // | Endpoint Read Loop  | Infinite     | On transport close    | One        |
 // | Endpoint Write Loop | Infinite     | On transport close    | One        |
+// | Close Transport     | CloseTimeout | On transport close    | One        |
 
 // Max Party Slots (Always): 2
+// Max Promise Slots (Worst Case): 3
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -417,9 +419,7 @@ class Http2ClientTransport final : public ClientTransport {
   }
 
   // This function MUST run on the transport party.
-  void CloseTransport(
-      absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
-      Http2Status http2_status);
+  void CloseTransport();
 
   void MaybeSpawnCloseTransport(Http2Status http2_status,
                                 DebugLocation whence = {});
@@ -612,8 +612,10 @@ class Http2ClientTransport final : public ClientTransport {
   };
 
   inline Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
-    if (error_code > 13) {
-      return Http2ErrorCode::kInternalError;
+    if (GPR_UNLIKELY(error_code > GetMaxHttp2ErrorCode())) {
+      LOG(ERROR) << "GetErrorCodeFromRstFrameErrorCode: Invalid error code "
+                    "received from RST_STREAM frame: "
+                 << error_code;
     }
 
     return static_cast<Http2ErrorCode>(error_code);

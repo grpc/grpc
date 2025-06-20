@@ -698,18 +698,9 @@ Http2ClientTransport::Http2ClientTransport(
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
-void Http2ClientTransport::CloseTransport(
-    absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list,
-    Http2Status http2_status) {
-  for (const auto& pair : stream_list) {
-    // There is no merit in transitioning the stream to
-    // closed state here as the subsequent lookups would
-    // fail. Also, as this is running on the transport
-    // party, there would not be concurrent access to the stream.
-    auto& stream = pair.second;
-    stream->call.SpawnPushServerTrailingMetadata(
-        ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
-  }
+void Http2ClientTransport::CloseTransport() {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
+
   // This is the only place where the general_party_ is
   // reset.
   general_party_.reset();
@@ -724,12 +715,15 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 
   // Free up the stream_list at this point. This would still allow the frames
   // in the MPSC to be drained and block any additional frames from being
-  // enqueued or read.
+  // enqueued. Additionally this also prevents additional frames with non-zero
+  // stream_ids from being processed by the read loop.
   ReleasableMutexLock lock(&transport_mutex_);
   if (is_transport_closed_) {
     lock.Release();
     return;
   }
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
+                       "Initiating transport close";
   is_transport_closed_ = true;
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
       std::move(stream_list_);
@@ -744,6 +738,19 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
       [self = RefAsSubclass<Http2ClientTransport>(),
        stream_list = std::move(stream_list),
        http2_status = std::move(http2_status)]() mutable {
+        HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::CloseTransport Cleaning up call stacks";
+        // Clean up the call stacks for all active streams.
+        for (const auto& pair : stream_list) {
+          // There is no merit in transitioning the stream to
+          // closed state here as the subsequent lookups would
+          // fail. Also, as this is running on the transport
+          // party, there would not be concurrent access to the stream.
+          auto& stream = pair.second;
+          stream->call.SpawnPushServerTrailingMetadata(
+              ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
+        }
+
         // RFC9113 : A GOAWAY frame might not immediately precede closing of
         // the connection; a receiver of a GOAWAY that has no more use for the
         // connection SHOULD still send a GOAWAY frame before terminating the
@@ -752,11 +759,8 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
         // goaway here. Once goaway is sent or timer is expired, close the
         // transport.
         return Map(Immediate(absl::OkStatus()),
-                   [self, stream_list = std::move(stream_list),
-                    http2_status = std::move(http2_status)](
-                       GRPC_UNUSED absl::Status) mutable {
-                     self->CloseTransport(std::move(stream_list),
-                                          std::move(http2_status));
+                   [self](GRPC_UNUSED absl::Status) mutable {
+                     self->CloseTransport();
                      return Empty{};
                    });
       },
