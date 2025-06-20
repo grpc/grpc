@@ -8175,7 +8175,6 @@ grpc_cc_library(
         "error_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
-        "http2_client_transport",
         "resolved_address",
         "status_helper",
         "subchannel_connector",

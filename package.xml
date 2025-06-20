@@ -377,7 +377,6 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_window_update.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/frame_window_update.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/header_assembler.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_constants.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_encoder.h" role="src" />
@@ -389,31 +388,22 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/hpack_parser_table.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_client_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_settings.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_stats_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_status.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_transport.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_transport.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/huffsyms.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/keepalive.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/keepalive.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/legacy_frame.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/message_assembler.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/parsing.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_abuse_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_callbacks.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_callbacks.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_promise.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/ping_rate_policy.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/transport/stream_lists.cc" role="src" />
@@ -1561,21 +1551,15 @@
     <file baseinstalldir="/" name="src/core/lib/promise/detail/join_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_factory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_like.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/detail/promise_variant.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/seq_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/detail/status.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/exec_ctx_wakeup_scheduler.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/for_each.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/if.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_latch.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/inter_activity_mutex.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/interceptor_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/latch.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/loop.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/map.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/match_promise.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/mpsc.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/mpsc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/observable.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/party.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/party.h" role="src" />
@@ -1590,8 +1574,6 @@
     <file baseinstalldir="/" name="src/core/lib/promise/status_flag.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_join.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/promise/try_seq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/wait_set.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/promise/wait_set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/api.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/resource_quota/arena.cc" role="src" />
@@ -1680,8 +1662,6 @@
     <file baseinstalldir="/" name="src/core/lib/transport/connectivity_state.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/error_utils.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/promise_endpoint.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/transport/promise_endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/status_conversion.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/transport/timeout_encoding.cc" role="src" />
