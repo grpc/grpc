@@ -81,7 +81,7 @@ class ServerCallWriter
 
     private function addSendInitialMetadataOpIfNotSent(
         array &$batch,
-        array $initialMetadata = null
+        ?array $initialMetadata = null
     ) {
         if (!$this->initialMetadataSent_) {
             $batch[OP_SEND_INITIAL_METADATA] = $initialMetadata ?? [];

@@ -721,7 +721,7 @@ function _makeStub($args)
         $update_metadata =
             function ($metadata,
                       $authUri = null,
-                      ClientInterface $client = null) use ($token) {
+                      ?ClientInterface $client = null) use ($token) {
                 $metadata_copy = $metadata;
                 $metadata_copy[CredentialsLoader::AUTH_METADATA_KEY] =
                     [sprintf('%s %s',
