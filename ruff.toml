@@ -12,6 +12,7 @@ ignore = [
     # imports upon detecting type annotations that can be written more succinctly under PEP 563.
 
     "TD003", # TD003 Missing issue link for this TODO
+    "TD004", # Checks that a "TODO" tag is followed by a colon.
     "FIX002", # Checks for "TODO" comments.
     "FIX004", # Checks for "HACK" comments.
 
@@ -30,6 +31,18 @@ ignore = [
     # This conflicts with isort
 
     "TRY400", # Checks for uses of logging.error instead of logging.exception when logging an exception.
+
+    "D401", # Checks for docstring first lines that are not in an imperative mood.
+    "D404", # Checks for docstrings that start with This.
+    "D205", # Checks for docstring summary lines that are not separated from the docstring description by one blank line.
+    "D400", # Checks for docstrings in which the first line does not end in a period.
+    "D415", # Checks for docstrings in which the first line does not end in a punctuation mark, such as a period, 
+    # question mark, or exclamation point.
+
+    "FBT001", # Checks for the use of boolean positional arguments in function definitions, 
+    # as determined by the presence of a type hint containing bool as an evident subtype - e.g. bool, bool | int, typing.Optional[bool], etc.
+
+    "FBT002", # Checks for the use of boolean positional arguments in function definitions, as determined by the presence of a boolean default value.
 ]
 
 # This is to suppress

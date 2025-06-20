@@ -16,7 +16,6 @@
 from typing import (
     Any,
     Callable,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -32,9 +31,9 @@ RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
 SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
-MetadatumType = Tuple[MetadataKey, MetadataValue]
+MetadatumType = tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
-ChannelArgumentType = Sequence[Tuple[str, Any]]
+ChannelArgumentType = Sequence[tuple[str, Any]]
 EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]

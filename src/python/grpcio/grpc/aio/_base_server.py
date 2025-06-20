@@ -14,7 +14,7 @@
 """Abstract base classes for server-side classes."""
 
 import abc
-from typing import Generic, NoReturn, Optional
+from typing import Generic, Optional
 from collections.abc import Iterable, Mapping, Sequence
 
 import grpc
@@ -141,7 +141,8 @@ class Server(abc.ABC):
 
         """
 
-    def add_registered_method_handlers(self, service_name, method_handlers):
+    @abc.abstractmethod
+    def add_registered_method_handlers(self, service_name, method_handlers) -> None: # noqa: ANN001
         """Registers GenericRpcHandlers with this Server.
 
         This method is only safe to call before the server is started.
@@ -202,8 +203,8 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         self,
         code: grpc.StatusCode,
         details: str = "",
-        trailing_metadata: MetadataType = tuple(),
-    ) -> NoReturn:
+        trailing_metadata: MetadataType = (),
+    ) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supersede any existing
@@ -342,7 +343,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         """
 
-    def trailing_metadata(self):
+    def trailing_metadata(self) -> Optional[MetadataType]:
         """Access value to be used as trailing metadata upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -353,7 +354,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def code(self):
+    def code(self) -> Optional[grpc.StatusCode]:
         """Accesses the value to be used as status code upon RPC completion.
 
         This is an EXPERIMENTAL API.
@@ -364,7 +365,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
         raise NotImplementedError
 
-    def details(self):
+    def details(self) -> str:
         """Accesses the value to be used as detail string upon RPC completion.
 
         This is an EXPERIMENTAL API.

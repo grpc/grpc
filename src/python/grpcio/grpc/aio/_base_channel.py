@@ -192,7 +192,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         """Starts an asynchronous context manager.
 
         Returns:
@@ -201,14 +201,14 @@ class Channel(abc.ABC):
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None: # noqa: ANN001
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
         """
 
     @abc.abstractmethod
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         """Closes this Channel and releases all resources held by it.
 
         This method immediately stops the channel from executing new RPCs in

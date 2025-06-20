@@ -14,7 +14,7 @@
 """Server-side implementation of gRPC Asyncio Python."""
 
 from concurrent.futures import Executor
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 from collections.abc import Sequence
 
 import grpc
@@ -29,7 +29,7 @@ from ._typing import ChannelArgumentType
 
 def _augment_channel_arguments(
     base_options: ChannelArgumentType, compression: Optional[grpc.Compression],
-):
+) -> tuple:
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
 
@@ -45,7 +45,7 @@ class Server(_base_server.Server):
         options: ChannelArgumentType,
         maximum_concurrent_rpcs: Optional[int],
         compression: Optional[grpc.Compression],
-    ):
+    ) -> None:
         self._loop = cygrpc.get_working_loop()
         if interceptors:
             invalid_interceptors = [
@@ -54,9 +54,12 @@ class Server(_base_server.Server):
                 if not isinstance(interceptor, ServerInterceptor)
             ]
             if invalid_interceptors:
-                raise ValueError(
-                    "Interceptor must be ServerInterceptor, the "
-                    f"following are invalid: {invalid_interceptors}",
+                msg = (
+                    f"Interceptor must be ServerInterceptor, the following are invalid: "
+                    f"{invalid_interceptors}"
+                )
+                raise TypeError(
+                  msg,
                 )
         self._server = cygrpc.AioServer(
             self._loop,
@@ -84,7 +87,7 @@ class Server(_base_server.Server):
     def add_registered_method_handlers(
         self,
         service_name: str,
-        method_handlers: Dict[str, grpc.RpcMethodHandler],
+        method_handlers: dict[str, grpc.RpcMethodHandler],
     ) -> None:
         # TODO(xuanwn): Implement this for AsyncIO.
         pass
@@ -189,18 +192,17 @@ class Server(_base_server.Server):
         """
         return await self._server.wait_for_termination(timeout)
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Schedules a graceful shutdown in current event loop.
 
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
-        if hasattr(self, "_server"):
-            if self._server.is_running():
-                cygrpc.schedule_coro_threadsafe(
-                    self._server.shutdown(None),
-                    self._loop,
-                )
+        if hasattr(self, "_server") and self._server.is_running():
+            cygrpc.schedule_coro_threadsafe(
+                self._server.shutdown(None),
+                self._loop,
+            )
 
 
 def server(
@@ -210,7 +212,7 @@ def server(
     options: Optional[ChannelArgumentType] = None,
     maximum_concurrent_rpcs: Optional[int] = None,
     compression: Optional[grpc.Compression] = None,
-):
+) -> Server:
     """Creates a Server with which RPCs can be serviced.
 
     Args:
