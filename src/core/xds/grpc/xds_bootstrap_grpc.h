@@ -85,6 +85,10 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
       return servers;
     }
 
+    bool FallbackOnReachabilityOnly() const override {
+      return fallback_on_reachability_only_;
+    }
+
     const std::string& client_listener_resource_name_template() const {
       return client_listener_resource_name_template_;
     }
@@ -94,6 +98,7 @@ class GrpcXdsBootstrap final : public XdsBootstrap {
    private:
     std::vector<GrpcXdsServer> servers_;
     std::string client_listener_resource_name_template_;
+    bool fallback_on_reachability_only_;
   };
 
   // Creates bootstrap object from json_string.
