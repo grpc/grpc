@@ -519,14 +519,15 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
       [this](GRPC_UNUSED Http2Frame frame) {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
-        return AssertResultType<absl::Status>(Map(
-            ProcessOneFrame(std::move(frame)),
-            [self = RefAsSubclass<Http2ClientTransport>()](Http2Status status) {
-              if (!status.IsOk()) {
-                return self->HandleError(std::move(status));
-              }
-              return absl::OkStatus();
-            }));
+        return AssertResultType<absl::Status>(
+            Map(ProcessOneFrame(std::move(frame)),
+                [self = this->RefAsSubclass<Http2ClientTransport>()](
+                    Http2Status status) {
+                  if (!status.IsOk()) {
+                    return self->HandleError(std::move(status));
+                  }
+                  return absl::OkStatus();
+                }));
       }));
 }
 
