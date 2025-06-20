@@ -88,14 +88,15 @@ def _docker_jobspec(
     inner_jobs=_DEFAULT_INNER_JOBS,
     timeout_seconds=None,
 ):
-    """Run a single instance of run_tests.py in a docker container"""
+    """Run a single instance of run_tests.go in a docker container"""
     if not timeout_seconds:
         timeout_seconds = _DEFAULT_RUNTESTS_TIMEOUT
     shortname = "run_tests_%s" % name
     test_job = jobset.JobSpec(
         cmdline=[
-            "python3",
-            "tools/run_tests/run_tests.py",
+            "go",
+            "run",
+            "tools/run_tests/run_tests.go",
             "--use_docker",
             "-t",
             "-j",
@@ -122,7 +123,7 @@ def _workspace_jobspec(
     inner_jobs=_DEFAULT_INNER_JOBS,
     timeout_seconds=None,
 ):
-    """Run a single instance of run_tests.py in a separate workspace"""
+    """Run a single instance of run_tests.go in a separate workspace"""
     if not workspace_name:
         workspace_name = "workspace_%s" % name
     if not timeout_seconds:
@@ -462,14 +463,14 @@ def _runs_per_test_type(arg_str):
 
 if __name__ == "__main__":
     argp = argparse.ArgumentParser(
-        description="Run a matrix of run_tests.py tests."
+        description="Run a matrix of run_tests.go tests."
     )
     argp.add_argument(
         "-j",
         "--jobs",
         default=multiprocessing.cpu_count() / _DEFAULT_INNER_JOBS,
         type=int,
-        help="Number of concurrent run_tests.py instances.",
+        help="Number of concurrent run_tests.go instances.",
     )
     argp.add_argument(
         "-f",
@@ -491,14 +492,14 @@ if __name__ == "__main__":
         default=False,
         action="store_const",
         const=True,
-        help="Pass --build_only flag to run_tests.py instances.",
+        help="Pass --build_only flag to run_tests.go instances.",
     )
     argp.add_argument(
         "--force_default_poller",
         default=False,
         action="store_const",
         const=True,
-        help="Pass --force_default_poller to run_tests.py instances.",
+        help="Pass --force_default_poller to run_tests.go instances.",
     )
     argp.add_argument(
         "--dry_run",
@@ -524,7 +525,7 @@ if __name__ == "__main__":
         "--inner_jobs",
         default=_DEFAULT_INNER_JOBS,
         type=int,
-        help="Number of jobs in each run_tests.py instance",
+        help="Number of jobs in each run_tests.go instance",
     )
     argp.add_argument(
         "-n",
@@ -646,13 +647,13 @@ if __name__ == "__main__":
     if num_failures == 0:
         jobset.message(
             "SUCCESS",
-            "All run_tests.py instances finished successfully.",
+            "All run_tests.go instances finished successfully.",
             do_newline=True,
         )
     else:
         jobset.message(
             "FAILED",
-            "Some run_tests.py instances have failed.",
+            "Some run_tests.go instances have failed.",
             do_newline=True,
         )
         sys.exit(1)
