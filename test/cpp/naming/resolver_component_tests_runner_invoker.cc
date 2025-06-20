@@ -168,5 +168,18 @@ int main(int argc, char** argv) {
         "test/cpp/naming/utils/tcp_connect.py");
   }
   grpc_shutdown();
+#ifndef GPR_WINDOWS
+  if (WIFEXITED(result)) {
+    if (WEXITSTATUS(result) != 0) {
+      int error_code = WEXITSTATUS(result);
+      LOG(FATAL) << "DNS test subprocess failed with code: " << error_code;
+    }
+  } else if (WIFSIGNALED(result)) {
+    int signal = WTERMSIG(result);
+    LOG(FATAL) << "DNS test subprocess killed by signal: " << signal;
+  } else {
+    LOG(FATAL) << "DNS test subprocess failed, neither WEXITSTATUS nor WTERMSIG is true";
+  }
+#endif
   return result;
 }
