@@ -30,6 +30,6 @@ source $VIRTUALENV/bin/activate
 pip install ruff==0.11.13
 
 EXIT=0
-ruff check --config grpc-stype-config.toml "${DIRS[@]}" || EXIT=1
+ruff check --config ruff.toml "${DIRS[@]}" || EXIT=1
 
 exit $EXIT
