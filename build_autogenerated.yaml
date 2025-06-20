@@ -963,7 +963,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -2574,7 +2573,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -4568,7 +4566,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -6429,7 +6426,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -10564,7 +10560,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -12229,7 +12224,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
