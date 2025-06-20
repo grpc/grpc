@@ -27,7 +27,8 @@ from ._typing import ChannelArgumentType, ChannelArgsType
 
 
 def _augment_channel_arguments(
-    base_options: Sequence[ChannelArgumentType], compression: Optional[grpc.Compression]
+    base_options: Sequence[ChannelArgumentType],
+    compression: Optional[grpc.Compression],
 ):
     compression_option = _compression.create_channel_option(compression)
     return tuple(base_options) + compression_option
