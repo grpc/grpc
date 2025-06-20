@@ -107,6 +107,29 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "postmortem",
+    srcs = ["util/postmortem_emit.cc"],
+    hdrs = [
+        "util/postmortem_emit.h",
+    ],
+    deps = [
+        "//:channelz",
+        "//:stats",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_check",
+    hdrs = ["util/grpc_check.h"],
+    external_deps = [
+        "absl/log:check",
+    ],
+    deps = [
+        "postmortem",
+    ],
+)
+
+grpc_cc_library(
     name = "event_engine_extensions",
     hdrs = [
         "lib/event_engine/extensions/blocking_dns.h",
@@ -3162,6 +3185,7 @@ grpc_cc_library(
         "common_event_engine_closures",
         "error",
         "event_engine_time_util",
+        "grpc_check",
         "grpc_sockaddr",
         "iomgr_port",
         "posix_event_engine_closure",
