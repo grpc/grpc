@@ -2296,12 +2296,16 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
+  src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
+  src/core/ext/transport/chttp2/transport/keepalive.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
+  src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -2780,8 +2784,10 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/mpsc.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -2827,6 +2833,7 @@ add_library(grpc
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/promise_endpoint.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -3381,12 +3388,16 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   src/core/ext/transport/chttp2/transport/hpack_parser.cc
   src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
+  src/core/ext/transport/chttp2/transport/http2_transport.cc
   src/core/ext/transport/chttp2/transport/huffsyms.cc
+  src/core/ext/transport/chttp2/transport/keepalive.cc
   src/core/ext/transport/chttp2/transport/parsing.cc
   src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   src/core/ext/transport/chttp2/transport/ping_callbacks.cc
+  src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
   src/core/ext/transport/chttp2/transport/varint.cc
@@ -3562,8 +3573,10 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_pipe.cc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/promise/activity.cc
+  src/core/lib/promise/mpsc.cc
   src/core/lib/promise/party.cc
   src/core/lib/promise/sleep.cc
+  src/core/lib/promise/wait_set.cc
   src/core/lib/resource_quota/api.cc
   src/core/lib/resource_quota/arena.cc
   src/core/lib/resource_quota/connection_quota.cc
@@ -3604,6 +3617,7 @@ add_library(grpc_unsecure
   src/core/lib/transport/call_final_info.cc
   src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
+  src/core/lib/transport/promise_endpoint.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
   src/core/lib/transport/transport.cc
@@ -13008,9 +13022,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-    src/core/lib/promise/mpsc.cc
-    src/core/lib/promise/wait_set.cc
-    src/core/lib/transport/promise_endpoint.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -13114,9 +13125,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     src/core/ext/transport/chaotic_good_legacy/frame_header.cc
     src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
     src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-    src/core/lib/promise/mpsc.cc
-    src/core/lib/promise/wait_set.cc
-    src/core/lib/transport/promise_endpoint.cc
     src/core/util/seq_bit_set.cc
     test/core/call/batch_builder.cc
     test/core/end2end/cq_verifier.cc
@@ -13307,9 +13315,6 @@ add_executable(end2end_http2_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -13411,9 +13416,6 @@ add_executable(end2end_http2_security_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -13515,9 +13517,6 @@ add_executable(end2end_http2_security_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -13707,9 +13706,6 @@ add_executable(end2end_http2_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -13899,9 +13895,6 @@ add_executable(end2end_inproc_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -14003,9 +13996,6 @@ add_executable(end2end_inproc_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -14195,9 +14185,6 @@ add_executable(end2end_posix_no_logging_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -14299,9 +14286,6 @@ add_executable(end2end_posix_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -18137,9 +18121,6 @@ add_executable(h2_ssl_cert_test
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/core/call/batch_builder.cc
   test/core/end2end/cq_verifier.cc
@@ -19126,13 +19107,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    src/core/ext/transport/chttp2/transport/http2_client_transport.cc
-    src/core/ext/transport/chttp2/transport/http2_transport.cc
-    src/core/ext/transport/chttp2/transport/keepalive.cc
-    src/core/ext/transport/chttp2/transport/ping_promise.cc
-    src/core/lib/promise/mpsc.cc
-    src/core/lib/promise/wait_set.cc
-    src/core/lib/transport/promise_endpoint.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/chttp2/http2_client_transport_test.cc
@@ -19186,9 +19160,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
     ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
     src/core/ext/transport/chttp2/transport/http2_server_transport.cc
-    src/core/lib/promise/mpsc.cc
-    src/core/lib/promise/wait_set.cc
-    src/core/lib/transport/promise_endpoint.cc
     test/core/event_engine/event_engine_test_utils.cc
     test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
     test/core/transport/chttp2/http2_server_transport_test.cc
@@ -19825,7 +19796,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_latch_test
-  src/core/lib/promise/wait_set.cc
   test/core/promise/inter_activity_latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -23217,8 +23187,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(party_mpsc_test
-    src/core/lib/promise/mpsc.cc
-    src/core/lib/promise/wait_set.cc
     test/core/promise/party_mpsc_test.cc
   )
   if(WIN32 AND MSVC)
@@ -23262,7 +23230,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(party_test
-  src/core/lib/promise/wait_set.cc
   test/core/promise/party_test.cc
 )
 if(WIN32 AND MSVC)
@@ -24710,7 +24677,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_endpoint_test
-  src/core/lib/transport/promise_endpoint.cc
   test/core/transport/promise_endpoint_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25249,9 +25215,6 @@ add_executable(qps_json_driver
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
@@ -25354,9 +25317,6 @@ add_executable(qps_worker
   src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  src/core/lib/promise/mpsc.cc
-  src/core/lib/promise/wait_set.cc
-  src/core/lib/transport/promise_endpoint.cc
   src/core/util/seq_bit_set.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
