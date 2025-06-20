@@ -41,7 +41,7 @@ call bazel_rbe/bazel_wrapper.bat ^
   test ^
   %BAZEL_FLAGS% ^
   --define=protobuf_allow_msvc=true ^
-  --runs_per_test=200 ^
+  --runs_per_test=2000 ^
   -- ^
   //test/cpp/naming:cancel_ares_query_test ^
   || exit /b 1
