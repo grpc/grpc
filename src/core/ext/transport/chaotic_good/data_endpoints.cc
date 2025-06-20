@@ -871,8 +871,10 @@ void Endpoint::ToJson(absl::AnyInvocable<void(Json::Object)> sink) {
   obj["now"] = Json::FromNumber(ctx_->clock->Now());
   obj["encode_alignment"] = Json::FromNumber(ctx_->encode_alignment);
   obj["decode_alignment"] = Json::FromNumber(ctx_->decode_alignment);
-  obj["secure_frame_bytes_queued"] =
-      Json::FromNumber(ctx_->secure_frame_queue->InstantaneousQueuedBytes());
+  if (ctx_->secure_frame_queue != nullptr) {
+    obj["secure_frame_bytes_queued"] =
+        Json::FromNumber(ctx_->secure_frame_queue->InstantaneousQueuedBytes());
+  }
   obj["enable_tracing"] = Json::FromBool(ctx_->enable_tracing);
   obj["reader"] = Json::FromObject(ctx_->reader->ToJson());
   party_->ToJson([root = std::move(obj),
