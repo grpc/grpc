@@ -1895,6 +1895,7 @@
     <file baseinstalldir="/" name="src/core/util/glob.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/glob.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/gpr_time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/grpc_check.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex_unsupported.cc" role="src" />
@@ -1954,6 +1955,8 @@
     <file baseinstalldir="/" name="src/core/util/posix/thd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/time.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/posix/tmpfile.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/postmortem_emit.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/postmortem_emit.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/random_early_detection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/random_early_detection.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/ref_counted.h" role="src" />

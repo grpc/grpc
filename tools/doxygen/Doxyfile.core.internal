@@ -2694,6 +2694,7 @@ src/core/util/gethostname_sysconf.cc \
 src/core/util/glob.cc \
 src/core/util/glob.h \
 src/core/util/gpr_time.cc \
+src/core/util/grpc_check.h \
 src/core/util/grpc_if_nametoindex.h \
 src/core/util/grpc_if_nametoindex_posix.cc \
 src/core/util/grpc_if_nametoindex_unsupported.cc \
@@ -2753,6 +2754,8 @@ src/core/util/posix/sync.cc \
 src/core/util/posix/thd.cc \
 src/core/util/posix/time.cc \
 src/core/util/posix/tmpfile.cc \
+src/core/util/postmortem_emit.cc \
+src/core/util/postmortem_emit.h \
 src/core/util/random_early_detection.cc \
 src/core/util/random_early_detection.h \
 src/core/util/ref_counted.h \

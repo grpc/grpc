@@ -25,10 +25,10 @@
     CHECK(a);                    \
   }
 
-#define GRPC_CHECK_EQ(a, b) \
-  if (a != b) {             \
-    PostMortemEmit();       \
-    CHECK_EQ(a, b);         \
+#define GRPC_CHECK_EQ(a, b)      \
+  if (a != b) {                  \
+    grpc_core::PostMortemEmit(); \
+    CHECK_EQ(a, b);              \
   }
 
 #else
