@@ -597,7 +597,7 @@ cdef extern from "grpc/credentials.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials) nogil
+  grpc_channel_credentials *grpc_google_default_credentials_create(grpc_call_credentials* call_credentials, grpc_call_credentials* alts_credentials) nogil
 
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,

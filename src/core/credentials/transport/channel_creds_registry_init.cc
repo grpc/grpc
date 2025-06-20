@@ -57,7 +57,7 @@ class GoogleDefaultChannelCredsFactory : public ChannelCredsFactory<> {
   RefCountedPtr<grpc_channel_credentials> CreateChannelCreds(
       RefCountedPtr<ChannelCredsConfig> /*config*/) const override {
     return RefCountedPtr<grpc_channel_credentials>(
-        grpc_google_default_credentials_create(nullptr));
+        grpc_google_default_credentials_create(nullptr, nullptr));
   }
 
  private:
