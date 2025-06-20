@@ -21,12 +21,7 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import (
-    Any,
-    Generic,
-    Optional,
-    Union,
-)
+from typing import Any, Generic, Optional, Union
 
 import grpc
 from grpc import _common

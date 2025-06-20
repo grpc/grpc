@@ -21,13 +21,7 @@ from collections.abc import Awaitable
 from collections.abc import Iterator
 from collections.abc import Sequence
 import functools
-from typing import (
-    Any,
-    Callable,
-    NamedTuple,
-    Optional,
-    Union,
-)
+from typing import Any, Callable, NamedTuple, Optional, Union
 
 import grpc
 from grpc._cython import cygrpc

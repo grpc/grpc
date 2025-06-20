@@ -16,12 +16,7 @@
 from collections.abc import AsyncIterable
 from collections.abc import Iterable
 from collections.abc import Sequence
-from typing import (
-    Any,
-    Callable,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, TypeVar, Union
 
 from grpc._cython.cygrpc import EOF
 
