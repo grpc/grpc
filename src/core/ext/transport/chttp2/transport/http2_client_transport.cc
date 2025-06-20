@@ -706,7 +706,7 @@ void Http2ClientTransport::CloseTransport(
     // closed state here as the subsequent lookups would
     // fail. Also, as this is running on the transport
     // party, there would not be concurrent access to the stream.
-    auto stream = std::move(pair.second);
+    auto& stream = pair.second;
     stream->call.SpawnPushServerTrailingMetadata(
         ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
   }
@@ -731,7 +731,8 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
     return;
   }
   is_transport_closed_ = true;
-  auto stream_list = std::move(stream_list_);
+  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
+      std::move(stream_list_);
   stream_list_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
                           http2_status.GetAbslConnectionError(),
@@ -887,18 +888,7 @@ auto Http2ClientTransport::CallOutboundLoop(
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
             Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};
-            return Map(self->EnqueueOutgoingFrame(std::move(frame)),
-                       [self, stream_id](absl::Status status) {
-                         auto stream = self->LookupStream(stream_id);
-                         if (GPR_UNLIKELY(stream == nullptr)) {
-                           LOG(ERROR)
-                               << "Stream not found while sending end stream";
-                           return absl::InternalError(
-                               "Stream not found while sending end stream");
-                         }
-                         stream->SentEndStreamFrame();
-                         return status;
-                       });
+            return self->EnqueueOutgoingFrame(std::move(frame));
           },
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {

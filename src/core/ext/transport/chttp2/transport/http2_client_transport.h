@@ -224,7 +224,6 @@ class Http2ClientTransport final : public ClientTransport {
           stream_state(HttpStreamState::kIdle),
           stream_id(stream_id1),
           header_assembler(stream_id1),
-          end_stream_frame_sent(false),
           did_push_initial_metadata(false),
           did_push_trailing_metadata(false) {}
 
@@ -275,10 +274,9 @@ class Http2ClientTransport final : public ClientTransport {
       }
     }
 
-    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
-
-    inline void SentEndStreamFrame() { end_stream_frame_sent = true; }
-    inline bool IsEndStreamFrameSent() const { return end_stream_frame_sent; }
+    inline bool IsClosed() const {
+      return stream_state == HttpStreamState::kClosed;
+    }
 
     CallHandler call;
     HttpStreamState stream_state;
@@ -286,12 +284,14 @@ class Http2ClientTransport final : public ClientTransport {
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-    // This flag is used to notify the mixer that this stream is closed for
+    // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
+    // tracks if the half close has been sent for this stream. This flag is used
+    // to notify the mixer that this stream is closed for
     // writes(HalfClosedLocal). When the mixer dequeues the last message for
-    // this stream, it will mark the stream as closed for writes. This is done
-    // as the stream state should not transition to HalfClosedLocal till the
-    // end_stream frame is sent.
-    bool end_stream_frame_sent;
+    // the streamQ, it will mark the stream as closed for writes and send a
+    // frame with end_stream or set the end_stream flag in the last data
+    // frame being sent out. This is done as the stream state should not
+    // transition to HalfClosedLocal till the end_stream frame is sent.
     bool did_push_initial_metadata;
     bool did_push_trailing_metadata;
   };
