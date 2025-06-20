@@ -591,7 +591,6 @@ grpc_cc_test(
         "absl/log:log",
         "gtest",
     ],
-    tags = ["no_windows"],
     uses_polling = False,
     deps = [
         "//:gpr",

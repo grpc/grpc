@@ -12806,10 +12806,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: http2_server_transport_test
   gtest: true
