@@ -745,6 +745,8 @@ def grpc_package(name, visibility = "private", features = []):
         visibility = ["//visibility:public"]
     elif visibility == "private":
         visibility = []
+    elif visibility == "grpc":
+        visibility = ["//:__subpackages__"]
     else:
         fail("Unknown visibility " + visibility)
 

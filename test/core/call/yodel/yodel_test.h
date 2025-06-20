@@ -36,6 +36,7 @@
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/test_util/fuzz_config_vars.h"
 #include "test/core/test_util/fuzz_config_vars_helpers.h"
+#include "test/core/test_util/postmortem.h"
 #include "test/core/test_util/proto_bit_gen.h"
 #include "test/core/test_util/test_config.h"
 
@@ -348,6 +349,7 @@ class YodelTest {
   // Called after the test has run, but before the event engine is shut down.
   virtual void Shutdown() {}
 
+  PostMortem postmortem_;
   absl::BitGenRef rng_;
   fuzzing_event_engine::Actions actions_;
   std::unique_ptr<State> state_;

@@ -76,6 +76,8 @@ class GrpcMessageAssembler {
   ValueOrHttp2Status<MessageHandle> ExtractMessage() {
     const size_t current_len = message_buffer_.Length();
     if (current_len < kGrpcHeaderSizeInBytes) {
+      // TODO(tjagtap) : [PH2][P3] : Write a test for this failure.
+      LOG(ERROR) << "Incomplete gRPC message received";
       return ReturnNullOrError();
     }
     GrpcMessageHeader header = ExtractGrpcHeader(message_buffer_);

@@ -27,20 +27,17 @@
 #include <sys/types.h>
 
 #include <algorithm>
-#include <limits>
 #include <memory>
 #include <tuple>
 #include <type_traits>
-#include <variant>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
-#include "src/core/util/dual_ref_counted.h"
+#include "src/core/lib/debug/trace_flags.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/memory_usage.h"
 #include "src/core/util/ref_counted_ptr.h"
-#include "src/core/util/single_set_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
@@ -50,6 +47,100 @@ namespace channelz {
 namespace testing {
 size_t GetSizeofTraceEvent(void);
 }
+
+namespace detail {
+
+class Renderer {
+ public:
+  virtual ~Renderer() = default;
+  virtual std::string Render() const = 0;
+  virtual size_t MemoryUsage() const = 0;
+};
+
+struct StrCatFn {
+  template <typename... Arg>
+  std::string operator()(const Arg&... args) {
+    return absl::StrCat(args...);
+  }
+};
+
+template <typename A>
+auto AdaptForStorage(A&& a) {
+  using RawA = std::remove_reference_t<A>;
+  if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
+    return absl::string_view(a);
+  } else {
+    return RawA(std::forward<A>(a));
+  }
+}
+
+template <typename... Args>
+std::unique_ptr<Renderer> RendererFromConcatenationInner(Args&&... args) {
+  class R final : public Renderer {
+   public:
+    explicit R(Args&&... args) : args_(std::forward<Args>(args)...) {}
+
+    std::string Render() const override {
+      return std::apply(StrCatFn(), args_);
+    }
+    size_t MemoryUsage() const override {
+      return MemoryUsageOf(args_) + sizeof(Renderer);
+    }
+
+   private:
+    std::tuple<Args...> args_;
+  };
+  return std::make_unique<R>(std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+std::unique_ptr<Renderer> RendererFromConcatenation(Args&&... args) {
+  return RendererFromConcatenationInner(
+      AdaptForStorage<Args>(std::forward<Args>(args))...);
+}
+
+struct RendererFromConcatenationFn {
+  template <typename... Args>
+  auto operator()(Args&&... args) {
+    return RendererFromConcatenation(std::forward<Args>(args)...);
+  }
+};
+
+template <typename N>
+void OutputLogFromLogExpr(N* out, std::unique_ptr<Renderer> renderer) {
+  out->NewNode(std::move(renderer)).Commit();
+}
+
+template <typename N, typename... T>
+class LogExpr {
+ public:
+  explicit LogExpr(N* node, T&&... values)
+      : out_(node), values_(std::forward<T>(values)...) {}
+
+  ~LogExpr() {
+    if (out_ != nullptr) {
+      OutputLogFromLogExpr(out_,
+                           std::apply(detail::RendererFromConcatenationFn(),
+                                      std::move(values_)));
+    }
+  }
+
+  template <typename U>
+  friend auto operator<<(LogExpr<N, T...>&& x, U&& u) {
+    auto mk = [out = std::exchange(x.out_, nullptr),
+               u = AdaptForStorage(std::forward<U>(u))](
+                  T&&... existing_values) mutable {
+      return LogExpr<N, T..., decltype(u)>(
+          out, std::forward<T>(existing_values)..., std::move(u));
+    };
+    return std::apply(mk, std::move(x.values_));
+  }
+
+ private:
+  N* out_;
+  std::tuple<T...> values_;
+};
+}  // namespace detail
 
 class BaseNode;
 
@@ -67,19 +158,7 @@ class ChannelTrace {
   explicit ChannelTrace(size_t max_memory)
       : max_memory_(std::min(max_memory, sizeof(Entry) * 32768)) {}
 
-  class Renderer {
-   public:
-    virtual ~Renderer() = default;
-    virtual std::string Render() const = 0;
-    virtual size_t MemoryUsage() const = 0;
-  };
-
-  enum Severity {
-    Unset = 0,  // never to be used
-    Info,       // we start at 1 to avoid using proto default values
-    Warning,
-    Error
-  };
+  using Renderer = detail::Renderer;
 
   // Represents a node in the channel trace.
   // Nodes form a tree structure, allowing for hierarchical tracing.
@@ -147,7 +226,7 @@ class ChannelTrace {
     // Returns a new `Node` object representing the child.
     // If this node is invalid (e.g., default-constructed or moved-from),
     // an invalid `Node` is returned.
-    [[nodiscard]] Node NewChild(std::unique_ptr<Renderer> renderer) {
+    [[nodiscard]] Node NewNode(std::unique_ptr<Renderer> renderer) {
       if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
       return Node(trace_, trace_->AppendEntry(ref_, std::move(renderer)));
     }
@@ -160,9 +239,10 @@ class ChannelTrace {
     // If this node is invalid (e.g., default-constructed or moved-from),
     // an invalid `Node` is returned.
     template <typename... Args>
-    [[nodiscard]] Node NewChild(Args&&... args) {
+    [[nodiscard]] Node NewNode(Args&&... args) {
       if (trace_ == nullptr || ref_.id == kSentinelId) return Node();
-      return NewChild(RendererFromConcatenation(std::forward<Args>(args)...));
+      return NewNode(
+          detail::RendererFromConcatenation(std::forward<Args>(args)...));
     }
 
     // Marks the trace entry associated with this `Node` as permanent.
@@ -174,6 +254,8 @@ class ChannelTrace {
       committed_ = true;
     }
 
+    bool ProducesOutput() const { return ref_.id != kSentinelId; }
+
    private:
     friend class ChannelTrace;
 
@@ -184,26 +266,14 @@ class ChannelTrace {
     bool committed_ = false;
   };
 
-  static const char* SeverityString(ChannelTrace::Severity severity) {
-    switch (severity) {
-      case ChannelTrace::Severity::Info:
-        return "CT_INFO";
-      case ChannelTrace::Severity::Warning:
-        return "CT_WARNING";
-      case ChannelTrace::Severity::Error:
-        return "CT_ERROR";
-      default:
-        GPR_UNREACHABLE_CODE(return "CT_UNKNOWN");
-    }
-  }
-
   [[nodiscard]] Node NewNode(std::unique_ptr<Renderer> render) {
     return Node(this, AppendEntry(EntryRef::Sentinel(), std::move(render)));
   }
 
   template <typename... Args>
   [[nodiscard]] Node NewNode(Args&&... args) {
-    return NewNode(RendererFromConcatenation(std::forward<Args>(args)...));
+    return NewNode(
+        detail::RendererFromConcatenation(std::forward<Args>(args)...));
   }
 
   // Creates and returns the raw Json object, so a parent channelz
@@ -211,9 +281,10 @@ class ChannelTrace {
   Json RenderJson() const;
 
   void ForEachTraceEvent(
-      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                             RefCountedPtr<BaseNode>)>
-          callback) const ABSL_LOCKS_EXCLUDED(mu_);
+      absl::FunctionRef<void(gpr_timespec, std::string)> callback) const
+      ABSL_LOCKS_EXCLUDED(mu_);
+
+  bool ProducesOutput() const { return max_memory_ > 0; }
 
   std::string creation_timestamp() const;
   uint64_t num_events_logged() const {
@@ -225,9 +296,8 @@ class ChannelTrace {
   friend size_t testing::GetSizeofTraceEvent(void);
 
   void ForEachTraceEventLocked(
-      absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                             RefCountedPtr<BaseNode>)>
-          callback) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+      absl::FunctionRef<void(gpr_timespec, std::string)> callback) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   static constexpr uint16_t kSentinelId = 65535;
 
@@ -281,53 +351,8 @@ class ChannelTrace {
   void DropEntry(EntryRef entry) ABSL_LOCKS_EXCLUDED(mu_);
   void DropEntryId(uint16_t id) ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  struct StrCatFn {
-    template <typename... Arg>
-    std::string operator()(const Arg&... args) {
-      return absl::StrCat(args...);
-    }
-  };
-
-  template <typename A>
-  static auto AdaptForStorage(A&& a) {
-    using RawA = std::remove_reference_t<A>;
-    if constexpr (std::is_same_v<std::decay_t<RawA>, const char*>) {
-      return absl::string_view(a);
-    } else {
-      return RawA(a);
-    }
-  }
-
-  template <typename... Args>
-  static std::unique_ptr<Renderer> RendererFromConcatenationInner(
-      Args&&... args) {
-    class R final : public Renderer {
-     public:
-      explicit R(Args&&... args) : args_(std::forward<Args>(args)...) {}
-
-      std::string Render() const override {
-        return std::apply(StrCatFn(), args_);
-      }
-      size_t MemoryUsage() const override {
-        return MemoryUsageOf(args_) + sizeof(Renderer);
-      }
-
-     private:
-      std::tuple<Args...> args_;
-    };
-    return std::make_unique<R>(std::forward<Args>(args)...);
-  }
-
-  template <typename... Args>
-  static std::unique_ptr<Renderer> RendererFromConcatenation(Args&&... args) {
-    return RendererFromConcatenationInner(
-        AdaptForStorage<Args>(std::forward<Args>(args))...);
-  }
-
   void RenderEntry(const Entry& entry,
-                   absl::FunctionRef<void(gpr_timespec, Severity, std::string,
-                                          RefCountedPtr<BaseNode>)>
-                       callback,
+                   absl::FunctionRef<void(gpr_timespec, std::string)> callback,
                    int depth) const ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   mutable Mutex mu_;
@@ -341,7 +366,93 @@ class ChannelTrace {
   std::vector<Entry> entries_ ABSL_GUARDED_BY(mu_);
 };
 
+// A node that GRPC_CHANNELZ_TRACE can output to, that also
+// logs to absl LOG(INFO) if a particular TraceFlag is enabled.
+// Provides a way to elevate GRPC_TRACE_LOG statements to channelz
+// also.
+class TraceNode {
+ public:
+  TraceNode() = default;
+
+  template <typename F>
+  TraceNode(ChannelTrace::Node node, TraceFlag& flag, F prefix)
+      : node_(std::move(node)) {
+    if (GPR_UNLIKELY(flag.enabled())) {
+      log_to_absl_ = std::make_unique<std::string>(prefix());
+    }
+  }
+
+  bool ProducesOutput() const {
+    return node_.ProducesOutput() || log_to_absl_ != nullptr;
+  }
+
+  void Finish(std::unique_ptr<detail::Renderer> renderer) {
+    if (GPR_UNLIKELY(log_to_absl_ != nullptr)) {
+      LOG(INFO) << *log_to_absl_ << renderer->Render();
+    }
+    node_.NewNode(std::move(renderer)).Commit();
+  }
+
+  void Commit() { node_.Commit(); }
+
+ private:
+  ChannelTrace::Node node_;
+  std::unique_ptr<std::string> log_to_absl_;
+};
+
+namespace detail {
+inline ChannelTrace* LogOutputFrom(ChannelTrace& t) {
+  if (!t.ProducesOutput()) return nullptr;
+  return &t;
+}
+
+inline ChannelTrace::Node* LogOutputFrom(ChannelTrace::Node& n) {
+  if (!n.ProducesOutput()) return nullptr;
+  return &n;
+}
+
+inline TraceNode* LogOutputFrom(TraceNode& n) {
+  if (!n.ProducesOutput()) return nullptr;
+  return &n;
+}
+
+inline void OutputLogFromLogExpr(TraceNode* out,
+                                 std::unique_ptr<Renderer> renderer) {
+  out->Finish(std::move(renderer));
+}
+}  // namespace detail
+
 }  // namespace channelz
 }  // namespace grpc_core
+
+// Log like LOG() to a channelz object (and potentially as part of a GRPC_TRACE
+// log with channelz::TraceNode).
+//
+// `output` is one of a ChannelTrace, ChannelTrace::Node or a TraceNode.
+//
+// This trace always commits - and the channelz node is inaccessible as a
+// result. Use it for annotation like things, and if commit-ability is
+// important, put it under a parent node and use that for `output`.
+//
+// Notes on this weird macro!
+// - We want this to be a statement level thing, such that end of statement ==>
+//   we can commit the log line.
+// - To do that we need to ensure we're not an expression, so we want an if,
+//   for, while, or do statement enclosing things.
+// - But hey! we want to stream after the GRPC_CHANNELZ_LOG(foo), so we want an
+//   if right - if (we_can_output) output << s1 << s2 << s3;
+// - But hey! now if someone copy/pastes this in front of an else then we
+//   bind with that else, and boom we've got a security hole... so let's not do
+//   that.
+// - So, the for here acts as an if (the output = nullptr part ensures we don't)
+//   actually loop), ensures we have a statement, and ensures we don't
+//   accidentally bind with a trailing else.
+// - And of course we skip wrapping things in {} because we really like that
+//   GRPC_CHANNELZ_LOG(foo) << "hello!"; syntax.
+#define GRPC_CHANNELZ_LOG(output)                                      \
+  for (auto* out = grpc_core::channelz::detail::LogOutputFrom(output); \
+       out != nullptr; out = nullptr)                                  \
+  grpc_core::channelz::detail::LogExpr<                                \
+      std::remove_reference_t<decltype(*out)>>(out)
 
 #endif  // GRPC_SRC_CORE_CHANNELZ_CHANNEL_TRACE_H

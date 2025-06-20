@@ -656,8 +656,12 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         cluster_config_map,
     std::set<absl::string_view>* eds_resources_seen,
     std::set<absl::string_view>* dns_names_seen,
-    absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters) {
-  if (depth > 0) CHECK_NE(leaf_clusters, nullptr);
+    absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters,
+    std::vector<std::string>* resolution_notes) {
+  if (depth > 0) {
+    CHECK_NE(leaf_clusters, nullptr);
+    CHECK_NE(resolution_notes, nullptr);
+  }
   if (depth == kMaxXdsAggregateClusterRecursionDepth) {
     *leaf_clusters =
         absl::UnavailableError("aggregate cluster graph exceeds max depth");
@@ -687,6 +691,9 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
   // If there was an error fetching the CDS resource, report the error.
   if (!state.update.ok()) {
     cluster_config = state.update.status();
+    if (resolution_notes != nullptr) {
+      resolution_notes->emplace_back(state.update.status().message());
+    }
     return true;
   }
   // If we don't have the resource yet, we can't return a config yet.
@@ -785,12 +792,13 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         // Recursively expand leaf clusters.
         absl::StatusOr<std::vector<absl::string_view>> child_leaf_clusters;
         child_leaf_clusters.emplace();
+        std::vector<std::string> child_resolution_notes;
         bool have_all_resources = true;
         for (const std::string& child_name :
              aggregate.prioritized_cluster_names) {
           have_all_resources &= PopulateClusterConfigMap(
               child_name, depth + 1, cluster_config_map, eds_resources_seen,
-              dns_names_seen, &child_leaf_clusters);
+              dns_names_seen, &child_leaf_clusters, &child_resolution_notes);
           if (!child_leaf_clusters.ok()) break;
         }
         // Note that we cannot use the cluster_config reference we
@@ -807,11 +815,17 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
           }
           return true;
         }
-        // If needed, propagate leaf cluster list up the tree.
+        // If needed, propagate leaf cluster list and resolution note
+        // lists up the tree.
         if (leaf_clusters != nullptr) {
           (*leaf_clusters)
               ->insert((*leaf_clusters)->end(), child_leaf_clusters->begin(),
                        child_leaf_clusters->end());
+        }
+        if (resolution_notes != nullptr) {
+          resolution_notes->insert(resolution_notes->end(),
+                                   child_resolution_notes.begin(),
+                                   child_resolution_notes.end());
         }
         // If there are no leaf clusters, report an error for the cluster.
         if (have_all_resources && child_leaf_clusters->empty()) {
@@ -825,8 +839,9 @@ bool XdsDependencyManager::PopulateClusterConfigMap(
         // at the root of the tree, because we need to make sure the list
         // of underlying cluster names stays alive so that the leaf cluster
         // list of the root aggregate cluster can point to those strings.
-        aggregate_cluster_config.emplace(std::move(cluster_resource),
-                                         std::move(*child_leaf_clusters));
+        aggregate_cluster_config.emplace(
+            std::move(cluster_resource), std::move(*child_leaf_clusters),
+            absl::StrJoin(child_resolution_notes, "; "));
         return have_all_resources;
       });
 }

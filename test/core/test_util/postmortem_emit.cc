@@ -12,32 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "test/core/test_util/postmortem.h"
+#include "test/core/test_util/postmortem_emit.h"
 
-#include "gtest/gtest.h"
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
-PostMortem::~PostMortem() {
-  if (!::testing::Test::HasFailure()) return;
-  Emit();
-}
+void PostMortemEmit() {
+  std::cerr << "===========================================================\n";
+  std::cerr << "🛑 gRPC Test Postmortem Analysis 🛑\n";
+  std::cerr << "===========================================================\n";
 
-void PostMortem::Emit() {
-  LOG(INFO) << "===========================================================";
-  LOG(INFO) << "🛑 gRPC Test Postmortem Analysis 🛑";
-  LOG(INFO) << "===========================================================";
+  std::cerr << "❗ gRPC Statistics:\n"
+            << StatsAsJson(global_stats().Collect().get()) << "\n";
 
-  LOG(INFO) << "❗ gRPC Statistics:\n"
-            << StatsAsJson(global_stats().Collect().get());
-
-  LOG(INFO) << "❗ channelz entities:";
+  std::cerr << "❗ channelz entities:\n";
   for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
-    LOG(INFO) << "  🔴 [" << node->uuid() << ":"
+    std::cerr << "  🔴 [" << node->uuid() << ":"
               << channelz::BaseNode::EntityTypeString(node->type())
-              << "]: " << node->RenderJsonString();
+              << "]: " << node->RenderJsonString() << "\n";
   }
 }
 

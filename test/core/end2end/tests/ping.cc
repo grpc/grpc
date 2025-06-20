@@ -34,7 +34,7 @@ CORE_END2END_TEST(RetryHttp2Tests, Ping) {
   InitClient(ChannelArgs()
                  .Set(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA, 0)
                  .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1));
-  InitServer(ChannelArgs()
+  InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS, 0)
                  .Set(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS, 1));
   PingServerFromClient(0);

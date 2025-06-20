@@ -35,6 +35,8 @@ namespace chaotic_good {
   "grpc.chaotic_good.max_send_chunk_size"
 #define GRPC_ARG_CHAOTIC_GOOD_INLINED_PAYLOAD_SIZE_THRESHOLD \
   "grpc.chaotic_good.inlined_payload_size_threshold"
+#define GRPC_ARG_CHAOTIC_GOOD_SCHEDULER_CONFIG \
+  "grpc.chaotic_good.scheduler_config"
 
 // Transport configuration.
 // Most of our configuration is derived from channel args, and then exchanged
@@ -56,6 +58,9 @@ class Config {
     max_send_chunk_size_ = std::max(
         0, channel_args.GetInt(GRPC_ARG_CHAOTIC_GOOD_MAX_SEND_CHUNK_SIZE)
                .value_or(max_send_chunk_size_));
+    scheduler_config_ =
+        channel_args.GetString(GRPC_ARG_CHAOTIC_GOOD_SCHEDULER_CONFIG)
+            .value_or("spanrr");
     if (max_recv_chunk_size_ == 0 || max_send_chunk_size_ == 0) {
       max_recv_chunk_size_ = 0;
       max_send_chunk_size_ = 0;
@@ -148,6 +153,7 @@ class Config {
     options.encode_alignment = encode_alignment_;
     options.decode_alignment = decode_alignment_;
     options.inlined_payload_size_threshold = inline_payload_size_threshold_;
+    options.scheduler_config = scheduler_config_;
     return options;
   }
 
@@ -218,6 +224,7 @@ class Config {
   uint32_t max_send_chunk_size_ = 1024 * 1024;
   uint32_t max_recv_chunk_size_ = 1024 * 1024;
   uint32_t inline_payload_size_threshold_ = 8 * 1024;
+  std::string scheduler_config_;
   std::vector<PendingConnection> pending_data_endpoints_;
   absl::flat_hash_set<chaotic_good_frame::Settings::Features>
       supported_features_;

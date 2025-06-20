@@ -873,6 +873,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     tags = [
         "avoid_dep",
@@ -1039,9 +1040,9 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/types:span",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:message",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
     ],
     deps = [
         "envoy_config_rbac_upb",
@@ -1173,9 +1174,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:message",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
     ],
     standalone = True,
     visibility = ["//visibility:public"],
@@ -1223,6 +1224,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:span",
         "absl/functional:any_invocable",
     ],
     tags = [
@@ -1263,6 +1265,7 @@ grpc_cc_library(
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
+        "grpc_trace",
         "parse_address",
         "ref_counted_ptr",
         "sockaddr_utils",
@@ -1497,6 +1500,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
     ],
     linkopts = select({
@@ -1777,6 +1781,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:closure",
         "//src/core:connection_quota",
         "//src/core:connectivity_state",
@@ -1888,6 +1893,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
         "madler_zlib",
     ],
@@ -1938,6 +1944,7 @@ grpc_cc_library(
         "//src/core:channel_fwd",
         "//src/core:channel_init",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:closure",
         "//src/core:compression",
         "//src/core:connectivity_state",
@@ -2208,6 +2215,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["//visibility:public"],
@@ -2310,8 +2318,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     visibility = ["//bazel:tsi"],
     deps = [
@@ -2328,8 +2336,8 @@ grpc_cc_library(
         "libssl",
         "libcrypto",
         "absl/strings",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:tsi"],
@@ -2376,8 +2384,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/container:inlined_vector",
     ],
@@ -2385,6 +2393,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:alt_grpc++_base_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2467,8 +2476,8 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/memory",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "absl/strings:str_format",
         "protobuf_headers",
     ],
@@ -2479,6 +2488,7 @@ grpc_cc_library(
     ],
     visibility = ["//bazel:alt_grpc++_base_unsecure_legacy"],
     deps = [
+        "channel",
         "channel_arg_names",
         "channel_stack_builder",
         "config",
@@ -2649,8 +2659,8 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/time",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     public_hdrs = [
         "include/grpcpp/ext/orca_service.h",
@@ -3588,7 +3598,7 @@ grpc_cc_library(
         "//src/core:load_balancing/oob_backend_metric_internal.h",
     ],
     external_deps = [
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/mem",
         "absl/base:core_headers",
         "absl/log",
         "absl/log:check",
@@ -4106,7 +4116,7 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
     external_deps = [
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/mem",
         "absl/log",
         "absl/log:check",
         "absl/strings",
@@ -4300,6 +4310,7 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:compression",
         "//src/core:context",
         "//src/core:experiments",
@@ -4368,11 +4379,11 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:text",
-        "@com_google_protobuf//upb:json",
-        "@com_google_protobuf//upb:reflection",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/text",
+        "@com_google_protobuf//upb/json",
+        "@com_google_protobuf//upb/reflection",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
@@ -4527,6 +4538,7 @@ grpc_cc_library(
         "hpack_parse_result",
         "stats",
         "//src/core:hpack_constants",
+        "//src/core:http2_stats_collector",
         "//src/core:metadata_batch",
         "//src/core:no_destruct",
         "//src/core:parsed_metadata",
@@ -4749,6 +4761,7 @@ grpc_cc_library(
         "//src/core:bdp_estimator",
         "//src/core:bitset",
         "//src/core:channel_args",
+        "//src/core:channelz_property_list",
         "//src/core:chttp2_flow_control",
         "//src/core:closure",
         "//src/core:connectivity_state",
@@ -5158,6 +5171,26 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_upb",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_property_list_upb",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_property_list_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
