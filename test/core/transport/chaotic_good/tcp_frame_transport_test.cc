@@ -23,9 +23,9 @@
 #include "gtest/gtest.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
 #include "src/core/lib/promise/inter_activity_latch.h"
+#include "src/core/util/postmortem_emit.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h"
-#include "test/core/test_util/postmortem_emit.h"
 #include "test/core/transport/chaotic_good/test_frame.h"
 #include "test/core/transport/chaotic_good/test_frame.pb.h"
 

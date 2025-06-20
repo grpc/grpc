@@ -576,16 +576,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "postmortem_emit",
-    srcs = ["postmortem_emit.cc"],
-    hdrs = ["postmortem_emit.h"],
-    deps = [
-        "//:channelz",
-        "//:stats",
-    ],
-)
-
-grpc_cc_library(
     name = "postmortem",
     testonly = 1,
     hdrs = ["postmortem.h"],
@@ -593,6 +583,6 @@ grpc_cc_library(
         "gtest",
     ],
     deps = [
-        "postmortem_emit",
+        "//src/core:postmortem",
     ],
 )

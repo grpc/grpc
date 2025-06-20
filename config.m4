@@ -855,6 +855,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/posix/thd.cc \
     src/core/util/posix/time.cc \
     src/core/util/posix/tmpfile.cc \
+    src/core/util/postmortem_emit.cc \
     src/core/util/random_early_detection.cc \
     src/core/util/ref_counted_string.cc \
     src/core/util/shared_bit_gen.cc \

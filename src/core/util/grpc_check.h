@@ -1,4 +1,4 @@
-// Copyright 2025 gRPC authors.
+// Copyright 2025 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,26 +12,30 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
-#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
+#ifndef GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
+#define GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
 
-#include "gtest/gtest.h"
+#include "absl/log/check.h"
 #include "src/core/util/postmortem_emit.h"
 
-namespace grpc_core {
-
-// Helper class to dump useful post-mortem analysis in the event of a test
-// failure.
-class PostMortem {
- public:
-  // Used as a scoped object PostMortem will check gtest failure and emit
-  // state if it sees a test failure on destruction.
-  ~PostMortem() {
-    if (!::testing::Test::HasFailure()) return;
-    PostMortemEmit();
+#ifdef GRPC_POSTMORTEM_CHECKS
+#define GRPC_CHECK(a)            \
+  if (!a) {                      \
+    grpc_core::PostMortemEmit(); \
+    CHECK(a);                    \
   }
-};
 
-}  // namespace grpc_core
+#define GRPC_CHECK_EQ(a, b)      \
+  if (a != b) {                  \
+    grpc_core::PostMortemEmit(); \
+    CHECK_EQ(a, b);              \
+  }
 
-#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_H
+#else
+
+#define GRPC_CHECK(a) CHECK(a)
+#define GRPC_CHECK_EQ(a, b) CHECK_EQ(a, b)
+
+#endif
+
+#endif  // GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
