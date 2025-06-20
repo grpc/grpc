@@ -25,6 +25,13 @@ void PropertyList::SetInternal(absl::string_view key,
   }
 }
 
+PropertyList& PropertyList::Merge(PropertyList other) {
+  for (auto& [key, value] : other.property_list_) {
+    SetInternal(key, value);
+  }
+  return *this;
+}
+
 size_t PropertyGrid::GetIndex(std::vector<std::string>& vec,
                               absl::string_view value) {
   auto it = std::find(vec.begin(), vec.end(), value);
@@ -91,5 +98,4 @@ PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
   }
   return *this;
 }
-
 }  // namespace grpc_core::channelz
