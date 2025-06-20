@@ -14939,6 +14939,23 @@ targets:
   platforms:
   - linux
   - posix
+- name: posix_write_event_sink_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
+  src:
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
+  - test/core/event_engine/posix/posix_write_event_sink_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
