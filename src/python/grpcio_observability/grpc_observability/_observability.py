@@ -65,7 +65,7 @@ class StatsData:
         in stubs.
     """
 
-    name: "grpc_observability._cyobservability.MetricsName"
+    name: "grpc_observability._cyobservability.MetricsName"  # type: ignore
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
