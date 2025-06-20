@@ -30,6 +30,17 @@ grpc_internal_proto_library(
     ],
 )
 
+grpc_internal_proto_library(
+    name = "property_list_proto",
+    srcs = ["property_list.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:empty_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
 # TODO(roth): Migrate this to use separate
 # grpc_internal_proto_library/grpc_cc_proto_library/grpc_cc_grpc_library
 # rules when internal build system limitations are resolved.
