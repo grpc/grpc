@@ -99,7 +99,7 @@ PosixErrorOr<int64_t> TcpSend(EventEnginePosixInterface* posix_interface,
                               const FileDescriptor& fd,
                               const struct msghdr* msg, int* saved_errno,
                               int additional_flags = 0) {
-  GRPC_LATENT_SEE_PARENT_SCOPE("TcpSend");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("TcpSend");
   PosixErrorOr<int64_t> send_result;
   do {
     grpc_core::global_stats().IncrementSyscallWrite();
@@ -290,7 +290,7 @@ absl::Status PosixEndpointImpl::TcpAnnotateError(absl::Status src_error) const {
 
 // Returns true if data available to read or error other than EAGAIN.
 bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
-  GRPC_LATENT_SEE_INNER_SCOPE("TcpDoRead");
+  GRPC_LATENT_SEE_ALWAYS_ON_SCOPE("TcpDoRead");
 
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];

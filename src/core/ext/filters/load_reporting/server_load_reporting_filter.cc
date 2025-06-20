@@ -174,7 +174,7 @@ const char* GetStatusTagForStatus(grpc_status_code status) {
 
 void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
     ClientMetadata& md, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerLoadReportingFilter::Call::OnClientInitialMetadata");
   // Gather up basic facts about the request
   Slice service_method;
@@ -200,7 +200,7 @@ void ServerLoadReportingFilter::Call::OnClientInitialMetadata(
 
 void ServerLoadReportingFilter::Call::OnServerTrailingMetadata(
     ServerMetadata& md, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE(
+  GRPC_LATENT_SEE_SCOPE(
       "ServerLoadReportingFilter::Call::OnServerTrailingMetadata");
   const auto& costs = md.Take(LbCostBinMetadata());
   for (const auto& cost : costs) {
@@ -219,7 +219,7 @@ void ServerLoadReportingFilter::Call::OnServerTrailingMetadata(
 
 void ServerLoadReportingFilter::Call::OnFinalize(
     const grpc_call_final_info* final_info, ServerLoadReportingFilter* filter) {
-  GRPC_LATENT_SEE_INNER_SCOPE("ServerLoadReportingFilter::Call::OnFinalize");
+  GRPC_LATENT_SEE_SCOPE("ServerLoadReportingFilter::Call::OnFinalize");
   if (final_info == nullptr) return;
   // After the last bytes have been placed on the wire we record
   // final measurements
