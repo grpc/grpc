@@ -62,6 +62,7 @@ class UnaryUnaryMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -100,6 +101,7 @@ class UnaryStreamMultiCallable(Generic[RequestType, ResponseType], abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -138,6 +140,7 @@ class StreamUnaryMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -176,6 +179,7 @@ class StreamStreamMultiCallable(abc.ABC):
           RpcError: Indicates that the RPC terminated with non-OK status. The
             raised RpcError will also be a Call for the RPC affording the RPC's
             metadata, status code, and details.
+
         """
 
 
@@ -188,22 +192,28 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         """Starts an asynchronous context manager.
 
         Returns:
           Channel the channel that was instantiated.
+
         """
 
     @abc.abstractmethod
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(
+        self,
+        exc_type,  # noqa: ANN001
+        exc_val,  # noqa: ANN001
+        exc_tb,  # noqa: ANN001
+    ) -> None:
         """Finishes the asynchronous context manager by closing the channel.
 
         Still active RPCs will be cancelled.
         """
 
     @abc.abstractmethod
-    async def close(self, grace: Optional[float] = None):
+    async def close(self, grace: Optional[float] = None) -> None:
         """Closes this Channel and releases all resources held by it.
 
         This method immediately stops the channel from executing new RPCs in
@@ -220,7 +230,8 @@ class Channel(abc.ABC):
 
     @abc.abstractmethod
     def get_state(
-        self, try_to_connect: bool = False
+        self,
+        try_to_connect: bool = False,
     ) -> grpc.ChannelConnectivity:
         """Checks the connectivity state of a channel.
 
@@ -235,6 +246,7 @@ class Channel(abc.ABC):
             connect to peer or not.
 
         Returns: A ChannelConnectivity object.
+
         """
 
     @abc.abstractmethod
@@ -261,6 +273,7 @@ class Channel(abc.ABC):
         Args:
           last_observed_state: A grpc.ChannelConnectivity object representing
             the last known state.
+
         """
 
     @abc.abstractmethod
@@ -289,6 +302,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryUnaryMultiCallable value for the named unary-unary method.
+
         """
 
     @abc.abstractmethod
@@ -313,6 +327,7 @@ class Channel(abc.ABC):
 
         Returns:
           A UnaryStreamMultiCallable value for the named unary-stream method.
+
         """
 
     @abc.abstractmethod
@@ -337,6 +352,7 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamUnaryMultiCallable value for the named stream-unary method.
+
         """
 
     @abc.abstractmethod
@@ -361,4 +377,5 @@ class Channel(abc.ABC):
 
         Returns:
           A StreamStreamMultiCallable value for the named stream-stream method.
+
         """
