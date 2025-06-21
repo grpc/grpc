@@ -29,6 +29,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -205,14 +206,14 @@ Json::Object OutputBuffers::Reader::ToJson() {
 }
 
 void OutputBuffers::AddData(channelz::DataSink sink) {
-  Json::Object obj;
-  obj["num_readers"] =
-      Json::FromNumber(num_readers_.load(std::memory_order_relaxed));
-  obj["encode_alignment"] = Json::FromNumber(encode_alignment_);
-  obj["scheduling_state"] =
-      Json::FromNumber(scheduling_state_.load(std::memory_order_relaxed));
-  obj["scheduler"] = Json::FromString(scheduler_->Config());
-  sink.AddAdditionalInfo("outputBuffers", std::move(obj));
+  sink.AddAdditionalInfo(
+      "output_buffers",
+      channelz::PropertyList()
+          .Set("num_readers", num_readers_.load(std::memory_order_relaxed))
+          .Set("encode_alignment", encode_alignment_)
+          .Set("scheduling_state",
+               scheduling_state_.load(std::memory_order_relaxed))
+          .Set("scheduler", scheduler_->Config()));
   scheduling_party_->ToJson([sink](Json::Object obj) mutable {
     sink.AddAdditionalInfo("schedulingParty", std::move(obj));
   });
@@ -507,14 +508,11 @@ void InputQueue::Cancel(Completion* completion) {
 
 void InputQueue::AddData(channelz::DataSink sink) {
   MutexLock lock(&mu_);
-  Json::Object obj;
-  obj["read_requested"] = Json::FromString(absl::StrCat(read_requested_));
-  obj["read_completed"] = Json::FromString(absl::StrCat(read_completed_));
-  // TODO(ctiller): log completions_
-  if (!closed_error_.ok()) {
-    obj["closed_error"] = Json::FromString(closed_error_.ToString());
-  }
-  sink.AddAdditionalInfo("inputQueue", std::move(obj));
+  sink.AddAdditionalInfo(
+      "input_queue", channelz::PropertyList()
+                         .Set("read_requested", absl::StrCat(read_requested_))
+                         .Set("read_completed", absl::StrCat(read_completed_))
+                         .Set("closed_error", closed_error_));
 }
 
 void InputQueue::SetClosed(absl::Status status) {
