@@ -1486,7 +1486,6 @@ let package = Package(
         "src/core/lib/iomgr/pollset_windows.cc",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/port.h",
-        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.cc",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_impl.h",
