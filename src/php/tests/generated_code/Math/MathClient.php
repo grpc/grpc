@@ -37,7 +37,7 @@ class MathClient extends \Grpc\BaseStub {
      * @param \Math\DivArgs $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Math\DivReply>
      */
     public function Div(\Math\DivArgs $argument,
       $metadata = [], $options = []) {

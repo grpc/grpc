@@ -40,7 +40,7 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\LoadBalancerStatsRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\LoadBalancerStatsResponse>
      */
     public function GetClientStats(\Grpc\Testing\LoadBalancerStatsRequest $argument,
       $metadata = [], $options = []) {
@@ -55,7 +55,7 @@ class LoadBalancerStatsServiceClient extends \Grpc\BaseStub {
      * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
-     * @return \Grpc\UnaryCall
+     * @return \Grpc\UnaryCall<\Grpc\Testing\LoadBalancerAccumulatedStatsResponse>
      */
     public function GetClientAccumulatedStats(\Grpc\Testing\LoadBalancerAccumulatedStatsRequest $argument,
       $metadata = [], $options = []) {
