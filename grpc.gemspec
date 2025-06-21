@@ -1361,6 +1361,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_posix.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/posix_interface_windows.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc )
+  s.files += %w( src/core/lib/event_engine/posix_engine/posix_write_event_sink.h )
   s.files += %w( src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc )
   s.files += %w( src/core/lib/event_engine/posix_engine/tcp_socket_utils.h )

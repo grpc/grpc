@@ -117,8 +117,11 @@ void PosixWriteEventSink::RecordEvent(EventEngine::Endpoint::WriteEvent event,
   if (!requested_events_.test(static_cast<int>(event))) return;
   std::vector<EventEngine::Endpoint::WriteMetric> metrics;
   auto maybe_add = [this, &metrics](Metric metric, auto value) {
-    if (!requested_metrics_->IsSet(static_cast<int>(metric))) return;
-    if (!value.has_value()) return;
+    if (requested_metrics_ == nullptr ||
+        !requested_metrics_->IsSet(static_cast<int>(metric)) ||
+        !value.has_value()) {
+      return;
+    }
     metrics.push_back(EventEngine::Endpoint::WriteMetric{
         .key = static_cast<size_t>(metric),
         .value = static_cast<int64_t>(value.value()),

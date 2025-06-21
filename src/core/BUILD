@@ -2516,6 +2516,7 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_posix_interface",
+        "posix_write_event_sink",
         "sync",
         "//:event_engine_base_hdrs",
         "//:gpr",

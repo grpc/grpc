@@ -936,9 +936,7 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 // queue, for example, if the socket is not capable of reporting timestamps.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
   if (outgoing_buffer_write_event_sink_.has_value()) {
-    traced_buffers_.Shutdown(
-        std::move(outgoing_buffer_write_event_sink_).value(),
-        absl::InternalError("TracedBuffer list shutdown"));
+    traced_buffers_.Shutdown(std::move(outgoing_buffer_write_event_sink_));
   }
 }
 
