@@ -297,6 +297,7 @@ CC_FILES=[
     'third_party/protobuf/src/google/protobuf/generated_message_util.cc',
     'third_party/protobuf/src/google/protobuf/implicit_weak_message.cc',
     'third_party/protobuf/src/google/protobuf/inlined_string_field.cc',
+    'third_party/protobuf/src/google/protobuf/internal_feature_helper.cc',
     'third_party/protobuf/src/google/protobuf/io/coded_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/gzip_stream.cc',
     'third_party/protobuf/src/google/protobuf/io/io_win32.cc',
@@ -411,4 +412,4 @@ CC_INCLUDES=[
 ]
 PROTO_INCLUDE='third_party/protobuf/src'
 
-PROTOBUF_SUBMODULE_VERSION="3d4adad5c4c4e6a6f9f038769b8c90716065b0e4"
+PROTOBUF_SUBMODULE_VERSION="74211c0dfc2777318ab53c2cd2c317a2ef9012de"
