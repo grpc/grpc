@@ -17476,6 +17476,12 @@ if(gRPC_INSTALL)
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
+  # Create protoc-compatible plugin name
+  if(UNIX)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E create_symlink grpc_python_plugin \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${gRPC_INSTALL_BINDIR}/protoc-gen-grpc_python)")
+  elseif(WIN32)
+    install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E copy \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${gRPC_INSTALL_BINDIR}/grpc_python_plugin.exe \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${gRPC_INSTALL_BINDIR}/protoc-gen-grpc_python.exe)")
+  endif()
 endif()
 
 endif()
