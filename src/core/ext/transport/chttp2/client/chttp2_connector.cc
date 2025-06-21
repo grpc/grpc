@@ -47,6 +47,7 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -56,6 +57,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
@@ -83,6 +85,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using http2::Http2ClientTransport;
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
@@ -117,6 +120,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
   CoreConfiguration::Get().handshaker_registry().AddHandshakers(
       HANDSHAKER_CLIENT, channel_args, args_.interested_parties,
       handshake_mgr_.get());
+  is_call_v1_ = !channel_args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
   handshake_mgr_->DoHandshake(
       /*endpoint=*/nullptr, channel_args, args.deadline, /*acceptor=*/nullptr,
       [self = RefAsSubclass<Chttp2Connector>()](
@@ -142,7 +146,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     }
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
-  } else if ((*result)->endpoint != nullptr) {
+  } else if ((*result)->endpoint != nullptr && is_call_v1_) {
     result_->transport = grpc_create_chttp2_transport(
         (*result)->args, std::move((*result)->endpoint), true);
     CHECK_NE(result_->transport, nullptr);
@@ -161,6 +165,27 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
           // Ensure the Chttp2Connector is deleted under an ExecCtx.
           self.reset();
         });
+  } else if ((*result)->endpoint != nullptr && !is_call_v1_) {
+    // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once the
+    // ping pong test is in place.
+    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+        event_engine_endpoint = grpc_event_engine::experimental::
+            grpc_take_wrapped_event_engine_endpoint(
+                (*result)->endpoint.release());
+    if (event_engine_endpoint == nullptr) {
+      LOG(ERROR) << "Failed to take endpoint.";
+      result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+    }
+    // Create the PromiseEndpoint
+    PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                     std::move((*result)->read_buffer));
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+        event_engine_ptr =
+            (*result)
+                ->args
+                .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+    result_->transport = new Http2ClientTransport(
+        std::move(promise_endpoint), (*result)->args, event_engine_ptr);
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external

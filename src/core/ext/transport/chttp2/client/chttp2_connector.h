@@ -61,6 +61,7 @@ class Chttp2Connector : public SubchannelConnector {
   Result* result_ = nullptr;
   grpc_closure* notify_ = nullptr;
   bool shutdown_ = false;
+  bool is_call_v1_ = true;
   grpc_closure on_receive_settings_;
   std::optional<grpc_event_engine::experimental::EventEngine::TaskHandle>
       timer_handle_ ABSL_GUARDED_BY(mu_);
