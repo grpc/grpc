@@ -426,30 +426,35 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<Http2Status>(MatchPromise(
       std::move(frame),
-      [this](Http2DataFrame frame) {
-        return ProcessHttp2DataFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2DataFrame frame) {
+        return self->ProcessHttp2DataFrame(std::move(frame));
       },
-      [this](Http2HeaderFrame frame) {
-        return ProcessHttp2HeaderFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2HeaderFrame frame) {
+        return self->ProcessHttp2HeaderFrame(std::move(frame));
       },
-      [this](Http2RstStreamFrame frame) {
-        return ProcessHttp2RstStreamFrame(frame);
+      [self =
+           RefAsSubclass<Http2ClientTransport>()](Http2RstStreamFrame frame) {
+        return self->ProcessHttp2RstStreamFrame(frame);
       },
-      [this](Http2SettingsFrame frame) {
-        return ProcessHttp2SettingsFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2SettingsFrame frame) {
+        return self->ProcessHttp2SettingsFrame(std::move(frame));
       },
-      [this](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
-      [this](Http2GoawayFrame frame) {
-        return ProcessHttp2GoawayFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2PingFrame frame) {
+        return self->ProcessHttp2PingFrame(frame);
       },
-      [this](Http2WindowUpdateFrame frame) {
-        return ProcessHttp2WindowUpdateFrame(frame);
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2GoawayFrame frame) {
+        return self->ProcessHttp2GoawayFrame(std::move(frame));
       },
-      [this](Http2ContinuationFrame frame) {
-        return ProcessHttp2ContinuationFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          Http2WindowUpdateFrame frame) {
+        return self->ProcessHttp2WindowUpdateFrame(frame);
       },
-      [this](Http2SecurityFrame frame) {
-        return ProcessHttp2SecurityFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          Http2ContinuationFrame frame) {
+        return self->ProcessHttp2ContinuationFrame(std::move(frame));
+      },
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2SecurityFrame frame) {
+        return self->ProcessHttp2SecurityFrame(std::move(frame));
       },
       [](GRPC_UNUSED Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
@@ -480,49 +485,51 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         return Http2FrameHeader::Parse(header_bytes.begin());
       },
       // Validate the incoming frame as per the current state of the transport
-      [this](Http2FrameHeader header) {
-        if (incoming_header_in_progress_ &&
-            (current_frame_header_.type != 9 /*Continuation*/ ||
-             current_frame_header_.stream_id != incoming_header_stream_id_)) {
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
+        if (self->incoming_header_in_progress_ &&
+            (self->current_frame_header_.type != 9 /*Continuation*/ ||
+             self->current_frame_header_.stream_id !=
+                 self->incoming_header_stream_id_)) {
           LOG(ERROR) << "Closing Connection " << header.ToString() << " "
                      << kAssemblerContiguousSequenceError;
-          return HandleError(Http2Status::Http2ConnectionError(
+          return self->HandleError(Http2Status::Http2ConnectionError(
               Http2ErrorCode::kProtocolError,
               std::string(kAssemblerContiguousSequenceError)));
         }
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                              "Validated Frame Header:"
                           << header.ToString();
-        current_frame_header_ = header;
+        self->current_frame_header_ = header;
         return absl::OkStatus();
       },
       // Read the payload of the frame.
-      [this]() {
+      [self = RefAsSubclass<Http2ClientTransport>()]() {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            EndpointRead(current_frame_header_.length));
+            self->EndpointRead(self->current_frame_header_.length));
       },
       // Parse the payload of the frame based on frame type.
-      [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
             << payload.JoinIntoString();
         ValueOrHttp2Status<Http2Frame> frame =
-            ParseFramePayload(current_frame_header_, std::move(payload));
+            ParseFramePayload(self->current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
-          return HandleError(
+          return self->HandleError(
               ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
         }
         return TakeValue(std::move(frame));
       },
-      [this](GRPC_UNUSED Http2Frame frame) {
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          GRPC_UNUSED Http2Frame frame) {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
         return AssertResultType<absl::Status>(
-            Map(ProcessOneFrame(std::move(frame)),
-                [self = this->RefAsSubclass<Http2ClientTransport>()](
-                    Http2Status status) {
+            Map(self->ProcessOneFrame(std::move(frame)),
+                [self](Http2Status status) {
                   if (!status.IsOk()) {
                     return self->HandleError(std::move(status));
                   }
@@ -533,12 +540,14 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
 
 auto Http2ClientTransport::ReadLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Continue";
-      return Continue();
-    });
-  }));
+  return AssertResultType<absl::Status>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        return TrySeq(
+            self->ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
+              HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Continue";
+              return Continue();
+            });
+      }));
 }
 
 auto Http2ClientTransport::OnReadLoopEnded() {
@@ -579,35 +588,32 @@ auto Http2ClientTransport::WriteFromQueue() {
 
 auto Http2ClientTransport::WriteLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
-    // can move bytes_sent_in_last_write_ to be a local variable.
-    bytes_sent_in_last_write_ = false;
-    return TrySeq(
-        // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
-        // acks as well. This will break the call to ResetPingClock as it only
-        // needs to be called on writing Data/Header/WindowUpdate frames.
-        // Possible fixes: Either WriteFromQueue iterates over all the frames
-        // and figures out the types of frames needed (this may anyways be
-        // needed to check that we do not send frames for closed streams) or we
-        // have flags to indicate the types of frame that are enqueued.
-        WriteFromQueue(),
-        [self = RefAsSubclass<Http2ClientTransport>()] {
-          return self->MaybeSendPing();
-        },
-        [self = RefAsSubclass<Http2ClientTransport>()] {
-          return self->MaybeSendPingAcks();
-        },
-        [this]() -> LoopCtl<absl::Status> {
-          // If any Header/Data/WindowUpdate frame was sent in the last write,
-          // reset the ping clock.
-          if (bytes_sent_in_last_write_) {
-            ping_manager_.ResetPingClock(/*is_client=*/true);
-          }
-          HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
-          return Continue();
-        });
-  }));
+  return AssertResultType<absl::Status>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
+        // can move bytes_sent_in_last_write_ to be a local variable.
+        self->bytes_sent_in_last_write_ = false;
+        return TrySeq(
+            // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
+            // acks as well. This will break the call to ResetPingClock as it
+            // only needs to be called on writing Data/Header/WindowUpdate
+            // frames. Possible fixes: Either WriteFromQueue iterates over all
+            // the frames and figures out the types of frames needed (this may
+            // anyways be needed to check that we do not send frames for closed
+            // streams) or we have flags to indicate the types of frame that are
+            // enqueued.
+            self->WriteFromQueue(), [self] { return self->MaybeSendPing(); },
+            [self] { return self->MaybeSendPingAcks(); },
+            [self]() -> LoopCtl<absl::Status> {
+              // If any Header/Data/WindowUpdate frame was sent in the last
+              // write, reset the ping clock.
+              if (self->bytes_sent_in_last_write_) {
+                self->ping_manager_.ResetPingClock(/*is_client=*/true);
+              }
+              HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
+              return Continue();
+            });
+      }));
 }
 
 auto Http2ClientTransport::OnWriteLoopEnded() {
