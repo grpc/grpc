@@ -1,4 +1,4 @@
-FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.9.1-mri-x86_64-linux
+FROM ghcr.io/rake-compiler/rake-compiler-dock-image:1.9.1-mri-x86-linux-musl
 
 #=================
 # Install ccache
@@ -13,3 +13,4 @@ RUN curl -sSL -o ccache.tar.gz https://github.com/ccache/ccache/releases/downloa
     && make -j4 && make install \
     && cd ../.. \
     && rm -rf ccache-4.5.1 ccache.tar.gz
+
