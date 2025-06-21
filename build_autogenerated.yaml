@@ -319,22 +319,28 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
+  - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/varint.h
@@ -999,15 +1005,20 @@ libs:
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
@@ -1020,6 +1031,7 @@ libs:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -1063,6 +1075,7 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/promise_endpoint.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -1407,12 +1420,16 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
+  - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
+  - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -1891,8 +1908,10 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -1938,6 +1957,7 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -2379,22 +2399,28 @@ libs:
   - src/core/ext/transport/chttp2/transport/frame_security.h
   - src/core/ext/transport/chttp2/transport/frame_settings.h
   - src/core/ext/transport/chttp2/transport/frame_window_update.h
+  - src/core/ext/transport/chttp2/transport/header_assembler.h
   - src/core/ext/transport/chttp2/transport/hpack_constants.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder.h
   - src/core/ext/transport/chttp2/transport/hpack_encoder_table.h
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.h
   - src/core/ext/transport/chttp2/transport/hpack_parser.h
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.h
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
   - src/core/ext/transport/chttp2/transport/http2_settings.h
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
+  - src/core/ext/transport/chttp2/transport/http2_transport.h
   - src/core/ext/transport/chttp2/transport/http2_ztrace_collector.h
   - src/core/ext/transport/chttp2/transport/huffsyms.h
   - src/core/ext/transport/chttp2/transport/internal.h
   - src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h
+  - src/core/ext/transport/chttp2/transport/keepalive.h
   - src/core/ext/transport/chttp2/transport/legacy_frame.h
+  - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.h
   - src/core/ext/transport/chttp2/transport/ping_callbacks.h
+  - src/core/ext/transport/chttp2/transport/ping_promise.h
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.h
   - src/core/ext/transport/chttp2/transport/stream_lists.h
   - src/core/ext/transport/chttp2/transport/varint.h
@@ -2608,15 +2634,20 @@ libs:
   - src/core/lib/promise/detail/join_state.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
+  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/detail/seq_state.h
   - src/core/lib/promise/detail/status.h
   - src/core/lib/promise/exec_ctx_wakeup_scheduler.h
   - src/core/lib/promise/for_each.h
   - src/core/lib/promise/if.h
+  - src/core/lib/promise/inter_activity_latch.h
+  - src/core/lib/promise/inter_activity_mutex.h
   - src/core/lib/promise/interceptor_list.h
   - src/core/lib/promise/latch.h
   - src/core/lib/promise/loop.h
   - src/core/lib/promise/map.h
+  - src/core/lib/promise/match_promise.h
+  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/observable.h
   - src/core/lib/promise/party.h
   - src/core/lib/promise/pipe.h
@@ -2629,6 +2660,7 @@ libs:
   - src/core/lib/promise/status_flag.h
   - src/core/lib/promise/try_join.h
   - src/core/lib/promise/try_seq.h
+  - src/core/lib/promise/wait_set.h
   - src/core/lib/resource_quota/api.h
   - src/core/lib/resource_quota/arena.h
   - src/core/lib/resource_quota/connection_quota.h
@@ -2667,6 +2699,7 @@ libs:
   - src/core/lib/transport/call_final_info.h
   - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
+  - src/core/lib/transport/promise_endpoint.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
   - src/core/lib/transport/transport.h
@@ -2893,12 +2926,16 @@ libs:
   - src/core/ext/transport/chttp2/transport/hpack_parse_result.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser.cc
   - src/core/ext/transport/chttp2/transport/hpack_parser_table.cc
+  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
   - src/core/ext/transport/chttp2/transport/http2_settings.cc
   - src/core/ext/transport/chttp2/transport/http2_stats_collector.cc
+  - src/core/ext/transport/chttp2/transport/http2_transport.cc
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
+  - src/core/ext/transport/chttp2/transport/keepalive.cc
   - src/core/ext/transport/chttp2/transport/parsing.cc
   - src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc
   - src/core/ext/transport/chttp2/transport/ping_callbacks.cc
+  - src/core/ext/transport/chttp2/transport/ping_promise.cc
   - src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   - src/core/ext/transport/chttp2/transport/stream_lists.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
@@ -3074,8 +3111,10 @@ libs:
   - src/core/lib/iomgr/wakeup_fd_pipe.cc
   - src/core/lib/iomgr/wakeup_fd_posix.cc
   - src/core/lib/promise/activity.cc
+  - src/core/lib/promise/mpsc.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/promise/sleep.cc
+  - src/core/lib/promise/wait_set.cc
   - src/core/lib/resource_quota/api.cc
   - src/core/lib/resource_quota/arena.cc
   - src/core/lib/resource_quota/connection_quota.cc
@@ -3116,6 +3155,7 @@ libs:
   - src/core/lib/transport/call_final_info.cc
   - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
+  - src/core/lib/transport/promise_endpoint.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
   - src/core/lib/transport/transport.cc
@@ -8266,18 +8306,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8327,9 +8361,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8399,18 +8430,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8460,9 +8485,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8620,18 +8642,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8681,9 +8697,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8749,18 +8762,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8810,9 +8817,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -8878,18 +8882,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -8939,9 +8937,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9095,18 +9090,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9156,9 +9145,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9312,18 +9298,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9373,9 +9353,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9441,18 +9418,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9502,9 +9473,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9658,18 +9626,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9719,9 +9681,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -9787,18 +9746,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -9848,9 +9801,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -11879,18 +11829,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/core/call/batch_builder.h
   - test/core/end2end/cq_verifier.h
@@ -11937,9 +11881,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/core/call/batch_builder.cc
   - test/core/end2end/cq_verifier.cc
@@ -12764,19 +12705,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/ext/transport/chttp2/transport/header_assembler.h
-  - src/core/ext/transport/chttp2/transport/http2_client_transport.h
-  - src/core/ext/transport/chttp2/transport/http2_transport.h
-  - src/core/ext/transport/chttp2/transport/keepalive.h
-  - src/core/ext/transport/chttp2/transport/message_assembler.h
-  - src/core/ext/transport/chttp2/transport/ping_promise.h
-  - src/core/lib/promise/detail/promise_variant.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/inter_activity_mutex.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/promise/poll_matcher.h
@@ -12785,13 +12713,6 @@ targets:
   - test/core/transport/util/transport_test.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
-  - src/core/ext/transport/chttp2/transport/http2_client_transport.cc
-  - src/core/ext/transport/chttp2/transport/http2_transport.cc
-  - src/core/ext/transport/chttp2/transport/keepalive.cc
-  - src/core/ext/transport/chttp2/transport/ping_promise.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_client_transport_test.cc
@@ -12811,11 +12732,6 @@ targets:
   language: c++
   headers:
   - src/core/ext/transport/chttp2/transport/http2_server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/transport/chttp2/http2_frame_test_helper.h
@@ -12824,9 +12740,6 @@ targets:
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
   - src/core/ext/transport/chttp2/transport/http2_server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
   - test/core/transport/chttp2/http2_server_transport_test.cc
@@ -13047,10 +12960,7 @@ targets:
   language: c++
   headers:
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
   src:
-  - src/core/lib/promise/wait_set.cc
   - test/core/promise/inter_activity_latch_test.cc
   deps:
   - gtest
@@ -14573,12 +14483,8 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/promise/mpsc.h
-  - src/core/lib/promise/wait_set.h
   - test/core/promise/poll_matcher.h
   src:
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_mpsc_test.cc
   deps:
   - gtest
@@ -14592,11 +14498,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/promise/inter_activity_latch.h
-  - src/core/lib/promise/wait_set.h
+  headers: []
   src:
-  - src/core/lib/promise/wait_set.cc
   - test/core/promise/party_test.cc
   deps:
   - gtest
@@ -15112,10 +15015,8 @@ targets:
   language: c++
   headers:
   - src/core/lib/promise/join.h
-  - src/core/lib/transport/promise_endpoint.h
   - test/core/promise/test_wakeup_schedulers.h
   src:
-  - src/core/lib/transport/promise_endpoint.cc
   - test/core/transport/promise_endpoint_test.cc
   deps:
   - gtest
@@ -15347,18 +15248,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/cpp/qps/benchmark_config.h
   - test/cpp/qps/client.h
@@ -15402,9 +15297,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
@@ -15461,18 +15353,12 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/pending_connection.h
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good_legacy/server_transport.h
-  - src/core/lib/promise/detail/promise_variant.h
   - src/core/lib/promise/event_engine_wakeup_scheduler.h
-  - src/core/lib/promise/inter_activity_latch.h
   - src/core/lib/promise/inter_activity_pipe.h
   - src/core/lib/promise/join.h
   - src/core/lib/promise/lock_based_mpsc.h
-  - src/core/lib/promise/match_promise.h
-  - src/core/lib/promise/mpsc.h
   - src/core/lib/promise/switch.h
   - src/core/lib/promise/wait_for_callback.h
-  - src/core/lib/promise/wait_set.h
-  - src/core/lib/transport/promise_endpoint.h
   - src/core/util/seq_bit_set.h
   - test/cpp/qps/client.h
   - test/cpp/qps/histogram.h
@@ -15511,9 +15397,6 @@ targets:
   - src/core/ext/transport/chaotic_good_legacy/frame_header.cc
   - src/core/ext/transport/chaotic_good_legacy/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good_legacy/server_transport.cc
-  - src/core/lib/promise/mpsc.cc
-  - src/core/lib/promise/wait_set.cc
-  - src/core/lib/transport/promise_endpoint.cc
   - src/core/util/seq_bit_set.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
