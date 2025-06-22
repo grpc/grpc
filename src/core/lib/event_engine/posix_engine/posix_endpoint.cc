@@ -902,7 +902,6 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
     return false;
   }
   *sent_length = length;
-
   return true;
 }
 
@@ -1389,7 +1388,6 @@ class PosixEndpointTelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
     return PosixWriteEventSink::GetMetricsSet(keys);
   }
 
-  /// Returns a MetricsSet with all supported keys set.
   std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
       const override {
     return PosixWriteEventSink::GetFullMetricsSet();
