@@ -14,6 +14,8 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_write_event_sink.h"
 
+#include "absl/log/log.h"
+
 namespace grpc_event_engine::experimental {
 
 std::optional<size_t> PosixWriteEventSink::GetMetricKey(

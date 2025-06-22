@@ -96,6 +96,10 @@ class OpenTelemetryPluginImpl::ClientCallTracer::CallAttemptTracer<
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
                    absl::Time time, size_t byte_offset,
                    const std::vector<TcpEventMetric>& metrics) override {
+    LOG(ERROR) << absl::StrCat(
+        "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
+        " byte_offset=", byte_offset, " ",
+        grpc_core::TcpCallTracer::TcpEventMetricsToString(metrics));
     call_attempt_tracer_->RecordAnnotation(
         absl::StrCat(
             "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),

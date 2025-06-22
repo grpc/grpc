@@ -618,9 +618,8 @@ class PosixEndpoint : public PosixEndpointWithFdSupport {
     return impl_->Write(std::move(on_writable), data, std::move(args));
   }
 
-  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
-    return nullptr;
-  }
+  std::shared_ptr<EventEngine::Endpoint::TelemetryInfo> GetTelemetryInfo()
+      const override;
 
   const grpc_event_engine::experimental::EventEngine::ResolvedAddress&
   GetPeerAddress() const override {

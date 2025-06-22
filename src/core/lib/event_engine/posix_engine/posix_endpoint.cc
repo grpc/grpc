@@ -899,6 +899,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
         static_cast<uint32_t>(bytes_counter_ + *length),
         &poller_->posix_interface(), handle_->WrappedFd(),
         std::move(outgoing_buffer_write_event_sink_).value());
+    outgoing_buffer_write_event_sink_.reset();
   }
   return true;
 }
@@ -1364,6 +1365,39 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     Ref().release();
     handle_->NotifyOnError(on_error_);
   }
+}
+
+namespace {
+class PosixEndpointTelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
+ public:
+  std::vector<size_t> AllWriteMetrics() const override {
+    return PosixWriteEventSink::AllWriteMetrics();
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) const override {
+    return PosixWriteEventSink::GetMetricName(key);
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) const override {
+    return PosixWriteEventSink::GetMetricKey(name);
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+      absl::Span<const size_t> keys) const override {
+    return PosixWriteEventSink::GetMetricsSet(keys);
+  }
+
+  /// Returns a MetricsSet with all supported keys set.
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+      const override {
+    return PosixWriteEventSink::GetFullMetricsSet();
+  }
+};
+}  // namespace
+
+std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+PosixEndpoint::GetTelemetryInfo() const {
+  return std::make_shared<PosixEndpointTelemetryInfo>();
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(
