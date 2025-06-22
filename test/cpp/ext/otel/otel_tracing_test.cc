@@ -44,6 +44,7 @@ using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
 using ::testing::ElementsAre;
 using ::testing::FieldsAre;
+using ::testing::HasSubstr;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
@@ -672,6 +673,81 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
       });
   ASSERT_NE(server_span, spans.end());
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
+}
+
+// Test presence of TCP write annotations
+TEST_F(OTelTracingTest, TcpWriteAnnotations) {
+  SendRPC(stub_.get());
+  auto spans = GetSpans(3);
+  SpanData* attempt_span;
+  SpanData* server_span;
+  EXPECT_EQ(spans.size(), 3);
+  for (const auto& span : spans) {
+    EXPECT_TRUE(span->GetSpanContext().IsValid());
+    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+      attempt_span = span.get();
+      // Verify TCP sendmsg event
+      const auto sendmsg_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SENDMSG");
+          });
+      ASSERT_NE(sendmsg_event, span->GetEvents().end());
+      // Verify TCP scheduled event
+      const auto scheduled_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SCHEDULED");
+          });
+      ASSERT_NE(scheduled_event, span->GetEvents().end());
+      // Verify TCP sent event
+      const auto sent_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return absl::StrContains(event.GetName(), "TCP: SENT");
+                       });
+      ASSERT_NE(sent_event, span->GetEvents().end());
+      // Verify TCP acked event
+      const auto acked_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: ACKED");
+          });
+      ASSERT_NE(acked_event, span->GetEvents().end());
+    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+      server_span = span.get();
+      // Verify TCP sendmsg event
+      const auto sendmsg_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SENDMSG");
+          });
+      ASSERT_NE(sendmsg_event, span->GetEvents().end());
+      // Verify TCP scheduled event
+      const auto scheduled_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SCHEDULED");
+          });
+      ASSERT_NE(scheduled_event, span->GetEvents().end());
+      // Verify TCP sent event
+      const auto sent_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return absl::StrContains(event.GetName(), "TCP: SENT");
+                       });
+      ASSERT_NE(sent_event, span->GetEvents().end());
+      // Verify TCP acked event
+      const auto acked_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: ACKED");
+          });
+      ASSERT_NE(acked_event, span->GetEvents().end());
+    }
+  }
+  EXPECT_NE(attempt_span, nullptr);
+  EXPECT_NE(server_span, nullptr);
 }
 
 TEST(OTelTracingPluginTest, OTelSpanIdAndTraceIdToStringTest) {

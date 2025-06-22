@@ -885,6 +885,15 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   msg->msg_control = u.cmsg_buf;
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
 
+  // Add traced buffer before we write to avoid race conditions with getting the
+  // timestamps from the error queue. If sending fails, we simply shutdown the
+  // traced buffer list.
+  traced_buffers_.AddNewEntry(
+      static_cast<uint32_t>(bytes_counter_ + sending_length),
+      &poller_->posix_interface(), handle_->WrappedFd(),
+      std::move(outgoing_buffer_write_event_sink_).value());
+  outgoing_buffer_write_event_sink_.reset();
+
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
   PosixErrorOr<int64_t> length = TcpSend(&posix_interface, handle_->WrappedFd(),
@@ -893,14 +902,7 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
     return false;
   }
   *sent_length = length;
-  // Only save timestamps if all the bytes were taken by sendmsg.
-  if (sending_length == static_cast<size_t>(*length)) {
-    traced_buffers_.AddNewEntry(
-        static_cast<uint32_t>(bytes_counter_ + *length),
-        &poller_->posix_interface(), handle_->WrappedFd(),
-        std::move(outgoing_buffer_write_event_sink_).value());
-    outgoing_buffer_write_event_sink_.reset();
-  }
+
   return true;
 }
 
