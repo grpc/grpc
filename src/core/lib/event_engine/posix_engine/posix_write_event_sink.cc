@@ -14,8 +14,6 @@
 
 #include "src/core/lib/event_engine/posix_engine/posix_write_event_sink.h"
 
-#include "absl/log/log.h"
-
 namespace grpc_event_engine::experimental {
 
 std::optional<size_t> PosixWriteEventSink::GetMetricKey(
@@ -125,8 +123,8 @@ void PosixWriteEventSink::RecordEvent(EventEngine::Endpoint::WriteEvent event,
       return;
     }
     metrics.push_back(EventEngine::Endpoint::WriteMetric{
-        .key = static_cast<size_t>(metric),
-        .value = static_cast<int64_t>(value.value()),
+        static_cast<size_t>(metric),
+        static_cast<int64_t>(value.value()),
     });
   };
   maybe_add(Metric::kDeliveryRate, conn_metrics.delivery_rate);

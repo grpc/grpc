@@ -1397,7 +1397,9 @@ class PosixEndpointTelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
 
 std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
 PosixEndpoint::GetTelemetryInfo() const {
-  return std::make_shared<PosixEndpointTelemetryInfo>();
+  static absl::NoDestructor<std::shared_ptr<PosixEndpointTelemetryInfo>>
+      telemetry_info(std::make_shared<PosixEndpointTelemetryInfo>());
+  return *telemetry_info;
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(

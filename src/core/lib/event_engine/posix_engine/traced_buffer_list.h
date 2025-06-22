@@ -102,7 +102,9 @@ class TracedBufferList {
                         struct cmsghdr* /*opt_stats*/,
                         struct scm_timestamping* /*tss*/) {}
   int Size() { return 0; }
-  void Shutdown(void* /*remaining*/, absl::Status /*shutdown_err*/) {}
+  void Shutdown(
+      std::optional<EventEngine::Endpoint::WriteEventSink> /*remaining*/) {}
+  static void TestOnlySetMaxPendingAckTime(grpc_core::Duration /*duration*/);
 };
 #endif  // GRPC_LINUX_ERRQUEUE
 

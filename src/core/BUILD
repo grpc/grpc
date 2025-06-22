@@ -2532,7 +2532,6 @@ grpc_cc_library(
         "lib/event_engine/posix_engine/posix_write_event_sink.h",
     ],
     external_deps = [
-        "absl/log",
         "absl/base:no_destructor",
         "absl/functional:any_invocable",
     ],
