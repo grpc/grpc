@@ -1264,8 +1264,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   ChannelArgs new_args = args.SetObject(this).SetObject(saved_service_config_);
   // Construct filter stack.
   auto new_blackboard = MakeRefCounted<Blackboard>();
-  InterceptionChainBuilder builder(new_args, blackboard_.get(),
-                                   new_blackboard.get());
+  InterceptionChainBuilder builder(new_args, new_blackboard.get());
   if (idle_timeout_ != Duration::Zero()) {
     builder.AddOnServerTrailingMetadata([this](ServerMetadata&) {
       if (idle_state_.DecreaseCallCount()) StartIdleTimer();
@@ -1274,16 +1273,18 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked(
   CoreConfiguration::Get().channel_init().AddToInterceptionChainBuilder(
       GRPC_CLIENT_CHANNEL, builder);
   // Add filters returned by the config selector (e.g., xDS HTTP filters).
-  config_selector->AddFilters(builder);
+  config_selector->AddFilters(builder, blackboard_.get(), new_blackboard.get());
   const bool enable_retries =
       !channel_args_.WantMinimalStack() &&
       channel_args_.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   if (enable_retries) {
+    RetryInterceptor::UpdateBlackboard(*saved_service_config_,
+                                       blackboard_.get(), new_blackboard.get());
     builder.Add<RetryInterceptor>();
   }
+  blackboard_ = std::move(new_blackboard);
   // Create call destination.
   auto top_of_stack_call_destination = builder.Build(call_destination_);
-  blackboard_ = std::move(new_blackboard);
   // Send result to data plane.
   if (!top_of_stack_call_destination.ok()) {
     resolver_data_for_calls_.Set(MaybeRewriteIllegalStatusCode(

@@ -7610,6 +7610,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "client_channel_internal_header",
