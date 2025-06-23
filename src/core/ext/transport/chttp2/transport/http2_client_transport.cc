@@ -124,21 +124,6 @@ void Http2ClientTransport::AbortWithError() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport AbortWithError End";
 }
 
-auto Http2ClientTransport::TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
-  // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
-  // and using that always would be more efficient.
-  return AssertResultType<absl::Status>(
-      Map(outgoing_frames_.MakeSender().Send(std::move(frame), 1),
-          [](StatusFlag status) {
-            HTTP2_CLIENT_DLOG
-                << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
-                << status;
-            return (status.ok())
-                       ? absl::OkStatus()
-                       : absl::InternalError("Failed to enqueue frame");
-          }));
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Processing each type of frame
 
@@ -309,7 +294,7 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   // TODO(akshitpatel) : [PH2][P2] : This would fail in case of a rst frame
   // with NoError. Handle this case.
   Http2Status status = Http2Status::Http2StreamError(
-      GetErrorCodeFromRstFrameErrorCode(frame.error_code),
+      Http2ErrorCodeFromRstFrameErrorCode(frame.error_code),
       "Reset stream frame received.");
   CloseStream(frame.stream_id, status.GetAbslStreamError(),
               CloseStreamArgs{
@@ -719,7 +704,7 @@ Http2ClientTransport::Http2ClientTransport(
 // This function MUST be idempotent.
 void Http2ClientTransport::CloseStream(uint32_t stream_id, absl::Status status,
                                        CloseStreamArgs args,
-                                       DebugLocation whence = {}) {
+                                       DebugLocation whence) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
                     << stream_id << " status=" << status
                     << " location=" << whence.file() << ":" << whence.line();

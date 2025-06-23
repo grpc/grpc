@@ -122,7 +122,19 @@ class Http2ClientTransport final : public ClientTransport {
     return nullptr;
   }
 
-  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame);
+  auto TestOnlyEnqueueOutgoingFrame(Http2Frame frame) {
+    // TODO(tjagtap) : [PH2][P3] : See if making a sender in the constructor
+    // and using that always would be more efficient.
+    return AssertResultType<absl::Status>(Map(
+        outgoing_frames_.MakeSender().Send(std::move(frame), 1),
+        [](StatusFlag status) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
+              << status;
+          return (status.ok()) ? absl::OkStatus()
+                               : absl::InternalError("Failed to enqueue frame");
+        }));
+  }
 
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_manager_.RequestPing(std::move(on_initiate));
