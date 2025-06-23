@@ -84,6 +84,38 @@ cdef class BufferPool:
             grpc_byte_buffer_destroy(buffer)
             self._total_destructions += 1
     
+    cdef grpc_byte_buffer* _reuse_buffer_slice_data(self, grpc_byte_buffer* buffer, bytes message):
+        """
+        Reuse a buffer by replacing its slice data efficiently.
+        This is the key optimization - we reuse the buffer structure.
+        """
+        cdef:
+            size_t size = len(message)
+            grpc_slice new_slice
+            grpc_slice_buffer* slice_buffer
+        
+        # Create new slice with the message data
+        new_slice = grpc_slice_from_copied_buffer(<const char*>message, size)
+        
+        # Access the internal slice buffer through the union
+        slice_buffer = &buffer.data.raw.slice_buffer
+        
+        # Clear existing slices (unref them)
+        cdef size_t i
+        for i in range(slice_buffer.count):
+            grpc_slice_unref(slice_buffer.slices[i])
+        
+        # Reset the slice buffer
+        slice_buffer.count = 0
+        slice_buffer.length = 0
+        
+        # Add the new slice
+        slice_buffer.slices[0] = new_slice
+        slice_buffer.count = 1
+        slice_buffer.length = size
+        
+        return buffer
+    
     cdef grpc_byte_buffer* get_buffer(self, bytes message) except *:
         """
         Get a buffer for the given message.
@@ -105,13 +137,8 @@ cdef class BufferPool:
             grpc_slice_unref(message_slice)
             self._total_allocations += 1
         else:
-            # Reuse buffer from pool - need to copy new data
-            message_slice = grpc_slice_from_copied_buffer(
-                <const char*>message, size)
-            # Clear existing buffer and add new slice
-            grpc_byte_buffer_destroy(buffer)
-            buffer = grpc_raw_byte_buffer_create(&message_slice, 1)
-            grpc_slice_unref(message_slice)
+            # ✅ ACTUAL REUSE: Replace slice data without destroying buffer structure
+            buffer = self._reuse_buffer_slice_data(buffer, message)
         
         return buffer
     
