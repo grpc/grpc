@@ -50,7 +50,6 @@ cdef class BufferPool:
     cdef:
         list _bucket_sizes
         dict _pools
-        size_t _max_pool_size
         size_t _total_allocations
         size_t _total_reuses
         size_t _total_destructions
@@ -65,5 +64,4 @@ cdef class BufferPool:
     def get_stats(self)
     def clear_pools(self)
 
-cdef BufferPool _global_buffer_pool
-def get_global_buffer_pool() 
+cdef BufferPool get_global_buffer_pool() 
