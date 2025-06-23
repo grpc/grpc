@@ -336,9 +336,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GetStatsPluginGroup() = 0;
 
     /// Adds a trace message associated with the channel.
-    enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity,
-                               absl::string_view message) = 0;
+    virtual void AddTraceEvent(absl::string_view message) = 0;
   };
 
   class DelegatingChannelControlHelper;

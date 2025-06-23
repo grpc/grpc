@@ -24,11 +24,13 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <cstddef>
 #include <optional>
 
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata_batch.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/channel/promise_based_filter.h"
@@ -91,18 +93,15 @@ class ChannelCompression {
       bool is_client, MessageHandle message, DecompressArgs args,
       CallTracerInterface* call_tracer) const;
 
-  Json::Object ToJsonObject() const {
-    Json::Object object;
-    if (max_recv_size_.has_value()) {
-      object["maxRecvSize"] = Json::FromNumber(*max_recv_size_);
-    }
-    object["defaultCompressionAlgorithm"] = Json::FromString(
-        CompressionAlgorithmAsString(default_compression_algorithm_));
-    object["enabledCompressionAlgorithms"] = Json::FromString(
-        std::string(enabled_compression_algorithms_.ToString()));
-    object["enableCompression"] = Json::FromBool(enable_compression_);
-    object["enableDecompression"] = Json::FromBool(enable_decompression_);
-    return object;
+  channelz::PropertyList ChannelzProperties() const {
+    return channelz::PropertyList()
+        .Set("max_recv_size", max_recv_size_)
+        .Set("default_compression_algorithm",
+             CompressionAlgorithmAsString(default_compression_algorithm_))
+        .Set("enabled_compression_algorithms",
+             enabled_compression_algorithms_.ToString())
+        .Set("enable_compression", enable_compression_)
+        .Set("enable_decompression", enable_decompression_);
   }
 
  private:
@@ -135,9 +134,9 @@ class ClientCompressionFilter final
         compression_engine_(args) {}
   ~ClientCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("clientCompressionFilter",
-                           compression_engine_.ToJsonObject());
+                           compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.
@@ -185,9 +184,9 @@ class ServerCompressionFilter final
         compression_engine_(args) {}
   ~ServerCompressionFilter() override { ResetDataSource(); }
 
-  void AddData(channelz::DataSink& sink) override {
+  void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("serverCompressionFilter",
-                           compression_engine_.ToJsonObject());
+                           compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.

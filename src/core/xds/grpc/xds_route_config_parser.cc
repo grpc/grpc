@@ -88,15 +88,6 @@ bool XdsRlsEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(roth): Remove this once the feature passes interop tests.
-bool XdsAuthorityRewriteEnabled() {
-  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_AUTHORITY_REWRITE");
-  if (!value.has_value()) return false;
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsRouteConfigResourceParse()
 //
@@ -623,8 +614,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     route_action.retry_policy = RetryPolicyParse(retry_policy, errors);
   }
   // Host rewrite field.
-  if (XdsAuthorityRewriteEnabled() &&
-      DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
+  if (DownCast<const GrpcXdsServer&>(context.server).TrustedXdsServer()) {
     route_action.auto_host_rewrite =
         ParseBoolValue(envoy_config_route_v3_RouteAction_auto_host_rewrite(
             route_action_proto));

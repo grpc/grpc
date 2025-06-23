@@ -663,9 +663,6 @@ TEST(Frame, ParseRejectsDataFrame) {
                     Http2ErrorCode::kProtocolError,
                     absl::StrCat(RFC9113::kPaddingLengthLargerThanFrameLength,
                                  "{DATA: flags=9, stream_id=1, length=9}")));
-  // StatusIs(absl::StatusCode::kInternal, /*Connection Error*/
-  //          absl::StrCat(RFC9113::kFrameParserIncorrectPadding,
-  //                       "{DATA: flags=9, stream_id=1, length=9}")));
 }
 
 TEST(Frame, ParseRejectsHeaderFrame) {

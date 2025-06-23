@@ -529,6 +529,8 @@ grpc_cc_test(
     ],
     deps = [
         "//:chttp2_frame",
+        "//:hpack_encoder",
+        "//:hpack_parser",
         "//:ref_counted_ptr",
         "//src/core:header_assembler",
         "//src/core:http2_status",

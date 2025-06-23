@@ -64,6 +64,7 @@ grpc_cc_library(
     deps = [
         "//:call_tracer",
         "//:config",
+        "//:exec_ctx",
         "//:gpr",
         "//:gpr_platform",
         "//:grpc++",

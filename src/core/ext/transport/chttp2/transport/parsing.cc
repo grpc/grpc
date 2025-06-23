@@ -545,8 +545,7 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
 static grpc_error_handle init_data_frame_parser(grpc_chttp2_transport* t) {
   // Update BDP accounting since we have received a data frame.
   grpc_core::BdpEstimator* bdp_est = t->flow_control.bdp_estimator();
-  grpc_core::global_stats().IncrementHttp2ReadDataFrameSize(
-      t->incoming_frame_size);
+  t->http2_stats->IncrementHttp2ReadDataFrameSize(t->incoming_frame_size);
   if (bdp_est) {
     if (t->bdp_ping_blocked) {
       t->bdp_ping_blocked = false;
@@ -671,8 +670,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
                         nullptr, &t->http2_ztrace_collector));
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
       return init_header_skip_frame_parser(t, priority_type, is_eoh);
-    } else if (grpc_core::IsRqFastRejectEnabled() &&
-               GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
+    } else if (GPR_UNLIKELY(t->memory_owner.IsMemoryPressureHigh())) {
       // We have more streams allocated than we'd like, so apply some pushback
       // by refusing this stream.
       grpc_core::global_stats().IncrementRqCallsRejected();

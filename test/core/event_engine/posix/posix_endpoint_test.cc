@@ -115,7 +115,8 @@ std::list<Connection> CreateConnectedEndpoints(
   for (int i = 0; i < num_connections; ++i) {
     int client_fd = ConnectToServerOrDie(*resolved_addr);
     EventHandle* handle =
-        poller.CreateHandle(client_fd, "test", poller.CanTrackErrors());
+        poller.CreateHandle(poller.posix_interface().Adopt(client_fd), "test",
+                            poller.CanTrackErrors());
     EXPECT_NE(handle, nullptr);
     server_signal->WaitForNotification();
     EXPECT_NE(server_endpoint, nullptr);
@@ -209,9 +210,6 @@ class PosixEndpointTest : public ::testing::TestWithParam<bool> {
   }
 
   void TearDown() override {
-    if (poller_ != nullptr) {
-      poller_->Shutdown();
-    }
     grpc_core::WaitForSingleOwner(std::move(posix_ee_));
     grpc_core::WaitForSingleOwner(std::move(oracle_ee_));
   }

@@ -38,15 +38,13 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/windows/iocp.h"
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
-#include "src/core/lib/surface/init_internally.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
 namespace grpc_event_engine::experimental {
 
 class WindowsEventEngine
-    : public grpc_core::KeepsGrpcInitialized,
-      public ExtendedType<EventEngine, EventEngineWindowsSocketSupport> {
+    : public ExtendedType<EventEngine, EventEngineWindowsSocketSupport> {
  public:
   class WindowsDNSResolver : public EventEngine::DNSResolver {
    public:

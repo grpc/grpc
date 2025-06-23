@@ -32,8 +32,8 @@ source "${RUNFILES_DIR:-/dev/null}/$f" 2>/dev/null || \
 # --- end runfiles.bash initialization v3 ---
 
 # protoc and grpc_objective_c_plugin binaries are supplied as "data" in bazel
-PROTOC=$(rlocation com_google_protobuf/protoc)
-PLUGIN=$(rlocation com_github_grpc_grpc/src/compiler/grpc_objective_c_plugin)
+PROTOC=$(rlocation "$RLOCATIONPATH_PROTOC")
+PLUGIN=$(rlocation "$RLOCATIONPATH_PLUGIN")
 WELL_KNOWN_PROTOS_PATH=$(rlocation com_google_protobuf/src)
 RUNTIME_IMPORT_PREFIX=prefix/dir/
 

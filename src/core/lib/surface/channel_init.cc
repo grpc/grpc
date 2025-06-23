@@ -480,11 +480,11 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   // initialization, either by supplying a valid configuration or by
   // including an opt-out flag.
   if (terminal_filters.empty() && type != GRPC_CLIENT_DYNAMIC) {
-    LOG(ERROR) << "No terminal filters registered for channel stack type "
-               << grpc_channel_stack_type_string(type)
-               << "; this is common for unit tests messing with "
-                  "CoreConfiguration, but will result in a "
-                  "ChannelInit::CreateStack that never completes successfully.";
+    VLOG(2) << "No terminal filters registered for channel stack type "
+            << grpc_channel_stack_type_string(type)
+            << "; this is common for unit tests messing with "
+               "CoreConfiguration, but will result in a "
+               "ChannelInit::CreateStack that never completes successfully.";
   }
   return StackConfig{
       std::move(filters), std::move(fused_filters), std::move(terminal_filters),

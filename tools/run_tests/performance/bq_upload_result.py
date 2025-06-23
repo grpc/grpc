@@ -307,9 +307,9 @@ def _populate_prometheus_query_results_from_file(
                             "memoryMean": container_data["memoryMean"],
                         }
                         containersPrometheusData.append(containerPrometheusData)
-                    clientPrometheusData[
-                        "containers"
-                    ] = containersPrometheusData
+                    clientPrometheusData["containers"] = (
+                        containersPrometheusData
+                    )
                     clientsPrometheusData.append(clientPrometheusData)
                 scenario_result["clientsPrometheusData"] = clientsPrometheusData
 
@@ -327,9 +327,9 @@ def _populate_prometheus_query_results_from_file(
                             "memoryMean": container_data["memoryMean"],
                         }
                         containersPrometheusData.append(containerPrometheusData)
-                    serverPrometheusData[
-                        "containers"
-                    ] = containersPrometheusData
+                    serverPrometheusData["containers"] = (
+                        containersPrometheusData
+                    )
                     serversPrometheusData.append(serverPrometheusData)
             scenario_result["serversPrometheusData"] = serversPrometheusData
 

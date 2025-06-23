@@ -169,12 +169,15 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   }
   // Get existing cache or create new one.
   auto cache = filter_args.GetOrCreateState<CallCredentialsCache>(
-      filter_config->filter_instance_name, [&]() {
+      filter_config->filter_instance_name,
+      [&](RefCountedPtr<CallCredentialsCache> existing) {
+        if (existing != nullptr) {
+          // Update size, in case it's changed.
+          existing->SetMaxSize(filter_config->cache_size);
+          return existing;
+        }
         return MakeRefCounted<CallCredentialsCache>(filter_config->cache_size);
       });
-  // Make sure size is updated, in case we're reusing a pre-existing
-  // cache but it has the wrong size.
-  cache->SetMaxSize(filter_config->cache_size);
   // Instantiate filter.
   return std::unique_ptr<GcpAuthenticationFilter>(
       new GcpAuthenticationFilter(std::move(service_config), filter_config,

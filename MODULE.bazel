@@ -14,7 +14,7 @@
 
 module(
     name = "grpc",
-    version = "1.73.0-dev",
+    version = "1.74.0-dev",
     compatibility_level = 1,
     repo_name = "com_github_grpc_grpc",
 )

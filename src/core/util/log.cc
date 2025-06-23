@@ -104,6 +104,7 @@ void gpr_log_verbosity_init(void) {
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "DEBUG")) {
     LOG_FIRST_N(WARNING, 1)
@@ -111,12 +112,15 @@ void gpr_log_verbosity_init(void) {
            "ERROR. However if you see this message in a debug environment or "
            "test environment it is safe to ignore this message.";
     absl::SetVLogLevel("*grpc*/*", 2);
+    absl::SetVLogLevel("src/core/util/log", 2);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfo);
   } else if (absl::EqualsIgnoreCase(verbosity, "ERROR")) {
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kError);
   } else if (absl::EqualsIgnoreCase(verbosity, "NONE")) {
     absl::SetVLogLevel("*grpc*/*", -1);
+    absl::SetVLogLevel("src/core/util/log", -1);
     absl::SetMinLogLevel(absl::LogSeverityAtLeast::kInfinity);
   } else if (verbosity.empty()) {
     // Do not alter absl settings if GRPC_VERBOSITY flag is not set.

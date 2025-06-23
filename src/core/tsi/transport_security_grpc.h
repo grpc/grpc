@@ -64,6 +64,17 @@ void tsi_zero_copy_grpc_protector_destroy(tsi_zero_copy_grpc_protector* self);
 tsi_result tsi_zero_copy_grpc_protector_max_frame_size(
     tsi_zero_copy_grpc_protector* self, size_t* max_frame_size);
 
+// A stateless methods that reads the frame size of the input slice buffer. Does
+// NOT consume any of the protected_slices and does NOT modify the `self` input
+// argument in any way.
+// - protected_slices is the bytes of protected frames.
+// - frame_size is the output frame size.
+// - Returns true in case of success.
+// - Returns false in the case the frame size cannot be read
+bool tsi_zero_copy_grpc_protector_read_frame_size(
+    tsi_zero_copy_grpc_protector* self, grpc_slice_buffer* protected_slices,
+    uint32_t* frame_size);
+
 // Base for tsi_zero_copy_grpc_protector implementations.
 // Implementations must guarantee that protect and unprotect can be called
 // concurrently.
@@ -78,7 +89,11 @@ struct tsi_zero_copy_grpc_protector_vtable {
   void (*destroy)(tsi_zero_copy_grpc_protector* self);
   tsi_result (*max_frame_size)(tsi_zero_copy_grpc_protector* self,
                                size_t* max_frame_size);
+  bool (*read_frame_size)(tsi_zero_copy_grpc_protector* self,
+                          grpc_slice_buffer* protected_slices,
+                          uint32_t* frame_size);
 };
+
 struct tsi_zero_copy_grpc_protector {
   const tsi_zero_copy_grpc_protector_vtable* vtable;
 };
