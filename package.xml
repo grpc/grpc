@@ -800,6 +800,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h" role="src" />

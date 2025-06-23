@@ -5603,7 +5603,13 @@ grpc_cc_library(
     ],
     external_deps = [
         "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:protobuf_duration_upb",
+        "//:protobuf_timestamp_upb",
     ],
 )
 
