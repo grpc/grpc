@@ -237,8 +237,8 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
 // move things out of frames)
 void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out);
 
-Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
-  if (GPR_UNLIKELY(error_code > GetMaxHttp2ErrorCode())) {
+http2::Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
+  if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
     LOG(ERROR) << "GetErrorCodeFromRstFrameErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
