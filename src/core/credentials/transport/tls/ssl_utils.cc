@@ -459,8 +459,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
           root_certs = pem_root_certs.c_str();
         },
         [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-          options.spiffe_bundle_map =
-              std::make_shared<grpc_core::SpiffeBundleMap>(spiffe_bundle_map);
+          options.spiffe_bundle_map = &spiffe_bundle_map;
         });
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
@@ -516,8 +515,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
           options.pem_client_root_certs = pem_root_certs.c_str();
         },
         [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-          options.spiffe_bundle_map =
-              std::make_shared<grpc_core::SpiffeBundleMap>(spiffe_bundle_map);
+          options.spiffe_bundle_map = &spiffe_bundle_map;
         });
   }
   options.client_certificate_request =
