@@ -225,6 +225,9 @@ class PropertyTable {
   }
 
   PropertyTable& SetRow(size_t row, PropertyList values);
+  PropertyTable& AppendRow(PropertyList values) {
+    return SetRow(num_rows_, std::move(values));
+  }
 
   Json::Object TakeJsonObject();
 
