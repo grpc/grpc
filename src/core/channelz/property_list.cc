@@ -25,8 +25,15 @@ void PropertyList::SetInternal(absl::string_view key,
   }
 }
 
-size_t PropertyGrid::GetIndex(std::vector<std::string>& vec,
-                              absl::string_view value) {
+PropertyList& PropertyList::Merge(PropertyList other) {
+  for (auto& [key, value] : other.property_list_) {
+    SetInternal(key, value);
+  }
+  return *this;
+}
+
+namespace {
+size_t GetIndex(std::vector<std::string>& vec, absl::string_view value) {
   auto it = std::find(vec.begin(), vec.end(), value);
   if (it == vec.end()) {
     vec.emplace_back(value);
@@ -35,6 +42,7 @@ size_t PropertyGrid::GetIndex(std::vector<std::string>& vec,
     return it - vec.begin();
   }
 }
+}  // namespace
 
 Json::Object PropertyGrid::TakeJsonObject() {
   Json::Object json;
@@ -88,6 +96,50 @@ PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
   int r = GetIndex(rows_, row);
   for (auto& [key, value] : values.TakeJsonObject()) {
     grid_[std::pair(GetIndex(columns_, key), r)] = std::move(value);
+  }
+  return *this;
+}
+
+Json::Object PropertyTable::TakeJsonObject() {
+  Json::Object json;
+  Json::Array columns;
+  for (auto& c : columns_) {
+    columns.emplace_back(Json::FromString(std::string(c)));
+  }
+  json.emplace("columns", Json::FromArray(std::move(columns)));
+  Json::Array rows;
+  for (size_t r = 0; r < num_rows_; ++r) {
+    Json::Array cells;
+    cells.reserve(columns_.size());
+    for (size_t c = 0; c < columns_.size(); ++c) {
+      auto it = grid_.find(std::pair(c, r));
+      if (it != grid_.end()) {
+        cells.emplace_back(std::move(it->second));
+      } else {
+        cells.emplace_back(Json());
+      }
+    }
+    rows.emplace_back(Json::FromArray(std::move(cells)));
+  }
+  json.emplace("rows", Json::FromArray(std::move(rows)));
+  return json;
+}
+
+void PropertyTable::SetInternal(absl::string_view column, size_t row,
+                                std::optional<Json> value) {
+  int c = GetIndex(columns_, column);
+  num_rows_ = std::max(num_rows_, row + 1);
+  if (value.has_value()) {
+    grid_[std::pair(c, row)] = *std::move(value);
+  } else {
+    grid_.erase(std::pair(c, row));
+  }
+}
+
+PropertyTable& PropertyTable::SetRow(size_t row, PropertyList values) {
+  num_rows_ = std::max(num_rows_, row + 1);
+  for (auto& [key, value] : values.TakeJsonObject()) {
+    grid_[std::pair(GetIndex(columns_, key), row)] = std::move(value);
   }
   return *this;
 }
