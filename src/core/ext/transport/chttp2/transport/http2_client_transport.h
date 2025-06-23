@@ -69,8 +69,10 @@ namespace http2 {
 // |---------------------|--------------|-----------------------|------------|
 // | Endpoint Read Loop  | Infinite     | On transport close    | One        |
 // | Endpoint Write Loop | Infinite     | On transport close    | One        |
+// | Close Transport     | CloseTimeout | On transport close    | One        |
 
 // Max Party Slots (Always): 2
+// Max Promise Slots (Worst Case): 3
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -274,15 +276,25 @@ class Http2ClientTransport final : public ClientTransport {
       }
     }
 
-    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
+    inline bool IsClosed() const {
+      return stream_state == HttpStreamState::kClosed;
+    }
 
     CallHandler call;
+    // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
     HttpStreamState stream_state;
     const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-
+    // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
+    // tracks if the half close has been sent for this stream. This flag is used
+    // to notify the mixer that this stream is closed for
+    // writes(HalfClosedLocal). When the mixer dequeues the last message for
+    // the streamQ, it will mark the stream as closed for writes and send a
+    // frame with end_stream or set the end_stream flag in the last data
+    // frame being sent out. This is done as the stream state should not
+    // transition to HalfClosedLocal till the end_stream frame is sent.
     bool did_push_initial_metadata;
     bool did_push_trailing_metadata;
   };
@@ -320,6 +332,7 @@ class Http2ClientTransport final : public ClientTransport {
   InterActivityMutex<uint32_t> stream_id_mutex_;
   HPackCompressor encoder_;
   HPackParser parser_;
+  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
@@ -330,7 +343,7 @@ class Http2ClientTransport final : public ClientTransport {
     bool close_reads;
     bool close_writes;
     bool send_rst_stream;
-    bool cancelled;
+    bool push_trailing_metadata;
   };
 
   // This function MUST be idempotent.
@@ -365,7 +378,7 @@ class Http2ClientTransport final : public ClientTransport {
         // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
       }
 
-      if (!args.cancelled) {
+      if (args.push_trailing_metadata) {
         stream->call.SpawnPushServerTrailingMetadata(
             ServerMetadataFromStatus(status));
       }
@@ -405,8 +418,11 @@ class Http2ClientTransport final : public ClientTransport {
                });
   }
 
-  // This function MUST be idempotent.
-  void CloseTransport(const Http2Status& status, DebugLocation whence = {});
+  // This function MUST run on the transport party.
+  void CloseTransport();
+
+  void MaybeSpawnCloseTransport(Http2Status http2_status,
+                                DebugLocation whence = {});
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
@@ -427,14 +443,15 @@ class Http2ClientTransport final : public ClientTransport {
                       /*close_reads=*/true,
                       /*close_writes=*/true,
                       /*send_rst_stream=*/true,
-                      /*cancelled=*/false,
+                      /*push_trailing_metadata=*/true,
                   },
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
       LOG(ERROR) << "Connection Error: " << status.DebugString();
-      CloseTransport(status, whence);
-      return status.GetAbslConnectionError();
+      absl::Status absl_status = status.GetAbslConnectionError();
+      MaybeSpawnCloseTransport(std::move(status), whence);
+      return absl_status;
     }
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
@@ -593,6 +610,16 @@ class Http2ClientTransport final : public ClientTransport {
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
+
+  inline Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
+    if (GPR_UNLIKELY(error_code > GetMaxHttp2ErrorCode())) {
+      LOG(ERROR) << "GetErrorCodeFromRstFrameErrorCode: Invalid error code "
+                    "received from RST_STREAM frame: "
+                 << error_code;
+    }
+
+    return static_cast<Http2ErrorCode>(error_code);
+  }
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to
