@@ -14,7 +14,15 @@
 
 #include "src/core/xds/grpc/xds_matcher_input.h"
 
+#include "envoy/config/core/v3/extension.upb.h"
+#include "envoy/type/matcher/v3/http_inputs.upb.h"
+#include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_common_types_parser.h"
+#include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_context.h"
+// #include "src/core/xds/grpc/xds_matcher_input.h"
+#include "xds/core/v3/extension.upb.h"
+#include "xds/type/matcher/v3/http_inputs.upb.h"
 
 namespace grpc_core {
 std::optional<absl::string_view> MetadataInput::GetValue(
@@ -24,4 +32,42 @@ std::optional<absl::string_view> MetadataInput::GetValue(
   return DownCast<const RpcMatchContext&>(context).GetHeaderValue(key_,
                                                                   &buffer);
 }
+
+RefCountedPtr<InputConfig> MetadataInputFactory::ParseConfig(
+    const XdsResourceType::DecodeContext& context,
+    const xds_core_v3_TypedExtensionConfig* input,
+    ValidationErrors* errors) const {
+  const google_protobuf_Any* any =
+      xds_core_v3_TypedExtensionConfig_typed_config(input);
+  auto extension = ExtractXdsExtension(context, any, errors);
+  if (!extension.has_value()) {
+    errors->AddError("Fail to extract XdsExtenstion");
+    return nullptr;
+  }
+  if (extension->type != "envoy.type.matcher.v3.HttpRequestHeaderMatchInput") {
+    errors->AddError("unsupported input type");
+    return nullptr;
+  }
+  // Move to seprate function for each InputType
+  absl::string_view* serialized_http_header_input =
+      std::get_if<absl::string_view>(&extension->value);
+  // Parse HttpRequestHeaderMatchInput
+  auto http_header_input =
+      envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
+          serialized_http_header_input->data(),
+          serialized_http_header_input->size(), context.arena);
+  // extract header name (Key for metadata match)
+  auto x = envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
+      http_header_input);
+  auto header_name = UpbStringToStdString(x);
+  return MakeRefCounted<MetadataInputConfig>(type(), header_name);
+}
+
+template <>
+InputRegistry<absl::string_view>::InputRegistry() {
+  // Add factories
+  factories_.emplace(MetadataInputFactory::Type(),
+                     std::make_unique<MetadataInputFactory>());
+}
+
 }  // namespace grpc_core

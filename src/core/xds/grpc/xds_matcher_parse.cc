@@ -18,17 +18,18 @@
 
 #include <memory>
 
-#include "envoy/config/common/matcher/v3/matcher.upb.h"
 #include "envoy/config/core/v3/extension.upb.h"
 #include "envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb.h"
 #include "envoy/type/matcher/v3/http_inputs.upb.h"
 #include "envoy/type/matcher/v3/regex.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "src/core/xds/grpc/xds_matcher_action.h"
 #include "src/core/xds/grpc/xds_matcher_input.h"
+#include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
 #include "xds/type/matcher/v3/http_inputs.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
@@ -54,32 +55,14 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
     const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
-  ValidationErrors::ScopedField field(errors, ".input");
-  const google_protobuf_Any* any =
-      xds_core_v3_TypedExtensionConfig_typed_config(input);
-  auto extension = ExtractXdsExtension(context, any, errors);
-  if (!extension.has_value()) {
-    errors->AddError("Fail to extract XdsExtenstion");
-    return nullptr;
-  }
-  // Add support for other types here
-  if (extension->type != "envoy.type.matcher.v3.HttpRequestHeaderMatchInput") {
-    errors->AddError("unsupported input type");
-    return nullptr;
-  }
-  // Move to seprate function for each InputType
-  absl::string_view* serialized_http_header_input =
-      std::get_if<absl::string_view>(&extension->value);
-  // Parse HttpRequestHeaderMatchInput
-  auto http_header_input =
-      envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(
-          serialized_http_header_input->data(),
-          serialized_http_header_input->size(), context.arena);
-  // extract header name (Key for metadata match)
-  auto x = envoy_type_matcher_v3_HttpRequestHeaderMatchInput_header_name(
-      http_header_input);
-  auto header_name = UpbStringToStdString(x);
-  return std::make_unique<MetadataInput>(header_name);
+  const auto& registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .xds_matcher_input_registry();
+  RefCountedPtr<InputConfig> parsed_config =
+      registry.ParseConfig("envoy.type.matcher.v3.HttpRequestHeaderMatchInput",
+                           context, input, errors);
+
+  return registry.CreateInput(parsed_config);
 }
 
 // Function to parse "xds_core_v3_TypedExtensionConfig"  to generate

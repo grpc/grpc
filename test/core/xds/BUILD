@@ -272,8 +272,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:down_cast",
-        "//src/core:xds_matcher",
+        "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg_cc_proto",
@@ -288,8 +287,7 @@ grpc_cc_test(
     uses_event_engine = False,
     uses_polling = False,
     deps = [
-        "//src/core:down_cast",
-        "//src/core:xds_matcher",
+        "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg_cc_proto",
@@ -305,8 +303,7 @@ grpc_cc_test(
     uses_polling = False,
     deps = [
         "//src/core:down_cast",
-        "//src/core:xds_matcher",
-        "//src/core:xds_matcher_parse",
+        "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",
         "@envoy_api//envoy/config/common/matcher/v3:pkg_cc_proto",
         "@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg_cc_proto",

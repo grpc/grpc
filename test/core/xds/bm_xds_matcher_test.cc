@@ -24,7 +24,6 @@
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 
-
 namespace grpc_core {
 namespace {
 
