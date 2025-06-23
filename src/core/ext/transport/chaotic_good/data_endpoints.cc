@@ -119,15 +119,15 @@ SendRate::DeliveryData SendRate::GetDeliveryData(uint64_t current_time) const {
   }
 }
 
-void SendRate::AddData(Json::Object& obj) const {
+channelz::PropertyList SendRate::ChannelzProperties() const {
+  channelz::PropertyList obj;
   if (last_send_started_time_ != 0) {
-    obj["send_start_time"] = Json::FromNumber(last_send_started_time_);
-    obj["send_size"] = Json::FromNumber(last_send_bytes_outstanding_);
+    obj.Set("send_start_time", last_send_started_time_)
+        .Set("send_size", last_send_bytes_outstanding_);
   }
-  obj["current_rate"] = Json::FromNumber(current_rate_);
-  obj["rtt"] = Json::FromNumber(rtt_usec_);
-  obj["rate_measurement_age"] =
-      Json::FromNumber((Timestamp::Now() - last_rate_measurement_).millis());
+  return obj.Set("current_rate", current_rate_)
+      .Set("rtt", rtt_usec_)
+      .Set("last_rate_measurement", last_rate_measurement_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -184,25 +184,26 @@ void OutputBuffers::Reader::SetNetworkMetrics(
   output_buffers_->WakeupScheduler();
 }
 
-Json::Object OutputBuffers::Reader::ToJson() {
+channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
   MutexLock lock(&mu_);
-  Json::Object reader_data;
-  reader_data["reading"] = Json::FromBool(reading_);
-  send_rate_.AddData(reader_data);
-  if (!frames_.empty()) {
-    Json::Array queued_frames;
-    for (auto& frame : frames_) {
-      Json::Object frame_data;
-      frame_data["payload_tag"] = Json::FromNumber(frame.payload_tag);
-      frame_data["header"] = Json::FromString(
-          absl::ConvertVariantTo<FrameInterface&>(frame.frame->payload)
-              .ToString());
-      frame_data["mpsc_tokens"] = Json::FromNumber(frame.frame.tokens());
-      queued_frames.emplace_back(Json::FromObject(std::move(frame_data)));
-    }
-    reader_data["queued_frames"] = Json::FromArray(std::move(queued_frames));
-  }
-  return reader_data;
+  return channelz::PropertyList()
+      .Set("reading", reading_)
+      .Merge(send_rate_.ChannelzProperties())
+      .Set("queued_frames", [this]() -> std::optional<channelz::PropertyTable> {
+        mu_.AssertHeld();
+        if (frames_.empty()) return std::nullopt;
+        channelz::PropertyTable frames;
+        for (auto& frame : frames_) {
+          frames.AppendRow(
+              channelz::PropertyList()
+                  .Set("payload_tag", frame.payload_tag)
+                  .Set("header", absl::ConvertVariantTo<FrameInterface&>(
+                                     frame.frame->payload)
+                                     .ToString())
+                  .Set("mpsc_tokens", frame.frame.tokens()));
+        }
+        return frames;
+      }());
 }
 
 void OutputBuffers::AddData(channelz::DataSink sink) {
@@ -214,9 +215,7 @@ void OutputBuffers::AddData(channelz::DataSink sink) {
           .Set("scheduling_state",
                scheduling_state_.load(std::memory_order_relaxed))
           .Set("scheduler", scheduler_->Config()));
-  scheduling_party_->ToJson([sink](Json::Object obj) mutable {
-    sink.AddAdditionalInfo("schedulingParty", std::move(obj));
-  });
+  scheduling_party_->ExportToChannelz("scheduling_party", sink);
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
@@ -865,21 +864,18 @@ void Endpoint::ReceiveSecurityFrame(PromiseEndpoint& endpoint,
   transport_framing_endpoint_extension->ReceiveFrame(std::move(buffer));
 }
 
-void Endpoint::ToJson(absl::AnyInvocable<void(Json::Object)> sink) {
-  Json::Object obj;
-  obj["id"] = Json::FromNumber(ctx_->id);
-  obj["now"] = Json::FromNumber(ctx_->clock->Now());
-  obj["encode_alignment"] = Json::FromNumber(ctx_->encode_alignment);
-  obj["decode_alignment"] = Json::FromNumber(ctx_->decode_alignment);
-  obj["secure_frame_bytes_queued"] =
-      Json::FromNumber(ctx_->secure_frame_queue->InstantaneousQueuedBytes());
-  obj["enable_tracing"] = Json::FromBool(ctx_->enable_tracing);
-  obj["reader"] = Json::FromObject(ctx_->reader->ToJson());
-  party_->ToJson([root = std::move(obj),
-                  sink = std::move(sink)](Json::Object obj) mutable {
-    root["party"] = Json::FromObject(std::move(obj));
-    sink(std::move(root));
-  });
+void Endpoint::AddData(channelz::DataSink sink) {
+  sink.AddAdditionalInfo(
+      absl::StrCat("endpoint", ctx_->id),
+      channelz::PropertyList()
+          .Set("now", ctx_->clock->Now())
+          .Set("encode_alignment", ctx_->encode_alignment)
+          .Set("decode_alignment", ctx_->decode_alignment)
+          .Set("secure_frame_bytes_queued",
+               ctx_->secure_frame_queue->InstantaneousQueuedBytes())
+          .Set("enable_tracing", ctx_->enable_tracing)
+          .Merge(ctx_->reader->ChannelzProperties()));
+  party_->ExportToChannelz(absl::StrCat("endpoint_party", ctx_->id), sink);
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
@@ -1012,20 +1008,8 @@ void DataEndpoints::AddData(channelz::DataSink sink) {
     Json::Array endpoints ABSL_GUARDED_BY(mu);
   };
   MutexLock lock(&mu_);
-  auto endpoint_info_collector =
-      std::make_shared<EndpointInfoCollector>(endpoints_.size());
   for (size_t i = 0; i < endpoints_.size(); ++i) {
-    endpoints_[i]->ToJson([endpoint_info_collector, i,
-                           sink](Json::Object obj) mutable {
-      MutexLock lock(&endpoint_info_collector->mu);
-      endpoint_info_collector->endpoints[i] = Json::FromObject(std::move(obj));
-      if (--endpoint_info_collector->remaining == 0) {
-        sink.AddAdditionalInfo(
-            "chaoticGoodDataEndpoints",
-            {{"endpoints",
-              Json::FromArray(std::move(endpoint_info_collector->endpoints))}});
-      }
-    });
+    endpoints_[i]->AddData(sink);
   }
 }
 
