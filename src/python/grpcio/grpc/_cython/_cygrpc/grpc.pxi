@@ -48,8 +48,8 @@ cdef extern from "<mutex>" namespace "std" nogil:
         void lock()
         void unlock()
 
-    cdef cppclass unique_lock[Mutex]:
-      unique_lock(Mutex&)
+    cdef cppclass unique_lock[T]:
+      unique_lock(T&)
 
 cdef extern from "<condition_variable>" namespace "std" nogil:
   cdef cppclass condition_variable:

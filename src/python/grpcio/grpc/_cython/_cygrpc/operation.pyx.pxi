@@ -12,9 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Import buffer pool for optimization
-from .buffer_pool import get_global_buffer_pool, BufferPool
-
 cdef class Operation:
 
   cdef void c(self) except *:
@@ -64,16 +61,14 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    
-    # Use buffer pool for optimization
-    cdef BufferPool pool = get_global_buffer_pool()
-    self._c_message_byte_buffer = pool.get_buffer(self._message)
+    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
+        <const char*>self._message, len(self._message))
+    self._c_message_byte_buffer = grpc_raw_byte_buffer_create(&message_slice, 1)
+    grpc_slice_unref(message_slice)
     self.c_op.data.send_message.send_message = self._c_message_byte_buffer
 
   cdef void un_c(self) except *:
-    # Return buffer to pool for reuse instead of destroying
-    cdef BufferPool pool = get_global_buffer_pool()
-    pool.return_buffer(self._c_message_byte_buffer, self._buffer_size)
+    grpc_byte_buffer_destroy(self._c_message_byte_buffer)
     self._c_message_byte_buffer = NULL
 
 
