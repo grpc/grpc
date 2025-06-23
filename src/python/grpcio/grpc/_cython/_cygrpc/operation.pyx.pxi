@@ -12,6 +12,50 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import threading
+
+# Simple buffer pool implementation directly in this file
+cdef class SimpleBufferPool:
+    """
+    Simple thread-safe buffer pool for reusing grpc_byte_buffer objects.
+    """
+    cdef:
+        dict _pools
+        object _lock
+        
+    def __cinit__(self):
+        self._pools = {}
+        self._lock = threading.RLock()
+    
+    cdef grpc_byte_buffer* get_buffer(self, bytes message) except *:
+        cdef:
+            size_t size = len(message)
+            grpc_byte_buffer* buffer = NULL
+            grpc_slice message_slice
+        
+        with self._lock:
+            if size in self._pools:
+                buffer = self._pools[size]
+                del self._pools[size]
+            else:
+                message_slice = grpc_slice_from_copied_buffer(
+                    <const char*>message, size)
+                buffer = grpc_raw_byte_buffer_create(&message_slice, 1)
+                grpc_slice_unref(message_slice)
+        
+        return buffer
+    
+    cdef void return_buffer(self, grpc_byte_buffer* buffer, size_t size):
+        if buffer != NULL:
+            with self._lock:
+                if size not in self._pools:
+                    self._pools[size] = buffer
+                else:
+                    grpc_byte_buffer_destroy(buffer)
+
+# Global buffer pool instance
+cdef SimpleBufferPool _global_buffer_pool = SimpleBufferPool()
+
 cdef class Operation:
 
   cdef void c(self) except *:
@@ -61,14 +105,13 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
-        <const char*>self._message, len(self._message))
-    self._c_message_byte_buffer = grpc_raw_byte_buffer_create(&message_slice, 1)
-    grpc_slice_unref(message_slice)
+    # Use buffer pool instead of direct creation
+    self._c_message_byte_buffer = _global_buffer_pool.get_buffer(self._message)
     self.c_op.data.send_message.send_message = self._c_message_byte_buffer
 
   cdef void un_c(self) except *:
-    grpc_byte_buffer_destroy(self._c_message_byte_buffer)
+    # Return buffer to pool instead of destroying
+    _global_buffer_pool.return_buffer(self._c_message_byte_buffer, self._buffer_size)
     self._c_message_byte_buffer = NULL
 
 
