@@ -1219,8 +1219,7 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_ = data;
     outgoing_byte_idx_ = 0;
   }
-  if (args.has_metrics_sink()) {
-    CHECK(poller_->CanTrackErrors());
+  if (args.has_metrics_sink() && poller_->CanTrackErrors()) {
     outgoing_buffer_write_event_sink_ = args.TakeMetricsSink();
   }
 

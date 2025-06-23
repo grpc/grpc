@@ -30,7 +30,6 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
-#include "src/core/lib/event_engine/posix_engine/internal_errqueue.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
@@ -47,7 +46,6 @@ using opentelemetry::sdk::trace::SpanData;
 using opentelemetry::sdk::trace::SpanDataEvent;
 using ::testing::ElementsAre;
 using ::testing::FieldsAre;
-using ::testing::HasSubstr;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
@@ -681,9 +679,6 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
 #ifdef GRPC_LINUX_ERRQUEUE
 // Test presence of TCP write annotations
 TEST_F(OTelTracingTest, TcpWriteAnnotations) {
-  if (!grpc_event_engine::experimental::KernelSupportsErrqueue()) {
-    GTEST_SKIP() << "Test disabled if errqueue is not supported by kernel";
-  }
   if (!grpc_event_engine::experimental::MakeDefaultPoller(/*scheduler=*/nullptr)
            ->CanTrackErrors()) {
     GTEST_SKIP() << "Test disabled if poller doesn't support errqueue";
