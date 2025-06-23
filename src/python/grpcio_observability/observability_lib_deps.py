@@ -209,5 +209,6 @@ CC_FILES=[
 ]
 
 CC_INCLUDES=[
- 'third_party/abseil-cpp'
+ 'third_party/abseil-cpp',
+ 'grpc_root/src/core/ext/upb-gen'
 ]
