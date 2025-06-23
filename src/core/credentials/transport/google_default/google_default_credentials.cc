@@ -342,7 +342,7 @@ static bool metadata_server_available() {
 // A grpc_call_credentials implementation that uses two
 // underlying credentials: one for TLS and one for ALTS.
 // The implementation will pick the right credentials based on the auth
-// context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property. 
+// context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property.
 class GoogleDefaultCallCredentialsWrapper : public grpc_call_credentials {
  public:
   GoogleDefaultCallCredentialsWrapper(
@@ -463,11 +463,11 @@ grpc_channel_credentials* grpc_google_default_credentials_create(
     if (alts_credentials != nullptr) {
       grpc_core::RefCountedPtr<grpc_call_credentials> alts_creds(
           alts_credentials);
-      auto dual_creds =
+      auto wrapped_creds =
           grpc_core::MakeRefCounted<GoogleDefaultCallCredentialsWrapper>(
               call_creds, alts_creds);
       result = grpc_composite_channel_credentials_create(
-          creds.get(), dual_creds.get(), nullptr);
+          creds.get(), wrapped_creds.get(), nullptr);
     } else {
       result = grpc_composite_channel_credentials_create(
           creds.get(), call_creds.get(), nullptr);

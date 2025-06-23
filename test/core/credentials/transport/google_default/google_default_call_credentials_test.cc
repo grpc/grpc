@@ -120,6 +120,20 @@ TEST_F(GoogleDefaultCallCredentialsTest, UseTlsCredentials) {
             GRPC_TLS_TRANSPORT_SECURITY_TYPE);
 }
 
+TEST_F(GoogleDefaultCallCredentialsTest, UseTlsCredentialsWithOtherProtocols) {
+  ExecCtx exec_ctx;
+  grpc_call_credentials::GetRequestMetadataArgs get_request_metadata_args = {
+      nullptr,
+      CreateAuthContextWithSecurityType(GRPC_SSL_TRANSPORT_SECURITY_TYPE)};
+
+  RunRequestMetadataTest(get_request_metadata_args);
+
+  std::string buffer;
+  EXPECT_EQ(expected_md_.GetStringValue(
+                GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME, &buffer),
+            GRPC_TLS_TRANSPORT_SECURITY_TYPE);
+}
+
 }  // namespace
 }  // namespace grpc_core
 
