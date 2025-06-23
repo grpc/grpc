@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Import buffer pool for optimization
+from .buffer_pool import get_global_buffer_pool, BufferPool
 
 cdef class Operation:
 
@@ -54,6 +56,7 @@ cdef class SendMessageOperation(Operation):
     else:
       self._message = message
     self._flags = flags
+    self._buffer_size = len(self._message)
 
   def type(self):
     return GRPC_OP_SEND_MESSAGE
@@ -61,15 +64,17 @@ cdef class SendMessageOperation(Operation):
   cdef void c(self) except *:
     self.c_op.type = GRPC_OP_SEND_MESSAGE
     self.c_op.flags = self._flags
-    cdef grpc_slice message_slice = grpc_slice_from_copied_buffer(
-        self._message, len(self._message))
-    self._c_message_byte_buffer = grpc_raw_byte_buffer_create(
-        &message_slice, 1)
-    grpc_slice_unref(message_slice)
+    
+    # Use buffer pool for optimization
+    cdef BufferPool pool = get_global_buffer_pool()
+    self._c_message_byte_buffer = pool.get_buffer(self._message)
     self.c_op.data.send_message.send_message = self._c_message_byte_buffer
 
   cdef void un_c(self) except *:
-    grpc_byte_buffer_destroy(self._c_message_byte_buffer)
+    # Return buffer to pool for reuse instead of destroying
+    cdef BufferPool pool = get_global_buffer_pool()
+    pool.return_buffer(self._c_message_byte_buffer, self._buffer_size)
+    self._c_message_byte_buffer = NULL
 
 
 cdef class SendCloseFromClientOperation(Operation):

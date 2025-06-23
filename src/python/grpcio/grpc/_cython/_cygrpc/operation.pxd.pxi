@@ -38,6 +38,7 @@ cdef class SendMessageOperation(Operation):
   cdef readonly bytes _message
   cdef readonly int _flags
   cdef grpc_byte_buffer *_c_message_byte_buffer
+  cdef size_t _buffer_size  # Track buffer size for pooling
 
   cdef void c(self) except *
   cdef void un_c(self) except *
