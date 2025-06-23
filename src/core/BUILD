@@ -5621,6 +5621,9 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
         "absl/functional:any_invocable",
     ],
+    deps = [
+        "grpc_check",
+    ],
 )
 
 grpc_cc_library(
