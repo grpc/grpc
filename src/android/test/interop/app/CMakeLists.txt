@@ -125,3 +125,8 @@ target_link_libraries(grpc-interop
   test_proto_lib
   android
   ${log-lib})
+
+target_include_directories(grpc-interop
+  PRIVATE
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR})
