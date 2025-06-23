@@ -242,8 +242,9 @@ http2::Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
     LOG(ERROR) << "GetErrorCodeFromRstFrameErrorCode: Invalid error code "
                   "received from RST_STREAM frame: "
                << error_code;
+    return http2::Http2ErrorCode::kInternalError;
   }
-  return static_cast<Http2ErrorCode>(error_code);
+  return static_cast<http2::Http2ErrorCode>(error_code);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
