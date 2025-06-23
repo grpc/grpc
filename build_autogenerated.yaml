@@ -13449,6 +13449,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: jwt_verifier_test
   gtest: true
   build: test
