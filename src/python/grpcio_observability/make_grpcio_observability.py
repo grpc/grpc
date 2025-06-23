@@ -73,6 +73,7 @@ GRPCIO_OBSERVABILITY_ROOT_PREFIX = "src/python/grpcio_observability/"
 COPY_FILES_SOURCE_TARGET_PAIRS = [
     ("include", "grpc_root/include"),
     ("third_party/abseil-cpp/absl", "third_party/abseil-cpp/absl"),
+    ("third_party/protobuf/upb", "third_party/protobuf/upb"),
     ("src/core", "grpc_root/src/core"),
 ]
 
