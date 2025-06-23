@@ -30,16 +30,19 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <regex>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -725,6 +728,20 @@ class SecureEndpoint final : public EventEngine::Endpoint {
         return wrapped_telemetry_info_
                    ? wrapped_telemetry_info_->GetMetricKey(name)
                    : std::nullopt;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricsSet(keys)
+                   : nullptr;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+          const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetFullMetricsSet()
+                   : nullptr;
       }
 
      private:

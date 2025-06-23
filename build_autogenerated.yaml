@@ -251,6 +251,7 @@ libs:
   - src/core/credentials/call/jwt/json_token.h
   - src/core/credentials/call/jwt/jwt_credentials.h
   - src/core/credentials/call/jwt/jwt_verifier.h
+  - src/core/credentials/call/jwt_util.h
   - src/core/credentials/call/oauth2/oauth2_credentials.h
   - src/core/credentials/call/plugin/plugin_credentials.h
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.h
@@ -597,6 +598,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -962,7 +965,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -1326,6 +1328,7 @@ libs:
   - src/core/credentials/call/jwt/json_token.cc
   - src/core/credentials/call/jwt/jwt_credentials.cc
   - src/core/credentials/call/jwt/jwt_verifier.cc
+  - src/core/credentials/call/jwt_util.cc
   - src/core/credentials/call/oauth2/oauth2_credentials.cc
   - src/core/credentials/call/plugin/plugin_credentials.cc
   - src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc
@@ -1549,6 +1552,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -2424,6 +2428,8 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -2574,7 +2580,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -2921,6 +2926,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -4433,8 +4439,14 @@ libs:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -4570,7 +4582,6 @@ libs:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -4743,6 +4754,7 @@ libs:
   - src/core/util/time_averaged_stats.h
   - src/core/util/type_list.h
   - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
@@ -4787,7 +4799,10 @@ libs:
   - src/core/credentials/transport/tls/tls_utils.cc
   - src/core/credentials/transport/transport_credentials.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -5208,6 +5223,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: address_sorting_test
@@ -5441,6 +5457,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -5963,6 +5980,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: buffer_list_test
@@ -6017,11 +6035,13 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.h
   - test/core/event_engine/event_engine_test_utils.h
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h
   - test/core/test_util/test_call_creds.h
   src:
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.proto
+  - src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   - test/core/credentials/call/call_credentials_test.cc
   - test/core/event_engine/event_engine_test_utils.cc
   - test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -6181,6 +6201,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6242,6 +6263,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: call_tracer_test
@@ -6292,8 +6314,14 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -6424,7 +6452,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -6580,6 +6607,7 @@ targets:
   - src/core/util/time_averaged_stats.h
   - src/core/util/type_list.h
   - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
@@ -6612,7 +6640,10 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -6970,6 +7001,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: cel_authorization_engine_test
@@ -7606,6 +7638,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: cli_call_test
@@ -7881,6 +7914,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: completion_queue_threading_test
@@ -8243,6 +8277,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -8310,6 +8345,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -8374,6 +8410,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -8441,6 +8478,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -8593,6 +8631,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -8660,6 +8699,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -8720,6 +8760,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -8787,6 +8828,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -8847,6 +8889,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -8914,6 +8957,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -9062,6 +9106,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -9129,6 +9174,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -9277,6 +9323,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -9344,6 +9391,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -9404,6 +9452,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -9471,6 +9520,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -9619,6 +9669,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -9686,6 +9737,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -9746,6 +9798,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -9813,6 +9866,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -10008,6 +10062,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: endpoint_pair_test
@@ -10243,6 +10298,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: experiments_tag_test
@@ -10390,8 +10446,14 @@ targets:
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -10522,7 +10584,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -10678,6 +10739,7 @@ targets:
   - src/core/util/time_averaged_stats.h
   - src/core/util/type_list.h
   - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
@@ -10710,7 +10772,10 @@ targets:
   - src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   - src/core/credentials/transport/tls/certificate_provider_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -11217,6 +11282,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: fork_test
@@ -11834,6 +11900,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -11898,6 +11965,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -12052,8 +12120,14 @@ targets:
   - src/core/ext/transport/chttp2/transport/varint.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb.h
@@ -12184,7 +12258,6 @@ targets:
   - src/core/lib/iomgr/pollset_set_windows.h
   - src/core/lib/iomgr/pollset_windows.h
   - src/core/lib/iomgr/port.h
-  - src/core/lib/iomgr/python_util.h
   - src/core/lib/iomgr/resolve_address.h
   - src/core/lib/iomgr/resolve_address_impl.h
   - src/core/lib/iomgr/resolve_address_posix.h
@@ -12342,6 +12415,7 @@ targets:
   - src/core/util/type_list.h
   - src/core/util/unique_ptr_with_bitset.h
   - src/core/util/unique_type_name.h
+  - src/core/util/upb_utils.h
   - src/core/util/uri.h
   - src/core/util/validation_errors.h
   - src/core/util/wait_for_single_owner.h
@@ -12387,7 +12461,10 @@ targets:
   - src/core/ext/transport/chttp2/transport/huffsyms.cc
   - src/core/ext/transport/chttp2/transport/varint.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -13081,6 +13158,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: interception_chain_test
@@ -13200,6 +13278,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: interop_client
@@ -13316,6 +13395,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: json_object_loader_test
@@ -13351,6 +13431,16 @@ targets:
   - gtest
   - grpc_test_util
   uses_polling: false
+- name: jwt_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/credentials/call/jwt_util_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: jwt_verifier_test
   gtest: true
   build: test
@@ -13427,6 +13517,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -13550,6 +13641,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: log_too_many_open_files_test
   gtest: true
@@ -13614,6 +13706,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: lru_cache_test
@@ -13743,6 +13836,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: match_promise_test
@@ -13830,6 +13924,7 @@ targets:
   - gtest
   - absl/status:statusor
   - absl/strings:string_view
+  - absl/types:span
   - gpr
 - name: message_allocator_end2end_test
   gtest: true
@@ -14197,6 +14292,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: oracle_event_engine_posix_test
@@ -14638,6 +14734,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: pick_first_test
@@ -15166,6 +15263,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: promise_test
   gtest: true
@@ -15203,6 +15301,7 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/status:statusor
+  - absl/types:span
   - gpr
 - name: proto_buffer_reader_test
   gtest: true
@@ -15279,6 +15378,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -15340,6 +15440,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -15391,6 +15492,7 @@ targets:
   - src/core/ext/transport/chaotic_good/message_chunker.h
   - src/core/ext/transport/chaotic_good/message_reassembly.h
   - src/core/ext/transport/chaotic_good/pending_connection.h
+  - src/core/ext/transport/chaotic_good/scheduler.h
   - src/core/ext/transport/chaotic_good/serialize_little_endian.h
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.h
   - src/core/ext/transport/chaotic_good/server_transport.h
@@ -15447,6 +15549,7 @@ targets:
   - src/core/ext/transport/chaotic_good/data_endpoints.cc
   - src/core/ext/transport/chaotic_good/frame.cc
   - src/core/ext/transport/chaotic_good/frame_header.cc
+  - src/core/ext/transport/chaotic_good/scheduler.cc
   - src/core/ext/transport/chaotic_good/server/chaotic_good_server.cc
   - src/core/ext/transport/chaotic_good/server_transport.cc
   - src/core/ext/transport/chaotic_good/tcp_frame_header.cc
@@ -15516,6 +15619,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15642,11 +15746,22 @@ targets:
   - src/core/call/parsed_metadata.h
   - src/core/call/request_buffer.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/channelz/channel_trace.h
+  - src/core/channelz/channelz.h
+  - src/core/channelz/channelz_registry.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/lib/address_utils/parse_address.h
+  - src/core/lib/address_utils/sockaddr_utils.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
@@ -15660,6 +15775,12 @@ targets:
   - src/core/lib/iomgr/error.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/iomgr_internal.h
+  - src/core/lib/iomgr/port.h
+  - src/core/lib/iomgr/resolved_address.h
+  - src/core/lib/iomgr/sockaddr.h
+  - src/core/lib/iomgr/sockaddr_posix.h
+  - src/core/lib/iomgr/sockaddr_windows.h
+  - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/promise/activity.h
   - src/core/lib/promise/context.h
   - src/core/lib/promise/detail/basic_seq.h
@@ -15696,9 +15817,13 @@ targets:
   - src/core/lib/slice/slice_string_helpers.h
   - src/core/lib/surface/channel_stack_type.h
   - src/core/lib/transport/call_final_info.h
+  - src/core/lib/transport/connectivity_state.h
   - src/core/lib/transport/error_utils.h
   - src/core/lib/transport/status_conversion.h
   - src/core/lib/transport/timeout_encoding.h
+  - src/core/telemetry/histogram_view.h
+  - src/core/telemetry/stats.h
+  - src/core/telemetry/stats_data.h
   - src/core/util/atomic_utils.h
   - src/core/util/avl.h
   - src/core/util/bitset.h
@@ -15710,12 +15835,16 @@ targets:
   - src/core/util/dump_args.h
   - src/core/util/function_signature.h
   - src/core/util/glob.h
+  - src/core/util/grpc_if_nametoindex.h
   - src/core/util/if_list.h
   - src/core/util/json/json.h
+  - src/core/util/json/json_reader.h
   - src/core/util/json/json_writer.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
   - src/core/util/match.h
+  - src/core/util/memory_usage.h
+  - src/core/util/notification.h
   - src/core/util/orphanable.h
   - src/core/util/overload.h
   - src/core/util/packed_table.h
@@ -15724,12 +15853,17 @@ targets:
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ref_counted_string.h
   - src/core/util/ring_buffer.h
+  - src/core/util/shared_bit_gen.h
+  - src/core/util/single_set_ptr.h
   - src/core/util/sorted_pack.h
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/table.h
   - src/core/util/time.h
   - src/core/util/type_list.h
+  - src/core/util/upb_utils.h
+  - src/core/util/uri.h
+  - src/core/util/work_serializer.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -15742,8 +15876,16 @@ targets:
   - src/core/call/metadata_batch.cc
   - src/core/call/parsed_metadata.cc
   - src/core/call/request_buffer.cc
+  - src/core/channelz/channel_trace.cc
+  - src/core/channelz/channelz.cc
+  - src/core/channelz/channelz_registry.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/lib/address_utils/parse_address.cc
+  - src/core/lib/address_utils/sockaddr_utils.cc
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -15756,6 +15898,8 @@ targets:
   - src/core/lib/iomgr/error.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/iomgr_internal.cc
+  - src/core/lib/iomgr/sockaddr_utils_posix.cc
+  - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/promise/activity.cc
   - src/core/lib/promise/party.cc
   - src/core/lib/resource_quota/arena.cc
@@ -15769,17 +15913,27 @@ targets:
   - src/core/lib/slice/slice_string_helpers.cc
   - src/core/lib/surface/channel_stack_type.cc
   - src/core/lib/transport/call_final_info.cc
+  - src/core/lib/transport/connectivity_state.cc
   - src/core/lib/transport/error_utils.cc
   - src/core/lib/transport/status_conversion.cc
   - src/core/lib/transport/timeout_encoding.cc
+  - src/core/telemetry/histogram_view.cc
+  - src/core/telemetry/stats.cc
+  - src/core/telemetry/stats_data.cc
   - src/core/util/dump_args.cc
   - src/core/util/glob.cc
+  - src/core/util/grpc_if_nametoindex_posix.cc
+  - src/core/util/grpc_if_nametoindex_unsupported.cc
+  - src/core/util/json/json_reader.cc
   - src/core/util/json/json_writer.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
   - src/core/util/ref_counted_string.cc
+  - src/core/util/shared_bit_gen.cc
   - src/core/util/status_helper.cc
   - src/core/util/time.cc
+  - src/core/util/uri.cc
+  - src/core/util/work_serializer.cc
   - test/core/call/request_buffer_test.cc
   deps:
   - gtest
@@ -15787,12 +15941,15 @@ targets:
   - upb_wire_lib
   - absl/base:config
   - absl/base:no_destructor
+  - absl/container:btree
   - absl/container:flat_hash_map
   - absl/container:inlined_vector
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/strings:string_view
+  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: resolve_address_using_ares_resolver_posix_test
@@ -16071,6 +16228,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: sequential_connectivity_test
@@ -16441,6 +16599,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -16898,6 +17057,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
@@ -16938,6 +17098,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/hash:hash
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -16988,6 +17149,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
@@ -17238,6 +17400,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: timer_manager_test
@@ -17395,6 +17558,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17442,6 +17606,7 @@ targets:
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: unique_ptr_with_bitset_test
@@ -17589,6 +17754,7 @@ targets:
   - absl/hash:hash
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: wait_for_single_owner_test
@@ -17728,6 +17894,7 @@ targets:
   deps:
   - gtest
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: writes_per_rpc_test

@@ -268,7 +268,8 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
     const ChannelArgs& args, FrameTransport* frame_transport,
     MessageChunker message_chunker,
     RefCountedPtr<UnstartedCallDestination> call_destination)
-    : ctx_(frame_transport->ctx()),
+    : channelz::DataSource(frame_transport->ctx()->socket_node),
+      ctx_(frame_transport->ctx()),
       call_arena_allocator_(MakeRefCounted<CallArenaAllocator>(
           args.GetObject<ResourceQuota>()
               ->memory_quota()
@@ -282,9 +283,21 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
       ctx_->event_engine.get());
   party_ = Party::Make(std::move(party_arena));
   incoming_frame_spawner_ = party_->MakeSpawnSerializer();
-  MpscReceiver<OutgoingFrame> outgoing_pipe(8);
+  MpscReceiver<OutgoingFrame> outgoing_pipe(256 * 1024 * 1024);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
+}
+
+void ChaoticGoodServerTransport::StreamDispatch::AddData(
+    channelz::DataSink sink) {
+  MutexLock lock(&mu_);
+  Json::Object state;
+  state["stream_map_size"] = Json::FromNumber(stream_map_.size());
+  state["last_seen_new_stream_id"] = Json::FromNumber(last_seen_new_stream_id_);
+  sink.AddAdditionalInfo("chaoticGoodServerTransportState", std::move(state));
+  party_->ToJson([sink](Json::Object obj) mutable {
+    sink.AddAdditionalInfo("transportParty", std::move(obj));
+  });
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

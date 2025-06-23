@@ -267,6 +267,8 @@ class FuzzingEventEngine : public EventEngine {
   class FuzzingEndpoint final : public Endpoint {
    public:
     class TelemetryInfo;
+    class MetricsSet;
+    class FullMetricsSet;
 
     FuzzingEndpoint(std::shared_ptr<EndpointMiddle> middle, int index)
         : middle_(std::move(middle)), index_(index) {}

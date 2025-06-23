@@ -230,6 +230,8 @@
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/jwt/jwt_verifier.h" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/credentials/call/jwt_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.cc" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/oauth2/oauth2_credentials.h" role="src" />
     <file baseinstalldir="/" name="src/core/credentials/call/plugin/plugin_credentials.cc" role="src" />
@@ -799,6 +801,9 @@
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/google/rpc/status.upb_minitable.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.h" role="src" />
@@ -1474,7 +1479,6 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/pollset_windows.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/port.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/iomgr/python_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/resolve_address_impl.h" role="src" />

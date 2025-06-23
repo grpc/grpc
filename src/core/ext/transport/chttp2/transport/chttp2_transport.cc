@@ -1200,7 +1200,6 @@ static void write_action(
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
-  std::vector<size_t> write_metrics;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1217,9 +1216,9 @@ static void write_action(
     if (ee_ep != nullptr) {
       auto telemetry_info = ee_ep->GetTelemetryInfo();
       if (telemetry_info != nullptr) {
-        write_metrics = telemetry_info->AllWriteMetrics();
+        auto metrics_set = telemetry_info->GetFullMetricsSet();
         args.set_metrics_sink(WriteEventSink(
-            write_metrics,
+            std::move(metrics_set),
             {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
              WriteEvent::kAcked},
             [tcp_call_tracers = std::move(tcp_call_tracers),

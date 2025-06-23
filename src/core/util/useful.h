@@ -169,10 +169,6 @@ inline T SaturatingMul(T a, T b) {
   return a * b;
 }
 
-inline uint32_t MixHash32(uint32_t a, uint32_t b) {
-  return absl::rotl(a, 2u) ^ b;
-}
-
 inline uint32_t RoundUpToPowerOf2(uint32_t v) {
   v--;
   v |= v >> 1;
