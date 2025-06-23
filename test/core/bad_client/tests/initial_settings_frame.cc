@@ -126,6 +126,8 @@ static void single_request_verifier(grpc_server* server,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc_init();
+  grpc_tracer_set_enabled("api", true);
+  grpc_tracer_set_enabled("http", true);
 
   // various partial prefixes
   GRPC_RUN_BAD_CLIENT_TEST(verifier, nullptr, PFX_STR "\x00",
