@@ -171,7 +171,10 @@ GcpAuthenticationFilter::Create(const ChannelArgs& args,
   // previously by the XdsConfigSelector.
   auto cache = filter_args.GetState<CallCredentialsCache>(
       filter_config->filter_instance_name);
-  CHECK_NE(cache.get(), nullptr);
+  if (cache == nullptr) {
+    return absl::InvalidArgumentError(
+        "gcp_auth: cache object not found in filter state");
+  }
   // Instantiate filter.
   return std::unique_ptr<GcpAuthenticationFilter>(
       new GcpAuthenticationFilter(std::move(service_config), filter_config,
