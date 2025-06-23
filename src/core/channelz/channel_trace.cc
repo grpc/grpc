@@ -269,7 +269,10 @@ void ChannelTrace::RenderEntry(const Entry& entry,
     RenderEntry(entries_[id], child, arena);
     size_t length;
     auto* bytes = grpc_channelz_v2_TraceEvent_serialize(child, arena, &length);
-    auto* any = grpc_channelz_v2_TraceEvent_add_data(trace_event, arena);
+    auto* staple = grpc_channelz_v2_Staple_new(arena);
+    grpc_channelz_v2_Staple_set_name(staple,
+                                     StdStringToUpbString("child_trace"));
+    auto* any = grpc_channelz_v2_Staple_mutable_value(staple, arena);
     google_protobuf_Any_set_value(
         any, upb_StringView_FromDataAndSize(bytes, length));
     google_protobuf_Any_set_type_url(
