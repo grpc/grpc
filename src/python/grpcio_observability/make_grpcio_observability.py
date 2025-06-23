@@ -52,9 +52,15 @@ BAZEL_REFERENCE_LINK = [
 ]
 
 ABSL_INCLUDE = (os.path.join("third_party", "abseil-cpp"),)
+UPB_GEN_INCLUDE = (os.path.join("grpc_root", "src", "core", "ext", "upb-gen"),)
+UPB_DEFS_GEN_INCLUDE = (
+    os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
+)
 
 # will be added to include path when building grpcio_observability
-EXTENSION_INCLUDE_DIRECTORIES = ABSL_INCLUDE
+EXTENSION_INCLUDE_DIRECTORIES = (
+    ABSL_INCLUDE + UPB_GEN_INCLUDE + UPB_DEFS_GEN_INCLUDE
+)
 
 CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)
 
