@@ -91,3 +91,14 @@ cc_binary(
         "@pantor_inja//:inja",
     ],
 )
+
+cc_binary(
+    name = "gen_upb_api_from_bazel",
+    srcs = ["gen_upb_api_from_bazel.cc"],
+    deps = [
+        "@pugixml",
+        "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/strings",
+    ],
+)
