@@ -138,6 +138,8 @@ class PropertyList {
     return *this;
   }
 
+  PropertyList& Merge(PropertyList other);
+
   // TODO(ctiller): remove soon, switch to something returning a protobuf.
   Json::Object TakeJsonObject() { return std::move(property_list_); }
 
