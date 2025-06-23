@@ -56,10 +56,11 @@ UPB_GEN_INCLUDE = (os.path.join("grpc_root", "src", "core", "ext", "upb-gen"),)
 UPB_DEFS_GEN_INCLUDE = (
     os.path.join("grpc_root", "src", "core", "ext", "upbdefs-gen"),
 )
+PROTOBUF_INCLUDE = (os.path.join("third_party", "protobuf"),)
 
 # will be added to include path when building grpcio_observability
 EXTENSION_INCLUDE_DIRECTORIES = (
-    ABSL_INCLUDE + UPB_GEN_INCLUDE + UPB_DEFS_GEN_INCLUDE
+    ABSL_INCLUDE + UPB_GEN_INCLUDE + UPB_DEFS_GEN_INCLUDE + PROTOBUF_INCLUDE
 )
 
 CC_INCLUDES = list(EXTENSION_INCLUDE_DIRECTORIES)

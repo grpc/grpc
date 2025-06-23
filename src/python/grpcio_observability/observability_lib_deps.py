@@ -211,5 +211,6 @@ CC_FILES=[
 CC_INCLUDES=[
     'third_party/abseil-cpp',
     'grpc_root/src/core/ext/upb-gen',
-    'grpc_root/src/core/ext/upbdefs-gen'
+    'grpc_root/src/core/ext/upbdefs-gen',
+    'third_party/protobuf'
 ]
