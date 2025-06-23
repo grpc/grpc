@@ -128,5 +128,6 @@ target_link_libraries(grpc-interop
 
 target_include_directories(grpc-interop
   PRIVATE
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR})
+    "${GRPC_SRC_DIR}/src/core/ext/upb-gen"
+    "${GRPC_SRC_DIR}/src/core/ext/upbdefs-gen"
+    "${GRPC_SRC_DIR}/third_party/upb")
