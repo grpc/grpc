@@ -70,25 +70,17 @@
 
 #ifndef NDEBUG
 #undef DCHECK
-#define DCHECK(a)                          \
-  if (!(a)) {                              \
-    grpc_core::PostMortemEmit();           \
-    grpc_core::Crash("Failed DCHECK: #a"); \
-  }
-
+#define DCHECK(a) CHECK(a)
 #undef DCHECK_GE
-#define DCHECK_GE(a, b)                             \
-  if ((a) < (b)) {                                  \
-    grpc_core::PostMortemEmit();                    \
-    grpc_core::Crash("Failed DCHECK_GE: #a vs #b"); \
-  }
-
+#define DCHECK_GE(a, b) CHECK_GE(a, b)
 #undef DCHECK_LE
-#define DCHECK_LE(a, b)                             \
-  if ((a) > (b)) {                                  \
-    grpc_core::PostMortemEmit();                    \
-    grpc_core::Crash("Failed DCHECK_LE: #a vs #b"); \
-  }
+#define DCHECK_LE(a, b) CHECK_LE(a, b)
+#undef DCHECK_GT
+#define DCHECK_GT(a, b) CHECK_GT(a, b)
+#undef DCHECK_LT
+#define DCHECK_LT(a, b) CHECK_LT(a, b)
+#undef DCHECK_NE
+#define DCHECK_NE(a, b) CHECK_NE(a, b)
 #else
 #undef DCHECK
 #define DCHECK(a)
@@ -96,6 +88,12 @@
 #define DCHECK_GE(a, b)
 #undef DCHECK_LE
 #define DCHECK_LE(a, b)
+#undef DCHECK_GT
+#define DCHECK_GT(a, b)
+#undef DCHECK_LT
+#define DCHECK_LT(a, b)
+#undef DCHECK_NE
+#define DCHECK_NE(a, b)
 #endif
 
 #else
