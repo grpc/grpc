@@ -339,6 +339,10 @@ static bool metadata_server_available() {
   return static_cast<bool>(g_metadata_server_available);
 }
 
+// A grpc_call_credentials implementation that uses two
+// underlying credentials: one for TLS and one for ALTS.
+// The implementation will pick the right credentials based on the auth
+// context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property. 
 class GoogleDefaultCallCredentialsWrapper : public grpc_call_credentials {
  public:
   GoogleDefaultCallCredentialsWrapper(
