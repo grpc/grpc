@@ -47,6 +47,7 @@
 #include "src/core/util/json/json_reader.h"
 #include "src/core/util/json/json_writer.h"
 #include "src/core/util/notification.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/useful.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
@@ -282,6 +283,21 @@ TEST_P(ChannelzChannelTest, BasicChannel) {
   ChannelNode* channelz_channel =
       grpc_channel_get_channelz_node(channel.channel());
   ValidateChannel(channelz_channel, {0, 0, 0});
+}
+
+TEST_P(ChannelzChannelTest, BasicChannelProto) {
+  ExecCtx exec_ctx;
+  ChannelFixture channel(GetParam());
+  ChannelNode* channelz_channel =
+      grpc_channel_get_channelz_node(channel.channel());
+  upb_Arena* arena = upb_Arena_New();
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  channelz_channel->SerializeEntity(entity, arena);
+  EXPECT_EQ(grpc_channelz_v2_Entity_id(entity), channelz_channel->uuid());
+  EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
+            "channel");
+  EXPECT_EQ(grpc_channelz_v2_Entity_orphaned(entity), false);
+  upb_Arena_Free(arena);
 }
 
 class TestZTrace final : public ZTrace {

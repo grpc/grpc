@@ -1262,6 +1262,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
     ],
     deps = [
+        "channelz_upb",
         "config_vars",
         "exec_ctx",
         "gpr",
@@ -1288,6 +1289,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:time",
         "//src/core:time_precise",
+        "//src/core:upb_utils",
         "//src/core:useful",
     ],
 )
