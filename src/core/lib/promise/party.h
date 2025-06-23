@@ -29,6 +29,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
@@ -388,6 +389,9 @@ class Party : public Activity, private Wakeable {
   // This is an async operation because the party cannot be locked
   // synchronously.
   void ToJson(absl::AnyInvocable<void(Json::Object)>);
+
+  // Export the party to channelz.
+  void ExportToChannelz(std::string name, channelz::DataSink sink);
 
  protected:
   friend class Arena;

@@ -1261,6 +1261,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
     ],
     deps = [
+        "channelz_upb",
         "config_vars",
         "exec_ctx",
         "gpr",
@@ -1287,6 +1288,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:time",
         "//src/core:time_precise",
+        "//src/core:upb_utils",
         "//src/core:useful",
     ],
 )
@@ -1452,7 +1454,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/pollset.h",
         "//src/core:lib/iomgr/pollset_set_windows.h",
         "//src/core:lib/iomgr/pollset_windows.h",
-        "//src/core:lib/iomgr/python_util.h",
         "//src/core:lib/iomgr/resolve_address.h",
         "//src/core:lib/iomgr/resolve_address_impl.h",
         "//src/core:lib/iomgr/resolve_address_posix.h",

@@ -2437,6 +2437,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -3404,6 +3405,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -5773,7 +5775,10 @@ add_library(grpc_authorization_provider
   src/core/credentials/transport/tls/tls_utils.cc
   src/core/credentials/transport/transport_credentials.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -9449,7 +9454,10 @@ add_executable(call_utils_test
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -15602,7 +15610,10 @@ add_executable(filter_fusion_test
   src/core/credentials/transport/alts/grpc_alts_credentials_server_options.cc
   src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -18454,7 +18465,10 @@ add_executable(header_assembler_test
   src/core/ext/transport/chttp2/transport/huffsyms.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -25842,8 +25856,16 @@ add_executable(request_buffer_test
   src/core/call/metadata_batch.cc
   src/core/call/parsed_metadata.cc
   src/core/call/request_buffer.cc
+  src/core/channelz/channel_trace.cc
+  src/core/channelz/channelz.cc
+  src/core/channelz/channelz_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/lib/address_utils/parse_address.cc
+  src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -25856,6 +25878,8 @@ add_executable(request_buffer_test
   src/core/lib/iomgr/error.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/iomgr_internal.cc
+  src/core/lib/iomgr/sockaddr_utils_posix.cc
+  src/core/lib/iomgr/socket_utils_windows.cc
   src/core/lib/promise/activity.cc
   src/core/lib/promise/party.cc
   src/core/lib/resource_quota/arena.cc
@@ -25869,17 +25893,27 @@ add_executable(request_buffer_test
   src/core/lib/slice/slice_string_helpers.cc
   src/core/lib/surface/channel_stack_type.cc
   src/core/lib/transport/call_final_info.cc
+  src/core/lib/transport/connectivity_state.cc
   src/core/lib/transport/error_utils.cc
   src/core/lib/transport/status_conversion.cc
   src/core/lib/transport/timeout_encoding.cc
+  src/core/telemetry/histogram_view.cc
+  src/core/telemetry/stats.cc
+  src/core/telemetry/stats_data.cc
   src/core/util/dump_args.cc
   src/core/util/glob.cc
+  src/core/util/grpc_if_nametoindex_posix.cc
+  src/core/util/grpc_if_nametoindex_unsupported.cc
+  src/core/util/json/json_reader.cc
   src/core/util/json/json_writer.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
   src/core/util/ref_counted_string.cc
+  src/core/util/shared_bit_gen.cc
   src/core/util/status_helper.cc
   src/core/util/time.cc
+  src/core/util/uri.cc
+  src/core/util/work_serializer.cc
   test/core/call/request_buffer_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25917,12 +25951,14 @@ target_link_libraries(request_buffer_test
   upb_wire_lib
   absl::config
   absl::no_destructor
+  absl::btree
   absl::flat_hash_map
   absl::inlined_vector
   absl::function_ref
   absl::hash
   absl::type_traits
   absl::statusor
+  absl::string_view
   absl::span
   absl::utility
   gpr

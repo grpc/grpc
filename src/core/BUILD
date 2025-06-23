@@ -764,6 +764,7 @@ grpc_cc_library(
         "promise_factory",
         "ref_counted",
         "sync",
+        "//:channelz",
         "//:event_engine_base_hdrs",
         "//:exec_ctx",
         "//:gpr",
@@ -5602,7 +5603,13 @@ grpc_cc_library(
     ],
     external_deps = [
         "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "absl/strings",
+    ],
+    deps = [
+        "//:gpr",
+        "//:protobuf_duration_upb",
+        "//:protobuf_timestamp_upb",
     ],
 )
 
@@ -8540,6 +8547,7 @@ grpc_cc_library(
     ],
     deps = [
         "1999",
+        "channelz_property_list",
         "chaotic_good_frame_transport",
         "chaotic_good_pending_connection",
         "chaotic_good_scheduler",

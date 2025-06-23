@@ -320,6 +320,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -1524,6 +1525,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/gcp)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lb/v1)
