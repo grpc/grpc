@@ -38,7 +38,7 @@ class StreamDataQueue {
   StreamDataQueue& operator=(const StreamDataQueue&) = delete;
 
  private:
-  // TODO(akshitpatel) : [PH2][P1] Keep this either in the transport or here.
+  // TODO(akshitpatel) : [PH2][P2] Keep this either in the transport or here.
   // Not both places.
   GrpcMessageDisassembler disassembler;
 };
