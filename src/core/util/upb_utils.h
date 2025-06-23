@@ -35,6 +35,10 @@ inline upb_StringView StdStringToUpbString(const T& str) {
   return upb_StringView_FromDataAndSize(str.data(), str.size());
 }
 
+inline upb_StringView StdStringToUpbString(const char* str) {
+  return upb_StringView_FromDataAndSize(str, strlen(str));
+}
+
 template <typename T>
 inline upb_StringView CopyStdStringToUpbString(const T& str, upb_Arena* arena) {
   char* copy = static_cast<char*>(upb_Arena_Malloc(arena, str.size()));
