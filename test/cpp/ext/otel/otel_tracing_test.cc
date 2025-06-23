@@ -29,7 +29,9 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#ifdef GRPC_POSIX_SOCKET_TCP
 #include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#endif  // GRPC_POSIX_SOCKET_TCP
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
