@@ -16,6 +16,7 @@ import threading
 import time
 from cpython cimport array
 import array
+import math
 
 # Global buffer pool instance
 cdef BufferPool _global_buffer_pool = BufferPool()
@@ -25,13 +26,15 @@ cdef class BufferPool:
     Thread-safe buffer pool for reusing grpc_byte_buffer objects.
     
     This pool reduces memory allocation overhead by maintaining a cache of
-    pre-allocated buffers for common message sizes.
+    pre-allocated buffers for common message sizes using size bucketing.
     """
     
     cdef:
-        # Simple Python dict for storing pools by size
+        # Size buckets: 1B, 10B, 100B, 1KB, 10KB, 100KB, 1MB, 10MB, 100MB
+        list _bucket_sizes
+        # Pools organized by bucket size
         dict _pools
-        # Maximum number of buffers to keep per size
+        # Maximum number of buffers to keep per bucket
         size_t _max_pool_size
         # Statistics for monitoring
         size_t _total_allocations
@@ -41,48 +44,86 @@ cdef class BufferPool:
         object _lock
         
     def __cinit__(self, size_t max_pool_size=100):
+        # Define size buckets: 1B, 10B, 100B, 1KB, 10KB, 100KB, 1MB, 10MB, 100MB
+        self._bucket_sizes = [1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000]
         self._max_pool_size = max_pool_size
         self._total_allocations = 0
         self._total_reuses = 0
         self._total_destructions = 0
         self._pools = {}
         self._lock = threading.RLock()
+        
+        # Initialize pools for each bucket
+        for bucket_size in self._bucket_sizes:
+            self._pools[bucket_size] = []
     
-    cdef grpc_byte_buffer* _get_buffer_from_pool(self, size_t size):
+    cdef size_t _get_bucket_size(self, size_t message_size):
         """
-        Get a buffer from the pool for the given size.
+        Find the smallest bucket size that can accommodate the message.
+        If message is larger than all buckets, dynamically add a new bucket.
+        Returns the bucket size to use.
+        """
+        cdef size_t bucket_size
+        
+        # First try to find an existing bucket
+        for bucket_size in self._bucket_sizes:
+            if bucket_size >= message_size:
+                return bucket_size
+        
+        # Message is larger than all existing buckets
+        # Add a new bucket size that's 10x larger than the current max
+        cdef size_t new_bucket_size = self._bucket_sizes[-1] * 10
+        
+        # If the new bucket would be too large (> 1GB), cap it
+        if new_bucket_size > 1000000000:  # 1GB
+            new_bucket_size = 1000000000
+        
+        # Add the new bucket size
+        self._bucket_sizes.append(new_bucket_size)
+        self._pools[new_bucket_size] = []
+        
+        return new_bucket_size
+    
+    cdef grpc_byte_buffer* _get_buffer_from_pool(self, size_t message_size):
+        """
+        Get a buffer from the appropriate size bucket.
         Returns NULL if no buffer is available.
         """
         cdef:
             grpc_byte_buffer* buffer = NULL
+            size_t bucket_size
             list pool_list
         
-        if size in self._pools:
-            pool_list = self._pools[size]
+        bucket_size = self._get_bucket_size(message_size)
+        
+        if bucket_size in self._pools:
+            pool_list = self._pools[bucket_size]
             if len(pool_list) > 0:
                 buffer = pool_list.pop()
                 self._total_reuses += 1
         
         return buffer
     
-    cdef void _return_buffer_to_pool(self, grpc_byte_buffer* buffer, size_t size):
+    cdef void _return_buffer_to_pool(self, grpc_byte_buffer* buffer, size_t message_size):
         """
-        Return a buffer to the pool for reuse.
+        Return a buffer to the appropriate size bucket.
         """
-        cdef list pool_list
+        cdef:
+            size_t bucket_size
+            list pool_list
         
-        if size not in self._pools:
-            self._pools[size] = []
+        bucket_size = self._get_bucket_size(message_size)
         
-        pool_list = self._pools[size]
-        
-        # Only add to pool if we haven't reached the maximum size
-        if len(pool_list) < self._max_pool_size:
-            pool_list.append(buffer)
-        else:
-            # Pool is full, destroy the buffer
-            grpc_byte_buffer_destroy(buffer)
-            self._total_destructions += 1
+        if bucket_size in self._pools:
+            pool_list = self._pools[bucket_size]
+            
+            # Only add to pool if we haven't reached the maximum size
+            if len(pool_list) < self._max_pool_size:
+                pool_list.append(buffer)
+            else:
+                # Pool is full, destroy the buffer
+                grpc_byte_buffer_destroy(buffer)
+                self._total_destructions += 1
     
     cdef grpc_byte_buffer* _reuse_buffer_slice_data(self, grpc_byte_buffer* buffer, bytes message):
         """
@@ -119,18 +160,18 @@ cdef class BufferPool:
     cdef grpc_byte_buffer* get_buffer(self, bytes message) except *:
         """
         Get a buffer for the given message.
-        Creates a new buffer if none is available in the pool.
+        Creates a new buffer if none is available in the appropriate bucket.
         """
         cdef:
             size_t size = len(message)
             grpc_byte_buffer* buffer = NULL
             grpc_slice message_slice
         
-        # Try to get from pool first
+        # Try to get from appropriate bucket first
         buffer = self._get_buffer_from_pool(size)
         
         if buffer == NULL:
-            # No buffer available in pool, create new one
+            # No buffer available in bucket, create new one
             message_slice = grpc_slice_from_copied_buffer(
                 <const char*>message, size)
             buffer = grpc_raw_byte_buffer_create(&message_slice, 1)
@@ -144,7 +185,7 @@ cdef class BufferPool:
     
     cdef void return_buffer(self, grpc_byte_buffer* buffer, size_t size):
         """
-        Return a buffer to the pool for reuse.
+        Return a buffer to the appropriate bucket for reuse.
         """
         if buffer != NULL:
             self._return_buffer_to_pool(buffer, size)
@@ -153,16 +194,18 @@ cdef class BufferPool:
         """
         Get pool statistics for monitoring.
         """
-        cdef dict pool_sizes = {}
-        for size, pool_list in self._pools.items():
-            pool_sizes[size] = len(pool_list)
+        cdef dict bucket_stats = {}
+        for bucket_size in self._bucket_sizes:
+            if bucket_size in self._pools:
+                bucket_stats[bucket_size] = len(self._pools[bucket_size])
         
         return {
             'total_allocations': self._total_allocations,
             'total_reuses': self._total_reuses,
             'total_destructions': self._total_destructions,
             'reuse_rate': (self._total_reuses / max(1, self._total_allocations + self._total_reuses)) * 100,
-            'pool_sizes': pool_sizes
+            'bucket_sizes': self._bucket_sizes,
+            'bucket_stats': bucket_stats
         }
     
     def clear_pools(self):
@@ -173,11 +216,13 @@ cdef class BufferPool:
             list pool_list
             grpc_byte_buffer* buffer
         
-        for pool_list in self._pools.values():
-            for buffer in pool_list:
-                grpc_byte_buffer_destroy(buffer)
-                self._total_destructions += 1
-        self._pools.clear()
+        for bucket_size in self._bucket_sizes:
+            if bucket_size in self._pools:
+                pool_list = self._pools[bucket_size]
+                for buffer in pool_list:
+                    grpc_byte_buffer_destroy(buffer)
+                    self._total_destructions += 1
+                pool_list.clear()
 
 def get_global_buffer_pool():
     """Get the global buffer pool instance."""

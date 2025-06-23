@@ -48,6 +48,7 @@ cdef class BufferPool:
     """
     
     cdef:
+        list _bucket_sizes
         dict _pools
         size_t _max_pool_size
         size_t _total_allocations
@@ -55,8 +56,9 @@ cdef class BufferPool:
         size_t _total_destructions
         object _lock
     
-    cdef grpc_byte_buffer* _get_buffer_from_pool(self, size_t size)
-    cdef void _return_buffer_to_pool(self, grpc_byte_buffer* buffer, size_t size)
+    cdef size_t _get_bucket_size(self, size_t message_size)
+    cdef grpc_byte_buffer* _get_buffer_from_pool(self, size_t message_size)
+    cdef void _return_buffer_to_pool(self, grpc_byte_buffer* buffer, size_t message_size)
     cdef grpc_byte_buffer* _reuse_buffer_slice_data(self, grpc_byte_buffer* buffer, bytes message)
     cdef grpc_byte_buffer* get_buffer(self, bytes message) except *
     cdef void return_buffer(self, grpc_byte_buffer* buffer, size_t size)
