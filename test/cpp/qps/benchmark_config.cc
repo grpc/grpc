@@ -22,8 +22,8 @@
 #include <grpcpp/security/credentials.h>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
 ABSL_FLAG(bool, enable_log_reporter, true,

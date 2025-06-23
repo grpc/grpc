@@ -41,7 +41,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/functional:any_invocable",
-        "absl/log:check",
         "absl/log:log",
         "absl/status:statusor",
         "absl/strings",
@@ -70,6 +69,7 @@ grpc_cc_library(
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:xds_enabled_server",
+        "//src/core:grpc_check",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )

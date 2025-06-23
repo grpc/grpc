@@ -29,7 +29,6 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "fuzztest/fuzztest.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/fuzz_config_vars.h"

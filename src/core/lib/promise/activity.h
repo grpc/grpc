@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/debug/trace.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/orphanable.h"

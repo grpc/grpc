@@ -19,12 +19,12 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/grpc_authorization_policy_provider.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "test/core/end2end/end2end_tests.h"

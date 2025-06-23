@@ -23,7 +23,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 // Helpers for hpack varint encoding
 

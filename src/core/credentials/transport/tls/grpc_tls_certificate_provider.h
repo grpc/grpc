@@ -27,11 +27,11 @@
 #include <string>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"

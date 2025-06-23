@@ -22,7 +22,7 @@
 #include <memory>
 #include <optional>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"

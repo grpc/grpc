@@ -23,8 +23,8 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 #include "test/cpp/util/tls_test_utils.h"

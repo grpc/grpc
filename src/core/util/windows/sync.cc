@@ -26,7 +26,7 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 void gpr_mu_init(gpr_mu* mu) {
   InitializeCriticalSection(&mu->cs);

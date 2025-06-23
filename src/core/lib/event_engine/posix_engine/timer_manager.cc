@@ -25,10 +25,10 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
 #include "src/core/lib/debug/trace.h"
+#include "src/core/util/grpc_check.h"
 
 static thread_local bool g_timer_thread;
 
@@ -65,8 +65,8 @@ void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
   std::optional<std::vector<experimental::EventEngine::Closure*>> check_result =
       timer_list_->TimerCheck(&next);
-  CHECK(check_result.has_value())
-      << "ERROR: More than one MainLoop is running.";
+  // DO NOT SUBMIT: << "ERROR: More than one MainLoop is running."
+  CHECK(check_result.has_value());
   bool timers_found = !check_result->empty();
   if (timers_found) {
     RunSomeTimers(std::move(*check_result));

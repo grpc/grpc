@@ -20,9 +20,9 @@
 #include <map>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

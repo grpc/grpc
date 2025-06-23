@@ -27,7 +27,6 @@
 #include <optional>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/channelz/channelz.h"
@@ -55,6 +54,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"

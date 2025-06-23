@@ -24,7 +24,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/util/grpc_check.h"
 
 grpc_plugin_credentials::~grpc_plugin_credentials() {
   if (plugin_.state != nullptr && plugin_.destroy != nullptr) {

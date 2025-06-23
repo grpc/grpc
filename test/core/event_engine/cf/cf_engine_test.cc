@@ -21,7 +21,6 @@
 
 #include <thread>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "gmock/gmock.h"
@@ -31,6 +30,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/port.h"
 
 using namespace std::chrono_literals;

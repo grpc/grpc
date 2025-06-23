@@ -63,7 +63,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/ext/transport/inproc/inproc_transport.h"
@@ -72,6 +71,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/cpp/server/external_connection_acceptor_impl.h"

@@ -22,11 +22,11 @@
 #include <grpc/support/port_platform.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/thd.h"
 
 struct completed_thread {

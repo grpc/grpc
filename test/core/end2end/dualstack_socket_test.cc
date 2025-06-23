@@ -21,10 +21,10 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"
 
 // This test won't work except with posix sockets enabled
 #ifdef GRPC_POSIX_SOCKET_EV

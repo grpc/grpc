@@ -33,7 +33,6 @@
 #include <vector>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/random/random.h"
@@ -62,6 +61,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"

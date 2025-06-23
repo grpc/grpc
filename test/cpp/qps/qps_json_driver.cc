@@ -24,9 +24,9 @@
 #include <set>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/qps/benchmark_config.h"
 #include "test/cpp/qps/driver.h"

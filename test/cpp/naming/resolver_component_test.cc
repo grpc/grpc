@@ -31,7 +31,6 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -54,6 +53,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/string.h"

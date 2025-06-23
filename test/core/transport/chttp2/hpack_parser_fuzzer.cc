@@ -25,7 +25,6 @@
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/random/bit_gen_ref.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/resource_quota/arena.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/status_helper.h"
 #include "test/core/test_util/fuzz_config_vars.h"

@@ -555,7 +555,8 @@ class Transport : public InternallyRefCounted<Transport> {
   }
 
   void DisconnectWithError(grpc_error_handle error) {
-    CHECK(!error.ok()) << error;
+    // DO NOT SUBMIT: << error
+    CHECK(!error.ok());
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->disconnect_with_error = error;
     PerformOp(op);

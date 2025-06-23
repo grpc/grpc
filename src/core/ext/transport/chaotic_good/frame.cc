@@ -23,7 +23,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/ext/transport/chaotic_good/chaotic_good_frame.pb.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 #include "src/core/util/status_helper.h"
 

@@ -21,12 +21,12 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 using grpc_core::http2::Http2ErrorCode;
 using grpc_core::http2::Http2Status;

@@ -17,8 +17,8 @@
 #include <atomic>
 #include <cstdint>
 
-#include "absl/log/check.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core::mpscpipe_detail {

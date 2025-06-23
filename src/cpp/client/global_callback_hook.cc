@@ -17,7 +17,7 @@
 #include <memory>
 
 #include "absl/base/no_destructor.h"
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 

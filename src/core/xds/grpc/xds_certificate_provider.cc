@@ -24,10 +24,10 @@
 #include <utility>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

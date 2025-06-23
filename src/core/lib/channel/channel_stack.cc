@@ -24,13 +24,13 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
 
 using grpc_event_engine::experimental::EventEngine;
 
@@ -65,8 +65,8 @@ size_t grpc_channel_stack_size(const grpc_channel_filter** filters,
                                                sizeof(grpc_channel_element));
   size_t i;
 
-  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0)
-      << "GPR_MAX_ALIGNMENT must be a power of two";
+  // DO NOT SUBMIT: << "GPR_MAX_ALIGNMENT must be a power of two"
+  CHECK((GPR_MAX_ALIGNMENT & (GPR_MAX_ALIGNMENT - 1)) == 0);
 
   // add the size for each filter
   for (i = 0; i < filter_count; i++) {

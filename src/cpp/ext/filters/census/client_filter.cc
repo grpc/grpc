@@ -35,7 +35,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -59,6 +58,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/telemetry/tcp_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/cpp/ext/filters/census/context.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"

@@ -26,7 +26,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "opentelemetry/metrics/meter.h"
 #include "opentelemetry/metrics/meter_provider.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/telemetry/call_tracer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "src/cpp/ext/otel/otel_client_call_tracer.h"

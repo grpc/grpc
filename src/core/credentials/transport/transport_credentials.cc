@@ -20,11 +20,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 
 // -- Common. --

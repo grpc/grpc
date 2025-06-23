@@ -24,12 +24,12 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -62,8 +62,9 @@ MockEndpointController::MockEndpointController(
 
 void MockEndpointController::TriggerReadEvent(Slice read_data) {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!reads_done_)
-      << "Cannot trigger a read event after NoMoreReads has been called.";
+  // DO NOT SUBMIT: << "Cannot trigger a read event after NoMoreReads has been
+  // called."
+  CHECK(!reads_done_);
   if (on_read_) {
     on_read_slice_buffer_->Append(std::move(read_data));
     engine_->Run(
@@ -77,8 +78,8 @@ void MockEndpointController::TriggerReadEvent(Slice read_data) {
 
 void MockEndpointController::NoMoreReads() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!std::exchange(reads_done_, true))
-      << "NoMoreReads() can only be called once";
+  // DO NOT SUBMIT: << "NoMoreReads() can only be called once"
+  CHECK(!std::exchange(reads_done_, true));
 }
 
 void MockEndpointController::Read(
@@ -100,8 +101,8 @@ void MockEndpointController::Read(
 }
 
 grpc_endpoint* MockEndpointController::TakeCEndpoint() {
-  CHECK_NE(mock_grpc_endpoint_, nullptr)
-      << "The endpoint has already been taken";
+  // DO NOT SUBMIT: << "The endpoint has already been taken"
+  CHECK_NE(mock_grpc_endpoint_, nullptr);
   grpc_core::DownCast<MockEndpoint*>(
       grpc_get_wrapped_event_engine_endpoint(mock_grpc_endpoint_))
       ->SetController(shared_from_this());

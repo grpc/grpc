@@ -26,9 +26,9 @@
 #include <grpc/support/time.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"
 

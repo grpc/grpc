@@ -35,7 +35,6 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
@@ -73,6 +72,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/time.h"
 

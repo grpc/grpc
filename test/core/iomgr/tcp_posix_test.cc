@@ -32,7 +32,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
@@ -50,6 +49,7 @@
 #include "src/core/lib/iomgr/tcp_posix.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"

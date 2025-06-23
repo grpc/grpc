@@ -32,11 +32,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/tsi/transport_security_interface.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 
 static void notification_signal(tsi_test_fixture* fixture) {

@@ -35,13 +35,13 @@
 
 #include <grpc/support/alloc.h>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 
 void grpc_create_socketpair_if_unix(int sv[2]) {

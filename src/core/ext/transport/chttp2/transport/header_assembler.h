@@ -24,7 +24,6 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
@@ -33,6 +32,7 @@
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 
 // TODO(tjagtap) TODO(akshitpatel): [PH2][P3] : Write micro benchmarks for

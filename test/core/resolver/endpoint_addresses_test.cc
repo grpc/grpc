@@ -20,7 +20,6 @@
 
 #include <set>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "gmock/gmock.h"
@@ -28,6 +27,7 @@
 #include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/resolved_address.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/uri.h"
 #include "test/core/test_util/test_config.h"
 

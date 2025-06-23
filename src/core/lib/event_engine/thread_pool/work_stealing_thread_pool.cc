@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -42,6 +41,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/examine_stack.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/thd.h"
 #include "src/core/util/time.h"
 

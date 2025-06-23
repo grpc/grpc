@@ -31,7 +31,6 @@
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "src/core/lib/event_engine/extensions/chaotic_good_extension.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 
 namespace grpc_core {

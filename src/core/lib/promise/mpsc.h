@@ -23,11 +23,11 @@
 #include <cstdint>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/lib/promise/activity.h"
 #include "src/core/lib/promise/map.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/lib/promise/status_flag.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

@@ -24,8 +24,8 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "src/core/lib/event_engine/cf_engine/cf_engine.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 

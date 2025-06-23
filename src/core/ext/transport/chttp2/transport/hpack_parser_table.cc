@@ -26,7 +26,6 @@
 #include <cstring>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

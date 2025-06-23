@@ -24,8 +24,8 @@
 #include <grpcpp/support/status.h>
 #include <inttypes.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
 // IWYU pragma: no_include "google/protobuf/duration.pb.h"

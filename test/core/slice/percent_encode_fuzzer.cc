@@ -22,10 +22,10 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/slice/percent_encoding.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 
 using fuzztest::Arbitrary;
 using fuzztest::ElementOf;

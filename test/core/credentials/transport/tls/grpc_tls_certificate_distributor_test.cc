@@ -25,10 +25,10 @@
 #include <string>
 #include <thread>
 
-#include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 #include "test/core/test_util/tls_utils.h"
 

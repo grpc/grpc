@@ -23,10 +23,10 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/log/check.h"
 #include "absl/random/random.h"
 #include "absl/types/span.h"
 #include "src/core/load_balancing/weighted_round_robin/static_stride_scheduler.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/no_destruct.h"
 
 namespace grpc_core {

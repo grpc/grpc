@@ -26,12 +26,12 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/credentials/call/call_credentials.h"
 #include "src/core/credentials/call/json_util.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "test/core/credentials/call/oauth2/oauth2_utils.h"
 #include "test/core/test_util/cmdline.h"

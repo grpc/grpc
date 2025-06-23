@@ -19,12 +19,12 @@
 #include <memory>
 #include <tuple>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"

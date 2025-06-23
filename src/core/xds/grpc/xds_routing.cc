@@ -26,12 +26,12 @@
 #include <cctype>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/matchers.h"
 #include "src/core/xds/grpc/xds_http_filter.h"
 

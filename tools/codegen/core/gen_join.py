@@ -95,7 +95,6 @@ front_matter = """
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 
 #include "src/core/lib/debug/trace.h"
@@ -103,6 +102,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/bitset.h"
+#include "src/core/util/grpc_check.h"
 #include <tuple>
 #include <type_traits>
 #include <utility>

@@ -29,7 +29,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/cord.h"
@@ -64,6 +63,7 @@
 #include "src/core/util/alloc.h"
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

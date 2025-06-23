@@ -18,13 +18,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -51,10 +51,12 @@ bool IsLowerCase(absl::string_view str) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
+  // DO NOT SUBMIT:  << factory->scheme()
+  CHECK(IsLowerCase(factory->scheme()));
   auto [_, inserted] =
       state_.factories.try_emplace(factory->scheme(), std::move(factory));
-  CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
+  // DO NOT SUBMIT:  << "scheme " << factory->scheme() << " already registered"
+  CHECK(inserted);
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(

@@ -26,13 +26,13 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/credentials/transport/alts/alts_credentials.h"
 #include "src/core/credentials/transport/alts/check_gcp_environment.h"
 #include "src/core/credentials/transport/alts/grpc_alts_credentials_options.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/test_util/test_config.h"
 
 const char* StrPtr(const std::optional<std::string>& str) {

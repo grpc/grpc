@@ -19,7 +19,7 @@
 #include <atomic>
 #include <cstdint>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 

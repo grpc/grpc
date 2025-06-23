@@ -24,7 +24,6 @@
 #include <string>
 
 #include "absl/cleanup/cleanup.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -33,6 +32,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"  // IWYU pragma: keep
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 
 #ifdef GRPC_POSIX_SOCKET_UTILS_COMMON

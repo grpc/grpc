@@ -21,11 +21,11 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/event_engine/common_closures.h"
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

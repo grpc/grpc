@@ -21,8 +21,8 @@
 #include <iterator>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/lib/resource_quota/arena.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/manual_constructor.h"
 
 namespace grpc_core {

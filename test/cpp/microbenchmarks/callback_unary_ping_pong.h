@@ -25,7 +25,7 @@
 
 #include <sstream>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/callback_test_service.h"
 #include "test/cpp/microbenchmarks/fullstack_context_mutators.h"

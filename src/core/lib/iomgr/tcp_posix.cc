@@ -46,7 +46,6 @@
 #include <unordered_map>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -70,6 +69,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/event_log.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"

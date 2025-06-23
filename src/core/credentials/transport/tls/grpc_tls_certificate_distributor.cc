@@ -20,8 +20,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
+#include "src/core/util/grpc_check.h"
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(
     const std::string& cert_name, std::optional<std::string> pem_root_certs,

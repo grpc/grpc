@@ -53,7 +53,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/hash/hash.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "absl/status/status.h"
@@ -90,6 +89,7 @@
 #include "src/core/util/backoff.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/dual_ref_counted.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_args.h"
 #include "src/core/util/json/json_object_loader.h"

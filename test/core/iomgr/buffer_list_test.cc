@@ -21,11 +21,11 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 

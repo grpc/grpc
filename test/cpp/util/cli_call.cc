@@ -28,8 +28,8 @@
 #include <iostream>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace testing {

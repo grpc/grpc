@@ -24,7 +24,6 @@
 #include <thread>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/time/time.h"
 #include "gtest/gtest.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/test_config.h"
 

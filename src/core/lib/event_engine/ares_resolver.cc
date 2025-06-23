@@ -54,7 +54,6 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
@@ -70,6 +69,7 @@
 #include "src/core/lib/event_engine/time_util.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"

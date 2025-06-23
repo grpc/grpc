@@ -41,7 +41,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/interception_chain.h"
@@ -80,6 +79,7 @@
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/mpscq.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/shared_bit_gen.h"

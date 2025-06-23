@@ -18,7 +18,7 @@
 
 #include <algorithm>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
@@ -26,7 +26,7 @@ uint32_t HPackEncoderTable::AllocateIndex(size_t element_size) {
   DCHECK_GE(element_size, 32u);
 
   uint32_t new_index = tail_remote_index_ + table_elems_ + 1;
-  DCHECK(element_size <= MaxEntrySize());
+  DCHECK_LE(element_size, MaxEntrySize());
 
   if (element_size > max_table_size_) {
     while (table_size_ > 0) {

@@ -23,7 +23,6 @@
 #include <ostream>
 #include <type_traits>
 
-#include "absl/log/check.h"
 #include "src/core/call/call_state.h"
 #include "src/core/call/message.h"
 #include "src/core/call/metadata.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/promise/try_seq.h"
 #include "src/core/lib/transport/call_final_info.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 

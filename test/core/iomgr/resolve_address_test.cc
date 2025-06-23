@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "gmock/gmock.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/fake_udp_and_tcp_server.h"

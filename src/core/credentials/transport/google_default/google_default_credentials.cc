@@ -32,7 +32,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/match.h"
@@ -59,6 +58,7 @@
 #include "src/core/load_balancing/grpclb/grpclb.h"
 #include "src/core/load_balancing/xds/xds_channel_args.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/httpcli.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/json/json.h"

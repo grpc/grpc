@@ -18,8 +18,8 @@
 #include <memory>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"  // IWYU pragma: keep
 #include "src/core/lib/iomgr/port.h"
+#include "src/core/util/grpc_check.h"  // IWYU pragma: keep
 
 #ifdef GRPC_POSIX_SOCKET_TCP
 

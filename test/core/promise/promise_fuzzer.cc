@@ -21,7 +21,6 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/lib/promise/activity.h"
@@ -31,6 +30,7 @@
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/race.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/promise/promise_fuzzer.pb.h"
 
 bool squelch = true;

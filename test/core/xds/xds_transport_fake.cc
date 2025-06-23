@@ -26,9 +26,9 @@
 #include <type_traits>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/xds/xds_client/xds_bootstrap.h"

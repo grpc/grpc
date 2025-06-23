@@ -34,7 +34,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/compression/message_compress.h"
 #include "src/core/lib/surface/event_string.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 #include "src/core/util/postmortem_emit.h"
 #include "test/core/test_util/build.h"

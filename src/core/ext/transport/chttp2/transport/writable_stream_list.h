@@ -19,8 +19,8 @@
 #ifndef GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAM_LIST_H
 #define GRPC_SRC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_WRITABLE_STREAM_LIST_H
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 namespace http2 {

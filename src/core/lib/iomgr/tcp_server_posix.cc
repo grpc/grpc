@@ -50,7 +50,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -74,6 +73,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/strerror.h"
 
 static std::atomic<int64_t> num_dropped_connections{0};

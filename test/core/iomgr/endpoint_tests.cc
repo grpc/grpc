@@ -25,11 +25,11 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/test_util/test_config.h"

@@ -23,8 +23,8 @@
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"

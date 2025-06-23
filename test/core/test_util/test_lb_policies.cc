@@ -24,7 +24,6 @@
 #include <string>
 #include <variant>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
@@ -42,6 +41,7 @@
 #include "src/core/load_balancing/oob_backend_metric.h"
 #include "src/core/load_balancing/subchannel_interface.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/json/json_util.h"
 #include "src/core/util/orphanable.h"

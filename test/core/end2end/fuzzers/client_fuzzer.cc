@@ -19,7 +19,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "fuzztest/fuzztest.h"
 #include "src/core/config/core_configuration.h"
@@ -34,6 +33,7 @@
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"

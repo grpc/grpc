@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/distributions.h"
 #include "absl/status/status.h"
@@ -36,6 +35,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/status_helper.h"
 

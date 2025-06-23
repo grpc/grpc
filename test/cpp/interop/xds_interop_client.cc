@@ -40,7 +40,6 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_split.h"
 #include "opentelemetry/exporters/prometheus/exporter_factory.h"
@@ -48,6 +47,7 @@
 #include "opentelemetry/sdk/metrics/meter_provider.h"
 #include "src/core/call/status_util.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/proto/grpc/testing/empty.pb.h"
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"

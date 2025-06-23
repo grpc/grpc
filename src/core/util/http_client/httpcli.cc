@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/functional/bind_front.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "src/core/config/core_configuration.h"
@@ -49,6 +48,7 @@
 #include "src/core/lib/resource_quota/api.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/http_client/format_request.h"
 #include "src/core/util/http_client/parser.h"
 #include "src/core/util/status_helper.h"

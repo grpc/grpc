@@ -18,8 +18,8 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include "gtest/gtest.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/ref_counted.h"
 #include "test/core/test_util/test_config.h"

@@ -22,7 +22,7 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 class XdsChannelCredentialsImpl final : public ChannelCredentials {

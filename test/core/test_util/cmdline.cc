@@ -27,10 +27,10 @@
 #include <algorithm>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 
 typedef enum { ARGTYPE_INT, ARGTYPE_BOOL, ARGTYPE_STRING } argtype;

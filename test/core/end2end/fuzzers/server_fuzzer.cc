@@ -20,7 +20,6 @@
 #include <optional>
 #include <string>
 
-#include "absl/log/check.h"
 #include "fuzztest/fuzztest.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -30,6 +29,7 @@
 #include "src/core/lib/experiments/config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
 #include "test/core/end2end/fuzzers/fuzzer_input.pb.h"

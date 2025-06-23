@@ -15,7 +15,7 @@
 #include <grpc/support/port_platform.h>
 #include <stdlib.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 // The echo client wraps an EventEngine::Connect and EventEngine::Endpoint
 // implementations, allowing third-party TCP listeners to interact with your

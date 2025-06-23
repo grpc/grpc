@@ -24,7 +24,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/call/call_destination.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 
 namespace grpc_core {

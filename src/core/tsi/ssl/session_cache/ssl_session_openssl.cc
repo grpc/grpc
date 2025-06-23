@@ -17,9 +17,9 @@
 //
 #include <grpc/support/port_platform.h>
 
-#include "absl/log/check.h"
 #include "src/core/tsi/ssl/session_cache/ssl_session.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 #ifndef OPENSSL_IS_BORINGSSL
 

@@ -39,7 +39,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/metadata.h"
@@ -54,6 +53,7 @@
 #include "src/core/telemetry/stats_data.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"

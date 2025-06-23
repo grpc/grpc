@@ -24,8 +24,8 @@
 #include <grpc/slice.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/test_util/tls_utils.h"

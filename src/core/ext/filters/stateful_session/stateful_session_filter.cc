@@ -27,7 +27,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
@@ -49,6 +48,7 @@
 #include "src/core/resolver/xds/xds_resolver_attributes.h"
 #include "src/core/service_config/service_config_call_data.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/time.h"
 

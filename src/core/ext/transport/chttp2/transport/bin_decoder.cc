@@ -22,9 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/base/attributes.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 
 static uint8_t decode_table[] = {
     0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40, 0x40,

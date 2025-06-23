@@ -31,7 +31,6 @@
 
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"

@@ -32,7 +32,7 @@
 #include <string>
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/thd.h"
 #include "src/cpp/server/load_reporter/load_reporter.h"

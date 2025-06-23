@@ -20,7 +20,6 @@
 
 #include "absl/cleanup/cleanup.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_format.h"
@@ -30,6 +29,7 @@
 #include "src/core/lib/event_engine/windows/windows_endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_event_engine::experimental {

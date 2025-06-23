@@ -18,8 +18,8 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/numeric/bits.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 
