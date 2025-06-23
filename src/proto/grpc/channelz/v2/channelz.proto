@@ -32,7 +32,7 @@ package grpc.channelz.v2;
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
-message Staple {
+message Data {
   string name = 1;
   google.protobuf.Any value = 2;
 }
@@ -47,7 +47,7 @@ message Entity {
   // Has this entity been orphaned?
   bool orphaned = 4;
   // Instantaneous data for this entity.
-  repeated Staple data = 5;
+  repeated Data data = 5;
   // Historical trace information for the entity.
   repeated TraceEvent trace = 6;
 }
@@ -58,5 +58,5 @@ message TraceEvent {
   // When this event occurred.
   google.protobuf.Timestamp timestamp = 2;
   // Any additional supporting data.
-  repeated Staple data = 3;
+  repeated Data data = 3;
 }
