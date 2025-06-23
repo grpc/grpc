@@ -297,6 +297,20 @@ TEST_P(ChannelzChannelTest, BasicChannelProto) {
   EXPECT_EQ(UpbStringToStdString(grpc_channelz_v2_Entity_kind(entity)),
             "channel");
   EXPECT_EQ(grpc_channelz_v2_Entity_orphaned(entity), false);
+  size_t size;
+  const grpc_channelz_v2_TraceEvent* const* trace =
+      grpc_channelz_v2_Entity_trace(entity, &size);
+  if (GetParam() <= 48) {
+    EXPECT_EQ(size, 0);
+  } else if (GetParam() > 1024 || size > 0) {
+    ASSERT_EQ(size, 1);
+    // TODO(ctiller): This should be a test of the trace, not the channel.
+    // Also, emitting "Channel created" every time a channel is created is
+    // probably not the most helpful thing to do.
+    EXPECT_EQ(
+        UpbStringToStdString(grpc_channelz_v2_TraceEvent_description(trace[0])),
+        "Channel created");
+  }
   upb_Arena_Free(arena);
 }
 
