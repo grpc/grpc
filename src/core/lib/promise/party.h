@@ -458,7 +458,7 @@ class Party : public Activity, private Wakeable {
           .Set("factory", [this]() {
             channelz::PropertyList factory;
             if (started_) {
-              factory.Set("promise", JsonDump(PromiseAsJson(promise_)));
+              factory.Set("promise", PromiseProperty(&promise_));
             } else {
               factory.Set("factory",
                           TypeName<typename Factory::UnderlyingFactory>());
@@ -557,7 +557,7 @@ class Party : public Activity, private Wakeable {
                          TypeName<typename Factory::UnderlyingFactory>());
           break;
         case State::kPromise:
-          properties.Set("promise", JsonDump(PromiseAsJson(promise_)));
+          properties.Set("promise", PromiseProperty(&promise_));
           break;
         case State::kResult:
           properties.Set("result", TypeName<typename Promise::Result>());
