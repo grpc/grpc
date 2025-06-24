@@ -229,14 +229,14 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
     return Http2Status::Http2StreamError(
         Http2ErrorCode::kInternalError,
-        "gRPC Error : A gRPC server can send upto 1 intitial metadata followed "
+        "gRPC Error : A gRPC server can send upto 1 initial metadata followed "
         "by upto 1 trailing metadata");
   }
 
-  HeaderAssembler& assember = stream->header_assembler;
-  Http2Status append_result = assember.AppendHeaderFrame(std::move(frame));
+  HeaderAssembler& assembler = stream->header_assembler;
+  Http2Status append_result = assembler.AppendHeaderFrame(std::move(frame));
   if (append_result.IsOk()) {
-    return ProcessMetadata(stream->stream_id, assember, stream->call,
+    return ProcessMetadata(stream->stream_id, assembler, stream->call,
                            stream->did_push_initial_metadata,
                            stream->did_push_trailing_metadata);
   }
@@ -244,13 +244,13 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
-    uint32_t stream_id, HeaderAssembler& assember, CallHandler& call,
+    uint32_t stream_id, HeaderAssembler& assembler, CallHandler& call,
     bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
-  if (assember.IsReady()) {
+  if (assembler.IsReady()) {
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
-        assember.ReadMetadata(parser_, !incoming_header_end_stream_,
-                              /*is_client=*/true);
+        assembler.ReadMetadata(parser_, !incoming_header_end_stream_,
+                               /*is_client=*/true);
     if (read_result.IsOk()) {
       Arena::PoolPtr<grpc_metadata_batch> metadata =
           TakeValue(std::move(read_result));
