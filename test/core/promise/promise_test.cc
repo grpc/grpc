@@ -44,20 +44,6 @@ TEST(PromiseTest, NowOrNever) {
   EXPECT_EQ(NowOrNever(Immediate(42)), std::optional<int>(42));
 }
 
-TEST(PromiseTest, CanConvertToJson) {
-  auto x = []() { return 42; };
-  EXPECT_FALSE(promise_detail::kHasToJsonMethod<decltype(x)>);
-}
-
-TEST(PromiseTest, CanCustomizeJsonConversion) {
-  class FooPromise {
-   public:
-    Json ToJson() const { return Json::FromObject(Json::Object()); }
-  };
-  EXPECT_TRUE(promise_detail::kHasToJsonMethod<FooPromise>);
-  EXPECT_EQ(JsonDump(PromiseAsJson(FooPromise())), "{}");
-}
-
 TEST(PromiseTest, CanConvertToProto) {
   auto x = []() { return 42; };
   EXPECT_FALSE(promise_detail::kHasToProtoMethod<decltype(x)>);
