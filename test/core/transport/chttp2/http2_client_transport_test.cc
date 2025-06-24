@@ -157,8 +157,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
   AppendGrpcHeaderToSliceBuffer(buffer, 0, 6);
   buffer.Append(SliceBuffer(Slice::FromExternalString("Hello!")));
 
-  Http2Frame frame = Http2DataFrame{
-      .stream_id = 9, .end_stream = false, .payload = std::move(buffer)};
+  Http2Frame frame = Http2DataFrame{/*stream_id=*/9, /*end_stream=*/false,
+                                    /*payload=*/std::move(buffer)};
 
   auto promise =
       client_transport->TestOnlyEnqueueOutgoingFrame(std::move(frame));
