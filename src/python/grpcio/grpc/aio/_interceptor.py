@@ -15,12 +15,12 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
+import collections
 from collections.abc import AsyncIterable
 from collections.abc import AsyncIterator
 from collections.abc import Awaitable
 from collections.abc import Iterator
 from collections.abc import Sequence
-import collections
 import functools
 from typing import Any, Callable, Optional, Union
 
@@ -90,15 +90,15 @@ class ServerInterceptor(metaclass=ABCMeta):
 
 
 class ClientCallDetails(
-    collections.namedtuple(
-      "ClientCallDetails",
-      (
-          "method",
-          "timeout",
-          "metadata",
-          "credentials",
-          "wait_for_ready",
-      )
+    collections.namedtuple(  # noqa: PYI024
+        "ClientCallDetails",
+        (
+            "method",
+            "timeout",
+            "metadata",
+            "credentials",
+            "wait_for_ready",
+        ),
     ),
     grpc.ClientCallDetails,
 ):
