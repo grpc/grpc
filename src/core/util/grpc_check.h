@@ -18,6 +18,7 @@
 #ifdef GRPC_POSTMORTEM_CHECKS
 #include "absl/log/log.h"
 #include "src/core/util/postmortem_emit.h"
+#include <limits.h>
 
 bool PostMortemEmitAndReturnFalse();
 
@@ -75,12 +76,13 @@ bool PostMortemEmitAndReturnFalse();
 #define DCHECK_LT(a, b) CHECK_LT(a, b)
 #define DCHECK_NE(a, b) CHECK_NE(a, b)
 #else
-#define DCHECK(a)
-#define DCHECK_GE(a, b)
-#define DCHECK_LE(a, b)
-#define DCHECK_GT(a, b)
-#define DCHECK_LT(a, b)
-#define DCHECK_NE(a, b)
+// VLOG(INT_MAX) effectively sends logs nowhere
+#define DCHECK(a) VLOG(INT_MAX)
+#define DCHECK_GE(a, b) VLOG(INT_MAX)
+#define DCHECK_LE(a, b) VLOG(INT_MAX)
+#define DCHECK_GT(a, b) VLOG(INT_MAX)
+#define DCHECK_LT(a, b) VLOG(INT_MAX)
+#define DCHECK_NE(a, b) VLOG(INT_MAX)
 #endif
 
 #else
