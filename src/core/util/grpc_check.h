@@ -19,7 +19,7 @@
 #include "absl/log/log.h"
 #include "src/core/util/postmortem_emit.h"
 
-bool PostMortemEmitFalse();
+bool PostMortemEmitAndReturnFalse();
 
 #undef CHECK
 #define CHECK(a) \

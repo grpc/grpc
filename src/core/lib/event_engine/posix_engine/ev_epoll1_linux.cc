@@ -253,8 +253,7 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
   auto result = posix_interface().EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
-  // DO NOT SUBMIT:  << result.StrError()
-  CHECK(result.ok());
+  CHECK(result.ok()) << result.StrError();
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
 }
@@ -489,8 +488,7 @@ void Epoll1Poller::ResetKickState() {
   wakeup_fd_ = *CreateWakeupFd(&posix_interface());
   auto status = posix_interface().EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
-  // DO NOT SUBMIT:  << status.StrError()
-  CHECK(status.ok());
+  CHECK(status.ok()) << status.StrError();
   grpc_core::MutexLock lock(&mu_);
   was_kicked_ = false;
 }

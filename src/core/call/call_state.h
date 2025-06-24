@@ -769,10 +769,10 @@ CallState::PollPullServerInitialMetadataAvailable() {
     case ServerToClientPullState::kTerminated:
       return false;
   }
-  // DO NOT SUBMIT: << server_to_client_pull_state_
   DCHECK(server_to_client_pull_state_ == ServerToClientPullState::kStarted ||
          server_to_client_pull_state_ ==
-             ServerToClientPullState::kStartedReading);
+             ServerToClientPullState::kStartedReading)
+      << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
     case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:
@@ -832,9 +832,9 @@ CallState::FinishPullServerInitialMetadata() {
     case ServerToClientPullState::kTerminated:
       return;
   }
-  // DO NOT SUBMIT: << server_to_client_pull_state_
   DCHECK(server_to_client_pull_state_ == ServerToClientPullState::kIdle ||
-         server_to_client_pull_state_ == ServerToClientPullState::kReading);
+         server_to_client_pull_state_ == ServerToClientPullState::kReading)
+      << server_to_client_pull_state_;
   switch (server_to_client_push_state_) {
     case ServerToClientPushState::kStart:
     case ServerToClientPushState::kPushedMessageWithoutInitialMetadata:

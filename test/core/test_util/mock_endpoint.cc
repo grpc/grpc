@@ -62,9 +62,8 @@ MockEndpointController::MockEndpointController(
 
 void MockEndpointController::TriggerReadEvent(Slice read_data) {
   grpc_core::MutexLock lock(&mu_);
-  // DO NOT SUBMIT: << "Cannot trigger a read event after NoMoreReads has been
-  // called."
-  CHECK(!reads_done_);
+  CHECK(!reads_done_)
+      << "Cannot trigger a read event after NoMoreReads has been called.";
   if (on_read_) {
     on_read_slice_buffer_->Append(std::move(read_data));
     engine_->Run(
@@ -78,8 +77,8 @@ void MockEndpointController::TriggerReadEvent(Slice read_data) {
 
 void MockEndpointController::NoMoreReads() {
   grpc_core::MutexLock lock(&mu_);
-  // DO NOT SUBMIT: << "NoMoreReads() can only be called once"
-  CHECK(!std::exchange(reads_done_, true));
+  CHECK(!std::exchange(reads_done_, true))
+      << "NoMoreReads() can only be called once";
 }
 
 void MockEndpointController::Read(
@@ -101,8 +100,8 @@ void MockEndpointController::Read(
 }
 
 grpc_endpoint* MockEndpointController::TakeCEndpoint() {
-  // DO NOT SUBMIT: << "The endpoint has already been taken"
-  CHECK_NE(mock_grpc_endpoint_, nullptr);
+  CHECK_NE(mock_grpc_endpoint_, nullptr)
+      << "The endpoint has already been taken";
   grpc_core::DownCast<MockEndpoint*>(
       grpc_get_wrapped_event_engine_endpoint(mock_grpc_endpoint_))
       ->SetController(shared_from_this());

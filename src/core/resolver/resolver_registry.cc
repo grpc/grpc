@@ -51,12 +51,10 @@ bool IsLowerCase(absl::string_view str) {
 
 void ResolverRegistry::Builder::RegisterResolverFactory(
     std::unique_ptr<ResolverFactory> factory) {
-  // DO NOT SUBMIT:  << factory->scheme()
-  CHECK(IsLowerCase(factory->scheme()));
+  CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
   auto [_, inserted] =
       state_.factories.try_emplace(factory->scheme(), std::move(factory));
-  // DO NOT SUBMIT:  << "scheme " << factory->scheme() << " already registered"
-  CHECK(inserted);
+  CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(

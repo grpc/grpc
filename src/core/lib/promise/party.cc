@@ -356,8 +356,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
-      // DO NOT SUBMIT:  << "; " << GRPC_DUMP_ARGS(party, arena)
-      CHECK(event_engine != nullptr);
+      CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
       GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
@@ -448,8 +447,8 @@ void Party::RunPartyAndUnref(uint64_t prev_state) {
     }
     LogStateChange("Run:Continue", prev_state,
                    prev_state & (kRefMask | kLocked | keep_allocated_mask));
-    // DO NOT SUBMIT: << "Party should be locked; prev_state=" << prev_state
-    DCHECK(prev_state & kLocked);
+    DCHECK(prev_state & kLocked)
+        << "Party should be locked; prev_state=" << prev_state;
     DCHECK_GE(prev_state & kRefMask, kOneRef);
     // From the previous state, extract which participants we're to wakeup.
     wakeup_mask_ |= prev_state & kWakeupMask;
@@ -510,9 +509,9 @@ size_t Party::AddParticipant(Participant* participant) {
     if (GPR_UNLIKELY((wakeup_mask & kWakeupMask) == 0)) {
       return std::numeric_limits<size_t>::max();
     }
-    // DO NOT SUBMIT: << "No available slots for new participant; allocated=" <<
-    // allocated << " state=" << state << " wakeup_mask=" << wakeup_mask
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0u);
+    DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
+        << "No available slots for new participant; allocated=" << allocated
+        << " state=" << state << " wakeup_mask=" << wakeup_mask;
     allocated |= wakeup_mask;
     slot = absl::countr_zero(wakeup_mask);
     // Try to allocate this slot and take a ref (atomically).
