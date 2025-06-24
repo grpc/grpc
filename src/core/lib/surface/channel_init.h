@@ -335,26 +335,12 @@ class ChannelInit {
                              FilterAdder filter_adder = nullptr,
                              SourceLocation registration_source = {});
 
-    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
-                                     UniqueTypeName name,
-                                     const grpc_channel_filter* filter,
-                                     FilterAdder filter_adder = nullptr,
-                                     SourceLocation registration_source = {});
-
     void RegisterFusedFilter(grpc_channel_stack_type type,
                              const grpc_channel_filter* filter,
                              SourceLocation registration_source = {}) {
       CHECK(filter != nullptr);
       RegisterFusedFilter(type, NameFromChannelFilter(filter), filter, nullptr,
                           registration_source);
-    }
-
-    void RegisterTerminalFusedFilter(grpc_channel_stack_type type,
-                                     const grpc_channel_filter* filter,
-                                     SourceLocation registration_source = {}) {
-      CHECK(filter != nullptr);
-      RegisterTerminalFusedFilter(type, NameFromChannelFilter(filter), filter,
-                                  nullptr, registration_source);
     }
 
     template <typename Filter>
@@ -438,7 +424,6 @@ class ChannelInit {
     std::vector<Filter> filters;
     std::vector<Filter> fused_filters;
     std::vector<Filter> terminators;
-    std::vector<Filter> terminal_fused_filters;
     std::vector<PostProcessor> post_processors;
   };
 
@@ -450,15 +435,14 @@ class ChannelInit {
           filter_registrations,
       grpc_channel_stack_type type);
 
-  static std::tuple<std::vector<Filter>, std::vector<Filter>>
-  SortFusedFilterRegistrations(
+  static std::vector<Filter> SortFusedFilterRegistrations(
       const std::vector<std::unique_ptr<FilterRegistration>>&
           filter_registrations);
 
-  static bool MergeFilters(ChannelStackBuilder* builder,
-                           const std::vector<Filter>& filters,
-                           const std::vector<Filter>& fused_filters,
-                           bool is_terminal);
+  static bool SelectThenMergeFilters(ChannelStackBuilder* builder,
+                                     const std::vector<Filter>& filters,
+                                     const std::vector<Filter>& fused_filters,
+                                     bool is_terminal);
 
   static StackConfig BuildStackConfig(
       const std::vector<std::unique_ptr<FilterRegistration>>&

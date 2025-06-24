@@ -136,14 +136,6 @@ void ChannelInit::Builder::RegisterFusedFilter(
       name, filter, filter_adder, registration_source));
 }
 
-void ChannelInit::Builder::RegisterTerminalFusedFilter(
-    grpc_channel_stack_type type, UniqueTypeName name,
-    const grpc_channel_filter* filter, FilterAdder filter_adder,
-    SourceLocation registration_source) {
-  RegisterFusedFilter(type, name, filter, filter_adder, registration_source);
-  fused_filters_[type].back()->Terminal();
-}
-
 class ChannelInit::DependencyTracker {
  public:
   // Declare that a filter exists.
@@ -265,7 +257,7 @@ class ChannelInit::DependencyTracker {
   size_t nodes_taken_ = 0;
 };
 
-bool ChannelInit::MergeFilters(
+bool ChannelInit::SelectThenMergeFilters(
     ChannelStackBuilder* builder,
     const std::vector<ChannelInit::Filter>& filters,
     const std::vector<ChannelInit::Filter>& fused_filters, bool is_terminal) {
@@ -403,37 +395,18 @@ ChannelInit::SortFilterRegistrationsByDependencies(
   return std::make_tuple(std::move(filters), std::move(terminal_filters));
 }
 
-std::tuple<std::vector<ChannelInit::Filter>, std::vector<ChannelInit::Filter>>
-ChannelInit::SortFusedFilterRegistrations(
+std::vector<ChannelInit::Filter> ChannelInit::SortFusedFilterRegistrations(
     const std::vector<std::unique_ptr<FilterRegistration>>&
         filter_registrations) {
-  std::vector<FilterRegistration*> terminal_fused_filter_registrations;
   std::vector<FilterRegistration*> fused_filter_registrations;
   std::vector<Filter> filters;
-  std::vector<Filter> terminal_filters;
   for (const auto& registration : filter_registrations) {
-    if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
-      CHECK(!registration->before_all_);
-      CHECK_EQ(registration->ordering_, Ordering::kDefault);
-      terminal_fused_filter_registrations.push_back(registration.get());
-    } else {
-      fused_filter_registrations.push_back(registration.get());
-    }
+    CHECK(!registration->terminal_);
+    fused_filter_registrations.push_back(registration.get());
   }
   std::sort(fused_filter_registrations.begin(),
             fused_filter_registrations.end(),
             CompareFusedChannelFiltersByName());
-  std::sort(terminal_fused_filter_registrations.begin(),
-            terminal_fused_filter_registrations.end(),
-            CompareFusedChannelFiltersByName());
-  for (auto registration : terminal_fused_filter_registrations) {
-    terminal_filters.emplace_back(
-        registration->name_, registration->filter_, nullptr,
-        std::move(registration->predicates_), registration->version_,
-        registration->ordering_, registration->registration_source_);
-  }
 
   for (auto registration : fused_filter_registrations) {
     filters.emplace_back(
@@ -441,7 +414,7 @@ ChannelInit::SortFusedFilterRegistrations(
         std::move(registration->predicates_), registration->version_,
         registration->ordering_, registration->registration_source_);
   }
-  return std::make_tuple(std::move(filters), std::move(terminal_filters));
+  return filters;
 }
 
 ChannelInit::StackConfig ChannelInit::BuildStackConfig(
@@ -464,12 +437,8 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> filters = std::move(std::get<0>(sorted_filters));
   std::vector<Filter> terminal_filters = std::move(std::get<1>(sorted_filters));
 
-  auto sorted_fused_filters =
-      SortFusedFilterRegistrations(fused_filter_registrations);
   std::vector<Filter> fused_filters =
-      std::move(std::get<0>(sorted_fused_filters));
-  std::vector<Filter> terminal_fused_filters =
-      std::move(std::get<1>(sorted_fused_filters));
+      SortFusedFilterRegistrations(fused_filter_registrations);
 
   // Check if there are no terminal filters: this would be an error.
   // GRPC_CLIENT_DYNAMIC stacks don't use this mechanism, so we don't check
@@ -486,9 +455,9 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
                "CoreConfiguration, but will result in a "
                "ChannelInit::CreateStack that never completes successfully.";
   }
-  return StackConfig{
-      std::move(filters), std::move(fused_filters), std::move(terminal_filters),
-      std::move(terminal_fused_filters), std::move(post_processor_functions)};
+  return StackConfig{std::move(filters), std::move(fused_filters),
+                     std::move(terminal_filters),
+                     std::move(post_processor_functions)};
 };
 
 void ChannelInit::PrintChannelStackTrace(
@@ -600,10 +569,9 @@ bool ChannelInit::Filter::CheckPredicates(const ChannelArgs& args) const {
 
 bool ChannelInit::CreateStack(ChannelStackBuilder* builder) const {
   const auto& stack_config = stack_configs_[builder->channel_stack_type()];
-  if (!MergeFilters(builder, stack_config.filters, stack_config.fused_filters,
-                    false) ||
-      !MergeFilters(builder, stack_config.terminators,
-                    stack_config.terminal_fused_filters, true)) {
+  if (!SelectThenMergeFilters(builder, stack_config.filters,
+                              stack_config.fused_filters, false) ||
+      !SelectThenMergeFilters(builder, stack_config.terminators, {}, true)) {
     return false;
   }
   for (const auto& post_processor : stack_config.post_processors) {
