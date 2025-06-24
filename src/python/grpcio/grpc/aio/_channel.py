@@ -52,14 +52,6 @@ from ._utils import _timeout_to_deadline
 
 _USER_AGENT = f"grpc-python-asyncio/{_grpcio_metadata.__version__}"
 
-_INVALID_INTERCEPTOR_MSG = (
-    "Interceptor {interceptor} must be "
-    "{UnaryUnaryClientInterceptor.__name__} or "
-    "{UnaryStreamClientInterceptor.__name__} or "
-    "{StreamUnaryClientInterceptor.__name__} or "
-    "{StreamStreamClientInterceptor.__name__}. "
-)
-
 if sys.version_info < (3, 7):  # noqa: UP036
 
     def _all_tasks() -> Iterable[asyncio.Task]:
@@ -372,10 +364,12 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise TypeError(
-                        _INVALID_INTERCEPTOR_MSG.format(
-                            interceptor=interceptor,
-                        ),
+                    raise ValueError(
+                        "Interceptor {} must be ".format(interceptor)
+                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
+                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
+                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
+                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
                     )
 
         self._loop = cygrpc.get_working_loop()
