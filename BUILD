@@ -32,7 +32,7 @@ licenses(["reciprocal"])
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-parse_headers",
+        "parse_headers",
         "layering_check",
     ],
 )
@@ -797,6 +797,7 @@ grpc_cc_library(
         "//src/core:time_precise",
         "//src/core:time_util",
         "//src/core:useful",
+        ":grpc_public_hdrs"
     ],
 )
 
@@ -2481,8 +2482,14 @@ grpc_cc_library(
         "@com_google_protobuf//upb/mem",
         "absl/strings:str_format",
         "protobuf_headers",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//:json_util",
+        "@com_google_protobuf//:type_resolver",
+        "@com_google_protobuf//src/google/protobuf/io:io",
     ],
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS + [
+        "include/grpcpp/impl/codegen/config_protobuf.h",
+    ],
     tags = [
         "avoid_dep",
         "nofixdeps",

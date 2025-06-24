@@ -23,8 +23,8 @@ load(
 package(
     default_visibility = ["//visibility:public"],
     features = [
-        "-layering_check",
-        "-parse_headers",
+        "layering_check",
+        "parse_headers",
     ],
 )
 
@@ -77,6 +77,12 @@ grpc_cc_library(
     external_deps = [
         "protobuf_clib",
         "protobuf",
+        "@com_google_protobuf//src/google/protobuf/compiler:code_generator",    # for code_generator.h
+        "@com_google_protobuf//src/google/protobuf/compiler/objectivec:names",  # for objectivec/names.h (or indirectly, for plugin.h if it depends on it)
+        "@com_google_protobuf//src/google/protobuf/compiler/csharp:names",      # for csharp/names.h
+        "@com_google_protobuf//src/google/protobuf/compiler/php:names",         # for php/names.h
+        "@com_google_protobuf//src/google/protobuf/io:io",                      # for zero_copy_stream.h, etc.
+        "@com_google_protobuf//src/google/protobuf/io:printer",                 # for printer.h
     ],
     deps = [
         "proto_parser_helper",
