@@ -366,7 +366,7 @@ class Channel(_base_channel.Channel):
                 else:
                     raise ValueError(  # noqa: TRY004
                         "Interceptor {} must be ".format(  # noqa: UP032
-                            interceptor
+                            interceptor,
                         )
                         + f"{UnaryUnaryClientInterceptor.__name__} or "
                         + f"{UnaryStreamClientInterceptor.__name__} or "
