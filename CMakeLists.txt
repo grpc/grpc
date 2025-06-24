@@ -1764,6 +1764,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx status_helper_test)
   add_dependencies(buildtests_cxx status_util_test)
   add_dependencies(buildtests_cxx stream_leak_with_queued_flow_control_update_test)
+  add_dependencies(buildtests_cxx stream_quota_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx streaming_throughput_test)
   endif()
@@ -2789,6 +2790,7 @@ add_library(grpc
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -3572,6 +3574,7 @@ add_library(grpc_unsecure
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   src/core/lib/security/authorization/evaluate_args.cc
@@ -5934,6 +5937,7 @@ add_library(grpc_authorization_provider
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/security/authorization/audit_logging.cc
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
@@ -9217,6 +9221,7 @@ add_executable(call_filters_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -9606,6 +9611,7 @@ add_executable(call_utils_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -9794,6 +9800,7 @@ add_executable(cancel_callback_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -10859,6 +10866,7 @@ add_executable(chunked_vector_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -15762,6 +15770,7 @@ add_executable(filter_fusion_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -16033,6 +16042,7 @@ add_executable(flow_control_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -16112,6 +16122,7 @@ add_executable(for_each_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -18617,6 +18628,7 @@ add_executable(header_assembler_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -19995,6 +20007,7 @@ add_executable(interceptor_list_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -21124,6 +21137,7 @@ add_executable(map_pipe_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -21527,6 +21541,7 @@ add_executable(message_assembler_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -25886,6 +25901,7 @@ add_executable(request_buffer_test
   src/core/lib/resource_quota/memory_quota.cc
   src/core/lib/resource_quota/periodic_update.cc
   src/core/lib/resource_quota/resource_quota.cc
+  src/core/lib/resource_quota/stream_quota.cc
   src/core/lib/resource_quota/thread_quota.cc
   src/core/lib/slice/percent_encoding.cc
   src/core/lib/slice/slice.cc
@@ -28752,6 +28768,55 @@ target_link_libraries(stream_leak_with_queued_flow_control_update_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(stream_quota_test
+  src/core/lib/resource_quota/periodic_update.cc
+  src/core/lib/resource_quota/stream_quota.cc
+  src/core/util/per_cpu.cc
+  src/core/util/time.cc
+  test/core/resource_quota/stream_quota_test.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(stream_quota_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(stream_quota_test PUBLIC cxx_std_17)
+target_include_directories(stream_quota_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(stream_quota_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::config
+  absl::function_ref
+  absl::hash
+  absl::statusor
+  gpr
 )
 
 
