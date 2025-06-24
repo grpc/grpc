@@ -12,17 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Common types for gRPC Async API"""
-
-from typing import (
-    Any,
-    AsyncIterable,
-    Callable,
-    Iterable,
-    Sequence,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from collections.abc import AsyncIterable
+from collections.abc import Iterable
+from collections.abc import Sequence
+from typing import Any, Callable, Tuple, TypeVar, Union
 
 from grpc._cython.cygrpc import EOF
 
