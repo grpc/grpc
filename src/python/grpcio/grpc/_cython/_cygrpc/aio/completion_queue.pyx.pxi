@@ -94,7 +94,7 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
         else:
             self._loops[loop] = _BoundEventLoop(loop, self._read_socket, self._handle_events)
 
-    cdef void _poll(self) nogil:
+    cdef int _poll(self) noexcept nogil:
         cdef grpc_event event
         cdef CallbackContext *context
 
@@ -102,10 +102,8 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
             event = grpc_completion_queue_next(self._cq,
                                                _GPR_INF_FUTURE,
                                                NULL)
-
             if event.type == GRPC_QUEUE_TIMEOUT:
-                with gil:
-                    raise AssertionError("Core should not return GRPC_QUEUE_TIMEOUT!")
+                return 1
             elif event.type == GRPC_QUEUE_SHUTDOWN:
                 self._shutdown = True
             else:
@@ -120,10 +118,14 @@ cdef class PollerCompletionQueue(BaseCompletionQueue):
                         # instead of delegate to any thread, the polling thread
                         # should handle the distribution of the event.
                         self._handle_events(None)
+        return 0
 
     def _poll_wrapper(self):
+        cdef int poll_result 
         with nogil:
-            self._poll()
+            poll_result = self._poll()
+        if poll_result == 1:
+            raise AssertionError("Core should not return GRPC_QUEUE_TIMEOUT!")
 
     cdef shutdown(self):
         # Removes the socket hook from loops
