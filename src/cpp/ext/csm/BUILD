@@ -66,10 +66,10 @@ grpc_cc_library(
         "//src/core:channel_args",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:grpc_check",
         "//src/core:metadata_batch",
         "//src/core:slice",
         "//src/core:xds_enabled_server",
-        "//src/core:grpc_check",
         "//src/cpp/ext/otel:otel_plugin",
     ],
 )

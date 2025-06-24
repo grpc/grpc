@@ -124,7 +124,7 @@ grpc_cc_library(
     hdrs = ["util/grpc_check.h"],
     external_deps = [
         "absl/log:check",
-        "absl/log"
+        "absl/log",
     ],
     deps = [
         "postmortem",

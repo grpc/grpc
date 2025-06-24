@@ -80,6 +80,7 @@ grpc_cc_library(
         "//src/core:error",
         "//src/core:event_engine_utils",
         "//src/core:experiments",
+        "//src/core:grpc_check",
         "//src/core:match",
         "//src/core:metadata_batch",
         "//src/core:metrics",
@@ -87,6 +88,5 @@ grpc_cc_library(
         "//src/core:slice_buffer",
         "//src/core:sync",
         "//src/core:tcp_tracer",
-        "//src/core:grpc_check",
     ],
 )

@@ -180,12 +180,12 @@ grpc_cc_library(
         "//src/core:env",
         "//src/core:error",
         "//src/core:gcp_metadata_query",
+        "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
         "//src/core:load_file",
         "//src/core:slice",
         "//src/core:status_helper",
         "//src/core:sync",
         "//src/core:time",
-        "//src/core:grpc_check",
     ],
 )
