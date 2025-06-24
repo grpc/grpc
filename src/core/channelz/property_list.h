@@ -29,18 +29,21 @@
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core::channelz {
 
-class PropertyList;
-class PropertyGrid;
-class PropertyTable;
+class OtherPropertyValue {
+ public:
+  virtual ~OtherPropertyValue() = default;
+  virtual void FillAny(google_protobuf_Any* any, upb_Arena* arena) = 0;
+  virtual Json::Object TakeJsonObject() = 0;
+};
 
 using PropertyValue =
     std::variant<absl::string_view, std::string, int64_t, uint64_t, double,
                  bool, Duration, Timestamp, absl::Status,
-                 std::shared_ptr<PropertyList>, std::shared_ptr<PropertyGrid>,
-                 std::shared_ptr<PropertyTable>>;
+                 std::shared_ptr<OtherPropertyValue>>;
 
 namespace property_list_detail {
 
@@ -84,6 +87,23 @@ struct Wrapper<const char*> {
 };
 
 template <>
+struct Wrapper<std::shared_ptr<OtherPropertyValue>> {
+  static std::optional<PropertyValue> Wrap(
+      std::shared_ptr<OtherPropertyValue> value) {
+    if (value == nullptr) return std::nullopt;
+    return PropertyValue(std::move(value));
+  }
+};
+
+template <typename T>
+struct Wrapper<T, std::enable_if_t<std::is_base_of_v<OtherPropertyValue, T> &&
+                                   std::is_final_v<T>>> {
+  static std::optional<PropertyValue> Wrap(T value) {
+    return PropertyValue(std::make_shared<T>(std::move(value)));
+  }
+};
+
+template <>
 struct Wrapper<bool> {
   static std::optional<PropertyValue> Wrap(bool value) {
     return PropertyValue(value);
@@ -98,7 +118,7 @@ struct Wrapper<bool> {
 // something that channelz presenters can interpret. It's currently defined in
 // terms of JSON, but as we adopt channelz-v2 it's expected we'll change this
 // to capture protobuf directly.
-class PropertyList {
+class PropertyList final : public OtherPropertyValue {
  public:
   template <typename T>
   PropertyList& Set(absl::string_view key, T value) {
@@ -109,9 +129,9 @@ class PropertyList {
   PropertyList& Merge(PropertyList other);
 
   // TODO(ctiller): remove soon, switch to just FillUpbProto.
-  Json::Object TakeJsonObject();
+  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyList* proto, upb_Arena* arena);
-  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 
  private:
   void SetInternal(absl::string_view key, std::optional<PropertyValue> value);
@@ -122,21 +142,10 @@ class PropertyList {
   absl::flat_hash_map<std::string, PropertyValue> property_list_;
 };
 
-namespace property_list_detail {
-
-template <>
-struct Wrapper<PropertyList> {
-  static std::optional<PropertyValue> Wrap(PropertyList value) {
-    return PropertyValue(std::make_shared<PropertyList>(std::move(value)));
-  }
-};
-
-};  // namespace property_list_detail
-
 // PropertyGrid is much the same as PropertyList, but it is two dimensional.
 // Each row and column can be set independently.
 // Rows and columns are ordered by the first setting of a value on them.
-class PropertyGrid {
+class PropertyGrid final : public OtherPropertyValue {
  public:
   template <typename T>
   PropertyGrid& Set(absl::string_view column, absl::string_view row, T value) {
@@ -147,9 +156,9 @@ class PropertyGrid {
   PropertyGrid& SetColumn(absl::string_view column, PropertyList values);
   PropertyGrid& SetRow(absl::string_view row, PropertyList values);
 
-  Json::Object TakeJsonObject();
+  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyGrid* proto, upb_Arena* arena);
-  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 
  private:
   void SetInternal(absl::string_view column, absl::string_view row,
@@ -160,20 +169,9 @@ class PropertyGrid {
   absl::flat_hash_map<std::pair<size_t, size_t>, PropertyValue> grid_;
 };
 
-namespace property_list_detail {
-
-template <>
-struct Wrapper<PropertyGrid> {
-  static std::optional<PropertyValue> Wrap(PropertyGrid value) {
-    return PropertyValue(std::make_shared<PropertyGrid>(std::move(value)));
-  }
-};
-
-};  // namespace property_list_detail
-
 // PropertyTable is much the same as PropertyGrid, but has numbered rows
 // instead of named rows.
-class PropertyTable {
+class PropertyTable final : public OtherPropertyValue {
  public:
   template <typename T>
   PropertyTable& Set(absl::string_view column, size_t row, T value) {
@@ -186,9 +184,9 @@ class PropertyTable {
     return SetRow(num_rows_, std::move(values));
   }
 
-  Json::Object TakeJsonObject();
+  Json::Object TakeJsonObject() override;
   void FillUpbProto(grpc_channelz_v2_PropertyTable* proto, upb_Arena* arena);
-  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena) override;
 
  private:
   void SetInternal(absl::string_view column, size_t row,
@@ -198,17 +196,6 @@ class PropertyTable {
   size_t num_rows_ = 0;
   absl::flat_hash_map<std::pair<size_t, size_t>, PropertyValue> grid_;
 };
-
-namespace property_list_detail {
-
-template <>
-struct Wrapper<PropertyTable> {
-  static std::optional<PropertyValue> Wrap(PropertyTable value) {
-    return PropertyValue(std::make_shared<PropertyTable>(std::move(value)));
-  }
-};
-
-};  // namespace property_list_detail
 
 }  // namespace grpc_core::channelz
 
