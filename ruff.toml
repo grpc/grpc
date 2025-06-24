@@ -45,6 +45,7 @@ ignore = [
     "FBT002", # Checks for the use of boolean positional arguments in function definitions, as determined by the presence of a boolean default value.
 
     "UP006", # Checks for the use of generics that can be replaced with standard library variants based on PEP 585.
+    "UP035", # Checks for uses of deprecated imports based on the minimum supported Python version. (`typing.Tuple` is deprecated, use `tuple` instead)
 ]
 
 # This is to suppress
