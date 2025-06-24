@@ -1897,6 +1897,7 @@
     <file baseinstalldir="/" name="src/core/util/glob.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/glob.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/gpr_time.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/util/grpc_check.cc" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_check.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/util/grpc_if_nametoindex_posix.cc" role="src" />

@@ -826,6 +826,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/util/gethostname_sysconf.cc \
     src/core/util/glob.cc \
     src/core/util/gpr_time.cc \
+    src/core/util/grpc_check.cc \
     src/core/util/grpc_if_nametoindex_posix.cc \
     src/core/util/grpc_if_nametoindex_unsupported.cc \
     src/core/util/host_port.cc \

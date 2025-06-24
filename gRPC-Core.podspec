@@ -2031,6 +2031,7 @@ Pod::Spec.new do |s|
                       'src/core/util/glob.cc',
                       'src/core/util/glob.h',
                       'src/core/util/gpr_time.cc',
+                      'src/core/util/grpc_check.cc',
                       'src/core/util/grpc_check.h',
                       'src/core/util/grpc_if_nametoindex.h',
                       'src/core/util/grpc_if_nametoindex_posix.cc',

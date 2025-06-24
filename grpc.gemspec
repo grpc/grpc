@@ -1915,6 +1915,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/util/glob.cc )
   s.files += %w( src/core/util/glob.h )
   s.files += %w( src/core/util/gpr_time.cc )
+  s.files += %w( src/core/util/grpc_check.cc )
   s.files += %w( src/core/util/grpc_check.h )
   s.files += %w( src/core/util/grpc_if_nametoindex.h )
   s.files += %w( src/core/util/grpc_if_nametoindex_posix.cc )
