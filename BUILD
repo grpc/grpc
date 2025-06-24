@@ -5198,6 +5198,16 @@ grpc_upb_proto_reflection_library(
     deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
 )
 
+grpc_upb_proto_library(
+    name = "promise_upb",
+    deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "promise_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
+)
+
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
     "duration",
