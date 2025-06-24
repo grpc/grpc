@@ -132,7 +132,6 @@ class MatcherTest : public ::testing::Test {
     ASSERT_EQ(result.size(), 1);
 
     const char* kExpectedTypeUrl =
-        "type.googleapis.com/"
         "envoy.extensions.filters.http.rate_limit_quota.v3."
         "RateLimitQuotaBucketSettings";
     ASSERT_EQ(result[0]->type_url(), kExpectedTypeUrl);

@@ -78,58 +78,18 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
     errors->AddError("Fail to extract XdsExtenstion");
     return nullptr;
   }
-  // Supported Extension check
-  // Add other supported Actions here (switch case or registery ??)
-  if (extension->type !=
+  const auto& registry =
+      DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
+          .xds_matcher_action_registry();
+  RefCountedPtr<ActionConfig> parsed_config = registry.ParseConfig(
       "envoy.extensions.filters.http.rate_limit_quota.v3."
-      "RateLimitQuotaBucketSettings") {
-    errors->AddError("unsupported action type");
+      "RateLimitQuotaBucketSettings",
+      context, action, errors);
+  if (parsed_config == nullptr) {
+    errors->AddError("Unsupported action type");
     return nullptr;
   }
-  // Parse RLQS Bucketing action
-  // Move to seprate function
-  BucketingAction::BucketConfig config;
-  absl::string_view* serialised_rate_limit_quota_bucket_settings =
-      std::get_if<absl::string_view>(&extension->value);
-  auto rate_limit_quota_bucket_settings =
-      envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_parse(
-          serialised_rate_limit_quota_bucket_settings->data(),
-          serialised_rate_limit_quota_bucket_settings->size(), context.arena);
-  // Other cases needed to be supported. Having only bucket_id_builder for now.
-  if (!envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_has_bucket_id_builder(
-          rate_limit_quota_bucket_settings)) {
-    errors->AddError("bucket_id_builder missing, rest value are unsupported");
-    return nullptr;
-  }
-  auto bucket_id_builder =
-      envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_bucket_id_builder(
-          rate_limit_quota_bucket_settings);
-  // parse map to get generate key:value pair
-  size_t iter = kUpb_Map_Begin;
-  upb_StringView key;
-  const envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder*
-      value;
-  while (
-      envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_bucket_id_builder_next(
-          bucket_id_builder, &key, &value, &iter)) {
-    // Checking only string value other values are also possible (May need to
-    // support)
-    if (envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_has_string_value(
-            value)) {
-      auto string_value =
-          envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_BucketIdBuilder_ValueBuilder_string_value(
-              value);
-      // Add to Map
-      config.map[UpbStringToStdString(key)] =
-          UpbStringToStdString(string_value);
-    }
-  }
-  // Create and return Bucketing Action
-  if (config.map.empty()) {
-    errors->AddError("bucket_id_builder map parsing failed");
-    return nullptr;
-  }
-  return std::make_unique<BucketingAction>(config);
+  return registry.CreateAction(parsed_config);
 }
 
 // Parse and generate input matcher with type string_view
