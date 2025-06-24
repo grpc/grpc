@@ -59,7 +59,7 @@ class Server(_base_server.Server):
                     f"Interceptor must be ServerInterceptor, the following are invalid: "
                     f"{invalid_interceptors}"
                 )
-                raise TypeError(
+                raise ValueError(
                     msg,
                 )
         self._server = cygrpc.AioServer(
