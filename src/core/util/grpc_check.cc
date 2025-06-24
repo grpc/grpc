@@ -15,8 +15,8 @@
 #ifdef GRPC_POSTMORTEM_CHECKS
 #include "src/core/util/postmortem_emit.h"
 
-bool PostMortemEmitAndReturnFalse() {
+bool PostMortemEmitAndReturnTrue() {
   grpc_core::PostMortemEmit();
-  return false;
+  return true;
 }
 #endif

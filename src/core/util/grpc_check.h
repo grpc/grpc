@@ -20,45 +20,45 @@
 #include "src/core/util/postmortem_emit.h"
 #include <limits.h>
 
-bool PostMortemEmitAndReturnFalse();
+bool PostMortemEmitAndReturnTrue();
 
 #undef CHECK
 #define CHECK(a) \
-  if (!(a) && PostMortemEmitAndReturnFalse()) LOG(FATAL) << "Failed CHECK(#a). "
+  if (!(a) && PostMortemEmitAndReturnTrue()) LOG(FATAL) << "Failed CHECK(#a). "
 
 #undef CHECK_EQ
 #define CHECK_EQ(a, b)                       \
-  if (!((a) == (b)) && PostMortemEmitAndReturnFalse()) \
+  if (!((a) == (b)) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_EQ(#a, #b). "
 
 #undef CHECK_NE
 #define CHECK_NE(a, b)                     \
-  if ((a) == (b) && PostMortemEmitAndReturnFalse()) \
+  if ((a) == (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_NE(#a, #b). "
 
 #undef CHECK_GT
 #define CHECK_GT(a, b)                     \
-  if ((a) <= (b) && PostMortemEmitAndReturnFalse()) \
+  if ((a) <= (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_GT(#a, #b). "
 
 #undef CHECK_LT
 #define CHECK_LT(a, b)                     \
-  if ((a) >= (b) && PostMortemEmitAndReturnFalse()) \
+  if ((a) >= (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_LT(#a,  #b). "
 
 #undef CHECK_GE
 #define CHECK_GE(a, b)                    \
-  if ((a) < (b) && PostMortemEmitAndReturnFalse()) \
+  if ((a) < (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_GE(#a, #b). "
 
 #undef CHECK_LE
 #define CHECK_LE(a, b)                    \
-  if ((a) > (b) && PostMortemEmitAndReturnFalse()) \
+  if ((a) > (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_LE: #a vs #b"
 
 #undef CHECK_OK
 #define CHECK_OK(a)                       \
-  if (!(a).ok() && PostMortemEmitAndReturnFalse()) \
+  if (!(a).ok() && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed "                 \
                 "CHECK_OK(#a). "
 
