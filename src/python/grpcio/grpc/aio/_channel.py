@@ -366,10 +366,10 @@ class Channel(_base_channel.Channel):
                 else:
                     raise ValueError( # noqa: TRY004
                         "Interceptor {} must be ".format(interceptor) # noqa: UP032
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
+                        + f"{UnaryUnaryClientInterceptor.__name__} or "
+                        + f"{UnaryStreamClientInterceptor.__name__} or "
+                        + f"{StreamUnaryClientInterceptor.__name__} or "
+                        + f"{StreamStreamClientInterceptor.__name__}. ",
                     )
 
         self._loop = cygrpc.get_working_loop()
