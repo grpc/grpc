@@ -20,7 +20,7 @@ from functools import partial
 import inspect
 import logging
 import traceback
-from typing import TYPE_CHECKING, Any, Generic, Optional, Union
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 from grpc import _common
@@ -36,10 +36,6 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
-
-if TYPE_CHECKING:
-    from collections.abc import AsyncIterator
-    from collections.abc import Generator
 
 __all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 
