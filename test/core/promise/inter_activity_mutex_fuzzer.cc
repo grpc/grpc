@@ -30,9 +30,6 @@
 #include "test/core/promise/inter_activity_mutex_fuzzer.pb.h"
 #include "test/core/promise/poll_matcher.h"
 
-using ::testing::Mock;
-using ::testing::StrictMock;
-
 namespace grpc_core {
 namespace {
 
