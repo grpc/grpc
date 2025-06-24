@@ -14,9 +14,16 @@
 """Common types for gRPC Async API"""
 from __future__ import annotations
 
-from collections.abc import AsyncIterable
-from collections.abc import Iterable
-from typing import Any, Callable, Sequence, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    AsyncIterable,
+    Callable,
+    Iterable,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 from grpc._cython.cygrpc import EOF
 
