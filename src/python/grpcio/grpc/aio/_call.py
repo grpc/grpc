@@ -15,14 +15,12 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
-from collections.abc import Generator
 import enum
 from functools import partial
 import inspect
 import logging
 import traceback
-from typing import Any, Generic, Optional, Union
+from typing import TYPE_CHECKING, Any, Generic, Optional, Union
 
 import grpc
 from grpc import _common
@@ -38,6 +36,10 @@ from ._typing import RequestIterableType
 from ._typing import RequestType
 from ._typing import ResponseType
 from ._typing import SerializingFunction
+
+if TYPE_CHECKING:
+    from collections.abc import AsyncIterator
+    from collections.abc import Generator
 
 __all__ = "AioRpcError", "Call", "UnaryStreamCall", "UnaryUnaryCall"
 
@@ -165,7 +167,7 @@ class AioRpcError(grpc.RpcError):
         return self._repr()
 
     def __reduce__(self) -> tuple[
-        type["AioRpcError"],  # Type object of the class AioRpcError
+        type[AioRpcError],  # Type object of the class AioRpcError
         tuple[
             grpc.StatusCode,  # self._code
             Metadata,  # self._initial_metadata
