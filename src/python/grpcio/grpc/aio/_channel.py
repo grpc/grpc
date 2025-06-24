@@ -364,8 +364,10 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError( # noqa: TRY004
-                        "Interceptor {} must be ".format(interceptor) # noqa: UP032
+                    raise ValueError(  # noqa: TRY004
+                        "Interceptor {} must be ".format(  # noqa: UP032
+                            interceptor
+                        )
                         + f"{UnaryUnaryClientInterceptor.__name__} or "
                         + f"{UnaryStreamClientInterceptor.__name__} or "
                         + f"{StreamUnaryClientInterceptor.__name__} or "
