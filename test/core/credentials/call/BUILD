@@ -48,6 +48,8 @@ grpc_cc_test(
         "absl/strings",
         "gtest",
     ],
+    uses_event_engine = False,
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//src/core:jwt_util",
