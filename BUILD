@@ -2715,6 +2715,7 @@ grpc_cc_library(
         "grpc++",
         "grpc++_config_proto",
         "//src/proto/grpc/channelz:channelz_proto",
+        "//src/proto/grpc/channelz/v2:service_cc_grpc",
     ],
     alwayslink = 1,
 )
