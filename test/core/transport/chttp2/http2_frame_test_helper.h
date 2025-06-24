@@ -22,6 +22,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/slice/slice.h"
@@ -35,6 +36,10 @@ using EventEngineSlice = grpc_event_engine::experimental::Slice;
 
 class Http2FrameTestHelper {
  public:
+  uint32_t GetDefaultInitialWindowSize() {
+    return Http2Settings::max_initial_window_size() - 1;
+  }
+
   EventEngineSlice EventEngineSliceFromHttp2DataFrame(
       std::string_view payload, const uint32_t stream_id = 1,
       const bool end_stream = false) const {

@@ -691,6 +691,10 @@ Http2ClientTransport::Http2ClientTransport(
   keepalive_manager_.Spawn(general_party_.get());
 
   // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  Http2ErrorCode code = settings_.mutable_local().Apply(
+      Http2Settings::kInitialWindowSizeWireId,
+      Http2Settings::max_initial_window_size() - 1);
+  DCHECK(code == Http2ErrorCode::kNoError);
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
   if (settings_frame.has_value()) {
