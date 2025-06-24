@@ -106,5 +106,6 @@ message Promise {
     Loop loop_promise = 3;
     Race race_promise = 4;
     Seq seq_promise = 5;
+    Join join_promise = 6;
   }
 }
