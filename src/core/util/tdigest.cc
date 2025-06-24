@@ -406,8 +406,9 @@ absl::Status TDigest::FromString(absl::string_view string) {
     return absl::OkStatus();
   }
 
+  // DO NOT SUBMIT:  << "Invalid sum value."
   // Validate min/max/sum/count.
-  DCHECK_LT(std::abs(sum - sum_), 1e-10) << "Invalid sum value.";
+  DCHECK_LT(std::abs(sum - sum_), 1e-10);
 
   if (count != count_) {
     return absl::InvalidArgumentError("Invalid count value.");

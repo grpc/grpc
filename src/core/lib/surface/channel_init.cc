@@ -152,9 +152,9 @@ class ChannelInit::DependencyTracker {
 
   FilterRegistration* Next() {
     if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
-                                               "filters:\n"
-                                            << GraphString();
+      // DO NOT SUBMIT: << "Unresolvable graph of channel "filters:\n" <<
+      // GraphString()
+      CHECK_EQ(nodes_taken_, nodes_.size());
       return nullptr;
     }
     auto next = ready_dependencies_.top();
@@ -164,10 +164,10 @@ class ChannelInit::DependencyTracker {
       // Constraint: if we use ordering other than default, then we must have an
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
+      // DO NOT SUBMIT: << "Ambiguous ordering between " << next.node->name() <<
+      // " and " << ready_dependencies_.top().node->name()
       CHECK_NE(next.node->ordering(),
-               ready_dependencies_.top().node->ordering())
-          << "Ambiguous ordering between " << next.node->name() << " and "
-          << ready_dependencies_.top().node->name();
+               ready_dependencies_.top().node->ordering());
     }
     for (Node* dependent : next.node->dependents) {
       CHECK_GT(dependent->waiting_dependencies, 0u);
@@ -195,7 +195,8 @@ class ChannelInit::DependencyTracker {
 
   absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
     auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
+    // DO NOT SUBMIT:  << "Filter " << name.name() << " not found"
+    CHECK(it != nodes_.end());
     return it->second.all_dependencies;
   }
 

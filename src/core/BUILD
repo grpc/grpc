@@ -120,9 +120,11 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "grpc_check",
+    srcs = ["util/grpc_check.cc"],
     hdrs = ["util/grpc_check.h"],
     external_deps = [
         "absl/log:check",
+        "absl/log"
     ],
     deps = [
         "postmortem",

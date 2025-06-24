@@ -562,7 +562,8 @@ Poller::WorkResult PollPoller::Work(
 
     pfd_count = 1;
     auto wakeup_fd = posix_interface().GetFd(wakeup_fd_->ReadFd());
-    CHECK(wakeup_fd.ok()) << wakeup_fd.StrError();
+    // DO NOT SUBMIT:  << wakeup_fd.StrError()
+    CHECK(wakeup_fd.ok());
     pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;

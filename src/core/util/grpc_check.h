@@ -16,83 +16,70 @@
 #define GRPC_SRC_CORE_UTIL_GRPC_CHECK_H
 
 #ifdef GRPC_POSTMORTEM_CHECKS
-#include "src/core/util/crash.h"
+#include "absl/log/log.h"
 #include "src/core/util/postmortem_emit.h"
 
+bool PostMortemEmitFalse();
+
 #undef CHECK
-#define CHECK(a)                          \
-  if (!(a)) {                             \
-    grpc_core::PostMortemEmit();          \
-    grpc_core::Crash("Failed CHECK: #a"); \
-  }
+#define CHECK(a) \
+  if (!(a) && PostMortemEmitFalse()) LOG(FATAL) << "Failed CHECK(#a). "
 
 #undef CHECK_EQ
-#define CHECK_EQ(a, b)                             \
-  if ((a) != (b)) {                                \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_EQ: #a vs #b"); \
-  }
+#define CHECK_EQ(a, b)                       \
+  if (!((a) == (b)) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_EQ(#a, #b). "
 
 #undef CHECK_NE
-#define CHECK_NE(a, b)                             \
-  if ((a) == (b)) {                                \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_NE: #a vs #b"); \
-  }
+#define CHECK_NE(a, b)                     \
+  if ((a) == (b) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_NE(#a, #b). "
 
 #undef CHECK_GT
-#define CHECK_GT(a, b)                             \
-  if ((a) <= (b)) {                                \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_GT: #a vs #b"); \
-  }
+#define CHECK_GT(a, b)                     \
+  if ((a) <= (b) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_GT(#a, #b). "
 
 #undef CHECK_LT
-#define CHECK_LT(a, b)                             \
-  if ((a) >= (b)) {                                \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_LT: #a vs #b"); \
-  }
+#define CHECK_LT(a, b)                     \
+  if ((a) >= (b) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_LT(#a,  #b). "
 
 #undef CHECK_GE
-#define CHECK_GE(a, b)                             \
-  if ((a) < (b)) {                                 \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_GE: #a vs #b"); \
-  }
+#define CHECK_GE(a, b)                    \
+  if ((a) < (b) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_GE(#a, #b). "
 
 #undef CHECK_LE
-#define CHECK_LE(a, b)                             \
-  if ((a) > (b)) {                                 \
-    grpc_core::PostMortemEmit();                   \
-    grpc_core::Crash("Failed CHECK_LE: #a vs #b"); \
-  }
+#define CHECK_LE(a, b)                    \
+  if ((a) > (b) && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed CHECK_LE: #a vs #b"
 
-#ifndef NDEBUG
+#undef CHECK_OK
+#define CHECK_OK(a)                       \
+  if (!(a).ok() && PostMortemEmitFalse()) \
+  LOG(FATAL) << "Failed "                 \
+                "CHECK_OK(#a). "
+
 #undef DCHECK
-#define DCHECK(a) CHECK(a)
 #undef DCHECK_GE
-#define DCHECK_GE(a, b) CHECK_GE(a, b)
 #undef DCHECK_LE
-#define DCHECK_LE(a, b) CHECK_LE(a, b)
 #undef DCHECK_GT
-#define DCHECK_GT(a, b) CHECK_GT(a, b)
 #undef DCHECK_LT
-#define DCHECK_LT(a, b) CHECK_LT(a, b)
 #undef DCHECK_NE
+#ifndef NDEBUG
+#define DCHECK(a) CHECK(a)
+#define DCHECK_GE(a, b) CHECK_GE(a, b)
+#define DCHECK_LE(a, b) CHECK_LE(a, b)
+#define DCHECK_GT(a, b) CHECK_GT(a, b)
+#define DCHECK_LT(a, b) CHECK_LT(a, b)
 #define DCHECK_NE(a, b) CHECK_NE(a, b)
 #else
-#undef DCHECK
 #define DCHECK(a)
-#undef DCHECK_GE
 #define DCHECK_GE(a, b)
-#undef DCHECK_LE
 #define DCHECK_LE(a, b)
-#undef DCHECK_GT
 #define DCHECK_GT(a, b)
-#undef DCHECK_LT
 #define DCHECK_LT(a, b)
-#undef DCHECK_NE
 #define DCHECK_NE(a, b)
 #endif
 

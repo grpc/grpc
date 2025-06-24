@@ -53,9 +53,10 @@ class GrpcMessageAssembler {
   // This function will move the payload into an internal buffer.
   Http2Status AppendNewDataFrame(SliceBuffer& payload,
                                  const bool is_end_stream) {
-    DCHECK(!is_end_stream_)
-        << "Calling this function when a previous frame was marked as the last "
-           "frame does not make sense.";
+    // DO NOT SUBMIT: << "Calling this function when a previous frame was marked
+    // as the last "
+    //"frame does not make sense."
+    DCHECK(!is_end_stream_);
     is_end_stream_ = is_end_stream;
     if constexpr (sizeof(size_t) == 4) {
       if (GPR_UNLIKELY(message_buffer_.Length() >=
@@ -142,8 +143,9 @@ class GrpcMessageDisassembler {
   // GrpcMessageDisassembler object will take ownership of the message.
   void PrepareBatchedMessageForSending(MessageHandle message) {
     PrepareMessageForSending(std::move(message));
-    DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize)
-        << "Avoid batches larger than " << kMaxMessageBatchSize << "bytes";
+    // DO NOT SUBMIT: << "Avoid batches larger than " << kMaxMessageBatchSize <<
+    // "bytes"
+    DCHECK_LE(GetBufferedLength(), kMaxMessageBatchSize);
   }
 
   size_t GetBufferedLength() const { return message_.Length(); }
