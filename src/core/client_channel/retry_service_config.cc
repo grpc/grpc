@@ -177,10 +177,10 @@ void RetryMethodConfig::JsonPostLoad(const Json& json, const JsonArgs& args,
           errors, absl::StrCat(".retryableStatusCodes[", i, "]"));
       grpc_status_code status;
       static const auto is_valid_code = grpc_status_code_from_string((*status_code_list)[i].c_str(),
-                                        &status)
+                                                                     &status);
       if (!is_valid_code) {
         errors->AddError("failed to parse status code");
-      } else if (status == grpc_status_code.GRPC_STATUS_DEADLINE_EXCEEDED) {
+      } else if (status == GRPC_STATUS_DEADLINE_EXCEEDED) {
         errors->AddError("DEADLINE_EXCEEDED should not be retried since it is scoped to the request");
       } else {
         retryable_status_codes_.Add(status);
