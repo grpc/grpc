@@ -341,9 +341,19 @@ class WriteContext {
   }
 
   grpc_chttp2_stream* NextStream() {
-    if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
-      result_.partial = true;
-      return nullptr;
+    if (grpc_core::IsChttp2BoundWriteSizeEnabled()) {
+      if (t_->outbuf.c_slice_buffer()->length >= target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
+    } else {
+      // TODO(ctiller): this is likely buggy now, but everything seems to be
+      // working, so I'm keeping the above fix just for the experiment until
+      // we've had time to soak it fully.
+      if (t_->outbuf.c_slice_buffer()->length > target_write_size_) {
+        result_.partial = true;
+        return nullptr;
+      }
     }
 
     grpc_chttp2_stream* s;

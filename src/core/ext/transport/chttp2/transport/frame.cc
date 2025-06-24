@@ -632,6 +632,16 @@ http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
   }
 }
 
+http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
+  if (GPR_UNLIKELY(error_code > http2::GetMaxHttp2ErrorCode())) {
+    LOG(ERROR) << "Http2ErrorCodeFromRstFrameErrorCode: Invalid error code "
+                  "received from RST_STREAM frame: "
+               << error_code;
+    return http2::Http2ErrorCode::kInternalError;
+  }
+  return static_cast<http2::Http2ErrorCode>(error_code);
+}
+
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
   CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
