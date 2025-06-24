@@ -96,7 +96,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
 
@@ -137,7 +138,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
@@ -155,8 +157,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
   AppendGrpcHeaderToSliceBuffer(buffer, 0, 6);
   buffer.Append(SliceBuffer(Slice::FromExternalString("Hello!")));
 
-  Http2Frame frame = Http2DataFrame{
-      .stream_id = 9, .end_stream = false, .payload = std::move(buffer)};
+  Http2Frame frame = Http2DataFrame{/*stream_id=*/9, /*end_stream=*/false,
+                                    /*payload=*/std::move(buffer)};
 
   auto promise =
       client_transport->TestOnlyEnqueueOutgoingFrame(std::move(frame));
@@ -181,7 +183,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
 
@@ -244,7 +247,8 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
 
@@ -311,7 +315,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
@@ -349,7 +354,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -420,7 +426,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       absl::UnavailableError("Connection closed"), event_engine().get());
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -476,7 +483,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
 
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -568,7 +576,8 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
   mock_endpoint.ExpectWrite(
       {
-          helper_.EventEngineSliceFromHttp2SettingsFrame({{4, 65535}}),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
 

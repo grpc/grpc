@@ -13960,10 +13960,6 @@ targets:
   - gtest
   - protobuf
   - grpc_test_util
-  platforms:
-  - linux
-  - posix
-  - mac
   uses_polling: false
 - name: http2_server_transport_test
   gtest: true
@@ -15096,6 +15092,7 @@ targets:
   deps:
   - gtest
   - grpc_test_util
+  uses_polling: false
 - name: jwt_verifier_test
   gtest: true
   build: test
