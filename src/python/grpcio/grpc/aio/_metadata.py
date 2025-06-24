@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
