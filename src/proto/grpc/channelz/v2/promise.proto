@@ -29,6 +29,8 @@ syntax = "proto3";
 
 package grpc.channelz.v2;
 
+import "src/proto/grpc/channelz/v2/property_list.proto";
+
 message Promise {
   // A custom promise - usually a specific poller implementation that
   // has some custom data to export.
