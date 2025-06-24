@@ -50,8 +50,8 @@ grpc_internal_proto_library(
     name = "promise_proto",
     srcs = ["promise.proto"],
     deps = [
-        "property_list_proto"
-    ]
+        "property_list_proto",
+    ],
 )
 
 grpc_cc_proto_library(
