@@ -15,8 +15,8 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
-import functools
 import collections
+import functools
 from typing import (
     Any,
     AsyncIterable,
