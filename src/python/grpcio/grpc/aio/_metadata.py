@@ -16,8 +16,10 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
-from collections.abc import Iterator
 from typing import Any, Optional, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
