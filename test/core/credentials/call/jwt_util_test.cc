@@ -30,6 +30,8 @@ namespace grpc_core {
 namespace {
 
 TEST(GetJwtExpirationTime, Valid) {
+  // Set epoch to avoid rounding error.
+  TestOnlySetProcessEpoch({0, 0, GPR_CLOCK_MONOTONIC});
   std::string token = absl::StrCat(
       "foo.", absl::WebSafeBase64Escape("{\"exp\":499996800}"), ".bar");
   auto result = GetJwtExpirationTime(token);
