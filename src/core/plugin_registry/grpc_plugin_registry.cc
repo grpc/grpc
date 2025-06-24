@@ -70,6 +70,7 @@ extern void RegisterHttpProxyMapper(CoreConfiguration::Builder* builder);
 extern void RegisterConnectedChannel(CoreConfiguration::Builder* builder);
 extern void RegisterLoadBalancedCallDestination(
     CoreConfiguration::Builder* builder);
+extern void RegisterChttp2Transport(CoreConfiguration::Builder* builder);
 #ifndef GRPC_NO_RLS
 extern void RegisterRlsLbPolicy(CoreConfiguration::Builder* builder);
 #endif  // !GRPC_NO_RLS
@@ -98,6 +99,7 @@ void BuildCoreConfiguration(CoreConfiguration::Builder* builder) {
   RegisterEndpointInfoHandshaker(builder);
   RegisterHttpConnectHandshaker(builder);
   RegisterTCPConnectHandshaker(builder);
+  RegisterChttp2Transport(builder);
   RegisterPriorityLbPolicy(builder);
   RegisterOutlierDetectionLbPolicy(builder);
   RegisterWeightedTargetLbPolicy(builder);

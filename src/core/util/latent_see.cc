@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "src/core/util/ring_buffer.h"
 #include "src/core/util/sync.h"
@@ -37,6 +38,27 @@ std::atomic<uint64_t> Flow::next_flow_id_{1};
 std::atomic<uintptr_t> Log::free_bins_{0};
 const std::chrono::steady_clock::time_point start_time =
     std::chrono::steady_clock::now();
+
+void Log::InstallAtExitHandler() {
+  atexit([] {
+    auto& log = Log::Get();
+    auto json = log.TryGenerateJson();
+    if (!json.has_value()) {
+      LOG(INFO) << "Failed to generate latent_see.json (contention with "
+                   "another writer)";
+      return;
+    }
+    if (log.stats_flusher_ != nullptr) {
+      log.stats_flusher_(*json);
+      return;
+    }
+    LOG(INFO) << "Writing latent_see.json in " << get_current_dir_name();
+    FILE* f = fopen("latent_see.json", "w");
+    if (f == nullptr) return;
+    fprintf(f, "%s", json->c_str());
+    fclose(f);
+  });
+}
 
 void Log::TryPullEventsAndFlush(
     absl::FunctionRef<void(absl::Span<const RecordedEvent>)> callback) {
@@ -115,13 +137,17 @@ std::optional<std::string> Log::TryGenerateJson() {
         absl::StrAppend(
             &json, "{\"name\": \"", event.event.metadata->name,
             "\", \"ph\": \"", phase, "\", \"ts\": ",
-            Nanos(event.event.timestamp - start_time).count() / 1000.0,
+            absl::StrFormat(
+                "%.12g",
+                Nanos(event.event.timestamp - start_time).count() / 1000.0),
             ", \"pid\": 0, \"tid\": ", event.thread_id);
       } else {
         absl::StrAppend(
             &json, "{\"name\": ", event.event.metadata->name, ", \"ph\": \"",
             phase, "\", \"ts\": ",
-            Nanos(event.event.timestamp - start_time).count() / 1000.0,
+            absl::StrFormat(
+                "%.12g",
+                Nanos(event.event.timestamp - start_time).count() / 1000.0),
             ", \"pid\": 0, \"tid\": ", event.thread_id);
       }
 

@@ -48,6 +48,7 @@ DebugOnlyTraceFlag slice_refcount_trace(false, "slice_refcount");
 DebugOnlyTraceFlag stream_refcount_trace(false, "stream_refcount");
 DebugOnlyTraceFlag subchannel_refcount_trace(false, "subchannel_refcount");
 DebugOnlyTraceFlag work_serializer_trace(false, "work_serializer");
+DebugOnlyTraceFlag ztrace_trace(false, "ztrace");
 TraceFlag api_trace(false, "api");
 TraceFlag apple_polling_trace(false, "apple_polling");
 TraceFlag backend_metric_trace(false, "backend_metric");
@@ -78,7 +79,6 @@ TraceFlag event_engine_dns_trace(false, "event_engine_dns");
 TraceFlag event_engine_endpoint_trace(false, "event_engine_endpoint");
 TraceFlag event_engine_endpoint_data_trace(false, "event_engine_endpoint_data");
 TraceFlag event_engine_poller_trace(false, "event_engine_poller");
-TraceFlag executor_trace(false, "executor");
 TraceFlag fault_injection_filter_trace(false, "fault_injection_filter");
 TraceFlag flowctl_trace(false, "flowctl");
 TraceFlag fork_trace(false, "fork");
@@ -161,7 +161,6 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"event_engine_endpoint", &event_engine_endpoint_trace},
           {"event_engine_endpoint_data", &event_engine_endpoint_data_trace},
           {"event_engine_poller", &event_engine_poller_trace},
-          {"executor", &executor_trace},
           {"fault_injection_filter", &fault_injection_filter_trace},
           {"flowctl", &flowctl_trace},
           {"fork", &fork_trace},
@@ -235,6 +234,7 @@ const absl::flat_hash_map<std::string, TraceFlag*>& GetAllTraceFlags() {
           {"stream_refcount", &stream_refcount_trace},
           {"subchannel_refcount", &subchannel_refcount_trace},
           {"work_serializer", &work_serializer_trace},
+          {"ztrace", &ztrace_trace},
 #endif
       }));
   return *all;

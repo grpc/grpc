@@ -21,19 +21,14 @@
 
 #include <memory>
 #include <optional>
-#include <regex>
-#include <tuple>
 
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 #include "src/core/config/core_configuration.h"
-#include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/timer_manager.h"
-#include "src/core/util/no_destruct.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
 
@@ -42,8 +37,6 @@ using grpc_event_engine::experimental::FuzzingEventEngine;
 using grpc_event_engine::experimental::SetDefaultEventEngine;
 
 namespace grpc_core {
-
-bool CoreEnd2endTest::core_configuration_reset_ = true;
 
 Slice RandomSlice(size_t length) {
   size_t i;
@@ -68,17 +61,16 @@ Slice RandomBinarySlice(size_t length) {
 
 CoreEnd2endTest::CoreEnd2endTest(
     const CoreTestConfiguration* config,
-    const core_end2end_test_fuzzer::Msg* fuzzing_args, absl::string_view suite_name)
+    const core_end2end_test_fuzzer::Msg* fuzzing_args,
+    absl::string_view suite_name)
     : test_config_(config), fuzzing_(fuzzing_args != nullptr) {
   if (fuzzing_args != nullptr) {
     ConfigVars::Overrides overrides =
         OverridesFromFuzzConfigVars(fuzzing_args->config_vars());
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
     if (suite_name == "NoLoggingTests") overrides.trace = std::nullopt;
-    if (core_configuration_reset_) {
-      ConfigVars::SetOverrides(overrides);
-      TestOnlyReloadExperimentsFromConfigVariables();
-    }
+    ConfigVars::SetOverrides(overrides);
+    TestOnlyReloadExperimentsFromConfigVariables();
     FuzzingEventEngine::Options options;
     options.max_delay_run_after = std::chrono::milliseconds(500);
     options.max_delay_write = std::chrono::microseconds(5);
@@ -97,19 +89,13 @@ CoreEnd2endTest::CoreEnd2endTest(
           engine->Tick(max_step);
           grpc_timer_manager_tick();
         });
-    SetPostGrpcInitFunc([]() {
-      grpc_timer_manager_set_threading(false);
-      ExecCtx exec_ctx;
-      Executor::SetThreadingAll(false);
-    });
+    SetPostGrpcInitFunc([]() { grpc_timer_manager_set_threading(false); });
   } else {
     ConfigVars::Overrides overrides;
     overrides.default_ssl_roots_file_path = CA_CERT_PATH;
     ConfigVars::SetOverrides(overrides);
   }
-  if (core_configuration_reset_) {
-    CoreConfiguration::Reset();
-  }
+  CoreConfiguration::Reset();
   initialized_ = false;
   grpc_prewarm_os_for_tests();
 }
@@ -215,7 +201,7 @@ std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    InitServer(ChannelArgs());
+    InitServer(DefaultServerArgs());
     InitClient(ChannelArgs());
   }
 }

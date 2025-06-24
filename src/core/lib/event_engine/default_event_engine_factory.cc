@@ -45,7 +45,7 @@ std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
 namespace grpc_event_engine::experimental {
 
 std::shared_ptr<EventEngine> DefaultEventEngineFactory() {
-  return std::make_shared<PosixEventEngine>();
+  return PosixEventEngine::MakePosixEventEngine();
 }
 
 }  // namespace grpc_event_engine::experimental

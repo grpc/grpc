@@ -329,6 +329,10 @@ UPB_INLINE envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_type_oneo
   return (envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_clear_type(envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__config__route__v3__ScopedRouteConfiguration__Key__Fragment_msg_init, &field);
+}
 UPB_INLINE void envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment_clear_string_key(envoy_config_route_v3_ScopedRouteConfiguration_Key_Fragment* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);

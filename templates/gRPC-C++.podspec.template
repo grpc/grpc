@@ -185,7 +185,7 @@
       ss.dependency "#{s.name}/Privacy", version
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', version
-      abseil_version = '~> 1.20240722.0'
+      abseil_version = '~> 1.20250127.1'
       % for abseil_spec in grpcpp_abseil_specs:
       ss.dependency '${abseil_spec}', abseil_version
       % endfor

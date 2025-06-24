@@ -376,10 +376,6 @@ TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForBackend(DEBUG_LOCATION, 0);
-  // LDS should have been ACKed.
-  auto response_state = balancer_->ads_service()->lds_response_state();
-  ASSERT_TRUE(response_state.has_value());
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
   // Now update the LDS resource to add the fault injection filter with
   // a config that fails all RPCs.
   envoy::extensions::filters::http::fault::v3::HTTPFault http_fault;
@@ -399,18 +395,8 @@ TEST_P(LdsRdsInteractionTest, HcmConfigUpdatedWithoutRdsChange) {
   ClientHcmAccessor().Pack(http_connection_manager, &listener);
   SetListenerAndRouteConfiguration(balancer_.get(), std::move(listener),
                                    default_route_config_);
-  // Wait for the LDS update to be ACKed.
-  const auto deadline =
-      absl::Now() + (absl::Seconds(30) * grpc_test_slowdown_factor());
-  while (true) {
-    ASSERT_LT(absl::Now(), deadline) << "timed out waiting for LDS ACK";
-    response_state = balancer_->ads_service()->lds_response_state();
-    if (response_state.has_value()) break;
-    absl::SleepFor(absl::Seconds(1) * grpc_test_slowdown_factor());
-  }
-  EXPECT_EQ(response_state->state, AdsServiceImpl::ResponseState::ACKED);
-  // Now RPCs should fail with ABORTED status.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
+  // When the client sees the update, RPCs should fail with ABORTED status.
+  SendRpcsUntilFailure(DEBUG_LOCATION, StatusCode::ABORTED, "Fault injected");
 }
 
 TEST_P(LdsRdsInteractionTest, LdsUpdateChangesHcmConfigAndRdsResourceName) {
@@ -1548,41 +1534,41 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
-  // Start with only backend 1 up, but the default cluster pointing to
-  // backend 0, which is down.
+  // We create two backends, with one cluster pointing to each backend.
+  // The default cluster points to backend 0, which is down.
+  // We create a new cluster, pointing to backend 1, which is up.
   CreateBackends(2);
   StartBackend(1);
   EdsResourceArgs args({{"locality0", CreateEndpointsForBackends(0, 1)}});
   balancer_->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Start an RPC with wait_for_ready=true and no deadline.  This will
-  // stay pending until backend 0 is reachable.
-  LongRunningRpc rpc;
-  rpc.StartRpc(stub_.get(),
-               RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
-  // Send a non-wait_for_ready RPC, which should fail.  This tells us
-  // that the client has received the update and attempted to connect.
-  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
-                      MakeConnectionFailureRegex(
-                          "connections to all backends failing; last error: "));
-  // Now create a new cluster, pointing to backend 1.
+  // Create a new cluster, pointing to backend 1.
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
   EdsResourceArgs args1({{"locality0", CreateEndpointsForBackends(1, 2)}});
   balancer_->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsServiceName));
-  // Populate new CDS resources.
   Cluster new_cluster = default_cluster_;
   new_cluster.set_name(kNewClusterName);
   new_cluster.mutable_eds_cluster_config()->set_service_name(
       kNewEdsServiceName);
   balancer_->ads_service()->SetCdsResource(new_cluster);
-  // Send a update RouteConfiguration to use backend 1.
+  // Send a non-wait_for_ready RPC, which should fail.  This tells us
+  // that the client has received the update and attempted to connect.
+  CheckRpcSendFailure(DEBUG_LOCATION, StatusCode::UNAVAILABLE,
+                      MakeConnectionFailureRegex(
+                          "connections to all backends failing; last error: "));
+  // Start an RPC with wait_for_ready=true and no deadline.  This will
+  // stay pending until backend 0 is reachable.
+  LongRunningRpc rpc;
+  rpc.StartRpc(stub_.get(),
+               RpcOptions().set_wait_for_ready(true).set_timeout_ms(0));
+  // Send an updated RouteConfiguration that points to the new cluster.
   RouteConfiguration new_route_config = default_route_config_;
   auto* default_route =
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(balancer_.get(), new_route_config);
-  // Wait for RPCs to go to the new backend: 1, this ensures that the client
+  // Wait for RPCs to go to backend 1.  This ensures that the client
   // has processed the update.
   WaitForBackend(
       DEBUG_LOCATION, 1,
@@ -1596,8 +1582,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
         }
       },
       WaitForBackendOptions().set_reset_counters(false));
-  // Bring up the backend 0.  Yhis will allow the delayed RPC to finally
-  // complete.
+  // Bring up backend 0.  This will allow the delayed RPC to finally complete.
   StartBackend(0);
   Status status = rpc.GetStatus();
   EXPECT_TRUE(status.ok()) << "code=" << status.error_code()

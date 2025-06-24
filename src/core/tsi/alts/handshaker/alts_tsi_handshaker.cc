@@ -38,9 +38,20 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h"
+#include "src/core/util/env.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/sync.h"
 #include "upb/mem/arena.hpp"
+
+namespace {
+constexpr absl::string_view kUseGrpcExperimentalAltsHandshakerKeepaliveParams =
+    "GRPC_EXPERIMENTAL_ALTS_HANDSHAKER_KEEPALIVE_PARAMS";
+
+// 10 seconds
+constexpr int kExperimentalKeepAliveTimeoutMs = 10 * 1000;
+// 10 minutes
+constexpr int kExperimentalKeepAliveTimeMs = 10 * 60 * 1000;
+}  // namespace
 
 // Main struct for ALTS TSI handshaker.
 struct alts_tsi_handshaker {
@@ -66,6 +77,9 @@ struct alts_tsi_handshaker {
   bool shutdown = false;
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
+  // A comma-separated list of preferred transport protocols, sorted by
+  // preference.
+  std::optional<std::string> preferred_transport_protocols;
 };
 
 // Main struct for ALTS TSI handshaker result.
@@ -80,6 +94,7 @@ typedef struct alts_tsi_handshaker_result {
   grpc_slice serialized_context;
   // Peer's maximum frame size.
   size_t max_frame_size;
+  std::optional<std::string> negotiated_transport_protocol;
 } alts_tsi_handshaker_result;
 
 static tsi_result handshaker_result_extract_peer(
@@ -91,8 +106,11 @@ static tsi_result handshaker_result_extract_peer(
   alts_tsi_handshaker_result* result =
       reinterpret_cast<alts_tsi_handshaker_result*>(
           const_cast<tsi_handshaker_result*>(self));
-  CHECK_EQ(kTsiAltsNumOfPeerProperties, 5u);
-  tsi_result ok = tsi_construct_peer(kTsiAltsNumOfPeerProperties, peer);
+  const int peer_properties_count =
+      (result && result->negotiated_transport_protocol.has_value())
+          ? (kTsiAltsMinNumOfPeerProperties + 1)
+          : kTsiAltsMinNumOfPeerProperties;
+  tsi_result ok = tsi_construct_peer(peer_properties_count, peer);
   int index = 0;
   if (ok != TSI_OK) {
     LOG(ERROR) << "Failed to construct tsi peer";
@@ -146,7 +164,19 @@ static tsi_result handshaker_result_extract_peer(
     tsi_peer_destruct(peer);
     LOG(ERROR) << "Failed to set tsi peer property";
   }
-  CHECK(++index == kTsiAltsNumOfPeerProperties);
+  if (result->negotiated_transport_protocol.has_value()) {
+    index++;
+    CHECK_NE(&peer->properties[index], nullptr);
+    ok = tsi_construct_string_peer_property_from_cstring(
+        TSI_ALTS_NEGOTIATED_TRANSPORT_PROTOCOL,
+        result->negotiated_transport_protocol.value().c_str(),
+        &peer->properties[index]);
+    if (ok != TSI_OK) {
+      tsi_peer_destruct(peer);
+      LOG(ERROR) << "Failed to set tsi peer property";
+    }
+  }
+  CHECK(++index == peer_properties_count);
   return ok;
 }
 
@@ -313,7 +343,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // We don't check if local service account is empty here
   // because local identity could be empty in certain situations.
   alts_tsi_handshaker_result* sresult =
-      grpc_core::Zalloc<alts_tsi_handshaker_result>();
+      static_cast<alts_tsi_handshaker_result*>(
+          gpr_zalloc(sizeof(alts_tsi_handshaker_result)));
   sresult->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(sresult->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
@@ -322,6 +353,19 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   memcpy(sresult->peer_identity, peer_service_account.data,
          peer_service_account.size);
   sresult->max_frame_size = grpc_gcp_HandshakerResult_max_frame_size(hresult);
+  const grpc_gcp_NegotiatedTransportProtocol* negotiated_transport_protocol =
+      grpc_gcp_HandshakerResult_transport_protocol(hresult);
+
+  sresult->negotiated_transport_protocol = std::nullopt;
+  if (negotiated_transport_protocol != nullptr) {
+    upb_StringView transport_protocol =
+        grpc_gcp_NegotiatedTransportProtocol_transport_protocol(
+            negotiated_transport_protocol);
+    if (transport_protocol.size != 0) {
+      sresult->negotiated_transport_protocol =
+          std::string(transport_protocol.data, transport_protocol.size);
+    }
+  }
   upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
       peer_rpc_version, rpc_versions_arena.ptr(), &sresult->rpc_versions);
@@ -347,19 +391,13 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     return TSI_FAILED_PRECONDITION;
   }
   if (grpc_gcp_Identity_attributes_size(identity) != 0) {
-    // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-    // v30.0.
-    const upb_Map* upb_map =
-        _grpc_gcp_Identity_attributes_upb_map(peer_identity);
-    if (upb_map) {
-      size_t iter = kUpb_Map_Begin;
-      upb_MessageValue k, v;
-      while (upb_Map_Next(upb_map, &k, &v, &iter)) {
-        upb_StringView key = k.str_val;
-        upb_StringView val = v.str_val;
-        grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
-                                                 context_arena.ptr());
-      }
+    size_t iter = kUpb_Map_Begin;
+    upb_StringView key;
+    upb_StringView val;
+    while (
+        grpc_gcp_Identity_attributes_next(peer_identity, &key, &val, &iter)) {
+      grpc_gcp_AltsContext_peer_attributes_set(context, key, val,
+                                               context_arena.ptr());
     }
   }
 
@@ -432,7 +470,8 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, cb, user_data,
         handshaker->client_vtable_for_testing, handshaker->is_client,
-        handshaker->max_frame_size, error);
+        handshaker->max_frame_size, handshaker->preferred_transport_protocols,
+        error);
     if (client == nullptr) {
       LOG(ERROR) << "Failed to create ALTS handshaker client";
       if (error != nullptr) *error = "Failed to create ALTS handshaker client";
@@ -499,9 +538,22 @@ static void alts_tsi_handshaker_create_channel(
   grpc_channel_credentials* creds = grpc_insecure_credentials_create();
   // Disable retries so that we quickly get a signal when the
   // handshake server is not reachable.
-  grpc_arg disable_retries_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0);
-  grpc_channel_args args = {1, &disable_retries_arg};
+  std::vector<grpc_arg> args_vec;
+  args_vec.push_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 0));
+  // TODO(gtcooke94) - Flag to try new values for ALTS keep alive settings,
+  // remove after trial
+  std::optional<std::string> env = grpc_core::GetEnv(
+      kUseGrpcExperimentalAltsHandshakerKeepaliveParams.data());
+  if (env.has_value() && (*env == "true")) {
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIMEOUT_MS),
+        kExperimentalKeepAliveTimeoutMs));
+    args_vec.push_back(grpc_channel_arg_integer_create(
+        const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+        kExperimentalKeepAliveTimeMs));
+  }
+  grpc_channel_args args = {args_vec.size(), args_vec.data()};
   handshaker->channel = grpc_channel_create(
       next_args->handshaker->handshaker_service_url, creds, &args);
   grpc_channel_credentials_release(creds);
@@ -646,7 +698,8 @@ tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self,
-    size_t user_specified_max_frame_size) {
+    size_t user_specified_max_frame_size,
+    std::optional<std::string> preferred_transport_protocols) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     LOG(ERROR) << "Invalid arguments to alts_tsi_handshaker_create()";
@@ -668,6 +721,7 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->max_frame_size = user_specified_max_frame_size != 0
                                    ? user_specified_max_frame_size
                                    : kTsiAltsMaxFrameSize;
+  handshaker->preferred_transport_protocols = preferred_transport_protocols;
   *self = &handshaker->base;
   return TSI_OK;
 }

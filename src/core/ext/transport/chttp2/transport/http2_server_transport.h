@@ -75,6 +75,10 @@ class Http2ServerTransport final : public ServerTransport {
   void Orphan() override;
   void AbortWithError();
 
+  RefCountedPtr<channelz::SocketNode> GetSocketNode() const override {
+    return nullptr;
+  }
+
  private:
   // Reading from the endpoint.
 
@@ -106,7 +110,6 @@ class Http2ServerTransport final : public ServerTransport {
   PromiseEndpoint endpoint_;
   Http2SettingsManager settings_;
 
-  // TODO(tjagtap) : [PH2][P3] : This is not nice. Fix by using Stapler.
   Http2FrameHeader current_frame_header_;
 
   struct Stream : public RefCounted<Stream> {
@@ -127,15 +130,55 @@ class Http2ServerTransport final : public ServerTransport {
   absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list_
       ABSL_GUARDED_BY(transport_mutex_);
 
-  // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it.
+  // This function MUST be idempotent.
+  void CloseStream(uint32_t stream_id, absl::Status status,
+                   DebugLocation whence = {}) {
+    LOG(INFO) << "Http2ServerTransport::CloseStream for stream id=" << stream_id
+              << " status=" << status << " location=" << whence.file() << ":"
+              << whence.line();
+    // TODO(akshitpatel) : [PH2][P2] : Implement this.
+  }
+
+  // This function is supposed to be idempotent.
+  void CloseTransport(const Http2Status& status, DebugLocation whence = {}) {
+    LOG(INFO) << "Http2ClientTransport::CloseTransport status=" << status
+              << " location=" << whence.file() << ":" << whence.line();
+    // TODO(akshitpatel) : [PH2][P2] : Implement this.
+  }
+
+  // Handles the error status and returns the corresponding absl status. Absl
+  // Status is returned so that the error can be gracefully handled
+  // by promise primitives.
+  // If the error is a stream error, it closes the stream and returns an ok
+  // status. Ok status is returned because the calling transport promise loops
+  // should not be cancelled in case of stream errors.
+  // If the error is a connection error, it closes the transport and returns the
+  // corresponding (failed) absl status.
+  absl::Status HandleError(Http2Status status, DebugLocation whence = {}) {
+    auto error_type = status.GetType();
+    DCHECK(error_type != Http2Status::Http2ErrorType::kOk);
+
+    if (error_type == Http2Status::Http2ErrorType::kStreamError) {
+      CloseStream(current_frame_header_.stream_id, status.GetAbslStreamError(),
+                  whence);
+      return absl::OkStatus();
+    } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
+      CloseTransport(status, whence);
+      return status.GetAbslConnectionError();
+    }
+
+    GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
+  }
+
+  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it.
   // uint32_t next_stream_id_ ABSL_GUARDED_BY(transport_mutex_) = 1;
-  // TODO(tjagtap) : [PH2][P1] : Either use this in code or delete it. This was
+  // TODO(tjagtap) : [PH2][P2] : Either use this in code or delete it. This was
   // copied from Chaotic Good.
   // uint32_t last_seen_new_stream_id_ = 0;
 
-  // TODO(tjagtap) : [PH2][P1] : Implement if needed.
+  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
   // uint32_t MakeStream(CallHandler call_handler);
-  // TODO(tjagtap) : [PH2][P1] : Implement if needed.
+  // TODO(tjagtap) : [PH2][P2] : Implement if needed.
   // RefCountedPtr<Http2ServerTransport::Stream> LookupStream(uint32_t
   // stream_id);
 };

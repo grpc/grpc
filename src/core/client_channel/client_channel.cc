@@ -228,21 +228,19 @@ class ClientChannel::SubchannelWrapper::WatcherWrapper
     subchannel_wrapper_.reset(DEBUG_LOCATION, "WatcherWrapper");
   }
 
-  void OnConnectivityStateChange(
-      RefCountedPtr<ConnectivityStateWatcherInterface> self,
-      grpc_connectivity_state state, const absl::Status& status) override {
+  void OnConnectivityStateChange(grpc_connectivity_state state,
+                                 const absl::Status& status) override {
     GRPC_TRACE_LOG(client_channel, INFO)
         << "client_channel=" << subchannel_wrapper_->client_channel_.get()
         << ": connectivity change for subchannel wrapper "
         << subchannel_wrapper_.get() << " subchannel "
         << subchannel_wrapper_->subchannel_.get()
         << "; hopping into work_serializer";
-    self.release();  // Held by callback.
+    auto self = RefAsSubclass<WatcherWrapper>();
     subchannel_wrapper_->client_channel_->work_serializer_->Run(
-        [this, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-            *subchannel_wrapper_->client_channel_->work_serializer_) {
-          ApplyUpdateInControlPlaneWorkSerializer(state, status);
-          Unref();
+        [self, state, status]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+            *self->subchannel_wrapper_->client_channel_->work_serializer_) {
+          self->ApplyUpdateInControlPlaneWorkSerializer(state, status);
         });
   }
 
@@ -324,8 +322,7 @@ ClientChannel::SubchannelWrapper::SubchannelWrapper(
       auto it =
           client_channel_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == client_channel_->subchannel_refcount_map_.end()) {
-        client_channel_->channelz_node_->AddChildSubchannel(
-            subchannel_node->uuid());
+        subchannel_node->AddParent(client_channel_->channelz_node_);
         it = client_channel_->subchannel_refcount_map_
                  .emplace(subchannel_.get(), 0)
                  .first;
@@ -360,8 +357,8 @@ void ClientChannel::SubchannelWrapper::Orphaned() {
             CHECK(it != self->client_channel_->subchannel_refcount_map_.end());
             --it->second;
             if (it->second == 0) {
-              self->client_channel_->channelz_node_->RemoveChildSubchannel(
-                  subchannel_node->uuid());
+              subchannel_node->RemoveParent(
+                  self->client_channel_->channelz_node_);
               self->client_channel_->subchannel_refcount_map_.erase(it);
             }
           }
@@ -498,24 +495,13 @@ class ClientChannel::ClientChannelControlHelper
     return *client_channel_->stats_plugin_group_;
   }
 
-  void AddTraceEvent(TraceSeverity severity, absl::string_view message) override
+  void AddTraceEvent(absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*client_channel_->work_serializer_) {
     if (client_channel_->resolver_ == nullptr) return;  // Shutting down.
-    if (client_channel_->channelz_node_ != nullptr) {
-      client_channel_->channelz_node_->AddTraceEvent(
-          ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_buffer(message.data(), message.size()));
-    }
+    GRPC_CHANNELZ_LOG(client_channel_->channelz_node_) << std::string(message);
   }
 
  private:
-  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
-      TraceSeverity severity) {
-    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
-    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
-    return channelz::ChannelTrace::Error;
-  }
-
   WeakRefCountedPtr<ClientChannel> client_channel_;
 };
 
@@ -530,7 +516,11 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
   if (args.GetBool(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL).value_or(false)) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
-  return GlobalSubchannelPool::instance();
+  if (IsShardGlobalConnectionPoolEnabled()) {
+    return GlobalSubchannelPool::instance();
+  } else {
+    return LegacyGlobalSubchannelPool::instance();
+  }
 }
 
 }  // namespace
@@ -701,6 +691,7 @@ class ExternalStateWatcher : public RefCounted<ExternalStateWatcher> {
                        grpc_connectivity_state last_observed_state,
                        Timestamp deadline)
       : channel_(std::move(channel)), cq_(cq), tag_(tag) {
+    grpc_cq_begin_op(cq, tag);
     MutexLock lock(&mu_);
     // Start watch.  This inherits the ref from creation.
     auto watcher =
@@ -780,17 +771,14 @@ void ClientChannel::WatchConnectivityState(grpc_connectivity_state state,
 }
 
 void ClientChannel::AddConnectivityWatcher(
-    grpc_connectivity_state,
-    OrphanablePtr<AsyncConnectivityStateWatcherInterface>) {
-  Crash("not implemented");
-  // TODO(ctiller): to make this work, need to change WorkSerializer to use
-  // absl::AnyInvocable<> instead of std::function<>
-  //  work_serializer_->Run(
-  //      [self = RefAsSubclass<ClientChannel>(), initial_state,
-  //       watcher = std::move(watcher)]()
-  //            ABSL_EXCLUSIVE_LOCKS_REQUIRED(*work_serializer_) {
-  //        self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
-  //      });
+    grpc_connectivity_state initial_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+  auto self = RefAsSubclass<ClientChannel>();
+  work_serializer_->Run(
+      [self, initial_state, watcher = std::move(watcher)]()
+          ABSL_EXCLUSIVE_LOCKS_REQUIRED(*self->work_serializer_) mutable {
+            self->state_tracker_.AddWatcher(initial_state, std::move(watcher));
+          });
 }
 
 void ClientChannel::RemoveConnectivityWatcher(
@@ -1159,12 +1147,8 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   }
   // Add channel trace event.
   if (!trace_strings.empty()) {
-    std::string message =
-        absl::StrCat("Resolution event: ", absl::StrJoin(trace_strings, ", "));
-    if (channelz_node_ != nullptr) {
-      channelz_node_->AddTraceEvent(channelz::ChannelTrace::Severity::Info,
-                                    grpc_slice_from_cpp_string(message));
-    }
+    GRPC_CHANNELZ_LOG(channelz_node_)
+        << "Resolution event: " << absl::StrJoin(trace_strings, ", ");
   }
 }
 
@@ -1320,11 +1304,16 @@ void ClientChannel::UpdateStateLocked(grpc_connectivity_state state,
   state_tracker_.SetState(state, status, reason);
   if (channelz_node_ != nullptr) {
     channelz_node_->SetConnectivityState(state);
-    channelz_node_->AddTraceEvent(
-        channelz::ChannelTrace::Severity::Info,
-        grpc_slice_from_static_string(
-            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
-                state)));
+    if (!status.ok() || state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state)
+          << " status: " << status;
+    } else {
+      GRPC_CHANNELZ_LOG(channelz_node_)
+          << channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                 state);
+    }
   }
 }
 

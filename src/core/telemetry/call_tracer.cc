@@ -142,9 +142,9 @@ class DelegatingClientCallTracer : public ClientCallTracer {
                                                transport_stream_stats);
       }
     }
-    void RecordEnd(const gpr_timespec& latency) override {
+    void RecordEnd() override {
       for (auto* tracer : tracers_) {
-        tracer->RecordEnd(latency);
+        tracer->RecordEnd();
       }
     }
     void RecordIncomingBytes(

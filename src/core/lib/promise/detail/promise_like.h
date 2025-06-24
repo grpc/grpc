@@ -22,6 +22,8 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/function_signature.h"
+#include "src/core/util/json/json.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also
@@ -46,6 +48,25 @@
 // practice people find hard to deal with.
 
 namespace grpc_core {
+
+namespace promise_detail {
+template <typename Promise, typename = void>
+constexpr bool kHasToJsonMethod = false;
+
+template <typename Promise>
+constexpr bool kHasToJsonMethod<
+    Promise, std::void_t<decltype(std::declval<Promise>().ToJson())>> = true;
+}  // namespace promise_detail
+
+template <typename Promise>
+Json PromiseAsJson(const Promise& promise) {
+  if constexpr (promise_detail::kHasToJsonMethod<Promise>) {
+    return promise.ToJson();
+  } else {
+    return Json::FromString(std::string(TypeName<Promise>()));
+  }
+}
+
 namespace promise_detail {
 
 template <typename T>
@@ -93,6 +114,7 @@ class PromiseLike<
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION WrappedResult operator()() {
     return WrapInPoll(f_());
   }
+  Json ToJson() const { return PromiseAsJson(f_); }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
@@ -114,6 +136,7 @@ class PromiseLike<
     f_();
     return Empty{};
   }
+  Json ToJson() const { return PromiseAsJson(f_); }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
@@ -122,6 +145,7 @@ class PromiseLike<
 };
 
 }  // namespace promise_detail
+
 }  // namespace grpc_core
 
 #endif  // GRPC_SRC_CORE_LIB_PROMISE_DETAIL_PROMISE_LIKE_H

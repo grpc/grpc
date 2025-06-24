@@ -17,6 +17,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <cstdint>
 #include <string>
 #include <variant>
@@ -218,11 +219,21 @@ struct MessageChunkFrame final : public FrameInterface {
   SliceBuffer payload;
 };
 
+template <typename T>
+inline std::enable_if_t<std::is_base_of<FrameInterface, T>::value, uint32_t>
+FrameMpscTokens(const T& frame) {
+  return frame.MakeHeader().payload_length;
+}
+
 using Frame =
     std::variant<SettingsFrame, ClientInitialMetadataFrame,
                  ServerInitialMetadataFrame, ServerTrailingMetadataFrame,
                  MessageFrame, BeginMessageFrame, MessageChunkFrame,
                  ClientEndOfStream, CancelFrame>;
+
+inline uint32_t FrameMpscTokens(const Frame& frame) {
+  return FrameMpscTokens(absl::ConvertVariantTo<const FrameInterface&>(frame));
+}
 
 inline Frame CopyFrame(const Frame& frame) {
   return Match(

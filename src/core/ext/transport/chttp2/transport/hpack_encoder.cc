@@ -101,6 +101,13 @@ void HPackCompressor::Frame(const EncodeHeaderOptions& options,
     FillHeader(grpc_slice_buffer_tiny_add(output, kHeadersFrameHeaderSize),
                frame_type, options.stream_id, len, flags);
     options.call_tracer->RecordOutgoingBytes({kHeadersFrameHeaderSize, 0, 0});
+    options.ztrace_collector->Append([&]() {
+      return H2HeaderTrace<false>{
+          options.stream_id, (flags & GRPC_CHTTP2_DATA_FLAG_END_HEADERS) != 0,
+          (flags & GRPC_CHTTP2_DATA_FLAG_END_STREAM) != 0,
+          frame_type == GRPC_CHTTP2_FRAME_CONTINUATION,
+          static_cast<uint32_t>(len)};
+    });
     grpc_slice_buffer_move_first(raw.c_slice_buffer(), len, output);
 
     frame_type = GRPC_CHTTP2_FRAME_CONTINUATION;

@@ -50,6 +50,10 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
       ares_socket_t as) override;
   void ConfigureAresChannelLocked(ares_channel channel) override;
 
+  std::unique_ptr<GrpcPolledFdFactory> NewEmptyInstance() const override {
+    return std::make_unique<GrpcPolledFdFactoryWindows>(iocp_);
+  }
+
  private:
   friend class CustomSockFuncs;
 

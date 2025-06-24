@@ -30,8 +30,10 @@
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/json/json.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -129,6 +131,30 @@ struct SeqState<Traits, P, F0> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(2);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -252,6 +278,36 @@ struct SeqState<Traits, P, F0, F1> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(3);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -425,6 +481,42 @@ struct SeqState<Traits, P, F0, F1, F2> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(4);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -647,6 +739,49 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(5);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -927,6 +1062,56 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(6);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -1262,6 +1447,63 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(7);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -1653,6 +1895,70 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(8);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -2099,6 +2405,77 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(9);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    Json::Object step8;
+    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    if (state == State::kState8) {
+      step8["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step8));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -2608,6 +2985,85 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(10);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    Json::Object step8;
+    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    if (state == State::kState8) {
+      step8["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step8));
+    Json::Object step9;
+    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    if (state == State::kState9) {
+      step9["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step9));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -3179,6 +3635,93 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(11);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    Json::Object step8;
+    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    if (state == State::kState8) {
+      step8["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step8));
+    Json::Object step9;
+    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    if (state == State::kState9) {
+      step9["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step9));
+    Json::Object step10;
+    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    if (state == State::kState10) {
+      step10["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step10));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -3813,6 +4356,101 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(12);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    Json::Object step8;
+    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    if (state == State::kState8) {
+      step8["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step8));
+    Json::Object step9;
+    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    if (state == State::kState9) {
+      step9["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step9));
+    Json::Object step10;
+    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    if (state == State::kState10) {
+      step10["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step10));
+    Json::Object step11;
+    step11["type"] = Json::FromString(std::string(TypeName<F10>()));
+    if (state == State::kState11) {
+      step11["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step11));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -4513,6 +5151,109 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) =
       delete;
+  Json ToJson(absl::string_view type_name) const {
+    Json::Object obj;
+#ifndef NDEBUG
+    obj["source_location"] =
+        Json::FromString(absl::StrCat(whence.file(), ":", whence.line()));
+#endif
+    obj["seq_type"] = Json::FromString(std::string(type_name));
+    Json::Array steps;
+    steps.reserve(13);
+    Json::Object step0;
+    step0["type"] = Json::FromString(std::string(TypeName<P>()));
+    if (state == State::kState0) {
+      step0["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step0));
+    Json::Object step1;
+    step1["type"] = Json::FromString(std::string(TypeName<F0>()));
+    if (state == State::kState1) {
+      step1["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step1));
+    Json::Object step2;
+    step2["type"] = Json::FromString(std::string(TypeName<F1>()));
+    if (state == State::kState2) {
+      step2["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step2));
+    Json::Object step3;
+    step3["type"] = Json::FromString(std::string(TypeName<F2>()));
+    if (state == State::kState3) {
+      step3["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.prior.prior.prior
+                            .current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step3));
+    Json::Object step4;
+    step4["type"] = Json::FromString(std::string(TypeName<F3>()));
+    if (state == State::kState4) {
+      step4["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step4));
+    Json::Object step5;
+    step5["type"] = Json::FromString(std::string(TypeName<F4>()));
+    if (state == State::kState5) {
+      step5["polling_state"] = PromiseAsJson(
+          prior.prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step5));
+    Json::Object step6;
+    step6["type"] = Json::FromString(std::string(TypeName<F5>()));
+    if (state == State::kState6) {
+      step6["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step6));
+    Json::Object step7;
+    step7["type"] = Json::FromString(std::string(TypeName<F6>()));
+    if (state == State::kState7) {
+      step7["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step7));
+    Json::Object step8;
+    step8["type"] = Json::FromString(std::string(TypeName<F7>()));
+    if (state == State::kState8) {
+      step8["polling_state"] =
+          PromiseAsJson(prior.prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step8));
+    Json::Object step9;
+    step9["type"] = Json::FromString(std::string(TypeName<F8>()));
+    if (state == State::kState9) {
+      step9["polling_state"] = PromiseAsJson(prior.prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step9));
+    Json::Object step10;
+    step10["type"] = Json::FromString(std::string(TypeName<F9>()));
+    if (state == State::kState10) {
+      step10["polling_state"] = PromiseAsJson(prior.prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step10));
+    Json::Object step11;
+    step11["type"] = Json::FromString(std::string(TypeName<F10>()));
+    if (state == State::kState11) {
+      step11["polling_state"] = PromiseAsJson(prior.current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step11));
+    Json::Object step12;
+    step12["type"] = Json::FromString(std::string(TypeName<F11>()));
+    if (state == State::kState12) {
+      step12["polling_state"] = PromiseAsJson(current_promise);
+    }
+    steps.emplace_back(Json::FromObject(step12));
+    obj["steps"] = Json::FromArray(steps);
+    return Json::FromObject(obj);
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {

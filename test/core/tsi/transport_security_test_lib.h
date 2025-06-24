@@ -245,4 +245,10 @@ X509* ReadPemCert(absl::string_view pem_cert);
 // Returns the OpenSSL representation of a CRL.
 X509_CRL* ReadCrl(absl::string_view crl_pem);
 
+// Returns the result of protecting the buffer using the protector.
+std::string Protect(tsi_frame_protector* protector, absl::string_view buffer);
+
+// Returns the result of unprotecting the buffer using the protector.
+std::string Unprotect(tsi_frame_protector* protector, absl::string_view buffer);
+
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H

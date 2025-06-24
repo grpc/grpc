@@ -143,7 +143,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client, size_t max_frame_size, std::string* error);
+    bool is_client, size_t max_frame_size,
+    std::optional<absl::string_view> preferred_transport_protocol,
+    std::string* error);
 
 ///
 /// This method handles handshaker response returned from ALTS handshaker

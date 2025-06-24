@@ -29,13 +29,11 @@ extern "C" {
 #endif
 
 typedef struct envoy_service_discovery_v3_ResourceLocator { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_ResourceLocator;
-typedef struct envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry;
 typedef struct envoy_service_discovery_v3_ResourceName { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_ResourceName;
 typedef struct envoy_service_discovery_v3_ResourceError { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_ResourceError;
 typedef struct envoy_service_discovery_v3_DiscoveryRequest { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DiscoveryRequest;
 typedef struct envoy_service_discovery_v3_DiscoveryResponse { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DiscoveryResponse;
 typedef struct envoy_service_discovery_v3_DeltaDiscoveryRequest { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DeltaDiscoveryRequest;
-typedef struct envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry;
 typedef struct envoy_service_discovery_v3_DeltaDiscoveryResponse { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DeltaDiscoveryResponse;
 typedef struct envoy_service_discovery_v3_DynamicParameterConstraints { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DynamicParameterConstraints;
 typedef struct envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint { upb_Message UPB_PRIVATE(base); } envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint;
@@ -163,23 +161,6 @@ UPB_INLINE bool envoy_service_discovery_v3_ResourceLocator_dynamic_parameters_de
   upb_Map* map = (upb_Map*)upb_Message_GetMap(UPB_UPCAST(msg), &field);
   if (!map) return false;
   return _upb_Map_Delete(map, &key, 0, NULL);
-}
-
-/* envoy.service.discovery.v3.ResourceLocator.DynamicParametersEntry */
-
-UPB_INLINE upb_StringView envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry_key(const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry_value(const envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry_set_value(envoy_service_discovery_v3_ResourceLocator_DynamicParametersEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 /* envoy.service.discovery.v3.ResourceName */
@@ -1346,23 +1327,6 @@ UPB_INLINE struct envoy_service_discovery_v3_ResourceLocator* envoy_service_disc
   return sub;
 }
 
-/* envoy.service.discovery.v3.DeltaDiscoveryRequest.InitialResourceVersionsEntry */
-
-UPB_INLINE upb_StringView envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_key(const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_value(const envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry_set_value(envoy_service_discovery_v3_DeltaDiscoveryRequest_InitialResourceVersionsEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
-}
-
 /* envoy.service.discovery.v3.DeltaDiscoveryResponse */
 
 UPB_INLINE envoy_service_discovery_v3_DeltaDiscoveryResponse* envoy_service_discovery_v3_DeltaDiscoveryResponse_new(upb_Arena* arena) {
@@ -1788,6 +1752,10 @@ UPB_INLINE envoy_service_discovery_v3_DynamicParameterConstraints_type_oneofcase
   return (envoy_service_discovery_v3_DynamicParameterConstraints_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
 }
+UPB_INLINE void envoy_service_discovery_v3_DynamicParameterConstraints_clear_type(envoy_service_discovery_v3_DynamicParameterConstraints* msg) {
+  const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__service__discovery__v3__DynamicParameterConstraints_msg_init, &field);
+}
 UPB_INLINE void envoy_service_discovery_v3_DynamicParameterConstraints_clear_constraint(envoy_service_discovery_v3_DynamicParameterConstraints* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), -9, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
   upb_Message_ClearBaseField(UPB_UPCAST(msg), &field);
@@ -1955,6 +1923,10 @@ UPB_INLINE envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstrai
   const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   return (envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_constraint_type_oneofcases)upb_Message_WhichOneofFieldNumber(
       UPB_UPCAST(msg), &field);
+}
+UPB_INLINE void envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_clear_constraint_type(envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint* msg) {
+  const upb_MiniTableField field = {2, UPB_SIZE(20, 32), -9, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
+  upb_Message_ClearOneof(UPB_UPCAST(msg), &envoy__service__discovery__v3__DynamicParameterConstraints__SingleConstraint_msg_init, &field);
 }
 UPB_INLINE void envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint_clear_key(envoy_service_discovery_v3_DynamicParameterConstraints_SingleConstraint* msg) {
   const upb_MiniTableField field = {1, UPB_SIZE(12, 16), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};

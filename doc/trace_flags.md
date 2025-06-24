@@ -37,7 +37,6 @@ processing requests via debug logs. Available tracers include:
   - event_engine_endpoint - EventEngine Endpoint operations.
   - event_engine_endpoint_data - Detailed dump of EventEngine endpoint TCP data.
   - event_engine_poller - EventEngine Poller events.
-  - executor - gRPC's legacy thread pool ('the executor').
   - fault_injection_filter - Fault injection.
   - flowctl - Http2 flow control.
   - fork - Fork support.
@@ -111,6 +110,7 @@ accomplished by invoking `bazel build --config=dbg <target>`
   - stream_refcount - Stream refcounting.
   - subchannel_refcount - Subchannel refcounting.
   - work_serializer - A synchronization mechanism used to ensure that only one thread is executing at a given time.
+  - ztrace - Trace ztrace appends globally (for debugging the ztrace system itself).
 
 Glob patterns and special cases:
   - `*` can be used to turn all traces on.

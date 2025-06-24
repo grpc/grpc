@@ -191,7 +191,7 @@ class FakeCallTracer : public ClientCallTracer {
     std::shared_ptr<TcpCallTracer> StartNewTcpTrace() override {
       return nullptr;
     }
-    void RecordEnd(const gpr_timespec& /*latency*/) override {
+    void RecordEnd() override {
       test_state_->NotifyClient();
       delete this;
     }

@@ -90,6 +90,8 @@ grpc_error_handle grpc_chttp2_ping_parser_parse(void* parser,
 
   if (p->byte == 8) {
     CHECK(is_last);
+    t->http2_ztrace_collector.Append(
+        grpc_core::H2PingTrace<true>{p->is_ack != 0, p->opaque_8bytes});
     if (p->is_ack) {
       GRPC_TRACE_LOG(http2_ping, INFO)
           << (t->is_client ? "CLIENT" : "SERVER") << "[" << t

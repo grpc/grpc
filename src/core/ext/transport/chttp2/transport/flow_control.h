@@ -32,6 +32,7 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
@@ -271,6 +272,11 @@ class TransportFlowControl final {
 
   FlowControlAction SetAckedInitialWindow(uint32_t value);
 
+  void set_target_initial_window_size(uint32_t value) {
+    target_initial_window_size_ =
+        std::min(value, Http2Settings::max_initial_window_size());
+  }
+
   // Getters
   int64_t remote_window() const { return remote_window_; }
   int64_t announced_window() const { return announced_window_; }
@@ -302,6 +308,23 @@ class TransportFlowControl final {
     double bdp_bw_est;
 
     std::string ToString() const;
+    channelz::PropertyList ChannelzProperties() const {
+      return channelz::PropertyList()
+          .Set("target_window", target_window)
+          .Set("target_frame_size", target_frame_size)
+          .Set("target_preferred_rx_crypto_frame_size",
+               target_preferred_rx_crypto_frame_size)
+          .Set("acked_init_window", acked_init_window)
+          .Set("queued_init_window", queued_init_window)
+          .Set("sent_init_window", sent_init_window)
+          .Set("remote_window", remote_window)
+          .Set("announced_window", announced_window)
+          .Set("announced_stream_total_over_incoming_window",
+               announced_stream_total_over_incoming_window)
+          .Set("bdp_accumulator", bdp_accumulator)
+          .Set("bdp_estimate", bdp_estimate)
+          .Set("bdp_bw_est", bdp_bw_est);
+    }
   };
 
   Stats stats() const {

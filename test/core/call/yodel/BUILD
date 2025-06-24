@@ -56,6 +56,7 @@ grpc_cc_library(
         "//test/core/test_util:fuzz_config_vars",
         "//test/core/test_util:fuzz_config_vars_helpers",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem",
         "//test/core/test_util:proto_bit_gen",
     ],
 )

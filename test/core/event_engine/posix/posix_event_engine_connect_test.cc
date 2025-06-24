@@ -146,7 +146,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectTimeoutOrRstTest) {
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
   CHECK_OK(resolved_addr);
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);
@@ -175,7 +176,8 @@ TEST(PosixEventEngineTest, IndefiniteConnectCancellationTest) {
       "ipv6:[::1]:", std::to_string(grpc_pick_unused_port_or_die()));
   auto resolved_addr = URIToResolvedAddress(target_addr);
   CHECK_OK(resolved_addr);
-  std::shared_ptr<EventEngine> posix_ee = std::make_shared<PosixEventEngine>();
+  std::shared_ptr<EventEngine> posix_ee =
+      PosixEventEngine::MakePosixEventEngine();
   std::string resolved_addr_str =
       ResolvedAddressToNormalizedString(*resolved_addr).value();
   auto sockets = CreateConnectedSockets(*resolved_addr);

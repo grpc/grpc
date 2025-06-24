@@ -85,7 +85,7 @@ class FakeClientCallTracer : public ClientCallTracer {
         grpc_metadata_batch* /*recv_trailing_metadata*/,
         const grpc_transport_stream_stats* /*transport_stream_stats*/)
         override {}
-    void RecordEnd(const gpr_timespec& /*latency*/) override { Unref(); }
+    void RecordEnd() override { Unref(); }
     void RecordIncomingBytes(
         const TransportByteSize& /*transport_byte_size*/) override {}
     void RecordOutgoingBytes(

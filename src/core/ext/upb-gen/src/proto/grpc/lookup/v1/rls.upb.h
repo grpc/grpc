@@ -22,7 +22,6 @@ extern "C" {
 #endif
 
 typedef struct grpc_lookup_v1_RouteLookupRequest { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_RouteLookupRequest;
-typedef struct grpc_lookup_v1_RouteLookupRequest_KeyMapEntry { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_RouteLookupRequest_KeyMapEntry;
 typedef struct grpc_lookup_v1_RouteLookupResponse { upb_Message UPB_PRIVATE(base); } grpc_lookup_v1_RouteLookupResponse;
 
 typedef enum {
@@ -176,23 +175,6 @@ UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_reason(grpc_lookup_v1_Rout
 UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_set_stale_header_data(grpc_lookup_v1_RouteLookupRequest *msg, upb_StringView value) {
   const upb_MiniTableField field = {6, UPB_SIZE(24, 32), 0, kUpb_NoSub, 9, (int)kUpb_FieldMode_Scalar | ((int)kUpb_FieldRep_StringView << kUpb_FieldRep_Shift)};
   upb_Message_SetBaseField((upb_Message *)msg, &field, &value);
-}
-
-/* grpc.lookup.v1.RouteLookupRequest.KeyMapEntry */
-
-UPB_INLINE upb_StringView grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_key(const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE upb_StringView grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_value(const grpc_lookup_v1_RouteLookupRequest_KeyMapEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_value(msg, &ret, 0);
-  return ret;
-}
-
-UPB_INLINE void grpc_lookup_v1_RouteLookupRequest_KeyMapEntry_set_value(grpc_lookup_v1_RouteLookupRequest_KeyMapEntry *msg, upb_StringView value) {
-  _upb_msg_map_set_value(msg, &value, 0);
 }
 
 /* grpc.lookup.v1.RouteLookupResponse */

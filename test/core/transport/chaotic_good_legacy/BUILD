@@ -215,38 +215,6 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
-    name = "chaotic_good_server_test",
-    srcs = ["chaotic_good_server_test.cc"],
-    external_deps = [
-        "absl/log:check",
-        "absl/log:log",
-        "absl/strings",
-        "absl/time",
-        "gtest",
-    ],
-    tags = [
-        "no_windows",
-    ],
-    uses_event_engine = True,
-    uses_polling = False,
-    deps = [
-        "//:grpc",
-        "//:grpc++",
-        "//:grpc_public_hdrs",
-        "//:parse_address",
-        "//:uri",
-        "//src/core:channel_args",
-        "//src/core:chaotic_good_legacy_connector",
-        "//src/core:chaotic_good_legacy_server",
-        "//src/core:notification",
-        "//src/core:resource_quota",
-        "//src/core:time",
-        "//test/core/event_engine:event_engine_test_utils",
-        "//test/core/test_util:grpc_test_util",
-    ],
-)
-
 grpc_fuzz_test(
     name = "control_endpoint_test",
     srcs = ["control_endpoint_test.cc"],

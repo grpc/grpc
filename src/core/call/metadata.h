@@ -62,6 +62,16 @@ class ServerMetadataOrHandle {
     return value_;
   }
 
+  ServerMetadataHandle TakeMetadata() && {
+    CHECK(!ok());
+    return std::move(server_metadata_);
+  }
+
+  ValueType TakeValue() && {
+    CHECK(ok());
+    return std::move(value_);
+  }
+
  private:
   ServerMetadataOrHandle(ServerMetadataHandle server_metadata, ValueType value)
       : server_metadata_(std::move(server_metadata)),
@@ -82,6 +92,13 @@ template <typename T>
 struct FailureStatusCastImpl<ServerMetadataOrHandle<T>, ServerMetadataHandle&> {
   static ServerMetadataOrHandle<T> Cast(ServerMetadataHandle& t) {
     return ServerMetadataOrHandle<T>::Failure(std::move(t));
+  }
+};
+
+template <>
+struct FailureStatusCastImpl<ServerMetadataHandle, ServerMetadataHandle&> {
+  static ServerMetadataHandle Cast(ServerMetadataHandle& t) {
+    return std::move(t);
   }
 };
 

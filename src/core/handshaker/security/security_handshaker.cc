@@ -281,13 +281,13 @@ void SecurityHandshaker::OnPeerCheckedFn(grpc_error_handle error) {
       grpc_slice slice = grpc_slice_from_copied_buffer(
           reinterpret_cast<const char*>(unused_bytes), unused_bytes_size);
       args_->endpoint = grpc_secure_endpoint_create(
-          protector, zero_copy_protector, std::move(args_->endpoint), &slice,
-          args_->args.ToC().get(), 1);
+          protector, zero_copy_protector, std::move(args_->endpoint), &slice, 1,
+          args_->args);
       CSliceUnref(slice);
     } else {
       args_->endpoint = grpc_secure_endpoint_create(
           protector, zero_copy_protector, std::move(args_->endpoint), nullptr,
-          args_->args.ToC().get(), 0);
+          0, args_->args);
     }
   } else if (unused_bytes_size > 0) {
     // Not wrapping the endpoint, so just pass along unused bytes.
@@ -373,13 +373,16 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     outgoing_.Clear();
     outgoing_.Append(Slice::FromCopiedBuffer(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size));
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+        write_args;
+    write_args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(
         args_->endpoint.get(), outgoing_.c_slice_buffer(),
         NewClosure(
             [self = RefAsSubclass<SecurityHandshaker>()](absl::Status status) {
               self->OnHandshakeDataSentToPeerFnScheduler(std::move(status));
             }),
-        nullptr, /*max_frame_size=*/INT_MAX);
+        std::move(write_args));
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(

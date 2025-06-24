@@ -6,7 +6,7 @@ certifi==2023.7.22
 chardet==3.0.4
 charset-normalizer==3.3.2
 coverage==4.5.4
-cython==3.0.0
+cython==3.1.1
 Deprecated==1.2.14
 gevent==22.08.0
 google-api-core==2.24.0
@@ -26,7 +26,7 @@ opentelemetry-sdk==1.25.0
 opentelemetry-semantic-conventions==0.46b0
 prometheus_client==0.20.0
 proto-plus==1.25.0
-protobuf>=5.27.1,<6.0dev
+protobuf>=5.27.1,<6.0.0
 pyasn1-modules==0.3.0
 pyasn1==0.5.0
 requests==2.25.1

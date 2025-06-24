@@ -25,10 +25,10 @@
 #include "src/core/lib/event_engine/windows/windows_engine.h"
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
   return []() {
-    return std::make_unique<
+    return std::make_shared<
         grpc_event_engine::experimental::WindowsEventEngine>();
   };
 }
@@ -36,7 +36,7 @@ CustomEventEngineFactory() {
 #else
 
 absl::AnyInvocable<
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine>(void)>
+    std::shared_ptr<grpc_event_engine::experimental::EventEngine>(void)>
 CustomEventEngineFactory() {
   CHECK(false) << "This tool was not built for Windows.";
 }

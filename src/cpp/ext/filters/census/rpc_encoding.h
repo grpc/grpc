@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <string.h>
 
+// TODO(xuanwn): Use absl::endian/absl::byteswap when abseil-cpp is upgraded
+// to 202507.
 #include "absl/base/internal/endian.h"
 #include "absl/strings/string_view.h"
 

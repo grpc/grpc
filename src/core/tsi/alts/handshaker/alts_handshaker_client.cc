@@ -27,6 +27,7 @@
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/numbers.h"
+#include "absl/strings/str_split.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -111,6 +112,7 @@ typedef struct alts_grpc_handshaker_client {
   recv_message_result* pending_recv_message_result = nullptr;
   // Maximum frame size used by frame protector.
   size_t max_frame_size;
+  std::vector<std::string> preferred_transport_protocols;
   // If non-null, will be populated with an error string upon error.
   std::string* error;
 } alts_grpc_handshaker_client;
@@ -537,6 +539,17 @@ static grpc_byte_buffer* get_serialized_start_client(
   }
   grpc_gcp_StartClientHandshakeReq_set_max_frame_size(
       start_client, static_cast<uint32_t>(client->max_frame_size));
+  if (!client->preferred_transport_protocols.empty()) {
+    grpc_gcp_TransportProtocolPreferences* preferences =
+        grpc_gcp_StartClientHandshakeReq_mutable_transport_protocol_preferences(
+            start_client, arena.ptr());
+    for (const auto& transport_protocol :
+         client->preferred_transport_protocols) {
+      grpc_gcp_TransportProtocolPreferences_add_transport_protocol(
+          preferences, upb_StringView_FromString(transport_protocol.c_str()),
+          arena.ptr());
+    }
+  }
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
@@ -595,6 +608,17 @@ static grpc_byte_buffer* get_serialized_start_server(
       server_version, arena.ptr(), &client->options->rpc_versions);
   grpc_gcp_StartServerHandshakeReq_set_max_frame_size(
       start_server, static_cast<uint32_t>(client->max_frame_size));
+  if (!client->preferred_transport_protocols.empty()) {
+    grpc_gcp_TransportProtocolPreferences* preferences =
+        grpc_gcp_StartServerHandshakeReq_mutable_transport_protocol_preferences(
+            start_server, arena.ptr());
+    for (const auto& transport_protocol :
+         client->preferred_transport_protocols) {
+      grpc_gcp_TransportProtocolPreferences_add_transport_protocol(
+          preferences, upb_StringView_FromString(transport_protocol.c_str()),
+          arena.ptr());
+    }
+  }
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
@@ -712,7 +736,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
     void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client, size_t max_frame_size, std::string* error) {
+    bool is_client, size_t max_frame_size,
+    std::optional<absl::string_view> preferred_transport_protocols,
+    std::string* error) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     LOG(ERROR) << "Invalid arguments to alts_handshaker_client_create()";
     return nullptr;
@@ -735,6 +761,12 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
   client->handshake_status_details = grpc_empty_slice();
   client->max_frame_size = max_frame_size;
+  std::vector<std::string> transport_protocols;
+  if (preferred_transport_protocols.has_value()) {
+    transport_protocols = absl::StrSplit(preferred_transport_protocols.value(),
+                                         ',', absl::SkipWhitespace());
+  }
+  client->preferred_transport_protocols = transport_protocols;
   client->error = error;
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==

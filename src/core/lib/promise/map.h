@@ -156,6 +156,13 @@ class Map {
     return Pending();
   }
 
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<Fn>()));
+    return Json::FromObject(std::move(obj));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +200,13 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  Json ToJson() const {
+    Json::Object obj;
+    obj["promise"] = PromiseAsJson(promise_);
+    obj["map_fn"] = Json::FromString(std::string(TypeName<FusedFn>()));
+    return Json::FromObject(std::move(obj));
   }
 
  private:
@@ -269,6 +283,18 @@ template <typename Promise>
 auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   return MapErrors(std::move(promise), [prefix](absl::Status status) {
     absl::Status out(status.code(), absl::StrCat(prefix, status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
+
+template <typename Gen, typename Promise>
+auto AddGeneratedErrorPrefix(Gen prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix(), status.message()));
     status.ForEachPayload(
         [&out](absl::string_view name, const absl::Cord& value) {
           out.SetPayload(name, value);

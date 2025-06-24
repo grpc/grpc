@@ -41,7 +41,7 @@ namespace grpc {
 void RegisterOpenCensusPlugin() {
   grpc_core::ServerCallTracerFactory::RegisterGlobal(
       new grpc::internal::OpenCensusServerCallTracerFactory);
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->channel_init()
             ->RegisterFilter(GRPC_CLIENT_CHANNEL,

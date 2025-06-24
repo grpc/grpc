@@ -46,7 +46,7 @@ namespace {
 // right point.
 CORE_END2END_TEST(RetryTests, RetryStreaming) {
   SKIP_IF_V3();  // Not working yet
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()
           .Set(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024 * 8)

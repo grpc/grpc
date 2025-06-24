@@ -13,7 +13,7 @@
 # limitations under the License.
 """Buildgen python version plugin
 
-This parses the list of supported python versions from the yaml build file, and 
+This parses the list of supported python versions from the yaml build file, and
 creates custom strings for the minimum and maximum supported python versions.
 
 """

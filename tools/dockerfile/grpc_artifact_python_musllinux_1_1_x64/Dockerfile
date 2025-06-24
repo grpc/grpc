@@ -18,12 +18,12 @@ FROM quay.io/pypa/musllinux_1_1_x86_64:2024-09-09-f386546
 
 #===================================
 # Install Python build requirements
-RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython<4.0.0rc1'
-RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython<4.0.0rc1'
+RUN /opt/python/cp38-cp38/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp39-cp39/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp310-cp310/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp311-cp311/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp312-cp312/bin/pip install --upgrade 'cython==3.1.1'
+RUN /opt/python/cp313-cp313/bin/pip install --upgrade 'cython==3.1.1'
 
 #=================
 # Install ccache

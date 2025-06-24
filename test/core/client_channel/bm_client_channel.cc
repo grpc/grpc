@@ -181,7 +181,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 
 int main(int argc, char** argv) {
   ::benchmark::Initialize(&argc, argv);
-  grpc_core::CoreConfiguration::RegisterBuilder(
+  grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
       [](grpc_core::CoreConfiguration::Builder* builder) {
         builder->resolver_registry()->RegisterResolverFactory(
             std::make_unique<grpc_core::TestResolverFactory>());

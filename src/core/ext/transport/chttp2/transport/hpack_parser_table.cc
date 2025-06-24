@@ -33,6 +33,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_constants.h"
 #include "src/core/ext/transport/chttp2/transport/hpack_parse_result.h"
+#include "src/core/ext/transport/chttp2/transport/http2_stats_collector.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/telemetry/stats.h"
@@ -58,7 +59,7 @@ auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   CHECK_GT(num_entries_, 0u);
   size_t index = first_entry_ % max_entries_;
   if (index == timestamp_index_) {
-    global_stats().IncrementHttp2HpackEntryLifetime(
+    http2_stats_collector_->IncrementHttp2HpackEntryLifetime(
         (Timestamp::Now() - timestamp_).millis());
     timestamp_index_ = kNoTimestamp;
   }
@@ -66,7 +67,7 @@ auto HPackTable::MementoRingBuffer::PopOne() -> Memento {
   --num_entries_;
   auto& entry = entries_[index];
   if (!entry.parse_status.TestBit(Memento::kUsedBit)) {
-    global_stats().IncrementHttp2HpackMisses();
+    http2_stats_collector_->IncrementHttp2HpackMisses();
   }
   return std::move(entry);
 }
@@ -77,7 +78,7 @@ auto HPackTable::MementoRingBuffer::Lookup(uint32_t index) -> const Memento* {
   auto& entry = entries_[offset];
   const bool was_used = entry.parse_status.TestBit(Memento::kUsedBit);
   entry.parse_status.SetBit(Memento::kUsedBit);
-  if (!was_used) global_stats().IncrementHttp2HpackHits();
+  if (!was_used) http2_stats_collector_->IncrementHttp2HpackHits();
   return &entry;
 }
 
@@ -110,9 +111,9 @@ void HPackTable::MementoRingBuffer::ForEach(F f) const {
 }
 
 HPackTable::MementoRingBuffer::~MementoRingBuffer() {
-  ForEach([](uint32_t, const Memento& m) {
+  ForEach([this](uint32_t, const Memento& m) {
     if (!m.parse_status.TestBit(Memento::kUsedBit)) {
-      global_stats().IncrementHttp2HpackMisses();
+      http2_stats_collector_->IncrementHttp2HpackMisses();
     }
   });
 }
@@ -122,6 +123,11 @@ void HPackTable::EvictOne() {
   auto first_entry = entries_.PopOne();
   CHECK(first_entry.md.transport_size() <= mem_used_);
   mem_used_ -= first_entry.md.transport_size();
+}
+
+void HPackTable::SetHttp2StatsCollector(
+    std::shared_ptr<Http2StatsCollector> http2_stats_collector) {
+  entries_.SetHttp2StatsCollector(http2_stats_collector);
 }
 
 void HPackTable::SetMaxBytes(uint32_t max_bytes) {

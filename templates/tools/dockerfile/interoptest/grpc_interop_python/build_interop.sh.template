@@ -1,3 +1,0 @@
-%YAML 1.2
---- |
-  <%include file="../../python_build_interop.sh.include"/>

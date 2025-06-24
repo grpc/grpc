@@ -263,6 +263,8 @@ class TrySeq {
     return state_.PollOnce();
   }
 
+  Json ToJson() const { return state_.ToJson("TrySeq"); }
+
  private:
   SeqState<TrySeqTraits, P, Fs...> state_;
 };

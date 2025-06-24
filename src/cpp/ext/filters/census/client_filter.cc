@@ -247,8 +247,7 @@ void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordOutgoingBytes(
 void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordCancel(
     absl::Status /*cancel_error*/) {}
 
-void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd(
-    const gpr_timespec& /*latency*/) {
+void OpenCensusCallTracer::OpenCensusCallAttemptTracer::RecordEnd() {
   if (OpenCensusStatsEnabled()) {
     std::vector<std::pair<opencensus::tags::TagKey, std::string>> tags =
         context_.tags().tags();

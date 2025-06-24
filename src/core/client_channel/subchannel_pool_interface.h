@@ -45,7 +45,17 @@ class SubchannelKey final {
   SubchannelKey(SubchannelKey&& other) noexcept = default;
   SubchannelKey& operator=(SubchannelKey&& other) noexcept = default;
 
-  bool operator<(const SubchannelKey& other) const;
+  bool operator<(const SubchannelKey& other) const {
+    return Compare(other) < 0;
+  }
+  bool operator>(const SubchannelKey& other) const {
+    return Compare(other) > 0;
+  }
+  bool operator==(const SubchannelKey& other) const {
+    return Compare(other) == 0;
+  }
+
+  int Compare(const SubchannelKey& other) const;
 
   const grpc_resolved_address& address() const { return address_; }
   const ChannelArgs& args() const { return args_; }

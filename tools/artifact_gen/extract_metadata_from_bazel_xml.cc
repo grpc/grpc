@@ -28,6 +28,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "include/nlohmann/json.hpp"
 #include "pugixml.hpp"
@@ -152,17 +153,22 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib"
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib"
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib"
+    },
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib"
@@ -382,13 +388,6 @@ static const char* kBuildExtraMetadata = R"json({
         "run": true,
         "_TYPE": "target",
         "_RENAME": "grpc_cli"
-    },
-    "test/cpp/ext/otel:otel_plugin_test": {
-        "language": "c++",
-        "build": "plugin_test",
-        "_TYPE": "target",
-        "plugin_option": "gRPC_BUILD_GRPCPP_OTEL_PLUGIN",
-        "_RENAME": "otel_plugin_test"
     }
     // TODO(jtattermusch): create_jwt and verify_jwt breaks distribtests because it depends on grpc_test_utils and thus requires tests to be built
     // For now it's ok to disable them as these binaries aren't very useful anyway.
@@ -453,7 +452,7 @@ class ArtifactGen {
       bazel_rule.deps = {
           "@com_google_protobuf//upb:descriptor_upb_proto",
           "@com_google_protobuf//"
-          "upb:generated_code_support__only_for_generated_code_do_not_use__i_"
+          "upb:generated_code_support"
           "give_permission_to_break_me",
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers
@@ -542,6 +541,10 @@ class ArtifactGen {
       }
       if (absl::c_contains(bazel_rule.tags, "bazel_only")) {
         continue;
+      }
+      if (absl::StartsWith(test, "test/cpp/ext/otel")) {
+        test_dict["build"] = "plugin_test";
+        test_dict["plugin_option"] = "gRPC_BUILD_GRPCPP_OTEL_PLUGIN";
       }
       // if any tags that restrict platform compatibility are present,
       // generate the "platforms" field accordingly
@@ -1097,7 +1100,15 @@ class ArtifactGen {
   }
 
   static std::string GetBazelLabel(std::string target_name) {
-    if (absl::StartsWith(target_name, "@")) return target_name;
+    if (absl::StartsWith(target_name, "@")) {
+      if (absl::StrContains(target_name, ':')) {
+        return target_name;
+      } else {
+        // @foo//bar/baz -> @foo//bar/baz:baz
+        std::vector<std::string> parts = absl::StrSplit(target_name, '/');
+        return absl::StrCat(target_name, ":", parts.back());
+      }
+    }
     if (absl::StrContains(target_name, ":")) {
       return absl::StrCat("//", target_name);
     } else {
@@ -1148,6 +1159,7 @@ class ArtifactGen {
       {"@utf8_range//", "third_party/utf8_range"},
       {"@com_googlesource_code_re2//", "third_party/re2"},
       {"@com_google_googletest//", "third_party/googletest"},
+      {"@googletest//", "third_party/googletest"},
       {"@com_google_protobuf//upb", "third_party/upb/upb"},
       {"@com_google_protobuf//third_party/utf8_range",
        "third_party/utf8_range"},

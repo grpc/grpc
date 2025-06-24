@@ -66,6 +66,7 @@
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 #include "src/core/util/validation_errors.h"
@@ -407,7 +408,6 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
     RefCountedPtr<OutlierDetectionLb> parent_;
     std::optional<EventEngine::TaskHandle> timer_handle_;
     Timestamp start_time_;
-    absl::BitGen bit_gen_;
   };
 
   ~OutlierDetectionLb() override;
@@ -924,7 +924,8 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
           << "] checking candidate " << endpoint_state
           << ": success_rate=" << success_rate;
       if (success_rate < ejection_threshold) {
-        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        SharedBitGen bit_gen;
+        uint32_t random_key = absl::Uniform(bit_gen, 1, 100);
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)
@@ -967,7 +968,7 @@ void OutlierDetectionLb::EjectionTimer::OnTimerLocked() {
       if (endpoint_state->ejection_time().has_value()) continue;
       if ((100.0 - success_rate) >
           config.failure_percentage_ejection->threshold) {
-        uint32_t random_key = absl::Uniform(bit_gen_, 1, 100);
+        uint32_t random_key = absl::Uniform(SharedBitGen(), 1, 100);
         double current_percent =
             100.0 * ejected_host_count / parent_->endpoint_state_map_.size();
         GRPC_TRACE_LOG(outlier_detection_lb, INFO)

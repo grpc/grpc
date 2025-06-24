@@ -44,6 +44,7 @@ python3 tools/run_tests/python_utils/bazel_report_helper.py --report_path bazel_
 
 # run all C/C++ tests
 bazel_c_cpp_tests/bazel_wrapper \
+  --output_base=.bazel_rbe \
   --bazelrc=tools/remote_build/mac.bazelrc \
   test \
   --google_credentials="${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json" \

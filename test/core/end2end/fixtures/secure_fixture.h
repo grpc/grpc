@@ -40,17 +40,18 @@ class SecureFixture : public grpc_core::CoreTestFixture {
  protected:
   const std::string& localaddr() const { return localaddr_; }
 
- private:
-  virtual grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) = 0;
-  virtual grpc_server_credentials* MakeServerCreds(
-      const grpc_core::ChannelArgs& args) = 0;
   virtual grpc_core::ChannelArgs MutateClientArgs(grpc_core::ChannelArgs args) {
     return args;
   }
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
+
+ private:
+  virtual grpc_channel_credentials* MakeClientCreds(
+      const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_server_credentials* MakeServerCreds(
+      const grpc_core::ChannelArgs& args) = 0;
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {

@@ -31,9 +31,7 @@ def _dump_streams(name, streams):
     for stream_name, stream in zip(("STDOUT", "STDERR"), streams):
         stream.seek(0)
         sys.stderr.write(
-            "{} {}:\n{}\n".format(
-                name, stream_name, stream.read().decode("ascii")
-            )
+            "{} {}:\n{}\n".format(name, stream_name, stream.read().decode())
         )
         stream.close()
     sys.stderr.flush()
@@ -67,8 +65,8 @@ _GDB_TIMEOUT_S = 60
 
 
 @unittest.skipUnless(
-    sys.platform.startswith("linux"),
-    "not supported on windows, and fork+exec networking blocked on mac",
+    sys.platform.startswith("linux") or sys.platform.startswith("darwin"),
+    f"not supported on {sys.platform}",
 )
 @unittest.skipUnless(
     os.getenv("GRPC_ENABLE_FORK_SUPPORT") is not None,

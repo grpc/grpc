@@ -61,7 +61,8 @@ ControlEndpoint::ControlEndpoint(
                           << " bytes from " << buffer << " to "
                           << ResolvedAddressToString(endpoint->GetPeerAddress())
                                  .value_or("<<unknown peer address>>");
-                      return endpoint->Write(std::move(flushing));
+                      return endpoint->Write(std::move(flushing),
+                                             PromiseEndpoint::WriteArgs{});
                     },
                     // Then repeat
                     []() -> LoopCtl<absl::Status> { return Continue{}; }));

@@ -38,8 +38,18 @@ class Http2FrameTestHelper {
   EventEngineSlice EventEngineSliceFromHttp2DataFrame(
       std::string_view payload, const uint32_t stream_id = 1,
       const bool end_stream = false) const {
+    SliceBuffer buffer;
+    AppendGrpcHeaderToSliceBuffer(buffer, 0, payload.size());
+    buffer.Append(Slice::FromCopiedString(payload));
     return EventEngineSliceFromHttp2Frame(
-        Http2DataFrame{stream_id, end_stream, SliceBufferFromString(payload)});
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
+  }
+
+  EventEngineSlice EventEngineSliceFromEmptyHttp2DataFrame(
+      const uint32_t stream_id = 1, const bool end_stream = false) const {
+    SliceBuffer buffer;
+    return EventEngineSliceFromHttp2Frame(
+        Http2DataFrame{stream_id, end_stream, std::move(buffer)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2HeaderFrame(
@@ -58,8 +68,12 @@ class Http2FrameTestHelper {
   }
 
   EventEngineSlice EventEngineSliceFromHttp2SettingsFrame(
-      const bool ack = false) const {
-    return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{ack, {}});
+      std::vector<Http2SettingsFrame::Setting> settings) const {
+    if (settings.empty()) {
+      return EventEngineSliceFromHttp2Frame(Http2SettingsFrame{true, {}});
+    }
+    return EventEngineSliceFromHttp2Frame(
+        Http2SettingsFrame{false, std::move(settings)});
   }
 
   EventEngineSlice EventEngineSliceFromHttp2PingFrame(

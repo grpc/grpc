@@ -110,7 +110,9 @@ subprocess.check_call(
     ["cmake", "-G", "Unix Makefiles", "../third_party/bloaty"],
     cwd="bloaty-build",
 )
-subprocess.check_call("make -j%d" % args.jobs, shell=True, cwd="bloaty-build")
+subprocess.check_call(
+    "make -j%d bloaty" % args.jobs, shell=True, cwd="bloaty-build"
+)
 
 text = ""
 diff_size = 0

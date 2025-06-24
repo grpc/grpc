@@ -503,16 +503,17 @@ const grpc_channel_filter ServerLoggingFilter::kFilter =
 
 void RegisterLoggingFilter(LoggingSink* sink) {
   g_logging_sink = sink;
-  CoreConfiguration::RegisterBuilder([](CoreConfiguration::Builder* builder) {
-    builder->channel_init()
-        ->RegisterV2Filter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
-        // TODO(yashykt) : Figure out a good place to place this channel arg
-        .IfChannelArg("grpc.experimental.enable_observability", true);
-    builder->channel_init()
-        ->RegisterV2Filter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
-        // TODO(yashykt) : Figure out a good place to place this channel arg
-        .IfChannelArg("grpc.experimental.enable_observability", true);
-  });
+  CoreConfiguration::RegisterEphemeralBuilder(
+      [](CoreConfiguration::Builder* builder) {
+        builder->channel_init()
+            ->RegisterV2Filter<ServerLoggingFilter>(GRPC_SERVER_CHANNEL)
+            // TODO(yashykt) : Figure out a good place to place this channel arg
+            .IfChannelArg("grpc.experimental.enable_observability", true);
+        builder->channel_init()
+            ->RegisterV2Filter<ClientLoggingFilter>(GRPC_CLIENT_CHANNEL)
+            // TODO(yashykt) : Figure out a good place to place this channel arg
+            .IfChannelArg("grpc.experimental.enable_observability", true);
+      });
 }
 
 }  // namespace grpc_core

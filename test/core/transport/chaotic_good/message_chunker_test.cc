@@ -24,23 +24,18 @@
 namespace grpc_core {
 namespace {
 
-// One frame for this test is one of the message carrying frame types.
-using Frame =
-    std::variant<chaotic_good::BeginMessageFrame,
-                 chaotic_good::MessageChunkFrame, chaotic_good::MessageFrame>;
-
 // This type looks like an mpsc for sending frames, but simply accumulates
 // frames so we can look at them at the end of the test and ensure they're
 // correct.
 struct Sender {
-  std::vector<Frame> frames;
+  std::vector<chaotic_good::Frame> frames;
   Sender() = default;
   Sender(const Sender&) = delete;
   Sender(Sender&&) = delete;
   Sender& operator=(const Sender&) = delete;
   Sender& operator=(Sender&&) = delete;
-  auto Send(Frame frame) {
-    frames.emplace_back(std::move(frame));
+  auto Send(chaotic_good::OutgoingFrame frame, uint32_t) {
+    frames.emplace_back(std::move(frame.payload));
     return []() -> Poll<StatusFlag> { return Success{}; };
   }
 };
@@ -53,7 +48,7 @@ void MessageChunkerTest(uint32_t max_chunk_size, uint32_t alignment,
   EXPECT_THAT(chunker.Send(Arena::MakePooled<Message>(
                                SliceBuffer(Slice::FromCopiedString(payload)),
                                message_flags),
-                           stream_id, sender)(),
+                           stream_id, nullptr, sender)(),
               IsReady(Success{}));
   if (max_chunk_size == 0) {
     // No chunking ==> one frame with just a message.
