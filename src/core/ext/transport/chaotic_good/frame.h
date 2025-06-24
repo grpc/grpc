@@ -203,9 +203,7 @@ struct MessageFrame final : public FrameInterface {
            message->payload()->JoinIntoString() ==
                other.message->payload()->JoinIntoString();
   }
-  bool operator!=(const MessageFrame& other) const {
-    return !(*this == other);
-  }
+  bool operator!=(const MessageFrame& other) const { return !(*this == other); }
   bool IsLegal() const override { return stream_id != 0; }
 
   uint32_t stream_id;
