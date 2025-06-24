@@ -62,24 +62,40 @@ message Promise {
     repeated Promise children = 1;
   }
 
+  enum CompositionKind {
+    UNKNOWN = 0;
+    NORMAL = 1;
+    TRY = 2;
+  }
+
   // One step in a sequence
   message SeqStep {
     string factory = 1;
     Promise polling_promise = 2;
   }
 
-  enum SeqKind {
-    UNKNOWN = 0;
-    SEQ = 1;
-    TRY_SEQ = 2;
-  }
-
   // Seq(step0, step1, ...)
   // or TrySeq(step0, step1, ...)
   // distinguished by kind
   message Seq {
-    SeqKind kind = 1;
+    CompositionKind kind = 1;
     repeated SeqStep steps = 2;
+  }
+
+  message JoinBranch {
+    string factory = 1;
+    oneof state {
+      Promise polling_promise = 2;
+      string result = 3;
+    }
+  }
+
+  // Join(case1, case2, ...)
+  // or TryJoin(case1, case2, ...)
+  // distiguished by kind
+  message Join {
+    CompositionKind kind = 1;
+    repeated JoinBranch branches = 2;
   }
 
   oneof promise {
