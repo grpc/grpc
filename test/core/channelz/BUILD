@@ -131,3 +131,16 @@ grpc_fuzz_test(
         "//:channelz",
     ],
 )
+
+grpc_fuzz_test(
+    name = "channelz_fuzzer",
+    srcs = ["channelz_fuzzer.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//:channelz",
+    ],
+)
