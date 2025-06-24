@@ -29,18 +29,14 @@ cp tools/artifact_gen/bazel-bin/gen_upb_api_from_bazel "${TMP_DIR}/"
 rm -rf tools/artifact_gen/bazel-*
 
 # Clean existing generated files
-rm -rf src/core/ext/upb-gen
-mkdir -p src/core/ext/upb-gen
-rm -rf src/core/ext/upbdefs-gen
-mkdir -p src/core/ext/upbdefs-gen
+${TMP_DIR}/gen_upb_api_from_bazel --mode=clean $@
 
 UPB_RULES_XML=$(mktemp)
 DEPS_XML=$(mktemp)
 trap "rm -f ${UPB_RULES_XML} ${DEPS_XML}; rm -rf ${TMP_DIR}" EXIT
 
 # Query for upb rules from the main grpc workspace. This must be run from the root.
-tools/bazel query --output xml --noimplicit_deps \
-  'kind("(upb_c_proto_library|upb_proto_reflection_library)", //...)' > "${UPB_RULES_XML}"
+tools/bazel query --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
 
 # Now we can use the generator to get the list of deps.
 DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \

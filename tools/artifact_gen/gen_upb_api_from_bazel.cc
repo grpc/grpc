@@ -44,7 +44,7 @@ ABSL_FLAG(std::string, upbdefs_out, "src/core/ext/upbdefs-gen",
           "Output directory for upbdefs targets");
 ABSL_FLAG(std::string, mode, "generate_and_copy",
           "The mode to run in: "
-          "'generate_and_copy', 'list_deps', or 'list_build_targets'");
+          "'generate_and_copy', 'list_deps', 'clean' or 'list_build_targets'");
 ABSL_FLAG(std::string, upb_rules_xml, "",
           "Path to the XML file from `bazel query` on upb rules.");
 ABSL_FLAG(std::string, deps_xml, "",
@@ -306,6 +306,12 @@ int main(int argc, char** argv) {
   std::string mode = absl::GetFlag(FLAGS_mode);
   std::string upb_rules_xml = absl::GetFlag(FLAGS_upb_rules_xml);
   std::string deps_xml = absl::GetFlag(FLAGS_deps_xml);
+
+  if (mode == "clean") {
+    std::filesystem::remove_all(upb_out);
+    std::filesystem::remove_all(upbdefs_out);
+    return 0;
+  }
 
   auto upb_rules = GetUpbRules(upb_rules_xml);
 
