@@ -104,6 +104,9 @@ struct ProtoTransportFrame final : public FrameInterface {
   bool operator==(const ProtoTransportFrame& other) const {
     return body.ShortDebugString() == other.body.ShortDebugString();
   }
+  bool operator!=(const ProtoTransportFrame& other) const {
+    return !(*this == other);
+  }
   bool IsLegal() const override { return true; }
 
   Body body;
@@ -136,6 +139,9 @@ struct ProtoStreamFrame final : public FrameInterface {
     return body.ShortDebugString() == other.body.ShortDebugString() &&
            stream_id == other.stream_id;
   }
+  bool operator!=(const ProtoStreamFrame& other) const {
+    return !(*this == other);
+  }
   bool IsLegal() const override { return stream_id != 0; }
 
   Body body;
@@ -158,6 +164,9 @@ struct EmptyStreamFrame final : public FrameInterface {
   std::string ToString() const override { return FrameTypeString(frame_type); }
   bool operator==(const EmptyStreamFrame& other) const {
     return stream_id == other.stream_id;
+  }
+  bool operator!=(const EmptyStreamFrame& other) const {
+    return !(*this == other);
   }
   bool IsLegal() const override { return stream_id != 0; }
 
@@ -194,6 +203,9 @@ struct MessageFrame final : public FrameInterface {
            message->payload()->JoinIntoString() ==
                other.message->payload()->JoinIntoString();
   }
+  bool operator!=(const MessageFrame& other) const {
+    return !(*this == other);
+  }
   bool IsLegal() const override { return stream_id != 0; }
 
   uint32_t stream_id;
@@ -212,6 +224,9 @@ struct MessageChunkFrame final : public FrameInterface {
   bool operator==(const MessageChunkFrame& other) const {
     return stream_id == other.stream_id &&
            payload.JoinIntoString() == other.payload.JoinIntoString();
+  }
+  bool operator!=(const MessageChunkFrame& other) const {
+    return !(*this == other);
   }
   bool IsLegal() const override { return stream_id != 0; }
 
