@@ -1259,6 +1259,8 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "channelz_upb",
@@ -1268,6 +1270,7 @@ grpc_cc_library(
         "grpc_public_hdrs",
         "grpc_trace",
         "parse_address",
+        "protobuf_any_upb",
         "ref_counted_ptr",
         "sockaddr_utils",
         "uri",
