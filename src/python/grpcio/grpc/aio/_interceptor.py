@@ -15,14 +15,18 @@
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
-import collections
-from collections.abc import AsyncIterable
-from collections.abc import AsyncIterator
-from collections.abc import Awaitable
-from collections.abc import Iterator
-from collections.abc import Sequence
 import functools
-from typing import Any, Callable, Optional, Union
+from typing import (
+    Any,
+    AsyncIterable,
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterator,
+    Optional,
+    Sequence,
+    Union,
+)
 
 import grpc
 from grpc._cython import cygrpc
