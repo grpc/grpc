@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
-#define GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#ifndef GRPC_SRC_CORE_UTIL_POSTMORTEM_EMIT_H
+#define GRPC_SRC_CORE_UTIL_POSTMORTEM_EMIT_H
 
 namespace grpc_core {
 
@@ -22,4 +22,4 @@ void PostMortemEmit();
 
 }  // namespace grpc_core
 
-#endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H
+#endif  // GRPC_SRC_CORE_UTIL_POSTMORTEM_EMIT_H
