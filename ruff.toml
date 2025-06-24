@@ -43,6 +43,8 @@ ignore = [
     # as determined by the presence of a type hint containing bool as an evident subtype - e.g. bool, bool | int, typing.Optional[bool], etc.
 
     "FBT002", # Checks for the use of boolean positional arguments in function definitions, as determined by the presence of a boolean default value.
+
+    "UP006", # Checks for the use of generics that can be replaced with standard library variants based on PEP 585.
 ]
 
 # This is to suppress
