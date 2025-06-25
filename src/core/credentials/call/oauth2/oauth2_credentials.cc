@@ -301,9 +301,10 @@ class grpc_compute_engine_token_fetcher_credentials
         grpc_core::Oauth2TokenFetcherCredentials::debug_string());
   }
 
- private:
-  grpc_core::HttpRequest BuildHttpRequestWithQueryParams(
-      std::vector<QueryParam> query_parameter_pairs,
+ protected:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest>
+  BuildHttpRequestWithQueryParams(
+      std::vector<grpc_core::URI::QueryParam> query_parameter_pairs,
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
@@ -327,6 +328,7 @@ class grpc_compute_engine_token_fetcher_credentials
             grpc_insecure_credentials_create()));
   }
 
+ private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
