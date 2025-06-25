@@ -48,6 +48,12 @@
   "/" GRPC_GOOGLE_WELL_KNOWN_CREDENTIALS_FILE
 #endif
 
+// A grpc_call_credentials implementation that uses two
+// underlying credentials: one for TLS and one for ALTS.
+// The implementation will pick the right credentials based on the auth
+// context's GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME property.
+class GoogleDefaultCallCredentialsWrapper;
+
 class grpc_google_default_channel_credentials
     : public grpc_channel_credentials {
  public:
