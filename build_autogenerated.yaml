@@ -11500,6 +11500,18 @@ targets:
   deps:
   - gtest
   - grpc++_test_util
+- name: google_default_call_credentials_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - test/core/test_util/test_call_creds.h
+  src:
+  - test/core/credentials/transport/google_default/google_default_call_credentials_test.cc
+  - test/core/test_util/test_call_creds.cc
+  deps:
+  - gtest
+  - grpc_test_util
 - name: gpr_time_test
   gtest: true
   build: test

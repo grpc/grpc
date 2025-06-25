@@ -225,7 +225,8 @@ GRPCAPI void grpc_call_credentials_release(grpc_call_credentials* creds);
    type is ALTS.
 */
 GRPCAPI grpc_channel_credentials* grpc_google_default_credentials_create(
-    grpc_call_credentials* call_credentials);
+    grpc_call_credentials* call_creds_for_tls,
+    grpc_call_credentials* call_creds_for_alts);
 
 GRPCAPI grpc_channel_credentials*
 grpc_google_default_credentials_create_with_alts_option(
