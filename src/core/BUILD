@@ -3621,6 +3621,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
         "grpc_service_config",
