@@ -114,7 +114,8 @@ TEST(BufferListTest, ProcessTimestampScheduled) {
   struct sock_extended_err serr;
   serr.ee_data = 10;
   serr.ee_info = SCM_TSTAMP_SCHED;
-  struct scm_timestamping tss{0};
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   EXPECT_EQ(count, 10);
   EXPECT_THAT(traced_buffers.Size(), Eq(10));
@@ -139,7 +140,8 @@ TEST(BufferListTest, ProcessTimestampSent) {
   struct sock_extended_err serr;
   serr.ee_data = 10;
   serr.ee_info = SCM_TSTAMP_SND;
-  struct scm_timestamping tss{0};
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   EXPECT_EQ(count, 10);
   EXPECT_THAT(traced_buffers.Size(), Eq(10));
@@ -164,7 +166,8 @@ TEST(BufferListTest, ProcessTimestampsAcked) {
   struct sock_extended_err serr;
   serr.ee_data = 10;
   serr.ee_info = SCM_TSTAMP_ACK;
-  struct scm_timestamping tss{0};
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   EXPECT_EQ(count, 10);
   EXPECT_THAT(traced_buffers.Size(), Eq(0));
@@ -190,7 +193,8 @@ TEST(BufferListTest, TimedOut) {
   struct sock_extended_err serr;
   serr.ee_data = 0;
   serr.ee_info = SCM_TSTAMP_SND;
-  struct scm_timestamping tss{0};
+  struct scm_timestamping tss;
+  memset(&tss, 0, sizeof(tss));
   traced_buffers.ProcessTimestamp(&serr, nullptr, &tss);
   // All buffers should be deleted
   EXPECT_THAT(traced_buffers.Size(), Eq(0));
