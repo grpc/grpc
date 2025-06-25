@@ -3638,6 +3638,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "google_default_call_credentials_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "gpr_time_test",
     "platforms": [
       "linux",
@@ -4391,7 +4415,8 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix"
+      "posix",
+      "windows"
     ],
     "cpu_cost": 1.0,
     "exclude_configs": [],
@@ -4403,7 +4428,8 @@
     "platforms": [
       "linux",
       "mac",
-      "posix"
+      "posix",
+      "windows"
     ],
     "uses_polling": false
   },
@@ -4776,6 +4802,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "inter_activity_mutex_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "inter_activity_pipe_test",
     "platforms": [
       "linux",
@@ -5021,7 +5071,7 @@
       "posix",
       "windows"
     ],
-    "uses_polling": true
+    "uses_polling": false
   },
   {
     "args": [],
@@ -6598,6 +6648,28 @@
       "posix"
     ],
     "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "posix_write_event_sink_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix"
+    ],
+    "uses_polling": false
   },
   {
     "args": [],

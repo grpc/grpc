@@ -2531,8 +2531,29 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_posix_interface",
+        "posix_write_event_sink",
         "sync",
+        "//:event_engine_base_hdrs",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_write_event_sink",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_write_event_sink.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_write_event_sink.h",
+    ],
+    external_deps = [
+        "absl/base:no_destructor",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "bitset",
+        "event_engine_common",
+        "//:event_engine_base_hdrs",
     ],
 )
 
@@ -8211,6 +8232,7 @@ grpc_cc_library(
         "error_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
+        "http2_client_transport",
         "resolved_address",
         "status_helper",
         "subchannel_connector",
@@ -10198,6 +10220,17 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_session_cache",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_strings",
+    srcs = [
+        "channelz/zviz/strings.cc",
+    ],
+    hdrs = ["channelz/zviz/strings.h"],
+    external_deps = [
+        "absl/strings",
     ],
 )
 
