@@ -16,21 +16,61 @@ libs:
   build: all
   language: c
   public_headers:
+  - include/grpc/byte_buffer.h
+  - include/grpc/byte_buffer_reader.h
+  - include/grpc/compression.h
+  - include/grpc/event_engine/endpoint_config.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/extensible.h
+  - include/grpc/event_engine/internal/memory_allocator_impl.h
+  - include/grpc/event_engine/internal/slice_cast.h
+  - include/grpc/event_engine/internal/write_event.h
+  - include/grpc/event_engine/memory_allocator.h
+  - include/grpc/event_engine/memory_request.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice.h
+  - include/grpc/event_engine/slice_buffer.h
+  - include/grpc/fork.h
+  - include/grpc/grpc.h
+  - include/grpc/grpc_audit_logging.h
+  - include/grpc/grpc_crl_provider.h
+  - include/grpc/grpc_posix.h
+  - include/grpc/grpc_security.h
+  - include/grpc/grpc_security_constants.h
   - include/grpc/impl/call.h
+  - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/atm.h
   - include/grpc/impl/codegen/atm_gcc_atomic.h
   - include/grpc/impl/codegen/atm_gcc_sync.h
   - include/grpc/impl/codegen/atm_windows.h
+  - include/grpc/impl/codegen/byte_buffer.h
+  - include/grpc/impl/codegen/byte_buffer_reader.h
+  - include/grpc/impl/codegen/compression_types.h
+  - include/grpc/impl/codegen/connectivity_state.h
   - include/grpc/impl/codegen/fork.h
   - include/grpc/impl/codegen/gpr_types.h
+  - include/grpc/impl/codegen/grpc_types.h
   - include/grpc/impl/codegen/log.h
   - include/grpc/impl/codegen/port_platform.h
+  - include/grpc/impl/codegen/propagation_bits.h
+  - include/grpc/impl/codegen/slice.h
+  - include/grpc/impl/codegen/status.h
   - include/grpc/impl/codegen/sync.h
   - include/grpc/impl/codegen/sync_abseil.h
   - include/grpc/impl/codegen/sync_custom.h
   - include/grpc/impl/codegen/sync_generic.h
   - include/grpc/impl/codegen/sync_posix.h
   - include/grpc/impl/codegen/sync_windows.h
+  - include/grpc/impl/compression_types.h
+  - include/grpc/impl/connectivity_state.h
+  - include/grpc/impl/grpc_types.h
+  - include/grpc/impl/propagation_bits.h
+  - include/grpc/impl/slice_type.h
+  - include/grpc/load_reporting.h
+  - include/grpc/passive_listener.h
+  - include/grpc/slice.h
+  - include/grpc/slice_buffer.h
+  - include/grpc/status.h
   - include/grpc/support/alloc.h
   - include/grpc/support/atm.h
   - include/grpc/support/atm_gcc_atomic.h
@@ -51,6 +91,7 @@ libs:
   - include/grpc/support/sync_windows.h
   - include/grpc/support/thd_id.h
   - include/grpc/support/time.h
+  - include/grpc/support/workaround_list.h
   headers:
   - src/core/config/config_vars.h
   - src/core/config/load_config.h
@@ -132,12 +173,14 @@ libs:
   - absl/numeric:bits
   - absl/random:random
   - absl/status:status
+  - absl/status:statusor
   - absl/strings:cord
   - absl/strings:str_format
   - absl/strings:strings
   - absl/synchronization:synchronization
   - absl/time:time
   - absl/types:optional
+  - absl/types:span
 - name: grpc
   build: all
   language: c
@@ -165,7 +208,6 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
@@ -2129,9 +2171,7 @@ libs:
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -2264,7 +2304,6 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
@@ -3233,9 +3272,7 @@ libs:
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -4297,6 +4334,7 @@ libs:
   - src/cpp/server/health/default_health_check_service.h
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/cpp/client/call_credentials.cc
   - src/cpp/client/channel_cc.cc
@@ -4339,8 +4377,15 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/container:fixed_array
+  - absl/container:layout
+  - absl/functional:overload
   - absl/log:absl_check
   - absl/log:absl_log
+  - absl/strings:charset
+  - absl/strings:internal
   - grpc_unsecure
   - protobuf
   baselib: true
@@ -4370,7 +4415,6 @@ libs:
   - include/grpc/grpc_posix.h
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
-  - include/grpc/impl/channel_arg_names.h
   - include/grpc/impl/codegen/byte_buffer.h
   - include/grpc/impl/codegen/byte_buffer_reader.h
   - include/grpc/impl/codegen/compression_types.h
@@ -5048,9 +5092,7 @@ libs:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -5086,6 +5128,7 @@ libs:
   - src/compiler/ruby_generator_map-inl.h
   - src/compiler/ruby_generator_string-inl.h
   - src/compiler/schema_interface.h
+  - third_party/utf8_range/utf8_validity.h
   src:
   - src/compiler/cpp_generator.cc
   - src/compiler/csharp_generator.cc
@@ -5096,7 +5139,42 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps:
+  - utf8_range_lib
+  - z
+  - absl/algorithm:container
+  - absl/base:base
+  - absl/base:config
+  - absl/base:core_headers
+  - absl/base:dynamic_annotations
+  - absl/base:prefetch
+  - absl/cleanup:cleanup
+  - absl/container:btree
+  - absl/container:fixed_array
+  - absl/container:flat_hash_map
+  - absl/container:flat_hash_set
+  - absl/container:layout
+  - absl/functional:any_invocable
+  - absl/functional:function_ref
+  - absl/functional:overload
+  - absl/hash:hash
+  - absl/log:absl_check
+  - absl/log:absl_log
+  - absl/memory:memory
+  - absl/meta:type_traits
+  - absl/numeric:bits
   - absl/status:status
+  - absl/status:statusor
+  - absl/strings:charset
+  - absl/strings:cord
+  - absl/strings:internal
+  - absl/strings:str_format
+  - absl/strings:string_view
+  - absl/strings:strings
+  - absl/synchronization:synchronization
+  - absl/time:time
+  - absl/types:optional
+  - absl/types:span
+  - absl/utility:utility
   - protobuf
   - protoc
 - name: grpcpp_channelz
@@ -5216,8 +5294,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: address_sorting_test
@@ -5450,8 +5526,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -5973,8 +6047,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: buffer_list_test
@@ -6194,8 +6266,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -6256,8 +6326,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: call_tracer_test
@@ -6867,9 +6935,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -6994,8 +7060,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: cel_authorization_engine_test
@@ -7631,8 +7695,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: cli_call_test
@@ -7907,8 +7969,6 @@ targets:
   - test/core/event_engine/common_closures_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: completion_queue_threading_test
@@ -10055,8 +10115,6 @@ targets:
   - absl/base:config
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: endpoint_pair_test
@@ -10291,8 +10349,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: experiments_tag_test
@@ -10310,7 +10366,6 @@ targets:
   - test/core/experiments/fixtures/experiments.cc
   deps:
   - gtest
-  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: experiments_test
@@ -10999,9 +11054,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -11159,8 +11212,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: for_each_test
@@ -11275,8 +11326,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: fork_test
@@ -11352,8 +11401,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: function_signature_test
@@ -12691,9 +12738,7 @@ targets:
   - absl/meta:type_traits
   - absl/random:bit_gen_ref
   - absl/random:distributions
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - cares
   - gpr
@@ -12928,8 +12973,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - gpr
 - name: http_proxy_mapper_test
   gtest: true
@@ -13039,7 +13082,6 @@ targets:
   deps:
   - gtest
   - absl/meta:type_traits
-  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: init_test
@@ -13151,8 +13193,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: interception_chain_test
@@ -13271,8 +13311,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: interop_client
@@ -13388,8 +13426,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: json_object_loader_test
@@ -13510,8 +13546,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: lb_get_cpu_stats_test
@@ -13634,8 +13668,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
 - name: log_too_many_open_files_test
   gtest: true
@@ -13699,8 +13731,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: lru_cache_test
@@ -13829,8 +13859,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: match_promise_test
@@ -13916,9 +13944,7 @@ targets:
   - third_party/googletest/googlemock/src/gmock_main.cc
   deps:
   - gtest
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - gpr
 - name: message_allocator_end2end_test
   gtest: true
@@ -14050,8 +14076,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
 - name: message_compress_test
   gtest: true
@@ -14285,8 +14309,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: oracle_event_engine_posix_test
@@ -14727,8 +14749,6 @@ targets:
   - absl/container:flat_hash_map
   - absl/functional:function_ref
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: pick_first_test
@@ -15201,7 +15221,6 @@ targets:
   deps:
   - gtest
   - absl/meta:type_traits
-  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: promise_mutex_test
@@ -15256,8 +15275,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
 - name: promise_test
   gtest: true
@@ -15294,8 +15311,6 @@ targets:
   deps:
   - gtest
   - absl/container:flat_hash_map
-  - absl/status:statusor
-  - absl/types:span
   - gpr
 - name: proto_buffer_reader_test
   gtest: true
@@ -15612,8 +15627,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -15941,9 +15954,7 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
   - absl/strings:string_view
-  - absl/types:span
   - absl/utility:utility
   - gpr
 - name: resolve_address_using_ares_resolver_posix_test
@@ -16221,8 +16232,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: sequential_connectivity_test
@@ -16592,8 +16601,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
@@ -16734,7 +16741,6 @@ targets:
   - test/core/load_balancing/static_stride_scheduler_test.cc
   deps:
   - gtest
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: status_conversion_test
@@ -16882,7 +16888,6 @@ targets:
   deps:
   - gtest
   - absl/meta:type_traits
-  - absl/status:statusor
   - gpr
   uses_polling: false
 - name: sync_test
@@ -17050,8 +17055,6 @@ targets:
   - test/core/event_engine/posix/timer_heap_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_core_event_engine_slice_buffer_test
@@ -17091,8 +17094,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/hash:hash
-  - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17142,8 +17143,6 @@ targets:
   - test/core/util/time_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: test_cpp_client_credentials_test
@@ -17393,8 +17392,6 @@ targets:
   - test/core/event_engine/posix/timer_list_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: timer_manager_test
@@ -17551,8 +17548,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - absl/utility:utility
   - gpr
   uses_polling: false
@@ -17599,8 +17594,6 @@ targets:
   - gtest
   - absl/container:flat_hash_map
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: unique_ptr_with_bitset_test
@@ -17747,8 +17740,6 @@ targets:
   - absl/functional:function_ref
   - absl/hash:hash
   - absl/meta:type_traits
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: wait_for_single_owner_test
@@ -17887,8 +17878,6 @@ targets:
   - test/core/transport/chttp2/write_size_policy_test.cc
   deps:
   - gtest
-  - absl/status:statusor
-  - absl/types:span
   - gpr
   uses_polling: false
 - name: writes_per_rpc_test

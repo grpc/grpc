@@ -784,6 +784,7 @@ grpc_cc_library(
     deps = [
         "config_vars",
         "debug_location",
+        ":grpc_public_hdrs",
         "//src/core:construct_destruct",
         "//src/core:env",
         "//src/core:event_engine_thread_local",
@@ -797,7 +798,6 @@ grpc_cc_library(
         "//src/core:time_precise",
         "//src/core:time_util",
         "//src/core:useful",
-        ":grpc_public_hdrs"
     ],
 )
 
