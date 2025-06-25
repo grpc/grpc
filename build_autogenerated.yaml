@@ -13136,6 +13136,19 @@ targets:
   - gtest
   - grpc
   uses_polling: false
+- name: inter_activity_mutex_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/inter_activity_mutex.h
+  - test/core/promise/poll_matcher.h
+  src:
+  - test/core/promise/inter_activity_mutex_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - grpc
 - name: inter_activity_pipe_test
   gtest: true
   build: test
