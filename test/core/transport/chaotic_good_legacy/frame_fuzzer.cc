@@ -19,7 +19,6 @@
 #include <limits>
 #include <memory>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/bit_gen_ref.h"
 #include "absl/status/statusor.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/resource_quota/resource_quota.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "test/core/promise/test_context.h"
 #include "test/core/transport/chaotic_good_legacy/frame_fuzzer.pb.h"

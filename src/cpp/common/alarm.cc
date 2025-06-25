@@ -29,12 +29,12 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/default_event_engine.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/surface/completion_queue.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 
 namespace grpc {

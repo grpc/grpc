@@ -21,7 +21,6 @@
 #include <grpc/support/port_platform.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -31,6 +30,7 @@
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/ext/transport/chttp2/transport/stream_lists.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 
 grpc_slice grpc_chttp2_window_update_create(

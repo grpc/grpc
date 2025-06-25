@@ -27,7 +27,6 @@
 #include <optional>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/util/dump_args.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/useful.h"
 #include "test/core/event_engine/event_engine_test_utils.h"

@@ -18,8 +18,8 @@
 #include <grpc/support/port_platform.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/util/grpc_check.h"
 
 // IWYU pragma: no_include <sys/socket.h>
 

@@ -26,7 +26,6 @@
 #include <inttypes.h>
 #include <limits.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/config/core_configuration.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/server/server.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "src/core/util/thd.h"
 #include "test/core/end2end/cq_verifier.h"

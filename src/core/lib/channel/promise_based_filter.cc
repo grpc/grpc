@@ -25,7 +25,6 @@
 
 #include "absl/base/attributes.h"
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/latent_see.h"
 #include "src/core/util/manual_constructor.h"
 #include "src/core/util/status_helper.h"

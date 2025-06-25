@@ -31,8 +31,8 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/end2end/cq_verifier.h"

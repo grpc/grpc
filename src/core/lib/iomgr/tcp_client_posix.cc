@@ -33,7 +33,6 @@
 #include <memory>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -53,6 +52,7 @@
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/status_helper.h"
 #include "src/core/util/string.h"
 

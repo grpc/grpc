@@ -31,7 +31,6 @@
 #include <string_view>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/config/core_configuration.h"
@@ -54,6 +53,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/time.h"

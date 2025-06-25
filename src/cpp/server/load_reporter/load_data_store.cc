@@ -27,9 +27,9 @@
 #include <set>
 #include <unordered_map>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/server/load_reporter/constants.h"
 
 namespace grpc {

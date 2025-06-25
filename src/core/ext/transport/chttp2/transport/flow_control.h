@@ -29,7 +29,6 @@
 #include <utility>
 
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/property_list.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
 #include "src/core/lib/transport/bdp_estimator.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 
 namespace grpc {

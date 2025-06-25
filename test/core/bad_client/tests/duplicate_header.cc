@@ -21,7 +21,7 @@
 #include <grpc/status.h>
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/bad_client/bad_client.h"
 #include "test/core/end2end/cq_verifier.h"

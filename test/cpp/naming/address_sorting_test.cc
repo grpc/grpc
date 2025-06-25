@@ -27,7 +27,6 @@
 
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gmock/gmock.h"
 #include "src/core/client_channel/client_channel_filter.h"
@@ -42,6 +41,7 @@
 #include "src/core/resolver/resolver.h"
 #include "src/core/resolver/resolver_registry.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/port.h"

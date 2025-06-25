@@ -31,7 +31,6 @@
 #include <variant>
 
 #include "absl/base/attributes.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/match.h"
@@ -51,6 +50,7 @@
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/telemetry/stats.h"
 #include "src/core/telemetry/stats_data.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/match.h"
 
 // IWYU pragma: no_include <type_traits>

@@ -30,10 +30,10 @@
 #include <vector>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_format.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 #ifdef __FreeBSD__
 #include <sys/wait.h>

@@ -29,7 +29,6 @@
 #include <string>
 #include <type_traits>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/unique_type_name.h"
 
@@ -152,9 +152,8 @@ class ChannelInit::DependencyTracker {
 
   FilterRegistration* Next() {
     if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size()) << "Unresolvable graph of channel "
-                                               "filters:\n"
-                                            << GraphString();
+      CHECK_EQ(nodes_taken_, nodes_.size())
+          << "Unresolvable graph of channel filters :\n " << GraphString();
       return nullptr;
     }
     auto next = ready_dependencies_.top();

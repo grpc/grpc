@@ -20,7 +20,6 @@
 
 #include <grpc/grpc.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -28,6 +27,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 

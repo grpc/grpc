@@ -28,7 +28,6 @@
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -44,6 +43,7 @@
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
 #include "src/core/util/gcp_metadata_query.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/load_file.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/status_helper.h"

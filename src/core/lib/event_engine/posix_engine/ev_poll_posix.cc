@@ -28,7 +28,6 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_format.h"
@@ -38,6 +37,7 @@
 #include "src/core/lib/event_engine/posix_engine/posix_interface.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 #ifdef GRPC_POSIX_SOCKET_EV_POLL
 

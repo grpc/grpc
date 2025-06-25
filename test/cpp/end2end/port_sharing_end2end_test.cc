@@ -31,7 +31,6 @@
 #include <mutex>
 #include <thread>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/test_util/port.h"

@@ -202,7 +202,6 @@ front_matter = """
 
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/base/attributes.h"
 #include "absl/strings/str_cat.h"
@@ -213,6 +212,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
 #include "src/core/lib/promise/promise.h"
 

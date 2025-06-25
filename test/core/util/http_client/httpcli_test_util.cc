@@ -27,12 +27,12 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/config/config_vars.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/subprocess.h"
 #include "test/core/test_util/port.h"
 

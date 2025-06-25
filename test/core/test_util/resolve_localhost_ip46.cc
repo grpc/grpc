@@ -23,7 +23,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/event_engine/shim.h"
@@ -32,6 +31,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc_core {
 namespace {

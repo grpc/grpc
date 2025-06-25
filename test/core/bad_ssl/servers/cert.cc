@@ -21,8 +21,8 @@
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/bad_ssl/server_common.h"
 #include "test/core/test_util/tls_utils.h"
 

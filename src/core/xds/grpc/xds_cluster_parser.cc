@@ -19,7 +19,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -50,6 +49,7 @@
 #include "src/core/load_balancing/lb_policy_registry.h"
 #include "src/core/util/down_cast.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/time.h"
 #include "src/core/util/upb_utils.h"

@@ -24,7 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 #include "src/core/config/config_vars.h"
@@ -35,6 +34,7 @@
 #include "src/core/transport/auth_context.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/unique_type_name.h"
 #include "test/core/test_util/test_call_creds.h"
 #include "test/core/test_util/test_config.h"

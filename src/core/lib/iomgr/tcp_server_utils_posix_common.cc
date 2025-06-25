@@ -33,7 +33,6 @@
 
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/iomgr/vsock.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 
 #define MIN_SAFE_ACCEPT_QUEUE_SIZE 100
 

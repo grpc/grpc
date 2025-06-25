@@ -26,7 +26,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/sync.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/port_server_client.h"

@@ -26,7 +26,6 @@
 #include <memory>
 #include <sstream>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/random/random.h"
 #include "src/core/call/metadata_batch.h"
@@ -37,6 +36,7 @@
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/microbenchmarks/helpers.h"

@@ -17,11 +17,11 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "src/core/lib/event_engine/windows/win_socket.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/event_engine/windows/create_sockpair.h"
 
 namespace grpc_event_engine {

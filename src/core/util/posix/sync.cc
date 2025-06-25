@@ -27,7 +27,7 @@
 #include <grpc/support/time.h>
 #include <time.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 void gpr_mu_init(gpr_mu* mu) {
 #ifdef GRPC_ASAN_ENABLED

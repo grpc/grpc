@@ -27,7 +27,6 @@
 #include <new>
 #include <optional>
 
-#include "absl/log/check.h"
 #include "src/core/client_channel/client_channel_filter.h"
 #include "src/core/client_channel/retry_service_config.h"
 #include "src/core/client_channel/retry_throttle.h"
@@ -36,6 +35,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/transport.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 

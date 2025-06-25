@@ -28,7 +28,7 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 namespace grpc {
 namespace experimental {

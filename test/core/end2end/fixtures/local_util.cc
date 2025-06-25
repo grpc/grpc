@@ -25,7 +25,7 @@
 
 #include <utility>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  const grpc_metadata* /*md*/,

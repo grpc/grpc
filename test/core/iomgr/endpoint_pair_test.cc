@@ -25,7 +25,6 @@
 
 #include <chrono>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -35,6 +34,7 @@
 #include "src/core/lib/event_engine/tcp_socket_utils.h"
 #include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/resource_quota/memory_quota.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/useful.h"
 #include "test/core/iomgr/endpoint_tests.h"

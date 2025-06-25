@@ -35,7 +35,6 @@
 #include <vector>
 
 #include "absl/functional/function_ref.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -60,6 +59,7 @@
 #include "src/core/ext/filters/http/client/http_client_filter.h"
 #include "src/core/lib/security/authorization/audit_logging.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/string.h"
 #include "src/core/util/sync.h"

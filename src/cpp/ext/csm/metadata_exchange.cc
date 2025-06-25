@@ -29,7 +29,6 @@
 #include <unordered_map>
 #include <variant>
 
-#include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_split.h"
@@ -40,6 +39,7 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/env.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/ext/otel/key_value_iterable.h"
 #include "upb/base/string_view.h"
 

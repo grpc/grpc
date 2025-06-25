@@ -23,7 +23,7 @@
 #include <math.h>
 #include <stddef.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/useful.h"
 
 // Histograms are stored with exponentially increasing bucket sizes.

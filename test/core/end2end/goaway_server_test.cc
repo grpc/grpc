@@ -33,7 +33,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+#include "src/core/util/grpc_check.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/util/delegating_event_engine.h"
 #include "test/core/test_util/port.h"

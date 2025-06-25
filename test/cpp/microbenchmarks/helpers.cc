@@ -20,7 +20,7 @@
 
 #include <string.h>
 
-#include "absl/log/check.h"
+#include "src/core/util/grpc_check.h"
 
 static LibraryInitializer* g_libraryInitializer;
 

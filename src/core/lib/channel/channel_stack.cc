@@ -24,13 +24,13 @@
 #include <memory>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/channelz/property_list.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/util/alloc.h"
+#include "src/core/util/grpc_check.h"
 
 using grpc_event_engine::experimental::EventEngine;
 

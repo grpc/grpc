@@ -35,7 +35,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/iomgr/iomgr_fwd.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/notification.h"
 #include "src/core/util/status_helper.h"

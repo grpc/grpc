@@ -32,8 +32,8 @@
 #include <memory>
 #include <string>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/test_util/port.h"

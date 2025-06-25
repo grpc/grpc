@@ -32,7 +32,6 @@
 #include <unordered_set>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/strings/str_format.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/iocp_windows.h"
@@ -44,6 +43,7 @@
 #include "src/core/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/memory.h"
 #include "src/core/util/string.h"
 

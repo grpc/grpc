@@ -23,9 +23,9 @@
 #include <thread>
 
 #include "absl/flags/flag.h"
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/str_split.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/string.h"
 #include "test/core/test_util/test_config.h"
 #include "test/cpp/interop/client_helper.h"

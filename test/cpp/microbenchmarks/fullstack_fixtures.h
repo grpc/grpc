@@ -28,7 +28,6 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "absl/log/check.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -41,6 +40,7 @@
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "test/core/test_util/port.h"
 #include "test/core/test_util/test_config.h"

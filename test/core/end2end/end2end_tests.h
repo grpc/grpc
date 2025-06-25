@@ -41,7 +41,6 @@
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/memory/memory.h"
 #include "absl/meta/type_traits.h"
 #include "absl/strings/str_cat.h"
@@ -57,6 +56,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/bitset.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/call/batch_builder.h"

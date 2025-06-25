@@ -35,7 +35,6 @@
 #include <optional>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
@@ -44,6 +43,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/load_balancing/backend_metric_data.h"
 #include "src/core/util/debug_location.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/time.h"
 #include "src/cpp/server/backend_metric_recorder.h"
 #include "upb/base/string_view.h"

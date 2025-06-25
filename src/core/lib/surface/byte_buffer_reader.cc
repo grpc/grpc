@@ -24,9 +24,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "absl/log/check.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
+#include "src/core/util/grpc_check.h"
 
 int grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                  grpc_byte_buffer* buffer) {

@@ -27,7 +27,6 @@
 
 #include "absl/base/attributes.h"
 #include "absl/functional/any_invocable.h"
-#include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
@@ -40,6 +39,7 @@
 #include "src/core/util/check_class_size.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 

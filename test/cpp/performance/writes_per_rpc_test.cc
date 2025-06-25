@@ -27,7 +27,6 @@
 #include <chrono>
 #include <utility>
 
-#include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "gtest/gtest.h"
 #include "src/core/config/core_configuration.h"
@@ -43,6 +42,7 @@
 #include "src/core/lib/surface/channel_create.h"
 #include "src/core/server/server.h"
 #include "src/core/telemetry/stats.h"
+#include "src/core/util/grpc_check.h"
 #include "src/core/util/notification.h"
 #include "src/cpp/client/create_channel_internal.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
