@@ -12,7 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_internal_proto_library", "grpc_package")
+load(
+    "//bazel:grpc_build_system.bzl",
+    "grpc_cc_proto_library",
+    "grpc_internal_proto_library",
+    "grpc_package",
+)
 
 licenses(["notice"])
 
@@ -39,4 +44,14 @@ grpc_internal_proto_library(
         "@com_google_protobuf//:empty_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
+)
+
+grpc_cc_proto_library(
+    name = "channelz_cc_proto",
+    deps = [":channelz_proto"],
+)
+
+grpc_cc_proto_library(
+    name = "property_list_cc_proto",
+    deps = [":property_list_proto"],
 )
