@@ -303,7 +303,7 @@ class grpc_compute_engine_token_fetcher_credentials
 
  protected:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest>
-  BuildHttpRequestWithQueryParams(
+  BuildAndStartHttpRequestWithQueryParams(
       std::vector<grpc_core::URI::QueryParam> query_parameter_pairs,
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) {
@@ -321,21 +321,21 @@ class grpc_compute_engine_token_fetcher_credentials
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       query_parameter_pairs, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
-    return grpc_core::HttpRequest::Get(
+    auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
         on_complete, response,
         grpc_core::RefCountedPtr<grpc_channel_credentials>(
             grpc_insecure_credentials_create()));
+    http_request->Start();
+    return http_request;
   }
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
-    auto http_request = BuildHttpRequestWithQueryParams({}, pollent, deadline,
-                                                        response, on_complete);
-    http_request->Start();
-    return http_request;
+    return BuildAndStartHttpRequestWithQueryParams({}, pollent, deadline, response,
+                                           on_complete);
   }
 };
 
@@ -355,10 +355,8 @@ class grpc_compute_engine_token_fetcher_alts_credentials
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
-    auto http_request = BuildHttpRequestWithQueryParams(
-        {{"transport", "alts"}}, pollent, deadline, response, on_complete);
-    http_request->Start();
-    return http_request;
+    return BuildAndStartHttpRequestWithQueryParams({{"transport", "alts"}}, pollent,
+                                           deadline, response, on_complete);
   }
 };
 
