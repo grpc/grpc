@@ -901,6 +901,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -1795,6 +1796,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -2514,6 +2516,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -2981,6 +2984,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -4514,6 +4518,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -4847,6 +4852,7 @@ libs:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -6384,6 +6390,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -6681,6 +6688,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -10528,6 +10536,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -10825,6 +10834,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -12214,6 +12224,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener.h
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.h
   - src/core/lib/event_engine/posix_engine/posix_interface.h
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.h
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.h
   - src/core/lib/event_engine/posix_engine/timer.h
   - src/core/lib/event_engine/posix_engine/timer_heap.h
@@ -12526,6 +12537,7 @@ targets:
   - src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   - src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  - src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   - src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   - src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   - src/core/lib/event_engine/posix_engine/timer.cc
@@ -15002,6 +15014,21 @@ targets:
   platforms:
   - linux
   - posix
+- name: posix_write_event_sink_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/posix/posix_write_event_sink_test.cc
+  deps:
+  - gtest
+  - grpc_test_util
+  platforms:
+  - linux
+  - posix
+  - mac
+  uses_polling: false
 - name: pre_stop_hook_server_test
   gtest: true
   build: test
