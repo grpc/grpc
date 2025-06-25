@@ -67,6 +67,7 @@
 #include "src/core/util/cpp_impl_of.h"
 #include "src/core/util/dual_ref_counted.h"
 #include "src/core/util/orphanable.h"
+#include "src/core/util/per_cpu.h"
 #include "src/core/util/random_early_detection.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/sync.h"
@@ -291,6 +292,11 @@ class Server : public ServerInterface,
       grpc_core::Timestamp timestamp;
     };
 
+    struct BlackboardShard {
+      Mutex mu;
+      RefCountedPtr<Blackboard> blackboard ABSL_GUARDED_BY(&mu);
+    };
+
     void DrainConnectionsLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
     void OnDrainGraceTimer();
@@ -308,6 +314,7 @@ class Server : public ServerInterface,
     OrphanablePtr<ListenerInterface> listener_;
     grpc_closure destroy_done_;
     ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
+    PerCpu<BlackboardShard> blackboards_;
     Mutex mu_;  // We could share this mutex with Listener implementations. It's
                 // a tradeoff between increased memory requirement and more
                 // granular critical regions.
@@ -322,9 +329,6 @@ class Server : public ServerInterface,
     grpc_event_engine::experimental::EventEngine::TaskHandle
         drain_grace_timer_handle_ ABSL_GUARDED_BY(mu_) =
             grpc_event_engine::experimental::EventEngine::TaskHandle::kInvalid;
-
-    Mutex blackboard_mu_;
-    RefCountedPtr<Blackboard> blackboard_ ABSL_GUARDED_BY(&blackboard_mu_);
   };
 
   explicit Server(const ChannelArgs& args);

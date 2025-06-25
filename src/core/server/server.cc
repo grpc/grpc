@@ -106,12 +106,15 @@ void Server::ListenerState::ConfigFetcherWatcher::UpdateConnectionManager(
     if (listener_state_->server_->ShutdownCalled()) {
       return;
     }
-    {
-      auto new_blackboard = MakeRefCounted<Blackboard>();
-      MutexLock lock(&listener_state_->blackboard_mu_);
-      listener_state_->connection_manager_->UpdateBlackboard(
-          listener_state_->blackboard_.get(), new_blackboard.get());
-      listener_state_->blackboard_ = std::move(new_blackboard);
+    RefCountedPtr<Blackboard> new_blackboard;
+    for (auto& blackboard_shard : listener_state_->blackboards_) {
+      MutexLock lock(&blackboard_shard.mu);
+      if (new_blackboard == nullptr) {
+        new_blackboard = MakeRefCounted<Blackboard>();
+        listener_state_->connection_manager_->UpdateBlackboard(
+            blackboard_shard.blackboard.get(), new_blackboard.get());
+      }
+      blackboard_shard.blackboard = new_blackboard;
     }
     listener_state_->is_serving_ = true;
     if (listener_state_->started_) return;
@@ -139,7 +142,8 @@ Server::ListenerState::ListenerState(RefCountedPtr<Server> server,
       event_engine_(
           server_->channel_args()
               .GetObject<grpc_event_engine::experimental::EventEngine>()),
-      listener_(std::move(l)) {
+      listener_(std::move(l)),
+      blackboards_(PerCpuOptions().SetMaxShards(16)) {
   auto max_allowed_incoming_connections =
       server_->channel_args().GetInt(GRPC_ARG_MAX_ALLOWED_INCOMING_CONNECTIONS);
   if (max_allowed_incoming_connections.has_value()) {
@@ -290,8 +294,9 @@ grpc_error_handle Server::ListenerState::SetupTransport(
     const ChannelArgs& args) {
   RefCountedPtr<Blackboard> blackboard;
   {
-    MutexLock lock(&blackboard_mu_);
-    blackboard = blackboard_;
+    auto& blackboard_shard = blackboards_.this_cpu();
+    MutexLock lock(&blackboard_shard.mu);
+    blackboard = blackboard_shard.blackboard;
   }
   return server_->SetupTransport(transport, accepting_pollset, args,
                                  blackboard.get());
