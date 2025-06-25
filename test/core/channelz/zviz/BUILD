@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/channelz/zviz")
@@ -29,5 +29,31 @@ grpc_fuzz_test(
     ],
     deps = [
         "//src/core:zviz_strings",
+    ],
+)
+
+grpc_cc_library(
+    name = "environment_fake",
+    testonly = True,
+    hdrs = ["environment_fake.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+    ],
+    deps = [
+        "//src/core:zviz_environment",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "environment_test",
+    srcs = ["environment_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "//src/core:zviz_environment",
     ],
 )

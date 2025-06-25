@@ -10204,6 +10204,22 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "zviz_environment",
+    srcs = [
+        "channelz/zviz/environment.cc",
+    ],
+    hdrs = ["channelz/zviz/environment.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/status:statusor",
+    ],
+    deps = [
+        ":zviz_strings",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
