@@ -52,7 +52,7 @@ class UnaryCall extends AbstractCall
     /**
      * Wait for the server to respond with data and a status.
      *
-     * @return array{0: T|null, 1: stdClass} [response data, status]
+     * @return array{0: T|null, 1: \stdClass} [response data, status]
      */
     public function wait()
     {
