@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
 
 grpc_package(name = "test/core/channelz/zviz")
@@ -55,5 +55,17 @@ grpc_fuzz_test(
     deps = [
         "environment_fake",
         "//src/core:zviz_environment",
+    ],
+)
+
+grpc_cc_test(
+    name = "layout_test",
+    srcs = ["layout_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    deps = [
+        "//src/core:zviz_layout",
     ],
 )

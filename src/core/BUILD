@@ -10220,6 +10220,20 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "zviz_layout",
+    srcs = [
+        "channelz/zviz/layout.cc",
+    ],
+    hdrs = ["channelz/zviz/layout.h"],
+    deps = [
+        ":zviz_environment",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:duration_cc_proto",
+        "@com_google_protobuf//:timestamp_cc_proto",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
