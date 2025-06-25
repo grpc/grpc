@@ -1489,6 +1489,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx glob_test)
   add_dependencies(buildtests_cxx goaway_server_test)
   add_dependencies(buildtests_cxx google_c2p_resolver_test)
+  add_dependencies(buildtests_cxx google_default_call_credentials_test)
   add_dependencies(buildtests_cxx gpr_time_test)
   add_dependencies(buildtests_cxx graceful_shutdown_test)
   add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
@@ -1530,9 +1531,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx hpack_parser_table_test)
   add_dependencies(buildtests_cxx hpack_parser_test)
   add_dependencies(buildtests_cxx http2_client)
-  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
-    add_dependencies(buildtests_cxx http2_client_transport_test)
-  endif()
+  add_dependencies(buildtests_cxx http2_client_transport_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx http2_server_transport_test)
   endif()
@@ -1554,6 +1553,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx insecure_credentials_test)
   add_dependencies(buildtests_cxx insecure_security_connector_test)
   add_dependencies(buildtests_cxx inter_activity_latch_test)
+  add_dependencies(buildtests_cxx inter_activity_mutex_test)
   add_dependencies(buildtests_cxx inter_activity_pipe_test)
   add_dependencies(buildtests_cxx interception_chain_test)
   add_dependencies(buildtests_cxx interceptor_list_test)
@@ -1660,6 +1660,9 @@ if(gRPC_BUILD_TESTS)
   endif()
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx posix_event_engine_test)
+  endif()
+  if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+    add_dependencies(buildtests_cxx posix_write_event_sink_test)
   endif()
   add_dependencies(buildtests_cxx pre_stop_hook_server_test)
   add_dependencies(buildtests_cxx prioritized_race_test)
@@ -2684,6 +2687,7 @@ add_library(grpc
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -3474,6 +3478,7 @@ add_library(grpc_unsecure
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -5841,6 +5846,7 @@ add_library(grpc_authorization_provider
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -9513,6 +9519,7 @@ add_executable(call_utils_test
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -15639,6 +15646,7 @@ add_executable(filter_fusion_test
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -16732,6 +16740,49 @@ target_link_libraries(google_c2p_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(google_default_call_credentials_test
+  test/core/credentials/transport/google_default/google_default_call_credentials_test.cc
+  test/core/test_util/test_call_creds.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(google_default_call_credentials_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(google_default_call_credentials_test PUBLIC cxx_std_17)
+target_include_directories(google_default_call_credentials_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(google_default_call_credentials_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc_test_util
 )
 
 
@@ -18491,6 +18542,7 @@ add_executable(header_assembler_test
   src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc
   src/core/lib/event_engine/posix_engine/posix_interface_posix.cc
   src/core/lib/event_engine/posix_engine/posix_interface_windows.cc
+  src/core/lib/event_engine/posix_engine/posix_write_event_sink.cc
   src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc
   src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc
   src/core/lib/event_engine/posix_engine/timer.cc
@@ -19114,56 +19166,54 @@ target_link_libraries(http2_client
 
 endif()
 if(gRPC_BUILD_TESTS)
-if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
-  add_executable(http2_client_transport_test
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-    test/core/event_engine/event_engine_test_utils.cc
-    test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
-    test/core/transport/chttp2/http2_client_transport_test.cc
-    test/core/transport/util/mock_promise_endpoint.cc
-  )
-  if(WIN32 AND MSVC)
-    if(BUILD_SHARED_LIBS)
-      target_compile_definitions(http2_client_transport_test
-      PRIVATE
-        "GPR_DLL_IMPORTS"
-        "GRPC_DLL_IMPORTS"
-      )
-    endif()
-  endif()
-  target_compile_features(http2_client_transport_test PUBLIC cxx_std_17)
-  target_include_directories(http2_client_transport_test
+add_executable(http2_client_transport_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
+  test/core/event_engine/event_engine_test_utils.cc
+  test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
+  test/core/transport/chttp2/http2_client_transport_test.cc
+  test/core/transport/util/mock_promise_endpoint.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(http2_client_transport_test
     PRIVATE
-      ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/include
-      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_RE2_INCLUDE_DIR}
-      ${_gRPC_SSL_INCLUDE_DIR}
-      ${_gRPC_UPB_GENERATED_DIR}
-      ${_gRPC_UPB_GRPC_GENERATED_DIR}
-      ${_gRPC_UPB_INCLUDE_DIR}
-      ${_gRPC_XXHASH_INCLUDE_DIR}
-      ${_gRPC_ZLIB_INCLUDE_DIR}
-      third_party/googletest/googletest/include
-      third_party/googletest/googletest
-      third_party/googletest/googlemock/include
-      third_party/googletest/googlemock
-      ${_gRPC_PROTO_GENS_DIR}
-  )
-
-  target_link_libraries(http2_client_transport_test
-    ${_gRPC_ALLTARGETS_LIBRARIES}
-    gtest
-    ${_gRPC_PROTOBUF_LIBRARIES}
-    grpc_test_util
-  )
-
-
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
 endif()
+target_compile_features(http2_client_transport_test PUBLIC cxx_std_17)
+target_include_directories(http2_client_transport_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(http2_client_transport_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -19842,6 +19892,49 @@ target_include_directories(inter_activity_latch_test
 )
 
 target_link_libraries(inter_activity_latch_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  grpc
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(inter_activity_mutex_test
+  test/core/promise/inter_activity_mutex_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(inter_activity_mutex_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(inter_activity_mutex_test PUBLIC cxx_std_17)
+target_include_directories(inter_activity_mutex_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(inter_activity_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   grpc
@@ -24054,6 +24147,50 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     gtest
     grpc++_test_util
+  )
+
+
+endif()
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+  add_executable(posix_write_event_sink_test
+    test/core/event_engine/posix/posix_write_event_sink_test.cc
+  )
+  if(WIN32 AND MSVC)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(posix_write_event_sink_test
+      PRIVATE
+        "GPR_DLL_IMPORTS"
+        "GRPC_DLL_IMPORTS"
+      )
+    endif()
+  endif()
+  target_compile_features(posix_write_event_sink_test PUBLIC cxx_std_17)
+  target_include_directories(posix_write_event_sink_test
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_RE2_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(posix_write_event_sink_test
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    gtest
+    grpc_test_util
   )
 
 
