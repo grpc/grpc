@@ -14,7 +14,7 @@
 
 syntax = "proto3";
 
-package inter_activity_mutex_test;
+package inter_activity_mutex_fuzzer;
 
 message Op {
   message Poll {
