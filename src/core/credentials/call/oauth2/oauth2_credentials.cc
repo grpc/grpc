@@ -342,8 +342,8 @@ class grpc_compute_engine_token_fetcher_credentials
 class grpc_compute_engine_token_fetcher_alts_credentials
     : public grpc_compute_engine_token_fetcher_credentials {
  public:
-  grpc_compute_engine_token_fetcher_credentials() = default;
-  ~grpc_compute_engine_token_fetcher_credentials() override = default;
+  grpc_compute_engine_token_fetcher_alts_credentials() = default;
+  ~grpc_compute_engine_token_fetcher_alts_credentials() override = default;
 
   std::string debug_string() override {
     return absl::StrFormat(
@@ -360,7 +360,7 @@ class grpc_compute_engine_token_fetcher_alts_credentials
     http_request->Start();
     return http_request;
   }
-}
+};
 
 }  // namespace
 
