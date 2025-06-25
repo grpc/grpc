@@ -34,23 +34,10 @@ std::optional<absl::string_view> MetadataInput::GetValue(
 }
 
 RefCountedPtr<InputConfig> MetadataInputFactory::ParseConfig(
-    const XdsResourceType::DecodeContext& context,
-    const xds_core_v3_TypedExtensionConfig* input,
+    const XdsResourceType::DecodeContext& context, XdsExtension& input,
     ValidationErrors* errors) const {
-  const google_protobuf_Any* any =
-      xds_core_v3_TypedExtensionConfig_typed_config(input);
-  auto extension = ExtractXdsExtension(context, any, errors);
-  if (!extension.has_value()) {
-    errors->AddError("Fail to extract XdsExtenstion");
-    return nullptr;
-  }
-  if (extension->type != "envoy.type.matcher.v3.HttpRequestHeaderMatchInput") {
-    errors->AddError("unsupported input type");
-    return nullptr;
-  }
-  // Move to seprate function for each InputType
   absl::string_view* serialized_http_header_input =
-      std::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&input.value);
   // Parse HttpRequestHeaderMatchInput
   auto http_header_input =
       envoy_type_matcher_v3_HttpRequestHeaderMatchInput_parse(

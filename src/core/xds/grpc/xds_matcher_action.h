@@ -17,6 +17,7 @@
 
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "xds/core/v3/extension.upb.h"
@@ -36,8 +37,7 @@ class ActionFactory {
   virtual ~ActionFactory() = default;
   virtual absl::string_view type() const = 0;
   virtual RefCountedPtr<ActionConfig> ParseConfig(
-      const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* action,
+      const XdsResourceType::DecodeContext& context, XdsExtension& action,
       ValidationErrors* errors) const = 0;
   virtual std::unique_ptr<XdsMatcher::Action> CreateAction(
       RefCountedPtr<ActionConfig> config) const = 0;
@@ -56,10 +56,9 @@ class ActionRegistry {
   }
 
   RefCountedPtr<ActionConfig> ParseConfig(
-      absl::string_view type, const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* action,
+      const XdsResourceType::DecodeContext& context, XdsExtension& action,
       ValidationErrors* errors) const {
-    const auto it = factories_.find(type);
+    const auto it = factories_.find(action.type);
     if (it == factories_.cend()) return nullptr;
     return it->second->ParseConfig(context, action, errors);
   }
@@ -77,6 +76,7 @@ class ActionRegistry {
 };
 
 // --- Concrete Action : BucketingAction ---
+// Need to implement this completely.
 class BucketingAction : public XdsMatcher::Action {
  public:
   struct BucketConfig {
@@ -136,8 +136,7 @@ class BucketingActionFactory : public ActionFactory {
            "RateLimitQuotaBucketSettings";
   }
   RefCountedPtr<ActionConfig> ParseConfig(
-      const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* action,
+      const XdsResourceType::DecodeContext& context, XdsExtension& action,
       ValidationErrors* errors) const override;
 
   std::unique_ptr<XdsMatcher::Action> CreateAction(

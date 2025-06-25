@@ -20,6 +20,7 @@
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/upb_utils.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 
 namespace grpc_core {
 
@@ -30,28 +31,16 @@ ActionRegistry::ActionRegistry() {
       std::make_unique<BucketingActionFactory>());
 }
 
+// Need to extend this to completly p[arse the config.
+// For now implemented bare minimum as place holder for matcher parse e2e test
 RefCountedPtr<ActionConfig> BucketingActionFactory::ParseConfig(
-    const XdsResourceType::DecodeContext& context,
-    const xds_core_v3_TypedExtensionConfig* action,
+    const XdsResourceType::DecodeContext& context, XdsExtension& action,
     ValidationErrors* errors) const {
   ValidationErrors::ScopedField field(errors, ".bucketaction");
-  const google_protobuf_Any* any =
-      xds_core_v3_TypedExtensionConfig_typed_config(action);
-  auto extension = ExtractXdsExtension(context, any, errors);
-  if (!extension.has_value()) {
-    errors->AddError("Fail to extract XdsExtenstion");
-    return nullptr;
-  }
-  if (extension->type !=
-      "envoy.extensions.filters.http.rate_limit_quota.v3."
-      "RateLimitQuotaBucketSettings") {
-    errors->AddError("unsupported action type");
-    return nullptr;
-  }
   // Parse RLQS Bucketing action
   BucketingAction::BucketConfig config;
   absl::string_view* serialised_rate_limit_quota_bucket_settings =
-      std::get_if<absl::string_view>(&extension->value);
+      std::get_if<absl::string_view>(&action.value);
   auto rate_limit_quota_bucket_settings =
       envoy_extensions_filters_http_rate_limit_quota_v3_RateLimitQuotaBucketSettings_parse(
           serialised_rate_limit_quota_bucket_settings->data(),

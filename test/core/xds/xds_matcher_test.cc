@@ -318,6 +318,77 @@ TEST(XdsMatcherPrefixMapTest, OnNoMatch) {
   ASSERT_EQ(result.size(), 1);
   EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "no_match_action");
 }
+
+TEST(XdsMatcherMatcherListKeepMatchingTest, KeepMatchingFalseStopMatching) {
+  // Setup: Create a matcher list where two consecutive predicates would match.
+  // The first one has keep_matching=false.
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  // Matcher 1: Will match, keep_matching is false.
+  auto predicate1 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_))
+      .WillOnce(::testing::Return(true));
+  matchers.emplace_back(std::move(predicate1),
+                        std::make_unique<XdsMatcher::OnMatch>(
+                            std::make_unique<TestAction>("Action1"),
+                            /*keep_matching=*/false));
+  // Matcher 2: Would also match, but should never be evaluated.
+  auto predicate2 = std::make_unique<MockPredicate>();
+  matchers.emplace_back(std::move(predicate2),
+                        std::make_unique<XdsMatcher::OnMatch>(
+                            std::make_unique<TestAction>("Action2"),
+                            /*keep_matching=*/false));
+  XdsMatcherList matcher_list(std::move(matchers), nullptr);
+  TestMatchContext context("/qux");
+  XdsMatcher::Result result;
+  // Execute
+  bool match_found = matcher_list.FindMatches(context, result);
+  // Checks
+  EXPECT_TRUE(match_found);
+  ASSERT_EQ(result.size(), 1);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "Action1");
+}
+
+TEST(XdsMatcherMatcherListKeepMatchingTest, KeepMatchingTrueContinueMatching) {
+  // Verifies that when keep_matching is true, matching continues and
+  // actions are accumulated until a final match (with keep_matching=false) is
+  // found.
+  std::vector<XdsMatcherList::FieldMatcher> matchers;
+  // Matcher 1: Will match, keep_matching = true
+  auto predicate1 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate1, Match(::testing::_))
+      .WillOnce(::testing::Return(true));
+  matchers.emplace_back(std::move(predicate1),
+                        std::make_unique<XdsMatcher::OnMatch>(
+                            std::make_unique<TestAction>("Action1"),
+                            /*keep_matching=*/true));
+  // Matcher 2: Would not match.
+  auto predicate2 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate2, Match(::testing::_))
+      .WillOnce(::testing::Return(false));
+  matchers.emplace_back(std::move(predicate2),
+                        std::make_unique<XdsMatcher::OnMatch>(
+                            std::make_unique<TestAction>("Action2"),
+                            /*keep_matching=*/false));
+  // Matcher 3: Would also match Terminal match, with keep matching as false
+  auto predicate3 = std::make_unique<MockPredicate>();
+  EXPECT_CALL(*predicate3, Match(::testing::_))
+      .WillOnce(::testing::Return(true));
+  matchers.emplace_back(std::move(predicate3),
+                        std::make_unique<XdsMatcher::OnMatch>(
+                            std::make_unique<TestAction>("Action3"),
+                            /*keep_matching=*/false));
+  XdsMatcherList matcher_list(std::move(matchers), nullptr);
+  TestMatchContext context("/qux");
+  XdsMatcher::Result result;
+  // Execute
+  bool match_found = matcher_list.FindMatches(context, result);
+  // Assert
+  EXPECT_TRUE(match_found);
+  ASSERT_EQ(result.size(), 2);
+  EXPECT_EQ(static_cast<TestAction*>(result[0])->name(), "Action1");
+  EXPECT_EQ(static_cast<TestAction*>(result[1])->name(), "Action3");
+}
+
 }  // namespace
 }  // namespace testing
 }  // namespace grpc_core

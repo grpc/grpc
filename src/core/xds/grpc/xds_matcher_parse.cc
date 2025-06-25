@@ -14,15 +14,8 @@
 
 #include "src/core/xds/grpc/xds_matcher_parse.h"
 
-#include <upb/message/map.h>
-
 #include <memory>
 
-#include "envoy/config/core/v3/extension.upb.h"
-#include "envoy/extensions/filters/http/rate_limit_quota/v3/rate_limit_quota.upb.h"
-#include "envoy/type/matcher/v3/http_inputs.upb.h"
-#include "envoy/type/matcher/v3/regex.upb.h"
-#include "envoy/type/matcher/v3/string.upb.h"
 #include "src/core/util/upb_utils.h"
 #include "src/core/xds/grpc/xds_bootstrap_grpc.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
@@ -31,19 +24,16 @@
 #include "src/core/xds/grpc/xds_matcher_input.h"
 #include "src/core/xds/xds_client/xds_client.h"
 #include "xds/core/v3/extension.upb.h"
-#include "xds/type/matcher/v3/http_inputs.upb.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
 #include "xds/type/matcher/v3/regex.upb.h"
 #include "xds/type/matcher/v3/string.upb.h"
 
 namespace grpc_core {
 
-// Forward declaration for ParseMatcher to resolve circular dependency.
+// Forward declarations
 std::unique_ptr<XdsMatcher> ParseMatcher(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher* matcher, ValidationErrors* errors);
-
-// Forward declaration for ParsePredicate to resolve circular dependency.
 std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
     const XdsResourceType::DecodeContext& context,
     const xds_type_matcher_v3_Matcher_MatcherList_Predicate* predicate,
@@ -55,13 +45,23 @@ std::unique_ptr<XdsMatcherList::Predicate> ParsePredicate(
 std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> ParseStringInput(
     const XdsResourceType::DecodeContext& context,
     const xds_core_v3_TypedExtensionConfig* input, ValidationErrors* errors) {
+  ValidationErrors::ScopedField field(errors, ".input");
+  const google_protobuf_Any* any =
+      xds_core_v3_TypedExtensionConfig_typed_config(input);
+  auto extension = ExtractXdsExtension(context, any, errors);
+  if (!extension.has_value()) {
+    errors->AddError("Fail to extract XdsExtenstion");
+    return nullptr;
+  }
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .xds_matcher_input_registry();
   RefCountedPtr<InputConfig> parsed_config =
-      registry.ParseConfig("envoy.type.matcher.v3.HttpRequestHeaderMatchInput",
-                           context, input, errors);
-
+      registry.ParseConfig(context, extension.value(), errors);
+  if (parsed_config == nullptr) {
+    errors->AddError("Unsupported input type");
+    return nullptr;
+  }
   return registry.CreateInput(parsed_config);
 }
 
@@ -81,10 +81,8 @@ std::unique_ptr<XdsMatcher::Action> ParseAction(
   const auto& registry =
       DownCast<const GrpcXdsBootstrap&>(context.client->bootstrap())
           .xds_matcher_action_registry();
-  RefCountedPtr<ActionConfig> parsed_config = registry.ParseConfig(
-      "envoy.extensions.filters.http.rate_limit_quota.v3."
-      "RateLimitQuotaBucketSettings",
-      context, action, errors);
+  RefCountedPtr<ActionConfig> parsed_config =
+      registry.ParseConfig(context, extension.value(), errors);
   if (parsed_config == nullptr) {
     errors->AddError("Unsupported action type");
     return nullptr;
@@ -147,7 +145,7 @@ std::unique_ptr<XdsMatcher::OnMatch> ParseOnMatch(
   ValidationErrors::ScopedField field(errors, ".OnMatch");
   // Parse keep matching once we move to latest xds protos
   bool keep_matching = false;
-  // action is a variant which can have Action or a Nested Matcher
+  // Action is a variant which can have Action or a Nested Matcher
   if (xds_type_matcher_v3_Matcher_OnMatch_has_action(on_match)) {
     auto action = ParseAction(
         context, xds_type_matcher_v3_Matcher_OnMatch_action(on_match), errors);
@@ -207,6 +205,7 @@ std::unique_ptr<XdsMatcherList::Predicate> ParseSinglePredicate(
   // Supporting value match now, need to add custom match
   if (!xds_type_matcher_v3_Matcher_MatcherList_Predicate_SinglePredicate_has_value_match(
           single_predicate)) {
+    errors->AddError("only value match supported");
     return nullptr;
   }
   // StringMatcher creation from value match
@@ -332,7 +331,7 @@ std::vector<XdsMatcherList::FieldMatcher> ParseFieldMatcherList(
       field_matcher_list.emplace_back(std::move(predicate),
                                       std::move(on_match));
     } else {
-      // should we break from error
+      // should we break, if we are unable to parse onMatch and predicate.
       errors->AddError("Error in parsing field matcher");
     }
   }
@@ -385,7 +384,7 @@ std::unique_ptr<XdsMatcher> ParseMatcher(
           std::move(input), std::move(map), std::move(on_no_match));
     } else if (xds_type_matcher_v3_Matcher_MatcherTree_has_prefix_match_map(
                    matcher_tree)) {
-      // PRefix Match Map matcher
+      // Prefix Match Map matcher
       auto map =
           ParseMatchMap(context,
                         xds_type_matcher_v3_Matcher_MatcherTree_exact_match_map(

@@ -17,6 +17,7 @@
 
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
+#include "src/core/xds/grpc/xds_common_types.h"
 #include "src/core/xds/grpc/xds_common_types_parser.h"
 #include "src/core/xds/grpc/xds_matcher.h"
 #include "xds/type/matcher/v3/matcher.upb.h"
@@ -41,8 +42,7 @@ class InputFactory final {
   virtual ~InputFactory() = default;
   virtual absl::string_view type() const = delete;
   virtual RefCountedPtr<InputConfig> ParseConfig(
-      const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* input,
+      const XdsResourceType::DecodeContext& context, XdsExtension& input,
       ValidationErrors* errors) const = delete;
   virtual std::unique_ptr<XdsMatcher::InputValue<T>> CreateInput(
       RefCountedPtr<InputConfig> config) const = delete;
@@ -54,8 +54,7 @@ class InputFactory<absl::string_view> {
   virtual ~InputFactory() = default;
   virtual absl::string_view type() const = 0;
   virtual RefCountedPtr<InputConfig> ParseConfig(
-      const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* input,
+      const XdsResourceType::DecodeContext& context, XdsExtension& input,
       ValidationErrors* errors) const = 0;
   virtual std::unique_ptr<XdsMatcher::InputValue<absl::string_view>>
   CreateInput(RefCountedPtr<InputConfig> config) const = 0;
@@ -75,10 +74,9 @@ class InputRegistry {
   }
 
   RefCountedPtr<InputConfig> ParseConfig(
-      absl::string_view type, const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* input,
+      const XdsResourceType::DecodeContext& context, XdsExtension& input,
       ValidationErrors* errors) const {
-    const auto it = factories_.find(type);
+    const auto it = factories_.find(input.type);
     if (it == factories_.cend()) return nullptr;
     return it->second->ParseConfig(context, input, errors);
   }
@@ -144,8 +142,7 @@ class MetadataInputFactory : public InputFactory<absl::string_view> {
   }
 
   RefCountedPtr<InputConfig> ParseConfig(
-      const XdsResourceType::DecodeContext& context,
-      const xds_core_v3_TypedExtensionConfig* input,
+      const XdsResourceType::DecodeContext& context, XdsExtension& input,
       ValidationErrors* errors) const override;
 
   std::unique_ptr<XdsMatcher::InputValue<absl::string_view>> CreateInput(
