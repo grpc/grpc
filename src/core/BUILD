@@ -5776,6 +5776,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "interception_chain",
