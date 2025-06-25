@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -872,7 +873,10 @@ void Endpoint::AddData(channelz::DataSink sink) {
           .Set("encode_alignment", ctx_->encode_alignment)
           .Set("decode_alignment", ctx_->decode_alignment)
           .Set("secure_frame_bytes_queued",
-               ctx_->secure_frame_queue->InstantaneousQueuedBytes())
+               [this]() -> std::optional<uint64_t> {
+                 if (ctx_->secure_frame_queue == nullptr) return std::nullopt;
+                 return ctx_->secure_frame_queue->InstantaneousQueuedBytes();
+               }())
           .Set("enable_tracing", ctx_->enable_tracing)
           .Merge(ctx_->reader->ChannelzProperties()));
   party_->ExportToChannelz(absl::StrCat("endpoint_party", ctx_->id), sink);
