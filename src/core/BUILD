@@ -10193,6 +10193,17 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "zviz_strings",
+    srcs = [
+        "channelz/zviz/strings.cc",
+    ],
+    hdrs = ["channelz/zviz/strings.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
