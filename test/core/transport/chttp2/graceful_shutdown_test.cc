@@ -200,7 +200,8 @@ class GracefulShutdownTest : public ::testing::Test {
         read_bytes_ = read_bytes_.substr(where + bytes.size());
         break;
       }
-      ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
+      ASSERT_LT(absl::Now() - start_time, absl::Seconds(60))
+          << "Timeout reading bytes";
       read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
     }
   }
