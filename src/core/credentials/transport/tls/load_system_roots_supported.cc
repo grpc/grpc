@@ -131,6 +131,7 @@ grpc_slice CreateRootCertsBundle(const char* certs_directory) {
       } else {
         LOG(ERROR) << "failed to read file: " << roots_filenames[i].path;
       }
+      close(file_descriptor);
     }
   }
   bundle_slice = grpc_slice_new(bundle_string, bytes_read, gpr_free);

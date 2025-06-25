@@ -155,6 +155,7 @@ Party::Participant::~Participant() {
 // Party::SpawnSerializer
 
 bool Party::SpawnSerializer::PollParticipantPromise() {
+  GRPC_LATENT_SEE_INNER_SCOPE("SpawnSerializer::PollParticipantPromise");
   if (active_ == nullptr) {
     active_ = next_.Pop().value_or(nullptr);
   }
@@ -206,19 +207,21 @@ Json ParticipantBitmaskToJson(uint64_t mask) {
 Party::~Party() {}
 
 void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
-  auto event_engine =
-      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
-  CHECK(event_engine != nullptr);
-  event_engine->Run([f = std::move(f), self = Ref()]() mutable {
-    self->Spawn(
-        "get-json",
-        [f = std::move(f), self]() mutable {
-          return [f = std::move(f), self]() mutable {
-            f(self->ToJsonLocked());
-            return absl::OkStatus();
-          };
-        },
-        [](absl::Status) {});
+  Spawn(
+      "get-json",
+      [f = std::move(f), self = Ref()]() mutable {
+        return [f = std::move(f), self]() mutable {
+          f(self->ToJsonLocked());
+          return absl::OkStatus();
+        };
+      },
+      [](absl::Status) {});
+}
+
+void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
+  ToJson([name = std::move(name),
+          sink = std::move(sink)](Json::Object obj) mutable {
+    sink.AddAdditionalInfo(std::move(name), std::move(obj));
   });
 }
 
@@ -318,6 +321,7 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       g_run_state = this;
       do {
         GRPC_LATENT_SEE_INNER_SCOPE("run_one_party");
+        CHECK(first.party != nullptr);
         first.party->RunPartyAndUnref(first.prev_state);
         first = std::exchange(next, PartyWakeup{});
       } while (first.party != nullptr);
@@ -348,10 +352,12 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       // gets held for a really long time.
       auto wakeup =
           std::exchange(g_run_state->next, PartyWakeup{party, prev_state});
-      auto arena = party->arena_.get();
+      auto arena = wakeup.party->arena_.get();
+      CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
       CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");
         ExecCtx exec_ctx;

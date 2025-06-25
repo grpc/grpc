@@ -32,6 +32,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <type_traits>
 #include <utility>
 
 #include "absl/base/thread_annotations.h"
@@ -50,6 +51,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -123,8 +125,27 @@ class BaseNode : public DualRefCounted<BaseNode> {
     return "unknown";
   }
 
+  static absl::string_view EntityTypeToKind(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "channel";
+      case EntityType::kInternalChannel:
+        return "channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+  }
+
  protected:
-  BaseNode(EntityType type, std::string name);
+  BaseNode(EntityType type, size_t max_trace_memory, std::string name);
 
  public:
   void Orphaned() override;
@@ -173,6 +194,16 @@ class BaseNode : public DualRefCounted<BaseNode> {
                  absl::AnyInvocable<void(Json output)> callback);
   Json::Object AdditionalInfo();
 
+  const ChannelTrace& trace() const { return trace_; }
+  template <typename... Args>
+  ChannelTrace::Node NewTraceNode(Args&&... args) {
+    return trace_.NewNode(std::forward<Args>(args)...);
+  }
+  ChannelTrace& mutable_trace() { return trace_; }
+
+  virtual void SerializeEntity(grpc_channelz_v2_Entity* entity,
+                               upb_Arena* arena);
+
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
 
@@ -198,7 +229,21 @@ class BaseNode : public DualRefCounted<BaseNode> {
   BaseNode* next_;  // updated by registry
   mutable Mutex parent_mu_;
   ParentSet parents_ ABSL_GUARDED_BY(parent_mu_);
+  ChannelTrace trace_;
 };
+
+namespace detail {
+inline ChannelTrace* LogOutputFrom(BaseNode* n) {
+  if (n == nullptr) return nullptr;
+  return LogOutputFrom(n->mutable_trace());
+}
+
+template <typename N>
+inline std::enable_if_t<std::is_base_of_v<BaseNode, N>, ChannelTrace*>
+LogOutputFrom(const RefCountedPtr<N>& n) {
+  return LogOutputFrom(n.get());
+}
+}  // namespace detail
 
 class ZTrace {
  public:
@@ -254,6 +299,13 @@ class DataSink {
     if (impl == nullptr) return;
     impl->AddAdditionalInfo(name, std::move(additional_info));
   }
+
+  template <typename T>
+  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddAdditionalInfo(
+      absl::string_view name, T value) {
+    AddAdditionalInfo(name, value.TakeJsonObject());
+  }
+
   void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
     auto impl = impl_.lock();
     if (impl == nullptr) return;
@@ -364,7 +416,7 @@ class PerCpuCallCountingHelper final {
 // Handles channelz bookkeeping for channels
 class ChannelNode final : public BaseNode {
  public:
-  ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+  ChannelNode(std::string target, size_t max_trace_memory,
               bool is_internal_channel);
 
   void Orphaned() override {
@@ -386,15 +438,6 @@ class ChannelNode final : public BaseNode {
   Json RenderJson() override;
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
-    trace_.AddTraceEvent(severity, data);
-  }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data,
-                                      std::move(referenced_channel));
-  }
   void SetChannelArgs(const ChannelArgs& channel_args) {
     channel_args_ = channel_args;
   }
@@ -409,7 +452,6 @@ class ChannelNode final : public BaseNode {
   CallCounts GetCallCounts() const { return call_counter_.GetCallCounts(); }
   std::set<intptr_t> child_channels() const;
   std::set<intptr_t> child_subchannels() const;
-  const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
@@ -417,7 +459,6 @@ class ChannelNode final : public BaseNode {
 
   std::string target_;
   CallCountingHelper call_counter_;
-  ChannelTrace trace_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
@@ -430,7 +471,7 @@ class ChannelNode final : public BaseNode {
 // Handles channelz bookkeeping for subchannels
 class SubchannelNode final : public BaseNode {
  public:
-  SubchannelNode(std::string target_address, size_t channel_tracer_max_nodes);
+  SubchannelNode(std::string target_address, size_t max_trace_memory);
   ~SubchannelNode() override;
 
   void Orphaned() override {
@@ -449,17 +490,8 @@ class SubchannelNode final : public BaseNode {
   Json RenderJson() override;
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
-    trace_.AddTraceEvent(severity, data);
-  }
   void SetChannelArgs(const ChannelArgs& channel_args) {
     channel_args_ = channel_args;
-  }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data,
-                                      std::move(referenced_channel));
   }
   void RecordCallStarted() { call_counter_.RecordCallStarted(); }
   void RecordCallFailed() { call_counter_.RecordCallFailed(); }
@@ -472,7 +504,6 @@ class SubchannelNode final : public BaseNode {
     MutexLock lock(&socket_mu_);
     return child_socket_;
   }
-  const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
@@ -484,7 +515,6 @@ class SubchannelNode final : public BaseNode {
   WeakRefCountedPtr<SocketNode> child_socket_ ABSL_GUARDED_BY(socket_mu_);
   std::string target_;
   CallCountingHelper call_counter_;
-  ChannelTrace trace_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
@@ -493,7 +523,7 @@ class SubchannelNode final : public BaseNode {
 // Handles channelz bookkeeping for servers
 class ServerNode final : public BaseNode {
  public:
-  explicit ServerNode(size_t channel_tracer_max_nodes);
+  explicit ServerNode(size_t max_trace_memory);
 
   ~ServerNode() override;
 
@@ -508,15 +538,6 @@ class ServerNode final : public BaseNode {
                                   intptr_t max_results);
 
   // proxy methods to composed classes.
-  void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
-    trace_.AddTraceEvent(severity, data);
-  }
-  void AddTraceEventWithReference(ChannelTrace::Severity severity,
-                                  const grpc_slice& data,
-                                  RefCountedPtr<BaseNode> referenced_channel) {
-    trace_.AddTraceEventWithReference(severity, data,
-                                      std::move(referenced_channel));
-  }
   void SetChannelArgs(const ChannelArgs& channel_args) {
     channel_args_ = channel_args;
   }
@@ -530,12 +551,10 @@ class ServerNode final : public BaseNode {
       const;
   std::map<intptr_t, WeakRefCountedPtr<SocketNode>> child_sockets() const;
 
-  const ChannelTrace& trace() const { return trace_; }
   const ChannelArgs& channel_args() const { return channel_args_; }
 
  private:
   PerCpuCallCountingHelper call_counter_;
-  ChannelTrace trace_;
   // TODO(ctiller): keeping channel args here can create odd circular references
   // that are hard to reason about. Consider moving this to a DataSource.
   ChannelArgs channel_args_;
@@ -678,7 +697,7 @@ class ListenSocketNode final : public BaseNode {
 class CallNode final : public BaseNode {
  public:
   explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, std::move(name)) {}
+      : BaseNode(EntityType::kCall, 0, std::move(name)) {}
 
   Json RenderJson() override;
 };

@@ -200,6 +200,7 @@ def _bazel_name_to_file_path(name):
             if (
                 "/upb_generator/minitable/main.cc" in filepath
                 or "/upb_generator/c/generator.cc" in filepath
+                or "/protobuf/compiler/main_no_generators.cc" in filepath
             ):
                 return None
 

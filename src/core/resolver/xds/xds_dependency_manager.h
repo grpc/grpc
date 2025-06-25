@@ -172,7 +172,8 @@ class XdsDependencyManager final : public RefCounted<XdsDependencyManager>,
           cluster_config_map,
       std::set<absl::string_view>* eds_resources_seen,
       std::set<absl::string_view>* dns_names_seen,
-      absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters = nullptr);
+      absl::StatusOr<std::vector<absl::string_view>>* leaf_clusters = nullptr,
+      std::vector<std::string>* resolution_notes = nullptr);
 
   // Called when an external cluster subscription is unreffed.
   void OnClusterSubscriptionUnref(absl::string_view cluster_name,

@@ -71,17 +71,17 @@ class FilterArgs {
         [](const V3Based& v3) { return v3.instance_id; });
   }
 
-  // If a filter state object of type T exists for key from a previous
-  // filter stack, retains it for the new filter stack we're constructing.
-  // Otherwise, invokes create_func() to create a new filter state
-  // object for the new filter stack.  Returns the new filter state object.
+  // Invokes update_func() to update a filter state object of type T
+  // with the specified key.  The existing filter state object, if any,
+  // will be passed to update_func().  The filter state object returned
+  // by update_func() will be saved and returned.
   template <typename T>
   RefCountedPtr<T> GetOrCreateState(
       const std::string& key,
-      absl::FunctionRef<RefCountedPtr<T>()> create_func) {
+      absl::FunctionRef<RefCountedPtr<T>(RefCountedPtr<T>)> update_func) const {
     RefCountedPtr<T> state;
     if (old_blackboard_ != nullptr) state = old_blackboard_->Get<T>(key);
-    if (state == nullptr) state = create_func();
+    state = update_func(std::move(state));
     if (new_blackboard_ != nullptr) new_blackboard_->Set(key, state);
     return state;
   }

@@ -29,6 +29,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
+#include "src/core/channelz/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
@@ -389,6 +390,9 @@ class Party : public Activity, private Wakeable {
   // synchronously.
   void ToJson(absl::AnyInvocable<void(Json::Object)>);
 
+  // Export the party to channelz.
+  void ExportToChannelz(std::string name, channelz::DataSink sink);
+
  protected:
   friend class Arena;
 
@@ -429,6 +433,7 @@ class Party : public Activity, private Wakeable {
     }
 
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       if (!started_) {
         auto p = factory_.Make();
         Destruct(&factory_);
@@ -498,6 +503,7 @@ class Party : public Activity, private Wakeable {
 
     // Inside party poll: drive from factory -> promise -> result
     bool PollParticipantPromise() override {
+      GRPC_LATENT_SEE_INNER_SCOPE(TypeName<SuppliedFactory>());
       switch (state_.load(std::memory_order_relaxed)) {
         case State::kFactory: {
           auto p = factory_.Make();
@@ -633,7 +639,7 @@ class Party : public Activity, private Wakeable {
         // If the party is locked, we need to set the wakeup bits, and then
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
-        if (kReffed) {
+        if constexpr (kReffed) {
           DCHECK_GT(cur_state & kRefMask, kOneRef);
         } else {
           DCHECK_GE(cur_state & kRefMask, kOneRef);

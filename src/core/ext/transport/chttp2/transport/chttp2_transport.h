@@ -79,13 +79,10 @@ void TestOnlyGlobalHttp2TransportDisableTransientFailureStateNotification(
 
 typedef void (*WriteTimestampsCallback)(void*, Timestamps*,
                                         grpc_error_handle error);
-typedef void* (*CopyContextFn)(Arena*);
 
 void GrpcHttp2SetWriteTimestampsCallback(WriteTimestampsCallback fn);
-void GrpcHttp2SetCopyContextFn(CopyContextFn fn);
 
 WriteTimestampsCallback GrpcHttp2GetWriteTimestampsCallback();
-CopyContextFn GrpcHttp2GetCopyContextFn();
 
 // Interprets the passed arg as a ContextList type and for each entry in the
 // passed ContextList, it executes the function set using

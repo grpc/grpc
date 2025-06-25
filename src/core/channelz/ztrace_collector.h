@@ -169,7 +169,7 @@ class ZTraceCollector {
     };
     template <typename T>
     void Append(std::pair<gpr_cycle_counter, T> value) {
-      memory_used_ += MemoryUsage(value.second);
+      memory_used_ += MemoryUsageOf(value.second);
       while (memory_used_ > memory_cap_) RemoveMostRecent();
       std::get<Collection<T> >(data).push_back(std::move(value));
     }
@@ -188,7 +188,7 @@ class ZTraceCollector {
           collection.front().first < state->most_recent) {
         state->enact = +[](Instance* instance) {
           auto& collection = std::get<Collection<T> >(instance->data);
-          const size_t ent_usage = MemoryUsage(collection.front().second);
+          const size_t ent_usage = MemoryUsageOf(collection.front().second);
           CHECK_GE(instance->memory_used_, ent_usage);
           instance->memory_used_ -= ent_usage;
           collection.pop_front();

@@ -684,6 +684,7 @@ LIBGRPC_SRC = \
     src/core/channelz/channel_trace.cc \
     src/core/channelz/channelz.cc \
     src/core/channelz/channelz_registry.cc \
+    src/core/channelz/property_list.cc \
     src/core/client_channel/backup_poller.cc \
     src/core/client_channel/client_channel.cc \
     src/core/client_channel/client_channel_factory.cc \
@@ -721,6 +722,7 @@ LIBGRPC_SRC = \
     src/core/credentials/call/jwt/json_token.cc \
     src/core/credentials/call/jwt/jwt_credentials.cc \
     src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
     src/core/credentials/call/token_fetcher/token_fetcher_credentials.cc \
@@ -804,6 +806,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/hpack_parser.cc \
     src/core/ext/transport/chttp2/transport/hpack_parser_table.cc \
     src/core/ext/transport/chttp2/transport/http2_settings.cc \
+    src/core/ext/transport/chttp2/transport/http2_stats_collector.cc \
     src/core/ext/transport/chttp2/transport/huffsyms.cc \
     src/core/ext/transport/chttp2/transport/parsing.cc \
     src/core/ext/transport/chttp2/transport/ping_abuse_policy.cc \
@@ -944,6 +947,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -1174,10 +1178,10 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/default_event_engine.cc \
     src/core/lib/event_engine/default_event_engine_factory.cc \
     src/core/lib/event_engine/event_engine.cc \
-    src/core/lib/event_engine/forkable.cc \
     src/core/lib/event_engine/posix_engine/ev_epoll1_linux.cc \
     src/core/lib/event_engine/posix_engine/ev_poll_posix.cc \
     src/core/lib/event_engine/posix_engine/event_poller_posix_default.cc \
+    src/core/lib/event_engine/posix_engine/file_descriptor_collection.cc \
     src/core/lib/event_engine/posix_engine/internal_errqueue.cc \
     src/core/lib/event_engine/posix_engine/lockfree_event.cc \
     src/core/lib/event_engine/posix_engine/native_posix_dns_resolver.cc \
@@ -1185,6 +1189,8 @@ LIBGRPC_SRC = \
     src/core/lib/event_engine/posix_engine/posix_engine.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener.cc \
     src/core/lib/event_engine/posix_engine/posix_engine_listener_utils.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_posix.cc \
+    src/core/lib/event_engine/posix_engine/posix_interface_windows.cc \
     src/core/lib/event_engine/posix_engine/set_socket_dualstack.cc \
     src/core/lib/event_engine/posix_engine/tcp_socket_utils.cc \
     src/core/lib/event_engine/posix_engine/timer.cc \
@@ -1397,6 +1403,7 @@ LIBGRPC_SRC = \
     src/core/service_config/service_config_impl.cc \
     src/core/service_config/service_config_parser.cc \
     src/core/telemetry/call_tracer.cc \
+    src/core/telemetry/context_list_entry.cc \
     src/core/telemetry/default_tcp_tracer.cc \
     src/core/telemetry/histogram_view.cc \
     src/core/telemetry/metrics.cc \
@@ -1494,6 +1501,7 @@ LIBGRPC_SRC = \
     src/core/util/uri.cc \
     src/core/util/uuid_v4.cc \
     src/core/util/validation_errors.cc \
+    src/core/util/wait_for_single_owner.cc \
     src/core/util/windows/cpu.cc \
     src/core/util/windows/directory_reader.cc \
     src/core/util/windows/env.cc \

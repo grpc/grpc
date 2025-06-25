@@ -25,6 +25,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/str_format.h"
@@ -40,6 +41,7 @@
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_buffer.h"
 #include "src/core/lib/surface/call.h"
@@ -65,13 +67,18 @@ class OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer
   }
 
   ~TcpCallTracer() override {
-    server_call_tracer_->arena_->GetContext<grpc_core::Call>()->InternalUnref(
-        "OpenTelemetryPluginImpl::ServerCallTracer::TcpCallTracer");
+    grpc_core::ExecCtx exec_ctx;
+    auto* arena = server_call_tracer_->arena_;
+    // The ServerCallTracer is allocated on the arena and hence needs to be
+    // reset before unreffing the call.
+    server_call_tracer_.reset();
+    arena->GetContext<grpc_core::Call>()->InternalUnref(
+        "OpenTelemetryPluginImpl::ServerCallTracer::~TcpCallTracer");
   }
 
   void RecordEvent(grpc_event_engine::experimental::internal::WriteEvent type,
                    absl::Time time, size_t byte_offset,
-                   std::vector<TcpEventMetric> metrics) override {
+                   const std::vector<TcpEventMetric>& metrics) override {
     server_call_tracer_->RecordAnnotation(
         absl::StrCat(
             "TCP: ", grpc_event_engine::experimental::WriteEventToString(type),
@@ -144,6 +151,9 @@ void OpenTelemetryPluginImpl::ServerCallTracer::RecordReceivedInitialMetadata(
     // tracing systems active for the same call.
     grpc_core::SetContext<census_context>(
         reinterpret_cast<census_context*>(span_.get()));
+    if (IsSampled()) {
+      arena_->GetContext<grpc_core::Call>()->set_traced(true);
+    }
   }
 }
 

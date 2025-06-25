@@ -30,16 +30,19 @@
 
 #include <algorithm>
 #include <atomic>
+#include <cstddef>
 #include <memory>
 #include <optional>
 #include <regex>
 #include <utility>
+#include <vector>
 
 #include "absl/base/thread_annotations.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -693,21 +696,59 @@ class SecureEndpoint final : public EventEngine::Endpoint {
     return impl_->QueryExtension(id);
   }
 
-  std::vector<size_t> AllWriteMetrics() override {
-    return impl_->AllWriteMetrics();
-  }
-
-  std::optional<absl::string_view> GetMetricName(size_t key) override {
-    return impl_->GetMetricName(key);
-  }
-
-  std::optional<size_t> GetMetricKey(absl::string_view name) override {
-    return impl_->GetMetricKey(name);
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return std::make_shared<Impl::TelemetryInfo>(impl_->GetTelemetryInfo());
   }
 
  private:
   class Impl : public grpc_core::RefCounted<Impl> {
    public:
+    class TelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
+     public:
+      explicit TelemetryInfo(
+          std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+              wrapped_telemetry_info)
+          : wrapped_telemetry_info_(std::move(wrapped_telemetry_info)) {}
+
+      std::vector<size_t> AllWriteMetrics() const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->AllWriteMetrics()
+                   : std::vector<size_t>{};
+      }
+
+      std::optional<absl::string_view> GetMetricName(
+          size_t key) const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricName(key)
+                   : std::nullopt;
+      }
+
+      std::optional<size_t> GetMetricKey(
+          absl::string_view name) const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricKey(name)
+                   : std::nullopt;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+          absl::Span<const size_t> keys) const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetMetricsSet(keys)
+                   : nullptr;
+      }
+
+      std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+          const override {
+        return wrapped_telemetry_info_
+                   ? wrapped_telemetry_info_->GetFullMetricsSet()
+                   : nullptr;
+      }
+
+     private:
+      std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+          wrapped_telemetry_info_;
+    };
+
     Impl(std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
              wrapped_ep,
          struct tsi_frame_protector* protector,
@@ -838,16 +879,9 @@ class SecureEndpoint final : public EventEngine::Endpoint {
       frame_protector_.Shutdown();
     }
 
-    virtual std::vector<size_t> AllWriteMetrics() {
-      return wrapped_ep_->AllWriteMetrics();
-    }
-
-    virtual std::optional<absl::string_view> GetMetricName(size_t key) {
-      return wrapped_ep_->GetMetricName(key);
-    }
-
-    virtual std::optional<size_t> GetMetricKey(absl::string_view name) {
-      return wrapped_ep_->GetMetricKey(name);
+    std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const {
+      return std::make_shared<Impl::TelemetryInfo>(
+          wrapped_ep_->GetTelemetryInfo());
     }
 
    private:

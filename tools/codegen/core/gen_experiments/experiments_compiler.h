@@ -16,17 +16,26 @@
 #define GRPC_TOOLS_CODEGEN_CORE_GEN_EXPERIMENTS_EXPERIMENTS_COMPILER_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/log/check.h"
 #include "absl/log/log.h"
 #include "absl/status/status.h"
-#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/civil_time.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+
+// TODO(ladynana): Remove this macro once `error_flatten` experiment fully
+// rollout and status_helper.h doesn't depend on experiments.h.
+#define GRPC_EXPERIMENTS_RETURN_IF_ERROR(expr) \
+  do {                                         \
+    const absl::Status status = (expr);        \
+    if (!status.ok()) return status;           \
+  } while (0)
 
 namespace grpc_core {
 
@@ -47,11 +56,11 @@ class ExperimentDefinition {
                                 const std::string& expiry, bool uses_polling,
                                 bool allow_in_fuzzing_config,
                                 const std::vector<std::string>& test_tags,
-                                const std::vector<std::string>& requirements);
+                                const std::set<std::string>& requirements);
 
   bool IsValid(bool check_expiry = false) const;
   bool AddRolloutSpecification(
-      const std::map<std::string, std::string>& defaults,
+      const absl::flat_hash_map<std::string, std::string>& defaults,
       const std::map<std::string, std::string>& platforms_define,
       RolloutSpecification& rollout_attributes);
 
@@ -68,9 +77,9 @@ class ExperimentDefinition {
   bool allow_in_fuzzing_config() const { return allow_in_fuzzing_config_; }
   std::string additional_constraints(const std::string& platform) const {
     auto it = additional_constraints_.find(platform);
-    return it != additional_constraints_.end() ? it->second : "false";
+    return it != additional_constraints_.end() ? it->second : "";
   }
-  const std::vector<std::string>& requirements() const { return requires_; }
+  const std::set<std::string>& requirements() const { return requires_; }
 
  private:
   bool error_;
@@ -81,19 +90,20 @@ class ExperimentDefinition {
   bool uses_polling_;
   bool allow_in_fuzzing_config_;
   std::vector<std::string> test_tags_;
-  std::vector<std::string> requires_;
-  std::map<std::string, std::string> defaults_;
-  std::map<std::string, std::string> additional_constraints_;
+  std::set<std::string> requires_;
+  absl::flat_hash_map<std::string, std::string> defaults_;
+  absl::flat_hash_map<std::string, std::string> additional_constraints_;
 };
 
 class ExperimentsCompiler {
  public:
   ExperimentsCompiler(
-      const std::map<std::string, std::string>& defaults,
+      const absl::flat_hash_map<std::string, std::string>& defaults,
       const std::map<std::string, std::string>& platforms_define,
-      const std::map<std::string, std::string>& final_return,
-      const std::map<std::string, std::string>& final_define,
-      const std::map<std::string, std::string>& bzl_list_for_defaults)
+      const absl::flat_hash_map<std::string, std::string>& final_return,
+      const absl::flat_hash_map<std::string, std::string>& final_define,
+      const absl::flat_hash_map<std::string, std::string>&
+          bzl_list_for_defaults)
       : defaults_(defaults),
         platforms_define_(platforms_define),
         final_return_(final_return),
@@ -106,7 +116,9 @@ class ExperimentsCompiler {
 
   class ExperimentsOutputGenerator {
    public:
-    ExperimentsOutputGenerator(const ExperimentsCompiler& compiler)
+    // The compiler is not owned by the generator, and will always outlive the
+    // generator.
+    ExperimentsOutputGenerator(const ExperimentsCompiler* compiler)
         : compiler_(compiler) {}
     virtual ~ExperimentsOutputGenerator() = default;
     virtual void GenerateHeader(std::string& output) = 0;
@@ -116,6 +128,7 @@ class ExperimentsCompiler {
     void PutCopyright(std::string& output);
     void PutBanner(const std::string& prefix, std::vector<std::string>& lines,
                    std::string& output);
+    std::string ToAsciiCStr(const std::string& s);
     std::string SnakeToPascal(const std::string& snake_case);
     void GenerateHeaderInner(const std::string& mode, std::string& output);
     void GenerateSourceInner(const std::string& header_file_path,
@@ -127,7 +140,7 @@ class ExperimentsCompiler {
                                            std::string& output);
 
    private:
-    const ExperimentsCompiler& compiler_;
+    const ExperimentsCompiler* compiler_;
   };
 
   absl::Status GenerateExperimentsHdr(
@@ -137,41 +150,57 @@ class ExperimentsCompiler {
       const std::string& output_file, const std::string& header_file_path,
       ExperimentsCompiler::ExperimentsOutputGenerator& generator);
 
-  const std::map<std::string, std::string>& defaults() const {
+  const absl::flat_hash_map<std::string, std::string>& defaults() const {
     return defaults_;
   }
   const std::map<std::string, std::string>& platforms_define() const {
     return platforms_define_;
   }
-  const std::map<std::string, std::string>& final_return() const {
+  const absl::flat_hash_map<std::string, std::string>& final_return() const {
     return final_return_;
   }
-  const std::map<std::string, std::string>& final_define() const {
+  const absl::flat_hash_map<std::string, std::string>& final_define() const {
     return final_define_;
   }
-  const std::map<std::string, std::string>& bzl_list_for_defaults() const {
+  const absl::flat_hash_map<std::string, std::string>& bzl_list_for_defaults()
+      const {
     return bzl_list_for_defaults_;
   }
   const std::map<std::string, ExperimentDefinition>& experiment_definitions()
       const {
     return experiment_definitions_;
   }
+  const std::vector<std::string>& sorted_experiment_names() const {
+    return sorted_experiment_names_;
+  }
 
  private:
   absl::Status WriteToFile(const std::string& output_file,
                            const std::string& contents);
-  std::map<std::string, std::string> defaults_;
+  absl::Status FinalizeExperiments();
+  // Unordered map of default definitions. Note that the iterator order is not
+  // guaranteed.
+  absl::flat_hash_map<std::string, std::string> defaults_;
+  // Ordered map of default platforms. The iterator order is guaranteed and
+  // determines the order of platforms in the generated files.
   std::map<std::string, std::string> platforms_define_;
-  std::map<std::string, std::string> final_return_;
-  std::map<std::string, std::string> final_define_;
-  std::map<std::string, std::string> bzl_list_for_defaults_;
+  // Unordered map of default return statements. Note that the iterator order is
+  // not guaranteed.
+  absl::flat_hash_map<std::string, std::string> final_return_;
+  // Unordered map of default define statement. Note that the iterator order is
+  // not guaranteed.
+  absl::flat_hash_map<std::string, std::string> final_define_;
+  // Unordered map of default bzl list. Note that the iterator order is not
+  // guaranteed.
+  absl::flat_hash_map<std::string, std::string> bzl_list_for_defaults_;
   std::map<std::string, ExperimentDefinition> experiment_definitions_;
+  std::vector<std::string> sorted_experiment_names_;
 };
 
 static inline std::string GetCopyright() {
   absl::CivilDay today = absl::ToCivilDay(absl::Now(), absl::UTCTimeZone());
   return absl::StrCat("// Copyright ", absl::CivilYear(today).year(),
-                      R"( The gRPC Authors
+                      R"( gRPC authors.
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -228,7 +257,7 @@ class GrpcOssExperimentsOutputGenerator
     : public ExperimentsCompiler::ExperimentsOutputGenerator {
  public:
   explicit GrpcOssExperimentsOutputGenerator(
-      const ExperimentsCompiler& compiler, const std::string& mode,
+      const ExperimentsCompiler* compiler, const std::string& mode,
       const std::string& header_file_path = "")
       : ExperimentsOutputGenerator(compiler),
         mode_(mode),

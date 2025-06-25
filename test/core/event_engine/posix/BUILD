@@ -270,6 +270,84 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "file_descriptor_collection_test",
+    srcs = ["file_descriptor_collection_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        "//src/core:posix_event_engine_posix_interface",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "poller_fork_test",
+    srcs = ["poller_fork_test.cc"],
+    external_deps = [
+        "absl/log:log",
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":posix_engine_test_utils",
+        "//:grpc++",
+        "//src/core:posix_event_engine",
+        "//test/core/event_engine:event_engine_test_utils",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_library(
+    name = "dns_server",
+    testonly = True,
+    srcs = ["dns_server.cc"],
+    hdrs = ["dns_server.h"],
+    external_deps = [
+        "absl/status:statusor",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    visibility = ["//visibility:private"],
+    deps = [
+        "//:gpr_platform",
+        "//:grpc++",
+        "//src/core:notification",
+    ],
+)
+
+grpc_cc_test(
+    name = "dns_fork_test",
+    srcs = ["dns_fork_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = True,
+    uses_polling = True,
+    deps = [
+        ":dns_server",
+        "//:gpr_platform",
+        "//src/core:posix_event_engine",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "errqueue_support_test",
     srcs = ["errqueue_support_test.cc"],
     external_deps = [

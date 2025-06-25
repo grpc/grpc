@@ -1837,7 +1837,7 @@ static void tcp_write(
     tcp->outgoing_byte_idx = 0;
   }
   tcp->outgoing_buffer_arg =
-      args.GetDeprecatedAndDiscouragedGoogleSpecificPointer();
+      args.TakeDeprecatedAndDiscouragedGoogleSpecificPointer();
   if (tcp->outgoing_buffer_arg) {
     CHECK(grpc_event_engine_can_track_errors());
   }
