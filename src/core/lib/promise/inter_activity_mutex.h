@@ -419,10 +419,10 @@ class InterActivityMutex {
 
     InterActivityMutex* mutex_;
     uintptr_t prev_state_ = kUnlocked;
-    State state_ =
-        mutex_->state_.compare_exchange_weak(prev_state_, kLocked, std::memory_order_acq_rel)
-            ? State::kFastLocked
-            : State::kStart;
+    State state_ = mutex_->state_.compare_exchange_weak(
+                       prev_state_, kLocked, std::memory_order_acq_rel)
+                       ? State::kFastLocked
+                       : State::kStart;
     GPR_NO_UNIQUE_ADDRESS F f_;
     Waiter* waiter_;
   };
