@@ -2517,8 +2517,29 @@ grpc_cc_library(
         "iomgr_port",
         "posix_event_engine_internal_errqueue",
         "posix_event_engine_posix_interface",
+        "posix_write_event_sink",
         "sync",
+        "//:event_engine_base_hdrs",
         "//:gpr",
+    ],
+)
+
+grpc_cc_library(
+    name = "posix_write_event_sink",
+    srcs = [
+        "lib/event_engine/posix_engine/posix_write_event_sink.cc",
+    ],
+    hdrs = [
+        "lib/event_engine/posix_engine/posix_write_event_sink.h",
+    ],
+    external_deps = [
+        "absl/base:no_destructor",
+        "absl/functional:any_invocable",
+    ],
+    deps = [
+        "bitset",
+        "event_engine_common",
+        "//:event_engine_base_hdrs",
     ],
 )
 
@@ -3621,6 +3642,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
         "grpc_service_config",
@@ -5781,6 +5803,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "interception_chain",
@@ -7616,6 +7639,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "client_channel_internal_header",
@@ -8181,6 +8205,7 @@ grpc_cc_library(
         "error_utils",
         "grpc_insecure_credentials",
         "handshaker_registry",
+        "http2_client_transport",
         "resolved_address",
         "status_helper",
         "subchannel_connector",
@@ -10168,6 +10193,107 @@ grpc_cc_library(
         "//:transport_auth_context",
         "//:tsi_base",
         "//:tsi_ssl_session_cache",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_strings",
+    srcs = [
+        "channelz/zviz/strings.cc",
+    ],
+    hdrs = ["channelz/zviz/strings.h"],
+    external_deps = [
+        "absl/strings",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_environment",
+    srcs = [
+        "channelz/zviz/environment.cc",
+    ],
+    hdrs = ["channelz/zviz/environment.h"],
+    external_deps = [
+        "absl/strings",
+        "absl/status:statusor",
+    ],
+    deps = [
+        "zviz_strings",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_layout",
+    srcs = [
+        "channelz/zviz/layout.cc",
+    ],
+    hdrs = ["channelz/zviz/layout.h"],
+    deps = [
+        "zviz_environment",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "@com_google_protobuf//:duration_cc_proto",
+        "@com_google_protobuf//:timestamp_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_data",
+    srcs = [
+        "channelz/zviz/data.cc",
+    ],
+    hdrs = ["channelz/zviz/data.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "no_destruct",
+        "zviz_environment",
+        "zviz_layout",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_trace",
+    srcs = [
+        "channelz/zviz/trace.cc",
+    ],
+    hdrs = ["channelz/zviz/trace.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "zviz_data",
+        "zviz_environment",
+        "zviz_layout",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_entity",
+    srcs = [
+        "channelz/zviz/entity.cc",
+    ],
+    hdrs = ["channelz/zviz/entity.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "zviz_data",
+        "zviz_environment",
+        "zviz_layout",
+        "zviz_strings",
+        "zviz_trace",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
     ],
 )
 
