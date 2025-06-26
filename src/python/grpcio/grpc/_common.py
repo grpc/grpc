@@ -15,7 +15,7 @@
 
 import logging
 import time
-from typing import AnyStr, Callable, Optional, TypeVar, Union
+from typing import Any, AnyStr, Callable, Optional, TypeVar, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -80,10 +80,10 @@ def decode(b: AnyStr) -> str:
 
 
 def _transform(
-    message: T,
+    message: Any,
     transformer: Union[SerializingFunction, DeserializingFunction, None],
     exception_message: str,
-) -> Union[T, None]:
+) -> Union[Any, None]:
     if transformer is None:
         return message
     else:
@@ -94,13 +94,13 @@ def _transform(
             return None
 
 
-def serialize(message: T, serializer: Optional[SerializingFunction]) -> bytes:
+def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
     return _transform(message, serializer, "Exception serializing message!")  # type: ignore
 
 
 def deserialize(
     serialized_message: bytes, deserializer: Optional[DeserializingFunction]
-) -> Union[T, None]:
+) -> Union[Any, None]:
     return _transform(
         serialized_message, deserializer, "Exception deserializing message!"
     )
