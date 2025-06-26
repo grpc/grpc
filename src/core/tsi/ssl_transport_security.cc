@@ -118,6 +118,7 @@ struct tsi_ssl_client_handshaker_factory {
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<tsi::SslSessionLRUCache> session_cache;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
+  std::shared_ptr<RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_server_handshaker_factory {
@@ -131,6 +132,7 @@ struct tsi_ssl_server_handshaker_factory {
   unsigned char* alpn_protocol_list;
   size_t alpn_protocol_list_length;
   grpc_core::RefCountedPtr<TlsSessionKeyLogger> key_logger;
+  std::shared_ptr<RootCertInfo> root_cert_info;
 };
 
 struct tsi_ssl_handshaker {
@@ -2348,12 +2350,12 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
-      (options->spiffe_bundle_map == nullptr ||
-       options->spiffe_bundle_map->size() == 0) &&
+      options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
 
+  impl->root_cert_info = options->root_cert_info;
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
 #else
@@ -2547,6 +2549,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       gpr_zalloc(sizeof(*impl)));
   tsi_ssl_handshaker_factory_init(&impl->base);
   impl->base.vtable = &server_handshaker_factory_vtable;
+  impl->root_cert_info = options->root_cert_info;
 
   impl->ssl_contexts = static_cast<SSL_CTX**>(
       gpr_zalloc(options->num_key_cert_pairs * sizeof(SSL_CTX*)));

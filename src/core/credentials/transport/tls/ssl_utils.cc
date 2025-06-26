@@ -439,7 +439,6 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_client_handshaker_factory** handshaker_factory) {
   const char* root_certs = nullptr;
   const tsi_ssl_root_certs_store* root_store = nullptr;
-  tsi_ssl_client_handshaker_options options;
   bool roots_are_configured = root_cert_info != nullptr;
   if (!roots_are_configured && !skip_server_certificate_verification) {
     GRPC_TRACE_LOG(tsi, INFO)
@@ -458,13 +457,12 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
         [&](const std::string& pem_root_certs) {
           root_certs = pem_root_certs.c_str();
         },
-        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-          options.spiffe_bundle_map = &spiffe_bundle_map;
-        });
+        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
                            pem_key_cert_pair->cert_chain != nullptr;
+  tsi_ssl_client_handshaker_options options;
   options.pem_root_certs = root_certs;
   options.root_store = root_store;
   options.alpn_protocols =
@@ -481,6 +479,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
+  options.root_cert_info = root_cert_info;
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -514,9 +513,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
         [&](const std::string& pem_root_certs) {
           options.pem_client_root_certs = pem_root_certs.c_str();
         },
-        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-          options.spiffe_bundle_map = &spiffe_bundle_map;
-        });
+        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
   }
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
@@ -529,6 +526,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
+  options.root_cert_info = root_cert_info;
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);

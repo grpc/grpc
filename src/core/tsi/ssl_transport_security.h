@@ -51,6 +51,8 @@
 #define TSI_X509_VERIFIED_ROOT_CERT_SUBECT_PEER_PROPERTY \
   "x509_verified_root_cert_subject"
 
+using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
+
 // --- tsi_ssl_root_certs_store object ---
 
 // This object stores SSL root certificates. It can be shared by multiple SSL
@@ -192,6 +194,8 @@ struct tsi_ssl_client_handshaker_options {
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
   const grpc_core::SpiffeBundleMap* spiffe_bundle_map = nullptr;
+
+  std::shared_ptr<RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662
@@ -366,6 +370,8 @@ struct tsi_ssl_server_handshaker_options {
   bool send_client_ca_list;
 
   const grpc_core::SpiffeBundleMap* spiffe_bundle_map = nullptr;
+
+  std::shared_ptr<RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed
   // https://github.com/grpc/grpc/pull/39708/files#r2143735662

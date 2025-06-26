@@ -31,6 +31,7 @@
 #include "absl/strings/string_view.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/credentials/transport/tls/ssl_utils.h"
+#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/sync.h"
@@ -39,7 +40,7 @@ struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
 };
 
-using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
+// using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
 
 // TLS certificate distributor.
 struct grpc_tls_certificate_distributor
