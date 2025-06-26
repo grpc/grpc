@@ -2339,7 +2339,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
-bool IsEmpty(std::shared_ptr<RootCertInfo> root_cert_info) {
+bool IsRootCertInfoEmpty(std::shared_ptr<RootCertInfo> root_cert_info) {
   if (root_cert_info == nullptr) {
     return true;
   }
@@ -2367,7 +2367,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
-      IsEmpty(options->root_cert_info) &&
+      IsRootCertInfoEmpty(options->root_cert_info) &&
       !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }

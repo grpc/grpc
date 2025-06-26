@@ -40,8 +40,6 @@ struct grpc_tls_identity_pairs {
   grpc_core::PemKeyCertPairList pem_key_cert_pairs;
 };
 
-// using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
-
 // TLS certificate distributor.
 struct grpc_tls_certificate_distributor
     : public grpc_core::RefCounted<grpc_tls_certificate_distributor> {

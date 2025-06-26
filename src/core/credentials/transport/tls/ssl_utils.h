@@ -43,10 +43,6 @@
 
 // --- Util ---
 
-// Needed along with `RootCertInfo` defined in
-// `grpc_tls_certificate_distributor.h` to avoid dependency cycle
-// using RootCertInfo = std::variant<std::string, grpc_core::SpiffeBundleMap>;
-
 // Check ALPN information returned from SSL handshakes.
 grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
