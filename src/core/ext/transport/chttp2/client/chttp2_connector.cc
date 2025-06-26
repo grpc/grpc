@@ -147,9 +147,9 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   } else if ((*result)->endpoint != nullptr) {
-    const bool is_callv1_ =
+    const bool is_callv1 =
         !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
-    if (is_callv1_) {
+    if (is_callv1) {
       result_->transport = grpc_create_chttp2_transport(
           (*result)->args, std::move((*result)->endpoint), true);
       CHECK_NE(result_->transport, nullptr);
@@ -189,11 +189,11 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
       Ref().release();  // Ref held by OnReceiveSettings()
       // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
+      result_->channel_args = std::move((*result)->args);
       result_->transport = new Http2ClientTransport(
           std::move(promise_endpoint), (*result)->args, event_engine_ptr);
 
       DCHECK_NE(result_->transport, nullptr);
-      result_->channel_args = std::move((*result)->args);
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
           [self = RefAsSubclass<Chttp2Connector>()]() mutable {
