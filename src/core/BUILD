@@ -3642,6 +3642,7 @@ grpc_cc_library(
     ],
     deps = [
         "arena",
+        "blackboard",
         "channel_fwd",
         "client_channel_internal_header",
         "grpc_service_config",
@@ -5802,6 +5803,7 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "interception_chain",
@@ -7637,6 +7639,7 @@ grpc_cc_library(
     deps = [
         "arena",
         "arena_promise",
+        "blackboard",
         "channel_args",
         "channel_fwd",
         "client_channel_internal_header",
