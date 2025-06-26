@@ -10218,7 +10218,7 @@ grpc_cc_library(
         "absl/status:statusor",
     ],
     deps = [
-        ":zviz_strings",
+        "zviz_strings",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
     ],
 )
@@ -10230,10 +10230,30 @@ grpc_cc_library(
     ],
     hdrs = ["channelz/zviz/layout.h"],
     deps = [
-        ":zviz_environment",
+        "zviz_environment",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "@com_google_protobuf//:duration_cc_proto",
         "@com_google_protobuf//:timestamp_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_data",
+    srcs = [
+        "channelz/zviz/data.cc",
+    ],
+    hdrs = ["channelz/zviz/data.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "no_destruct",
+        "zviz_environment",
+        "zviz_layout",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+        "//src/proto/grpc/channelz/v2:property_list_cc_proto",
     ],
 )
 

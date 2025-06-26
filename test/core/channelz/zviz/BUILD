@@ -69,3 +69,27 @@ grpc_cc_test(
         "//src/core:zviz_layout",
     ],
 )
+
+grpc_cc_library(
+    name = "layout_log",
+    testonly = True,
+    hdrs = ["layout_log.h"],
+    deps = [
+        "//src/core:zviz_layout",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "data_test",
+    srcs = ["data_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_data",
+    ],
+)
