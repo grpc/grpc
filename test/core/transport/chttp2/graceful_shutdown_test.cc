@@ -171,7 +171,7 @@ class GracefulShutdownTest : public ::testing::Test {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
           char* dump = grpc_dump_slice(self->read_buffer_.slices[i],
-                                             GPR_DUMP_HEX | GPR_DUMP_ASCII);
+                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
           LOG(INFO) << "Read: " << dump;
           gpr_free(dump);
           absl::StrAppend(&self->read_bytes_,
