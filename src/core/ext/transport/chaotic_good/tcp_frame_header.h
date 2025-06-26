@@ -31,7 +31,7 @@ inline uint32_t DataConnectionPadding(uint32_t payload_length,
 
 struct TcpFrameHeader {
   // Frame header size is fixed.
-  enum { kFrameHeaderSize = 16 };
+  enum { kFrameHeaderSize = 24 };
 
   FrameHeader header;
   // if 0 ==> this frames payload will be on the control channel
@@ -57,9 +57,8 @@ struct TcpFrameHeader {
 };
 
 struct TcpDataFrameHeader {
-  enum { kFrameHeaderSize = 20 };
+  enum { kFrameHeaderSize = 12 };
   uint64_t payload_tag;
-  uint64_t send_timestamp;
   uint32_t payload_length;
 
   // Parses a frame header from a buffer of kFrameHeaderSize bytes. All
@@ -71,7 +70,6 @@ struct TcpDataFrameHeader {
   template <typename Sink>
   friend void AbslStringify(Sink& sink, const TcpDataFrameHeader& frame) {
     sink.Append(absl::StrCat("DataFrameHeader{payload_tag:", frame.payload_tag,
-                             ",send_timestamp:", frame.send_timestamp,
                              ",payload_length:", frame.payload_length, "}"));
   }
 };

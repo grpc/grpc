@@ -94,6 +94,7 @@ class MessageChunker {
 
   template <typename Output>
   auto Send(MessageHandle message, uint32_t stream_id,
+            TransportContext::Clock* clock,
             std::shared_ptr<TcpCallTracer> call_tracer, Output& output) {
     return If(
         ShouldChunk(*message),
@@ -103,16 +104,20 @@ class MessageChunker {
           begin.stream_id = stream_id;
           uint32_t tokens = begin.MakeHeader().payload_length;
           return Seq(
-              output.Send(OutgoingFrame{std::move(begin), call_tracer}, tokens),
+              output.Send(
+                  OutgoingFrame{clock->Now(), std::move(begin), call_tracer},
+                  tokens),
               Loop([chunker = message_chunker_detail::PayloadChunker(
                         max_chunk_size_, alignment_, stream_id,
                         std::move(*message->payload())),
-                    &output, call_tracer = std::move(call_tracer)]() mutable {
+                    clock, &output,
+                    call_tracer = std::move(call_tracer)]() mutable {
                 auto next = chunker.NextChunk();
                 uint32_t tokens = FrameMpscTokens(next.frame);
                 return Map(
                     output.Send(
-                        OutgoingFrame{std::move(next.frame), call_tracer},
+                        OutgoingFrame{clock->Now(), std::move(next.frame),
+                                      call_tracer},
                         tokens),
                     [done = next.done](StatusFlag x) -> LoopCtl<StatusFlag> {
                       if (!done) return Continue{};
@@ -125,7 +130,8 @@ class MessageChunker {
           frame.message = std::move(message);
           frame.stream_id = stream_id;
           uint32_t tokens = FrameMpscTokens(frame);
-          return output.Send(OutgoingFrame{std::move(frame), nullptr}, tokens);
+          return output.Send(
+              OutgoingFrame{clock->Now(), std::move(frame), nullptr}, tokens);
         });
   }
 

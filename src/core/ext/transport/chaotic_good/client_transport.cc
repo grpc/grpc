@@ -271,8 +271,9 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
   auto send_fragment = [this, call_tracer, stream_id](auto frame) mutable {
     frame.stream_id = stream_id;
     auto tokens = FrameMpscTokens(frame);
-    return outgoing_frames_.Send(OutgoingFrame{std::move(frame), call_tracer},
-                                 tokens);
+    return outgoing_frames_.Send(
+        OutgoingFrame{ctx_->clock->Now(), std::move(frame), call_tracer},
+        tokens);
   };
   auto send_message = [this, stream_id, call_tracer,
                        message_chunker =
@@ -280,8 +281,8 @@ auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,
     if (ctx_->socket_node != nullptr) {
       ctx_->socket_node->RecordMessagesSent(1);
     }
-    return message_chunker.Send(std::move(message), stream_id, call_tracer,
-                                outgoing_frames_);
+    return message_chunker.Send(std::move(message), stream_id, ctx_->clock,
+                                call_tracer, outgoing_frames_);
   };
   return GRPC_LATENT_SEE_PROMISE(
       "CallOutboundLoop",

@@ -24,6 +24,7 @@ void TcpFrameHeaderToJsonObject(const TcpFrameHeader& header,
   object["frame_type"] = Json::FromString(FrameTypeString(header.header.type));
   object["stream_id"] = Json::FromNumber(header.header.stream_id);
   object["payload_length"] = Json::FromNumber(header.header.payload_length);
+  object["send_timestamp"] = Json::FromNumber(header.header.send_timestamp);
   if (header.payload_tag != 0) {
     object["payload_tag"] = Json::FromNumber(header.payload_tag);
   }
@@ -32,7 +33,6 @@ void TcpFrameHeaderToJsonObject(const TcpFrameHeader& header,
 void TcpDataFrameHeaderToJsonObject(const TcpDataFrameHeader& header,
                                     Json::Object& object) {
   object["payload_tag"] = Json::FromNumber(header.payload_tag);
-  object["send_time"] = Json::FromNumber(header.send_timestamp);
   object["payload_length"] = Json::FromNumber(header.payload_length);
 }
 

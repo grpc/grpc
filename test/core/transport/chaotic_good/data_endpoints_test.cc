@@ -117,8 +117,8 @@ class DataEndpointsTest : public YodelTest {
   using YodelTest::YodelTest;
 };
 
-chaotic_good::data_endpoints_detail::Clock* Time1Clock() {
-  class Clock final : public chaotic_good::data_endpoints_detail::Clock {
+chaotic_good::TransportContext::Clock* Time1Clock() {
+  class Clock final : public chaotic_good::TransportContext::Clock {
    public:
     uint64_t Now() override { return 1; }
   };
