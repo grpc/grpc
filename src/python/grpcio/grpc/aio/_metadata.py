@@ -16,8 +16,10 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from collections import abc
-from collections.abc import Iterator
-from typing import Any, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
@@ -44,7 +46,7 @@ class Metadata(abc.Collection):
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple) -> "Metadata":
+    def from_tuple(cls, raw_metadata: tuple) -> Metadata:
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -133,7 +135,7 @@ class Metadata(abc.Collection):
             return tuple(self) == other
         return NotImplemented  # pytype: disable=bad-return-type
 
-    def __add__(self, other: Union["Metadata", tuple[MetadataKey, MetadataValue]]) -> Metadata:
+    def __add__(self, other: Union[Metadata, tuple[MetadataKey, MetadataValue]]) -> Metadata:
         if isinstance(other, self.__class__):
             return Metadata(*(tuple(self) + tuple(other)))
         if isinstance(other, tuple):

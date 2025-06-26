@@ -14,6 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 
 import asyncio
+import types
 from collections.abc import Iterable
 from collections.abc import Sequence
 import sys
@@ -364,12 +365,12 @@ class Channel(_base_channel.Channel):
                 elif isinstance(interceptor, StreamStreamClientInterceptor):
                     self._stream_stream_interceptors.append(interceptor)
                 else:
-                    raise ValueError( # noqa: TRY004
-                        "Interceptor {} must be ".format(interceptor) # noqa: UP032
-                        + "{} or ".format(UnaryUnaryClientInterceptor.__name__)
-                        + "{} or ".format(UnaryStreamClientInterceptor.__name__)
-                        + "{} or ".format(StreamUnaryClientInterceptor.__name__)
-                        + "{}. ".format(StreamStreamClientInterceptor.__name__)
+                    raise ValueError(  # noqa: TRY004
+                        f"Interceptor {interceptor} must be "
+                        f"{UnaryUnaryClientInterceptor.__name__} or "
+                        f"{UnaryStreamClientInterceptor.__name__} or "
+                        f"{StreamUnaryClientInterceptor.__name__} or "
+                        f"{StreamStreamClientInterceptor.__name__}. ",
                     )
 
         self._loop = cygrpc.get_working_loop()
@@ -385,7 +386,7 @@ class Channel(_base_channel.Channel):
 
     async def __aexit__(
         self,
-        exc_type: Optional[type],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[object],
     ) -> None:
