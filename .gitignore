@@ -182,3 +182,5 @@ fuzz-*.log
 # bazel module files
 third_party/**/MODULE.bazel
 MODULE.bazel.lock
+
+.venv*
