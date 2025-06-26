@@ -10257,6 +10257,25 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "zviz_trace",
+    srcs = [
+        "channelz/zviz/trace.cc",
+    ],
+    hdrs = ["channelz/zviz/trace.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "zviz_data",
+        "zviz_environment",
+        "zviz_layout",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(

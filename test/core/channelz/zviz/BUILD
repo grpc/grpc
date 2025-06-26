@@ -93,3 +93,19 @@ grpc_fuzz_test(
         "//src/core:zviz_data",
     ],
 )
+
+grpc_fuzz_test(
+    name = "trace_test",
+    srcs = ["trace_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/container:flat_hash_map",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_trace",
+    ],
+)

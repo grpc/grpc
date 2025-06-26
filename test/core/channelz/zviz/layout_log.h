@@ -25,6 +25,13 @@ class LogElement final : public Element {
       : prefix_(prefix), lines_(lines) {}
 
   Element& AppendText(Intent intent, absl::string_view text) override {
+    if (intent == Intent::kTimestamp) {
+      // We elide the text for timestamps to avoid timezone issues in text
+      // comparisons.
+      lines_.emplace_back(
+          absl::StrCat(prefix_, "APPEND_TEXT ", intent, " [value elided]"));
+      return *this;
+    }
     lines_.emplace_back(
         absl::StrCat(prefix_, "APPEND_TEXT ", intent, " ", text));
     return *this;
