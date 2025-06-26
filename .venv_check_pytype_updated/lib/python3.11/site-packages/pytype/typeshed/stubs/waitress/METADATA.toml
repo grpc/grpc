@@ -1,9 +1,0 @@
-version = "2.1.*"
-upstream_repository = "https://github.com/Pylons/waitress"
-requires = []
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true
-# linux and darwin are equivalent
-platforms = ["linux", "win32"]

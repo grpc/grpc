@@ -1,6 +1,0 @@
-version = "3.2.*"
-upstream_repository = "https://github.com/PyCQA/pyflakes"
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

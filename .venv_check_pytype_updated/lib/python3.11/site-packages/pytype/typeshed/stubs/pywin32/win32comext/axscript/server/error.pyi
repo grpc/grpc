@@ -1,6 +1,0 @@
-from _typeshed import Incomplete
-
-class Exception:
-    activeScriptError: Incomplete
-    def __init__(self, activeScriptError) -> None: ...
-    def __getattr__(self, attr: str): ...

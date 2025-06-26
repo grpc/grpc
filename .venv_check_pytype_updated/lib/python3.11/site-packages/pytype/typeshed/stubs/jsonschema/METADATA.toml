@@ -1,8 +1,0 @@
-version = "4.21.*"
-upstream_repository = "https://github.com/python-jsonschema/jsonschema"
-requires = ["referencing"]
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true
-extras = ["format"]

@@ -1,6 +1,0 @@
-version = "0.21.*"
-upstream_repository = "https://github.com/MartinThoma/flake8-simplify"
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

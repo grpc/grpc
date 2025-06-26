@@ -1,3 +1,0 @@
-def product(sequence): ...
-
-prod = product

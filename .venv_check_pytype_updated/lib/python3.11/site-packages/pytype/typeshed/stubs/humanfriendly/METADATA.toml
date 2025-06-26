@@ -1,5 +1,0 @@
-version = "10.0.*"
-upstream_repository = "https://github.com/xolox/python-humanfriendly"
-
-[tool.stubtest]
-stubtest_requirements = ["docutils", "mock"]

@@ -1,4 +1,0 @@
-from braintree.merchant_account.business_details import BusinessDetails as BusinessDetails
-from braintree.merchant_account.funding_details import FundingDetails as FundingDetails
-from braintree.merchant_account.individual_details import IndividualDetails as IndividualDetails
-from braintree.merchant_account.merchant_account import MerchantAccount as MerchantAccount

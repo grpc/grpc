@@ -1,7 +1,0 @@
-version = "10.2.*"
-upstream_repository = "https://github.com/python-pillow/Pillow"
-
-[tool.stubtest]
-stubtest_requirements = ["olefile"]
-# darwin checks don't affect stubtest
-platforms = ["linux", "win32"]

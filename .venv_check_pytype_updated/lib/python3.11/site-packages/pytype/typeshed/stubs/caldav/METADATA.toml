@@ -1,8 +1,0 @@
-version = "1.3.*"
-upstream_repository = "https://github.com/python-caldav/caldav"
-# also types-lxml and types-icalendar when those stubs are added
-requires = ["types-requests", "types-vobject"]
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

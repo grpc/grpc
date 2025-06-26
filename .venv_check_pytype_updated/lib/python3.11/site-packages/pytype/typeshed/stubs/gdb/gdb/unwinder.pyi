@@ -1,3 +1,0 @@
-import gdb
-
-def register_unwinder(locus: gdb.Objfile | gdb.Progspace | None, unwinder: gdb.Unwinder, replace: bool = ...) -> None: ...

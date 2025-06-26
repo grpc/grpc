@@ -1,6 +1,0 @@
-version = "0.3.*"
-upstream_repository = "https://github.com/peterjc/flake8-rst-docstrings"
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

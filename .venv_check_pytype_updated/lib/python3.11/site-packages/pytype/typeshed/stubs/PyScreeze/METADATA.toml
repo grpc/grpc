@@ -1,7 +1,0 @@
-version = "0.1.30"
-upstream_repository = "https://github.com/asweigart/pyscreeze"
-requires = ["types-Pillow"]
-
-[tool.stubtest]
-# Linux has extra constants, win32 has different definitions
-platforms = ["linux", "win32"]

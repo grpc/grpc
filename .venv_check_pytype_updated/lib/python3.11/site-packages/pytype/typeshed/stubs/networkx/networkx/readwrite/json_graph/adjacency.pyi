@@ -1,6 +1,0 @@
-from networkx.utils.backends import _dispatch
-
-@_dispatch
-def adjacency_data(G, attrs={"id": "id", "key": "key"}): ...
-@_dispatch
-def adjacency_graph(data, directed: bool = False, multigraph: bool = True, attrs={"id": "id", "key": "key"}): ...

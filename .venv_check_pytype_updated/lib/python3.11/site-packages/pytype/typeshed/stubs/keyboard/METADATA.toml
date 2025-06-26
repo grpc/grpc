@@ -1,9 +1,0 @@
-version = "0.13.*"
-upstream_repository = "https://github.com/boppreh/keyboard"
-
-# [tool.stubtest]
-# While the stubs slightly differ on Windows vs Linux.
-# It's only by possible mouse buttons and event literal types.
-# As well as returning a tuple of int/long from keyboard.mouse.get_position
-# The "mouse" module is obsoleted by the "mouse" package.
-# platforms =

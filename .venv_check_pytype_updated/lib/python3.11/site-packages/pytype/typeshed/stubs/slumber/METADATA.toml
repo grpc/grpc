@@ -1,3 +1,0 @@
-version = "0.7.*"
-upstream_repository = "https://github.com/samgiles/slumber"
-requires = ["types-requests"]

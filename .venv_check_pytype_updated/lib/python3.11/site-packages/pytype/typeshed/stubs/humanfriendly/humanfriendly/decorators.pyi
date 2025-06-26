@@ -1,3 +1,0 @@
-RESULTS_ATTRIBUTE: str
-
-def cached(function): ...
