@@ -694,6 +694,22 @@ Http2ClientTransport::Http2ClientTransport(
   // The keepalive loop is only spawned if the keepalive time is not infinity.
   keepalive_manager_.Spawn(general_party_.get());
 
+  // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  Http2ErrorCode code = settings_.mutable_local().Apply(
+      Http2Settings::kInitialWindowSizeWireId,
+      (Http2Settings::max_initial_window_size() - 1));
+  DCHECK(code == Http2ErrorCode::kNoError);
+  std::optional<Http2SettingsFrame> settings_frame =
+      settings_.MaybeSendUpdate();
+  if (settings_frame.has_value()) {
+    general_party_->Spawn(
+        "SendFirstSettingsFrame",
+        [self = RefAsSubclass<Http2ClientTransport>(),
+         frame = std::move(*settings_frame)]() mutable {
+          return self->EnqueueOutgoingFrame(std::move(frame));
+        },
+        [](GRPC_UNUSED absl::Status status) {});
+  }
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 

@@ -95,6 +95,14 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportObjectCreation) {
   LOG(INFO) << "TestHttp2ClientTransportObjectCreation Begin";
   MockPromiseEndpoint mock_endpoint(/*port=*/1000);
 
+  mock_endpoint.ExpectWrite(
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
+      },
+      event_engine().get());
   mock_endpoint.ExpectRead(
       {helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
@@ -134,6 +142,12 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromQueue) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {
           helper_.EventEngineSliceFromHttp2DataFrame(
               /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
       },
@@ -176,14 +190,16 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportWriteFromCall) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
 
       },
       event_engine().get());
 
   mock_endpoint.ExpectWrite(
-      {helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+           kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+       helper_.EventEngineSliceFromHttp2DataFrame(data_payload,
                                                   /*stream_id=*/1,
                                                   /*end_stream=*/false),
        helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
@@ -238,10 +254,16 @@ TEST_F(Http2ClientTransportTest, Http2ClientTransportAbortTest) {
 
   // Expect Client Initial Metadata to be sent.
   mock_endpoint.ExpectWrite(
-      {EventEngineSlice(
-           grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-       helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-           kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))},
+      {
+          EventEngineSlice(
+              grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
+      },
+      event_engine().get());
+  mock_endpoint.ExpectWrite(
+      {helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+          kPathDemoServiceStep.begin(), kPathDemoServiceStep.end()))},
       event_engine().get());
 
   auto client_transport = MakeOrphanable<Http2ClientTransport>(
@@ -291,6 +313,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingRead) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
 
@@ -342,6 +366,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingWrite) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -414,6 +440,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportPingTimeout) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -471,6 +499,8 @@ TEST_F(Http2ClientTransportTest, TestHttp2ClientTransportMultiplePings) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWriteWithCallback(
@@ -569,12 +599,14 @@ TEST_F(Http2ClientTransportTest, TestHeaderDataHeaderFrameOrder) {
       {
           EventEngineSlice(
               grpc_slice_from_copied_string(GRPC_CHTTP2_CLIENT_CONNECT_STRING)),
-          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
-              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
+          helper_.EventEngineSliceFromHttp2SettingsFrame(
+              {{4, helper_.GetDefaultInitialWindowSize()}}),
       },
       event_engine().get());
   mock_endpoint.ExpectWrite(
       {
+          helper_.EventEngineSliceFromHttp2HeaderFrame(std::string(
+              kPathDemoServiceStep.begin(), kPathDemoServiceStep.end())),
           helper_.EventEngineSliceFromEmptyHttp2DataFrame(/*stream_id=*/1,
                                                           /*end_stream=*/true),
       },
