@@ -111,7 +111,7 @@ BANNED_EXCEPT = {
     "absl::nullopt": [],
     "absl::make_optional": [],
     "std::make_pair": [],
-    "std::make_tuple": [
+    "std::tuple": [
         "src/core/call/filter_fusion.h",
         "src/core/lib/surface/channel_init.cc",
     ],

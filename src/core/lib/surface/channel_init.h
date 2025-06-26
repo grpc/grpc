@@ -439,10 +439,15 @@ class ChannelInit {
       const std::vector<std::unique_ptr<FilterRegistration>>&
           filter_registrations);
 
-  static bool SelectThenMergeFilters(ChannelStackBuilder* builder,
-                                     const std::vector<Filter>& filters,
-                                     const std::vector<Filter>& fused_filters,
-                                     bool is_terminal);
+  template <bool is_terminal>
+  static std::vector<FilterNode> SelectFiltersByPredicate(
+      const std::vector<Filter>& filters, ChannelStackBuilder* builder);
+
+  static void MergeFilters(std::vector<FilterNode>& filter_list,
+                           const std::vector<Filter>& fused_filters);
+
+  static void AppendFiltersToBuilder(const std::vector<FilterNode>& filter_list,
+                                     ChannelStackBuilder* builder);
 
   static StackConfig BuildStackConfig(
       const std::vector<std::unique_ptr<FilterRegistration>>&
