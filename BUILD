@@ -4807,6 +4807,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:tcp_tracer",
         "//src/core:time",
+        "//src/core:transport_common",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
