@@ -1,3 +1,0 @@
-version = "8.0.2"
-upstream_repository = "https://github.com/un33k/python-slugify"
-obsolete_since = "8.0.2" # Released on 2024-01-25

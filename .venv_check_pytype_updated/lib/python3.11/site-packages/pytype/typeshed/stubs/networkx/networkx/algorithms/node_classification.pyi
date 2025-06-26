@@ -1,6 +1,0 @@
-from networkx.utils.backends import _dispatch
-
-@_dispatch
-def harmonic_function(G, max_iter: int = 30, label_name: str = "label"): ...
-@_dispatch
-def local_and_global_consistency(G, alpha: float = 0.99, max_iter: int = 30, label_name: str = "label"): ...

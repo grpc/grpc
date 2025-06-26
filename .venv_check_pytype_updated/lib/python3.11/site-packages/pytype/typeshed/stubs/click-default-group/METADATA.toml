@@ -1,4 +1,0 @@
-version = "1.2.*"
-# requires a version of click with a py.typed
-requires = ["click>=8.0.0"]
-upstream_repository = "https://github.com/click-contrib/click-default-group"

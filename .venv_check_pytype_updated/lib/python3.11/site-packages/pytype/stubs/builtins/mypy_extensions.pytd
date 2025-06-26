@@ -1,6 +1,0 @@
-# pytype's equivalent of mypy's mypy_extensions
-# (https://github.com/python/typeshed/blob/master/third_party/2and3/mypy_extensions.pyi)
-
-from typing import Any
-
-def __getattr__(name) -> Any: ...

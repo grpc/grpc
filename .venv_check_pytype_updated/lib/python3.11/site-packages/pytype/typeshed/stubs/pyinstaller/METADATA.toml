@@ -1,6 +1,0 @@
-version = "6.5.*"
-upstream_repository = "https://github.com/pyinstaller/pyinstaller"
-requires = ["types-setuptools"]
-
-[tool.stubtest]
-extras = ["completion"]

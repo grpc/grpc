@@ -1,3 +1,0 @@
-class Constants:
-    @staticmethod
-    def get_all_constant_values_from_class(klass): ...

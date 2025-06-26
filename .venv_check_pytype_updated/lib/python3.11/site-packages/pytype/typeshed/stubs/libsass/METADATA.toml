@@ -1,7 +1,0 @@
-version = "0.23.*"
-requires = ["types-setuptools"]
-upstream_repository = "https://github.com/sass/libsass-python"
-
-[tool.stubtest]
-# The runtime package has an undeclared dependency on setuptools
-stubtest_requirements = ["setuptools"]

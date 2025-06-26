@@ -1,6 +1,0 @@
-class NoOpTraceId:
-    VERSION: str
-    DELIMITER: str
-    start_time: str
-    def __init__(self) -> None: ...
-    def to_id(self): ...

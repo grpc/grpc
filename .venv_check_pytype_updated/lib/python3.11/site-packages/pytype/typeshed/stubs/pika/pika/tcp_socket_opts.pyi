@@ -1,6 +1,0 @@
-from _typeshed import Incomplete
-
-LOGGER: Incomplete
-
-def socket_requires_keepalive(tcp_options): ...
-def set_sock_opts(tcp_options, sock) -> None: ...

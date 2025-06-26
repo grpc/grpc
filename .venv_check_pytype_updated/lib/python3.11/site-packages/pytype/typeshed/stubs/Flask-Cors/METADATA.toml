@@ -1,8 +1,0 @@
-version = "4.0.*"
-upstream_repository = "https://github.com/corydolphin/flask-cors"
-# Requires a version of flask with a `py.typed` file
-requires = ["Flask>=2.0.0"]
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

@@ -1,9 +1,0 @@
-version = "0.2.*"
-# There is no web portal for the source, this is the official source link:
-# upstream_repository = "https://people.csail.mit.edu/hubert/pyaudio/#sources"
-
-[tool.stubtest]
-# linux and win32 are equivalent
-platforms = ["darwin", "linux"]
-apt_dependencies = ["portaudio19-dev"]
-brew_dependencies = ["portaudio"]

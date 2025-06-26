@@ -1,6 +1,0 @@
-version = "1.7.*"
-upstream_repository = "https://github.com/pycqa/flake8-docstrings"
-partial_stub = true
-
-[tool.stubtest]
-ignore_missing_stub = true

@@ -1,9 +1,0 @@
-from typing import Any
-
-log: Any
-DEFAULT_INTERVAL: Any
-
-class RulePoller:
-    def __init__(self, cache, connector) -> None: ...
-    def start(self) -> None: ...
-    def wake_up(self) -> None: ...

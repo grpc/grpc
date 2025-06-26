@@ -1,6 +1,0 @@
-version = "2.7.8"
-upstream_repository = "https://github.com/PyFPDF/fpdf2"
-requires = ["types-Pillow>=9.2.0"]
-
-[tool.stubtest]
-stubtest_requirements = ["cryptography"]

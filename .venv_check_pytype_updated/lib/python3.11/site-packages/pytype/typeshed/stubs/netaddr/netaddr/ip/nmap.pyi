@@ -1,6 +1,0 @@
-from collections.abc import Iterator
-
-from netaddr.ip import IPAddress
-
-def valid_nmap_range(target_spec: str) -> bool: ...
-def iter_nmap_range(*nmap_target_spec: str) -> Iterator[IPAddress]: ...
