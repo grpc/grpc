@@ -39,7 +39,7 @@ class _AuthMetadataContext(
 
 
 class _CallbackState(object):
-    def __init__(self):
+    def __init__(self) -> None:
         self.lock = threading.Lock()
         self.called = False
         self.exception = None
@@ -49,13 +49,13 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
     _state: _CallbackState
     _callback: Callable
 
-    def __init__(self, state: _CallbackState, callback: Callable):
+    def __init__(self, state: _CallbackState, callback: Callable) -> None:
         self._state = state
         self._callback = callback
 
     def __call__(
         self, metadata: MetadataType, error: Optional[Type[BaseException]]
-    ):
+    ) -> None:
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -81,7 +81,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 class _Plugin(object):
     _metadata_plugin: grpc.AuthMetadataPlugin
 
-    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin):
+    def __init__(self, metadata_plugin: grpc.AuthMetadataPlugin) -> None:
         self._metadata_plugin = metadata_plugin
         self._stored_ctx = None
 
@@ -96,7 +96,7 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable):
+    def __call__(self, service_url: str, method_name: str, callback: Callable) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )

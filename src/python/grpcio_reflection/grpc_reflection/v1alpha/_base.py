@@ -13,6 +13,8 @@
 # limitations under the License.
 """Base implementation of reflection servicer."""
 
+from typing import Any, Dict, Iterable, Optional, Set, Tuple
+
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 import grpc
@@ -22,7 +24,7 @@ from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
 _POOL = descriptor_pool.Default()
 
 
-def _not_found_error(original_request):
+def _not_found_error(original_request: _reflection_pb2.ServerReflectionRequest) -> _reflection_pb2.ServerReflectionResponse:
     return _reflection_pb2.ServerReflectionResponse(
         error_response=_reflection_pb2.ErrorResponse(
             error_code=grpc.StatusCode.NOT_FOUND.value[0],
@@ -32,7 +34,10 @@ def _not_found_error(original_request):
     )
 
 
-def _collect_transitive_dependencies(descriptor, seen_files):
+def _collect_transitive_dependencies(
+    descriptor: Any, 
+    seen_files: Dict[str, Any]
+) -> None:
     seen_files.update({descriptor.name: descriptor})
     for dependency in descriptor.dependencies:
         if not dependency.name in seen_files:
@@ -40,13 +45,16 @@ def _collect_transitive_dependencies(descriptor, seen_files):
             _collect_transitive_dependencies(dependency, seen_files)
 
 
-def _file_descriptor_response(descriptor, original_request):
+def _file_descriptor_response(
+    descriptor: Any, 
+    original_request: _reflection_pb2.ServerReflectionRequest
+) -> _reflection_pb2.ServerReflectionResponse:
     # collect all dependencies
-    descriptors = {}
+    descriptors: Dict[str, Any] = {}
     _collect_transitive_dependencies(descriptor, descriptors)
 
     # serialize all descriptors
-    serialized_proto_list = []
+    serialized_proto_list: list[bytes] = []
     for d_key in descriptors:
         proto = descriptor_pb2.FileDescriptorProto()
         descriptors[d_key].CopyToProto(proto)
@@ -63,17 +71,21 @@ def _file_descriptor_response(descriptor, original_request):
 class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
     """Base class for reflection servicer."""
 
-    def __init__(self, service_names, pool=None):
+    def __init__(self, service_names: Iterable[str], pool: Optional[Any] = None) -> None:
         """Constructor.
 
         Args:
             service_names: Iterable of fully-qualified service names available.
             pool: An optional DescriptorPool instance.
         """
-        self._service_names = tuple(sorted(service_names))
-        self._pool = _POOL if pool is None else pool
+        self._service_names: Tuple[str, ...] = tuple(sorted(service_names))
+        self._pool: Any = _POOL if pool is None else pool
 
-    def _file_by_filename(self, request, filename):
+    def _file_by_filename(
+        self, 
+        request: _reflection_pb2.ServerReflectionRequest, 
+        filename: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileByName(filename)
         except KeyError:
@@ -81,7 +93,11 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor, request)
 
-    def _file_containing_symbol(self, request, fully_qualified_name):
+    def _file_containing_symbol(
+        self, 
+        request: _reflection_pb2.ServerReflectionRequest, 
+        fully_qualified_name: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             descriptor = self._pool.FindFileContainingSymbol(
                 fully_qualified_name
@@ -92,8 +108,11 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
             return _file_descriptor_response(descriptor, request)
 
     def _file_containing_extension(
-        self, request, containing_type, extension_number
-    ):
+        self, 
+        request: _reflection_pb2.ServerReflectionRequest, 
+        containing_type: str, 
+        extension_number: int
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type
@@ -109,12 +128,16 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
         else:
             return _file_descriptor_response(descriptor, request)
 
-    def _all_extension_numbers_of_type(self, request, containing_type):
+    def _all_extension_numbers_of_type(
+        self, 
+        request: _reflection_pb2.ServerReflectionRequest, 
+        containing_type: str
+    ) -> _reflection_pb2.ServerReflectionResponse:
         try:
             message_descriptor = self._pool.FindMessageTypeByName(
                 containing_type
             )
-            extension_numbers = tuple(
+            extension_numbers: Tuple[int, ...] = tuple(
                 sorted(
                     extension.number
                     for extension in self._pool.FindAllExtensions(
@@ -133,7 +156,10 @@ class BaseReflectionServicer(_reflection_pb2_grpc.ServerReflectionServicer):
                 original_request=request,
             )
 
-    def _list_services(self, request):
+    def _list_services(
+        self, 
+        request: _reflection_pb2.ServerReflectionRequest
+    ) -> _reflection_pb2.ServerReflectionResponse:
         return _reflection_pb2.ServerReflectionResponse(
             list_services_response=_reflection_pb2.ListServiceResponse(
                 service=[

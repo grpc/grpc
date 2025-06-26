@@ -20,6 +20,7 @@ import platform
 import re
 import shutil
 import sys
+from typing import Any, List, Optional
 
 import setuptools
 from setuptools import errors as _errors
@@ -42,15 +43,15 @@ class CommandError(object):
 
 class GatherProto(setuptools.Command):
     description = "gather proto dependencies"
-    user_options = []
+    user_options: List[tuple] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         pass
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         pass
 
-    def run(self):
+    def run(self) -> None:
         # TODO(atash) ensure that we're running from the repository directory when
         # this command is used
         try:
@@ -67,7 +68,7 @@ class GatherProto(setuptools.Command):
 class BuildPy(build_py.build_py):
     """Custom project build command."""
 
-    def run(self):
+    def run(self) -> None:
         try:
             self.run_command("build_package_protos")
         except CommandError as error:
@@ -79,16 +80,16 @@ class TestLite(setuptools.Command):
     """Command to run tests without fetching or building anything."""
 
     description = "run tests without fetching or building anything."
-    user_options = []
+    user_options: List[tuple] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         pass
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         # distutils requires this override.
         pass
 
-    def run(self):
+    def run(self) -> None:
         import tests
 
         loader = tests.Loader()
@@ -107,15 +108,15 @@ class TestPy3Only(setuptools.Command):
     """
 
     description = "run tests for py3+ features"
-    user_options = []
+    user_options: List[tuple] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         pass
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         pass
 
-    def run(self):
+    def run(self) -> None:
         import tests
 
         loader = tests.Loader()
@@ -130,15 +131,15 @@ class TestAio(setuptools.Command):
     """Command to run aio tests without fetching or building anything."""
 
     description = "run aio tests without fetching or building anything."
-    user_options = []
+    user_options: List[tuple] = []
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         pass
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         pass
 
-    def run(self):
+    def run(self) -> None:
         import tests
 
         loader = tests.Loader()
@@ -154,32 +155,32 @@ class TestAio(setuptools.Command):
 
 class RunInterop(test.test):
     description = "run interop test client/server"
-    user_options = [
+    user_options: List[tuple] = [
         ("args=", None, "pass-thru arguments for the client/server"),
         ("client", None, "flag indicating to run the client"),
         ("server", None, "flag indicating to run the server"),
         ("use-asyncio", None, "flag indicating to run the asyncio stack"),
     ]
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         self.args = ""
         self.client = False
         self.server = False
         self.use_asyncio = False
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         if self.client and self.server:
             raise _errors.OptionError(
                 "you may only specify one of client or server"
             )
 
-    def run(self):
+    def run(self) -> None:
         if self.client:
             self.run_client()
         elif self.server:
             self.run_server()
 
-    def run_server(self):
+    def run_server(self) -> None:
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
         if self.use_asyncio:
@@ -196,30 +197,39 @@ class RunInterop(test.test):
             sys.argv[1:] = self.args.split()
             server.serve(server.parse_interop_server_arguments(sys.argv))
 
-    def run_client(self):
+    def run_client(self) -> None:
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
-        from tests.interop import client
+        if self.use_asyncio:
+            import asyncio
 
-        sys.argv[1:] = self.args.split()
-        client.test_interoperability(client.parse_interop_client_args(sys.argv))
+            from tests_aio.interop import client
+
+            sys.argv[1:] = self.args.split()
+            args = client.parse_interop_client_arguments(sys.argv)
+            asyncio.get_event_loop().run_until_complete(client.test_interoperability(args))
+        else:
+            from tests.interop import client
+
+            sys.argv[1:] = self.args.split()
+            client.test_interoperability(client.parse_interop_client_arguments(sys.argv))
 
 
 class RunFork(test.test):
     description = "run fork test client"
-    user_options = [("args=", "a", "pass-thru arguments for the client")]
+    user_options: List[tuple] = [("args=", "a", "pass-thru arguments for the client")]
 
-    def initialize_options(self):
+    def initialize_options(self) -> None:
         self.args = ""
 
-    def finalize_options(self):
+    def finalize_options(self) -> None:
         # distutils requires this override.
         pass
 
-    def run(self):
+    def run(self) -> None:
         # We import here to ensure that our setuptools parent has had a chance to
         # edit the Python system path.
         from tests.fork import client
 
         sys.argv[1:] = self.args.split()
-        client.test_fork()
+        client.test_fork(sys.argv)

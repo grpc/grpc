@@ -14,12 +14,16 @@
 """Utilities for RPC Framework's Face interface."""
 
 import collections
+from typing import Callable, Iterator, TypeVar
 
 # stream is referenced from specification in this module.
 from grpc.framework.common import cardinality
 from grpc.framework.common import style
 from grpc.framework.foundation import stream  # pylint: disable=unused-import
 from grpc.framework.interfaces.face import face
+
+RequestT = TypeVar('RequestT')
+ResponseT = TypeVar('ResponseT')
 
 
 class _MethodImplementation(
@@ -43,7 +47,7 @@ class _MethodImplementation(
     pass
 
 
-def unary_unary_inline(behavior):
+def unary_unary_inline(behavior: Callable[[RequestT, face.ServicerContext], ResponseT]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -68,7 +72,7 @@ def unary_unary_inline(behavior):
     )
 
 
-def unary_stream_inline(behavior):
+def unary_stream_inline(behavior: Callable[[RequestT, face.ServicerContext], Iterator[ResponseT]]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -93,7 +97,7 @@ def unary_stream_inline(behavior):
     )
 
 
-def stream_unary_inline(behavior):
+def stream_unary_inline(behavior: Callable[[Iterator[RequestT], face.ServicerContext], ResponseT]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -118,7 +122,7 @@ def stream_unary_inline(behavior):
     )
 
 
-def stream_stream_inline(behavior):
+def stream_stream_inline(behavior: Callable[[Iterator[RequestT], face.ServicerContext], Iterator[ResponseT]]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -143,7 +147,7 @@ def stream_stream_inline(behavior):
     )
 
 
-def unary_unary_event(behavior):
+def unary_unary_event(behavior: Callable[[RequestT, Callable[[ResponseT], None], face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -168,7 +172,7 @@ def unary_unary_event(behavior):
     )
 
 
-def unary_stream_event(behavior):
+def unary_stream_event(behavior: Callable[[RequestT, stream.Consumer[ResponseT], face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
@@ -193,14 +197,13 @@ def unary_stream_event(behavior):
     )
 
 
-def stream_unary_event(behavior):
+def stream_unary_event(behavior: Callable[[Iterator[RequestT], Callable[[ResponseT], None], face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
       behavior: The implementation of a stream-unary RPC method as a callable
-        value that takes a response callback to which to pass the response value
-        of the RPC and an face.ServicerContext and returns a stream.Consumer to
-        which the request values of the RPC should be passed.
+        value that takes an iterator of request values, a response callback to
+        which to pass the response value of the RPC, and an face.ServicerContext.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.
@@ -219,14 +222,13 @@ def stream_unary_event(behavior):
     )
 
 
-def stream_stream_event(behavior):
+def stream_stream_event(behavior: Callable[[Iterator[RequestT], stream.Consumer[ResponseT], face.ServicerContext], None]) -> _MethodImplementation:
     """Creates an face.MethodImplementation for the given behavior.
 
     Args:
       behavior: The implementation of a stream-stream RPC method as a callable
-        value that takes a stream.Consumer to which to pass the response values
-        of the RPC and an face.ServicerContext and returns a stream.Consumer to
-        which the request values of the RPC should be passed.
+        value that takes an iterator of request values, a stream.Consumer to
+        which to pass the response values of the RPC, and an face.ServicerContext.
 
     Returns:
       An face.MethodImplementation derived from the given behavior.

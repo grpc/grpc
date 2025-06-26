@@ -18,8 +18,13 @@ import collections
 import enum
 import functools
 import logging
+from typing import Callable, TypeVar
 
 _LOGGER = logging.getLogger(__name__)
+
+T = TypeVar('T')
+ArgsT = TypeVar('ArgsT')
+KwargsT = TypeVar('KwargsT')
 
 
 class Outcome(ABC):
@@ -51,7 +56,7 @@ class _EasyOutcome(
     """A trivial implementation of Outcome."""
 
 
-def _call_logging_exceptions(behavior, message, *args, **kwargs):
+def _call_logging_exceptions(behavior: Callable[..., T], message: str, *args: ArgsT, **kwargs: KwargsT) -> _EasyOutcome:
     try:
         return _EasyOutcome(
             Outcome.Kind.RETURNED, behavior(*args, **kwargs), None
@@ -61,7 +66,7 @@ def _call_logging_exceptions(behavior, message, *args, **kwargs):
         return _EasyOutcome(Outcome.Kind.RAISED, None, e)
 
 
-def with_exceptions_logged(behavior, message):
+def with_exceptions_logged(behavior: Callable[..., T], message: str) -> Callable[..., _EasyOutcome]:
     """Wraps a callable in a try-except that logs any exceptions it raises.
 
     Args:
@@ -76,13 +81,13 @@ def with_exceptions_logged(behavior, message):
     """
 
     @functools.wraps(behavior)
-    def wrapped_behavior(*args, **kwargs):
+    def wrapped_behavior(*args: ArgsT, **kwargs: KwargsT) -> _EasyOutcome:
         return _call_logging_exceptions(behavior, message, *args, **kwargs)
 
     return wrapped_behavior
 
 
-def call_logging_exceptions(behavior, message, *args, **kwargs):
+def call_logging_exceptions(behavior: Callable[..., T], message: str, *args: ArgsT, **kwargs: KwargsT) -> _EasyOutcome:
     """Calls a behavior in a try-except that logs any exceptions it raises.
 
     Args:

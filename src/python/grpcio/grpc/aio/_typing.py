@@ -15,7 +15,7 @@
 from collections.abc import AsyncIterable
 from collections.abc import Iterable
 from collections.abc import Sequence
-from typing import Any, Callable, Tuple, TypeVar, Union
+from typing import Callable, Tuple, TypeVar, Union
 
 from grpc._cython.cygrpc import EOF
 
@@ -25,13 +25,14 @@ from ._metadata import MetadataValue
 
 RequestType = TypeVar("RequestType")
 ResponseType = TypeVar("ResponseType")
-SerializingFunction = Callable[[Any], bytes]
-DeserializingFunction = Callable[[bytes], Any]
+T = TypeVar("T")
+SerializingFunction = Callable[[T], bytes]
+DeserializingFunction = Callable[[bytes], T]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
-ChannelArgumentType = Tuple[Union[str, bytes], Any]
+ChannelArgumentType = Tuple[Union[str, bytes], Union[str, bytes, int]]
 ChannelArgsType = Union[Sequence[ChannelArgumentType], Tuple[ChannelArgumentType, ...]]
 EOFType = type(EOF)
-DoneCallbackType = Callable[[Any], None]
-RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
-ResponseIterableType = AsyncIterable[Any]
+DoneCallbackType = Callable[[], None]
+RequestIterableType = Union[Iterable[RequestType], AsyncIterable[RequestType]]
+ResponseIterableType = AsyncIterable[ResponseType]

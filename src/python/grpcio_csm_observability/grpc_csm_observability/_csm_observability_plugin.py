@@ -68,7 +68,7 @@ class CSMOpenTelemetryLabelInjector(OpenTelemetryLabelInjector):
     _exchange_labels: Dict[str, AnyStr]
     _additional_exchange_labels: Dict[str, str]
 
-    def __init__(self):
+    def __init__(self) -> None:
         fields = {}
         self._exchange_labels = {}
         self._additional_exchange_labels = {}
@@ -196,56 +196,25 @@ class CsmOpenTelemetryPluginOption(OpenTelemetryPluginOption):
 
     _label_injector: CSMOpenTelemetryLabelInjector
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._label_injector = CSMOpenTelemetryLabelInjector()
 
     @staticmethod
     def is_active_on_client_channel(target: str) -> bool:
-        """Determines whether this plugin option is active on a channel based on target.
-
-        Args:
-          target: Required. The target for the RPC.
-
-        Returns:
-          True if this plugin option is active on the channel, false otherwise.
-        """
-        # CSM channels should have an "xds" scheme
-        if not target.startswith("xds:"):
-            return False
-        # If scheme is correct, the authority should be TD if exist
-        authority_pattern = r"^xds:\/\/([^/]+)"
-        match = re.search(authority_pattern, target)
-        if match:
-            return TRAFFIC_DIRECTOR_AUTHORITY in match.group(1)
-        else:
-            # Return True if the authority doesn't exist
-            return True
+        # CSM is active on client channel if the target is Traffic Director.
+        return target == TRAFFIC_DIRECTOR_AUTHORITY
 
     @staticmethod
     def is_active_on_server(
         xds: bool,  # pylint: disable=unused-argument
     ) -> bool:
-        """Determines whether this plugin option is active on a given server.
-
-        Since servers don't need to be xds enabled to work as part of a service
-        mesh, we're returning True and enable this PluginOption for all servers.
-
-        Note: This always returns true because server can be part of the mesh even
-        if it's not xds-enabled. And we want CSM labels for those servers too.
-
-        Args:
-          xds: Required. if this server is build for xds.
-
-        Returns:
-          True if this plugin option is active on the server, false otherwise.
-        """
-        return True
+        # CSM is active on server if CSM_MESH_ID is set.
+        return os.getenv("CSM_MESH_ID") is not None
 
     def get_label_injector(self) -> OpenTelemetryLabelInjector:
         return self._label_injector
 
 
-# pylint: disable=no-self-use
 class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
     """Describes a Plugin for CSM OpenTelemetry observability.
 
@@ -262,33 +231,28 @@ class CsmOpenTelemetryPlugin(OpenTelemetryPlugin):
         plugin_options: Iterable[OpenTelemetryPluginOption] = [],
         meter_provider: Optional[MeterProvider] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
-    ):
-        new_options = list(plugin_options) + [CsmOpenTelemetryPluginOption()]
-        super().__init__(
-            plugin_options=new_options,
-            meter_provider=meter_provider,
-            generic_method_attribute_filter=generic_method_attribute_filter,
+    ) -> None:
+        self.plugin_options = plugin_options
+        self.meter_provider = meter_provider
+        self.generic_method_attribute_filter = (
+            generic_method_attribute_filter or (lambda _: True)
         )
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:
-        return [OptionalLabelType.XDS_SERVICE_LABELS]
+        return ["csm.workload_canonical_service", "csm.mesh_id"]
 
 
 def get_value_from_struct(key: str, struct: struct_pb2.Struct) -> str:
-    value = struct.fields.get(key)
-    if not value:
-        return UNKNOWN_VALUE
-    return value.string_value
+    return struct.fields[key].string_value
 
 
 def get_str_value_from_resource(
     attribute: Union[ResourceAttributes, str], resource: Resource
 ) -> str:
     value = resource.attributes.get(attribute, UNKNOWN_VALUE)
-    return str(value)
+    return value if isinstance(value, str) else UNKNOWN_VALUE
 
 
-# pylint: disable=line-too-long
 def get_resource_type(gcp_resource: Resource) -> str:
     # Convert resource type from GoogleCloudResourceDetector to the value we used for
     # metadata exchange.

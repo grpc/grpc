@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import AnyStr, Callable, Dict, Iterable, List, Optional
+from typing import Any, AnyStr, Callable, Dict, Iterable, List, Optional
 
 # pytype: disable=pyi-error
 from grpc_observability import _open_telemetry_observability
@@ -104,7 +104,7 @@ class OpenTelemetryPlugin:
         meter_provider: Optional[MeterProvider] = None,
         target_attribute_filter: Optional[Callable[[str], bool]] = None,
         generic_method_attribute_filter: Optional[Callable[[str], bool]] = None,
-    ):
+    ) -> None:
         """
         Args:
           plugin_options: An Iterable of OpenTelemetryPluginOption which will be
@@ -159,12 +159,13 @@ class OpenTelemetryPlugin:
         """
         _open_telemetry_observability.end_open_telemetry_observability()
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> "OpenTelemetryPlugin":
         _open_telemetry_observability.start_open_telemetry_observability(
             plugins=self._plugins
         )
+        return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[Any]) -> None:
         _open_telemetry_observability.end_open_telemetry_observability()
 
     def _get_enabled_optional_labels(self) -> List[OptionalLabelType]:

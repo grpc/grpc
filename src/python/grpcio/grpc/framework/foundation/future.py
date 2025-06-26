@@ -32,6 +32,9 @@ built-in-but-only-in-3.3-and-later TimeoutError.
 """
 
 import abc
+from typing import Any, Callable, Optional, TypeVar
+
+T = TypeVar('T')
 
 
 class TimeoutError(Exception):
@@ -60,7 +63,7 @@ class Future(abc.ABC):
     # UNCANCELLABLE
     # NOT_IMMEDIATELY_DETERMINABLE
     @abc.abstractmethod
-    def cancel(self):
+    def cancel(self) -> bool:
         """Attempts to cancel the computation.
 
         This method does not block.
@@ -91,7 +94,7 @@ class Future(abc.ABC):
     # Notice how giving the cancel method the right semantics obviates most
     # reasons for this method to exist.
     @abc.abstractmethod
-    def cancelled(self):
+    def cancelled(self) -> bool:
         """Describes whether the computation was cancelled.
 
         This method does not block.
@@ -105,7 +108,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def running(self):
+    def running(self) -> bool:
         """Describes whether the computation is taking place.
 
         This method does not block.
@@ -122,7 +125,7 @@ class Future(abc.ABC):
     # computation completed successfully. A computation's having been cancelled
     # conflicts with considering that computation "done".
     @abc.abstractmethod
-    def done(self):
+    def done(self) -> bool:
         """Describes whether the computation has taken place.
 
         This method does not block.
@@ -135,7 +138,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def result(self, timeout=None):
+    def result(self, timeout: Optional[float] = None) -> T:
         """Accesses the outcome of the computation or raises its exception.
 
         This method may return immediately or may block.
@@ -158,7 +161,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def exception(self, timeout=None):
+    def exception(self, timeout: Optional[float] = None) -> Optional[Exception]:
         """Return the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -181,7 +184,7 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def traceback(self, timeout=None):
+    def traceback(self, timeout: Optional[float] = None) -> Optional[object]:
         """Access the traceback of the exception raised by the computation.
 
         This method may return immediately or may block.
@@ -204,16 +207,13 @@ class Future(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_done_callback(self, fn):
-        """Adds a function to be called at completion of the computation.
-
-        The callback will be passed this Future object describing the outcome of
-        the computation.
-
-        If the computation has already completed, the callback will be called
-        immediately.
+    def add_done_callback(self, fn: Callable[["Future[T]"], None]) -> None:
+        """Add a callback to be run when the computation becomes done.
 
         Args:
-          fn: A callable taking this Future object as its single parameter.
+          fn: A callable that will be called with this Future as its only argument
+            when the Future becomes done.
+
+        The callable is called in the same thread that called add_done_callback.
         """
         raise NotImplementedError()
