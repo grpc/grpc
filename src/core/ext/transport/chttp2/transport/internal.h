@@ -833,10 +833,6 @@ void grpc_chttp2_settings_timeout(
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
 
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
-  (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
-
 #define GRPC_CHTTP2_IF_TRACING(severity) \
   LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))
 

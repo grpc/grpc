@@ -425,6 +425,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
+  bool is_first_write_;
   uint32_t incoming_header_stream_id_;
 
   // Ping related members

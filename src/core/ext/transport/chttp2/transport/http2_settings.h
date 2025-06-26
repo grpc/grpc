@@ -32,6 +32,13 @@
 
 namespace grpc_core {
 
+// TODO(tjagtap) : [PH2][P2] : Move to a new file that is common to PH2 and
+// CHTTP2.
+// For an HTTP2 connection, this must be sent before the settings frame is sent.
+#define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
+  (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
+
 class Http2Settings {
  public:
   enum : uint16_t {
