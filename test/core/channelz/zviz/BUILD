@@ -151,3 +151,21 @@ grpc_fuzz_test(
         "//src/core:zviz_layout_html",
     ],
 )
+
+grpc_fuzz_test(
+    name = "html_integration_test",
+    srcs = ["html_integration_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "//src/core:zviz_entity",
+        "//src/core:zviz_html",
+        "//src/core:zviz_layout",
+        "//src/core:zviz_layout_html",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
