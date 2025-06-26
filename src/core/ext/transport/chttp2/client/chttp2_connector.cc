@@ -139,68 +139,70 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
 
 void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   MutexLock lock(&mu_);
-  const bool is_callv1_ =
-      !channel_args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false);
+
   if (!result.ok() || shutdown_) {
     if (result.ok()) {
       result = GRPC_ERROR_CREATE("connector shutdown");
     }
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
-  } else if ((*result)->endpoint != nullptr && is_callv1_) {
-    result_->transport = grpc_create_chttp2_transport(
-        (*result)->args, std::move((*result)->endpoint), true);
-    CHECK_NE(result_->transport, nullptr);
-    result_->channel_args = std::move((*result)->args);
-    Ref().release();  // Ref held by OnReceiveSettings()
-    GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_chttp2_transport_start_reading(
-        result_->transport, (*result)->read_buffer.c_slice_buffer(),
-        &on_receive_settings_, args_.interested_parties, nullptr);
-    timer_handle_ = event_engine_->RunAfter(
-        args_.deadline - Timestamp::Now(),
-        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ExecCtx exec_ctx;
-          self->OnTimeout();
-          // Ensure the Chttp2Connector is deleted under an ExecCtx.
-          self.reset();
-        });
-  } else if ((*result)->endpoint != nullptr && !is_callv1_) {
-    // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once the
-    // ping pong test is in place.
-    std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
-        event_engine_endpoint = grpc_event_engine::experimental::
-            grpc_take_wrapped_event_engine_endpoint(
-                (*result)->endpoint.release());
-    if (event_engine_endpoint == nullptr) {
-      LOG(ERROR) << "Failed to take endpoint.";
-      result = GRPC_ERROR_CREATE("Failed to take endpoint.");
-    }
-    // Create the PromiseEndpoint
-    PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
-                                     std::move((*result)->read_buffer));
-    std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-        event_engine_ptr =
-            (*result)
-                ->args
-                .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
-    Ref().release();  // Ref held by OnReceiveSettings()
-    // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
-    result_->transport =
-        new Http2ClientTransport(std::move(promise_endpoint), (*result)->args,
-                                 event_engine_ptr, &on_receive_settings_);
+  } else if ((*result)->endpoint != nullptr) {
+    const bool is_callv1_ =
+        !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
+    if (is_callv1_) {
+      result_->transport = grpc_create_chttp2_transport(
+          (*result)->args, std::move((*result)->endpoint), true);
+      CHECK_NE(result_->transport, nullptr);
+      result_->channel_args = std::move((*result)->args);
+      Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                        grpc_schedule_on_exec_ctx);
+      grpc_chttp2_transport_start_reading(
+          result_->transport, (*result)->read_buffer.c_slice_buffer(),
+          &on_receive_settings_, args_.interested_parties, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    } else {
+      // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
+      // the ping pong test is in place.
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          event_engine_endpoint = grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (event_engine_endpoint == nullptr) {
+        LOG(ERROR) << "Failed to take endpoint.";
+        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+      }
+      // Create the PromiseEndpoint
+      PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                       std::move((*result)->read_buffer));
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine_ptr =
+              (*result)
+                  ->args
+                  .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+      Ref().release();  // Ref held by OnReceiveSettings()
+      // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
+      result_->transport = new Http2ClientTransport(
+          std::move(promise_endpoint), (*result)->args, event_engine_ptr);
 
-    DCHECK_NE(result_->transport, nullptr);
-    result_->channel_args = std::move((*result)->args);
-    timer_handle_ = event_engine_->RunAfter(
-        args_.deadline - Timestamp::Now(),
-        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ExecCtx exec_ctx;
-          self->OnTimeout();
-          // Ensure the Chttp2Connector is deleted under an ExecCtx.
-          self.reset();
-        });
+      DCHECK_NE(result_->transport, nullptr);
+      result_->channel_args = std::move((*result)->args);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    }
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -267,12 +269,11 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
 absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
                                                  const ChannelArgs& args) {
   auto r = ChannelCreate(
-               target,
-               args.SetObject(
-                   EndpointTransportClientChannelFactory<Chttp2Connector>()),
-               GRPC_CLIENT_CHANNEL, nullptr)
-               .SetObject(GRPC_ARG_USE_V3_STACK,
-                          IsPromiseBasedHttp2ClientTransportEnabled());
+      target,
+      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
+          .Set(GRPC_ARG_USE_V3_STACK,
+               IsPromiseBasedHttp2ClientTransportEnabled()),
+      GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
   } else {
