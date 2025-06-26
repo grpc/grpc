@@ -430,7 +430,7 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
 
 grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     tsi_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const std::shared_ptr<RootCertInfo> root_cert_info,
+    std::shared_ptr<RootCertInfo> root_cert_info,
     bool skip_server_certificate_verification, tsi_tls_version min_tls_version,
     tsi_tls_version max_tls_version, tsi_ssl_session_cache* ssl_session_cache,
     tsi::TlsSessionKeyLoggerCache::TlsSessionKeyLogger* tls_session_key_logger,
@@ -452,12 +452,12 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
     }
     root_store = grpc_core::DefaultSslRootStore::GetRootStore();
   } else if (roots_are_configured) {
-    Match(
-        *root_cert_info,
-        [&](const std::string& pem_root_certs) {
-          root_certs = pem_root_certs.c_str();
-        },
-        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
+    // Match(
+    //     *root_cert_info,
+    //     [&](const std::string& pem_root_certs) {
+    //       // root_certs = pem_root_certs.c_str();
+    //     },
+    //     [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
   }
   bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
                            pem_key_cert_pair->private_key != nullptr &&
@@ -479,7 +479,7 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   options.max_tls_version = max_tls_version;
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
-  options.root_cert_info = root_cert_info;
+  options.root_cert_info = std::move(root_cert_info);
   const tsi_result result =
       tsi_create_ssl_client_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
@@ -508,12 +508,12 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.pem_key_cert_pairs = pem_key_cert_pairs;
   options.num_key_cert_pairs = num_key_cert_pairs;
   if (root_cert_info != nullptr) {
-    Match(
-        *root_cert_info,
-        [&](const std::string& pem_root_certs) {
-          options.pem_client_root_certs = pem_root_certs.c_str();
-        },
-        [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
+    // Match(
+    //     *root_cert_info,
+    //     [&](const std::string& pem_root_certs) {
+    //       options.pem_client_root_certs = pem_root_certs.c_str();
+    //     },
+    //     [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {});
   }
   options.client_certificate_request =
       grpc_get_tsi_client_certificate_request_type(client_certificate_request);
@@ -526,7 +526,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
   options.crl_directory = crl_directory;
   options.crl_provider = std::move(crl_provider);
   options.send_client_ca_list = send_client_ca_list;
-  options.root_cert_info = root_cert_info;
+  options.root_cert_info = std::move(root_cert_info);
   const tsi_result result =
       tsi_create_ssl_server_handshaker_factory_with_options(&options,
                                                             handshaker_factory);
