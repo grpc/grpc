@@ -337,9 +337,10 @@ class _OpenTelemetryExporterDelegator(_observability.Exporter):
         self, stats_data: List[_observability.StatsData]
     ) -> None:
         # Records stats data to MeterProvider.
-        for data in stats_data:
-            for plugin in self._plugins:
-                plugin.maybe_record_stats_data(data)
+        if self._plugins is not None:
+            for data in stats_data:
+                for plugin in self._plugins:
+                    plugin.maybe_record_stats_data(data)
 
     def export_tracing_data(
         self, tracing_data: List[_observability.TracingData]
@@ -358,7 +359,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
     """
 
     _exporter: "grpc_observability.Exporter"
-    _plugins: List[_OpenTelemetryPlugin]
+    _plugins: Optional[Iterable[_OpenTelemetryPlugin]]
     _registered_methods: Set[bytes]
     _client_option_activated: bool
     _server_option_activated: bool
@@ -411,8 +412,9 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         self._maybe_activate_client_plugin_options(target)
         exchange_labels = self._get_client_exchange_labels()
         enabled_optional_labels = set()
-        for plugin in self._plugins:
-            enabled_optional_labels.update(plugin.get_enabled_optional_labels())
+        if self._plugins is not None:
+            for plugin in self._plugins:
+                enabled_optional_labels.update(plugin.get_enabled_optional_labels())
 
         capsule = _cyobservability.create_client_call_tracer(
             method_name,
@@ -467,32 +469,35 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
 
     def _get_client_exchange_labels(self) -> Dict[str, AnyStr]:
         client_exchange_labels = {}
-        for _plugin in self._plugins:
-            client_exchange_labels.update(_plugin.get_client_exchange_labels())
+        if self._plugins is not None:
+            for _plugin in self._plugins:
+                client_exchange_labels.update(_plugin.get_client_exchange_labels())
         return client_exchange_labels
 
     def _get_server_exchange_labels(self) -> Dict[str, AnyStr]:
         server_exchange_labels = {}
-        for _plugin in self._plugins:
-            server_exchange_labels.update(_plugin.get_server_exchange_labels())
+        if self._plugins is not None:
+            for _plugin in self._plugins:
+                server_exchange_labels.update(_plugin.get_server_exchange_labels())
         return server_exchange_labels
 
     def _maybe_activate_client_plugin_options(self, target: bytes) -> None:
-        if not self._client_option_activated:
+        if not self._client_option_activated and self._plugins is not None:
             for _plugin in self._plugins:
                 _plugin.activate_client_plugin_options(target)
             self._client_option_activated = True
 
     def _maybe_activate_server_plugin_options(self, xds: bool) -> None:
-        if not self._server_option_activated:
+        if not self._server_option_activated and self._plugins is not None:
             for _plugin in self._plugins:
                 _plugin.activate_server_plugin_options(xds)
             self._server_option_activated = True
 
     def _get_identifier(self) -> str:
         plugin_identifiers = []
-        for _plugin in self._plugins:
-            plugin_identifiers.append(_plugin.identifier)
+        if self._plugins is not None:
+            for _plugin in self._plugins:
+                plugin_identifiers.append(_plugin.identifier)
         return PLUGIN_IDENTIFIER_SEP.join(plugin_identifiers)
 
     def get_enabled_optional_labels(self) -> List[OptionalLabelType]:

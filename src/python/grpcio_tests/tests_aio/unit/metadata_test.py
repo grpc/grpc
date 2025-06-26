@@ -257,8 +257,7 @@ class TestMetadata(AioTestBase):
     async def test_from_client_to_server_with_list(self):
         multicallable = self._client.unary_unary(_TEST_CLIENT_TO_SERVER)
         call = multicallable(
-            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER)
-        )  # pytype: disable=wrong-arg-types
+            _REQUEST, metadata=list(_INITIAL_METADATA_FROM_CLIENT_TO_SERVER))  # pytype: disable=wrong-arg-types
         self.assertEqual(_RESPONSE, await call)
         self.assertEqual(grpc.StatusCode.OK, await call.code())
 
@@ -343,7 +342,7 @@ class TestMetadata(AioTestBase):
         self.assertEqual(tuple(metadata_obj), metadata_obj)
 
         expected_sum = tuple(metadata_obj) + (("third", "3"),)
-        self.assertEqual(expected_sum, metadata_obj + (("third", "3"),))
+        self.assertEqual(expected_sum, metadata_obj + (("third", "3"),))  # pytype: disable=unsupported-operands
         self.assertEqual(
             expected_sum, metadata_obj + aio.Metadata(("third", "3"))
         )
