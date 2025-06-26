@@ -13457,6 +13457,25 @@ targets:
   - absl/types:span
   - gpr
   uses_polling: false
+- name: layout_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/channelz/zviz/environment.h
+  - src/core/channelz/zviz/layout.h
+  - src/core/channelz/zviz/strings.h
+  src:
+  - src/proto/grpc/channelz/v2/channelz.proto
+  - src/core/channelz/zviz/environment.cc
+  - src/core/channelz/zviz/layout.cc
+  - src/core/channelz/zviz/strings.cc
+  - test/core/channelz/zviz/layout_test.cc
+  - third_party/googletest/googlemock/src/gmock_main.cc
+  deps:
+  - gtest
+  - absl/status:statusor
+  - protobuf
 - name: lb_get_cpu_stats_test
   gtest: true
   build: test
