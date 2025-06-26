@@ -55,13 +55,15 @@ struct FrameHeader {
   FrameType type = FrameType::kCancel;
   uint32_t stream_id = 0;
   uint32_t payload_length = 0;
+  uint64_t send_timestamp = 0;
 
   // Report contents as a string
   std::string ToString() const;
 
   bool operator==(const FrameHeader& h) const {
     return type == h.type && stream_id == h.stream_id &&
-           payload_length == h.payload_length;
+           payload_length == h.payload_length &&
+           send_timestamp == h.send_timestamp;
   }
 };
 
