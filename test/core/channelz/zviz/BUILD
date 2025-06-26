@@ -109,3 +109,18 @@ grpc_fuzz_test(
         "//src/core:zviz_trace",
     ],
 )
+
+grpc_fuzz_test(
+    name = "entity_test",
+    srcs = ["entity_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_entity",
+    ],
+)
