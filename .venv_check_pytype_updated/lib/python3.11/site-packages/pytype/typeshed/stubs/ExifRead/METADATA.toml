@@ -1,0 +1,2 @@
+version = "3.0.*"
+upstream_repository = "https://github.com/ianare/exif-py"

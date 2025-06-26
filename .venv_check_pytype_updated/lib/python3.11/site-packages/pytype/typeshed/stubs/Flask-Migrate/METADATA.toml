@@ -1,0 +1,4 @@
+version = "4.0.*"
+upstream_repository = "https://github.com/miguelgrinberg/Flask-Migrate"
+# Requires versions of flask and Flask-SQLAlchemy with `py.typed` files
+requires = ["Flask-SQLAlchemy>=3.0.1", "Flask>=2.0.0"]

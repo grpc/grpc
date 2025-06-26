@@ -1,0 +1,32 @@
+Metadata-Version: 2.1
+Name: pycnite
+Version: 2024.7.31
+Summary: Python bytecode utilities
+Maintainer: Google LLC
+Maintainer-email: mdemello@google.com
+License: Apache 2.0
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: Apache Software License
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Programming Language :: Python :: Implementation :: CPython
+Classifier: Topic :: Software Development
+Requires-Python: >=3.8
+License-File: LICENSE
+
+[![CI](https://github.com/google/pycnite/workflows/CI/badge.svg?branch=main)](https://github.com/google/pycnite/actions)
+[![PyPI - Wheel](https://img.shields.io/pypi/wheel/pycnite)](https://pypi.org/project/pycnite/#files)
+
+# pycnite
+
+A collection of utilities for working with compiled Python bytecode.
+
+This library adds pure Python, versioned parsers for the .pyc format, allowing
+tools that work with bytecode to have different host and target Python versions.
+
+Currently supported target versions: 3.8, 3.9, 3.10, 3.11 and 3.12

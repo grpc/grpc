@@ -1,0 +1,3 @@
+version = "5.*"
+upstream_repository = "https://github.com/Blizzard/s2client-proto"
+requires = ["types-protobuf"]

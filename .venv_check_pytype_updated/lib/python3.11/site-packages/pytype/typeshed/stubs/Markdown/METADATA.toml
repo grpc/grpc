@@ -1,0 +1,6 @@
+version = "3.5.*"
+upstream_repository = "https://github.com/Python-Markdown/markdown"
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true

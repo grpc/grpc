@@ -1,0 +1,2 @@
+async def f():
+  pass

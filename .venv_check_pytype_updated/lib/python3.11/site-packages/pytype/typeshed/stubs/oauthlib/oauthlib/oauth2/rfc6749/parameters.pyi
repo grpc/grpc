@@ -1,0 +1,23 @@
+from _typeshed import Incomplete
+
+def prepare_grant_uri(
+    uri,
+    client_id,
+    response_type,
+    redirect_uri: Incomplete | None = None,
+    scope: Incomplete | None = None,
+    state: Incomplete | None = None,
+    code_challenge: str | None = None,
+    code_challenge_method: str | None = "plain",
+    **kwargs,
+): ...
+def prepare_token_request(
+    grant_type, body: str = "", include_client_id: bool = True, code_verifier: str | None = None, **kwargs
+): ...
+def prepare_token_revocation_request(
+    url, token, token_type_hint: str = "access_token", callback: Incomplete | None = None, body: str = "", **kwargs
+): ...
+def parse_authorization_code_response(uri, state: Incomplete | None = None): ...
+def parse_implicit_response(uri, state: Incomplete | None = None, scope: Incomplete | None = None): ...
+def parse_token_response(body, scope: Incomplete | None = None): ...
+def validate_token_parameters(params) -> None: ...

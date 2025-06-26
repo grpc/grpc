@@ -1,0 +1,2 @@
+version = "1.4.*"
+upstream_repository = "https://github.com/Pylons/translationstring"

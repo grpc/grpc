@@ -1,0 +1,2 @@
+version = "0.4.*"
+upstream_repository = "https://github.com/takluyver/entrypoints"

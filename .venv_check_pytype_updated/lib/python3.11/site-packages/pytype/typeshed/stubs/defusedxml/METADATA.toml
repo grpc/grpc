@@ -1,0 +1,7 @@
+version = "0.7.*"
+upstream_repository = "https://github.com/tiran/defusedxml"
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true
+stubtest_requirements = ["lxml"]

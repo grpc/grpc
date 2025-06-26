@@ -1,0 +1,3 @@
+version = "5.3.*"
+requires = ["Flask>=0.9"]
+upstream_repository = "https://github.com/miguelgrinberg/flask-socketio"

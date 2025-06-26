@@ -1,0 +1,6 @@
+version = "2.4.*"
+upstream_repository = "https://github.com/opentracing/opentracing-python"
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true

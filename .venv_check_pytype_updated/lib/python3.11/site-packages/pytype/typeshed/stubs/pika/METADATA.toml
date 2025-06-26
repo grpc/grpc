@@ -1,0 +1,10 @@
+version = "1.3.*"
+upstream_repository = "https://github.com/pika/pika"
+stub_distribution = "types-pika-ts" # https://github.com/python/typeshed/issues/9246
+extra_description = """\
+The `types-pika` package contains alternate, more complete type stubs, that \
+are maintained outside of typeshed.\
+"""
+
+[tool.stubtest]
+stubtest_requirements = ["gevent", "tornado", "twisted"]

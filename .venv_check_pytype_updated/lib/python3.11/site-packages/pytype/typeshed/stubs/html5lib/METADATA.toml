@@ -1,0 +1,7 @@
+version = "1.1.*"
+upstream_repository = "https://github.com/html5lib/html5lib-python"
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true
+extras = ["all"]

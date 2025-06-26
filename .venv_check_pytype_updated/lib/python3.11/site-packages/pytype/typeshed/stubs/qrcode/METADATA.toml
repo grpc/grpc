@@ -1,0 +1,5 @@
+version = "7.4.*"
+upstream_repository = "https://github.com/lincolnloop/python-qrcode"
+
+[tool.stubtest]
+extras = ["lxml"]

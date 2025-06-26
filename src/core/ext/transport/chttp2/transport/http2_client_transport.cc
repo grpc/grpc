@@ -109,8 +109,11 @@ void Http2ClientTransport::StopConnectivityWatch(
 
 void Http2ClientTransport::Orphan() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan Begin";
-  // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
-  general_party_.reset();
+  // Accessing general_party here is not advisable. It may so happen that
+  // the party is already freed/may free up any time. The only guarantee here
+  // is that the transport is still valid.
+  MaybeSpawnCloseTransport(Http2Status::AbslConnectionError(
+      absl::StatusCode::kUnavailable, "Orphaned"));
   Unref();
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Orphan End";
 }
@@ -286,23 +289,24 @@ Http2Status Http2ClientTransport::ProcessMetadata(
 Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
     Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
-  HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2RstStreamFrame Factory";
-  // TODO(tjagtap) : [PH2][P1] : Implement this.
   HTTP2_TRANSPORT_DLOG
-      << "Http2Transport ProcessHttp2RstStreamFrame Promise{ stream_id="
+      << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
 
+  // TODO(akshitpatel) : [PH2][P2] : This would fail in case of a rst frame
+  // with NoError. Handle this case.
   Http2Status status = Http2Status::Http2StreamError(
-      static_cast<Http2ErrorCode>(frame.error_code),
+      GetErrorCodeFromRstFrameErrorCode(frame.error_code),
       "Reset stream frame received.");
   CloseStream(frame.stream_id, status.GetAbslStreamError(),
               CloseStreamArgs{
                   /*close_reads=*/true,
                   /*close_writes=*/true,
                   /*send_rst_stream=*/false,
-                  /*cancelled=*/false,
+                  /*push_trailing_metadata=*/true,
               });
-
+  // In case of stream error, we do not want the Read Loop to be broken. Hence
+  // returning an ok status.
   return Http2Status::Ok();
 }
 
@@ -426,30 +430,35 @@ auto Http2ClientTransport::ProcessOneFrame(Http2Frame frame) {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ProcessOneFrame Factory";
   return AssertResultType<Http2Status>(MatchPromise(
       std::move(frame),
-      [this](Http2DataFrame frame) {
-        return ProcessHttp2DataFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2DataFrame frame) {
+        return self->ProcessHttp2DataFrame(std::move(frame));
       },
-      [this](Http2HeaderFrame frame) {
-        return ProcessHttp2HeaderFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2HeaderFrame frame) {
+        return self->ProcessHttp2HeaderFrame(std::move(frame));
       },
-      [this](Http2RstStreamFrame frame) {
-        return ProcessHttp2RstStreamFrame(frame);
+      [self =
+           RefAsSubclass<Http2ClientTransport>()](Http2RstStreamFrame frame) {
+        return self->ProcessHttp2RstStreamFrame(frame);
       },
-      [this](Http2SettingsFrame frame) {
-        return ProcessHttp2SettingsFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2SettingsFrame frame) {
+        return self->ProcessHttp2SettingsFrame(std::move(frame));
       },
-      [this](Http2PingFrame frame) { return ProcessHttp2PingFrame(frame); },
-      [this](Http2GoawayFrame frame) {
-        return ProcessHttp2GoawayFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2PingFrame frame) {
+        return self->ProcessHttp2PingFrame(frame);
       },
-      [this](Http2WindowUpdateFrame frame) {
-        return ProcessHttp2WindowUpdateFrame(frame);
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2GoawayFrame frame) {
+        return self->ProcessHttp2GoawayFrame(std::move(frame));
       },
-      [this](Http2ContinuationFrame frame) {
-        return ProcessHttp2ContinuationFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          Http2WindowUpdateFrame frame) {
+        return self->ProcessHttp2WindowUpdateFrame(frame);
       },
-      [this](Http2SecurityFrame frame) {
-        return ProcessHttp2SecurityFrame(std::move(frame));
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          Http2ContinuationFrame frame) {
+        return self->ProcessHttp2ContinuationFrame(std::move(frame));
+      },
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2SecurityFrame frame) {
+        return self->ProcessHttp2SecurityFrame(std::move(frame));
       },
       [](GRPC_UNUSED Http2UnknownFrame frame) {
         // As per HTTP2 RFC, implementations MUST ignore and discard frames of
@@ -480,64 +489,69 @@ auto Http2ClientTransport::ReadAndProcessOneFrame() {
         return Http2FrameHeader::Parse(header_bytes.begin());
       },
       // Validate the incoming frame as per the current state of the transport
-      [this](Http2FrameHeader header) {
-        if (incoming_header_in_progress_ &&
-            (current_frame_header_.type != 9 /*Continuation*/ ||
-             current_frame_header_.stream_id != incoming_header_stream_id_)) {
+      [self = RefAsSubclass<Http2ClientTransport>()](Http2FrameHeader header) {
+        if (self->incoming_header_in_progress_ &&
+            (self->current_frame_header_.type != 9 /*Continuation*/ ||
+             self->current_frame_header_.stream_id !=
+                 self->incoming_header_stream_id_)) {
           LOG(ERROR) << "Closing Connection " << header.ToString() << " "
                      << kAssemblerContiguousSequenceError;
-          return HandleError(Http2Status::Http2ConnectionError(
+          return self->HandleError(Http2Status::Http2ConnectionError(
               Http2ErrorCode::kProtocolError,
               std::string(kAssemblerContiguousSequenceError)));
         }
         HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadAndProcessOneFrame "
                              "Validated Frame Header:"
                           << header.ToString();
-        current_frame_header_ = header;
+        self->current_frame_header_ = header;
         return absl::OkStatus();
       },
       // Read the payload of the frame.
-      [this]() {
+      [self = RefAsSubclass<Http2ClientTransport>()]() {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame Read Frame ";
         return AssertResultType<absl::StatusOr<SliceBuffer>>(
-            EndpointRead(current_frame_header_.length));
+            self->EndpointRead(self->current_frame_header_.length));
       },
       // Parse the payload of the frame based on frame type.
-      [this](SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          SliceBuffer payload) -> absl::StatusOr<Http2Frame> {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ParseFramePayload "
             << payload.JoinIntoString();
         ValueOrHttp2Status<Http2Frame> frame =
-            ParseFramePayload(current_frame_header_, std::move(payload));
+            ParseFramePayload(self->current_frame_header_, std::move(payload));
         if (!frame.IsOk()) {
-          return HandleError(
+          return self->HandleError(
               ValueOrHttp2Status<Http2Frame>::TakeStatus(std::move(frame)));
         }
         return TakeValue(std::move(frame));
       },
-      [this](GRPC_UNUSED Http2Frame frame) {
+      [self = RefAsSubclass<Http2ClientTransport>()](
+          GRPC_UNUSED Http2Frame frame) {
         HTTP2_CLIENT_DLOG
             << "Http2ClientTransport ReadAndProcessOneFrame ProcessOneFrame";
-        return AssertResultType<absl::Status>(Map(
-            ProcessOneFrame(std::move(frame)),
-            [self = RefAsSubclass<Http2ClientTransport>()](Http2Status status) {
-              if (!status.IsOk()) {
-                return self->HandleError(std::move(status));
-              }
-              return absl::OkStatus();
-            }));
+        return AssertResultType<absl::Status>(
+            Map(self->ProcessOneFrame(std::move(frame)),
+                [self](Http2Status status) {
+                  if (!status.IsOk()) {
+                    return self->HandleError(std::move(status));
+                  }
+                  return absl::OkStatus();
+                }));
       }));
 }
 
 auto Http2ClientTransport::ReadLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    return TrySeq(ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Continue";
-      return Continue();
-    });
-  }));
+  return AssertResultType<absl::Status>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        return TrySeq(
+            self->ReadAndProcessOneFrame(), []() -> LoopCtl<absl::Status> {
+              HTTP2_CLIENT_DLOG << "Http2ClientTransport ReadLoop Continue";
+              return Continue();
+            });
+      }));
 }
 
 auto Http2ClientTransport::OnReadLoopEnded() {
@@ -578,35 +592,32 @@ auto Http2ClientTransport::WriteFromQueue() {
 
 auto Http2ClientTransport::WriteLoop() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Factory";
-  return AssertResultType<absl::Status>(Loop([this]() {
-    // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
-    // can move bytes_sent_in_last_write_ to be a local variable.
-    bytes_sent_in_last_write_ = false;
-    return TrySeq(
-        // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
-        // acks as well. This will break the call to ResetPingClock as it only
-        // needs to be called on writing Data/Header/WindowUpdate frames.
-        // Possible fixes: Either WriteFromQueue iterates over all the frames
-        // and figures out the types of frames needed (this may anyways be
-        // needed to check that we do not send frames for closed streams) or we
-        // have flags to indicate the types of frame that are enqueued.
-        WriteFromQueue(),
-        [self = RefAsSubclass<Http2ClientTransport>()] {
-          return self->MaybeSendPing();
-        },
-        [self = RefAsSubclass<Http2ClientTransport>()] {
-          return self->MaybeSendPingAcks();
-        },
-        [this]() -> LoopCtl<absl::Status> {
-          // If any Header/Data/WindowUpdate frame was sent in the last write,
-          // reset the ping clock.
-          if (bytes_sent_in_last_write_) {
-            ping_manager_.ResetPingClock(/*is_client=*/true);
-          }
-          HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
-          return Continue();
-        });
-  }));
+  return AssertResultType<absl::Status>(
+      Loop([self = RefAsSubclass<Http2ClientTransport>()]() {
+        // TODO(akshitpatel) : [PH2][P1] : Once a common SliceBuffer is used, we
+        // can move bytes_sent_in_last_write_ to be a local variable.
+        self->bytes_sent_in_last_write_ = false;
+        return TrySeq(
+            // TODO(akshitpatel) : [PH2][P1] : WriteFromQueue may write settings
+            // acks as well. This will break the call to ResetPingClock as it
+            // only needs to be called on writing Data/Header/WindowUpdate
+            // frames. Possible fixes: Either WriteFromQueue iterates over all
+            // the frames and figures out the types of frames needed (this may
+            // anyways be needed to check that we do not send frames for closed
+            // streams) or we have flags to indicate the types of frame that are
+            // enqueued.
+            self->WriteFromQueue(), [self] { return self->MaybeSendPing(); },
+            [self] { return self->MaybeSendPingAcks(); },
+            [self]() -> LoopCtl<absl::Status> {
+              // If any Header/Data/WindowUpdate frame was sent in the last
+              // write, reset the ping clock.
+              if (self->bytes_sent_in_last_write_) {
+                self->ping_manager_.ResetPingClock(/*is_client=*/true);
+              }
+              HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteLoop Continue";
+              return Continue();
+            });
+      }));
 }
 
 auto Http2ClientTransport::OnWriteLoopEnded() {
@@ -694,15 +705,73 @@ Http2ClientTransport::Http2ClientTransport(
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
 }
 
-void Http2ClientTransport::CloseTransport(const Http2Status& status,
-                                          DebugLocation whence) {
-  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport status=" << status
-                    << " location=" << whence.file() << ":" << whence.line();
-  MutexLock lock(&transport_mutex_);
+void Http2ClientTransport::CloseTransport() {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseTransport";
+
+  // This is the only place where the general_party_ is
+  // reset.
+  general_party_.reset();
+}
+
+void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
+                                                    DebugLocation whence) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
+                       "status="
+                    << http2_status << " location=" << whence.file() << ":"
+                    << whence.line();
+
+  // Free up the stream_list at this point. This would still allow the frames
+  // in the MPSC to be drained and block any additional frames from being
+  // enqueued. Additionally this also prevents additional frames with non-zero
+  // stream_ids from being processed by the read loop.
+  ReleasableMutexLock lock(&transport_mutex_);
+  if (is_transport_closed_) {
+    lock.Release();
+    return;
+  }
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::MaybeSpawnCloseTransport "
+                       "Initiating transport close";
+  is_transport_closed_ = true;
+  absl::flat_hash_map<uint32_t, RefCountedPtr<Stream>> stream_list =
+      std::move(stream_list_);
+  stream_list_.clear();
   state_tracker_.SetState(GRPC_CHANNEL_SHUTDOWN,
-                          absl::UnavailableError("transport closed"),
+                          http2_status.GetAbslConnectionError(),
                           "transport closed");
-  // TODO(akshitpatel) : [PH2][P1] : Implement this.
+  lock.Release();
+
+  general_party_->Spawn(
+      "CloseTransport",
+      [self = RefAsSubclass<Http2ClientTransport>(),
+       stream_list = std::move(stream_list),
+       http2_status = std::move(http2_status)]() mutable {
+        HTTP2_CLIENT_DLOG
+            << "Http2ClientTransport::CloseTransport Cleaning up call stacks";
+        // Clean up the call stacks for all active streams.
+        for (const auto& pair : stream_list) {
+          // There is no merit in transitioning the stream to
+          // closed state here as the subsequent lookups would
+          // fail. Also, as this is running on the transport
+          // party, there would not be concurrent access to the stream.
+          auto& stream = pair.second;
+          stream->call.SpawnPushServerTrailingMetadata(
+              ServerMetadataFromStatus(http2_status.GetAbslConnectionError()));
+        }
+
+        // RFC9113 : A GOAWAY frame might not immediately precede closing of
+        // the connection; a receiver of a GOAWAY that has no more use for the
+        // connection SHOULD still send a GOAWAY frame before terminating the
+        // connection.
+        // TODO(akshitpatel) : [PH2][P2] : There would a timer for sending
+        // goaway here. Once goaway is sent or timer is expired, close the
+        // transport.
+        return Map(Immediate(absl::OkStatus()),
+                   [self](GRPC_UNUSED absl::Status) mutable {
+                     self->CloseTransport();
+                     return Empty{};
+                   });
+      },
+      [](Empty) {});
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
@@ -760,7 +829,7 @@ bool Http2ClientTransport::MakeStream(CallHandler call_handler,
                                 /*close_reads=*/true,
                                 /*close_writes=*/true,
                                 /*send_rst_stream=*/true,
-                                /*cancelled=*/true,
+                                /*push_trailing_metadata=*/false,
                             });
         }
       });
@@ -806,8 +875,13 @@ auto Http2ClientTransport::CallOutboundLoop(
               [self = RefAsSubclass<Http2ClientTransport>(),
                stream_id](absl::Status status) {
                 if (status.ok()) {
+                  // TODO(akshitpatel) : [PH2][P3] : Investigate if stream
+                  // lookup can be done once outside the promise and all the
+                  // promises can hold a reference to the stream.
                   auto stream = self->LookupStream(stream_id);
-                  if (stream == nullptr) {
+                  if (GPR_UNLIKELY(stream == nullptr)) {
+                    LOG(ERROR)
+                        << "Stream not found while sending initial metadata";
                     return absl::InternalError(
                         "Stream not found while sending initial metadata");
                   }
@@ -821,16 +895,7 @@ auto Http2ClientTransport::CallOutboundLoop(
             // released.
             return ForEach(MessagesFrom(call_handler), send_message);
           },
-          // TODO(akshitpatel): [PH2][P2][RISK] : Need to check if it is okay
-          // to send half close when the call is cancelled.
           [self = RefAsSubclass<Http2ClientTransport>(), stream_id]() mutable {
-            self->CloseStream(stream_id, absl::OkStatus(),
-                              CloseStreamArgs{
-                                  /*close_reads=*/false,
-                                  /*close_writes=*/true,
-                                  /*send_rst_stream=*/false,
-                                  /*cancelled=*/false,
-                              });
             // TODO(akshitpatel): [PH2][P2] : Figure out a way to send the end
             // of stream frame in the same frame as the last message.
             Http2DataFrame frame{stream_id, /*end_stream*/ true, SliceBuffer()};

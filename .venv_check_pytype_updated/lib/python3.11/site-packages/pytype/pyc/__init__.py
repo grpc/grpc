@@ -1,0 +1,1 @@
+"""pyc file format parser."""

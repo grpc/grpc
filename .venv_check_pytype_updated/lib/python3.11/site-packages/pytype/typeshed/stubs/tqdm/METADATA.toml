@@ -1,0 +1,6 @@
+version = "4.66.*"
+upstream_repository = "https://github.com/tqdm/tqdm"
+
+[tool.stubtest]
+extras = ["slack", "telegram"]
+stubtest_requirements = ["dask", "pandas", "rich", "tensorflow"]

@@ -1,0 +1,13 @@
+from _typeshed import Incomplete
+from collections.abc import Generator
+
+from networkx.utils.backends import _dispatch
+
+@_dispatch
+def connected_components(G) -> Generator[Incomplete, None, None]: ...
+@_dispatch
+def number_connected_components(G): ...
+@_dispatch
+def is_connected(G): ...
+@_dispatch
+def node_connected_component(G, n): ...

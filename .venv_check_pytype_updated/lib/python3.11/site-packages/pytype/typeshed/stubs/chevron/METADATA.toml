@@ -1,0 +1,4 @@
+version = "0.14.*"
+upstream_repository = "https://github.com/noahmorrison/chevron"
+
+[tool.stubtest]

@@ -1,0 +1,2 @@
+version = "1.2.*"
+upstream_repository = "https://github.com/stchris/untangle"

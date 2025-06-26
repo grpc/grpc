@@ -1,0 +1,6 @@
+version = "3.5.*"
+upstream_repository = "https://github.com/pyserial/pyserial"
+
+[tool.stubtest]
+platforms = ["darwin", "linux", "win32"]
+extras = ["cp2110"]
