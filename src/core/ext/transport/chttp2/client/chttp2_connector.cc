@@ -139,7 +139,6 @@ void Chttp2Connector::Shutdown(grpc_error_handle error) {
 
 void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
   MutexLock lock(&mu_);
-
   if (!result.ok() || shutdown_) {
     if (result.ok()) {
       result = GRPC_ERROR_CREATE("connector shutdown");
@@ -192,7 +191,6 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
       result_->channel_args = std::move((*result)->args);
       result_->transport = new Http2ClientTransport(
           std::move(promise_endpoint), (*result)->args, event_engine_ptr);
-
       DCHECK_NE(result_->transport, nullptr);
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
