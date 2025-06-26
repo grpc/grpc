@@ -1,0 +1,18 @@
+# This module does not exist in typeshed.
+#
+from typing import Any, Text, Union
+
+builtins = ...  # type: module
+_aliases = ...  # type: dict[Union[bytes, Text], Union[bytes, Text]]
+_cache = ...  # type: dict[Any, Any]
+_import_tail = ...  # type: list[str]
+_norm_encoding_map = ...  # type: str
+_unknown = ...  # type: str
+aliases = ...  # type: Any
+codecs = ...  # type: module
+
+def normalize_encoding(encoding: Any) -> str: ...
+def search_function(encoding: Any) -> Any: ...
+
+class CodecRegistryError(LookupError, SystemError):
+  pass

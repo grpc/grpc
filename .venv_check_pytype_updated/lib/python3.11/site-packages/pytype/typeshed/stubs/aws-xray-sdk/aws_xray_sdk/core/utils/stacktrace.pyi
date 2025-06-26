@@ -1,0 +1,3 @@
+from _typeshed import Incomplete
+
+def get_stacktrace(limit: Incomplete | None = None): ...

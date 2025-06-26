@@ -1,0 +1,9 @@
+from _typeshed import Incomplete
+from collections.abc import Callable
+from typing import Any
+
+def pdb_on_signal(signalnum: int | None = None) -> None: ...
+def pdb_on_exception(limit: int = 100) -> None: ...
+def wrap_trace(
+    obj: Incomplete, hook: Callable[..., Any] = ..., which: str | None = None, events: str | None = None, label: str | None = None
+) -> Incomplete: ...

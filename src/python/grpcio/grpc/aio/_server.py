@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
+from __future__ import annotations
 
-from collections.abc import Sequence
 from concurrent.futures import Executor
 from typing import Optional
+from typing import Any, Optional, Sequence
 
 import grpc
 from grpc import _common
@@ -24,7 +25,8 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._interceptor import ServerInterceptor
-from ._typing import ChannelArgumentType, ChannelArgsType
+from ._typing import ChannelArgsType
+from ._typing import ChannelArgumentType
 
 
 def _augment_channel_arguments(
@@ -59,7 +61,7 @@ class Server(_base_server.Server):
                     f"Interceptor must be ServerInterceptor, the following are invalid: "
                     f"{invalid_interceptors}"
                 )
-                raise TypeError(
+                raise ValueError(
                     msg,
                 )
         self._server = cygrpc.AioServer(

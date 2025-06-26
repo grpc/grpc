@@ -1,0 +1,2 @@
+version = "1.8.*"
+upstream_repository = "https://github.com/asottile/flake8-2020"

@@ -1,0 +1,7 @@
+version = "3.5.*"
+upstream_repository = "https://github.com/stripe/stripe-python"
+partial_stub = true
+obsolete_since = "7.1.0" # Released on 2023-10-27
+
+[tool.stubtest]
+ignore_missing_stub = true

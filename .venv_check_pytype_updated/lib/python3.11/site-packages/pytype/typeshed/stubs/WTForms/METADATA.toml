@@ -1,0 +1,3 @@
+version = "3.1.*"
+upstream_repository = "https://github.com/wtforms/wtforms"
+requires = ["MarkupSafe"]

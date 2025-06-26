@@ -1,0 +1,2 @@
+version = "4.4.*"
+upstream_repository = "https://github.com/dwolfhub/zxcvbn-python"

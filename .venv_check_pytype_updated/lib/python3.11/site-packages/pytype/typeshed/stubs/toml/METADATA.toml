@@ -1,0 +1,2 @@
+version = "0.10.*"
+upstream_repository = "https://github.com/uiri/toml"

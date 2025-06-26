@@ -1,0 +1,6 @@
+from networkx.utils.backends import _dispatch
+
+@_dispatch
+def find_asteroidal_triple(G): ...
+@_dispatch
+def is_at_free(G): ...

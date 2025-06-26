@@ -1,0 +1,5 @@
+version = "1.7.*"
+upstream_repository = "https://github.com/moses-palmer/pynput"
+
+[tool.stubtest]
+platforms = ["darwin", "linux", "win32"]

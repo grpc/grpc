@@ -16,8 +16,6 @@
 gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn't provide thread safety for most of its APIs.
 """
-from __future__ import annotations
-
 from grpc._cython.cygrpc import AbortError
 from grpc._cython.cygrpc import BaseError
 from grpc._cython.cygrpc import EOF

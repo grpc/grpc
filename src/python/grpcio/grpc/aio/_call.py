@@ -12,16 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+from __future__ import annotations
 
 import asyncio
-from collections.abc import AsyncIterator
-from collections.abc import Generator
 import enum
 from functools import partial
 import inspect
 import logging
 import traceback
-from typing import Any, Generic, Optional, Union
+from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
 import grpc
 from grpc import _common
@@ -164,7 +163,7 @@ class AioRpcError(grpc.RpcError):
         return self._repr()
 
     def __reduce__(self) -> tuple[
-        type["AioRpcError"],  # Type object of the class AioRpcError
+        type[AioRpcError],  # Type object of the class AioRpcError
         tuple[
             grpc.StatusCode,  # self._code
             Metadata,  # self._initial_metadata

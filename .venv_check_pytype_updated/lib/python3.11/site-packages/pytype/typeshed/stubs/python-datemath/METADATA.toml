@@ -1,0 +1,8 @@
+version = "1.5.*"
+upstream_repository = "https://github.com/nickmaccarthy/python-datemath"
+# Requires a version of arrow with a `py.typed` file
+requires = ["arrow>=1.0.1"]
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true

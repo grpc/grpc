@@ -1,0 +1,15 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+#
+# This source code is licensed under the MIT license found in the
+# LICENSE file in the root directory of this source tree.
+#
+# pyre-strict
+
+import subprocess
+from contextlib import AsyncExitStack
+
+
+def fun() -> None:
+    # this is an explicit syntax error to cause formatter error
+    async with AsyncExitStack() as stack:
+        stack

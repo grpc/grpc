@@ -1,0 +1,15 @@
+version = "1.40.*"
+upstream_repository = "https://github.com/influxdata/influxdb-client-python"
+# requires a version of urllib3 with a py.typed file
+requires = ["urllib3>=2"]
+
+extra_description = """\
+    Note: `types-influxdb-client` has required `urllib3>=2` since v1.37.0.1. \
+    If you need to install `types-influxdb-client` into an environment \
+    that must also have `urllib3<2` installed into it, \
+    you will have to use `types-influxdb-client<1.37.0.1`.\
+    """
+
+[tool.stubtest]
+extras = ["extra"]
+stubtest_requirements = ["aiohttp"]

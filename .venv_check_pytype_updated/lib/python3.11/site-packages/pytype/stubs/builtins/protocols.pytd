@@ -1,0 +1,54 @@
+# TODO(rechen): Collection and Hashable should be in this list, but importing
+# either of them breaks protocol inference.
+from typing import Any, Callable, Container, ContextManager, Iterable, Mapping, MutableMapping, MutableSequence, Protocol, Reversible, Sequence, Sized, SupportsAbs, SupportsComplex, SupportsFloat, SupportsInt, SupportsRound
+
+if sys.version_info >= (3, 0):
+  from typing import SupportsBytes
+
+class SupportsLower(Protocol):
+  @abstractmethod
+  def lower(self) -> Any: ...
+
+class SupportsUpper(Protocol):
+  @abstractmethod
+  def upper(self) -> Any: ...
+
+class SupportsStartswith(Protocol):
+  @abstractmethod
+  def startswith(self, str: Any) -> bool: ...
+
+class SupportsEndswith(Protocol):
+  @abstractmethod
+  def endswith(self, str: Any) -> bool: ...
+
+class SupportsLstrip(Protocol):
+  @abstractmethod
+  def lstrip(self) -> Any: ...
+
+class SupportsReplace(Protocol):
+  @abstractmethod
+  def replace(self, old: Any, new: Any) -> Any: ...
+
+class SupportsEncode(Protocol):
+  @abstractmethod
+  def encode(self) -> Any: ...
+
+class SupportsDecode(Protocol):
+  @abstractmethod
+  def decode(self) -> Any: ...
+
+class SupportsSplitlines(Protocol):
+  @abstractmethod
+  def splitlines(self) -> Any: ...
+
+class SupportsSplit(Protocol):
+  @abstractmethod
+  def split(self) -> Any: ...
+
+class SupportsStrip(Protocol):
+  @abstractmethod
+  def strip(self) -> Any: ...
+
+class SupportsFind(Protocol):
+  @abstractmethod
+  def find(self, sub: Any) -> Any: ...

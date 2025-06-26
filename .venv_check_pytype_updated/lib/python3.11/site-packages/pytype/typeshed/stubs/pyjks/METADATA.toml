@@ -1,0 +1,3 @@
+version = "20.0.*"
+upstream_repository = "https://github.com/kurtbrose/pyjks"
+requires = ["types-pyasn1"]

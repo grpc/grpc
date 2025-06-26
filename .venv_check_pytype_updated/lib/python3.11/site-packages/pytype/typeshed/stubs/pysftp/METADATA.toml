@@ -1,0 +1,3 @@
+version = "0.2.*"
+upstream_repository = "https://bitbucket.org/dundeemt/pysftp"
+requires = ["types-paramiko"]

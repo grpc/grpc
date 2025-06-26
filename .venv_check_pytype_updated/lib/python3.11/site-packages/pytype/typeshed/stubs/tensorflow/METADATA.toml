@@ -1,0 +1,9 @@
+version = "2.15.*"
+upstream_repository = "https://github.com/tensorflow/tensorflow"
+# requires a version of numpy with a `py.typed` file
+requires = ["numpy>=1.20", "types-protobuf", "types-requests"]
+extra_description = "Partially generated using [mypy-protobuf==3.5.0](https://github.com/nipunn1313/mypy-protobuf/tree/v3.5.0) on tensorflow==2.12.1"
+partial_stub = true
+
+[tool.stubtest]
+ignore_missing_stub = true

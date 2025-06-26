@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+from __future__ import annotations
 
 import asyncio
 import types
 from collections.abc import Iterable
 from collections.abc import Sequence
 import sys
-from typing import Any, Optional, Union
+from typing import Any, Iterable, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
@@ -42,7 +43,8 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import ChannelArgumentType, ChannelArgsType
+from ._typing import ChannelArgsType
+from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
 from ._typing import RequestIterableType

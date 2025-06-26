@@ -1,0 +1,5 @@
+version = "0.4.*"
+upstream_repository = "https://github.com/tartley/colorama"
+
+[tool.stubtest]
+platforms = ["linux", "win32"]

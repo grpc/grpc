@@ -1,0 +1,3 @@
+__version__: str
+
+class UnidentifiedImageError(OSError): ...

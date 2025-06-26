@@ -1,0 +1,2 @@
+version = "1.5.*"
+upstream_repository = "https://github.com/sergey-dryabzhinsky/python-zstd"

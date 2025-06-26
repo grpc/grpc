@@ -1,0 +1,3 @@
+from datetime import datetime
+
+def generate(dt: datetime, utc: bool = True, accept_naive: bool = False, microseconds: bool = False) -> str: ...

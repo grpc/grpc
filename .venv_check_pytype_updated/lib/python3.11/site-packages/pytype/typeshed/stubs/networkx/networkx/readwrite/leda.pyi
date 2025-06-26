@@ -1,0 +1,6 @@
+from networkx.utils.backends import _dispatch
+
+@_dispatch
+def read_leda(path, encoding: str = "UTF-8"): ...
+@_dispatch
+def parse_leda(lines): ...

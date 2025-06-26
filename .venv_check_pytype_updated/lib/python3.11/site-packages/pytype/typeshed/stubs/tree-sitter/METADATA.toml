@@ -1,0 +1,7 @@
+version = "0.20.1"
+upstream_repository = "https://github.com/tree-sitter/py-tree-sitter"
+obsolete_since = "0.20.3" # Released on 2023-11-13
+
+[tool.stubtest]
+# The runtime has an undeclared dependency on setuptools
+stubtest_requirements = ["setuptools"]

@@ -1,0 +1,4 @@
+version = "5.1"
+upstream_repository = "https://github.com/regebro/tzlocal"
+requires = ["types-pytz"]
+obsolete_since = "5.2" # Released on 2023-10-22
