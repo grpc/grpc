@@ -124,3 +124,16 @@ grpc_fuzz_test(
         "//src/core:zviz_entity",
     ],
 )
+
+grpc_fuzz_test(
+    name = "html_test",
+    srcs = ["html_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//src/core:zviz_html",
+    ],
+)

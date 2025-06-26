@@ -10297,6 +10297,21 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_library(
+    name = "zviz_html",
+    srcs = [
+        "channelz/zviz/html.cc",
+    ],
+    hdrs = ["channelz/zviz/html.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/strings:string_view",
+        "absl/types:span",
+        "absl/functional:function_ref",
+    ],
+)
+
 ### UPB Targets
 
 grpc_upb_proto_library(
