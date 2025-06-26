@@ -21,6 +21,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
@@ -169,9 +170,10 @@ class GracefulShutdownTest : public ::testing::Test {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
-          LOG(INFO) << "Read: "
-                    << grpc_dump_slice(self->read_buffer_.slices[i],
-                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          char* dump = grpc_dump_slice(self->read_buffer_.slices[i],
+                                             GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          LOG(INFO) << "Read: " << dump;
+          gpr_free(dump);
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
         }
