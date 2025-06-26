@@ -334,8 +334,8 @@ class grpc_compute_engine_token_fetcher_credentials
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
-    return BuildAndStartHttpRequestWithQueryParams({}, pollent, deadline, response,
-                                           on_complete);
+    return BuildAndStartHttpRequestWithQueryParams({}, pollent, deadline,
+                                                   response, on_complete);
   }
 };
 
@@ -347,16 +347,16 @@ class grpc_compute_engine_token_fetcher_alts_credentials
 
   std::string debug_string() override {
     return absl::StrFormat(
-        "GoogleComputeEngineTokenFetcherCredentials{%s}",
-        grpc_core::Oauth2TokenFetcherCredentials::debug_string());
+        "GoogleComputeEngineTokenFetcherAltsCredentials{%s}",
+        grpc_compute_engine_token_fetcher_credentials::debug_string());
   }
 
  private:
   grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
       grpc_http_response* response, grpc_closure* on_complete) override {
-    return BuildAndStartHttpRequestWithQueryParams({{"transport", "alts"}}, pollent,
-                                           deadline, response, on_complete);
+    return BuildAndStartHttpRequestWithQueryParams(
+        {{"transport", "alts"}}, pollent, deadline, response, on_complete);
   }
 };
 
