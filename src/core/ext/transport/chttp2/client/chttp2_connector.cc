@@ -187,10 +187,9 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                 .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
     Ref().release();  // Ref held by OnReceiveSettings()
     // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
-    auto transport = MakeOrphanable<Http2ClientTransport>(
-        std::move(promise_endpoint), (*result)->args, event_engine_ptr,
-        &on_receive_settings_);
-    result_->transport = transport.release();
+    result_->transport =
+        new Http2ClientTransport(std::move(promise_endpoint), (*result)->args,
+                                 event_engine_ptr, &on_receive_settings_);
 
     DCHECK_NE(result_->transport, nullptr);
     result_->channel_args = std::move((*result)->args);
