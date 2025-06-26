@@ -17,7 +17,7 @@ import subprocess
 import sys
 import tempfile
 
-_GDB_TIMEOUT_S = 60
+_DEBUGGER_TIMEOUT_S = 60
 
 
 def print_backtraces(pid):
@@ -36,6 +36,7 @@ def print_backtraces(pid):
         debugger_name = "lldb"
         cmd = [
             "lldb",
+            "--no-lldbinit",
             "-b",  # Batch mode: exit after commands are executed
             "-o",
             "process attach --pid {}".format(pid),
@@ -58,11 +59,11 @@ def print_backtraces(pid):
             "quit",
         ]
     streams = tuple(tempfile.TemporaryFile() for _ in range(2))
-    sys.stderr.write("Invoking gdb\n")
+    sys.stderr.write(f"Invoking {debugger_name}\n")
     sys.stderr.flush()
     process = subprocess.Popen(cmd, stdout=streams[0], stderr=streams[1])
     try:
-        process.wait(timeout=_GDB_TIMEOUT_S)
+        process.wait(timeout=_DEBUGGER_TIMEOUT_S)
     except subprocess.TimeoutExpired:
         sys.stderr.write(
             "{} stacktrace generation timed out.\n".format(debugger_name)
