@@ -6468,12 +6468,28 @@ grpc_cc_library(
     ],
 )
 
+config_setting(
+    name = "grpc_cpu_intensive_bitgen_setting",
+    values = {"define": "grpc_bitgen_implementation=cpu_intensive"},
+)
+
+config_setting(
+    name = "grpc_mem_intensive_bitgen_setting",
+    values = {"define": "grpc_bitgen_implementation=mem_intensive"},
+)
+
 grpc_cc_library(
     name = "shared_bit_gen",
     srcs = ["util/shared_bit_gen.cc"],
     hdrs = [
         "util/shared_bit_gen.h",
     ],
+    # Select the appropriate SharedBitGen implementation based on the build flag.
+    defines = select({
+        ":grpc_cpu_intensive_bitgen_setting": ["GRPC_CPU_INTENSIVE_BITGEN"],
+        ":grpc_mem_intensive_bitgen_setting": ["GRPC_MEM_INTENSIVE_BITGEN"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/random",
     ],
