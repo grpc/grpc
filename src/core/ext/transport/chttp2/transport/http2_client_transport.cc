@@ -293,9 +293,9 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
   Http2ErrorCode error_code =
       Http2ErrorCodeFromRstFrameErrorCode(frame.error_code);
-  absl::Status absl_status(ErrorCodeToAbslStatusCode(error_code),
-                           "Reset stream frame received.");
-  CloseStream(frame.stream_id, std::move(absl_status),
+  CloseStream(frame.stream_id,
+              absl::Status((ErrorCodeToAbslStatusCode(error_code)),
+                           "Reset stream frame received."),
               CloseStreamArgs{
                   /*close_reads=*/true,
                   /*close_writes=*/true,
