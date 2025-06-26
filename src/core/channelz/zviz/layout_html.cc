@@ -64,8 +64,7 @@ Element& HtmlElement::AppendGroup(Intent intent) {
       std::make_unique<HtmlElement>(container_.NewDiv(IntentToStyle(intent))));
 }
 
-Element& HtmlElement::AppendData(absl::string_view name,
-                                 absl::string_view type) {
+Element& HtmlElement::AppendData(absl::string_view name, absl::string_view) {
   auto& grp = AppendGroup(Intent::kData);
   grp.AppendText(Intent::kHeading, name);
   return grp;
