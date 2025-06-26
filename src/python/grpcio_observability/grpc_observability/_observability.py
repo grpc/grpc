@@ -17,27 +17,30 @@ import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
-from typing import AnyStr, Dict, List, Mapping, Set, Tuple
+from typing import Dict, List, Mapping, Set, Tuple, Union
+
+# pylint: disable=unused-import
+from python.grpcio_observability import grpc_observability
 
 
 class Exporter(metaclass=abc.ABCMeta):
     """Abstract base class for census data exporters."""
 
     @abc.abstractmethod
-    def export_stats_data(self, stats_data: List[TracingData]) -> None:
-        """Exports a list of TracingData objects to the exporter's destination.
+    def export_stats_data(self, stats_data: List[StatsData]) -> None:
+        """Exports a list of StatsData objects to the exporter's destination.
 
         Args:
-          stats_data: A list of TracingData objects to export.
+          stats_data: A list of StatsData objects to export.
         """
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def export_tracing_data(self, tracing_data: List[StatsData]) -> None:
-        """Exports a list of StatsData objects to the exporter's destination.
+    def export_tracing_data(self, tracing_data: List[TracingData]) -> None:
+        """Exports a list of TracingData objects to the exporter's destination.
 
         Args:
-          tracing_data: A list of StatsData objects to export.
+          tracing_data: A list of TracingData objects to export.
         """
         raise NotImplementedError()
 
@@ -67,7 +70,7 @@ class StatsData:
     value_int: int = 0
     value_float: float = 0.0
     include_exchange_labels: bool = False
-    labels: Dict[str, AnyStr] = field(default_factory=dict)
+    labels: Dict[str, Union[str, bytes]] = field(default_factory=dict)
     identifiers: Set[str] = field(default_factory=set)
     registered_method: bool = False
 
@@ -108,7 +111,7 @@ class TracingData:
     status: str
     should_sample: bool
     child_span_count: int
-    span_labels: Mapping[str, AnyStr] = field(default_factory=dict)
+    span_labels: Mapping[str, Union[str, bytes]] = field(default_factory=dict)
     span_annotations: List[Tuple[str, str]] = field(default_factory=list)
 
 
