@@ -81,9 +81,9 @@ def decode(b: AnyStr) -> str:
 
 def _transform(
     message: Any,
-    transformer: Union[SerializingFunction, DeserializingFunction, None],
+    transformer: Optional[Union[SerializingFunction, DeserializingFunction]],
     exception_message: str,
-) -> Union[Any, None]:
+) -> Optional[Any]:
     if transformer is None:
         return message
     else:
@@ -100,7 +100,7 @@ def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
 
 def deserialize(
     serialized_message: bytes, deserializer: Optional[DeserializingFunction]
-) -> Union[Any, None]:
+) -> Optional[Any]:
     return _transform(
         serialized_message, deserializer, "Exception deserializing message!"
     )
