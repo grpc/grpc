@@ -127,7 +127,7 @@ class CallbackWithStatusTag : public grpc_completion_queue_functor {
     auto status = std::move(status_);
     func_ = nullptr;     // reset to clear this out for sure
     status_ = Status();  // reset to clear this out for sure
-    GetGlobalCallbackHook()->RunCallback(call_, [&func, &status]() {
+    GetGlobalCallbackHook()->RunCallback([&func, &status]() {
 #if GRPC_ALLOW_EXCEPTIONS
       try {
         func(status);
@@ -224,7 +224,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
 #endif
 
     if (do_callback) {
-      GetGlobalCallbackHook()->RunCallback(call_, [this, ok]() {
+      GetGlobalCallbackHook()->RunCallback([this, ok]() {
 #if GRPC_ALLOW_EXCEPTIONS
         try {
           func_(ok);
@@ -232,7 +232,7 @@ class CallbackWithSuccessTag : public grpc_completion_queue_functor {
           // nothing to return or change here, just don't crash the library
         }
 #else   // GRPC_ALLOW_EXCEPTIONS
-  func_(ok);
+        func_(ok);
 #endif  // GRPC_ALLOW_EXCEPTIONS
       });
     }

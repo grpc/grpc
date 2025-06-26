@@ -24,8 +24,7 @@ namespace grpc {
 class GlobalCallbackHook {
  public:
   virtual ~GlobalCallbackHook() = default;
-  virtual void RunCallback(grpc_call* call,
-                           absl::FunctionRef<void()> callback) = 0;
+  virtual void RunCallback(absl::FunctionRef<void()> callback) = 0;
 
  protected:
   // An exception-safe way of invoking a user-specified callback function.
@@ -45,7 +44,7 @@ class GlobalCallbackHook {
 
 class DefaultGlobalCallbackHook final : public GlobalCallbackHook {
  public:
-  void RunCallback(grpc_call* _, absl::FunctionRef<void()> callback) override {
+  void RunCallback(absl::FunctionRef<void()> callback) override {
     CatchingCallback(callback);
   }
 };
