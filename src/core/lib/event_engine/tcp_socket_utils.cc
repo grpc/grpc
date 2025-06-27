@@ -434,14 +434,17 @@ absl::StatusOr<std::string> ResolvedAddressToURI(
 }
 
 absl::StatusOr<EventEngine::ResolvedAddress> URIToResolvedAddress(
-    std::string address_str) {
+    absl::string_view address_str) {
   grpc_resolved_address addr;
   absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(address_str);
   if (!uri.ok()) {
     LOG(ERROR) << "Failed to parse URI. Error: " << uri.status();
   }
   GRPC_RETURN_IF_ERROR(uri.status());
-  CHECK(grpc_parse_uri(*uri, &addr));
+  if (!grpc_parse_uri(*uri, &addr)) {
+    return absl::UnknownError(
+        absl::StrCat("Failed to parse URI: ", address_str));
+  }
   return EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(addr.addr), addr.len);
 }
