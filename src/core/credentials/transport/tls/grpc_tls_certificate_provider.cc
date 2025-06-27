@@ -131,7 +131,7 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     const bool root_has_update = root_cert_info != nullptr;
     const bool identity_has_update = pem_key_cert_pairs.has_value();
     if (root_has_update || identity_has_update) {
-      distributor_->SetKeyMaterials(cert_name, root_cert_info,
+      distributor_->SetKeyMaterials(cert_name, std::move(root_cert_info),
                                     std::move(pem_key_cert_pairs));
     }
     grpc_error_handle root_cert_error;

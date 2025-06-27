@@ -79,7 +79,8 @@ void grpc_tls_certificate_distributor::SetKeyMaterials(
           roots_to_report = root_cert_info.roots;
         }
       }
-      watcher_ptr->OnCertificatesChanged(roots_to_report, pem_key_cert_pairs);
+      watcher_ptr->OnCertificatesChanged(std::move(roots_to_report),
+                                         pem_key_cert_pairs);
     }
     cert_info.pem_key_cert_pairs = std::move(*pem_key_cert_pairs);
   }
