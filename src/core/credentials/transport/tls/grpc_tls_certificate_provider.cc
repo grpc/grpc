@@ -110,12 +110,11 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         !root_certificate_.empty()) {
-      root_cert_info = std::make_shared<RootCertInfo>(root_certificate_);
+      root_cert_info_ = std::make_shared<RootCertInfo>(root_certificate_);
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -243,7 +242,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
-        !IsRootCertInfoEmpty(root_cert_info_.get())) {
+        root_cert_info_ != nullptr) {
       roots = std::move(root_cert_info_);
     }
     info.root_being_watched = root_being_watched;
@@ -338,7 +337,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   // If update has no value, but the existing root has a value, then the update
   // is a delete
   const bool is_root_update_a_delete =
-      root_cert_info == nullptr && !IsRootCertInfoEmpty(root_cert_info_.get());
+      root_cert_info == nullptr && root_cert_info_ != nullptr;
   // If the update has a value, see if the existing value is nullptr or has a
   // different value than the update.
   const bool did_root_change_value =
