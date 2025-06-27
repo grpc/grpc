@@ -2158,6 +2158,7 @@ static void tsi_ssl_client_handshaker_factory_destroy(
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   self->session_cache.reset();
   self->key_logger.reset();
+  self->root_cert_info.reset();
   gpr_free(self);
 }
 
@@ -2208,6 +2209,7 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   }
   if (self->alpn_protocol_list != nullptr) gpr_free(self->alpn_protocol_list);
   self->key_logger.reset();
+  self->root_cert_info.reset();
   gpr_free(self);
 }
 
