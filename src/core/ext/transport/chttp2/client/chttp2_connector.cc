@@ -187,10 +187,13 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
                   ->args
                   .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
       Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+        grpc_schedule_on_exec_ctx);
       // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
       result_->channel_args = std::move((*result)->args);
       result_->transport = new Http2ClientTransport(
-          std::move(promise_endpoint), (*result)->args, event_engine_ptr);
+          std::move(promise_endpoint), (*result)->args, event_engine_ptr,
+          &on_receive_settings_);
       DCHECK_NE(result_->transport, nullptr);
       timer_handle_ = event_engine_->RunAfter(
           args_.deadline - Timestamp::Now(),
