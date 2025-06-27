@@ -20,6 +20,11 @@ namespace grpc_core {
 // Emit useful post mortem analysis from whatever in-process data we have.
 void PostMortemEmit();
 
+// Does all the work of PostMortemEmit, but doesn't emit anything.
+// This is useful for verifying that PostMortemEmit *would* succeed...
+// which means especially that channelz is working.
+void SilentPostMortemEmit();
+
 }  // namespace grpc_core
 
 #endif  // GRPC_TEST_CORE_TEST_UTIL_POSTMORTEM_EMIT_H

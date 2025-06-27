@@ -135,9 +135,11 @@ class Http2ClientTransport final : public ClientTransport {
                                : absl::InternalError("Failed to enqueue frame");
         }));
   }
+
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_manager_.RequestPing(std::move(on_initiate));
   }
+
   template <typename Factory>
   auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
     return general_party_->Spawn(name, std::move(factory), [](auto) {});
@@ -154,7 +156,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
-  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assember,
+  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assembler,
                               CallHandler& call,
                               bool& did_push_initial_metadata,
                               bool& did_push_trailing_metadata);
@@ -348,43 +350,7 @@ class Http2ClientTransport final : public ClientTransport {
 
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
-                   CloseStreamArgs args, DebugLocation whence = {}) {
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                      << stream_id << " status=" << status
-                      << " location=" << whence.file() << ":" << whence.line();
-
-    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
-    // throughout this function.
-    MutexLock lock(&transport_mutex_);
-    auto pair = stream_list_.find(stream_id);
-    if (pair == stream_list_.end()) {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                        << stream_id << " stream not found";
-      return;
-    }
-    auto& stream = pair->second;
-
-    if (args.close_reads) {
-      stream->MarkHalfClosedRemote();
-    }
-    if (args.close_writes) {
-      stream->MarkHalfClosedLocal();
-    }
-
-    if (stream->IsClosed()) {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                        << stream_id << " closing stream.";
-      if (args.send_rst_stream) {
-        // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
-      }
-
-      if (args.push_trailing_metadata) {
-        stream->call.SpawnPushServerTrailingMetadata(
-            ServerMetadataFromStatus(status));
-      }
-      stream_list_.erase(stream_id);
-    }
-  }
+                   CloseStreamArgs args, DebugLocation whence = {});
 
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
@@ -459,6 +425,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
+  bool is_first_write_;
   uint32_t incoming_header_stream_id_;
 
   // Ping related members
@@ -610,16 +577,6 @@ class Http2ClientTransport final : public ClientTransport {
     // transport and greatly simpilfy the cleanup path.
     Http2ClientTransport* transport_;
   };
-
-  inline Http2ErrorCode GetErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
-    if (GPR_UNLIKELY(error_code > GetMaxHttp2ErrorCode())) {
-      LOG(ERROR) << "GetErrorCodeFromRstFrameErrorCode: Invalid error code "
-                    "received from RST_STREAM frame: "
-                 << error_code;
-    }
-
-    return static_cast<Http2ErrorCode>(error_code);
-  }
 };
 
 // Since the corresponding class in CHTTP2 is about 3.9KB, our goal is to

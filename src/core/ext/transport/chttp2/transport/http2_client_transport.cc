@@ -34,9 +34,11 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/for_each.h"
@@ -81,7 +83,7 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
     StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
-  CHECK(op->set_accept_stream) << "Set_accept_stream not supported on clients";
+  CHECK(!op->set_accept_stream) << "Set_accept_stream not supported on clients";
   DCHECK(did_stuff) << "Unimplemented transport perform op ";
 
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
@@ -174,8 +176,6 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     }
     MessageHandle message = TakeValue(std::move(result));
     if (message != nullptr) {
-      // TODO(tjagtap) : [PH2][P1] : Ask ctiller what is the right way to plumb
-      // with call V3. PushMessage or SpawnPushMessage.
       HTTP2_TRANSPORT_DLOG
           << "Http2Transport ProcessHttp2DataFrame SpawnPushMessage "
           << message->DebugString();
@@ -186,7 +186,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     break;
   }
 
-  // TODO(tjagtap) : [PH2][P1] : List of Tests:
+  // TODO(tjagtap) : [PH2][P2] : List of Tests:
   // 1. Data frame with unknown stream ID
   // 2. Data frame with only half a message and then end stream
   // 3. One data frame with a full message
@@ -231,14 +231,14 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
       (!incoming_header_end_stream_ && stream->did_push_initial_metadata)) {
     return Http2Status::Http2StreamError(
         Http2ErrorCode::kInternalError,
-        "gRPC Error : A gRPC server can send upto 1 intitial metadata followed "
+        "gRPC Error : A gRPC server can send upto 1 initial metadata followed "
         "by upto 1 trailing metadata");
   }
 
-  HeaderAssembler& assember = stream->header_assembler;
-  Http2Status append_result = assember.AppendHeaderFrame(std::move(frame));
+  HeaderAssembler& assembler = stream->header_assembler;
+  Http2Status append_result = assembler.AppendHeaderFrame(std::move(frame));
   if (append_result.IsOk()) {
-    return ProcessMetadata(stream->stream_id, assember, stream->call,
+    return ProcessMetadata(stream->stream_id, assembler, stream->call,
                            stream->did_push_initial_metadata,
                            stream->did_push_trailing_metadata);
   }
@@ -246,13 +246,13 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 }
 
 Http2Status Http2ClientTransport::ProcessMetadata(
-    uint32_t stream_id, HeaderAssembler& assember, CallHandler& call,
+    uint32_t stream_id, HeaderAssembler& assembler, CallHandler& call,
     bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
   HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
-  if (assember.IsReady()) {
+  if (assembler.IsReady()) {
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
-        assember.ReadMetadata(parser_, !incoming_header_end_stream_,
-                              /*is_client=*/true);
+        assembler.ReadMetadata(parser_, !incoming_header_end_stream_,
+                               /*is_client=*/true);
     if (read_result.IsOk()) {
       Arena::PoolPtr<grpc_metadata_batch> metadata =
           TakeValue(std::move(read_result));
@@ -292,13 +292,11 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
-
-  // TODO(akshitpatel) : [PH2][P2] : This would fail in case of a rst frame
-  // with NoError. Handle this case.
-  Http2Status status = Http2Status::Http2StreamError(
-      GetErrorCodeFromRstFrameErrorCode(frame.error_code),
-      "Reset stream frame received.");
-  CloseStream(frame.stream_id, status.GetAbslStreamError(),
+  Http2ErrorCode error_code =
+      Http2ErrorCodeFromRstFrameErrorCode(frame.error_code);
+  CloseStream(frame.stream_id,
+              absl::Status((ErrorCodeToAbslStatusCode(error_code)),
+                           "Reset stream frame received."),
               CloseStreamArgs{
                   /*close_reads=*/true,
                   /*close_writes=*/true,
@@ -557,7 +555,6 @@ auto Http2ClientTransport::ReadLoop() {
 auto Http2ClientTransport::OnReadLoopEnded() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Factory";
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-    // TODO(akshitpatel) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnReadLoopEnded Promise Status="
                       << status;
     GRPC_UNUSED absl::Status error =
@@ -576,6 +573,13 @@ auto Http2ClientTransport::WriteFromQueue() {
       [self = RefAsSubclass<Http2ClientTransport>()](
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
+        if (self->is_first_write_) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport Write GRPC_CHTTP2_CLIENT_CONNECT_STRING";
+          output_buf.Append(Slice(grpc_slice_from_copied_string(
+              GRPC_CHTTP2_CLIENT_CONNECT_STRING)));
+          self->is_first_write_ = false;
+        }
         Serialize(absl::Span<Http2Frame>(frames), output_buf);
         uint64_t buffer_length = output_buf.Length();
         HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
@@ -623,7 +627,6 @@ auto Http2ClientTransport::WriteLoop() {
 auto Http2ClientTransport::OnWriteLoopEnded() {
   HTTP2_CLIENT_DLOG << "Http2ClientTransport OnWriteLoopEnded Factory";
   return [self = RefAsSubclass<Http2ClientTransport>()](absl::Status status) {
-    // TODO(tjagtap) : [PH2][P1] : Implement this.
     HTTP2_CLIENT_DLOG << "Http2ClientTransport OnWriteLoopEnded Promise Status="
                       << status;
     GRPC_UNUSED absl::Status error =
@@ -644,6 +647,7 @@ Http2ClientTransport::Http2ClientTransport(
       bytes_sent_in_last_write_(false),
       incoming_header_in_progress_(false),
       incoming_header_end_stream_(false),
+      is_first_write_(true),
       incoming_header_stream_id_(0),
       keepalive_time_(std::max(
           Duration::Seconds(10),
@@ -691,6 +695,10 @@ Http2ClientTransport::Http2ClientTransport(
   keepalive_manager_.Spawn(general_party_.get());
 
   // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
+  Http2ErrorCode code = settings_.mutable_local().Apply(
+      Http2Settings::kInitialWindowSizeWireId,
+      (Http2Settings::max_initial_window_size() - 1));
+  DCHECK(code == Http2ErrorCode::kNoError);
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
   if (settings_frame.has_value()) {
@@ -703,6 +711,47 @@ Http2ClientTransport::Http2ClientTransport(
         [](GRPC_UNUSED absl::Status status) {});
   }
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Constructor End";
+}
+
+// This function MUST be idempotent.
+void Http2ClientTransport::CloseStream(uint32_t stream_id, absl::Status status,
+                                       CloseStreamArgs args,
+                                       DebugLocation whence) {
+  HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                    << stream_id << " status=" << status
+                    << " location=" << whence.file() << ":" << whence.line();
+
+  // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
+  // throughout this function.
+  MutexLock lock(&transport_mutex_);
+  auto pair = stream_list_.find(stream_id);
+  if (pair == stream_list_.end()) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " stream not found";
+    return;
+  }
+  auto& stream = pair->second;
+
+  if (args.close_reads) {
+    stream->MarkHalfClosedRemote();
+  }
+  if (args.close_writes) {
+    stream->MarkHalfClosedLocal();
+  }
+
+  if (stream->IsClosed()) {
+    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
+                      << stream_id << " closing stream.";
+    if (args.send_rst_stream) {
+      // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
+    }
+
+    if (args.push_trailing_metadata) {
+      stream->call.SpawnPushServerTrailingMetadata(
+          ServerMetadataFromStatus(status));
+    }
+    stream_list_.erase(stream_id);
+  }
 }
 
 void Http2ClientTransport::CloseTransport() {
@@ -775,7 +824,6 @@ void Http2ClientTransport::MaybeSpawnCloseTransport(Http2Status http2_status,
 }
 
 Http2ClientTransport::~Http2ClientTransport() {
-  // TODO(tjagtap) : [PH2][P1] : Implement the needed cleanup
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor Begin";
   DCHECK(stream_list_.empty());
   HTTP2_CLIENT_DLOG << "Http2ClientTransport Destructor End";
