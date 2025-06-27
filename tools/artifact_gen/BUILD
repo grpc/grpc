@@ -12,6 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+COPTS = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/std:c++17",
+        ],
+        "//conditions:default": [
+            "-std=c++17",
+        ],
+    })
+
 cc_library(
     name = "extract_metadata_from_bazel_xml",
     srcs = ["extract_metadata_from_bazel_xml.cc"],
@@ -82,14 +91,6 @@ cc_library(
 cc_binary(
     name = "artifact_gen",
     srcs = ["artifact_gen.cc"],
-    copts = select({
-        "@bazel_tools//src/conditions:windows": [
-            "/std:c++17",
-        ],
-        "//conditions:default": [
-            "-std=c++17",
-        ],
-    }),
     deps = [
         ":extract_metadata_from_bazel_xml",
         ":metadata_for_wrapped_languages",
@@ -103,6 +104,7 @@ cc_binary(
 cc_binary(
     name = "gen_upb_api_from_bazel",
     srcs = ["gen_upb_api_from_bazel.cc"],
+    copts = COPTS,
     deps = [
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/flags:parse",
