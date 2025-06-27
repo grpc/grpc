@@ -96,14 +96,8 @@ namespace grpc_core {
 class StaticDataCertificateProvider final
     : public grpc_tls_certificate_provider {
  public:
-  // TODO(gtcooke94) - Remove duplicate ctors and change all instances to the
-  // ctor with spiffe_bundle_map_path
   StaticDataCertificateProvider(std::string root_certificate,
                                 PemKeyCertPairList pem_key_cert_pairs);
-
-  StaticDataCertificateProvider(std::string root_certificate,
-                                PemKeyCertPairList pem_key_cert_pairs,
-                                SpiffeBundleMap* spiffe_bundle_map);
 
   ~StaticDataCertificateProvider() override;
 
