@@ -10356,7 +10356,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - test/core/test_util/scoped_env_var.h
   src:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
