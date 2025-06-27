@@ -82,6 +82,14 @@ cc_library(
 cc_binary(
     name = "artifact_gen",
     srcs = ["artifact_gen.cc"],
+    copts = select({
+        "@bazel_tools//src/conditions:windows": [
+            "/std:c++17",
+        ],
+        "//conditions:default": [
+            "-std=c++17",
+        ],
+    }),
     deps = [
         ":extract_metadata_from_bazel_xml",
         ":metadata_for_wrapped_languages",
