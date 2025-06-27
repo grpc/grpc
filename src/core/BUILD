@@ -8099,6 +8099,7 @@ grpc_cc_library(
         "mpsc",
         "ping_promise",
         "sync",
+        "transport_common",
         ":match_promise",
         ":poll",
         ":slice",
@@ -8176,6 +8177,20 @@ grpc_cc_library(
         "stats_data",
         "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "transport_common",
+    srcs = [
+        "ext/transport/chttp2/transport/transport_common.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/transport_common.h",
+    ],
+    external_deps = [
+    ],
+    deps = [
     ],
 )
 

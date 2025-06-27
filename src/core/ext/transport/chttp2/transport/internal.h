@@ -57,6 +57,7 @@
 #include "src/core/ext/transport/chttp2/transport/ping_abuse_policy.h"
 #include "src/core/ext/transport/chttp2/transport/ping_callbacks.h"
 #include "src/core/ext/transport/chttp2/transport/ping_rate_policy.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/ext/transport/chttp2/transport/write_size_policy.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
@@ -832,10 +833,6 @@ void grpc_chttp2_settings_timeout(
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
 #define MAX_SIZE_T (~(size_t)0)
-
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRING "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
-#define GRPC_CHTTP2_CLIENT_CONNECT_STRLEN \
-  (sizeof(GRPC_CHTTP2_CLIENT_CONNECT_STRING) - 1)
 
 #define GRPC_CHTTP2_IF_TRACING(severity) \
   LOG_IF(severity, GRPC_TRACE_FLAG_ENABLED(http))
