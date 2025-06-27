@@ -74,6 +74,8 @@
   default: true
 - name: pollset_alternative
   default: false
+- name: prioritize_finished_requests
+  default: false
 - name: promise_based_http2_client_transport
   default: false
 - name: promise_based_http2_server_transport

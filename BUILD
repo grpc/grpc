@@ -622,6 +622,7 @@ GRPC_XDS_TARGETS = [
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
+    "//src/core:call_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -873,6 +874,7 @@ grpc_cc_library(
     external_deps = [
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     tags = [
         "avoid_dep",
@@ -1039,9 +1041,9 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/types:span",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:message",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
     ],
     deps = [
         "envoy_config_rbac_upb",
@@ -1173,9 +1175,9 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:message",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/message",
     ],
     standalone = True,
     visibility = ["//visibility:public"],
@@ -1223,6 +1225,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/time",
+        "absl/types:span",
         "absl/functional:any_invocable",
     ],
     tags = [
@@ -1257,14 +1260,18 @@ grpc_cc_library(
         "absl/container:flat_hash_set",
         "absl/container:inlined_vector",
         "absl/functional:function_ref",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "channelz_upb",
         "config_vars",
         "exec_ctx",
         "gpr",
         "grpc_public_hdrs",
         "grpc_trace",
         "parse_address",
+        "protobuf_any_upb",
         "ref_counted_ptr",
         "sockaddr_utils",
         "uri",
@@ -1285,6 +1292,7 @@ grpc_cc_library(
         "//src/core:sync",
         "//src/core:time",
         "//src/core:time_precise",
+        "//src/core:upb_utils",
         "//src/core:useful",
     ],
 )
@@ -1450,7 +1458,6 @@ grpc_cc_library(
         "//src/core:lib/iomgr/pollset.h",
         "//src/core:lib/iomgr/pollset_set_windows.h",
         "//src/core:lib/iomgr/pollset_windows.h",
-        "//src/core:lib/iomgr/python_util.h",
         "//src/core:lib/iomgr/resolve_address.h",
         "//src/core:lib/iomgr/resolve_address_impl.h",
         "//src/core:lib/iomgr/resolve_address_posix.h",
@@ -1498,6 +1505,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
     ],
     linkopts = select({
@@ -1778,6 +1786,7 @@ grpc_cc_library(
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_fwd",
         "//src/core:channel_stack_type",
+        "//src/core:channelz_property_list",
         "//src/core:closure",
         "//src/core:connection_quota",
         "//src/core:connectivity_state",
@@ -1889,6 +1898,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time",
+        "absl/types:span",
         "absl/utility",
         "madler_zlib",
     ],
@@ -2210,6 +2220,7 @@ grpc_cc_library(
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
+        "absl/types:span",
     ],
     public_hdrs = GRPC_PUBLIC_HDRS,
     visibility = ["//visibility:public"],
@@ -2312,8 +2323,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/log:log",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     visibility = ["//bazel:tsi"],
     deps = [
@@ -2330,8 +2341,8 @@ grpc_cc_library(
         "libssl",
         "libcrypto",
         "absl/strings",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:tsi"],
@@ -2378,8 +2389,8 @@ grpc_cc_library(
         "absl/strings:str_format",
         "absl/synchronization",
         "absl/memory",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "protobuf_headers",
         "absl/container:inlined_vector",
     ],
@@ -2470,8 +2481,8 @@ grpc_cc_library(
         "absl/log:absl_check",
         "absl/log:absl_log",
         "absl/memory",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
         "absl/strings:str_format",
         "protobuf_headers",
     ],
@@ -2653,8 +2664,8 @@ grpc_cc_library(
         "absl/log:log",
         "absl/strings",
         "absl/time",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
     ],
     public_hdrs = [
         "include/grpcpp/ext/orca_service.h",
@@ -3071,6 +3082,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
@@ -3592,7 +3604,7 @@ grpc_cc_library(
         "//src/core:load_balancing/oob_backend_metric_internal.h",
     ],
     external_deps = [
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/mem",
         "absl/base:core_headers",
         "absl/log",
         "absl/log:check",
@@ -4110,7 +4122,7 @@ grpc_cc_library(
         "//src/core:tsi/alts/handshaker/alts_tsi_utils.h",
     ],
     external_deps = [
-        "@com_google_protobuf//upb:mem",
+        "@com_google_protobuf//upb/mem",
         "absl/log",
         "absl/log:check",
         "absl/strings",
@@ -4373,11 +4385,11 @@ grpc_cc_library(
         "absl/status:statusor",
         "absl/strings",
         "absl/strings:str_format",
-        "@com_google_protobuf//upb:base",
-        "@com_google_protobuf//upb:mem",
-        "@com_google_protobuf//upb:text",
-        "@com_google_protobuf//upb:json",
-        "@com_google_protobuf//upb:reflection",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/text",
+        "@com_google_protobuf//upb/json",
+        "@com_google_protobuf//upb/reflection",
     ],
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
@@ -4797,6 +4809,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:tcp_tracer",
         "//src/core:time",
+        "//src/core:transport_common",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
@@ -5165,6 +5178,36 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "rls_config_upbdefs",
     deps = ["//src/proto/grpc/lookup/v1:rls_config_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_upb",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:channelz_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "channelz_property_list_upb",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "channelz_property_list_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:property_list_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "promise_upb",
+    deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "promise_upbdefs",
+    deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [

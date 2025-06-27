@@ -207,19 +207,21 @@ Json ParticipantBitmaskToJson(uint64_t mask) {
 Party::~Party() {}
 
 void Party::ToJson(absl::AnyInvocable<void(Json::Object)> f) {
-  auto event_engine =
-      arena_->GetContext<grpc_event_engine::experimental::EventEngine>();
-  CHECK(event_engine != nullptr);
-  event_engine->Run([f = std::move(f), self = Ref()]() mutable {
-    self->Spawn(
-        "get-json",
-        [f = std::move(f), self]() mutable {
-          return [f = std::move(f), self]() mutable {
-            f(self->ToJsonLocked());
-            return absl::OkStatus();
-          };
-        },
-        [](absl::Status) {});
+  Spawn(
+      "get-json",
+      [f = std::move(f), self = Ref()]() mutable {
+        return [f = std::move(f), self]() mutable {
+          f(self->ToJsonLocked());
+          return absl::OkStatus();
+        };
+      },
+      [](absl::Status) {});
+}
+
+void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
+  ToJson([name = std::move(name),
+          sink = std::move(sink)](Json::Object obj) mutable {
+    sink.AddAdditionalInfo(std::move(name), std::move(obj));
   });
 }
 

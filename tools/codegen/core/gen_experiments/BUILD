@@ -14,6 +14,8 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test")
 
+# This library generates experiment header and source files for RPC frameworks.
+# To ensure its usability for other RPC frameworks, avoid adding any gRPC-specific dependencies.
 grpc_cc_library(
     name = "experiments_compiler",
     srcs = ["experiments_compiler.cc"],
@@ -26,6 +28,7 @@ grpc_cc_library(
         "absl/strings",
         "absl/strings:str_format",
         "absl/time:time",
+        "absl/container:flat_hash_map",
         "yaml-cpp",
     ],
     visibility = ["//visibility:public"],
@@ -38,6 +41,7 @@ grpc_cc_test(
         "gtest",
         "absl/log:log",
         "absl/status",
+        "absl/container:flat_hash_map",
     ],
     deps = [
         ":experiments_compiler",

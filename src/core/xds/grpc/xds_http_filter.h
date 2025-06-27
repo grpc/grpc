@@ -24,6 +24,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "src/core/call/interception_chain.h"
+#include "src/core/filter/blackboard.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_fwd.h"
 #include "src/core/util/json/json.h"
@@ -118,6 +119,12 @@ class XdsHttpFilterImpl {
   // Currently used only on the client side.
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config) const = 0;
+
+  // Adds state to new_blackboard if needed for the specified filter
+  // config.  Copies existing state from old_blackboard as appropriate.
+  virtual void UpdateBlackboard(const FilterConfig& /*hcm_filter_config*/,
+                                const Blackboard* /*old_blackboard*/,
+                                Blackboard* /*new_blackboard*/) const {}
 
   // Returns true if the filter is supported on clients; false otherwise
   virtual bool IsSupportedOnClients() const = 0;

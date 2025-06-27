@@ -361,11 +361,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
 
-  event_engine.reset();
+  CHECK(channelz_socket == nullptr);
 
-  if (channelz_socket != nullptr) {
-    channelz_socket.reset();
-  }
+  event_engine.reset();
 
   grpc_slice_buffer_destroy(&qbuf);
 
@@ -471,27 +469,6 @@ static void read_channel_args(grpc_chttp2_transport* t,
         grpc_core::Clamp(*max_requests_per_read, 1, 10000);
   } else {
     t->max_requests_per_read = 32;
-  }
-
-  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
-          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
-    t->channelz_socket =
-        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::string(grpc_endpoint_get_local_address(t->ep.get())),
-            std::string(t->peer_string.as_string_view()),
-            absl::StrCat(t->GetTransportName(), " ",
-                         t->peer_string.as_string_view()),
-            channel_args
-                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
-    // Checks channelz_socket, so must be initialized after.
-    t->channelz_data_source =
-        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(t);
-    auto epte = QueryExtension<ChannelzExtension>(
-        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
-            t->ep.get()));
-    if (epte != nullptr) {
-      epte->SetSocketNode(t->channelz_socket);
-    }
   }
 
   t->ack_pings = channel_args.GetBool("grpc.http2.ack_pings").value_or(true);
@@ -629,7 +606,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                   .Set("ping_on_rst_stream_percent",
                        t->ping_on_rst_stream_percent)
                   .Set("last_window_update", t->last_window_update_time)
-                  .Set("settings", t->settings.ToJsonObject())
+                  .Set("settings", t->settings.ChannelzProperties())
                   .Set("flow_control",
                        t->flow_control.stats().ChannelzProperties())
                   .Set("ping_rate_policy",
@@ -828,6 +805,26 @@ grpc_chttp2_transport::grpc_chttp2_transport(
           ? 0
           : CLOSURE_BARRIER_MAY_COVER_WRITE;
 #endif
+
+  if (channel_args.GetBool(GRPC_ARG_ENABLE_CHANNELZ)
+          .value_or(GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    channelz_socket =
+        grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
+            std::string(grpc_endpoint_get_local_address(ep.get())),
+            std::string(peer_string.as_string_view()),
+            absl::StrCat(GetTransportName(), " ", peer_string.as_string_view()),
+            channel_args
+                .GetObjectRef<grpc_core::channelz::SocketNode::Security>());
+    // Checks channelz_socket, so must be initialized after.
+    channelz_data_source =
+        std::make_unique<grpc_chttp2_transport::ChannelzDataSource>(this);
+    auto epte = QueryExtension<ChannelzExtension>(
+        grpc_event_engine::experimental::grpc_get_wrapped_event_engine_endpoint(
+            ep.get()));
+    if (epte != nullptr) {
+      epte->SetSocketNode(channelz_socket);
+    }
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
@@ -836,6 +833,9 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   t->destroying = 1;
   close_transport_locked(t.get(), GRPC_ERROR_CREATE("Transport destroyed"));
   t->memory_owner.Reset();
+  if (t->channelz_socket != nullptr) {
+    t->channelz_socket.reset();
+  }
 }
 
 void grpc_chttp2_transport::Orphan() {
@@ -1200,7 +1200,6 @@ static void write_action(
   // Choose max_frame_size as the preferred rx crypto frame size indicated by
   // the peer.
   grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args;
-  std::vector<size_t> write_metrics;
   int max_frame_size =
       t->settings.peer().preferred_receive_crypto_message_size();
   // Note: max frame size is 0 if the remote peer does not support adjusting the
@@ -1217,9 +1216,9 @@ static void write_action(
     if (ee_ep != nullptr) {
       auto telemetry_info = ee_ep->GetTelemetryInfo();
       if (telemetry_info != nullptr) {
-        write_metrics = telemetry_info->AllWriteMetrics();
+        auto metrics_set = telemetry_info->GetFullMetricsSet();
         args.set_metrics_sink(WriteEventSink(
-            write_metrics,
+            std::move(metrics_set),
             {WriteEvent::kSendMsg, WriteEvent::kScheduled, WriteEvent::kSent,
              WriteEvent::kAcked},
             [tcp_call_tracers = std::move(tcp_call_tracers),

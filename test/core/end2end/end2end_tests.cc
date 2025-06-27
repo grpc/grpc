@@ -201,7 +201,7 @@ std::optional<std::string> CoreEnd2endTest::IncomingCall::GetInitialMetadata(
 void CoreEnd2endTest::ForceInitialized() {
   if (!initialized_) {
     initialized_ = true;
-    InitServer(ChannelArgs());
+    InitServer(DefaultServerArgs());
     InitClient(ChannelArgs());
   }
 }

@@ -131,8 +131,10 @@ class ClientCompressionFilter final
 
   explicit ClientCompressionFilter(const ChannelArgs& args)
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
-        compression_engine_(args) {}
-  ~ClientCompressionFilter() override { ResetDataSource(); }
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ClientCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("clientCompressionFilter",
@@ -181,8 +183,10 @@ class ServerCompressionFilter final
 
   explicit ServerCompressionFilter(const ChannelArgs& args)
       : channelz::DataSource(args.GetObjectRef<channelz::BaseNode>()),
-        compression_engine_(args) {}
-  ~ServerCompressionFilter() override { ResetDataSource(); }
+        compression_engine_(args) {
+    SourceConstructed();
+  }
+  ~ServerCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
     sink.AddAdditionalInfo("serverCompressionFilter",

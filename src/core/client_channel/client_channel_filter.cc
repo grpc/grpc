@@ -980,20 +980,13 @@ class ClientChannelFilter::ClientChannelControlHelper final
     return **chand_->owning_stack_->stats_plugin_group;
   }
 
-  void AddTraceEvent(TraceSeverity, absl::string_view message) override
+  void AddTraceEvent(absl::string_view message) override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(*chand_->work_serializer_) {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
     GRPC_CHANNELZ_LOG(chand_->channelz_node_) << std::string(message);
   }
 
  private:
-  static channelz::ChannelTrace::Severity ConvertSeverityEnum(
-      TraceSeverity severity) {
-    if (severity == TRACE_INFO) return channelz::ChannelTrace::Info;
-    if (severity == TRACE_WARNING) return channelz::ChannelTrace::Warning;
-    return channelz::ChannelTrace::Error;
-  }
-
   ClientChannelFilter* chand_;
 };
 
@@ -1452,18 +1445,20 @@ void ClientChannelFilter::UpdateServiceConfigInDataPlaneLocked(
       !new_args.WantMinimalStack() &&
       new_args.GetBool(GRPC_ARG_ENABLE_RETRIES).value_or(true);
   // Construct dynamic filter stack.
+  auto new_blackboard = MakeRefCounted<Blackboard>();
   std::vector<const grpc_channel_filter*> filters =
-      config_selector->GetFilters();
+      config_selector->GetFilters(blackboard_.get(), new_blackboard.get());
   if (enable_retries) {
+    RetryFilter::UpdateBlackboard(*service_config, blackboard_.get(),
+                                  new_blackboard.get());
     filters.push_back(&RetryFilter::kVtable);
   } else {
     filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
-  auto new_blackboard = MakeRefCounted<Blackboard>();
-  RefCountedPtr<DynamicFilters> dynamic_filters = DynamicFilters::Create(
-      new_args, std::move(filters), blackboard_.get(), new_blackboard.get());
-  CHECK(dynamic_filters != nullptr);
   blackboard_ = std::move(new_blackboard);
+  RefCountedPtr<DynamicFilters> dynamic_filters =
+      DynamicFilters::Create(new_args, std::move(filters), blackboard_.get());
+  CHECK(dynamic_filters != nullptr);
   // Grab data plane lock to update service config.
   //
   // We defer unreffing the old values (and deallocating memory) until
