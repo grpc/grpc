@@ -579,6 +579,7 @@ grpc_cc_library(
     name = "unique_type_name",
     hdrs = ["util/unique_type_name.h"],
     external_deps = ["absl/strings"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "useful",
         "//:gpr_platform",
@@ -782,6 +783,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/context.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "down_cast",
         "//:gpr",
@@ -796,6 +798,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     public_hdrs = ["lib/promise/map.h"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "poll",
         "promise_like",
@@ -860,6 +863,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/arena_promise.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "arena",
         "construct_destruct",
@@ -1102,6 +1106,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/seq.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "basic_seq",
         "poll",
@@ -1149,6 +1154,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/activity.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "atomic_utils",
         "construct_destruct",
@@ -1172,6 +1178,7 @@ grpc_cc_library(
         "lib/promise/exec_ctx_wakeup_scheduler.h",
     ],
     external_deps = ["absl/status"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "closure",
         "error",
@@ -1441,6 +1448,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     public_hdrs = ["util/ref_counted.h"],
+    visibility = ["//bazel:ref_counted_ptr"],
     deps = [
         "atomic_utils",
         "down_cast",
@@ -3297,6 +3305,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/pollset_set.h",
     ],
+    visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
         "iomgr_fwd",
         "//:gpr",
@@ -6104,6 +6113,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/message",
     ],
     tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
     deps = [
         "certificate_provider_factory",
         "certificate_provider_registry",
@@ -9778,6 +9788,7 @@ grpc_cc_library(
     hdrs = [
         "call/metadata.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "error_utils",
         "metadata_batch",
