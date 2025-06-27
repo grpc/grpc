@@ -85,9 +85,6 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
-#ifndef GRPC_ANDROID
-using http2::Http2ClientTransport;
-#endif  // GRPC_ANDROID
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
@@ -194,7 +191,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
       Ref().release();  // Ref held by OnReceiveSettings()
       // TODO(akshitpatel) : [PH2][P1] : Figure this OnReceiveSettings part out
       result_->channel_args = std::move((*result)->args);
-      result_->transport = new Http2ClientTransport(
+      result_->transport = new http2::Http2ClientTransport(
           std::move(promise_endpoint), (*result)->args, event_engine_ptr);
       DCHECK_NE(result_->transport, nullptr);
       timer_handle_ = event_engine_->RunAfter(
