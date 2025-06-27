@@ -26,9 +26,20 @@
 namespace grpc_core::chaotic_good {
 
 struct TransportContext : public RefCounted<TransportContext> {
+  // A high-precision clock usable by the transport.
+  class Clock {
+   public:
+    virtual uint64_t Now() = 0;
+
+   protected:
+    ~Clock() = default;
+  };
+
   TransportContext(const ChannelArgs& args,
-                   RefCountedPtr<channelz::SocketNode> socket_node)
-      : event_engine(
+                   RefCountedPtr<channelz::SocketNode> socket_node,
+                   Clock* clock = DefaultClock())
+      : clock(clock),
+        event_engine(
             args.GetObjectRef<grpc_event_engine::experimental::EventEngine>()),
         stats_plugin_group(
             args.GetObjectRef<GlobalStatsPluginRegistry::StatsPluginGroup>()),
@@ -37,12 +48,27 @@ struct TransportContext : public RefCounted<TransportContext> {
   }
   TransportContext(std::shared_ptr<grpc_event_engine::experimental::EventEngine>
                        event_engine,
-                   RefCountedPtr<channelz::SocketNode> socket_node)
-      : event_engine(std::move(event_engine)),
+                   RefCountedPtr<channelz::SocketNode> socket_node,
+                   Clock* clock = DefaultClock())
+      : clock(clock),
+        event_engine(std::move(event_engine)),
         stats_plugin_group(nullptr),
         socket_node(std::move(socket_node)) {
     CHECK(this->event_engine != nullptr);
   }
+
+  static Clock* DefaultClock() {
+    class ClockImpl final : public Clock {
+     public:
+      uint64_t Now() override {
+        return std::chrono::steady_clock::now().time_since_epoch().count();
+      }
+    };
+    static ClockImpl clock;
+    return &clock;
+  }
+
+  Clock* const clock;
   const std::shared_ptr<grpc_event_engine::experimental::EventEngine>
       event_engine;
   const std::shared_ptr<GlobalStatsPluginRegistry::StatsPluginGroup>

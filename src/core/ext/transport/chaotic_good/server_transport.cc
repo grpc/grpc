@@ -113,12 +113,13 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallBody(
     uint32_t stream_id, CallInitiator call_initiator,
     std::shared_ptr<TcpCallTracer> call_tracer) {
   // Continuously send client frame with client to server messages.
-  return ForEach(MessagesFrom(call_initiator),
-                 [this, stream_id, call_tracer = std::move(call_tracer)](
-                     MessageHandle message) mutable {
-                   return message_chunker_.Send(std::move(message), stream_id,
-                                                call_tracer, outgoing_frames_);
-                 });
+  return ForEach(
+      MessagesFrom(call_initiator),
+      [this, stream_id,
+       call_tracer = std::move(call_tracer)](MessageHandle message) mutable {
+        return message_chunker_.Send(std::move(message), stream_id, ctx_->clock,
+                                     call_tracer, outgoing_frames_);
+      });
 }
 
 auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
@@ -140,7 +141,9 @@ auto ChaoticGoodServerTransport::StreamDispatch::SendCallInitialMetadataAndBody(
               frame.stream_id = stream_id;
               return TrySeq(
                   outgoing_frames_.Send(
-                      OutgoingFrame{std::move(frame), call_tracer}, 1),
+                      OutgoingFrame{ctx_->clock->Now(), std::move(frame),
+                                    call_tracer},
+                      1),
                   SendCallBody(stream_id, call_initiator, call_tracer));
             },
             []() { return StatusFlag(true); });
@@ -165,13 +168,13 @@ auto ChaoticGoodServerTransport::StreamDispatch::CallOutboundLoop(
                 return Empty{};
               }),
           call_initiator.PullServerTrailingMetadata(),
-          [outgoing_frames = outgoing_frames_, stream_id,
-           call_tracer](ServerMetadataHandle md) mutable {
+          [outgoing_frames = outgoing_frames_, stream_id, call_tracer,
+           clock = ctx_->clock](ServerMetadataHandle md) mutable {
             ServerTrailingMetadataFrame frame;
             frame.body = ServerMetadataProtoFromGrpc(*md);
             frame.stream_id = stream_id;
             return outgoing_frames.Send(
-                OutgoingFrame{std::move(frame), call_tracer}, 1);
+                OutgoingFrame{clock->Now(), std::move(frame), call_tracer}, 1);
           }));
 }
 

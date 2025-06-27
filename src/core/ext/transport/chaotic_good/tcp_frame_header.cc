@@ -26,8 +26,9 @@ void TcpFrameHeader::Serialize(uint8_t* data) const {
   DCHECK_EQ(payload_tag >> 56, 0u) << payload_tag;
   WriteLittleEndianUint64(
       static_cast<uint64_t>(header.type) | (payload_tag << 8), data);
-  WriteLittleEndianUint32(header.stream_id, data + 8);
-  WriteLittleEndianUint32(header.payload_length, data + 12);
+  WriteLittleEndianUint64(header.send_timestamp, data + 8);
+  WriteLittleEndianUint32(header.stream_id, data + 16);
+  WriteLittleEndianUint32(header.payload_length, data + 20);
 }
 
 // Parses a frame header from a buffer.
@@ -36,8 +37,9 @@ absl::StatusOr<TcpFrameHeader> TcpFrameHeader::Parse(const uint8_t* data) {
   const uint64_t type_and_tag = ReadLittleEndianUint64(data);
   tcp_header.header.type = static_cast<FrameType>(type_and_tag & 0xff);
   tcp_header.payload_tag = type_and_tag >> 8;
-  tcp_header.header.stream_id = ReadLittleEndianUint32(data + 8);
-  tcp_header.header.payload_length = ReadLittleEndianUint32(data + 12);
+  tcp_header.header.send_timestamp = ReadLittleEndianUint64(data + 8);
+  tcp_header.header.stream_id = ReadLittleEndianUint32(data + 16);
+  tcp_header.header.payload_length = ReadLittleEndianUint32(data + 20);
   return tcp_header;
 }
 
@@ -56,16 +58,14 @@ std::string TcpFrameHeader::ToString() const {
 
 void TcpDataFrameHeader::Serialize(uint8_t* data) const {
   WriteLittleEndianUint64(payload_tag, data);
-  WriteLittleEndianUint64(send_timestamp, data + 8);
-  WriteLittleEndianUint32(payload_length, data + 16);
+  WriteLittleEndianUint32(payload_length, data + 8);
 }
 
 absl::StatusOr<TcpDataFrameHeader> TcpDataFrameHeader::Parse(
     const uint8_t* data) {
   TcpDataFrameHeader header;
   header.payload_tag = ReadLittleEndianUint64(data);
-  header.send_timestamp = ReadLittleEndianUint64(data + 8);
-  header.payload_length = ReadLittleEndianUint32(data + 16);
+  header.payload_length = ReadLittleEndianUint32(data + 8);
   return header;
 }
 
