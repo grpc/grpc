@@ -39,7 +39,6 @@ namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
 
-
 }  // namespace
 
 bool SpiffeBundleMapEnabled() {
@@ -125,7 +124,7 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
           "be specified");
     }
   }
-  }
+}
 
 //
 // FileWatcherCertificateProviderFactory
