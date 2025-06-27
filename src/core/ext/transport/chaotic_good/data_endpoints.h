@@ -472,7 +472,7 @@ class Endpoint final {
     // TODO(ctiller): Inline members into EndpointContext.
     RefCountedPtr<OutputBuffers> output_buffers;
     RefCountedPtr<InputQueue> input_queues;
-    RefCountedPtr<SecureFrameQueue> secure_frame_queue;
+    SingleSetRefCountedPtr<SecureFrameQueue> secure_frame_queue;
     std::shared_ptr<PromiseEndpoint> endpoint;
     std::shared_ptr<TcpZTraceCollector> ztrace_collector;
     TransportContextPtr transport_ctx;
