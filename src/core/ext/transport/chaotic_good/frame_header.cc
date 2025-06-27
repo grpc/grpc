@@ -26,7 +26,8 @@ namespace chaotic_good {
 
 std::string FrameHeader::ToString() const {
   return absl::StrCat("[type:", type, " stream_id:", stream_id,
-                      " payload_length:", payload_length, "]");
+                      " payload_length:", payload_length,
+                      " send_timestamp:", send_timestamp, "]");
 }
 
 std::string FrameTypeString(FrameType type) {

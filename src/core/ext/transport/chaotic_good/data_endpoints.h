@@ -41,14 +41,6 @@ namespace chaotic_good {
 
 namespace data_endpoints_detail {
 
-class Clock {
- public:
-  virtual uint64_t Now() = 0;
-
- protected:
-  ~Clock() = default;
-};
-
 class SendRate {
  public:
   explicit SendRate(
@@ -91,11 +83,10 @@ class SendRate {
 class OutputBuffers final
     : public DualRefCounted<OutputBuffers, NonPolymorphicRefCount> {
  public:
-  OutputBuffers(Clock* clock, uint32_t encode_alignment,
+  OutputBuffers(uint32_t encode_alignment,
                 std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                 std::string scheduler_config, TransportContextPtr ctx)
       : encode_alignment_(encode_alignment),
-        clock_(clock),
         ztrace_collector_(std::move(ztrace_collector)),
         ctx_(std::move(ctx)),
         scheduling_party_(Party::Make(arena_)),
@@ -250,7 +241,6 @@ class OutputBuffers final
   MpscProbe<OutgoingFrame> mpsc_probe_ ABSL_GUARDED_BY(mu_reader_data_);
   std::vector<RefCountedPtr<Reader>> readers_ ABSL_GUARDED_BY(mu_reader_data_);
   const uint32_t encode_alignment_;
-  Clock* const clock_;
   const std::shared_ptr<TcpZTraceCollector> ztrace_collector_;
   TransportContextPtr ctx_;
   RefCountedPtr<Arena> arena_ = [ctx = ctx_]() {
@@ -447,7 +437,7 @@ class SecureFrameQueue
 class Endpoint final {
  public:
   Endpoint(uint32_t id, uint32_t encode_alignment, uint32_t decode_alignment,
-           Clock* clock, RefCountedPtr<OutputBuffers> output_buffers,
+           RefCountedPtr<OutputBuffers> output_buffers,
            RefCountedPtr<InputQueue> input_queues,
            PendingConnection pending_connection, bool enable_tracing,
            TransportContextPtr ctx,
@@ -477,7 +467,6 @@ class Endpoint final {
     std::shared_ptr<TcpZTraceCollector> ztrace_collector;
     TransportContextPtr transport_ctx;
     RefCountedPtr<Arena> arena;
-    Clock* clock;
     RefCountedPtr<OutputBuffers::Reader> reader;
     Timestamp last_metrics_update = Timestamp::ProcessEpoch();
   };
@@ -502,8 +491,7 @@ class DataEndpoints final : public channelz::DataSource {
                          TransportContextPtr ctx, uint32_t encode_alignment,
                          uint32_t decode_alignment,
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
-                         bool enable_tracing, std::string scheduler_config,
-                         data_endpoints_detail::Clock* clock = DefaultClock());
+                         bool enable_tracing, std::string scheduler_config);
   ~DataEndpoints() { ResetDataSource(); }
 
   void AddData(channelz::DataSink sink) override;
@@ -529,17 +517,6 @@ class DataEndpoints final : public channelz::DataSource {
   }
 
  private:
-  static data_endpoints_detail::Clock* DefaultClock() {
-    class ClockImpl final : public data_endpoints_detail::Clock {
-     public:
-      uint64_t Now() override {
-        return std::chrono::steady_clock::now().time_since_epoch().count();
-      }
-    };
-    static ClockImpl clock;
-    return &clock;
-  }
-
   RefCountedPtr<data_endpoints_detail::OutputBuffers> output_buffers_;
   RefCountedPtr<data_endpoints_detail::InputQueue> input_queues_;
   Mutex mu_;
