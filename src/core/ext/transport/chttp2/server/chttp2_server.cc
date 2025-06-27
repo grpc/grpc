@@ -233,7 +233,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
                                      std::move((*result)->endpoint), false)
             ->Ref();
     grpc_error_handle channel_init_err =
-        connection_->listener_state_->server()->SetupTransport(
+        connection_->listener_state_->SetupTransport(
             transport.get(), accepting_pollset_, (*result)->args);
     if (channel_init_err.ok()) {
       // Use notify_on_receive_settings callback to enforce the
@@ -244,7 +244,7 @@ void NewChttp2ServerListener::ActiveConnection::HandshakingState::
       GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
                         grpc_schedule_on_exec_ctx);
       grpc_closure* on_close = &connection_->on_close_;
-      // Refs helds by OnClose()
+      // Refs held by OnClose()
       connection_->Ref().release();
       grpc_chttp2_transport_start_reading(
           transport.get(), (*result)->read_buffer.c_slice_buffer(),
