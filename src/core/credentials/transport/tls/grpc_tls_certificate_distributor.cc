@@ -23,24 +23,10 @@
 #include "absl/log/check.h"
 #include "absl/status/status.h"
 #include "src/core/credentials/transport/tls/spiffe_utils.h"
-#include "src/core/util/match.h"
+#include "src/core/tsi/ssl_transport_security.h"
 
 bool grpc_tls_certificate_distributor::CertificateInfo::AreRootsEmpty() {
-  // The existing code prior to using std::variant with SpiffeBundleMap heavily
-  // depends on the string pem root representation being the empty string as
-  // equivalent to unset/default.  We need a way to safely see if the variant
-  // has essentially been default constructed.
-  if (roots == nullptr) {
-    return true;
-  }
-  return Match(
-      *roots,
-      [&](const absl::string_view& pem_root_certs) {
-        return pem_root_certs.empty();
-      },
-      [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-        return spiffe_bundle_map.size() == 0;
-      });
+  return IsRootCertInfoEmpty(roots.get());
 }
 
 void grpc_tls_certificate_distributor::SetKeyMaterials(

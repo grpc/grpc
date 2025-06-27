@@ -2339,21 +2339,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
-bool IsRootCertInfoEmpty(std::shared_ptr<RootCertInfo> root_cert_info) {
-  if (root_cert_info == nullptr) {
-    return true;
-  }
-  bool is_empty = true;
-  Match(
-      *root_cert_info,
-      [&](const std::string& pem_root_certs) {
-        is_empty = pem_root_certs.empty();
-      },
-      [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
-        is_empty = spiffe_bundle_map.size() == 0;
-      });
-  return is_empty;
-}
 
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
@@ -2831,6 +2816,20 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
   }
 
   return 0;  // Not found.
+}
+
+bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
+  if (root_cert_info == nullptr) {
+    return true;
+  }
+  return Match(
+      *root_cert_info,
+      [&](const std::string& pem_root_certs) {
+        return pem_root_certs.empty();
+      },
+      [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
+        return spiffe_bundle_map.size() == 0;
+      });
 }
 
 // --- Testing support. ---

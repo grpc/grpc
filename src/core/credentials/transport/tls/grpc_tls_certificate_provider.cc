@@ -47,8 +47,7 @@
 namespace grpc_core {
 namespace {
 
-absl::Status ValidateRootCertificates(
-    std::shared_ptr<RootCertInfo> root_cert_info) {
+absl::Status ValidateRootCertificates(const RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return absl::OkStatus();
   return Match(
       *root_cert_info,
@@ -122,7 +121,6 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
-    // std::optional<std::string> root_certificate;
     std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
@@ -175,8 +173,8 @@ UniqueTypeName StaticDataCertificateProvider::type() const {
 }
 
 absl::Status StaticDataCertificateProvider::ValidateCredentials() const {
-  absl::Status status = ValidateRootCertificates(
-      std::make_shared<RootCertInfo>(root_certificate_));
+  RootCertInfo root_cert_info(root_certificate_);
+  absl::Status status = ValidateRootCertificates(&root_cert_info);
   if (!status.ok()) {
     return status;
   }
@@ -257,10 +255,9 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     FileWatcherCertificateProvider::WatcherInfo& info =
         watcher_info_[cert_name];
-    if (!info.root_being_watched && root_being_watched) {
-      if (root_cert_info_ != nullptr) {
-        roots = root_cert_info_;
-      }
+    if (!info.root_being_watched && root_being_watched &&
+        !IsRootCertInfoEmpty(root_cert_info_.get())) {
+      roots = std::move(root_cert_info_);
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -307,7 +304,7 @@ UniqueTypeName FileWatcherCertificateProvider::type() const {
 
 absl::Status FileWatcherCertificateProvider::ValidateCredentials() const {
   MutexLock lock(&mu_);
-  absl::Status status = ValidateRootCertificates(root_cert_info_);
+  absl::Status status = ValidateRootCertificates(root_cert_info_.get());
   if (!status.ok()) {
     return status;
   }
@@ -354,7 +351,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   // If update has no value, but the existing root has a value, then the update
   // is a delete
   const bool is_root_update_a_delete =
-      root_cert_info == nullptr && root_cert_info_ != nullptr;
+      root_cert_info == nullptr && !IsRootCertInfoEmpty(root_cert_info_.get());
   // If the update has a value, see if the existing value is nullptr or has a
   // different value than the update.
   const bool did_root_change_value =
@@ -362,11 +359,7 @@ void FileWatcherCertificateProvider::ForceUpdate() {
       (root_cert_info_ == nullptr || *root_cert_info != *root_cert_info_);
   const bool root_changed = is_root_update_a_delete || did_root_change_value;
   if (root_changed) {
-    if (root_cert_info != nullptr) {
-      root_cert_info_ = std::move(root_cert_info);
-    } else {
-      root_cert_info_ = nullptr;
-    }
+    root_cert_info_ = std::move(root_cert_info);
   }
   const bool identity_cert_changed =
       (!pem_key_cert_pairs.has_value() && !pem_key_cert_pairs_.empty()) ||

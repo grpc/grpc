@@ -456,4 +456,6 @@ tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
 tsi_result tsi_ssl_get_cert_chain_contents(STACK_OF(X509) * peer_chain,
                                            tsi_peer_property* property);
 
+bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info);
+
 #endif  // GRPC_SRC_CORE_TSI_SSL_TRANSPORT_SECURITY_H
