@@ -330,7 +330,8 @@ class TestZTrace final : public ZTrace {
 
 class TestDataSource final : public DataSource {
  public:
-  TestDataSource(RefCountedPtr<BaseNode> node) : DataSource(std::move(node)) {
+  explicit TestDataSource(RefCountedPtr<BaseNode> node)
+      : DataSource(std::move(node)) {
     SourceConstructed();
   }
   ~TestDataSource() { SourceDestructing(); }
@@ -403,7 +404,7 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 
 class TestSubObjectDataSource final : public DataSource {
  public:
-  TestSubObjectDataSource(RefCountedPtr<BaseNode> node)
+  explicit TestSubObjectDataSource(RefCountedPtr<BaseNode> node)
       : DataSource(std::move(node)) {
     SourceConstructed();
   }
