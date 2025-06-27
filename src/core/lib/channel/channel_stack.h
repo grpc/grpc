@@ -189,7 +189,7 @@ struct grpc_channel_stack {
 
   class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
    public:
-    ChannelStackDataSource(
+    explicit ChannelStackDataSource(
         grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> node)
         : DataSource(std::move(node)) {
       SourceConstructed();
