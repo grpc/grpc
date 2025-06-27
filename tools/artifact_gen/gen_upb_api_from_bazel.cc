@@ -168,7 +168,7 @@ std::string GetUpbPath(std::string proto_path, const std::string& ext) {
 }
 
 std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
-  const std::vector<std::pair<std::string, std::string>> EXTERNAL_LINKS = {
+  const std::vector<std::pair<std::string, std::string>> kExternalLinks = {
       {"@com_google_protobuf//", "src/"},
       {"@com_google_googleapis//", ""},
       {"@com_github_cncf_xds//", ""},
@@ -176,7 +176,7 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
       {"@envoy_api//", ""},
       {"@opencensus_proto//", ""},
   };
-  for (const auto& link : EXTERNAL_LINKS) {
+  for (const auto& link : kExternalLinks) {
     if (absl::StartsWith(file, link.first)) {
       return link;
     }
@@ -186,23 +186,24 @@ std::pair<std::string, std::string> GetExternalLink(const std::string& file) {
 
 std::string GetBazelBinRootPath(
     const std::pair<std::string, std::string>& elink, const std::string& file) {
-  const std::string BAZEL_BIN_ROOT = "bazel-bin/";
+  const std::string kBazelBinRoot = "bazel-bin/";
   if (elink.first == "@com_google_protobuf//") {
     std::string name_part = std::filesystem::path(file).stem().string();
     // For upb generated files, we need to strip two extensions.
     name_part = std::filesystem::path(name_part).stem().string();
 
-    return absl::StrCat(BAZEL_BIN_ROOT, "external/",
-                        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
-                        "/src/google/protobuf/_virtual_imports/", name_part,
-                        "_proto/", file);
+    return absl::StrCat(
+        kBazelBinRoot, "external/",
+        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
+        "/src/google/protobuf/_virtual_imports/", name_part, "_proto/", file);
   }
   if (absl::StartsWith(elink.first, "@")) {
-    return absl::StrCat(BAZEL_BIN_ROOT, "external/",
-                        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}),
-                        "/", elink.second, file);
+    return absl::StrCat(
+        kBazelBinRoot, "external/",
+        absl::StrReplaceAll(elink.first, {{"@", ""}, {"//", ""}}), "/",
+        elink.second, file);
   } else {
-    return absl::StrCat(BAZEL_BIN_ROOT, file);
+    return absl::StrCat(kBazelBinRoot, file);
   }
 }
 
