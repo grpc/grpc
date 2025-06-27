@@ -38,15 +38,17 @@ namespace grpc_core {
 namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
-bool SpiffeBundleMapsEnabled() {
+
+
+}  // namespace
+
+bool SpiffeBundleMapEnabled() {
   auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
   if (!value.has_value()) return false;
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
   return parse_succeeded && parsed_value;
 }
-
-}  // namespace
 
 //
 // FileWatcherCertificateProviderFactory::Config
@@ -102,7 +104,7 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset");
   }
-  if (SpiffeBundleMapsEnabled()) {
+  if (SpiffeBundleMapEnabled()) {
     bool is_root_configured =
         (json.object().find("ca_certificate_file") != json.object().end()) ||
         (json.object().find("spiffe_bundle_map_file") != json.object().end());
@@ -114,15 +116,15 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
           "be specified");
     }
   } else {
-      spiffe_bundle_map_file_ = "";
-      if ((json.object().find("certificate_file") == json.object().end()) &&
-          (json.object().find("ca_certificate_file") == json.object().end())) {
-        errors->AddError(
-            "at least one of \"certificate_file\" and \"ca_certificate_file\" "
-            "must "
-            "be specified");
-      }
+    spiffe_bundle_map_file_ = "";
+    if ((json.object().find("certificate_file") == json.object().end()) &&
+        (json.object().find("ca_certificate_file") == json.object().end())) {
+      errors->AddError(
+          "at least one of \"certificate_file\" and \"ca_certificate_file\" "
+          "must "
+          "be specified");
     }
+  }
   }
 
 //
