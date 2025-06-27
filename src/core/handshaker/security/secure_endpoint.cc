@@ -517,6 +517,7 @@ static void endpoint_destroy(grpc_endpoint* secure_ep) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_mu.Lock();
   grpc_endpoint_destroy(ep->wrapped_ep);
+  ep->wrapped_ep = nullptr;
   ep->memory_owner.Reset();
   ep->read_mu.Unlock();
   SECURE_ENDPOINT_UNREF(ep, "destroy");
