@@ -31,14 +31,20 @@
 #include "src/core/config/core_configuration.h"
 #include "src/core/credentials/transport/tls/grpc_tls_certificate_provider.h"
 #include "src/core/util/down_cast.h"
+#include "src/core/util/env.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr absl::string_view kFileWatcherPlugin = "file_watcher";
-constexpr absl::string_view kSpiffeEnabledEnvVar =
-    "GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE";
+bool SpiffeBundleMapsEnabled() {
+  auto value = GetEnv("GRPC_EXPERIMENTAL_XDS_MTLS_SPIFFE");
+  if (!value.has_value()) return false;
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value->c_str(), &parsed_value);
+  return parse_succeeded && parsed_value;
+}
 
 }  // namespace
 
@@ -96,17 +102,28 @@ void FileWatcherCertificateProviderFactory::Config::JsonPostLoad(
         "fields \"certificate_file\" and \"private_key_file\" must be both set "
         "or both unset");
   }
-  bool is_root_configured =
-      (json.object().find("ca_certificate_file") != json.object().end()) ||
-      (json.object().find("spiffe_bundle_map_file") != json.object().end());
-  if ((json.object().find("certificate_file") == json.object().end()) &&
-      !is_root_configured) {
-    errors->AddError(
-        "at least one of \"certificate_file\" and a root "
-        "(\"ca_certificate_file\" or \"spiffe_bundle_map_file\") must "
-        "be specified");
+  if (SpiffeBundleMapsEnabled()) {
+    bool is_root_configured =
+        (json.object().find("ca_certificate_file") != json.object().end()) ||
+        (json.object().find("spiffe_bundle_map_file") != json.object().end());
+    if ((json.object().find("certificate_file") == json.object().end()) &&
+        !is_root_configured) {
+      errors->AddError(
+          "at least one of \"certificate_file\" and a root "
+          "(\"ca_certificate_file\" or \"spiffe_bundle_map_file\") must "
+          "be specified");
+    }
+  } else {
+      spiffe_bundle_map_file_ = "";
+      if ((json.object().find("certificate_file") == json.object().end()) &&
+          (json.object().find("ca_certificate_file") == json.object().end())) {
+        errors->AddError(
+            "at least one of \"certificate_file\" and \"ca_certificate_file\" "
+            "must "
+            "be specified");
+      }
+    }
   }
-}
 
 //
 // FileWatcherCertificateProviderFactory
