@@ -404,7 +404,7 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 
 class TestSubObjectDataSource final : public DataSource {
  public:
-  TestSubObjectDataSource(RefCountedPtr<BaseNode> node)
+  explicit TestSubObjectDataSource(RefCountedPtr<BaseNode> node)
       : DataSource(std::move(node)) {
     SourceConstructed();
   }
