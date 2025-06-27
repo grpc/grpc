@@ -504,7 +504,7 @@ class DataEndpoints final : public channelz::DataSource {
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
                          data_endpoints_detail::Clock* clock = DefaultClock());
-  ~DataEndpoints() { ResetDataSource(); }
+  ~DataEndpoints() { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override;
 

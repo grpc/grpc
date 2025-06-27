@@ -65,6 +65,7 @@ TcpFrameTransport::TcpFrameTransport(
     transport_framing_endpoint_extension->SetSendFrameCallback(
         control_endpoint_.SecureFrameWriterCallback());
   }
+  SourceConstructed();
 }
 
 auto TcpFrameTransport::WriteFrame(MpscQueued<OutgoingFrame> queued_frame) {
