@@ -46,7 +46,6 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/host_port.h"
-#include "src/core/util/match.h"
 #include "src/core/util/status_helper.h"
 
 namespace grpc_core {
@@ -532,9 +531,7 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
   }
   bool use_default_roots = !options_->watch_root_cert();
   grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair,
-      root_cert_info_ == nullptr || use_default_roots ? nullptr
-                                                      : root_cert_info_,
+      pem_key_cert_pair, use_default_roots ? nullptr : root_cert_info_,
       skip_server_certificate_verification,
       grpc_get_tsi_tls_version(options_->min_tls_version()),
       grpc_get_tsi_tls_version(options_->max_tls_version()), ssl_session_cache_,

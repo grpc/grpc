@@ -193,8 +193,8 @@ struct tsi_ssl_client_handshaker_options {
   // options as a shared_ptr.
   std::shared_ptr<grpc_core::experimental::CrlProvider> crl_provider;
 
-  const grpc_core::SpiffeBundleMap* spiffe_bundle_map = nullptr;
-
+  // root_cert_info is either the string containing the PEM encoding of the
+  // client root certificates or a SPIFFE bundle map.
   std::shared_ptr<RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed
@@ -371,6 +371,9 @@ struct tsi_ssl_server_handshaker_options {
 
   const grpc_core::SpiffeBundleMap* spiffe_bundle_map = nullptr;
 
+  // root_cert_info is either the string containing the PEM encoding of the
+  // server root certificates or a SPIFFE bundle map. This parameter may be NULL
+  // if the server does not want the client to be authenticated with SSL.
   std::shared_ptr<RootCertInfo> root_cert_info;
 
   // TODO(gtcooke94) this ctor is not needed

@@ -40,7 +40,6 @@
 #include "absl/strings/str_split.h"
 #include "src/core/config/config_vars.h"
 #include "src/core/credentials/transport/tls/load_system_roots.h"
-#include "src/core/credentials/transport/tls/spiffe_utils.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/transport/auth_context.h"
@@ -48,7 +47,6 @@
 #include "src/core/tsi/transport_security.h"
 #include "src/core/util/host_port.h"
 #include "src/core/util/load_file.h"
-#include "src/core/util/match.h"
 #include "src/core/util/ref_counted_ptr.h"
 #include "src/core/util/useful.h"
 

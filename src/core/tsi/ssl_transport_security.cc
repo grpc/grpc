@@ -2819,9 +2819,7 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, absl::string_view name) {
 }
 
 bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
-  if (root_cert_info == nullptr) {
-    return true;
-  }
+  if (root_cert_info == nullptr) return true;
   return Match(
       *root_cert_info,
       [&](const std::string& pem_root_certs) {
