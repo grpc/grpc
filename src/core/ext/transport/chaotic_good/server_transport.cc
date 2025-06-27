@@ -286,6 +286,7 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
   MpscReceiver<OutgoingFrame> outgoing_pipe(256 * 1024 * 1024);
   outgoing_frames_ = outgoing_pipe.MakeSender();
   frame_transport->Start(party_.get(), std::move(outgoing_pipe), Ref());
+  SourceConstructed();
 }
 
 void ChaoticGoodServerTransport::StreamDispatch::AddData(
