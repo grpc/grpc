@@ -106,15 +106,17 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     : distributor_(MakeRefCounted<grpc_tls_certificate_distributor>()),
       root_certificate_(std::move(root_certificate)),
       pem_key_cert_pairs_(std::move(pem_key_cert_pairs)) {
+  root_cert_info_ = std::make_shared<RootCertInfo>(root_certificate_);
   distributor_->SetWatchStatusCallback([this](std::string cert_name,
                                               bool root_being_watched,
                                               bool identity_being_watched) {
     MutexLock lock(&mu_);
+    std::shared_ptr<RootCertInfo> root_cert_info;
     std::optional<PemKeyCertPairList> pem_key_cert_pairs;
     StaticDataCertificateProvider::WatcherInfo& info = watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
-        !root_certificate_.empty()) {
-      root_cert_info_ = std::make_shared<RootCertInfo>(root_certificate_);
+        !IsRootCertInfoEmpty(root_cert_info_.get())) {
+      root_cert_info = root_cert_info_;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
@@ -125,10 +127,11 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
     if (!info.root_being_watched && !info.identity_being_watched) {
       watcher_info_.erase(cert_name);
     }
-    const bool root_has_update = IsRootCertInfoEmpty(root_cert_info_.get());
+    // const bool root_has_update = IsRootCertInfoEmpty(root_cert_info.get());
+    const bool root_has_update = root_cert_info != nullptr;
     const bool identity_has_update = pem_key_cert_pairs.has_value();
     if (root_has_update || identity_has_update) {
-      distributor_->SetKeyMaterials(cert_name, root_cert_info_,
+      distributor_->SetKeyMaterials(cert_name, root_cert_info,
                                     std::move(pem_key_cert_pairs));
     }
     grpc_error_handle root_cert_error;
@@ -243,7 +246,7 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
         watcher_info_[cert_name];
     if (!info.root_being_watched && root_being_watched &&
         root_cert_info_ != nullptr) {
-      roots = std::move(root_cert_info_);
+      roots = root_cert_info_;
     }
     info.root_being_watched = root_being_watched;
     if (!info.identity_being_watched && identity_being_watched &&
