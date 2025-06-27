@@ -326,7 +326,7 @@ void OutputBuffers::Schedule() {
   // know that the bytes are going out over a TCP collective, or whether they'll
   // hit data endpoints or be inlined on a control channel.
   scheduler_->NewStep(queued_tokens, first_message->frame.tokens());
-  const auto now = clock_->Now();
+  const auto now = ctx_->clock->Now();
   bool any_readers = false;
   {
     GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::Schedule::CollectData2");
@@ -569,7 +569,7 @@ class MetricsCollector
     : public RefCounted<MetricsCollector, NonPolymorphicRefCount> {
  public:
   explicit MetricsCollector(
-      Clock* clock,
+      TransportContext::Clock* clock,
       grpc_event_engine::experimental::EventEngine::Endpoint& endpoint)
       : clock_(clock), telemetry_info_(endpoint.GetTelemetryInfo()) {
     if (telemetry_info_ == nullptr) return;
@@ -677,7 +677,7 @@ class MetricsCollector
   }
 
  private:
-  Clock* const clock_;
+  TransportContext::Clock* const clock_;
   std::optional<size_t> delivery_rate_;
   std::optional<size_t> rtt_;
   std::optional<size_t> data_notsent_;
@@ -725,8 +725,8 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
               queued_frame.frame->payload);
           auto hdr = header_frames.TakeFirstNoInline(header_size);
           const uint32_t payload_length = frame.MakeHeader().payload_length;
-          TcpDataFrameHeader{queued_frame.payload_tag, ctx->clock->Now(),
-                             payload_length}
+          TcpDataFrameHeader{queued_frame.payload_tag,
+                             ctx->transport_ctx->clock->Now(), payload_length}
               .Serialize(hdr.data());
           memset(hdr.data() + TcpDataFrameHeader::kFrameHeaderSize, 0,
                  header_padding);
@@ -744,7 +744,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
 
 auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
   auto metrics_collector = MakeRefCounted<MetricsCollector>(
-      ctx->clock, *ctx->endpoint->GetEventEngineEndpoint());
+      ctx->transport_ctx->clock, *ctx->endpoint->GetEventEngineEndpoint());
   if (!metrics_collector->HasAnyMetrics()) {
     metrics_collector.reset();
   }
@@ -869,7 +869,7 @@ void Endpoint::AddData(channelz::DataSink sink) {
   sink.AddAdditionalInfo(
       absl::StrCat("endpoint", ctx_->id),
       channelz::PropertyList()
-          .Set("now", ctx_->clock->Now())
+          .Set("now", ctx_->transport_ctx->clock->Now())
           .Set("encode_alignment", ctx_->encode_alignment)
           .Set("decode_alignment", ctx_->decode_alignment)
           .Set("secure_frame_bytes_queued",
@@ -883,7 +883,7 @@ void Endpoint::AddData(channelz::DataSink sink) {
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
-                   uint32_t decode_alignment, Clock* clock,
+                   uint32_t decode_alignment,
                    RefCountedPtr<OutputBuffers> output_buffers,
                    RefCountedPtr<InputQueue> input_queues,
                    PendingConnection pending_connection, bool enable_tracing,
@@ -900,7 +900,6 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
   ep_ctx->ztrace_collector = std::move(ztrace_collector);
   ep_ctx->arena = SimpleArenaAllocator(0)->MakeArena();
   ep_ctx->arena->SetContext(ctx->event_engine.get());
-  ep_ctx->clock = clock;
   ep_ctx->transport_ctx = std::move(ctx);
   ep_ctx->reader = ep_ctx->output_buffers->MakeReader(ep_ctx->id);
   party_ = Party::Make(ep_ctx->arena);
@@ -987,17 +986,16 @@ DataEndpoints::DataEndpoints(
     std::vector<PendingConnection> endpoints_vec, TransportContextPtr ctx,
     uint32_t encode_alignment, uint32_t decode_alignment,
     std::shared_ptr<TcpZTraceCollector> ztrace_collector, bool enable_tracing,
-    std::string scheduler_config, data_endpoints_detail::Clock* clock)
+    std::string scheduler_config)
     : channelz::DataSource(ctx->socket_node),
       output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
-          clock, encode_alignment, ztrace_collector,
-          std::move(scheduler_config), ctx)),
+          encode_alignment, ztrace_collector, std::move(scheduler_config),
+          ctx)),
       input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
-        i, encode_alignment, decode_alignment, clock, output_buffers_,
-        input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
-        ztrace_collector));
+        i, encode_alignment, decode_alignment, output_buffers_, input_queues_,
+        std::move(endpoints_vec[i]), enable_tracing, ctx, ztrace_collector));
   }
 }
 
