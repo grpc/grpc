@@ -73,9 +73,6 @@ then
   # update upb
   rm -rf third_party/upb/upb
   cp -r third_party/protobuf/upb third_party/upb
-  # generate upb gen source codes
-  export CC=gcc
-  tools/codegen/core/gen_upb_api.sh
   # update utf8_range
   rm -rf third_party/utf8_range
   cp -r third_party/protobuf/third_party/utf8_range third_party/utf8_range/

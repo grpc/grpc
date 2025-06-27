@@ -182,3 +182,6 @@ fuzz-*.log
 # bazel module files
 third_party/**/MODULE.bazel
 MODULE.bazel.lock
+
+src/core/ext/upb*-gen
+
