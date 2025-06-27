@@ -85,7 +85,9 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+#ifndef GRPC_ANDROID
 using http2::Http2ClientTransport;
+#endif  // GRPC_ANDROID
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
@@ -167,6 +169,9 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
             // Ensure the Chttp2Connector is deleted under an ExecCtx.
             self.reset();
           });
+#ifdef GRPC_ANDROID
+    }
+#else
     } else {
       // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
       // the ping pong test is in place.
@@ -201,6 +206,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
             self.reset();
           });
     }
+#endif  // GRPC_ANDROID
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -266,11 +272,15 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
 
 absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
                                                  const ChannelArgs& args) {
+#ifdef GRPC_ANDROID
+  const bool is_v3 = false;
+#else
+  const bool is_v3 = IsPromiseBasedHttp2ClientTransportEnabled();
+#endif  // GRPC_ANDROID
   auto r = ChannelCreate(
       target,
       args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
-          .Set(GRPC_ARG_USE_V3_STACK,
-               IsPromiseBasedHttp2ClientTransportEnabled()),
+          .Set(GRPC_ARG_USE_V3_STACK, is_v3),
       GRPC_CLIENT_CHANNEL, nullptr);
   if (r.ok()) {
     return r->release()->c_ptr();
