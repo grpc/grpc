@@ -35,8 +35,10 @@ def generate_resolver_component_tests():
                 "address_sorting_test.cc",
             ],
             external_deps = [
-                "absl/log:check",
+                "@com_google_absl//absl/log:check",
+                "@com_google_absl//absl/log:log",
                 "gtest",
+                "address_sorting",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" %
@@ -47,6 +49,15 @@ def generate_resolver_component_tests():
                 "//:grpc%s" % unsecure_build_config_suffix,
                 "//:gpr",
                 "//test/cpp/util:test_config",
+                "//:config_vars",
+                "//:endpoint_addresses",
+                "//:exec_ctx",
+                "//:iomgr",
+                "//:grpc_client_channel",
+                "//:grpc_resolver",
+                "//:grpc_resolver_dns_ares",
+                "//:sockaddr_utils",
+                "//src/core:channel_args",
             ],
             tags = [
                 "no_windows",
@@ -63,8 +74,13 @@ def generate_resolver_component_tests():
                 "resolver_component_test.cc",
             ],
             external_deps = [
-                "absl/log:check",
                 "gtest",
+                "absl/strings",
+                "@com_google_absl//absl/flags:flag",
+                "@com_google_absl//absl/log:check",
+                "@com_google_absl//absl/log:log",
+                "@com_google_absl//absl/memory:memory",
+                "@com_google_absl//absl/strings:str_format",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" %
@@ -80,6 +96,23 @@ def generate_resolver_component_tests():
                 "//:gpr",
                 "//src/core:ares_resolver",
                 "//test/cpp/util:test_config",
+                "//:config",
+                "//:config_vars",
+                "//:endpoint_addresses",
+                "//:exec_ctx",
+                "//:grpc_client_channel",
+                "//:grpc_grpclb_balancer_addresses",
+                "//:grpc_resolver",
+                "//:grpc_resolver_dns_ares",
+                "//:iomgr",
+                "//:orphanable",
+                "//:parse_address",
+                "//:sockaddr_utils",
+                "//src/core:grpc_sockaddr",
+                "//src/core:default_event_engine",
+                "//src/core:experiments",
+                "//src/core:channel_args",
+                "//:work_serializer",
             ],
             tags = ["no_windows", "grpc:broken-internally"],
         )
@@ -90,13 +123,15 @@ def generate_resolver_component_tests():
                 "resolver_component_tests_runner_invoker.cc",
             ],
             external_deps = [
-                "absl/flags:flag",
-                "absl/log:check",
-                "absl/strings",
+                "@com_google_absl//absl/log:check",
+                "@com_google_absl//absl/log:log",
+                "@com_google_absl//absl/flags:flag",
+                "@com_google_absl//absl/strings:str_format",
             ],
             deps = [
                 "//test/cpp/util:test_util%s" %
                 unsecure_build_config_suffix,
+                "//src/core:env",
                 "//test/core/test_util:grpc_test_util%s" %
                 unsecure_build_config_suffix,
                 "//:grpc++%s" % unsecure_build_config_suffix,
