@@ -189,8 +189,12 @@ struct grpc_channel_stack {
 
   class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
    public:
-    using grpc_core::channelz::DataSource::DataSource;
-    ~ChannelStackDataSource() { ResetDataSource(); }
+    ChannelStackDataSource(
+        grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> node)
+        : DataSource(std::move(node)) {
+      SourceConstructed();
+    }
+    ~ChannelStackDataSource() { SourceDestructing(); }
     void AddData(grpc_core::channelz::DataSink sink) override;
   };
 

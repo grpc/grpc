@@ -999,6 +999,7 @@ DataEndpoints::DataEndpoints(
         input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
         ztrace_collector));
   }
+  SourceConstructed();
 }
 
 void DataEndpoints::AddData(channelz::DataSink sink) {

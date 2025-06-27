@@ -238,8 +238,10 @@ struct grpc_chttp2_transport final : public grpc_core::FilterStackTransport,
    public:
     explicit ChannelzDataSource(grpc_chttp2_transport* transport)
         : grpc_core::channelz::DataSource(transport->channelz_socket),
-          transport_(transport) {}
-    ~ChannelzDataSource() { ResetDataSource(); }
+          transport_(transport) {
+      SourceConstructed();
+    }
+    ~ChannelzDataSource() { SourceDestructing(); }
 
     void AddData(grpc_core::channelz::DataSink sink) override;
     std::unique_ptr<grpc_core::channelz::ZTrace> GetZTrace(
