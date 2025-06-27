@@ -2339,7 +2339,6 @@ tsi_result tsi_create_ssl_client_handshaker_factory(
                                                                factory);
 }
 
-
 tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     const tsi_ssl_client_handshaker_options* options,
     tsi_ssl_client_handshaker_factory** factory) {
@@ -2352,7 +2351,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   if (factory == nullptr) return TSI_INVALID_ARGUMENT;
   *factory = nullptr;
   if (options->pem_root_certs == nullptr && options->root_store == nullptr &&
-    options->root_cert_info == nullptr &&
+      options->root_cert_info == nullptr &&
       !options->skip_server_certificate_verification) {
     return TSI_INVALID_ARGUMENT;
   }
@@ -2422,8 +2421,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
     }
 #endif
     const bool custom_roots_configured = options->root_cert_info != nullptr ||
-                                    options->pem_root_certs != nullptr;
-    if (OPENSSL_VERSION_NUMBER < 0x10100000 || (options->root_store == nullptr && custom_roots_configured)) {
+                                         options->pem_root_certs != nullptr;
+    if (OPENSSL_VERSION_NUMBER < 0x10100000 ||
+        (options->root_store == nullptr && custom_roots_configured)) {
       if (options->root_cert_info != nullptr) {
         Match(
             *options->root_cert_info,
@@ -2822,9 +2822,7 @@ bool IsRootCertInfoEmpty(const RootCertInfo* root_cert_info) {
   if (root_cert_info == nullptr) return true;
   return Match(
       *root_cert_info,
-      [&](const std::string& pem_root_certs) {
-        return pem_root_certs.empty();
-      },
+      [&](const std::string& pem_root_certs) { return pem_root_certs.empty(); },
       [&](const grpc_core::SpiffeBundleMap& spiffe_bundle_map) {
         return spiffe_bundle_map.size() == 0;
       });
