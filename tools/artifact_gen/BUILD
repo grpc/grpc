@@ -98,6 +98,7 @@ cc_binary(
     deps = [
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/strings",
         "@pugixml",
     ],
