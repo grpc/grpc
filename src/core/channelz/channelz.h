@@ -147,6 +147,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
  protected:
   BaseNode(EntityType type, size_t max_trace_memory, std::string name);
 
+  // Leaf derived types should call NodeConstructed() in their constructors
+  // to complete the initialization.
+  void NodeConstructed();
+
  public:
   void Orphaned() override;
 
@@ -219,6 +223,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
+  bool node_constructed_called_ = false;
   uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
@@ -697,7 +702,9 @@ class ListenSocketNode final : public BaseNode {
 class CallNode final : public BaseNode {
  public:
   explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {}
+      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+    NodeConstructed();
+  }
 
   Json RenderJson() override;
 };

@@ -125,12 +125,20 @@ void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
 //
 
 BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_memory) {
-  // The registry will set uuid_ under its lock.
+    : type_(type),
+      uuid_(-1),
+      name_(std::move(name)),
+      trace_(max_trace_memory) {}
+
+void BaseNode::NodeConstructed() {
+  node_constructed_called_ = true;
   ChannelzRegistry::Register(this);
 }
 
-void BaseNode::Orphaned() { ChannelzRegistry::Unregister(this); }
+void BaseNode::Orphaned() {
+  DCHECK(node_constructed_called_);
+  ChannelzRegistry::Unregister(this);
+}
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
@@ -322,7 +330,9 @@ ChannelNode::ChannelNode(std::string target, size_t max_trace_memory,
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
                max_trace_memory, target),
-      target_(std::move(target)) {}
+      target_(std::move(target)) {
+  NodeConstructed();
+}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
@@ -442,7 +452,9 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 SubchannelNode::SubchannelNode(std::string target_address,
                                size_t max_trace_memory)
     : BaseNode(EntityType::kSubchannel, max_trace_memory, target_address),
-      target_(std::move(target_address)) {}
+      target_(std::move(target_address)) {
+  NodeConstructed();
+}
 
 SubchannelNode::~SubchannelNode() {}
 
@@ -507,7 +519,9 @@ Json SubchannelNode::RenderJson() {
 //
 
 ServerNode::ServerNode(size_t max_trace_memory)
-    : BaseNode(EntityType::kServer, max_trace_memory, "") {}
+    : BaseNode(EntityType::kServer, max_trace_memory, "") {
+  NodeConstructed();
+}
 
 ServerNode::~ServerNode() {}
 
@@ -720,7 +734,9 @@ SocketNode::SocketNode(std::string local, std::string remote, std::string name,
     : BaseNode(EntityType::kSocket, 0, std::move(name)),
       local_(std::move(local)),
       remote_(std::move(remote)),
-      security_(std::move(security)) {}
+      security_(std::move(security)) {
+  NodeConstructed();
+}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   streams_started_.fetch_add(1, std::memory_order_relaxed);
@@ -832,7 +848,9 @@ Json SocketNode::RenderJson() {
 
 ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
     : BaseNode(EntityType::kListenSocket, 0, std::move(name)),
-      local_addr_(std::move(local_addr)) {}
+      local_addr_(std::move(local_addr)) {
+  NodeConstructed();
+}
 
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {
