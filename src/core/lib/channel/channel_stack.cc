@@ -184,7 +184,6 @@ void grpc_channel_stack::ChannelStackDataSource::AddData(
       "channel_stack",
       grpc_core::channelz::PropertyList()
           .Set("type", "v1")
-          .Set("call_stack_size", channel_stack->call_stack_size)
           .Set("elements", [channel_stack]() {
             std::vector<grpc_core::channelz::PropertyList> elements;
             grpc_channel_element* elems =
