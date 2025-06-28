@@ -19,15 +19,14 @@ set -ex
 cd "$(dirname "$0")/../.."
 
 # Check if clang is available, if not use gcc
-BAZEL_CC_PREFIX=""
 if ! command -v clang &> /dev/null; then
   if command -v gcc &> /dev/null; then
-    BAZEL_CC_PREFIX="CC=gcc"
+    export CC=gcc
   fi
 fi
 
 # Build the C++ generator. This must be done from within the sub-workspace.
-(cd tools/artifact_gen && ${BAZEL_CC_PREFIX} ../../tools/bazel build //:gen_upb_api_from_bazel)
+(cd tools/artifact_gen && ../../tools/bazel build //:gen_upb_api_from_bazel)
 
 # Now that the tool is built, we can move the executable to a temporary location
 # to avoid issues with the nested bazel workspaces.
@@ -44,7 +43,7 @@ DEPS_XML=$(mktemp)
 trap "rm -f ${UPB_RULES_XML} ${DEPS_XML}; rm -rf ${TMP_DIR}" EXIT
 
 # Query for upb rules from the main grpc workspace. This must be run from the root.
-${BAZEL_CC_PREFIX} tools/bazel query --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
+tools/bazel query --output xml --noimplicit_deps //:all > "${UPB_RULES_XML}"
 
 # Now we can use the generator to get the list of deps.
 DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
@@ -54,7 +53,7 @@ DEPS_LIST=$(${TMP_DIR}/gen_upb_api_from_bazel \
 # Query for all the dependencies of the upb rules. This must be run from the root.
 if [[ -n "${DEPS_LIST}" ]]; then
   DEPS_QUERY="deps($(echo "${DEPS_LIST}" | sed 's/ / + /g'))"
-  ${BAZEL_CC_PREFIX} tools/bazel query --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
+  tools/bazel query --output xml --noimplicit_deps "${DEPS_QUERY}" > "${DEPS_XML}"
 else
   # If there are no dependencies, create an empty XML file
   echo '<?xml version="1.0" encoding="UTF-8" standalone="no"?><query/>' > "${DEPS_XML}"
@@ -67,7 +66,7 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  ${BAZEL_CC_PREFIX} tools/bazel build ${BUILD_TARGETS}
+  tools/bazel build ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
