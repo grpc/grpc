@@ -703,6 +703,9 @@ protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
+  src/proto/grpc/channelz/v2/channelz.proto src/proto/grpc/channelz/v2/channelz.proto
+)
+protobuf_generate_grpc_cpp_with_import_path_correction(
   src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp_with_import_path_correction(
@@ -1335,6 +1338,7 @@ if(gRPC_BUILD_TESTS)
     add_dependencies(buildtests_cxx call_arena_allocator_test)
   endif()
   add_dependencies(buildtests_cxx call_credentials_test)
+  add_dependencies(buildtests_cxx call_creds_registry_test)
   add_dependencies(buildtests_cxx call_filters_test)
   add_dependencies(buildtests_cxx call_finalization_test)
   add_dependencies(buildtests_cxx call_state_test)
@@ -1572,6 +1576,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx jwt_verifier_test)
   add_dependencies(buildtests_cxx lame_client_test)
   add_dependencies(buildtests_cxx latch_test)
+  add_dependencies(buildtests_cxx layout_test)
   add_dependencies(buildtests_cxx lb_get_cpu_stats_test)
   add_dependencies(buildtests_cxx lb_load_data_store_test)
   add_dependencies(buildtests_cxx lb_metadata_test)
@@ -2203,6 +2208,7 @@ add_library(grpc
   src/core/client_channel/subchannel_pool_interface.cc
   src/core/client_channel/subchannel_stream_client.cc
   src/core/config/core_configuration.cc
+  src/core/credentials/call/call_creds_registry_init.cc
   src/core/credentials/call/call_creds_util.cc
   src/core/credentials/call/composite/composite_call_credentials.cc
   src/core/credentials/call/external/aws_external_account_credentials.cc
@@ -2216,6 +2222,7 @@ add_library(grpc
   src/core/credentials/call/jwt/json_token.cc
   src/core/credentials/call/jwt/jwt_credentials.cc
   src/core/credentials/call/jwt/jwt_verifier.cc
+  src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   src/core/credentials/call/jwt_util.cc
   src/core/credentials/call/oauth2/oauth2_credentials.cc
   src/core/credentials/call/plugin/plugin_credentials.cc
@@ -2311,6 +2318,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
+  src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
@@ -2445,6 +2453,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -3405,6 +3414,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/transport/ping_promise.cc
   src/core/ext/transport/chttp2/transport/ping_rate_policy.cc
   src/core/ext/transport/chttp2/transport/stream_lists.cc
+  src/core/ext/transport/chttp2/transport/transport_common.cc
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/transport/chttp2/transport/write_size_policy.cc
   src/core/ext/transport/chttp2/transport/writing.cc
@@ -3421,6 +3431,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -5795,9 +5806,11 @@ add_library(grpc_authorization_provider
   src/core/credentials/transport/transport_credentials.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -9165,7 +9178,6 @@ add_executable(call_credentials_test
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.pb.h
   ${_gRPC_PROTO_GENS_DIR}/test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.grpc.pb.h
-  src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc
   test/core/credentials/call/call_credentials_test.cc
   test/core/event_engine/event_engine_test_utils.cc
   test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.cc
@@ -9204,6 +9216,49 @@ target_link_libraries(call_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
   ${_gRPC_PROTOBUF_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(call_creds_registry_test
+  test/core/credentials/call/call_creds_registry_test.cc
+  test/core/test_util/test_call_creds.cc
+)
+if(WIN32 AND MSVC)
+  if(BUILD_SHARED_LIBS)
+    target_compile_definitions(call_creds_registry_test
+    PRIVATE
+      "GPR_DLL_IMPORTS"
+      "GRPC_DLL_IMPORTS"
+    )
+  endif()
+endif()
+target_compile_features(call_creds_registry_test PUBLIC cxx_std_17)
+target_include_directories(call_creds_registry_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(call_creds_registry_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
   grpc_test_util
 )
 
@@ -9475,9 +9530,11 @@ add_executable(call_utils_test
   src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -15602,9 +15659,11 @@ add_executable(filter_fusion_test
   src/core/credentials/transport/tls/certificate_provider_registry.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -16011,7 +16070,11 @@ add_executable(flow_control_test
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/transport/chttp2/transport/http2_settings.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -18498,9 +18561,11 @@ add_executable(header_assembler_test
   src/core/ext/transport/chttp2/transport/varint.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
@@ -20715,6 +20780,48 @@ target_link_libraries(latch_test
   absl::statusor
   absl::span
   gpr
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(layout_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/v2/channelz.grpc.pb.h
+  src/core/channelz/zviz/environment.cc
+  src/core/channelz/zviz/layout.cc
+  src/core/channelz/zviz/strings.cc
+  test/core/channelz/zviz/layout_test.cc
+  third_party/googletest/googlemock/src/gmock_main.cc
+)
+target_compile_features(layout_test PUBLIC cxx_std_17)
+target_include_directories(layout_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(layout_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gtest
+  absl::statusor
+  ${_gRPC_PROTOBUF_LIBRARIES}
 )
 
 
@@ -25055,6 +25162,11 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(property_list_test
   src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/util/time.cc
   test/core/channelz/property_list_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -25090,6 +25202,8 @@ target_include_directories(property_list_test
 target_link_libraries(property_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_mini_descriptor_lib
+  upb_wire_lib
   absl::flat_hash_map
   absl::statusor
   absl::span

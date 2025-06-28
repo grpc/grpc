@@ -106,6 +106,8 @@
 
 #include <windows.h>
 
+#include <memory>
+
 #ifndef _WIN32_WINNT
 #error \
     "Please compile grpc with _WIN32_WINNT of at least 0x600 (aka Windows Vista)"

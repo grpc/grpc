@@ -129,24 +129,6 @@ std::optional<Duration> RetryState::ShouldRetry(
   return next_attempt_timeout;
 }
 
-RefCountedPtr<internal::RetryThrottler> RetryThrottlerFromChannelArgs(
-    const ChannelArgs& args, const FilterArgs& filter_args) {
-  // Get retry throttling parameters from service config.
-  auto* service_config = args.GetObject<ServiceConfig>();
-  if (service_config == nullptr) return nullptr;
-  const auto* config = static_cast<const internal::RetryGlobalConfig*>(
-      service_config->GetGlobalParsedConfig(
-          internal::RetryServiceConfigParser::ParserIndex()));
-  if (config == nullptr) return nullptr;
-  // Get throttle state.
-  return filter_args.GetOrCreateState<internal::RetryThrottler>(
-      "", [&](RefCountedPtr<internal::RetryThrottler> existing) {
-        return internal::RetryThrottler::Create(config->max_milli_tokens(),
-                                                config->milli_token_ratio(),
-                                                std::move(existing));
-      });
-}
-
 }  // namespace retry_detail
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -154,9 +136,27 @@ RefCountedPtr<internal::RetryThrottler> RetryThrottlerFromChannelArgs(
 
 absl::StatusOr<RefCountedPtr<RetryInterceptor>> RetryInterceptor::Create(
     const ChannelArgs& args, const FilterArgs& filter_args) {
-  auto retry_throttler =
-      retry_detail::RetryThrottlerFromChannelArgs(args, filter_args);
+  auto retry_throttler = filter_args.GetState<internal::RetryThrottler>("");
   return MakeRefCounted<RetryInterceptor>(args, std::move(retry_throttler));
+}
+
+void RetryInterceptor::UpdateBlackboard(const ServiceConfig& service_config,
+                                        const Blackboard* old_blackboard,
+                                        Blackboard* new_blackboard) {
+  const auto* config = static_cast<const internal::RetryGlobalConfig*>(
+      service_config.GetGlobalParsedConfig(
+          internal::RetryServiceConfigParser::ParserIndex()));
+  if (config == nullptr) return;
+  // Get existing throttle state.
+  RefCountedPtr<internal::RetryThrottler> throttler;
+  if (old_blackboard != nullptr) {
+    throttler = old_blackboard->Get<internal::RetryThrottler>("");
+  }
+  throttler = internal::RetryThrottler::Create(config->max_milli_tokens(),
+                                               config->milli_token_ratio(),
+                                               std::move(throttler));
+  CHECK_NE(new_blackboard, nullptr);
+  new_blackboard->Set("", std::move(throttler));
 }
 
 RetryInterceptor::RetryInterceptor(

@@ -240,10 +240,11 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
+  SourceConstructed();
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  ResetDataSource();
+  SourceDestructing();
   party_.reset();
 }
 
