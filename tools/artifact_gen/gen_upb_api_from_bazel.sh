@@ -66,7 +66,7 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  tools/bazel build --features=-archive_param_file ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
