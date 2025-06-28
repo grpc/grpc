@@ -24,7 +24,6 @@ let package = Package(
       path: basePath,
       exclude: [
       ],
-    
       sources: [
         "src/crypto/aes/aes.cc",
         "src/crypto/asn1/a_bitstr.cc",
@@ -330,4 +329,4 @@ let package = Package(
     ),
   ],
   cxxLanguageStandard: .cxx14
-)
+) 

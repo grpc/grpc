@@ -439,6 +439,52 @@ void ProcessSwiftPackageFiles(nlohmann::json& config) {
   // Add to swift_package for template use
   swift_package["all_files"] = sorted_files;
 }
+
+void ProcessSwiftBoringSSLPackageFiles(nlohmann::json& config) {
+  // Get the swift_boringssl_package.deps and collect all files, then deduplicate and sort
+  if (!config.contains("swift_boringssl_package") || !config["swift_boringssl_package"].contains("deps")) {
+    return;
+  }
+  
+  auto& swift_boringssl_package = config["swift_boringssl_package"];
+  auto& deps = swift_boringssl_package["deps"];
+  auto& libs = config["libs"];
+  
+  std::set<std::string> all_files;
+  const std::string prefix_to_remove = "third_party/boringssl-with-bazel/";
+  
+  // Collect files from all dependencies
+  for (const auto& dep : deps) {
+    std::string dep_name = dep.get<std::string>();
+    
+    // Find the library with this name
+    for (const auto& lib : libs) {
+      if (lib.contains("name") && lib["name"].get<std::string>() == dep_name) {
+        // Add all src files from this library (BoringSSL template only uses src files)
+        if (lib.contains("src")) {
+          for (const auto& file : lib["src"]) {
+            std::string file_path = file.get<std::string>();
+            // Remove the prefix if it exists
+            if (absl::StartsWith(file_path, prefix_to_remove)) {
+              file_path = file_path.substr(prefix_to_remove.length());
+            }
+            all_files.insert(file_path);
+          }
+        }
+        break;
+      }
+    }
+  }
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& file : all_files) {
+    sorted_files.push_back(file);
+  }
+  
+  // Add to swift_boringssl_package for template use
+  swift_boringssl_package["all_files"] = sorted_files;
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -451,4 +497,5 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddSupportedBazelVersions(config);
   ExpandSupportedPythonVersions(config);
   ProcessSwiftPackageFiles(config);
+  ProcessSwiftBoringSSLPackageFiles(config);
 }
