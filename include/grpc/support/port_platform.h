@@ -104,6 +104,7 @@
 #define NOMINMAX
 #endif /* NOMINMAX */
 
+#include <memory>
 #include <windows.h>
 
 #ifndef _WIN32_WINNT
