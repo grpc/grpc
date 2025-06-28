@@ -328,9 +328,9 @@ def end_open_telemetry_observability() -> None:
 
 
 class _OpenTelemetryExporterDelegator(_observability.Exporter):
-    _plugins: Optional[Iterable[_OpenTelemetryPlugin]]
+    _plugins: Iterable[_OpenTelemetryPlugin]
 
-    def __init__(self, plugins: Optional[Iterable[_OpenTelemetryPlugin]]):
+    def __init__(self, plugins: Iterable[_OpenTelemetryPlugin]):
         self._plugins = plugins
 
     def export_stats_data(
@@ -368,7 +368,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         *,
         plugins: Iterable[_OpenTelemetryPlugin],
     ):
-        self._exporter = _OpenTelemetryExporterDelegator(plugins)
+        self._exporter = _OpenTelemetryExporterDelegator(plugins or list())
         self._registered_methods = set()
         self._plugins = list(plugins)
         self._client_option_activated = False
