@@ -105,15 +105,18 @@ cc_binary(
     name = "gen_upb_api_from_bazel",
     srcs = ["gen_upb_api_from_bazel.cc"],
     copts = COPTS,
+    features = select({
+        "@bazel_tools//src/conditions:windows": ["-compiler_param_file"],
+        "//conditions:default": [],
+    }),
     deps = [
+        "@abseil-cpp//absl/base",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/flags:marshalling",
         "@abseil-cpp//absl/flags:parse",
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/log:globals",
+        "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log:initialize",
         "@abseil-cpp//absl/strings",
-        "@abseil-cpp//absl/strings:str_format",
         "@pugixml",
     ],
 )
