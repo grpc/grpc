@@ -19,6 +19,7 @@ from dataclasses import field
 import enum
 from typing import Dict, List, Mapping, Set, Tuple, Union
 
+
 class Exporter(metaclass=abc.ABCMeta):
     """Abstract base class for census data exporters."""
 
