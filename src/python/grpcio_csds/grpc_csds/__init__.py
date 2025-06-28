@@ -13,6 +13,8 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+from typing import Iterator, Union
+
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
@@ -25,20 +27,20 @@ class ClientStatusDiscoveryServiceServicer(
     """CSDS Servicer works for both the sync API and asyncio API."""
 
     @staticmethod
-    def FetchClientStatus(request, unused_context):
+    def FetchClientStatus(request: csds_pb2.ClientStatusRequest, unused_context: object) -> csds_pb2.ClientStatusResponse:
         return csds_pb2.ClientStatusResponse.FromString(
             cygrpc.dump_xds_configs()
         )
 
     @staticmethod
-    def StreamClientStatus(request_iterator, context):
+    def StreamClientStatus(request_iterator: Iterator[csds_pb2.ClientStatusRequest], context: object) -> Iterator[csds_pb2.ClientStatusResponse]:
         for request in request_iterator:
             yield ClientStatusDiscoveryServiceServicer.FetchClientStatus(
                 request, context
             )
 
 
-def add_csds_servicer(server):
+def add_csds_servicer(server: Union["grpc.Server", "grpc.aio.Server"]) -> None:
     """Register CSDS servicer to a server.
 
     CSDS is part of xDS protocol used to expose in-effective traffic

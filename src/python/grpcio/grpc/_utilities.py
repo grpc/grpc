@@ -55,7 +55,7 @@ class DictionaryGenericHandler(grpc.ServiceRpcHandler):
 
     def __init__(
         self, service: str, method_handlers: Dict[str, grpc.RpcMethodHandler]
-    ):
+    ) -> None:
         self._name = service
         self._method_handlers = {
             _common.fully_qualified_method(service, method): method_handler
@@ -81,7 +81,7 @@ class _ChannelReadyFuture(grpc.Future):
     _cancelled: bool
     _done_callbacks: Sequence[Callable]
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: grpc.Channel) -> None:
         self._condition = threading.Condition()
         self._channel = channel
 
@@ -167,7 +167,7 @@ class _ChannelReadyFuture(grpc.Future):
     def traceback(self, timeout: Optional[float] = None) -> None:
         self._block(timeout)
 
-    def add_done_callback(self, fn: DoneCallbackType):
+    def add_done_callback(self, fn: DoneCallbackType) -> None:
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._done_callbacks.append(fn)
@@ -175,11 +175,11 @@ class _ChannelReadyFuture(grpc.Future):
 
         fn(self)
 
-    def start(self):
+    def start(self) -> None:
         with self._condition:
             self._channel.subscribe(self._update, try_to_connect=True)
 
-    def __del__(self):
+    def __del__(self) -> None:
         with self._condition:
             if not self._cancelled and not self._matured:
                 self._channel.unsubscribe(self._update)
@@ -199,11 +199,11 @@ def first_version_is_lower(version1: str, version2: str) -> bool:
     the stub version is compatible with the runtime grpcio.
 
     Args:
-        version1: The first version string.
-        version2: The second version string.
+        version1: First version string to compare.
+        version2: Second version string to compare.
 
     Returns:
-        True if version1 is lower, False otherwise.
+        True if version1 is lower than version2, False otherwise.
     """
     version1_list = version1.split(".")
     version2_list = version2.split(".")

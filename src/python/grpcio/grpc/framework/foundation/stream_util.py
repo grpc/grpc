@@ -15,63 +15,74 @@
 
 import logging
 import threading
+from typing import Callable, Iterator, Protocol, TypeVar, Union
 
 from grpc.framework.foundation import stream
 
 _NO_VALUE = object()
 _LOGGER = logging.getLogger(__name__)
 
+T = TypeVar('T')
+U = TypeVar('U')
 
-class TransformingConsumer(stream.Consumer):
+
+class ThreadPoolProtocol(Protocol):
+    """Protocol for thread pool objects."""
+    
+    def submit(self, fn: Callable[..., T], *args, **kwargs) -> T:
+        ...
+
+
+class TransformingConsumer(stream.Consumer[T]):
     """A stream.Consumer that passes a transformation of its input to another."""
 
-    def __init__(self, transformation, downstream):
+    def __init__(self, transformation: Callable[[T], U], downstream: stream.Consumer[U]) -> None:
         self._transformation = transformation
         self._downstream = downstream
 
-    def consume(self, value):
+    def consume(self, value: T) -> None:
         self._downstream.consume(self._transformation(value))
 
-    def terminate(self):
+    def terminate(self) -> None:
         self._downstream.terminate()
 
-    def consume_and_terminate(self, value):
+    def consume_and_terminate(self, value: T) -> None:
         self._downstream.consume_and_terminate(self._transformation(value))
 
 
-class IterableConsumer(stream.Consumer):
+class IterableConsumer(stream.Consumer[T]):
     """A Consumer that when iterated over emits the values it has consumed."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._condition = threading.Condition()
-        self._values = []
+        self._values: list[T] = []
         self._active = True
 
-    def consume(self, value):
+    def consume(self, value: T) -> None:
         with self._condition:
             if self._active:
                 self._values.append(value)
                 self._condition.notify()
 
-    def terminate(self):
+    def terminate(self) -> None:
         with self._condition:
             self._active = False
             self._condition.notify()
 
-    def consume_and_terminate(self, value):
+    def consume_and_terminate(self, value: T) -> None:
         with self._condition:
             if self._active:
                 self._values.append(value)
                 self._active = False
                 self._condition.notify()
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[T]:
         return self
 
-    def __next__(self):
+    def __next__(self) -> T:
         return self.next()
 
-    def next(self):
+    def next(self) -> T:
         with self._condition:
             while self._active and not self._values:
                 self._condition.wait()
@@ -81,28 +92,28 @@ class IterableConsumer(stream.Consumer):
                 raise StopIteration()
 
 
-class ThreadSwitchingConsumer(stream.Consumer):
+class ThreadSwitchingConsumer(stream.Consumer[T]):
     """A Consumer decorator that affords serialization and asynchrony."""
 
-    def __init__(self, sink, pool):
+    def __init__(self, sink: stream.Consumer[T], pool: ThreadPoolProtocol) -> None:
         self._lock = threading.Lock()
         self._sink = sink
         self._pool = pool
         # True if self._spin has been submitted to the pool to be called once and
         # that call has not yet returned, False otherwise.
         self._spinning = False
-        self._values = []
+        self._values: list[T] = []
         self._active = True
 
-    def _spin(self, sink, value, terminate):
+    def _spin(self, sink: stream.Consumer[T], value: Union[T, object], terminate: bool) -> None:
         while True:
             try:
                 if value is _NO_VALUE:
                     sink.terminate()
                 elif terminate:
-                    sink.consume_and_terminate(value)
+                    sink.consume_and_terminate(value)  # type: ignore
                 else:
-                    sink.consume(value)
+                    sink.consume(value)  # type: ignore
             except Exception as e:  # pylint:disable=broad-except
                 _LOGGER.exception(e)
 
@@ -120,7 +131,7 @@ class ThreadSwitchingConsumer(stream.Consumer):
                     self._spinning = False
                     return
 
-    def consume(self, value):
+    def consume(self, value: T) -> None:
         with self._lock:
             if self._active:
                 if self._spinning:
@@ -129,7 +140,7 @@ class ThreadSwitchingConsumer(stream.Consumer):
                     self._pool.submit(self._spin, self._sink, value, False)
                     self._spinning = True
 
-    def terminate(self):
+    def terminate(self) -> None:
         with self._lock:
             if self._active:
                 self._active = False
@@ -137,7 +148,7 @@ class ThreadSwitchingConsumer(stream.Consumer):
                     self._pool.submit(self._spin, self._sink, _NO_VALUE, True)
                     self._spinning = True
 
-    def consume_and_terminate(self, value):
+    def consume_and_terminate(self, value: T) -> None:
         with self._lock:
             if self._active:
                 self._active = False

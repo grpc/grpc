@@ -101,7 +101,7 @@ class ChannelCache:
     _mapping: Dict[CacheKey, Tuple[grpc.Channel, datetime.datetime]]
     _eviction_thread: threading.Thread
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._mapping = collections.OrderedDict()
         self._eviction_thread = threading.Thread(
             target=ChannelCache._perform_evictions, daemon=True
@@ -109,14 +109,14 @@ class ChannelCache:
         self._eviction_thread.start()
 
     @staticmethod
-    def get():
+    def get() -> "ChannelCache":
         with ChannelCache._lock:
             if ChannelCache._singleton is None:
                 ChannelCache._singleton = ChannelCache()
         ChannelCache._eviction_ready.wait()
         return ChannelCache._singleton
 
-    def _evict_locked(self, key: CacheKey):
+    def _evict_locked(self, key: CacheKey) -> None:
         channel, _ = self._mapping.pop(key)
         _LOGGER.debug(
             "Evicting channel %s with configuration %s.", channel, key
@@ -125,7 +125,7 @@ class ChannelCache:
         del channel
 
     @staticmethod
-    def _perform_evictions():
+    def _perform_evictions() -> None:
         while True:
             with ChannelCache._lock:
                 ChannelCache._eviction_ready.set()
@@ -200,23 +200,19 @@ class ChannelCache:
                     channel,
                     datetime.datetime.now() + _EVICTION_PERIOD,
                 )
-                return channel, call_handle
             else:
                 channel = _create_channel(
                     target, options, channel_credentials, compression
                 )
+                # Register a new call handle if we're calling a registered method for a
+                # new channel.
                 if _registered_method:
                     call_handle = channel._get_registered_call_handle(method)
                 self._mapping[key] = (
                     channel,
                     datetime.datetime.now() + _EVICTION_PERIOD,
                 )
-                if (
-                    len(self._mapping) == 1
-                    or len(self._mapping) >= _MAXIMUM_CHANNELS
-                ):
-                    self._condition.notify()
-                return channel, call_handle
+        return channel, call_handle
 
     def _test_only_channel_count(self) -> int:
         with self._lock:

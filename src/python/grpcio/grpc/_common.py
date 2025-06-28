@@ -15,7 +15,7 @@
 
 import logging
 import time
-from typing import Any, AnyStr, Callable, Optional, Union
+from typing import Any, AnyStr, Callable, Optional, TypeVar, Union
 
 import grpc
 from grpc._cython import cygrpc
@@ -23,6 +23,8 @@ from grpc._typing import DeserializingFunction
 from grpc._typing import SerializingFunction
 
 _LOGGER = logging.getLogger(__name__)
+
+T = TypeVar('T')
 
 CYGRPC_CONNECTIVITY_STATE_TO_CHANNEL_CONNECTIVITY = {
     cygrpc.ConnectivityState.idle: grpc.ChannelConnectivity.IDLE,
@@ -79,26 +81,26 @@ def decode(b: AnyStr) -> str:
 
 def _transform(
     message: Any,
-    transformer: Union[SerializingFunction, DeserializingFunction, None],
+    transformer: Optional[Union[SerializingFunction, DeserializingFunction]],
     exception_message: str,
-) -> Any:
+) -> Optional[Any]:
     if transformer is None:
         return message
     else:
         try:
-            return transformer(message)
+            return transformer(message)  # type: ignore
         except Exception:  # pylint: disable=broad-except
             _LOGGER.exception(exception_message)
             return None
 
 
 def serialize(message: Any, serializer: Optional[SerializingFunction]) -> bytes:
-    return _transform(message, serializer, "Exception serializing message!")
+    return _transform(message, serializer, "Exception serializing message!")  # type: ignore
 
 
 def deserialize(
     serialized_message: bytes, deserializer: Optional[DeserializingFunction]
-) -> Any:
+) -> Optional[Any]:
     return _transform(
         serialized_message, deserializer, "Exception deserializing message!"
     )
@@ -112,7 +114,7 @@ def _wait_once(
     wait_fn: Callable[..., bool],
     timeout: float,
     spin_cb: Optional[Callable[[], None]],
-):
+) -> None:
     wait_fn(timeout=timeout)
     if spin_cb is not None:
         spin_cb()

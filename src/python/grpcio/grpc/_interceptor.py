@@ -16,7 +16,7 @@
 import collections
 import sys
 import types
-from typing import Any, Callable, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Optional, Sequence, Tuple, TypeVar, Union
 
 import grpc
 
@@ -25,6 +25,9 @@ from ._typing import DoneCallbackType
 from ._typing import MetadataType
 from ._typing import RequestIterableType
 from ._typing import SerializingFunction
+
+RequestT = TypeVar('RequestT')
+ResponseT = TypeVar('ResponseT')
 
 
 class _ServicePipeline(object):
@@ -167,7 +170,7 @@ class _FailureOutcome(
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         raise self._exception
 
     def exception(
@@ -180,7 +183,7 @@ class _FailureOutcome(
     ) -> Optional[types.TracebackType]:
         return self._traceback
 
-    def add_callback(self, unused_callback) -> bool:
+    def add_callback(self, unused_callback: Callable[[], None]) -> bool:
         return False
 
     def add_done_callback(self, fn: DoneCallbackType) -> None:
@@ -189,10 +192,10 @@ class _FailureOutcome(
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> Any:
         raise self._exception
 
-    def next(self):
+    def next(self) -> Any:
         return self.__next__()
 
 
@@ -237,7 +240,7 @@ class _UnaryOutcome(grpc.Call, grpc.Future):
     def done(self) -> bool:
         return True
 
-    def result(self, ignored_timeout: Optional[float] = None):
+    def result(self, ignored_timeout: Optional[float] = None) -> Any:
         return self._response
 
     def exception(self, ignored_timeout: Optional[float] = None):

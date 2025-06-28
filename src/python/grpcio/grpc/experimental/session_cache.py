@@ -13,10 +13,19 @@
 # limitations under the License.
 """gRPC's APIs for TLS Session Resumption support"""
 
+from typing import Protocol
+
 from grpc._cython import cygrpc as _cygrpc
 
 
-def ssl_session_cache_lru(capacity):
+class SSLCacheProtocol(Protocol):
+    """Protocol for SSL session cache objects."""
+    
+    def __int__(self) -> int:
+        ...
+
+
+def ssl_session_cache_lru(capacity: int) -> "SSLSessionCache":
     """Creates an SSLSessionCache with LRU replacement policy
 
     Args:
@@ -38,8 +47,8 @@ class SSLSessionCache(object):
     grpc.ssl_session_cache option
     """
 
-    def __init__(self, cache):
+    def __init__(self, cache: SSLCacheProtocol) -> None:
         self._cache = cache
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int(self._cache)

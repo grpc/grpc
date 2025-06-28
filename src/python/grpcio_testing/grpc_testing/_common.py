@@ -15,9 +15,12 @@
 
 import abc
 import collections
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple
+
+import grpc
 
 
-def _fuss(tuplified_metadata):
+def _fuss(tuplified_metadata: Sequence[tuple]) -> Tuple[tuple, ...]:
     return tuplified_metadata + (
         (
             "grpc.metadata_added_by_runtime",
@@ -29,14 +32,14 @@ def _fuss(tuplified_metadata):
 FUSSED_EMPTY_METADATA = _fuss(())
 
 
-def fuss_with_metadata(metadata):
+def fuss_with_metadata(metadata: Optional[Sequence[tuple]]) -> Tuple[tuple, ...]:
     if metadata is None:
         return FUSSED_EMPTY_METADATA
     else:
         return _fuss(tuple(metadata))
 
 
-def rpc_names(service_descriptors):
+def rpc_names(service_descriptors: Sequence[Any]) -> Dict[str, Any]:
     rpc_names_to_descriptors = {}
     for service_descriptor in service_descriptors:
         for method_descriptor in service_descriptor.methods_by_name.values():
@@ -63,39 +66,39 @@ class ChannelRpcRead(
 
 class ChannelRpcHandler(abc.ABC):
     @abc.abstractmethod
-    def initial_metadata(self):
+    def initial_metadata(self) -> Sequence[tuple]:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_request(self, request):
+    def add_request(self, request: Any) -> bool:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def close_requests(self):
+    def close_requests(self) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_response(self):
+    def take_response(self) -> ChannelRpcRead:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def cancel(self, code, details):
+    def cancel(self, code: grpc.StatusCode, details: str) -> bool:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def termination(self):
+    def termination(self) -> Tuple[Optional[Sequence[tuple]], Optional[grpc.StatusCode], Optional[str]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def is_active(self):
+    def is_active(self) -> bool:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def time_remaining(self):
+    def time_remaining(self) -> float:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_callback(self, callback):
+    def add_callback(self, callback: Callable) -> bool:
         raise NotImplementedError()
 
 
@@ -103,12 +106,12 @@ class ChannelHandler(abc.ABC):
     @abc.abstractmethod
     def invoke_rpc(
         self,
-        method_full_rpc_name,
-        invocation_metadata,
-        requests,
-        requests_closed,
-        timeout,
-    ):
+        method_full_rpc_name: str,
+        invocation_metadata: Sequence[tuple],
+        requests: Sequence[Any],
+        requests_closed: bool,
+        timeout: Optional[float],
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()
 
 
@@ -131,47 +134,47 @@ TERMINATED = ServerRpcRead(None, False, True)
 
 class ServerRpcHandler(abc.ABC):
     @abc.abstractmethod
-    def send_initial_metadata(self, initial_metadata):
+    def send_initial_metadata(self, initial_metadata: Sequence[tuple]) -> bool:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def take_request(self):
+    def take_request(self) -> Any:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_response(self, response):
+    def add_response(self, response: Any) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def send_termination(self, trailing_metadata, code, details):
+    def send_termination(self, trailing_metadata: Sequence[tuple], code: grpc.StatusCode, details: str) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def add_termination_callback(self, callback):
+    def add_termination_callback(self, callback: Callable) -> bool:
         raise NotImplementedError()
 
 
 class Serverish(abc.ABC):
     @abc.abstractmethod
     def invoke_unary_unary(
-        self, method_descriptor, handler, invocation_metadata, request, deadline
-    ):
+        self, method_descriptor: Any, handler: ServerRpcHandler, invocation_metadata: Sequence[tuple], request: Any, deadline: Optional[float]
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def invoke_unary_stream(
-        self, method_descriptor, handler, invocation_metadata, request, deadline
-    ):
+        self, method_descriptor: Any, handler: ServerRpcHandler, invocation_metadata: Sequence[tuple], request: Any, deadline: Optional[float]
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def invoke_stream_unary(
-        self, method_descriptor, handler, invocation_metadata, deadline
-    ):
+        self, method_descriptor: Any, handler: ServerRpcHandler, invocation_metadata: Sequence[tuple], deadline: Optional[float]
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()
 
     @abc.abstractmethod
     def invoke_stream_stream(
-        self, method_descriptor, handler, invocation_metadata, deadline
-    ):
+        self, method_descriptor: Any, handler: ServerRpcHandler, invocation_metadata: Sequence[tuple], deadline: Optional[float]
+    ) -> ChannelRpcHandler:
         raise NotImplementedError()

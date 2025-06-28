@@ -18,7 +18,7 @@ For usage instructions, see the Python Reflection documentation at
 """
 
 import logging
-from typing import Any, Dict, Iterable, List, Set
+from typing import Any, Dict, Iterable, List, Set, Tuple, Union
 
 from google.protobuf.descriptor_database import DescriptorDatabase
 from google.protobuf.descriptor_pb2 import FileDescriptorProto
@@ -50,7 +50,7 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
     # while implementing the Python interface given here:
     #   https://googleapis.dev/python/protobuf/3.17.0/google/protobuf/descriptor_database.html
 
-    def __init__(self, channel: grpc.Channel):
+    def __init__(self, channel: grpc.Channel) -> None:
         DescriptorDatabase.__init__(self)
         self._logger = logging.getLogger(__name__)
         self._stub = ServerReflectionStub(channel)
@@ -199,12 +199,10 @@ class ProtoReflectionDescriptorDatabase(DescriptorDatabase):
         )
         file_desc = response.file_descriptor_response
         self._add_file_from_response(file_desc)
-        return super().FindFileContainingExtension(
-            extendee_name, extension_number
-        )
+        return super().FindFileContainingExtension(extendee_name, extension_number)
 
     def _do_one_request(
-        self, request: ServerReflectionRequest, key: Any
+        self, request: ServerReflectionRequest, key: Union[str, Tuple[str, int]]
     ) -> ServerReflectionResponse:
         response = self._stub.ServerReflectionInfo(iter([request]))
         res = next(response)
