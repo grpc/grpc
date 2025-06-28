@@ -109,15 +109,25 @@ cc_binary(
         "@bazel_tools//src/conditions:windows": ["-compiler_param_file"],
         "//conditions:default": [],
     }),
+    linkopts = select({
+        "@bazel_tools//src/conditions:windows": [
+            # Windows needs explicit linking for some Abseil libraries not in the DLL
+            "-DEFAULTLIB:advapi32.lib",  # Required by absl::base
+        ],
+        "//conditions:default": [],
+    }),
     deps = [
         "@abseil-cpp//absl/base",
+        "@abseil-cpp//absl/base:core_headers",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/flags:marshalling",
         "@abseil-cpp//absl/flags:parse",
+        "@abseil-cpp//absl/flags:usage",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",
         "@abseil-cpp//absl/log:initialize",
         "@abseil-cpp//absl/strings",
+        "@abseil-cpp//absl/strings:str_format",
         "@pugixml",
     ],
 )
