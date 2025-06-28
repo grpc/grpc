@@ -211,7 +211,6 @@ static const char* kBuildExtraMetadata = R"json({
     "@com_google_protobuf//third_party/utf8_range:utf8_range": {
         "language": "c",
         "build": "all",
-        // rename to utf8_range_lib is necessary for now to avoid clash with utf8_range target in protobuf's cmake
         "_RENAME": "utf8_range_lib"
     },
     "@com_googlesource_code_re2//:re2": {
@@ -466,9 +465,7 @@ class ArtifactGen {
       // target so add the upb dependency manually
       bazel_rule.deps = {
           "@com_google_protobuf//upb:descriptor_upb_proto",
-          "@com_google_protobuf//"
-          "upb:generated_code_support"
-          "give_permission_to_break_me",
+          "@com_google_protobuf//upb:generated_code_support",
       };
       // populate the upb_c_proto_library rule with pre-generated upb headers
       // and sources using proto_rule

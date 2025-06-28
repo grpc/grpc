@@ -2190,6 +2190,7 @@ let package = Package(
         "third_party/upb/upb/base/status.hpp",
         "third_party/upb/upb/base/string_view.h",
         "third_party/upb/upb/base/upcast.h",
+        "third_party/upb/upb/generated_code_support.h",
         "third_party/upb/upb/json/decode.c",
         "third_party/upb/upb/json/decode.h",
         "third_party/upb/upb/json/encode.c",
