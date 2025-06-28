@@ -107,8 +107,11 @@ cc_binary(
     copts = COPTS,
     deps = [
         "@abseil-cpp//absl/flags:flag",
+        "@abseil-cpp//absl/flags:marshalling",
         "@abseil-cpp//absl/flags:parse",
         "@abseil-cpp//absl/log",
+        "@abseil-cpp//absl/log:globals",
+        "@abseil-cpp//absl/log:initialize",
         "@abseil-cpp//absl/strings",
         "@pugixml",
     ],
