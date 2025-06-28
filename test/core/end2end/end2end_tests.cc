@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
+#include "test/core/test_util/postmortem_emit.h"
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;
@@ -98,9 +99,11 @@ CoreEnd2endTest::CoreEnd2endTest(
   CoreConfiguration::Reset();
   initialized_ = false;
   grpc_prewarm_os_for_tests();
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
 }
 
 CoreEnd2endTest::~CoreEnd2endTest() {
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
   const bool do_shutdown = fixture_ != nullptr;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> ee;
   if (grpc_is_initialized()) {
@@ -133,6 +136,7 @@ CoreEnd2endTest::~CoreEnd2endTest() {
       LOG(ERROR) << "Timeout in waiting for gRPC shutdown";
     }
   }
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
   CHECK_EQ(client_, nullptr);
   CHECK_EQ(server_, nullptr);
   initialized_ = false;
