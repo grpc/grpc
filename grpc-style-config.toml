@@ -1,8 +1,9 @@
+[project]
+requires-python = ">= 3.9"
+
 [tool.black]
 line-length = 80
 target-version = [
-  "py37",
-  "py38",
   "py39",
   "py310",
   "py311",

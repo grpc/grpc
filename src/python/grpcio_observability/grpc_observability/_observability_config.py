@@ -25,7 +25,7 @@ GRPC_GCP_OBSERVABILITY_CONFIG_ENV = "GRPC_GCP_OBSERVABILITY_CONFIG"
 
 @dataclass
 class GcpObservabilityConfig:
-    project_id: Optional[str] = ""
+    project_id: str = ""
     stats_enabled: bool = False
     tracing_enabled: bool = False
     labels: Optional[Mapping[str, str]] = field(default_factory=dict)
@@ -72,10 +72,11 @@ def read_config() -> GcpObservabilityConfig:
     if not config.project_id:
         # Get project ID from GCP environment variables since project ID was not
         # set it in the GCP observability config.
-        config.project_id = _get_gcp_project_id_from_env_var()
-        if not config.project_id:
+        project_id = _get_gcp_project_id_from_env_var()
+        if not project_id:
             # Could not find project ID from GCP environment variables either.
             raise ValueError("GCP Project ID not found.")
+        config.project_id = project_id
     return config
 
 
