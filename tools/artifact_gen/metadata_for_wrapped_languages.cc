@@ -266,13 +266,21 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
     std::sort(ret.begin(), ret.end());
     return ret;
   };
-  std::vector<std::string> asm_outputs;
+  // Build asm_outputs like the Python version - preserve categories
+  nlohmann::json asm_outputs = nlohmann::json::object();
   for (auto it = sources.begin(); it != sources.end(); ++it) {
-    for (const auto& file : it.value()) {
+    const std::string& category = it.key();
+    const auto& files = it.value();
+    bool has_asm = false;
+    for (const auto& file : files) {
       std::string file_str = file;
       if (absl::EndsWith(file_str, ".S") || absl::EndsWith(file_str, ".asm")) {
-        asm_outputs.push_back(file);
+        has_asm = true;
+        break;
       }
+    }
+    if (has_asm) {
+      asm_outputs[category] = files;
     }
   }
   metadata["raw_boringssl_build_output_for_debugging"]["files"] = sources;
@@ -282,7 +290,14 @@ void AddBoringSslMetadata(nlohmann::json& metadata) {
        {"language", "c"},
        {"secure", false},
        {"src", file_list({"ssl", "crypto"})},
-       {"asm_src", file_list({"asm"})},
+       {"asm_src", [&asm_outputs, &file_list]() {
+         nlohmann::json result = nlohmann::json::object();
+         for (auto it = asm_outputs.begin(); it != asm_outputs.end(); ++it) {
+           const std::string& category = it.key();
+           result[category] = file_list({category});
+         }
+         return result;
+       }()},
        {"headers",
         file_list({"ssl_headers", "ssl_internal_headers", "crypto_headers",
                    "crypto_internal_headers", "fips_fragments"})},
@@ -730,6 +745,114 @@ std::set<std::string> MakeRubyGemFiles(const nlohmann::json& config) {
   
   return files;
 }
+
+
+
+nlohmann::json MakePythonCoreSourceFiles(const nlohmann::json& config) {
+  std::set<std::string> srcs;
+  
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  for (const auto& lib : config["libs"]) {
+    std::string lib_name = lib["name"];
+    lib_maps[lib_name] = &lib;
+  }
+  
+  // Get Python dependencies and expand transitive dependencies (like Ruby/PHP functions)
+  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
+  std::set<std::string> python_full_deps;
+  for (const auto& dep : python_deps) {
+    python_full_deps.insert(dep);
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+      python_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+    }
+  }
+  
+  // Get the mapping from original Bazel labels to renamed library names
+  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  
+  for (const auto& dep : python_full_deps) {
+    std::string actual_lib_name = dep;
+    
+    // Check if this is a renamed Bazel label using the shared metadata
+    auto rename_it = bazel_label_to_renamed.find(dep);
+    if (rename_it != bazel_label_to_renamed.end()) {
+      actual_lib_name = rename_it->second;
+    }
+    
+    auto it = lib_maps.find(actual_lib_name);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      if (lib->contains("src")) {
+        std::vector<std::string> src = (*lib)["src"];
+        srcs.insert(src.begin(), src.end());
+      }
+    }
+  }
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& src : srcs) {
+    sorted_files.push_back(src);
+  }
+  
+  return sorted_files;
+}
+
+nlohmann::json MakePythonAsmSourceFiles(const nlohmann::json& config) {
+  nlohmann::json asm_files = nlohmann::json::array();
+  
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  for (const auto& lib : config["libs"]) {
+    std::string lib_name = lib["name"];
+    lib_maps[lib_name] = &lib;
+  }
+  
+  // Get Python dependencies and expand transitive dependencies (like Ruby/PHP functions)
+  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
+  std::set<std::string> python_full_deps;
+  for (const auto& dep : python_deps) {
+    python_full_deps.insert(dep);
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+      python_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+    }
+  }
+  
+  // Get the mapping from original Bazel labels to renamed library names
+  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  
+  for (const auto& dep : python_full_deps) {
+    std::string actual_lib_name = dep;
+    
+    // Check if this is a renamed Bazel label using the shared metadata
+    auto rename_it = bazel_label_to_renamed.find(dep);
+    if (rename_it != bazel_label_to_renamed.end()) {
+      actual_lib_name = rename_it->second;
+    }
+    
+    auto it = lib_maps.find(actual_lib_name);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      if (lib->contains("asm_src")) {
+        // asm_src is a dictionary in the Python template
+        nlohmann::json asm_src = (*lib)["asm_src"];
+        for (auto it = asm_src.begin(); it != asm_src.end(); ++it) {
+          nlohmann::json asm_entry = nlohmann::json::object();
+          asm_entry["asm"] = it.key();
+          asm_entry["asm_src"] = it.value();
+          asm_files.push_back(asm_entry);
+        }
+      }
+    }
+  }
+  
+  return asm_files;
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -760,4 +883,10 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
     ruby_gem_files_array.push_back(file);
   }
   config["ruby_gem_files"] = ruby_gem_files_array;
+  
+  // Add Python core dependencies file collection
+  auto python_core_files = MakePythonCoreSourceFiles(config);
+  auto python_asm_files = MakePythonAsmSourceFiles(config);
+  config["python_core_source_files"] = python_core_files;
+  config["python_asm_source_files"] = python_asm_files;
 }
