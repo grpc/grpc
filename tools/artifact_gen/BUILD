@@ -66,8 +66,6 @@ cc_library(
     srcs = ["utils.cc"],
     hdrs = ["utils.h"],
     deps = [
-        "@abseil-cpp//absl/log",
-        "@abseil-cpp//absl/log:check",
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
     ],
@@ -105,23 +103,9 @@ cc_binary(
     name = "gen_upb_api_from_bazel",
     srcs = ["gen_upb_api_from_bazel.cc"],
     copts = COPTS,
-    features = select({
-        "@bazel_tools//src/conditions:windows": ["-compiler_param_file", "-dynamic_link_test_srcs"],
-        "//conditions:default": [],
-    }),
-    linkopts = select({
-        "@bazel_tools//src/conditions:windows": [
-            # Windows needs explicit linking for some Abseil libraries not in the DLL
-            "-DEFAULTLIB:advapi32.lib",  # Required by absl::base
-            "/WHOLEARCHIVE",  # Force all symbols to be included
-        ],
-        "//conditions:default": [],
-    }),
+
     deps = [
-        "@abseil-cpp//absl/flags:flag",
-        "@abseil-cpp//absl/flags:parse",
-        "@abseil-cpp//absl/log:absl_log",
-        "@abseil-cpp//absl/strings",
+        ":utils",
         "@pugixml",
     ],
 )
