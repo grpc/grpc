@@ -61,7 +61,7 @@ void AddAllFilesInDir(const std::string& root_dir, const std::string& dir,
                       std::vector<std::string>* result) {
   for (const auto& entry : std::filesystem::directory_iterator(dir)) {
     if (std::filesystem::is_regular_file(entry)) {
-      result->push_back(entry.path().lexically_relative(root_dir));
+      result->push_back(entry.path().lexically_relative(root_dir).string());
     } else if (std::filesystem::is_directory(entry)) {
       AddAllFilesInDir(root_dir, entry.path().string(), result);
     }
