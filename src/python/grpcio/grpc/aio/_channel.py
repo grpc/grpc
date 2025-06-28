@@ -39,7 +39,6 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
-from ._typing import ChannelArgsType
 from ._typing import ChannelArgumentType
 from ._typing import DeserializingFunction
 from ._typing import MetadataType
@@ -63,8 +62,7 @@ else:
 
 
 def _augment_channel_arguments(
-    base_options: Sequence[ChannelArgumentType],
-    compression: Optional[grpc.Compression],
+    base_options: ChannelArgumentType, compression: Optional[grpc.Compression]
 ):
     compression_channel_argument = _compression.create_channel_option(
         compression
@@ -326,7 +324,7 @@ class Channel(_base_channel.Channel):
     def __init__(
         self,
         target: str,
-        options: ChannelArgsType,
+        options: ChannelArgumentType,
         credentials: Optional[grpc.ChannelCredentials],
         compression: Optional[grpc.Compression],
         interceptors: Optional[Sequence[ClientInterceptor]],
@@ -571,7 +569,7 @@ class Channel(_base_channel.Channel):
 
 def insecure_channel(
     target: str,
-    options: Optional[ChannelArgsType] = None,
+    options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -591,7 +589,7 @@ def insecure_channel(
     """
     return Channel(
         target,
-        () if options is None else tuple(options),
+        () if options is None else options,
         None,
         compression,
         interceptors,
@@ -601,7 +599,7 @@ def insecure_channel(
 def secure_channel(
     target: str,
     credentials: grpc.ChannelCredentials,
-    options: Optional[ChannelArgsType] = None,
+    options: Optional[ChannelArgumentType] = None,
     compression: Optional[grpc.Compression] = None,
     interceptors: Optional[Sequence[ClientInterceptor]] = None,
 ):
@@ -622,7 +620,7 @@ def secure_channel(
     """
     return Channel(
         target,
-        () if options is None else tuple(options),
+        () if options is None else options,
         credentials._credentials,
         compression,
         interceptors,

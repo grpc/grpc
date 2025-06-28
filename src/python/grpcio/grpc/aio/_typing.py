@@ -36,10 +36,7 @@ SerializingFunction = Callable[[Any], bytes]
 DeserializingFunction = Callable[[bytes], Any]
 MetadatumType = Tuple[MetadataKey, MetadataValue]
 MetadataType = Union[Metadata, Sequence[MetadatumType]]
-ChannelArgumentType = Tuple[Union[str, bytes], Any]
-ChannelArgsType = Union[
-    Sequence[ChannelArgumentType], Tuple[ChannelArgumentType, ...]
-]
+ChannelArgumentType = Sequence[Tuple[str, Any]]
 EOFType = type(EOF)
 DoneCallbackType = Callable[[Any], None]
 RequestIterableType = Union[Iterable[Any], AsyncIterable[Any]]
