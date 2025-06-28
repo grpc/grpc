@@ -16,6 +16,7 @@ cc_library(
     name = "build_metadata",
     srcs = ["build_metadata.cc"],
     hdrs = ["build_metadata.h"],
+    data = ["build_metadata.json"],
     deps = [
         "@nlohmann_json//:json",
     ],
