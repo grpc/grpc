@@ -620,7 +620,79 @@ void ProcessSwiftBoringSSLPackageFiles(nlohmann::json& config) {
   swift_boringssl_package["all_files"] = sorted_files;
 }
 
+// Helper function to resolve dependencies and collect files from libraries
+// This eliminates duplication across PHP, Ruby, and Python file collection functions
+struct DependencyResolver {
+  explicit DependencyResolver(const nlohmann::json& config) : config_(config) {
+    // Build library maps
+    for (const auto& lib : config_["libs"]) {
+      std::string lib_name = lib["name"];
+      lib_maps_[lib_name] = &lib;
+    }
+    
+    // Get Bazel label to renamed mapping
+    bazel_label_to_renamed_ = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  }
+  
+  // Expand a list of dependencies to include transitive dependencies
+  std::set<std::string> ExpandTransitiveDeps(const std::vector<std::string>& deps, const std::set<std::string>& exclusions = {}) {
+    std::set<std::string> full_deps;
+    for (const auto& dep : deps) {
+      full_deps.insert(dep);
+      auto it = lib_maps_.find(dep);
+      if (it != lib_maps_.end()) {
+        const nlohmann::json* lib = it->second;
+        std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+        full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+      }
+    }
+    
+    // Remove exclusions
+    for (const auto& exclusion : exclusions) {
+      full_deps.erase(exclusion);
+    }
+    
+    return full_deps;
+  }
+  
+  // Collect files from a set of dependencies
+  std::set<std::string> CollectFiles(const std::set<std::string>& deps, const std::vector<std::string>& file_types) {
+    std::set<std::string> files;
+    
+    for (const auto& dep : deps) {
+      std::string actual_lib_name = dep;
+      
+      // Check if this is a renamed Bazel label
+      auto rename_it = bazel_label_to_renamed_.find(dep);
+      if (rename_it != bazel_label_to_renamed_.end()) {
+        actual_lib_name = rename_it->second;
+      }
+      
+      auto it = lib_maps_.find(actual_lib_name);
+      if (it != lib_maps_.end()) {
+        const nlohmann::json* lib = it->second;
+        
+        // Collect specified file types
+        for (const auto& file_type : file_types) {
+          if (lib->contains(file_type)) {
+            std::vector<std::string> file_list = (*lib)[file_type];
+            files.insert(file_list.begin(), file_list.end());
+          }
+        }
+      }
+    }
+    
+    return files;
+  }
+  
+private:
+  const nlohmann::json& config_;
+  std::map<std::string, const nlohmann::json*> lib_maps_;
+  std::map<std::string, std::string> bazel_label_to_renamed_;
+};
+
 std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
   std::set<std::string> srcs;
   
   // Start with php_config_m4.src + php_config_m4.headers (like Python template)
@@ -631,166 +703,39 @@ std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
     srcs.insert(header);
   }
   
-  std::map<std::string, const nlohmann::json*> lib_maps;
-  
-  // Get the mapping from original Bazel labels to renamed library names
-  // using the shared build metadata
-  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
-  
-  for (const auto& lib : config["libs"]) {
-    std::string lib_name = lib["name"];
-    lib_maps[lib_name] = &lib;
-  }
-  
+  // Get PHP dependencies and expand transitive dependencies
   std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
-  std::set<std::string> php_full_deps;
-  for (const auto& dep : php_deps) {
-    php_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
+  auto php_full_deps = resolver.ExpandTransitiveDeps(php_deps, {"cares"});
   
-  // Exclude cares (like Python template)
-  php_full_deps.erase("cares");
-  
-  for (const auto& dep : php_full_deps) {
-    std::string actual_lib_name = dep;
-    
-    // Check if this is a renamed Bazel label using the shared metadata
-    auto rename_it = bazel_label_to_renamed.find(dep);
-    if (rename_it != bazel_label_to_renamed.end()) {
-      actual_lib_name = rename_it->second;
-    }
-    
-    auto it = lib_maps.find(actual_lib_name);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      // Collect public_headers + headers + src (like Python template)
-      if (lib->contains("public_headers")) {
-        std::vector<std::string> public_headers = (*lib)["public_headers"];
-        srcs.insert(public_headers.begin(), public_headers.end());
-      }
-      if (lib->contains("headers")) {
-        std::vector<std::string> headers = (*lib)["headers"];
-        srcs.insert(headers.begin(), headers.end());
-      }
-      if (lib->contains("src")) {
-        std::vector<std::string> src = (*lib)["src"];
-        srcs.insert(src.begin(), src.end());
-      }
-    }
-  }
+  // Collect public_headers + headers + src files
+  auto dep_files = resolver.CollectFiles(php_full_deps, {"public_headers", "headers", "src"});
+  srcs.insert(dep_files.begin(), dep_files.end());
   
   return srcs;
 }
 
 std::set<std::string> MakeRubyGemFiles(const nlohmann::json& config) {
-  std::set<std::string> files;
-  
-  std::map<std::string, const nlohmann::json*> lib_maps;
-  for (const auto& lib : config["libs"]) {
-    std::string lib_name = lib["name"];
-    lib_maps[lib_name] = &lib;
-  }
+  DependencyResolver resolver(config);
   
   // Get Ruby dependencies and expand transitive dependencies
   std::vector<std::string> ruby_deps = config["ruby_gem"]["deps"];
-  std::set<std::string> ruby_full_deps;
-  for (const auto& dep : ruby_deps) {
-    ruby_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      ruby_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
+  auto ruby_full_deps = resolver.ExpandTransitiveDeps(ruby_deps);
   
-  // Get the mapping from original Bazel labels to renamed library names
-  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
-  
-  for (const auto& dep : ruby_full_deps) {
-    std::string actual_lib_name = dep;
-    
-    // Check if this is a renamed Bazel label using the shared metadata
-    auto rename_it = bazel_label_to_renamed.find(dep);
-    if (rename_it != bazel_label_to_renamed.end()) {
-      actual_lib_name = rename_it->second;
-    }
-    
-    auto it = lib_maps.find(actual_lib_name);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      // Collect public_headers + headers + src (like Python template)
-      if (lib->contains("public_headers")) {
-        std::vector<std::string> public_headers = (*lib)["public_headers"];
-        files.insert(public_headers.begin(), public_headers.end());
-      }
-      if (lib->contains("headers")) {
-        std::vector<std::string> headers = (*lib)["headers"];
-        files.insert(headers.begin(), headers.end());
-      }
-      if (lib->contains("src")) {
-        std::vector<std::string> src = (*lib)["src"];
-        files.insert(src.begin(), src.end());
-      }
-    }
-  }
-  
-
-  
-  return files;
+  // Collect public_headers + headers + src files
+  return resolver.CollectFiles(ruby_full_deps, {"public_headers", "headers", "src"});
 }
 
 
 
 nlohmann::json MakePythonCoreSourceFiles(const nlohmann::json& config) {
-  std::set<std::string> srcs;
+  DependencyResolver resolver(config);
   
-  std::map<std::string, const nlohmann::json*> lib_maps;
-  for (const auto& lib : config["libs"]) {
-    std::string lib_name = lib["name"];
-    lib_maps[lib_name] = &lib;
-  }
-  
-  // Get Python dependencies and expand transitive dependencies (like Ruby/PHP functions)
+  // Get Python dependencies and expand transitive dependencies
   std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
-  std::set<std::string> python_full_deps;
-  for (const auto& dep : python_deps) {
-    python_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      python_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
+  auto python_full_deps = resolver.ExpandTransitiveDeps(python_deps);
   
-  // Get the mapping from original Bazel labels to renamed library names
-  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
-  
-  for (const auto& dep : python_full_deps) {
-    std::string actual_lib_name = dep;
-    
-    // Check if this is a renamed Bazel label using the shared metadata
-    auto rename_it = bazel_label_to_renamed.find(dep);
-    if (rename_it != bazel_label_to_renamed.end()) {
-      actual_lib_name = rename_it->second;
-    }
-    
-    auto it = lib_maps.find(actual_lib_name);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      if (lib->contains("src")) {
-        std::vector<std::string> src = (*lib)["src"];
-        srcs.insert(src.begin(), src.end());
-      }
-    }
-  }
+  // Collect src files only
+  auto srcs = resolver.CollectFiles(python_full_deps, {"src"});
   
   // Convert to sorted JSON array
   nlohmann::json sorted_files = nlohmann::json::array();
@@ -802,34 +747,26 @@ nlohmann::json MakePythonCoreSourceFiles(const nlohmann::json& config) {
 }
 
 nlohmann::json MakePythonAsmSourceFiles(const nlohmann::json& config) {
+  DependencyResolver resolver(config);
   nlohmann::json asm_files = nlohmann::json::array();
   
+  // Get Python dependencies and expand transitive dependencies
+  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
+  auto python_full_deps = resolver.ExpandTransitiveDeps(python_deps);
+  
+  // For ASM files, we need custom logic since asm_src is a dictionary
   std::map<std::string, const nlohmann::json*> lib_maps;
   for (const auto& lib : config["libs"]) {
     std::string lib_name = lib["name"];
     lib_maps[lib_name] = &lib;
   }
   
-  // Get Python dependencies and expand transitive dependencies (like Ruby/PHP functions)
-  std::vector<std::string> python_deps = config["python_dependencies"]["deps"];
-  std::set<std::string> python_full_deps;
-  for (const auto& dep : python_deps) {
-    python_full_deps.insert(dep);
-    auto it = lib_maps.find(dep);
-    if (it != lib_maps.end()) {
-      const nlohmann::json* lib = it->second;
-      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
-      python_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
-    }
-  }
-  
-  // Get the mapping from original Bazel labels to renamed library names
   auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
   
   for (const auto& dep : python_full_deps) {
     std::string actual_lib_name = dep;
     
-    // Check if this is a renamed Bazel label using the shared metadata
+    // Check if this is a renamed Bazel label
     auto rename_it = bazel_label_to_renamed.find(dep);
     if (rename_it != bazel_label_to_renamed.end()) {
       actual_lib_name = rename_it->second;
@@ -853,6 +790,7 @@ nlohmann::json MakePythonAsmSourceFiles(const nlohmann::json& config) {
   
   return asm_files;
 }
+
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
