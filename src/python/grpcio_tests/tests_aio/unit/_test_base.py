@@ -42,7 +42,7 @@ def _get_default_loop(debug=True):
         asyncio.set_event_loop(loop)
     finally:
         if loop:
-          loop.set_debug(debug)
+            loop.set_debug(debug)
     return loop
 
 
