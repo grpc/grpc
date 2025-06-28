@@ -301,10 +301,12 @@ class grpc_compute_engine_token_fetcher_credentials
         grpc_core::Oauth2TokenFetcherCredentials::debug_string());
   }
 
- private:
-  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
+ protected:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest>
+  BuildAndStartHttpRequestWithQueryParams(
+      std::vector<grpc_core::URI::QueryParam> query_parameter_pairs,
       grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
-      grpc_http_response* response, grpc_closure* on_complete) override {
+      grpc_http_response* response, grpc_closure* on_complete) {
     grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),
                                const_cast<char*>("Google")};
     grpc_http_request request;
@@ -317,7 +319,7 @@ class grpc_compute_engine_token_fetcher_credentials
     auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
                                       GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
-                                      {} /* query params */, "" /* fragment */);
+                                      query_parameter_pairs, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
     auto http_request = grpc_core::HttpRequest::Get(
         std::move(*uri), /*args=*/nullptr, pollent, &request, deadline,
@@ -326,6 +328,35 @@ class grpc_compute_engine_token_fetcher_credentials
             grpc_insecure_credentials_create()));
     http_request->Start();
     return http_request;
+  }
+
+ private:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override {
+    return BuildAndStartHttpRequestWithQueryParams({}, pollent, deadline,
+                                                   response, on_complete);
+  }
+};
+
+class grpc_compute_engine_token_fetcher_alts_credentials
+    : public grpc_compute_engine_token_fetcher_credentials {
+ public:
+  grpc_compute_engine_token_fetcher_alts_credentials() = default;
+  ~grpc_compute_engine_token_fetcher_alts_credentials() override = default;
+
+  std::string debug_string() override {
+    return absl::StrFormat(
+        "GoogleComputeEngineTokenFetcherAltsCredentials{%s}",
+        grpc_compute_engine_token_fetcher_credentials::debug_string());
+  }
+
+ private:
+  grpc_core::OrphanablePtr<grpc_core::HttpRequest> StartHttpRequest(
+      grpc_polling_entity* pollent, grpc_core::Timestamp deadline,
+      grpc_http_response* response, grpc_closure* on_complete) override {
+    return BuildAndStartHttpRequestWithQueryParams(
+        {{"transport", "alts"}}, pollent, deadline, response, on_complete);
   }
 };
 
@@ -338,6 +369,16 @@ grpc_call_credentials* grpc_google_compute_engine_credentials_create(
   CHECK_EQ(reserved, nullptr);
   return grpc_core::MakeRefCounted<
              grpc_compute_engine_token_fetcher_credentials>()
+      .release();
+}
+
+grpc_call_credentials* grpc_google_compute_engine_alts_credentials_create(
+    void* reserved) {
+  GRPC_TRACE_LOG(api, INFO)
+      << "grpc_compute_engine_credentials_create(reserved=" << reserved << ")";
+  CHECK_EQ(reserved, nullptr);
+  return grpc_core::MakeRefCounted<
+             grpc_compute_engine_token_fetcher_alts_credentials>()
       .release();
 }
 

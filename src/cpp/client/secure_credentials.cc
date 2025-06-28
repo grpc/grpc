@@ -267,6 +267,13 @@ std::shared_ptr<CallCredentials> GoogleComputeEngineCredentials() {
       grpc_google_compute_engine_credentials_create(nullptr));
 }
 
+// Builds credentials for use when running in GCE
+std::shared_ptr<CallCredentials> GoogleComputeEngineCredentialsWithALTS() {
+  grpc::internal::GrpcLibrary init;  // To call grpc_init().
+  return WrapCallCredentials(
+      grpc_google_compute_engine_alts_credentials_create(nullptr));
+}
+
 // Builds JWT credentials.
 std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
     const std::string& json_key, long token_lifetime_seconds) {
