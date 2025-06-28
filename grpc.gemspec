@@ -46,7 +46,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'googleauth',         '~> 1.0'
 
   s.extensions = %w(src/ruby/ext/grpc/extconf.rb)
-
   s.files += %w( include/grpc/byte_buffer.h )
   s.files += %w( include/grpc/byte_buffer_reader.h )
   s.files += %w( include/grpc/census.h )
@@ -3450,4 +3449,5 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/zlib/zlib.h )
   s.files += %w( third_party/zlib/zutil.c )
   s.files += %w( third_party/zlib/zutil.h )
-end
+
+end 

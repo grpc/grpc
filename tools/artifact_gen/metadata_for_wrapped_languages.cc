@@ -244,6 +244,9 @@ void ExpandVersion(nlohmann::json& config) {
   // Add PHP stability computation
   std::string php_stability = version.tag.has_value() ? "beta" : "stable";
   settings["php_version"]["php_stability"] = php_stability;
+  
+  // Expand protobuf_version to have the same structure as other versions
+  ExpandOneVersion(settings, "protobuf_version");
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
@@ -327,6 +330,114 @@ void AddAbseilMetadata(nlohmann::json& config) {
     build["secure"] = false;
     config["libs"].push_back(build);
   }
+}
+
+void AddCaresMetadata(nlohmann::json& config) {
+  // This translates the contents of src/c-ares/gen_build_yaml.py into C++
+  // to match what the Python build system does
+  nlohmann::json cares_lib = {
+    {"name", "cares"},
+    {"defaults", "cares"},
+    {"build", "private"},
+    {"language", "c"},
+    {"secure", false},
+    {"src", nlohmann::json::array({
+      "third_party/cares/cares/src/lib/ares__read_line.c",
+      "third_party/cares/cares/src/lib/ares__get_hostent.c",
+      "third_party/cares/cares/src/lib/ares__close_sockets.c",
+      "third_party/cares/cares/src/lib/ares__timeval.c",
+      "third_party/cares/cares/src/lib/ares_gethostbyaddr.c",
+      "third_party/cares/cares/src/lib/ares_getenv.c",
+      "third_party/cares/cares/src/lib/ares_free_string.c",
+      "third_party/cares/cares/src/lib/ares_free_hostent.c",
+      "third_party/cares/cares/src/lib/ares_fds.c",
+      "third_party/cares/cares/src/lib/ares_expand_string.c",
+      "third_party/cares/cares/src/lib/ares_create_query.c",
+      "third_party/cares/cares/src/lib/ares_cancel.c",
+      "third_party/cares/cares/src/lib/ares_android.c",
+      "third_party/cares/cares/src/lib/ares_parse_txt_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_srv_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_soa_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_ptr_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_ns_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_naptr_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_mx_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_caa_reply.c",
+      "third_party/cares/cares/src/lib/ares_options.c",
+      "third_party/cares/cares/src/lib/ares_nowarn.c",
+      "third_party/cares/cares/src/lib/ares_mkquery.c",
+      "third_party/cares/cares/src/lib/ares_llist.c",
+      "third_party/cares/cares/src/lib/ares_getsock.c",
+      "third_party/cares/cares/src/lib/ares_getnameinfo.c",
+      "third_party/cares/cares/src/lib/bitncmp.c",
+      "third_party/cares/cares/src/lib/ares_writev.c",
+      "third_party/cares/cares/src/lib/ares_version.c",
+      "third_party/cares/cares/src/lib/ares_timeout.c",
+      "third_party/cares/cares/src/lib/ares_strerror.c",
+      "third_party/cares/cares/src/lib/ares_strcasecmp.c",
+      "third_party/cares/cares/src/lib/ares_search.c",
+      "third_party/cares/cares/src/lib/ares_platform.c",
+      "third_party/cares/cares/src/lib/windows_port.c",
+      "third_party/cares/cares/src/lib/inet_ntop.c",
+      "third_party/cares/cares/src/lib/ares__sortaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares__readaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_parse_uri_reply.c",
+      "third_party/cares/cares/src/lib/ares__parse_into_addrinfo.c",
+      "third_party/cares/cares/src/lib/ares_parse_a_reply.c",
+      "third_party/cares/cares/src/lib/ares_parse_aaaa_reply.c",
+      "third_party/cares/cares/src/lib/ares_library_init.c",
+      "third_party/cares/cares/src/lib/ares_init.c",
+      "third_party/cares/cares/src/lib/ares_gethostbyname.c",
+      "third_party/cares/cares/src/lib/ares_getaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_freeaddrinfo.c",
+      "third_party/cares/cares/src/lib/ares_expand_name.c",
+      "third_party/cares/cares/src/lib/ares_destroy.c",
+      "third_party/cares/cares/src/lib/ares_data.c",
+      "third_party/cares/cares/src/lib/ares__addrinfo_localhost.c",
+      "third_party/cares/cares/src/lib/ares__addrinfo2hostent.c",
+      "third_party/cares/cares/src/lib/inet_net_pton.c",
+      "third_party/cares/cares/src/lib/ares_strsplit.c",
+      "third_party/cares/cares/src/lib/ares_strdup.c",
+      "third_party/cares/cares/src/lib/ares_send.c",
+      "third_party/cares/cares/src/lib/ares_rand.c",
+      "third_party/cares/cares/src/lib/ares_query.c",
+      "third_party/cares/cares/src/lib/ares_process.c"
+    })},
+    {"headers", nlohmann::json::array({
+      "third_party/cares/ares_build.h",
+      "third_party/cares/cares/include/ares_version.h",
+      "third_party/cares/cares/include/ares.h",
+      "third_party/cares/cares/include/ares_rules.h",
+      "third_party/cares/cares/include/ares_dns.h",
+      "third_party/cares/cares/include/ares_nameser.h",
+      "third_party/cares/cares/src/tools/ares_getopt.h",
+      "third_party/cares/cares/src/lib/ares_strsplit.h",
+      "third_party/cares/cares/src/lib/ares_android.h",
+      "third_party/cares/cares/src/lib/ares_private.h",
+      "third_party/cares/cares/src/lib/ares_llist.h",
+      "third_party/cares/cares/src/lib/ares_platform.h",
+      "third_party/cares/cares/src/lib/ares_ipv6.h",
+      "third_party/cares/cares/src/lib/config-dos.h",
+      "third_party/cares/cares/src/lib/bitncmp.h",
+      "third_party/cares/cares/src/lib/ares_strcasecmp.h",
+      "third_party/cares/cares/src/lib/setup_once.h",
+      "third_party/cares/cares/src/lib/ares_inet_net_pton.h",
+      "third_party/cares/cares/src/lib/ares_data.h",
+      "third_party/cares/cares/src/lib/ares_getenv.h",
+      "third_party/cares/cares/src/lib/config-win32.h",
+      "third_party/cares/cares/src/lib/ares_strdup.h",
+      "third_party/cares/cares/src/lib/ares_iphlpapi.h",
+      "third_party/cares/cares/src/lib/ares_setup.h",
+      "third_party/cares/cares/src/lib/ares_writev.h",
+      "third_party/cares/cares/src/lib/ares_nowarn.h",
+      "third_party/cares/config_darwin/ares_config.h",
+      "third_party/cares/config_freebsd/ares_config.h",
+      "third_party/cares/config_linux/ares_config.h",
+      "third_party/cares/config_openbsd/ares_config.h"
+    })}
+  };
+  
+  config["libs"].push_back(cares_lib);
 }
 
 class TransitiveDepsCalculator {
@@ -561,12 +672,71 @@ std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
   
   return srcs;
 }
+
+std::set<std::string> MakeRubyGemFiles(const nlohmann::json& config) {
+  std::set<std::string> files;
+  
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  for (const auto& lib : config["libs"]) {
+    std::string lib_name = lib["name"];
+    lib_maps[lib_name] = &lib;
+  }
+  
+  // Get Ruby dependencies and expand transitive dependencies
+  std::vector<std::string> ruby_deps = config["ruby_gem"]["deps"];
+  std::set<std::string> ruby_full_deps;
+  for (const auto& dep : ruby_deps) {
+    ruby_full_deps.insert(dep);
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+      ruby_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+    }
+  }
+  
+  // Get the mapping from original Bazel labels to renamed library names
+  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  
+  for (const auto& dep : ruby_full_deps) {
+    std::string actual_lib_name = dep;
+    
+    // Check if this is a renamed Bazel label using the shared metadata
+    auto rename_it = bazel_label_to_renamed.find(dep);
+    if (rename_it != bazel_label_to_renamed.end()) {
+      actual_lib_name = rename_it->second;
+    }
+    
+    auto it = lib_maps.find(actual_lib_name);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      // Collect public_headers + headers + src (like Python template)
+      if (lib->contains("public_headers")) {
+        std::vector<std::string> public_headers = (*lib)["public_headers"];
+        files.insert(public_headers.begin(), public_headers.end());
+      }
+      if (lib->contains("headers")) {
+        std::vector<std::string> headers = (*lib)["headers"];
+        files.insert(headers.begin(), headers.end());
+      }
+      if (lib->contains("src")) {
+        std::vector<std::string> src = (*lib)["src"];
+        files.insert(src.begin(), src.end());
+      }
+    }
+  }
+  
+
+  
+  return files;
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   AddCApis(config);
   AddBoringSslMetadata(config);
   AddAbseilMetadata(config);
+  AddCaresMetadata(config);
   ExpandTransitiveDeps(config);
   AddPhpConfig(config);
   ExpandVersion(config);
@@ -582,4 +752,12 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
     package_xml_files.push_back(src);
   }
   config["package_xml_srcs"] = package_xml_files;
+  
+  // Add Ruby gem file collection
+  auto ruby_gem_files = MakeRubyGemFiles(config);
+  nlohmann::json ruby_gem_files_array = nlohmann::json::array();
+  for (const auto& file : ruby_gem_files) {
+    ruby_gem_files_array.push_back(file);
+  }
+  config["ruby_gem_files"] = ruby_gem_files_array;
 }
