@@ -46,8 +46,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
         "gtest_main",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
+        "//:channelz_property_list_upb",
         "//src/core:channelz_property_list",
     ],
 )
