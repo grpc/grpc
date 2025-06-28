@@ -389,6 +389,56 @@ void ExpandSupportedPythonVersions(nlohmann::json& config) {
   settings["min_python_version"] = supported_python_versions.front();
   settings["max_python_version"] = supported_python_versions.back();
 }
+
+void ProcessSwiftPackageFiles(nlohmann::json& config) {
+  // Get the swift_package.deps and collect all files, then deduplicate and sort
+  if (!config.contains("swift_package") || !config["swift_package"].contains("deps")) {
+    return;
+  }
+  
+  auto& swift_package = config["swift_package"];
+  auto& deps = swift_package["deps"];
+  auto& libs = config["libs"];
+  
+  std::set<std::string> all_files;
+  
+  // Collect files from all dependencies
+  for (const auto& dep : deps) {
+    std::string dep_name = dep.get<std::string>();
+    
+    // Find the library with this name
+    for (const auto& lib : libs) {
+      if (lib.contains("name") && lib["name"].get<std::string>() == dep_name) {
+        // Add all files from this library
+        if (lib.contains("public_headers")) {
+          for (const auto& file : lib["public_headers"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        if (lib.contains("headers")) {
+          for (const auto& file : lib["headers"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        if (lib.contains("src")) {
+          for (const auto& file : lib["src"]) {
+            all_files.insert(file.get<std::string>());
+          }
+        }
+        break;
+      }
+    }
+  }
+  
+  // Convert to sorted JSON array
+  nlohmann::json sorted_files = nlohmann::json::array();
+  for (const auto& file : all_files) {
+    sorted_files.push_back(file);
+  }
+  
+  // Add to swift_package for template use
+  swift_package["all_files"] = sorted_files;
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -400,4 +450,5 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   ExpandVersion(config);
   AddSupportedBazelVersions(config);
   ExpandSupportedPythonVersions(config);
+  ProcessSwiftPackageFiles(config);
 }

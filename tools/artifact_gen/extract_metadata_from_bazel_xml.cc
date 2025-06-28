@@ -148,17 +148,17 @@ BazelRule BazelRuleFromXml(const pugi::xml_node& node) {
 // this target should be renamed to a different name (to match expectations of
 // make and cmake builds)
 static const char* kBuildExtraMetadata = R"json({
-    "third_party/address_sorting:address_sorting": {
+    "//third_party/address_sorting:address_sorting": {
         "language": "c",
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb/base": {
+    "@com_google_protobuf//upb:base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib"
     },
-    "@com_google_protobuf//upb/mem": {
+    "@com_google_protobuf//upb:mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib"
@@ -168,7 +168,7 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_lex_lib"
     },
-    "@com_google_protobuf//upb/message": {
+    "@com_google_protobuf//upb:message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib"
@@ -630,9 +630,60 @@ class ArtifactGen {
   }
 
   void ConvertToBuildYamlLike() {
+    // Parse the build extra metadata to get rename mappings
+    const auto extra_metadata = nlohmann::json::parse(kBuildExtraMetadata, nullptr, true, true);
+    
     std::vector<nlohmann::json> lib_list;
     std::vector<nlohmann::json> target_list;
     std::vector<nlohmann::json> test_list;
+    
+    // Add libraries from rules that have extra metadata (including renames)
+    for (auto it = extra_metadata.begin(); it != extra_metadata.end(); ++it) {
+      const auto& bazel_label = it.key();
+      const auto& metadata = it.value();
+      
+      // Skip if this is not a library (e.g., it's a test or target)
+      if (metadata.contains("_TYPE") && metadata["_TYPE"] != "library") {
+        continue;
+      }
+      
+      // Check if this rule exists in our parsed rules
+      auto rule_it = rules_.find(bazel_label);
+      if (rule_it == rules_.end()) {
+        continue;
+      }
+      
+      // Ensure transitive metadata is computed
+      auto& bazel_rule = rule_it->second;
+      if (!bazel_rule.transitive_deps_computed) {
+        ComputeTransitiveMetadata(bazel_rule);
+      }
+      
+      // Create the library entry directly from the rule
+      auto lib_dict = nlohmann::json{
+          {"name", bazel_label},
+          {"public_headers", bazel_rule.collapsed_public_headers},
+          {"headers", bazel_rule.collapsed_headers},
+          {"src", bazel_rule.collapsed_srcs},
+          {"deps", bazel_rule.collapsed_deps},
+          {"transitive_deps", bazel_rule.transitive_deps},
+          {"exclude_deps", bazel_rule.exclude_deps},
+          {"collapsed_deps", bazel_rule.collapsed_deps},
+          {"collapsed_headers", bazel_rule.collapsed_headers},
+          {"collapsed_srcs", bazel_rule.collapsed_srcs},
+      };
+      
+      // Apply the extra metadata
+      lib_dict.update(metadata);
+      
+      // Apply rename if specified
+      if (metadata.contains("_RENAME")) {
+        lib_dict["name"] = metadata["_RENAME"];
+      }
+      
+      lib_list.push_back(lib_dict);
+    }
+    
     for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
       const auto& lib_dict = it.value();
       if (!lib_dict.contains("_TYPE")) {
@@ -1108,6 +1159,10 @@ class ArtifactGen {
         std::vector<std::string> parts = absl::StrSplit(target_name, '/');
         return absl::StrCat(target_name, ":", parts.back());
       }
+    }
+    if (absl::StartsWith(target_name, "//")) {
+      // Already a full Bazel label, return as-is
+      return target_name;
     }
     if (absl::StrContains(target_name, ":")) {
       return absl::StrCat("//", target_name);
