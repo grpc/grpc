@@ -51,6 +51,7 @@
 #include "src/core/util/time.h"
 #include "src/core/util/time_precise.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE \
@@ -124,8 +125,31 @@ class BaseNode : public DualRefCounted<BaseNode> {
     return "unknown";
   }
 
+  static absl::string_view EntityTypeToKind(EntityType type) {
+    switch (type) {
+      case EntityType::kTopLevelChannel:
+        return "channel";
+      case EntityType::kInternalChannel:
+        return "channel";
+      case EntityType::kSubchannel:
+        return "subchannel";
+      case EntityType::kServer:
+        return "server";
+      case EntityType::kListenSocket:
+        return "listen_socket";
+      case EntityType::kSocket:
+        return "socket";
+      case EntityType::kCall:
+        return "call";
+    }
+  }
+
  protected:
   BaseNode(EntityType type, size_t max_trace_memory, std::string name);
+
+  // Leaf derived types should call NodeConstructed() in their constructors
+  // to complete the initialization.
+  void NodeConstructed();
 
  public:
   void Orphaned() override;
@@ -181,6 +205,9 @@ class BaseNode : public DualRefCounted<BaseNode> {
   }
   ChannelTrace& mutable_trace() { return trace_; }
 
+  virtual void SerializeEntity(grpc_channelz_v2_Entity* entity,
+                               upb_Arena* arena);
+
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
 
@@ -196,6 +223,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
+  bool node_constructed_called_ = false;
   uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
@@ -312,11 +340,15 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's constructor.
+  // It adds this data source to the node's list of data sources.
+  void SourceConstructed();
+
   // This method must be called in the most derived class's destructor.
   // It removes this data source from the node's list of data sources.
   // If it is not called, then the AddData() function pointer may be invalid
   // when the node is queried.
-  void ResetDataSource();
+  void SourceDestructing();
 
  private:
   RefCountedPtr<BaseNode> node_;
@@ -674,7 +706,9 @@ class ListenSocketNode final : public BaseNode {
 class CallNode final : public BaseNode {
  public:
   explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {}
+      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+    NodeConstructed();
+  }
 
   Json RenderJson() override;
 };

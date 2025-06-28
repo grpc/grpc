@@ -240,10 +240,11 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
+  SourceConstructed();
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  ResetDataSource();
+  SourceDestructing();
   party_.reset();
 }
 
@@ -257,9 +258,7 @@ void ChaoticGoodClientTransport::Orphan() {
 
 void ChaoticGoodClientTransport::AddData(channelz::DataSink sink) {
   // TODO(ctiller): add calls in stream dispatch
-  party_->ToJson([sink = std::move(sink)](Json::Object obj) mutable {
-    sink.AddAdditionalInfo("transportParty", std::move(obj));
-  });
+  party_->ExportToChannelz("transport_party", sink);
 }
 
 auto ChaoticGoodClientTransport::CallOutboundLoop(uint32_t stream_id,

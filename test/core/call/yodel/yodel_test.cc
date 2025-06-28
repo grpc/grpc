@@ -24,6 +24,7 @@
 #include "src/core/util/wait_for_single_owner.h"
 #include "test/core/event_engine/event_engine_test_utils.h"
 #include "test/core/test_util/build.h"
+#include "test/core/test_util/postmortem_emit.h"
 
 namespace grpc_core {
 namespace yodel_detail {
@@ -118,10 +119,12 @@ void YodelTest::RunTest() {
     ExecCtx exec_ctx;
     InitTest();
   }
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
   {
     ExecCtx exec_ctx;
     TestImpl();
   }
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
   EXPECT_EQ(pending_actions_.size(), 0)
       << "There are still pending actions: did you forget to call "
          "WaitForAllPendingWork()?";
@@ -133,6 +136,7 @@ void YodelTest::RunTest() {
   if (!grpc_wait_until_shutdown(10)) {
     LOG(FATAL) << "Timeout in waiting for gRPC shutdown";
   }
+  SilentPostMortemEmit();  // Ensures no crashes in channelz.
   state_.reset();
   AsanAssertNoLeaks();
 }

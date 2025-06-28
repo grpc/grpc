@@ -26,9 +26,12 @@
 #include <grpcpp/support/slice.h>
 #include <grpcpp/support/status.h>
 
+#include <cstddef>
+#include <limits>
 #include <type_traits>
 
 #include "absl/log/absl_check.h"
+#include "absl/strings/str_cat.h"
 
 /// This header provides serialization and deserialization between gRPC
 /// messages serialized using protobuf and the C++ objects they represent.
@@ -44,8 +47,13 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
                 "ProtoBufferWriter must be a subclass of "
                 "::protobuf::io::ZeroCopyOutputStream");
   *own_buffer = true;
-  int byte_size = static_cast<int>(msg.ByteSizeLong());
-  if (static_cast<size_t>(byte_size) <= GRPC_SLICE_INLINED_SIZE) {
+  size_t byte_size = msg.ByteSizeLong();
+  if (byte_size > std::numeric_limits<int>::max()) {
+    return Status(StatusCode::INTERNAL,
+                  "Protobuf is too large to be serialized",
+                  absl::StrCat(byte_size, " bytes is beyond the limit 2^31-1"));
+  }
+  if (byte_size <= GRPC_SLICE_INLINED_SIZE) {
     Slice slice(byte_size);
     // We serialize directly into the allocated slices memory
     ABSL_CHECK(slice.end() == msg.SerializeWithCachedSizesToArray(
@@ -55,7 +63,8 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
 
     return grpc::Status::OK;
   }
-  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
+  ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength,
+                           static_cast<int>(byte_size));
   protobuf::io::CodedOutputStream cs(&writer);
   msg.SerializeWithCachedSizes(&cs);
   return !cs.HadError()

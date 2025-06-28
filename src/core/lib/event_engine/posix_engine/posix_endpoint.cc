@@ -885,6 +885,15 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
   msg->msg_control = u.cmsg_buf;
   msg->msg_controllen = CMSG_SPACE(sizeof(uint32_t));
 
+  // Add traced buffer before we write to avoid race conditions with getting the
+  // timestamps from the error queue. If sending fails, we simply shutdown the
+  // traced buffer list.
+  traced_buffers_.AddNewEntry(
+      static_cast<uint32_t>(bytes_counter_ + sending_length),
+      &poller_->posix_interface(), handle_->WrappedFd(),
+      std::move(outgoing_buffer_write_event_sink_).value());
+  outgoing_buffer_write_event_sink_.reset();
+
   // If there was an error on sendmsg the logic in tcp_flush will handle it.
   grpc_core::global_stats().IncrementTcpWriteSize(sending_length);
   PosixErrorOr<int64_t> length = TcpSend(&posix_interface, handle_->WrappedFd(),
@@ -893,13 +902,6 @@ bool PosixEndpointImpl::WriteWithTimestamps(struct msghdr* msg,
     return false;
   }
   *sent_length = length;
-  // Only save timestamps if all the bytes were taken by sendmsg.
-  if (sending_length == static_cast<size_t>(*length)) {
-    traced_buffers_.AddNewEntry(static_cast<uint32_t>(bytes_counter_ + *length),
-                                &poller_->posix_interface(),
-                                handle_->WrappedFd(), outgoing_buffer_arg_);
-    outgoing_buffer_arg_ = nullptr;
-  }
   return true;
 }
 
@@ -931,12 +933,12 @@ void PosixEndpointImpl::UnrefMaybePutZerocopySendRecord(
 }
 
 // If outgoing_buffer_arg is filled, shuts down the list early, so that any
-// release operations needed can be performed on the arg.
+// release operations needed can be performed on the arg. Should be used when we
+// know that there are not gonna be any write timestamps returned on the error
+// queue, for example, if the socket is not capable of reporting timestamps.
 void PosixEndpointImpl::TcpShutdownTracedBufferList() {
-  if (outgoing_buffer_arg_ != nullptr) {
-    traced_buffers_.Shutdown(outgoing_buffer_arg_,
-                             absl::InternalError("TracedBuffer list shutdown"));
-    outgoing_buffer_arg_ = nullptr;
+  if (outgoing_buffer_write_event_sink_.has_value()) {
+    traced_buffers_.Shutdown(std::move(outgoing_buffer_write_event_sink_));
   }
 }
 
@@ -972,7 +974,7 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
     // take a single ref on the zerocopy send record.
     tcp_zerocopy_send_ctx_->NoteSend(record);
     saved_errno = 0;
-    if (outgoing_buffer_arg_ != nullptr) {
+    if (outgoing_buffer_write_event_sink_.has_value()) {
       if (!ts_capable_ ||
           !WriteWithTimestamps(&msg, sending_length, &send_status, &saved_errno,
                                MSG_ZEROCOPY)) {
@@ -1029,7 +1031,6 @@ bool PosixEndpointImpl::DoFlushZerocopy(TcpZerocopySendRecord* record,
         return false;
       } else {
         status = TcpAnnotateError(PosixOSError(send_status, "sendmsg"));
-        TcpShutdownTracedBufferList();
         return true;
       }
     }
@@ -1094,7 +1095,7 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
     msg.msg_flags = 0;
     bool tried_sending_message = false;
     saved_errno = 0;
-    if (outgoing_buffer_arg_ != nullptr) {
+    if (outgoing_buffer_write_event_sink_.has_value()) {
       if (!ts_capable_ || !WriteWithTimestamps(&msg, sending_length,
                                                &send_result, &saved_errno, 0)) {
         // We could not set socket options to collect Fathom timestamps.
@@ -1127,7 +1128,6 @@ bool PosixEndpointImpl::TcpFlush(absl::Status& status) {
       } else {
         status = TcpAnnotateError(PosixOSError(send_result, "sendmsg"));
         outgoing_buffer_->Clear();
-        TcpShutdownTracedBufferList();
         return true;
       }
     }
@@ -1198,7 +1198,6 @@ bool PosixEndpointImpl::Write(
       << "Endpoint[" << this << "]: Write " << data->Length() << " bytes";
 
   if (data->Length() == 0) {
-    TcpShutdownTracedBufferList();
     GRPC_TRACE_LOG(event_engine_endpoint, INFO)
         << "Endpoint[" << this << "]: Write skipped";
     if (handle_->IsHandleShutdown()) {
@@ -1220,10 +1219,8 @@ bool PosixEndpointImpl::Write(
     outgoing_buffer_ = data;
     outgoing_byte_idx_ = 0;
   }
-  outgoing_buffer_arg_ =
-      args.TakeDeprecatedAndDiscouragedGoogleSpecificPointer();
-  if (outgoing_buffer_arg_) {
-    CHECK(poller_->CanTrackErrors());
+  if (args.has_metrics_sink() && poller_->CanTrackErrors()) {
+    outgoing_buffer_write_event_sink_ = args.TakeMetricsSink();
   }
 
   bool flush_result = zerocopy_send_record != nullptr
@@ -1368,6 +1365,40 @@ PosixEndpointImpl::PosixEndpointImpl(EventHandle* handle,
     Ref().release();
     handle_->NotifyOnError(on_error_);
   }
+}
+
+namespace {
+class PosixEndpointTelemetryInfo : public EventEngine::Endpoint::TelemetryInfo {
+ public:
+  std::vector<size_t> AllWriteMetrics() const override {
+    return PosixWriteEventSink::AllWriteMetrics();
+  }
+
+  std::optional<absl::string_view> GetMetricName(size_t key) const override {
+    return PosixWriteEventSink::GetMetricName(key);
+  }
+
+  std::optional<size_t> GetMetricKey(absl::string_view name) const override {
+    return PosixWriteEventSink::GetMetricKey(name);
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetMetricsSet(
+      absl::Span<const size_t> keys) const override {
+    return PosixWriteEventSink::GetMetricsSet(keys);
+  }
+
+  std::shared_ptr<EventEngine::Endpoint::MetricsSet> GetFullMetricsSet()
+      const override {
+    return PosixWriteEventSink::GetFullMetricsSet();
+  }
+};
+}  // namespace
+
+std::shared_ptr<EventEngine::Endpoint::TelemetryInfo>
+PosixEndpoint::GetTelemetryInfo() const {
+  static absl::NoDestructor<std::shared_ptr<PosixEndpointTelemetryInfo>>
+      telemetry_info(std::make_shared<PosixEndpointTelemetryInfo>());
+  return *telemetry_info;
 }
 
 std::unique_ptr<PosixEndpoint> CreatePosixEndpoint(

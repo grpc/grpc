@@ -69,8 +69,10 @@ namespace http2 {
 // |---------------------|--------------|-----------------------|------------|
 // | Endpoint Read Loop  | Infinite     | On transport close    | One        |
 // | Endpoint Write Loop | Infinite     | On transport close    | One        |
+// | Close Transport     | CloseTimeout | On transport close    | One        |
 
 // Max Party Slots (Always): 2
+// Max Promise Slots (Worst Case): 3
 
 // Experimental : This is just the initial skeleton of class
 // and it is functions. The code will be written iteratively.
@@ -133,9 +135,11 @@ class Http2ClientTransport final : public ClientTransport {
                                : absl::InternalError("Failed to enqueue frame");
         }));
   }
+
   auto TestOnlySendPing(absl::AnyInvocable<void()> on_initiate) {
     return ping_manager_.RequestPing(std::move(on_initiate));
   }
+
   template <typename Factory>
   auto TestOnlySpawnPromise(absl::string_view name, Factory factory) {
     return general_party_->Spawn(name, std::move(factory), [](auto) {});
@@ -152,7 +156,7 @@ class Http2ClientTransport final : public ClientTransport {
   Http2Status ProcessHttp2WindowUpdateFrame(Http2WindowUpdateFrame frame);
   Http2Status ProcessHttp2ContinuationFrame(Http2ContinuationFrame frame);
   Http2Status ProcessHttp2SecurityFrame(Http2SecurityFrame frame);
-  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assember,
+  Http2Status ProcessMetadata(uint32_t stream_id, HeaderAssembler& assembler,
                               CallHandler& call,
                               bool& did_push_initial_metadata,
                               bool& did_push_trailing_metadata);
@@ -274,15 +278,25 @@ class Http2ClientTransport final : public ClientTransport {
       }
     }
 
-    inline bool IsClosed() { return stream_state == HttpStreamState::kClosed; }
+    inline bool IsClosed() const {
+      return stream_state == HttpStreamState::kClosed;
+    }
 
     CallHandler call;
+    // TODO(akshitpatel) : [PH2][P3] : Investigate if this needs to be atomic.
     HttpStreamState stream_state;
     const uint32_t stream_id;
     TransportSendQeueue send_queue;
     GrpcMessageAssembler assembler;
     HeaderAssembler header_assembler;
-
+    // TODO(akshitpatel) : [PH2][P2] : StreamQ should maintain a flag that
+    // tracks if the half close has been sent for this stream. This flag is used
+    // to notify the mixer that this stream is closed for
+    // writes(HalfClosedLocal). When the mixer dequeues the last message for
+    // the streamQ, it will mark the stream as closed for writes and send a
+    // frame with end_stream or set the end_stream flag in the last data
+    // frame being sent out. This is done as the stream state should not
+    // transition to HalfClosedLocal till the end_stream frame is sent.
     bool did_push_initial_metadata;
     bool did_push_trailing_metadata;
   };
@@ -320,6 +334,7 @@ class Http2ClientTransport final : public ClientTransport {
   InterActivityMutex<uint32_t> stream_id_mutex_;
   HPackCompressor encoder_;
   HPackParser parser_;
+  bool is_transport_closed_ ABSL_GUARDED_BY(transport_mutex_) = false;
 
   ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(transport_mutex_){
       "http2_client", GRPC_CHANNEL_READY};
@@ -330,48 +345,12 @@ class Http2ClientTransport final : public ClientTransport {
     bool close_reads;
     bool close_writes;
     bool send_rst_stream;
-    bool cancelled;
+    bool push_trailing_metadata;
   };
 
   // This function MUST be idempotent.
   void CloseStream(uint32_t stream_id, absl::Status status,
-                   CloseStreamArgs args, DebugLocation whence = {}) {
-    HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                      << stream_id << " status=" << status
-                      << " location=" << whence.file() << ":" << whence.line();
-
-    // TODO(akshitpatel) : [PH2][P3] : Measure the impact of holding mutex
-    // throughout this function.
-    MutexLock lock(&transport_mutex_);
-    auto pair = stream_list_.find(stream_id);
-    if (pair == stream_list_.end()) {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                        << stream_id << " stream not found";
-      return;
-    }
-    auto& stream = pair->second;
-
-    if (args.close_reads) {
-      stream->MarkHalfClosedRemote();
-    }
-    if (args.close_writes) {
-      stream->MarkHalfClosedLocal();
-    }
-
-    if (stream->IsClosed()) {
-      HTTP2_CLIENT_DLOG << "Http2ClientTransport::CloseStream for stream id: "
-                        << stream_id << " closing stream.";
-      if (args.send_rst_stream) {
-        // TODO(akshitpatel) : [PH2][P2] : Send RST_STREAM frame.
-      }
-
-      if (!args.cancelled) {
-        stream->call.SpawnPushServerTrailingMetadata(
-            ServerMetadataFromStatus(status));
-      }
-      stream_list_.erase(stream_id);
-    }
-  }
+                   CloseStreamArgs args, DebugLocation whence = {});
 
   RefCountedPtr<Http2ClientTransport::Stream> LookupStream(uint32_t stream_id);
 
@@ -405,8 +384,11 @@ class Http2ClientTransport final : public ClientTransport {
                });
   }
 
-  // This function MUST be idempotent.
-  void CloseTransport(const Http2Status& status, DebugLocation whence = {});
+  // This function MUST run on the transport party.
+  void CloseTransport();
+
+  void MaybeSpawnCloseTransport(Http2Status http2_status,
+                                DebugLocation whence = {});
 
   // Handles the error status and returns the corresponding absl status. Absl
   // Status is returned so that the error can be gracefully handled
@@ -427,14 +409,15 @@ class Http2ClientTransport final : public ClientTransport {
                       /*close_reads=*/true,
                       /*close_writes=*/true,
                       /*send_rst_stream=*/true,
-                      /*cancelled=*/false,
+                      /*push_trailing_metadata=*/true,
                   },
                   whence);
       return absl::OkStatus();
     } else if (error_type == Http2Status::Http2ErrorType::kConnectionError) {
       LOG(ERROR) << "Connection Error: " << status.DebugString();
-      CloseTransport(status, whence);
-      return status.GetAbslConnectionError();
+      absl::Status absl_status = status.GetAbslConnectionError();
+      MaybeSpawnCloseTransport(std::move(status), whence);
+      return absl_status;
     }
     GPR_UNREACHABLE_CODE(return absl::InternalError("Invalid error type"));
   }
@@ -442,6 +425,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool bytes_sent_in_last_write_;
   bool incoming_header_in_progress_;
   bool incoming_header_end_stream_;
+  bool is_first_write_;
   uint32_t incoming_header_stream_id_;
 
   // Ping related members
