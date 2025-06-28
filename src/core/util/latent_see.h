@@ -47,7 +47,7 @@ namespace latent_see {
 struct Metadata {
   const char* file;
   int line;
-  const char* name;
+  absl::string_view name;
 };
 
 enum class EventType : uint8_t { kBegin, kEnd, kFlowStart, kFlowEnd, kMark };
@@ -259,6 +259,9 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
 
 }  // namespace latent_see
 }  // namespace grpc_core
+#define GRPC_LATENT_SEE_SYMBOL2(name, line) name##_##line
+#define GRPC_LATENT_SEE_SYMBOL1(name, line) GRPC_LATENT_SEE_SYMBOL2(name, line)
+#define GRPC_LATENT_SEE_SYMBOL(name) GRPC_LATENT_SEE_SYMBOL1(name, __LINE__)
 #define GRPC_LATENT_SEE_METADATA(name)                                     \
   []() {                                                                   \
     static grpc_core::latent_see::Metadata metadata = {__FILE__, __LINE__, \
@@ -268,14 +271,14 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION auto Promise(const Metadata* md_poll,
 // Parent scope: logs a begin and end event, and flushes the thread log on scope
 // exit. Because the flush takes some time it's better to place one parent scope
 // at the top of the stack, and use lighter weight scopes within it.
-#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                       \
-  grpc_core::latent_see::ParentScope latent_see_scope##__LINE__( \
+#define GRPC_LATENT_SEE_PARENT_SCOPE(name)                                     \
+  grpc_core::latent_see::ParentScope GRPC_LATENT_SEE_SYMBOL(latent_see_scope)( \
       GRPC_LATENT_SEE_METADATA(name))
 // Inner scope: logs a begin and end event. Lighter weight than parent scope,
 // but does not flush the thread state - so should only be enclosed by a parent
 // scope.
-#define GRPC_LATENT_SEE_INNER_SCOPE(name)                       \
-  grpc_core::latent_see::InnerScope latent_see_scope##__LINE__( \
+#define GRPC_LATENT_SEE_INNER_SCOPE(name)                                     \
+  grpc_core::latent_see::InnerScope GRPC_LATENT_SEE_SYMBOL(latent_see_scope)( \
       GRPC_LATENT_SEE_METADATA(name))
 // Mark: logs a single event.
 // This is not flushed automatically, and so should only be used within a parent

@@ -1479,21 +1479,9 @@ TEST_P(XdsStatefulSessionFilterConfigTest, UnparsableSessionState) {
 // GCP auth filter tests
 //
 
-using XdsGcpAuthnFilterNotRegisteredTest = XdsHttpFilterTest;
-
-TEST_F(XdsGcpAuthnFilterNotRegisteredTest, NotPresentWithoutEnvVar) {
-  XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
-  EXPECT_EQ(GetFilter(extension.type), nullptr);
-}
-
 class XdsGcpAuthnFilterTest : public XdsHttpFilterTest {
  protected:
   XdsGcpAuthnFilterTest() {
-    // Re-initialize registry with env var set.
-    ScopedExperimentalEnvVar env_var(
-        "GRPC_EXPERIMENTAL_XDS_GCP_AUTHENTICATION_FILTER");
-    registry_ = XdsHttpFilterRegistry();
-    // Now the filter will be found in the registry.
     XdsExtension extension = MakeXdsExtension(GcpAuthnFilterConfig());
     filter_ = GetFilter(extension.type);
     CHECK_NE(filter_, nullptr) << extension.type;

@@ -146,7 +146,6 @@ void TimerManager::RestartPostFork() {
 }
 
 void TimerManager::PrepareFork() { Shutdown(); }
-void TimerManager::PostforkParent() { RestartPostFork(); }
-void TimerManager::PostforkChild() { RestartPostFork(); }
+void TimerManager::PostFork() { RestartPostFork(); }
 
 }  // namespace grpc_event_engine::experimental

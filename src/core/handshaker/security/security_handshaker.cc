@@ -373,13 +373,16 @@ grpc_error_handle SecurityHandshaker::OnHandshakeNextDoneLocked(
     outgoing_.Clear();
     outgoing_.Append(Slice::FromCopiedBuffer(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size));
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs
+        write_args;
+    write_args.set_max_frame_size(INT_MAX);
     grpc_endpoint_write(
         args_->endpoint.get(), outgoing_.c_slice_buffer(),
         NewClosure(
             [self = RefAsSubclass<SecurityHandshaker>()](absl::Status status) {
               self->OnHandshakeDataSentToPeerFnScheduler(std::move(status));
             }),
-        nullptr, /*max_frame_size=*/INT_MAX);
+        std::move(write_args));
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(

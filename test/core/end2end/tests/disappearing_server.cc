@@ -79,7 +79,7 @@ CORE_END2END_TEST(CoreClientChannelTests, DisappearingServer) {
   // data structure to broadcast goaways to transports at the appropriate time.
   SKIP_IF_V3();
   OneRequestAndShutdownServer(*this);
-  InitServer(ChannelArgs());
+  InitServer(DefaultServerArgs());
   OneRequestAndShutdownServer(*this);
 }
 

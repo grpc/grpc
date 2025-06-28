@@ -24,6 +24,9 @@ class Foo {};
 }  // namespace
 
 TEST(FunctionSignatureTest, Works) {
+  if (TypeName<int>() == "unknown") {
+    GTEST_SKIP() << "insufficient support for this platform";
+  }
   EXPECT_EQ(TypeName<int>(), "int");
   EXPECT_THAT(TypeName<Foo>(), ::testing::HasSubstr("Foo"));
   auto x = []() {};

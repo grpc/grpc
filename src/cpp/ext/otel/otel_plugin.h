@@ -586,6 +586,10 @@ inline opentelemetry::nostd::string_view AbslStringViewToNoStdStringView(
   return opentelemetry::nostd::string_view(string.data(), string.size());
 }
 
+std::string OTelSpanTraceIdToString(opentelemetry::trace::Span* span);
+
+std::string OTelSpanSpanIdToString(opentelemetry::trace::Span* span);
+
 }  // namespace internal
 }  // namespace grpc
 

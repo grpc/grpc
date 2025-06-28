@@ -24,8 +24,6 @@
 
 namespace grpc_core {
 
-bool XdsGcpAuthFilterEnabled();
-
 XdsMetadataMap ParseXdsMetadataMap(
     const XdsResourceType::DecodeContext& context,
     const envoy_config_core_v3_Metadata* metadata, ValidationErrors* errors);

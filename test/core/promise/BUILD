@@ -498,21 +498,37 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_fuzz_test(
     name = "mpsc_test",
     srcs = ["mpsc_test.cc"],
     external_deps = [
         "gtest",
+        "fuzztest",
+        "fuzztest_main",
     ],
     tags = ["promise_test"],
-    uses_event_engine = False,
-    uses_polling = False,
     deps = [
         "poll_matcher",
         "//:gpr",
         "//:promise",
         "//src/core:activity",
         "//src/core:mpsc",
+    ],
+)
+
+grpc_cc_test(
+    name = "lock_based_mpsc_test",
+    srcs = ["lock_based_mpsc_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["promise_test"],
+    deps = [
+        "poll_matcher",
+        "//:gpr",
+        "//:promise",
+        "//src/core:activity",
+        "//src/core:lock_based_mpsc",
     ],
 )
 
@@ -714,12 +730,17 @@ grpc_cc_test(
     external_deps = [
         "absl/base:core_headers",
         "absl/log:log",
+        "absl/strings",
         "gtest",
     ],
-    tags = ["party_mpsc_test"],
+    tags = [
+        "no_windows",
+        "party_mpsc_test",
+    ],
     uses_event_engine = False,
     uses_polling = False,
     deps = [
+        "poll_matcher",
         "//:exec_ctx",
         "//:gpr",
         "//:grpc_unsecure",
@@ -740,18 +761,18 @@ grpc_cc_test(
 )
 
 grpc_internal_proto_library(
-    name = "inter_activity_mutex_test_proto",
-    srcs = ["inter_activity_mutex_test.proto"],
+    name = "inter_activity_mutex_fuzzer_proto",
+    srcs = ["inter_activity_mutex_fuzzer.proto"],
 )
 
 grpc_cc_proto_library(
-    name = "inter_activity_mutex_test_cc_proto",
-    deps = ["inter_activity_mutex_test_proto"],
+    name = "inter_activity_mutex_fuzzer_cc_proto",
+    deps = ["inter_activity_mutex_fuzzer_proto"],
 )
 
 grpc_fuzz_test(
-    name = "inter_activity_mutex_test",
-    srcs = ["inter_activity_mutex_test.cc"],
+    name = "inter_activity_mutex_fuzzer",
+    srcs = ["inter_activity_mutex_fuzzer.cc"],
     external_deps = [
         "gtest",
         "fuzztest",
@@ -759,7 +780,27 @@ grpc_fuzz_test(
     ],
     tags = ["promise_test"],
     deps = [
-        "inter_activity_mutex_test_cc_proto",
+        "inter_activity_mutex_fuzzer_cc_proto",
+        "poll_matcher",
+        "//:grpc",
+        "//src/core:1999",
+        "//src/core:inter_activity_mutex",
+        "//src/core:notification",
+        "//src/core:resource_quota",
+        "//src/core:seq",
+        "//src/core:time",
+    ],
+)
+
+grpc_cc_test(
+    name = "inter_activity_mutex_test",
+    srcs = ["inter_activity_mutex_test.cc"],
+    external_deps = [
+        "gtest",
+        "gtest_main",
+    ],
+    tags = ["promise_test"],
+    deps = [
         "poll_matcher",
         "//:grpc",
         "//src/core:1999",

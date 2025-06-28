@@ -21,6 +21,7 @@
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/status.h>
+#include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 #include <limits.h>
 #include <stdint.h>
@@ -45,6 +46,7 @@
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/ext/transport/chttp2/transport/frame_goaway.h"
 #include "src/core/ext/transport/chttp2/transport/frame_ping.h"
+#include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -53,6 +55,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/server/server.h"
 #include "src/core/util/crash.h"
@@ -83,7 +86,9 @@ class GracefulShutdownTest : public ::testing::Test {
         grpc_channel_arg_integer_create(
             const_cast<char*>(GRPC_ARG_HTTP2_BDP_PROBE), 0),
         grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), INT_MAX)};
+            const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS), INT_MAX),
+        grpc_channel_arg_integer_create(
+            const_cast<char*>(GRPC_ARG_PING_TIMEOUT_MS), 2000)};
     grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
                                              server_args};
     // Create server
@@ -165,6 +170,10 @@ class GracefulShutdownTest : public ::testing::Test {
       {
         MutexLock lock(&self->mu_);
         for (size_t i = 0; i < self->read_buffer_.count; ++i) {
+          char* dump = grpc_dump_slice(self->read_buffer_.slices[i],
+                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          LOG(INFO) << "Read: " << dump;
+          gpr_free(dump);
           absl::StrAppend(&self->read_bytes_,
                           StringViewFromSlice(self->read_buffer_.slices[i]));
         }
@@ -200,7 +209,8 @@ class GracefulShutdownTest : public ::testing::Test {
         read_bytes_ = read_bytes_.substr(where + bytes.size());
         break;
       }
-      ASSERT_LT(absl::Now() - start_time, absl::Seconds(60));
+      ASSERT_LT(absl::Now() - start_time, absl::Seconds(60))
+          << "Timeout reading bytes";
       read_cv_.WaitWithTimeout(&mu_, absl::Seconds(5));
     }
   }
@@ -275,8 +285,9 @@ class GracefulShutdownTest : public ::testing::Test {
     Notification on_write_done_notification_;
     GRPC_CLOSURE_INIT(&on_write_done_, OnWriteDone,
                       &on_write_done_notification_, nullptr);
-    grpc_endpoint_write(fds_.client, buffer, &on_write_done_, nullptr,
-                        /*max_frame_size=*/INT_MAX);
+    grpc_endpoint_write(
+        fds_.client, buffer, &on_write_done_,
+        grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs());
     ExecCtx::Get()->Flush();
     CHECK(on_write_done_notification_.WaitForNotificationWithTimeout(
         absl::Seconds(5)));
@@ -489,7 +500,7 @@ TEST_F(GracefulShutdownTest, UnresponsiveClient) {
   // Wait for final goaway without sending a ping ACK.
   WaitForClose();
   EXPECT_GE(absl::Now() - initial_time,
-            absl::Seconds(20) -
+            absl::Seconds(2) -
                 absl::Seconds(
                     1) /* clock skew between threads due to time caching */);
   // The shutdown should successfully complete.

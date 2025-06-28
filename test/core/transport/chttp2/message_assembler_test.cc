@@ -66,6 +66,31 @@ void AppendPartialMessage(SliceBuffer& payload, absl::string_view str) {
   payload.Append(Slice::FromCopiedString(str));
 }
 
+void ExpectMessageNull(ValueOrHttp2Status<MessageHandle>&& result) {
+  EXPECT_TRUE(result.IsOk());
+  MessageHandle message = TakeValue(std::move(result));
+  EXPECT_EQ(message, nullptr);
+}
+
+void ExpectMessagePayload(ValueOrHttp2Status<MessageHandle>&& result,
+                          const size_t expect_length, const uint8_t flags) {
+  EXPECT_TRUE(result.IsOk());
+  MessageHandle message = TakeValue(std::move(result));
+  EXPECT_EQ(message->payload()->Length(), expect_length);
+  EXPECT_EQ(message->flags(), flags);
+}
+
+void ExpectMessagePayload(ValueOrHttp2Status<MessageHandle>&& result,
+                          const size_t expect_length, const uint8_t flags,
+                          absl::string_view str) {
+  EXPECT_TRUE(result.IsOk());
+  MessageHandle message = TakeValue(std::move(result));
+  EXPECT_EQ(message->payload()->Length(), expect_length);
+  EXPECT_EQ(message->flags(), flags);
+  EXPECT_STREQ(message->payload()->JoinIntoString().c_str(),
+               std::string(str).c_str());
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // GrpcMessageAssembler Tests
 
@@ -75,8 +100,8 @@ TEST(GrpcMessageAssemblerTest, MustMakeSliceBufferEmpty) {
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kStr1024.size());
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
   // AppendNewDataFrame must empty the original buffer
   EXPECT_EQ(frame1.Length(), 0);
 }
@@ -88,16 +113,14 @@ TEST(GrpcMessageAssemblerTest, OneEmptyMessageInOneFrame) {
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes);
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), 0);
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), 0, kFlags0);
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result2));
 }
 
 TEST(GrpcMessageAssemblerTest, OneMessageInOneFrame) {
@@ -106,19 +129,14 @@ TEST(GrpcMessageAssemblerTest, OneMessageInOneFrame) {
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kStr1024.size());
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  SliceBuffer* payload1 = result1->get()->payload();
-  EXPECT_EQ(payload1->Length(), kStr1024.size());
-  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
-               std::string(kStr1024).c_str());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), kStr1024.size(), kFlags0, kStr1024);
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result2));
 }
 
 TEST(GrpcMessageAssemblerTest, OneMessageInThreeFrames) {
@@ -132,28 +150,23 @@ TEST(GrpcMessageAssemblerTest, OneMessageInThreeFrames) {
   AppendPartialMessage(frame3, kString3);
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get(), nullptr);
+  Http2Status append1 = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(append1.IsOk());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result1));
 
-  result = assembler.AppendNewDataFrame(frame2, kNotEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get(), nullptr);
+  Http2Status append2 = assembler.AppendNewDataFrame(frame2, kNotEndStream);
+  EXPECT_TRUE(append2.IsOk());
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result2));
 
-  result = assembler.AppendNewDataFrame(frame3, kEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get()->payload()->Length(), length);
-  EXPECT_EQ(result3->get()->flags(), kFlags0);
+  Http2Status append3 = assembler.AppendNewDataFrame(frame3, kEndStream);
+  EXPECT_TRUE(append3.IsOk());
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result3), length, kFlags0);
 
-  absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
-  EXPECT_TRUE(result4.ok());
-  EXPECT_EQ(result4->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result4));
 }
 
 TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrame) {
@@ -165,33 +178,21 @@ TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrame) {
   EXPECT_EQ(frame1.Length(), length + (3 * kGrpcHeaderSizeInBytes));
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  SliceBuffer* payload1 = result1->get()->payload();
-  EXPECT_EQ(payload1->Length(), kString1.size());
-  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
-               std::string(kString1).c_str());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), kString1.size(), kFlags0, kString1);
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  SliceBuffer* payload2 = result2->get()->payload();
-  EXPECT_EQ(payload2->Length(), kString2.size());
-  EXPECT_STREQ(payload2->JoinIntoString().c_str(),
-               std::string(kString2).c_str());
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  EXPECT_TRUE(result2.IsOk());
+  ExpectMessagePayload(std::move(result2), kString2.size(), kFlags0, kString2);
 
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  SliceBuffer* payload3 = result3->get()->payload();
-  EXPECT_EQ(payload3->Length(), kString3.size());
-  EXPECT_STREQ(payload3->JoinIntoString().c_str(),
-               std::string(kString3).c_str());
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result3), kString3.size(), kFlags0, kString3);
 
-  absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
-  EXPECT_TRUE(result4.ok());
-  EXPECT_EQ(result4->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result4));
 }
 
 TEST(GrpcMessageAssemblerTest, ThreeEmptyMessagesInOneFrame) {
@@ -202,24 +203,20 @@ TEST(GrpcMessageAssemblerTest, ThreeEmptyMessagesInOneFrame) {
   EXPECT_EQ(frame1.Length(), 3 * kGrpcHeaderSizeInBytes);
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), 0);
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), 0, kFlags0);
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get()->payload()->Length(), 0);
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result2), 0, kFlags0);
 
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get()->payload()->Length(), 0);
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result3), 0, kFlags0);
 
-  absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
-  EXPECT_TRUE(result4.ok());
-  EXPECT_EQ(result4->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result4));
 }
 
 TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrameMiddleMessageEmpty) {
@@ -231,30 +228,20 @@ TEST(GrpcMessageAssemblerTest, ThreeMessageInOneFrameMiddleMessageEmpty) {
   EXPECT_EQ(frame1.Length(), length + (3 * kGrpcHeaderSizeInBytes));
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  SliceBuffer* payload1 = result1->get()->payload();
-  EXPECT_EQ(payload1->Length(), kString1.size());
-  EXPECT_STREQ(payload1->JoinIntoString().c_str(),
-               std::string(kString1).c_str());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), kString1.size(), kFlags0, kString1);
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get()->payload()->Length(), 0);
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result2), 0, kFlags0);
 
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  SliceBuffer* payload3 = result3->get()->payload();
-  EXPECT_EQ(payload3->Length(), kString3.size());
-  EXPECT_STREQ(payload3->JoinIntoString().c_str(),
-               std::string(kString3).c_str());
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result3), kString3.size(), kFlags0, kString3);
 
-  absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
-  EXPECT_TRUE(result4.ok());
-  EXPECT_EQ(result4->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result4));
 }
 
 TEST(GrpcMessageAssemblerTest, FourMessageInThreeFrames) {
@@ -273,44 +260,35 @@ TEST(GrpcMessageAssemblerTest, FourMessageInThreeFrames) {
   AppendHeaderAndMessage(frame3, kStr1024);  // Message 4 complete
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status append1 = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(append1.IsOk());
 
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get()->payload()->Length(), kStr1024.size());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result1), kStr1024.size(), kFlags0, kStr1024);
 
-  absl::StatusOr<MessageHandle> result11 = assembler.ExtractMessage();
-  EXPECT_TRUE(result11.ok());
-  EXPECT_EQ(result11->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result11 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result11));
 
-  result = assembler.AppendNewDataFrame(frame2, kNotEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status append2 = assembler.AppendNewDataFrame(frame2, kNotEndStream);
+  EXPECT_TRUE(append2.IsOk());
 
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get()->payload()->Length(), 2 * kStr1024.size());
-  EXPECT_EQ(result2->get()->flags(), kFlags0);
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result2), 2 * kStr1024.size(), kFlags0);
 
-  absl::StatusOr<MessageHandle> result22 = assembler.ExtractMessage();
-  EXPECT_TRUE(result22.ok());
-  EXPECT_EQ(result22->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result22 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result22));
 
-  result = assembler.AppendNewDataFrame(frame3, kEndStream);
-  EXPECT_TRUE(result.ok());
+  Http2Status append3 = assembler.AppendNewDataFrame(frame3, kEndStream);
+  EXPECT_TRUE(append3.IsOk());
 
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get()->payload()->Length(), 2 * kStr1024.size());
-  EXPECT_EQ(result3->get()->flags(), kFlags5);
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result3), 2 * kStr1024.size(), kFlags5);
 
-  absl::StatusOr<MessageHandle> result4 = assembler.ExtractMessage();
-  EXPECT_TRUE(result4.ok());
-  EXPECT_EQ(result4->get()->payload()->Length(), kStr1024.size());
+  ValueOrHttp2Status<MessageHandle> result4 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result4), kStr1024.size(), kFlags0);
 
-  absl::StatusOr<MessageHandle> result5 = assembler.ExtractMessage();
-  EXPECT_TRUE(result5.ok());
-  EXPECT_EQ(result5->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result5 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result5));
 }
 
 TEST(GrpcMessageAssemblerTest, IncompleteMessageHeader) {
@@ -319,11 +297,10 @@ TEST(GrpcMessageAssemblerTest, IncompleteMessageHeader) {
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kNotEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_TRUE(result1.ok());
-  EXPECT_EQ(result1->get(), nullptr);
+  Http2Status append1 = assembler.AppendNewDataFrame(frame1, kNotEndStream);
+  EXPECT_TRUE(append1.IsOk());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result1));
 
   SliceBuffer frame2;
   AppendGrpcHeaderToSliceBuffer(frame2, kFlags0, kStr1024.size());
@@ -332,16 +309,13 @@ TEST(GrpcMessageAssemblerTest, IncompleteMessageHeader) {
   discard.Clear();
   frame2.Append(Slice::FromCopiedString(kStr1024));
 
-  result = assembler.AppendNewDataFrame(frame2, kEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result2 = assembler.ExtractMessage();
-  EXPECT_TRUE(result2.ok());
-  EXPECT_EQ(result2->get()->payload()->Length(), kStr1024.size());
-  EXPECT_EQ(result2->get()->flags(), kFlags0);
+  Http2Status append2 = assembler.AppendNewDataFrame(frame2, kEndStream);
+  EXPECT_TRUE(append2.IsOk());
+  ValueOrHttp2Status<MessageHandle> result2 = assembler.ExtractMessage();
+  ExpectMessagePayload(std::move(result2), kStr1024.size(), kFlags0);
 
-  absl::StatusOr<MessageHandle> result3 = assembler.ExtractMessage();
-  EXPECT_TRUE(result3.ok());
-  EXPECT_EQ(result3->get(), nullptr);
+  ValueOrHttp2Status<MessageHandle> result3 = assembler.ExtractMessage();
+  ExpectMessageNull(std::move(result3));
 }
 
 TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessageHeader) {
@@ -350,10 +324,10 @@ TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessageHeader) {
   frame1.RemoveLastNBytes(1);
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_FALSE(result1.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  EXPECT_FALSE(result1.IsOk());
 }
 
 TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessagePayload) {
@@ -363,10 +337,10 @@ TEST(GrpcMessageAssemblerTest, ErrorIncompleteMessagePayload) {
   EXPECT_EQ(frame1.Length(), kGrpcHeaderSizeInBytes + kString1.size());
 
   GrpcMessageAssembler assembler;
-  absl::Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
-  EXPECT_TRUE(result.ok());
-  absl::StatusOr<MessageHandle> result1 = assembler.ExtractMessage();
-  EXPECT_FALSE(result1.ok());
+  Http2Status result = assembler.AppendNewDataFrame(frame1, kEndStream);
+  EXPECT_TRUE(result.IsOk());
+  ValueOrHttp2Status<MessageHandle> result1 = assembler.ExtractMessage();
+  EXPECT_FALSE(result1.IsOk());
 }
 
 ///////////////////////////////////////////////////////////////////////////////

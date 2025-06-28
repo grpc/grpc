@@ -1795,8 +1795,9 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
   }
 }
 
-static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
-                      grpc_closure* cb, void* arg, int /*max_frame_size*/) {
+static void tcp_write(
+    grpc_endpoint* ep, grpc_slice_buffer* buf, grpc_closure* cb,
+    grpc_event_engine::experimental::EventEngine::Endpoint::WriteArgs args) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error_handle error;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
@@ -1835,8 +1836,9 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     tcp->outgoing_buffer = buf;
     tcp->outgoing_byte_idx = 0;
   }
-  tcp->outgoing_buffer_arg = arg;
-  if (arg) {
+  tcp->outgoing_buffer_arg =
+      args.TakeDeprecatedAndDiscouragedGoogleSpecificPointer();
+  if (tcp->outgoing_buffer_arg) {
     CHECK(grpc_event_engine_can_track_errors());
   }
 
@@ -1915,7 +1917,9 @@ static const grpc_endpoint_vtable vtable = {tcp_read,
 grpc_endpoint* grpc_tcp_create(
     grpc_fd* fd, const grpc_event_engine::experimental::EndpointConfig& config,
     absl::string_view peer_string) {
-  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled()) {
+  if (grpc_core::IsEventEngineForAllOtherEndpointsEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     // Create an EventEngine endpoint when creating the transport.
     auto* engine =
         reinterpret_cast<grpc_event_engine::experimental::EventEngine*>(
@@ -1943,7 +1947,9 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   CHECK(!grpc_event_engine::experimental::UsePollsetAlternative())
       << "This function must not be called when the pollset_alternative "
          "experiment is enabled. This is a bug.";
-  CHECK(!grpc_core::IsEventEngineForAllOtherEndpointsEnabled())
+  CHECK(
+      !grpc_core::IsEventEngineForAllOtherEndpointsEnabled() ||
+      grpc_event_engine::experimental::EventEngineExperimentDisabledForPython())
       << "The event_engine_for_all_other_endpoints experiment should prevent "
          "this method from being called. This is a bug.";
   grpc_tcp* tcp = new grpc_tcp(options);

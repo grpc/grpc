@@ -53,13 +53,13 @@ void CallbackUnaryCall(grpc::ChannelInterface* channel,
                        const grpc::internal::RpcMethod& method,
                        grpc::ClientContext* context,
                        const InputMessage* request, OutputMessage* result,
-                       std::function<void(grpc::Status)> on_completion) {
+                       std::function<void(grpc::Status)>&& on_completion) {
   static_assert(std::is_base_of<BaseInputMessage, InputMessage>::value,
                 "Invalid input message specification");
   static_assert(std::is_base_of<BaseOutputMessage, OutputMessage>::value,
                 "Invalid output message specification");
   CallbackUnaryCallImpl<BaseInputMessage, BaseOutputMessage> x(
-      channel, method, context, request, result, on_completion);
+      channel, method, context, request, result, std::move(on_completion));
 }
 
 template <class InputMessage, class OutputMessage>
@@ -69,7 +69,7 @@ class CallbackUnaryCallImpl {
                         const grpc::internal::RpcMethod& method,
                         grpc::ClientContext* context,
                         const InputMessage* request, OutputMessage* result,
-                        std::function<void(grpc::Status)> on_completion) {
+                        std::function<void(grpc::Status)>&& on_completion) {
     grpc::CompletionQueue* cq = channel->CallbackCQ();
     ABSL_CHECK_NE(cq, nullptr);
     grpc::internal::Call call(channel->CreateCall(method, context, cq));
@@ -90,8 +90,8 @@ class CallbackUnaryCallImpl {
     auto* const alloced =
         static_cast<OpSetAndTag*>(grpc_call_arena_alloc(call.call(), alloc_sz));
     auto* ops = new (&alloced->opset) FullCallOpSet;
-    auto* tag = new (&alloced->tag)
-        grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
+    auto* tag = new (&alloced->tag) grpc::internal::CallbackWithStatusTag(
+        call.call(), std::move(on_completion), ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
     grpc::Status s = ops->SendMessagePtr(request);

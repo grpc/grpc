@@ -61,7 +61,7 @@ CORE_END2END_TEST(ResourceQuotaTests, ResourceQuota) {
   grpc_resource_quota* resource_quota =
       grpc_resource_quota_create("test_server");
   grpc_resource_quota_resize(resource_quota, 1024 * 1024);
-  InitServer(ChannelArgs().Set(
+  InitServer(DefaultServerArgs().Set(
       GRPC_ARG_RESOURCE_QUOTA,
       ChannelArgs::Pointer(resource_quota, grpc_resource_quota_arg_vtable())));
   InitClient(ChannelArgs());

@@ -40,6 +40,7 @@ class QualificationValidator(object):
         self.using_re = re.compile(
             r"(using +|using +[A-Za-z_]+ *= *|namespace [A-Za-z_]+ *= *)::"
         )
+        self.incomplete_using_re = re.compile(r"using [A-Za-z_]+ = *\n")
         self.define_re = re.compile(r"^#define")
 
     def check(self, fpath, fix):
@@ -53,6 +54,9 @@ class QualificationValidator(object):
                 continue
             # skip `#define` statements
             if self.define_re.search(line):
+                continue
+            # skip if previous line is an incomplete using namespace statement
+            if i > 1 and self.incomplete_using_re.fullmatch(fcontents[i - 1]):
                 continue
             # fully-qualified namespace found, which may be unnecessary
             if fix:

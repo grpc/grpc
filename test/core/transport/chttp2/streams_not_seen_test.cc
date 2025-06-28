@@ -356,8 +356,9 @@ class StreamsNotSeenTest : public ::testing::Test {
     {
       MutexLock lock(&tcp_destroy_mu_);
       if (tcp_ != nullptr) {
-        grpc_endpoint_write(tcp_, buffer, &on_write_done_, nullptr,
-                            /*max_frame_size=*/INT_MAX);
+        grpc_endpoint_write(tcp_, buffer, &on_write_done_,
+                            grpc_event_engine::experimental::EventEngine::
+                                Endpoint::WriteArgs());
       }
     }
     ExecCtx::Get()->Flush();
