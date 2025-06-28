@@ -31,7 +31,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/log/log.h"
+#include "absl/log/absl_log.h"
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
@@ -64,7 +64,7 @@ struct Rule {
 std::string ReadFile(const std::string& path) {
   std::ifstream file(path);
   if (!file.is_open()) {
-    LOG(FATAL) << "Could not open file: " << path;
+    ABSL_LOG(FATAL) << "Could not open file: " << path;
   }
   std::stringstream buffer;
   buffer << file.rdbuf();
@@ -76,7 +76,7 @@ std::map<std::string, Rule> ParseBazelRules(
   std::map<std::string, Rule> rules;
   pugi::xml_document doc;
   if (!doc.load_string(xml_string.c_str())) {
-    LOG(FATAL) << "Failed to parse xml: " << xml_string;
+    ABSL_LOG(FATAL) << "Failed to parse xml: " << xml_string;
   }
 
   for (pugi::xml_node rule_node : doc.child("query").children("rule")) {
