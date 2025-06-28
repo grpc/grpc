@@ -65,6 +65,7 @@ cc_library(
     name = "utils",
     srcs = ["utils.cc"],
     hdrs = ["utils.h"],
+    copts = COPTS,
     deps = [
         "@nlohmann_json//:json",
         "@yaml-cpp//:yaml-cpp",
