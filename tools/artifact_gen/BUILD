@@ -130,4 +130,5 @@ cc_binary(
         "@abseil-cpp//absl/strings:str_format",
         "@pugixml",
     ],
+    linkstatic = True,
 )
