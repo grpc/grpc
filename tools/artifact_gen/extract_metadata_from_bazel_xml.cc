@@ -153,12 +153,17 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "address_sorting"
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base:base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib"
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/hash:hash": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_hash_lib"
+    },
+    "@com_google_protobuf//upb/mem:mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib"
@@ -168,7 +173,7 @@ static const char* kBuildExtraMetadata = R"json({
         "build": "all",
         "_RENAME": "upb_lex_lib"
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/message:message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib"
@@ -182,6 +187,16 @@ static const char* kBuildExtraMetadata = R"json({
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mini_descriptor_lib"
+    },
+    "@com_google_protobuf//upb/mini_table:mini_table": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_mini_table_lib"
+    },
+    "@com_google_protobuf//upb/reflection:reflection": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_reflection_lib"
     },
     "@com_google_protobuf//upb/text:text": {
         "language": "c",
@@ -637,6 +652,9 @@ class ArtifactGen {
     std::vector<nlohmann::json> target_list;
     std::vector<nlohmann::json> test_list;
     
+    // Keep track of which bazel labels have been renamed so we don't include them twice
+    std::set<std::string> renamed_labels;
+    
     // Add libraries from rules that have extra metadata (including renames)
     for (auto it = extra_metadata.begin(); it != extra_metadata.end(); ++it) {
       const auto& bazel_label = it.key();
@@ -679,6 +697,7 @@ class ArtifactGen {
       // Apply rename if specified
       if (metadata.contains("_RENAME")) {
         lib_dict["name"] = metadata["_RENAME"];
+        renamed_labels.insert(bazel_label);  // Track that this label was renamed
       }
       
       lib_list.push_back(lib_dict);
@@ -686,6 +705,15 @@ class ArtifactGen {
     
     for (auto it = build_metadata_.begin(); it != build_metadata_.end(); ++it) {
       const auto& lib_dict = it.value();
+      
+      // Skip libraries that have been renamed to avoid duplicates
+      if (lib_dict.contains("name")) {
+        std::string lib_name = lib_dict["name"];
+        if (renamed_labels.count(lib_name) > 0) {
+          continue;  // Skip this library as it was already added with a renamed version
+        }
+      }
+      
       if (!lib_dict.contains("_TYPE")) {
         lib_list.push_back(lib_dict);
       } else if (lib_dict["_TYPE"] == "library") {
