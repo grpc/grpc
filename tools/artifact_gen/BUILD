@@ -13,10 +13,20 @@
 # limitations under the License.
 
 cc_library(
+    name = "build_metadata",
+    srcs = ["build_metadata.cc"],
+    hdrs = ["build_metadata.h"],
+    deps = [
+        "@nlohmann_json//:json",
+    ],
+)
+
+cc_library(
     name = "extract_metadata_from_bazel_xml",
     srcs = ["extract_metadata_from_bazel_xml.cc"],
     hdrs = ["extract_metadata_from_bazel_xml.h"],
     deps = [
+        ":build_metadata",
         "@abseil-cpp//absl/algorithm:container",
         "@abseil-cpp//absl/flags:flag",
         "@abseil-cpp//absl/log",
@@ -32,6 +42,7 @@ cc_library(
     srcs = ["metadata_for_wrapped_languages.cc"],
     hdrs = ["metadata_for_wrapped_languages.h"],
     deps = [
+        ":build_metadata",
         "utils",
         "@abseil-cpp//absl/log",
         "@abseil-cpp//absl/log:check",

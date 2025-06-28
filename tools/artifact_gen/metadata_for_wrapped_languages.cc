@@ -16,9 +16,11 @@
 
 #include <fstream>
 #include <initializer_list>
+#include <map>
 #include <optional>
 #include <regex>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "absl/log/check.h"
@@ -29,6 +31,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
+#include "include/nlohmann/json.hpp"
+#include "build_metadata.h"
 #include "utils.h"
 
 namespace {
@@ -236,6 +240,10 @@ void ExpandVersion(nlohmann::json& config) {
   settings["php_version"]["php_composer"] = php_composer;
   settings["python_version"]["pep440"] = pep440;
   settings["ruby_version"]["ruby_version"] = ruby_version;
+  
+  // Add PHP stability computation
+  std::string php_stability = version.tag.has_value() ? "beta" : "stable";
+  settings["php_version"]["php_stability"] = php_stability;
 }
 
 void AddBoringSslMetadata(nlohmann::json& metadata) {
@@ -485,6 +493,74 @@ void ProcessSwiftBoringSSLPackageFiles(nlohmann::json& config) {
   // Add to swift_boringssl_package for template use
   swift_boringssl_package["all_files"] = sorted_files;
 }
+
+std::set<std::string> MakePhpPackageXmlSrcs(const nlohmann::json& config) {
+  std::set<std::string> srcs;
+  
+  // Start with php_config_m4.src + php_config_m4.headers (like Python template)
+  for (const auto& src : config["php_config_m4"]["src"]) {
+    srcs.insert(src);
+  }
+  for (const auto& header : config["php_config_m4"]["headers"]) {
+    srcs.insert(header);
+  }
+  
+  std::map<std::string, const nlohmann::json*> lib_maps;
+  
+  // Get the mapping from original Bazel labels to renamed library names
+  // using the shared build metadata
+  auto bazel_label_to_renamed = grpc_tools::artifact_gen::GetBazelLabelToRenamedMapping();
+  
+  for (const auto& lib : config["libs"]) {
+    std::string lib_name = lib["name"];
+    lib_maps[lib_name] = &lib;
+  }
+  
+  std::vector<std::string> php_deps = config["php_config_m4"]["deps"];
+  std::set<std::string> php_full_deps;
+  for (const auto& dep : php_deps) {
+    php_full_deps.insert(dep);
+    auto it = lib_maps.find(dep);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      std::vector<std::string> transitive_deps = (*lib)["transitive_deps"];
+      php_full_deps.insert(transitive_deps.begin(), transitive_deps.end());
+    }
+  }
+  
+  // Exclude cares (like Python template)
+  php_full_deps.erase("cares");
+  
+  for (const auto& dep : php_full_deps) {
+    std::string actual_lib_name = dep;
+    
+    // Check if this is a renamed Bazel label using the shared metadata
+    auto rename_it = bazel_label_to_renamed.find(dep);
+    if (rename_it != bazel_label_to_renamed.end()) {
+      actual_lib_name = rename_it->second;
+    }
+    
+    auto it = lib_maps.find(actual_lib_name);
+    if (it != lib_maps.end()) {
+      const nlohmann::json* lib = it->second;
+      // Collect public_headers + headers + src (like Python template)
+      if (lib->contains("public_headers")) {
+        std::vector<std::string> public_headers = (*lib)["public_headers"];
+        srcs.insert(public_headers.begin(), public_headers.end());
+      }
+      if (lib->contains("headers")) {
+        std::vector<std::string> headers = (*lib)["headers"];
+        srcs.insert(headers.begin(), headers.end());
+      }
+      if (lib->contains("src")) {
+        std::vector<std::string> src = (*lib)["src"];
+        srcs.insert(src.begin(), src.end());
+      }
+    }
+  }
+  
+  return srcs;
+}
 }  // namespace
 
 void AddMetadataForWrappedLanguages(nlohmann::json& config) {
@@ -498,4 +574,12 @@ void AddMetadataForWrappedLanguages(nlohmann::json& config) {
   ExpandSupportedPythonVersions(config);
   ProcessSwiftPackageFiles(config);
   ProcessSwiftBoringSSLPackageFiles(config);
+  
+  // Add package.xml-specific file collection
+  auto package_xml_srcs = MakePhpPackageXmlSrcs(config);
+  nlohmann::json package_xml_files = nlohmann::json::array();
+  for (const auto& src : package_xml_srcs) {
+    package_xml_files.push_back(src);
+  }
+  config["package_xml_srcs"] = package_xml_files;
 }
