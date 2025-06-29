@@ -68,16 +68,12 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 if [[ -n "${BUILD_TARGETS}" ]]; then
   # On Windows CI, we need special handling due to protobuf/MSVC incompatibilities
   if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || -n "$KOKORO_JOB_NAME" ]]; then
-    # Combination of flags to fix protobuf compilation with MSVC on Windows:
-    # - experimental_sibling_repository_layout: fixes include paths for external deps
-    # - noenable_platform_specific_config: avoids protobuf's clang-cl default
-    # - features=-layering_check: disables strict header checks that fail on Windows
-    # - features=-parse_headers: avoids parsing issues with MSVC
+    # Protobuf v31.1+ expects clang-cl on Windows but our CI uses MSVC.
+    # Disable platform-specific config to avoid protobuf forcing clang-cl,
+    # and use local strategy to avoid sandboxing issues with include paths.
     tools/bazel build \
-      --experimental_sibling_repository_layout \
       --noenable_platform_specific_config \
-      --features=-layering_check \
-      --features=-parse_headers \
+      --spawn_strategy=local \
       ${BUILD_TARGETS}
   else
     tools/bazel build ${BUILD_TARGETS}
