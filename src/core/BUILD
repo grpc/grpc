@@ -755,6 +755,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
+        "channelz_property_list",
         "check_class_size",
         "construct_destruct",
         "context",
