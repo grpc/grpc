@@ -268,6 +268,53 @@ TEST(ChannelInitTest, BottomCanComeBeforeTopWithExplicitOrdering) {
             std::vector<std::string>({"b", "c", "terminator"}));
 }
 
+TEST(ChannelInitTest, CanRegisterFusedFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter7"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter8"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter9"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter4+Filter5+Filter6+Filter7"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2+Filter3"));
+  EXPECT_EQ(GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL, ChannelArgs()),
+            std::vector<std::string>({"Filter1", "Filter2+Filter3",
+                                      "Filter4+Filter5+Filter6+Filter7",
+                                      "Filter8", "Filter9", "terminal1"}));
+}
+
+TEST(ChannelInitTest, PredicateMatchingWithFusedFilters) {
+  ChannelInit::Builder b;
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter1"))
+      .IfChannelArg("filter1", true);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter2"))
+      .IfChannelArg("filter2", true);
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter3"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter4"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter5"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("Filter6"));
+  b.RegisterFilter(GRPC_CLIENT_CHANNEL, FilterNamed("terminal1")).Terminal();
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter1+Filter2+Filter3+Filter4+Filter5"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter2+Filter3+Filter4+Filter5"));
+  b.RegisterFusedFilter(GRPC_CLIENT_CHANNEL,
+                        FilterNamed("Filter3+Filter4+Filter5"));
+  EXPECT_EQ(
+      GetFilterNames(b.Build(), GRPC_CLIENT_CHANNEL,
+                     ChannelArgs().Set("filter1", false).Set("filter2", true)),
+      std::vector<std::string>(
+          {"Filter2+Filter3+Filter4+Filter5", "Filter6", "terminal1"}));
+}
+
 class TestFilter1 {
  public:
   explicit TestFilter1(int* p) : p_(p) {}
