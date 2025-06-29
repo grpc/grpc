@@ -361,7 +361,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   cancel_pings(this, GRPC_ERROR_CREATE("Transport destroyed"));
 
-  CHECK(channelz_socket == nullptr);
+  if (channelz_socket != nullptr) {
+    channelz_socket.reset();
+  }
 
   event_engine.reset();
 
@@ -833,12 +835,10 @@ static void destroy_transport_locked(void* tp, grpc_error_handle /*error*/) {
   t->destroying = 1;
   close_transport_locked(t.get(), GRPC_ERROR_CREATE("Transport destroyed"));
   t->memory_owner.Reset();
-  if (t->channelz_socket != nullptr) {
-    t->channelz_socket.reset();
-  }
 }
 
 void grpc_chttp2_transport::Orphan() {
+  channelz_data_source.reset();
   combiner->Run(GRPC_CLOSURE_CREATE(destroy_transport_locked, this, nullptr),
                 absl::OkStatus());
 }
