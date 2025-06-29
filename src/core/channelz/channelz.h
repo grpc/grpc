@@ -299,12 +299,6 @@ class DataSink {
            std::shared_ptr<DataSinkCompletionNotification> notification)
       : impl_(impl), notification_(std::move(notification)) {}
 
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
-    auto impl = impl_.lock();
-    if (impl == nullptr) return;
-    impl->AddAdditionalInfo(name, std::move(additional_info));
-  }
-
   template <typename T>
   std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddAdditionalInfo(
       absl::string_view name, T value) {
@@ -318,6 +312,12 @@ class DataSink {
   }
 
  private:
+  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddAdditionalInfo(name, std::move(additional_info));
+  }
+
   std::weak_ptr<DataSinkImplementation> impl_;
   std::shared_ptr<DataSinkCompletionNotification> notification_;
 };

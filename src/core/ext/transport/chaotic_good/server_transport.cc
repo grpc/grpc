@@ -30,6 +30,7 @@
 #include "absl/random/random.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/frame.h"
 #include "src/core/ext/transport/chaotic_good/frame_header.h"
 #include "src/core/ext/transport/chaotic_good/frame_transport.h"
@@ -292,13 +293,12 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
 void ChaoticGoodServerTransport::StreamDispatch::AddData(
     channelz::DataSink sink) {
   MutexLock lock(&mu_);
-  Json::Object state;
-  state["stream_map_size"] = Json::FromNumber(stream_map_.size());
-  state["last_seen_new_stream_id"] = Json::FromNumber(last_seen_new_stream_id_);
-  sink.AddAdditionalInfo("chaoticGoodServerTransportState", std::move(state));
-  party_->ToJson([sink](Json::Object obj) mutable {
-    sink.AddAdditionalInfo("transportParty", std::move(obj));
-  });
+  sink.AddAdditionalInfo(
+      "transport_state",
+      channelz::PropertyList()
+          .Set("stream_map_size", stream_map_.size())
+          .Set("last_seen_new_stream_id", last_seen_new_stream_id_));
+  party_->ExportToChannelz("transport_party", sink);
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

@@ -30,6 +30,7 @@
 #include "absl/log/check.h"
 #include "absl/strings/string_view.h"
 #include "src/core/channelz/channelz.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/event_engine_context.h"
 #include "src/core/lib/promise/activity.h"
@@ -40,6 +41,7 @@
 #include "src/core/util/check_class_size.h"
 #include "src/core/util/construct_destruct.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/json/json_writer.h"
 #include "src/core/util/ref_counted.h"
 #include "src/core/util/ref_counted_ptr.h"
 
@@ -169,8 +171,8 @@ class Party : public Activity, private Wakeable {
     // Destroy the participant before finishing.
     virtual void Destroy() = 0;
 
-    // Return a Json description of this participant.
-    virtual Json::Object ToJson() = 0;
+    // Return a description of this participant.
+    virtual channelz::PropertyList ChannelzProperties() = 0;
 
     // Return a Handle instance for this participant.
     Wakeable* MakeNonOwningWakeable(Party* party);
@@ -286,17 +288,18 @@ class Party : public Activity, private Wakeable {
           party_->state_.load(std::memory_order_relaxed), wakeup_mask_);
     }
 
-    Json::Object ToJson() override {
-      Json::Object obj;
+    channelz::PropertyList ChannelzProperties() override {
+      channelz::PropertyList properties;
       if (active_ != nullptr) {
-        obj["active"] = Json::FromObject(active_->ToJson());
+        properties.Set("active", active_->ChannelzProperties());
       }
-      Json::Array queued;
-      next_.ForEach([&](Participant* p) {
-        queued.emplace_back(Json::FromObject(p->ToJson()));
-      });
-      obj["queued"] = Json::FromArray(std::move(queued));
-      return obj;
+      properties.Set("queued", [this]() {
+        channelz::PropertyTable queued;
+        next_.ForEach(
+            [&](Participant* p) { queued.AppendRow(p->ChannelzProperties()); });
+        return queued;
+      }());
+      return properties;
     }
 
    private:
@@ -449,17 +452,19 @@ class Party : public Activity, private Wakeable {
       return false;
     }
 
-    Json::Object ToJson() override {
-      Json::Object obj;
-      obj["on_complete"] =
-          Json::FromString(std::string(TypeName<OnComplete>()));
-      if (!started_) {
-        obj["factory"] = Json::FromString(
-            std::string(TypeName<typename Factory::UnderlyingFactory>()));
-      } else {
-        obj["promise"] = PromiseAsJson(promise_);
-      }
-      return obj;
+    channelz::PropertyList ChannelzProperties() override {
+      return channelz::PropertyList()
+          .Set("on_complete", TypeName<OnComplete>())
+          .Set("factory", [this]() {
+            channelz::PropertyList factory;
+            if (started_) {
+              factory.Set("promise", JsonDump(PromiseAsJson(promise_)));
+            } else {
+              factory.Set("factory",
+                          TypeName<typename Factory::UnderlyingFactory>());
+            }
+            return factory;
+          }());
     }
 
     void Destroy() override { delete this; }
@@ -544,22 +549,21 @@ class Party : public Activity, private Wakeable {
 
     void Destroy() override { this->Unref(); }
 
-    Json::Object ToJson() override {
-      Json::Object obj;
+    channelz::PropertyList ChannelzProperties() override {
+      channelz::PropertyList properties;
       switch (state_.load(std::memory_order_relaxed)) {
         case State::kFactory:
-          obj["factory"] = Json::FromString(
-              std::string(TypeName<typename Factory::UnderlyingFactory>()));
+          properties.Set("factory",
+                         TypeName<typename Factory::UnderlyingFactory>());
           break;
         case State::kPromise:
-          obj["promise"] = PromiseAsJson(promise_);
+          properties.Set("promise", JsonDump(PromiseAsJson(promise_)));
           break;
         case State::kResult:
-          obj["result"] = Json::FromString(
-              std::string(TypeName<typename Promise::Result>()));
+          properties.Set("result", TypeName<typename Promise::Result>());
           break;
       }
-      return obj;
+      return properties;
     }
 
    private:
@@ -685,7 +689,7 @@ class Party : public Activity, private Wakeable {
                            new_state);
   }
 
-  Json::Object ToJsonLocked();
+  channelz::PropertyList ChannelzPropertiesLocked();
 
   // Sentinel value for currently_polling_ when no participant is being polled.
   static constexpr uint8_t kNotPolling = 255;
