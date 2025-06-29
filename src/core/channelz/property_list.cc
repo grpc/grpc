@@ -14,6 +14,11 @@
 
 #include "src/core/channelz/property_list.h"
 
+#include <algorithm>
+#include <vector>
+
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/empty.upb.h"
 #include "src/core/util/match.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 
@@ -157,7 +162,7 @@ grpc_channelz_v2_PropertyValue* ToUpbProto(const PropertyValue& value,
 void PropertyList::SetInternal(absl::string_view key,
                                std::optional<PropertyValue> value) {
   if (value.has_value()) {
-    property_list_.emplace(key, *std::move(value));
+    property_list_.insert_or_assign(key, *std::move(value));
   } else {
     property_list_.erase(std::string(key));
   }
@@ -184,6 +189,18 @@ void PropertyList::FillUpbProto(grpc_channelz_v2_PropertyList* proto,
     grpc_channelz_v2_PropertyList_properties_set(
         proto, StdStringToUpbString(key), ToUpbProto(value, arena), arena);
   }
+}
+
+void PropertyList::FillAny(google_protobuf_Any* any, upb_Arena* arena) {
+  auto* p = grpc_channelz_v2_PropertyList_new(arena);
+  FillUpbProto(p, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_PropertyList_serialize(p, arena, &length);
+  google_protobuf_Any_set_value(any,
+                                upb_StringView_FromDataAndSize(bytes, length));
+  google_protobuf_Any_set_type_url(
+      any, StdStringToUpbString(
+               "type.googleapis.com/grpc.channelz.v2.PropertyList"));
 }
 
 Json::Object PropertyGrid::TakeJsonObject() {
@@ -224,7 +241,8 @@ void PropertyGrid::FillUpbProto(grpc_channelz_v2_PropertyGrid* proto,
   auto* rows_proto =
       grpc_channelz_v2_PropertyGrid_resize_rows(proto, rows_.size(), arena);
   for (size_t r = 0; r < rows_.size(); ++r) {
-    auto* row_proto = rows_proto[r];
+    auto* row_proto = grpc_channelz_v2_PropertyGrid_Row_new(arena);
+    rows_proto[r] = row_proto;
     grpc_channelz_v2_PropertyGrid_Row_set_label(row_proto,
                                                 StdStringToUpbString(rows_[r]));
     auto* row_columns_proto = grpc_channelz_v2_PropertyGrid_Row_resize_value(
@@ -233,9 +251,26 @@ void PropertyGrid::FillUpbProto(grpc_channelz_v2_PropertyGrid* proto,
       auto it = grid_.find(std::pair(c, r));
       if (it != grid_.end()) {
         row_columns_proto[c] = ToUpbProto(it->second, arena);
+      } else {
+        auto* val = grpc_channelz_v2_PropertyValue_new(arena);
+        grpc_channelz_v2_PropertyValue_set_empty_value(
+            val, google_protobuf_Empty_new(arena));
+        row_columns_proto[c] = val;
       }
     }
   }
+}
+
+void PropertyGrid::FillAny(google_protobuf_Any* any, upb_Arena* arena) {
+  auto* p = grpc_channelz_v2_PropertyGrid_new(arena);
+  FillUpbProto(p, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_PropertyGrid_serialize(p, arena, &length);
+  google_protobuf_Any_set_value(any,
+                                upb_StringView_FromDataAndSize(bytes, length));
+  google_protobuf_Any_set_type_url(
+      any, StdStringToUpbString(
+               "type.googleapis.com/grpc.channelz.v2.PropertyGrid"));
 }
 
 void PropertyGrid::SetInternal(absl::string_view column, absl::string_view row,
@@ -252,16 +287,28 @@ void PropertyGrid::SetInternal(absl::string_view column, absl::string_view row,
 PropertyGrid& PropertyGrid::SetColumn(absl::string_view column,
                                       PropertyList values) {
   int c = GetIndex(columns_, column);
-  for (auto& [key, value] : values.property_list_) {
-    grid_.emplace(std::pair(c, GetIndex(rows_, key)), std::move(value));
+  std::vector<std::string> keys;
+  for (const auto& [key, value] : values.property_list_) {
+    keys.push_back(key);
+  }
+  std::sort(keys.begin(), keys.end());
+  for (const auto& key : keys) {
+    grid_.emplace(std::pair(c, GetIndex(rows_, key)),
+                  std::move(values.property_list_.at(key)));
   }
   return *this;
 }
 
 PropertyGrid& PropertyGrid::SetRow(absl::string_view row, PropertyList values) {
   int r = GetIndex(rows_, row);
-  for (auto& [key, value] : values.property_list_) {
-    grid_.emplace(std::pair(GetIndex(columns_, key), r), std::move(value));
+  std::vector<std::string> keys;
+  for (const auto& [key, value] : values.property_list_) {
+    keys.push_back(key);
+  }
+  std::sort(keys.begin(), keys.end());
+  for (const auto& key : keys) {
+    grid_.emplace(std::pair(GetIndex(columns_, key), r),
+                  std::move(values.property_list_.at(key)));
   }
   return *this;
 }
@@ -320,16 +367,34 @@ void PropertyTable::FillUpbProto(grpc_channelz_v2_PropertyTable* proto,
   auto* rows_proto =
       grpc_channelz_v2_PropertyTable_resize_rows(proto, num_rows_, arena);
   for (size_t r = 0; r < num_rows_; ++r) {
-    auto* row_proto = rows_proto[r];
+    auto* row_proto = grpc_channelz_v2_PropertyTable_Row_new(arena);
+    rows_proto[r] = row_proto;
     auto* row_columns_proto = grpc_channelz_v2_PropertyTable_Row_resize_value(
         row_proto, columns_.size(), arena);
     for (size_t c = 0; c < columns_.size(); ++c) {
-      auto it = grid_.find(std::pair(c, r));
+      auto it = grid_.find({c, r});
       if (it != grid_.end()) {
         row_columns_proto[c] = ToUpbProto(it->second, arena);
+      } else {
+        auto* val = grpc_channelz_v2_PropertyValue_new(arena);
+        grpc_channelz_v2_PropertyValue_set_empty_value(
+            val, google_protobuf_Empty_new(arena));
+        row_columns_proto[c] = val;
       }
     }
   }
+}
+
+void PropertyTable::FillAny(google_protobuf_Any* any, upb_Arena* arena) {
+  auto* p = grpc_channelz_v2_PropertyTable_new(arena);
+  FillUpbProto(p, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_PropertyTable_serialize(p, arena, &length);
+  google_protobuf_Any_set_value(any,
+                                upb_StringView_FromDataAndSize(bytes, length));
+  google_protobuf_Any_set_type_url(
+      any, StdStringToUpbString(
+               "type.googleapis.com/grpc.channelz.v2.PropertyTable"));
 }
 
 }  // namespace grpc_core::channelz

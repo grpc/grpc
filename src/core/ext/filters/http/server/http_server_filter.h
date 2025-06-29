@@ -50,10 +50,10 @@ class HttpServerFilter final : public ImplementChannelFilter<HttpServerFilter>,
   ~HttpServerFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("httpServerFilter",
-                           channelz::PropertyList()
-                               .Set("surface_user_agent", surface_user_agent_)
-                               .Set("allow_put_requests", allow_put_requests_));
+    sink.AddData("httpServerFilter",
+                 channelz::PropertyList()
+                     .Set("surface_user_agent", surface_user_agent_)
+                     .Set("allow_put_requests", allow_put_requests_));
   }
 
   class Call {

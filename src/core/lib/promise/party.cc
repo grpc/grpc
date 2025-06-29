@@ -205,8 +205,7 @@ void Party::ExportToChannelz(std::string name, channelz::DataSink sink) {
   Spawn(
       "export-to-channelz",
       [name = std::move(name), sink = std::move(sink), self = Ref()]() mutable {
-        sink.AddAdditionalInfo(std::move(name),
-                               self->ChannelzPropertiesLocked());
+        sink.AddData(std::move(name), self->ChannelzPropertiesLocked());
         return absl::OkStatus();
       },
       [](absl::Status) {});

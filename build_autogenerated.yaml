@@ -11073,6 +11073,8 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -11143,6 +11145,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -15328,9 +15331,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/match.h
   - src/core/util/overload.h
   - src/core/util/time.h
@@ -15342,7 +15348,9 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/json/json_writer.cc
   - src/core/util/time.cc
   - test/core/channelz/property_list_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc

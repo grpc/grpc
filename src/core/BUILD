@@ -10194,8 +10194,10 @@ grpc_cc_library(
         "time",
         "upb_utils",
         "//:channelz_property_list_upb",
+        "//:channelz_upb",
         "//:gpr",
         "//:protobuf_any_upb",
+        "//:protobuf_empty_upb",
     ],
 )
 
