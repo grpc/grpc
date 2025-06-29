@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 from typing import Optional
 
-from __future__ import annotations
 import grpc
 from grpc._cython import cygrpc
 from grpc._typing import MetadataType
