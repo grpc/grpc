@@ -18,7 +18,6 @@ from dataclasses import dataclass
 from dataclasses import field
 import enum
 from typing import Dict, List, Mapping, Set, Tuple, Union
-from grpc_observability._cyobservability import MetricsName
 
 
 class Exporter(metaclass=abc.ABCMeta):
@@ -63,7 +62,7 @@ class StatsData:
         in stubs.
     """
 
-    name: MetricsName
+    name: "grpc_observability._cyobservability.MetricsName"  # type: ignore
     measure_double: bool
     value_int: int = 0
     value_float: float = 0.0
