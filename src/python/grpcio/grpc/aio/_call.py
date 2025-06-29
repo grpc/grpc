@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
-from __future__ import annotations
-
 import asyncio
 import enum
 from functools import partial
@@ -22,6 +20,7 @@ import logging
 import traceback
 from typing import Any, AsyncIterator, Generator, Generic, Optional, Union
 
+from __future__ import annotations
 import grpc
 from grpc import _common
 from grpc._cython import cygrpc

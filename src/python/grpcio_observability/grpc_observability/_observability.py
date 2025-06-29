@@ -11,13 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from __future__ import annotations
-
 import abc
 from dataclasses import dataclass
 from dataclasses import field
 import enum
 from typing import AnyStr, Dict, List, Mapping, Set, Tuple
+
+from __future__ import annotations
 
 
 class Exporter(metaclass=abc.ABCMeta):

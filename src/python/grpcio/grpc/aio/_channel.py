@@ -12,12 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
-from __future__ import annotations
-
 import asyncio
 import sys
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
 
+from __future__ import annotations
 import grpc
 from grpc import _common
 from grpc import _compression

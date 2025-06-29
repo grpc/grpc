@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import annotations
-
 import abc
 import contextlib
 import logging
@@ -29,6 +27,7 @@ from typing import (
     Union,
 )
 
+from __future__ import annotations
 from grpc._cython import cygrpc as _cygrpc
 from grpc._typing import ChannelArgumentType
 

@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
-from __future__ import annotations
-
 from abc import ABCMeta
 from abc import abstractmethod
 import asyncio
@@ -33,6 +31,7 @@ from typing import (
     Union,
 )
 
+from __future__ import annotations
 import grpc
 from grpc._cython import cygrpc
 
@@ -45,6 +44,7 @@ from ._call import UnaryUnaryCall
 from ._call import _API_STYLE_ERROR
 from ._call import _RPC_ALREADY_FINISHED_DETAILS
 from ._call import _RPC_HALF_CLOSED_DETAILS
+from ._utils import _timeout_to_deadline
 
 if TYPE_CHECKING:
     from ._metadata import Metadata
@@ -56,8 +56,6 @@ if TYPE_CHECKING:
     from ._typing import ResponseIterableType
     from ._typing import ResponseType
     from ._typing import SerializingFunction
-
-from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
 

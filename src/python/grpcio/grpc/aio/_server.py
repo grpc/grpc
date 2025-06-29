@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Server-side implementation of gRPC Asyncio Python."""
-from __future__ import annotations
-
 from typing import TYPE_CHECKING, Any, Optional, Sequence
 
-if TYPE_CHECKING:
-    from concurrent.futures import Executor
-    from ._typing import ChannelArgumentType
-
+from __future__ import annotations
 import grpc
 from grpc import _common
 from grpc import _compression
@@ -27,6 +22,12 @@ from grpc._cython import cygrpc
 
 from . import _base_server
 from ._interceptor import ServerInterceptor
+
+if TYPE_CHECKING:
+    from concurrent.futures import Executor
+
+    from ._typing import ChannelArgumentType
+
 
 
 def _augment_channel_arguments(
