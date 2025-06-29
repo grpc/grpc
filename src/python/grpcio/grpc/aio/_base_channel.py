@@ -14,9 +14,10 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
-from typing import Generic, Optional, Self
+from typing import Generic, Optional
 
 import grpc
+from typing_extensions import Self
 
 from . import _base_call
 from ._typing import DeserializingFunction

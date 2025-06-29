@@ -16,13 +16,14 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Sequence, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
 
 import grpc
 from grpc import _common
 from grpc import _compression
 from grpc import _grpcio_metadata
 from grpc._cython import cygrpc
+from typing_extensions import Self
 
 from . import _base_call
 from . import _base_channel
