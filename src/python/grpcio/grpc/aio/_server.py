@@ -30,7 +30,6 @@ if TYPE_CHECKING:
     from ._typing import ChannelArgumentType
 
 
-
 def _augment_channel_arguments(
     base_options: ChannelArgumentType,
     compression: Optional[grpc.Compression],
