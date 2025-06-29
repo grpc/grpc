@@ -14,8 +14,6 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 from __future__ import annotations
 
-from ._utils import _timeout_to_deadline
-
 import asyncio
 import sys
 from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
@@ -43,6 +41,7 @@ from ._interceptor import StreamUnaryClientInterceptor
 from ._interceptor import UnaryStreamClientInterceptor
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._metadata import Metadata
+from ._utils import _timeout_to_deadline
 
 if TYPE_CHECKING:
     from ._typing import ChannelArgumentType
