@@ -66,9 +66,22 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  # Disable platform-specific configurations to avoid conflicts with protobuf's
-  # default clang-cl configuration on Windows (our CI uses MSVC)
-  tools/bazel build --noenable_platform_specific_config ${BUILD_TARGETS}
+  # On Windows CI, we need special handling due to protobuf/MSVC incompatibilities
+  if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || -n "$KOKORO_JOB_NAME" ]]; then
+    # Combination of flags to fix protobuf compilation with MSVC on Windows:
+    # - experimental_sibling_repository_layout: fixes include paths for external deps
+    # - noenable_platform_specific_config: avoids protobuf's clang-cl default
+    # - features=-layering_check: disables strict header checks that fail on Windows
+    # - features=-parse_headers: avoids parsing issues with MSVC
+    tools/bazel build \
+      --experimental_sibling_repository_layout \
+      --noenable_platform_specific_config \
+      --features=-layering_check \
+      --features=-parse_headers \
+      ${BUILD_TARGETS}
+  else
+    tools/bazel build ${BUILD_TARGETS}
+  fi
 fi
 
 # Run the C++ program to copy the generated files.
