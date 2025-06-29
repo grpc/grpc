@@ -12,11 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
+from __future__ import annotations
+
 from collections import OrderedDict
 from collections import abc
 from typing import Any, Iterator, Optional, Union
-
-from __future__ import annotations
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]

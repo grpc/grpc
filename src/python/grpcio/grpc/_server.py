@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Service-side implementation of gRPC Python."""
+from __future__ import annotations
 
 import abc
 import collections
@@ -37,7 +38,6 @@ from typing import (
     Union,
 )
 
-from __future__ import annotations
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
 from grpc import _compression  # pytype: disable=pyi-error
