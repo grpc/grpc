@@ -91,9 +91,7 @@ class PartyExposer final : public channelz::DataSource {
   ~PartyExposer() { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    party_->ToJson([sink, name = name_](Json::Object obj) mutable {
-      sink.AddAdditionalInfo(name, std::move(obj));
-    });
+    party_->ExportToChannelz(std::string(name_), sink);
   }
 
  private:

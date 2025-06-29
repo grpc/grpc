@@ -336,9 +336,7 @@ class TestDataSource final : public DataSource {
   }
   ~TestDataSource() { SourceDestructing(); }
   void AddData(DataSink sink) override {
-    Json::Object object;
-    object["test"] = Json::FromString("yes");
-    sink.AddAdditionalInfo("testData", std::move(object));
+    sink.AddAdditionalInfo("testData", PropertyList().Set("test", "yes"));
   }
   std::unique_ptr<ZTrace> GetZTrace(absl::string_view name) override {
     if (name == "test_ztrace") return std::make_unique<TestZTrace>();
