@@ -874,7 +874,9 @@ void Endpoint::AddData(channelz::DataSink sink) {
           .Set("decode_alignment", ctx_->decode_alignment)
           .Set("secure_frame_bytes_queued",
                [this]() -> std::optional<uint64_t> {
-                 if (ctx_->secure_frame_queue == nullptr) return std::nullopt;
+                 if (ctx_->secure_frame_queue.Get() == nullptr) {
+                   return std::nullopt;
+                 }
                  return ctx_->secure_frame_queue->InstantaneousQueuedBytes();
                }())
           .Set("enable_tracing", ctx_->enable_tracing)
@@ -946,8 +948,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }
               }
-              ep_ctx->secure_frame_queue =
-                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment);
+              ep_ctx->secure_frame_queue.Set(
+                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment));
               auto* transport_framing_endpoint_extension =
                   GetTransportFramingEndpointExtension(*endpoint);
               if (transport_framing_endpoint_extension != nullptr) {
@@ -999,6 +1001,7 @@ DataEndpoints::DataEndpoints(
         input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
         ztrace_collector));
   }
+  SourceConstructed();
 }
 
 void DataEndpoints::AddData(channelz::DataSink sink) {

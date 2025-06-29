@@ -10184,11 +10184,16 @@ grpc_cc_library(
         "absl/strings",
         "absl/status",
         "absl/container:flat_hash_map",
+        "@com_google_protobuf//upb/mem",
     ],
     deps = [
         "json",
+        "match",
         "time",
+        "upb_utils",
+        "//:channelz_property_list_upb",
         "//:gpr",
+        "//:protobuf_any_upb",
     ],
 )
 

@@ -340,11 +340,15 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's constructor.
+  // It adds this data source to the node's list of data sources.
+  void SourceConstructed();
+
   // This method must be called in the most derived class's destructor.
   // It removes this data source from the node's list of data sources.
   // If it is not called, then the AddData() function pointer may be invalid
   // when the node is queried.
-  void ResetDataSource();
+  void SourceDestructing();
 
  private:
   RefCountedPtr<BaseNode> node_;

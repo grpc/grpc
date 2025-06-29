@@ -229,24 +229,32 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
 // DataSource
 //
 
-DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
-  if (node_ == nullptr) return;
-  MutexLock lock(&node_->data_sources_mu_);
-  node_->data_sources_.push_back(this);
-}
+DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {}
 
 DataSource::~DataSource() {
   DCHECK(node_ == nullptr) << "DataSource must be ResetDataSource()'d in the "
                               "most derived class before destruction";
 }
 
-void DataSource::ResetDataSource() {
+void DataSource::SourceConstructed() {
+  if (node_ == nullptr) return;
+  MutexLock lock(&node_->data_sources_mu_);
+  node_->data_sources_.push_back(this);
+}
+
+void DataSource::SourceDestructing() {
   RefCountedPtr<BaseNode> node = std::move(node_);
   if (node == nullptr) return;
   MutexLock lock(&node->data_sources_mu_);
-  node->data_sources_.erase(
-      std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),
-      node->data_sources_.end());
+  for (size_t i = 0; i < node->data_sources_.size(); ++i) {
+    if (node->data_sources_[i] == this) {
+      std::swap(node->data_sources_[i], node->data_sources_.back());
+      node->data_sources_.pop_back();
+      return;
+    }
+  }
+  LOG(DFATAL) << "DataSource not found in node's data sources -- probably "
+                 "SourceConstructed was not called";
 }
 
 //

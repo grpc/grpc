@@ -184,18 +184,17 @@ void grpc_channel_stack::ChannelStackDataSource::AddData(
       "channel_stack",
       grpc_core::channelz::PropertyList()
           .Set("type", "v1")
-          .Set("call_stack_size", channel_stack->call_stack_size)
           .Set("elements", [channel_stack]() {
-            std::vector<grpc_core::channelz::PropertyList> elements;
+            grpc_core::channelz::PropertyTable elements;
             grpc_channel_element* elems =
                 CHANNEL_ELEMS_FROM_STACK(channel_stack);
-            elements.reserve(channel_stack->count);
             for (size_t i = 0; i < channel_stack->count; i++) {
               grpc_channel_element& e = elems[i];
-              elements.emplace_back()
-                  .Set("type", e.filter->name.name())
-                  .Set("call_data_size", e.filter->sizeof_call_data)
-                  .Set("channel_data_size", e.filter->sizeof_channel_data);
+              elements.AppendRow(
+                  grpc_core::channelz::PropertyList()
+                      .Set("type", e.filter->name.name())
+                      .Set("call_data_size", e.filter->sizeof_call_data)
+                      .Set("channel_data_size", e.filter->sizeof_channel_data));
             }
             return elements;
           }()));

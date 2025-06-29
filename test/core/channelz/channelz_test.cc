@@ -330,8 +330,11 @@ class TestZTrace final : public ZTrace {
 
 class TestDataSource final : public DataSource {
  public:
-  using DataSource::DataSource;
-  ~TestDataSource() { ResetDataSource(); }
+  explicit TestDataSource(RefCountedPtr<BaseNode> node)
+      : DataSource(std::move(node)) {
+    SourceConstructed();
+  }
+  ~TestDataSource() { SourceDestructing(); }
   void AddData(DataSink sink) override {
     Json::Object object;
     object["test"] = Json::FromString("yes");
@@ -401,8 +404,11 @@ TEST_P(ChannelzChannelTest, ZTrace) {
 
 class TestSubObjectDataSource final : public DataSource {
  public:
-  using DataSource::DataSource;
-  ~TestSubObjectDataSource() { ResetDataSource(); }
+  explicit TestSubObjectDataSource(RefCountedPtr<BaseNode> node)
+      : DataSource(std::move(node)) {
+    SourceConstructed();
+  }
+  ~TestSubObjectDataSource() { SourceDestructing(); }
   void AddData(DataSink sink) override { sink.AddChildObjects({child_}); }
 
   int64_t child_id() const { return child_->uuid(); }
