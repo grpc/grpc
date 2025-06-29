@@ -20,6 +20,11 @@ cd $(dirname $0)/../../..
 
 REPO_ROOT="$(pwd)"
 
+if [ -f "./generate_artifacts.sh" ]; then
+  echo "Calling generate_artifacts.sh..."
+  bash -c ./generate_artifacts.sh
+fi
+
 # Build protoc and grpc_cpp_plugin. Codegen is not cross-compiled to Android
 mkdir -p cmake/build
 pushd cmake/build

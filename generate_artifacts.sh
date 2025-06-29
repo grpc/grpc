@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2016 gRPC authors.
+# Copyright 2025 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,17 +15,5 @@
 
 set -ex
 
-cd "$(dirname "$0")/../../.."
-
-mkdir -p "${ARTIFACTS_OUT}"
-
-# Generate the upb files before packaging
-if [ -f "./generate_artifacts.sh" ]; then
-  echo "Generating upb artifacts..."
-  bash -c ./generate_artifacts.sh
-fi
-
-# Build the PHP extension archive (this just zips all the files up)
-pear package
-
-cp -r grpc-*.tgz "${ARTIFACTS_OUT}"/
+cd $(dirname $0)
+tools/codegen/core/gen_upb_api.sh

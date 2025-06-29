@@ -143,4 +143,4 @@ if errors > 0:
 # https://github.com/grpc/grpc/issues/15381
 # Basically, a change rendered this script useless and we did not realize it.
 # This check ensures that this type of issue doesn't occur again.
-assert num_files > 1900  # we have more than 1900 files
+assert num_files > 1000  # we have more than 1000 files

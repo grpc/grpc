@@ -124,6 +124,16 @@ ENV['BUILDDIR'] = output_dir
 strip_tool = RbConfig::CONFIG['STRIP']
 strip_tool += ' -x' if apple_toolchain
 
+# This script is not always available, e.g. when building from a gem.
+# When it's not available, we assume the artifacts are already generated.
+if File.exist?(File.join(grpc_root, 'generate_artifacts.sh'))
+  puts 'Generating gRPC artifacts...'
+  Dir.chdir(grpc_root) do
+    system('./generate_artifacts.sh')
+    exit 1 unless $?.success?
+  end
+end
+
 unless windows
   puts 'Building internal gRPC into ' + grpc_lib_dir
   nproc = 4
