@@ -14,7 +14,7 @@
 """Abstract base classes for Channel objects and Multicallable objects."""
 
 import abc
-from typing import Generic, Optional
+from typing import Generic, Optional, Self
 
 import grpc
 
@@ -192,7 +192,7 @@ class Channel(abc.ABC):
     """
 
     @abc.abstractmethod
-    async def __aenter__(self) -> None:
+    async def __aenter__(self) -> Self:
         """Starts an asynchronous context manager.
 
         Returns:

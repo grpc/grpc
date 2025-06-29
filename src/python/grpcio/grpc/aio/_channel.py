@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import sys
-from typing import Self, TYPE_CHECKING, Any, Iterable, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Sequence, Union
 
 import grpc
 from grpc import _common
