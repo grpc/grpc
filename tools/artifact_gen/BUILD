@@ -104,10 +104,6 @@ cc_binary(
     name = "gen_upb_api_from_bazel",
     srcs = ["gen_upb_api_from_bazel.cc"],
     copts = COPTS,
-    features = select({
-        "@bazel_tools//src/conditions:windows": ["-compiler_param_file"],
-        "//conditions:default": [],
-    }),
     deps = [
         ":utils",
         "@pugixml",

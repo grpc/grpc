@@ -66,7 +66,9 @@ BUILD_TARGETS=$(${TMP_DIR}/gen_upb_api_from_bazel \
 
 # Build the upb targets from the root.
 if [[ -n "${BUILD_TARGETS}" ]]; then
-  tools/bazel build ${BUILD_TARGETS}
+  # Disable platform-specific configurations to avoid conflicts with protobuf's
+  # default clang-cl configuration on Windows (our CI uses MSVC)
+  tools/bazel build --noenable_platform_specific_config ${BUILD_TARGETS}
 fi
 
 # Run the C++ program to copy the generated files.
