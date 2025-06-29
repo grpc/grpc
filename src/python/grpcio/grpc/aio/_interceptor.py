@@ -26,6 +26,7 @@ from typing import (
     AsyncIterator,
     Awaitable,
     Callable,
+    Generator,
     Iterator,
     Optional,
     Sequence,
@@ -55,6 +56,7 @@ if TYPE_CHECKING:
     from ._typing import ResponseIterableType
     from ._typing import ResponseType
     from ._typing import SerializingFunction
+
 from ._utils import _timeout_to_deadline
 
 _LOCAL_CANCELLATION_DETAILS = "Locally cancelled by application!"
@@ -1154,7 +1156,7 @@ class UnaryUnaryCallResponse(_base_call.UnaryUnaryCall):
     async def debug_error_string(self) -> Optional[str]:
         return None
 
-    def __await__(self) -> Iterator[Any]:
+    def __await__(self) -> Generator[Any, None, ResponseType]:
         if False:  # pylint: disable=using-constant-test
             # This code path is never used, but a yield statement is needed
             # for telling the interpreter that __await__ is a generator.
