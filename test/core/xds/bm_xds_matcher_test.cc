@@ -75,7 +75,7 @@ class TestAction : public XdsMatcher::Action {
 // XdsMatcherList Benchmarks
 // =================================================================
 
-static void BM_XdsMatcherList(benchmark::State& state,
+void BM_XdsMatcherList(benchmark::State& state,
                               TestMatchContext context) {
   const int num_rules = state.range(0);
   std::vector<XdsMatcherList::FieldMatcher> matchers;
@@ -100,7 +100,7 @@ static void BM_XdsMatcherList(benchmark::State& state,
   state.SetItemsProcessed(state.iterations());
 }
 
-static void BM_XdsMatcherList_FirstMatch(benchmark::State& state) {
+void BM_XdsMatcherList_FirstMatch(benchmark::State& state) {
   // Scenario: Match the first rule (best case).
   TestMatchContext first_match_context("/rule/0");
   BM_XdsMatcherList(state, first_match_context);
@@ -109,7 +109,7 @@ BENCHMARK(BM_XdsMatcherList_FirstMatch)
     ->RangeMultiplier(kRangeMultiplier)
     ->Range(kSizeLow, kSizeHigh);
 
-static void BM_XdsMatcherList_LastMatch(benchmark::State& state) {
+void BM_XdsMatcherList_LastMatch(benchmark::State& state) {
   // Scenario: Match the last rule (worst case).
   const int num_rules = state.range(0);
   TestMatchContext last_match_context(absl::StrCat("/rule/", num_rules - 1));
@@ -119,7 +119,7 @@ BENCHMARK(BM_XdsMatcherList_LastMatch)
     ->RangeMultiplier(kRangeMultiplier)
     ->Range(kSizeLow, kSizeHigh);
 
-static void BM_XdsMatcherList_NoMatch(benchmark::State& state) {
+void BM_XdsMatcherList_NoMatch(benchmark::State& state) {
   // Scenario: No match.
   TestMatchContext no_match_context("/no_match");
   BM_XdsMatcherList(state, no_match_context);
@@ -132,7 +132,7 @@ BENCHMARK(BM_XdsMatcherList_NoMatch)
 // XdsMatcherExactMap Benchmark
 // =================================================================
 
-static void BM_XdsMatcherExactMap(benchmark::State& state) {
+void BM_XdsMatcherExactMap(benchmark::State& state) {
   // Argument 0: The number of items in the map.
   const int map_size = state.range(0);
   // Argument 1: The scenario type (0 for Match, 1 for No-Match).
@@ -173,7 +173,7 @@ BENCHMARK(BM_XdsMatcherExactMap)
 // XdsMatcherPrefixMap Benchmarks
 // =================================================================
 
-static void BM_XdsMatcherPrefixMap(benchmark::State& state) {
+void BM_XdsMatcherPrefixMap(benchmark::State& state) {
   // Argument 0: The number of prefixes in the map.
   const int map_size = state.range(0);
   // Argument 1: The scenario type (0 for Match, 1 for No-Match).

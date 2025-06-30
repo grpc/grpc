@@ -856,7 +856,6 @@ grpc_cc_test(
     srcs = ["trie_lookup_test.cc"],
     external_deps = [
         "gtest",
-        "gtest_main",
     ],
     deps = [
         "//src/core:trie_lookup",

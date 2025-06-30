@@ -21,6 +21,7 @@ load(
     "grpc_package",
 )
 load("//test/core/test_util:grpc_fuzzer.bzl", "grpc_fuzz_test")
+load("//test/cpp/microbenchmarks:grpc_benchmark_config.bzl", "HISTORY", "grpc_cc_benchmark")
 
 grpc_package(name = "test/core/xds")
 
@@ -262,15 +263,10 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_benchmark(
     name = "bm_xds_matcher_test",
     srcs = ["bm_xds_matcher_test.cc"],
-    external_deps = [
-        "gtest",
-        "benchmark",
-    ],
-    uses_event_engine = False,
-    uses_polling = False,
+    monitoring = HISTORY,
     deps = [
         "//src/core:grpc_xds_client",
         "//test/core/test_util:grpc_test_util",

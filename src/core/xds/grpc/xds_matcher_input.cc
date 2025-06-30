@@ -35,7 +35,7 @@ std::optional<absl::string_view> MetadataInput::GetValue(
 
 RefCountedPtr<InputConfig> MetadataInputFactory::ParseConfig(
     const XdsResourceType::DecodeContext& context, XdsExtension& input,
-    ValidationErrors* errors) const {
+    ValidationErrors*) const {
   absl::string_view* serialized_http_header_input =
       std::get_if<absl::string_view>(&input.value);
   // Parse HttpRequestHeaderMatchInput
