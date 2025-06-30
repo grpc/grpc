@@ -292,6 +292,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lb\\v1\\load_balancer.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lookup\\v1\\rls.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lookup\\v1\\rls_config.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\third_party\\cel-specproto\\cel\\expr\\checked.upb_minitable.c " +
+    "src\\core\\ext\\upb-gen\\third_party\\cel-specproto\\cel\\expr\\syntax.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\udpa\\annotations\\migrate.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\udpa\\annotations\\security.upb_minitable.c " +
     "src\\core\\ext\\upb-gen\\udpa\\annotations\\sensitive.upb_minitable.c " +
@@ -448,6 +450,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\google\\protobuf\\wrappers.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\rpc\\status.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup\\v1\\rls_config.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\third_party\\cel-specproto\\cel\\expr\\checked.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\third_party\\cel-specproto\\cel\\expr\\syntax.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\udpa\\annotations\\migrate.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\udpa\\annotations\\security.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\udpa\\annotations\\sensitive.upbdefs.c " +
@@ -1589,6 +1593,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lb\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lookup");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\src\\proto\\grpc\\lookup\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\third_party\\cel-specproto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\third_party\\cel-specproto\\cel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\third_party\\cel-specproto\\cel\\expr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\udpa");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\udpa\\annotations");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-gen\\validate");
@@ -1705,6 +1713,10 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\third_party");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\third_party\\cel-specproto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\third_party\\cel-specproto\\cel");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\third_party\\cel-specproto\\cel\\expr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\udpa");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\udpa\\annotations");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\validate");

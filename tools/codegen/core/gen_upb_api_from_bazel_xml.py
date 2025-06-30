@@ -163,6 +163,19 @@ def get_bazel_bin_root_path(elink, file):
             "%s_proto" % name,
         )
         return os.path.join(result, file)
+    if elink[0] == "@dev_cel//":
+        name = re.search("cel/expr/([a-z_]*)\.", file).group(1)
+        result = os.path.join(
+            BAZEL_BIN_ROOT,
+            "external",
+            "dev_cel",
+            "proto",
+            "cel",
+            "expr",
+            "_virtual_imports",
+            "%s_proto" % name,
+        )
+        return os.path.join(result, file)
     if elink[0].startswith("@"):
         # external
         result = os.path.join(
@@ -182,6 +195,7 @@ def get_external_link(file):
     EXTERNAL_LINKS = [
         ("@com_google_protobuf//", "src/"),
         ("@com_google_googleapis//", ""),
+        ("@dev_cel//", "proto/"),
         ("@com_github_cncf_xds//", ""),
         ("@com_envoyproxy_protoc_gen_validate//", ""),
         ("@envoy_api//", ""),

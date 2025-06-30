@@ -5129,6 +5129,26 @@ grpc_upb_proto_library(
 )
 
 grpc_upb_proto_library(
+    name = "dev_cel_expr_checked_upb",
+    deps = ["@dev_cel//proto/cel/expr:checked_proto"]
+)
+
+grpc_upb_proto_reflection_library(
+    name = "dev_cel_expr_checked_upbdefs",
+    deps = ["@dev_cel//proto/cel/expr:checked_proto"],
+)
+
+grpc_upb_proto_library(
+    name = "dev_cel_expr_syntax_upb",
+    deps = ["@dev_cel//proto/cel/expr:syntax_proto"]
+)
+
+grpc_upb_proto_reflection_library(
+    name = "dev_cel_expr_syntax_upbdefs",
+    deps = ["@dev_cel//proto/cel/expr:syntax_proto"],
+)
+
+grpc_upb_proto_library(
     name = "grpc_health_upb",
     deps = ["//src/proto/grpc/health/v1:health_proto"],
 )

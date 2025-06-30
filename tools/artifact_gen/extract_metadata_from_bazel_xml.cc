@@ -469,8 +469,6 @@ class ArtifactGen {
             proto_src = proto_src.substr(prefix_to_strip.length());
           }
         }
-        CHECK(!absl::StartsWith(proto_src, "@"))
-            << name << " is unknown workspace; proto_src=" << proto_src;
         const std::string proto_src_file =
             TryExtractSourceFilePath(proto_src).value();
         std::vector<std::string> extensions;
@@ -1182,6 +1180,13 @@ class ArtifactGen {
                "third_party/opencensus-proto/src",
                "third_party/opencensus-proto/src/",
            },
+       },
+         {
+         "dev_cel",
+         {
+           "third_party/cel-spec",
+           "third_party/cel-spec",    
+         },
        }};
 };
 

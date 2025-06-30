@@ -327,6 +327,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/src/proto/grpc/lb/v1/load_balancer.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/lookup/v1/rls_config.upb_minitable.c \
+    src/core/ext/upb-gen/third_party/cel-specproto/cel/expr/checked.upb_minitable.c \
+    src/core/ext/upb-gen/third_party/cel-specproto/cel/expr/syntax.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/migrate.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/security.upb_minitable.c \
     src/core/ext/upb-gen/udpa/annotations/sensitive.upb_minitable.c \
@@ -483,6 +485,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
+    src/core/ext/upbdefs-gen/third_party/cel-specproto/cel/expr/checked.upbdefs.c \
+    src/core/ext/upbdefs-gen/third_party/cel-specproto/cel/expr/syntax.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/sensitive.upbdefs.c \
@@ -1528,6 +1532,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/health/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lb/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/src/proto/grpc/lookup/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/third_party/cel-specproto/cel/expr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-gen/xds/annotations/v3)
@@ -1577,6 +1582,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/third_party/cel-specproto/cel/expr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/xds/annotations/v3)
