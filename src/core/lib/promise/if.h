@@ -219,19 +219,6 @@ class If<bool, T, F> {
     }
   }
 
-  Json ToJson() const {
-    Json::Object json;
-    json["condition"] = Json::FromBool(condition_);
-    json["true"] = Json::FromString(std::string(TypeName<TruePromise>()));
-    json["false"] = Json::FromString(std::string(TypeName<FalsePromise>()));
-    if (condition_) {
-      json["promise"] = if_true_.ToJson();
-    } else {
-      json["promise"] = if_false_.ToJson();
-    }
-    return Json::FromObject(std::move(json));
-  }
-
   void ToProto(grpc_channelz_v2_Promise* promise_proto,
                upb_Arena* arena) const {
     auto* if_proto =
