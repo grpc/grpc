@@ -166,11 +166,12 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
             // Ensure the Chttp2Connector is deleted under an ExecCtx.
             self.reset();
           });
-#ifdef GRPC_EXPERIMENTAL_DISABLE_PH2
-      // This macro is a temporary fix to help some customers who are having
-      // severe memory constraints. This macro will not always be available and
-      // we strongly recommend anyone to avoid the usage of this MACRO for any
-      // other purpose. We expect to delete this MACRO within 8-15 months.
+#ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+      // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
+      // some customers who are having severe memory constraints. This macro
+      // will not always be available and we strongly recommend anyone to avoid
+      // the usage of this MACRO for any other purpose. We expect to delete this
+      // MACRO within 8-15 months.
     }
 #else
     } else {
@@ -207,7 +208,7 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
             self.reset();
           });
     }
-#endif  // GRPC_EXPERIMENTAL_DISABLE_PH2
+#endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -273,15 +274,16 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
 
 absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
                                                  const ChannelArgs& args) {
-#ifdef GRPC_EXPERIMENTAL_DISABLE_PH2
-  // This macro is a temporary fix to help some customers who are having severe
-  // memory constraints. This macro will not always be available and we strongly
-  // recommend anyone to avoid the usage of this MACRO for any other purpose. We
-  // expect to delete this MACRO within 8-15 months.
+#ifdef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help some
+  // customers who are having severe memory constraints. This macro will not
+  // always be available and we strongly recommend anyone to avoid the usage of
+  // this MACRO for any other purpose. We expect to delete this MACRO within
+  // 8-15 months.
   const bool is_v3 = false;
 #else
   const bool is_v3 = IsPromiseBasedHttp2ClientTransportEnabled();
-#endif  // GRPC_EXPERIMENTAL_DISABLE_PH2
+#endif  // GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
   auto r = ChannelCreate(
       target,
       args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
