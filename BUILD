@@ -1273,6 +1273,7 @@ grpc_cc_library(
         "grpc_trace",
         "parse_address",
         "protobuf_any_upb",
+        "protobuf_descriptor_upbdefs",
         "ref_counted_ptr",
         "sockaddr_utils",
         "uri",
@@ -5209,6 +5210,13 @@ grpc_upb_proto_library(
 grpc_upb_proto_reflection_library(
     name = "promise_upbdefs",
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "protobuf_descriptor_upbdefs",
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
 )
 
 WELL_KNOWN_PROTO_TARGETS = [
