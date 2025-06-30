@@ -75,8 +75,7 @@ class TestAction : public XdsMatcher::Action {
 // XdsMatcherList Benchmarks
 // =================================================================
 
-void BM_XdsMatcherList(benchmark::State& state,
-                              TestMatchContext context) {
+void BM_XdsMatcherList(benchmark::State& state, TestMatchContext context) {
   const int num_rules = state.range(0);
   std::vector<XdsMatcherList::FieldMatcher> matchers;
   for (int i = 0; i < num_rules; ++i) {
