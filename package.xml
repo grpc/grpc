@@ -1188,6 +1188,10 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c" role="src" />

@@ -457,6 +457,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-gen\\google\\protobuf\\timestamp.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\protobuf\\wrappers.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\google\\rpc\\status.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\v2\\promise.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\v2\\property_list.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup\\v1\\rls_config.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\udpa\\annotations\\migrate.upbdefs.c " +
     "src\\core\\ext\\upbdefs-gen\\udpa\\annotations\\security.upbdefs.c " +
@@ -1722,6 +1724,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\channelz\\v2");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\src\\proto\\grpc\\lookup\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-gen\\udpa");

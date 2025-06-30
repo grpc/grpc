@@ -179,6 +179,7 @@ grpc_cc_library(
         "//src/core:default_event_engine",
         "//src/core:env",
         "//src/core:error",
+        "//src/core:event_engine_shim",
         "//src/core:gcp_metadata_query",
         "//src/core:grpc_check",
         "//src/core:iomgr_fwd",
