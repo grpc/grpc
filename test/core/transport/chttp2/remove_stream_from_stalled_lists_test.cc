@@ -152,7 +152,8 @@ class TestServer {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GRPC_CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    GRPC_CHECK(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     accept_thread_ = std::thread(std::bind(&TestServer::AcceptThread, this));

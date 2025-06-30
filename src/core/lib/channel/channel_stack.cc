@@ -167,7 +167,7 @@ grpc_error_handle grpc_channel_stack_init(
 
   GRPC_CHECK(user_data > (char*)stack);
   GRPC_CHECK((uintptr_t)(user_data - (char*)stack) ==
-        grpc_channel_stack_size(filters, filter_count));
+             grpc_channel_stack_size(filters, filter_count));
 
   stack->call_stack_size = call_size;
   stack->channelz_data_source.Init(

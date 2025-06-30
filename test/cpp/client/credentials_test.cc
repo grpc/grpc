@@ -437,7 +437,8 @@ TEST(CredentialsTest, TlsCredentialsOptionsCopyConstructor) {
   TlsTestCredentialsOptions copied_options = options;
 
   // Make sure the copy constructor cloned the internal pointer
-  GRPC_CHECK(options.internal_cred_opts() != copied_options.internal_cred_opts());
+  GRPC_CHECK(options.internal_cred_opts() !=
+             copied_options.internal_cred_opts());
 }
 
 TEST(CredentialsTest, TlsCredentialsOptionsDoesNotLeak) {

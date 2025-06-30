@@ -253,7 +253,8 @@ void InjectNonResponsiveDNSServer(ares_channel* channel) {
   dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
   dns_server_addrs[0].next = nullptr;
-  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
+  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 TEST_F(HttpRequestTest, CancelGetDuringDNSResolution) {

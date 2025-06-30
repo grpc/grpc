@@ -101,9 +101,9 @@ class ServerThread {
         grpc_completion_queue_create_for_pluck(nullptr);
     grpc_server_shutdown_and_notify(server_, shutdown_cq, nullptr);
     GRPC_CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
-                                      grpc_timeout_seconds_to_deadline(1),
-                                      nullptr)
-              .type == GRPC_OP_COMPLETE);
+                                           grpc_timeout_seconds_to_deadline(1),
+                                           nullptr)
+                   .type == GRPC_OP_COMPLETE);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
     grpc_completion_queue_destroy(cq_);

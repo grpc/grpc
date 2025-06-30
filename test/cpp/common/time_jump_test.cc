@@ -126,7 +126,8 @@ TEST_P(TimeJumpTest, TimedWait) {
     VLOG(2) << "After wait, timedout = " << timedout
             << " elapsed_ms = " << elapsed_ms;
     GRPC_CHECK_EQ(timedout, 1);
-    GRPC_CHECK(1 == gpr_time_similar(gpr_time_sub(after, before),
+    GRPC_CHECK(1 ==
+               gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
                                 gpr_time_from_millis(50, GPR_TIMESPAN)));
 

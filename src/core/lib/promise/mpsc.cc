@@ -406,7 +406,7 @@ void Mpsc::ReleaseActiveTokens(bool wake_reader, uint64_t tokens) {
       auto prev = active_tokens_.fetch_and(kActiveTokensMask,
                                            std::memory_order_release);
       GRPC_DCHECK_EQ(prev & (kActiveTokensWakerBit | kActiveTokensWakingBit),
-                kActiveTokensWakingBit)
+                     kActiveTokensWakingBit)
           << prev;
       if (wake_reader) waker.Wakeup();
       return;

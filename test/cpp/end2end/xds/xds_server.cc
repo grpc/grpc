@@ -160,7 +160,7 @@ void AdsServiceImpl::Reactor::OnReadDone(bool ok) {
     int client_resource_type_version = 0;
     if (!request_.version_info().empty()) {
       GRPC_CHECK(absl::SimpleAtoi(request_.version_info(),
-                             &client_resource_type_version));
+                                  &client_resource_type_version));
     }
     if (ads_service_impl_->check_version_callback_ != nullptr) {
       ads_service_impl_->check_version_callback_(request_.type_url(),

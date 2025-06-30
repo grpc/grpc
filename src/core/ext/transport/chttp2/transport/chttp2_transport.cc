@@ -736,7 +736,7 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   }
 
   GRPC_CHECK(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
-        GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
+             GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
 
   grpc_slice_buffer_init(&read_buffer);
   if (is_client) {
@@ -1844,13 +1844,13 @@ void grpc_chttp2_transport::PerformStreamOp(
   if (!is_client) {
     if (op->send_initial_metadata) {
       GRPC_CHECK(!op->payload->send_initial_metadata.send_initial_metadata
-                 ->get(grpc_core::GrpcTimeoutMetadata())
-                 .has_value());
+                      ->get(grpc_core::GrpcTimeoutMetadata())
+                      .has_value());
     }
     if (op->send_trailing_metadata) {
       GRPC_CHECK(!op->payload->send_trailing_metadata.send_trailing_metadata
-                 ->get(grpc_core::GrpcTimeoutMetadata())
-                 .has_value());
+                      ->get(grpc_core::GrpcTimeoutMetadata())
+                      .has_value());
     }
   }
 

@@ -1270,7 +1270,8 @@ class BaseCallData : public Activity, private Wakeable {
   ~BaseCallData() override;
 
   void set_pollent(grpc_polling_entity* pollent) {
-    GRPC_CHECK(nullptr == pollent_.exchange(pollent, std::memory_order_release));
+    GRPC_CHECK(nullptr ==
+               pollent_.exchange(pollent, std::memory_order_release));
   }
 
   // Activity implementation (partial).

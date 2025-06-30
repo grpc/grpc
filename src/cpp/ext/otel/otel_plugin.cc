@@ -288,8 +288,9 @@ OpenTelemetryPluginImpl::CallbackMetricReporter::CallbackMetricReporter(
   for (const auto& handle : key->metrics()) {
     const auto& descriptor =
         grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
-    GRPC_CHECK(descriptor.instrument_type ==
-          grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
+    GRPC_CHECK(
+        descriptor.instrument_type ==
+        grpc_core::GlobalInstrumentsRegistry::InstrumentType::kCallbackGauge);
     switch (descriptor.value_type) {
       case grpc_core::GlobalInstrumentsRegistry::ValueType::kInt64: {
         auto& callback_gauge_state =
@@ -503,9 +504,9 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
               "Compressed message bytes received per server call", "By");
     }
     // Store optional label keys for per call metrics
-    GRPC_CHECK(static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                  OptionalLabelKey::kSize) <=
-          kOptionalLabelsSizeLimit);
+    GRPC_CHECK(static_cast<size_t>(
+                   grpc_core::ClientCallTracer::CallAttemptTracer::
+                       OptionalLabelKey::kSize) <= kOptionalLabelsSizeLimit);
     for (const auto& key : optional_label_keys) {
       auto optional_key = OptionalLabelStringToKey(key);
       if (optional_key.has_value()) {
@@ -518,7 +519,7 @@ OpenTelemetryPluginImpl::OpenTelemetryPluginImpl(
         [&, this](const grpc_core::GlobalInstrumentsRegistry::
                       GlobalInstrumentDescriptor& descriptor) {
           GRPC_CHECK(descriptor.optional_label_keys.size() <=
-                kOptionalLabelsSizeLimit);
+                     kOptionalLabelsSizeLimit);
           if (instruments_data_.size() < descriptor.index + 1) {
             instruments_data_.resize(descriptor.index + 1);
           }
@@ -729,7 +730,7 @@ void OpenTelemetryPluginImpl::AddCounter(
     return;
   }
   GRPC_CHECK(std::holds_alternative<
-        std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
+             std::unique_ptr<opentelemetry::metrics::Counter<uint64_t>>>(
       instrument_data.instrument));
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
@@ -760,7 +761,7 @@ void OpenTelemetryPluginImpl::AddCounter(
     return;
   }
   GRPC_CHECK(std::holds_alternative<
-        std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
+             std::unique_ptr<opentelemetry::metrics::Counter<double>>>(
       instrument_data.instrument));
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
@@ -791,7 +792,7 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     return;
   }
   GRPC_CHECK(std::holds_alternative<
-        std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
+             std::unique_ptr<opentelemetry::metrics::Histogram<uint64_t>>>(
       instrument_data.instrument));
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
@@ -824,7 +825,7 @@ void OpenTelemetryPluginImpl::RecordHistogram(
     return;
   }
   GRPC_CHECK(std::holds_alternative<
-        std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
+             std::unique_ptr<opentelemetry::metrics::Histogram<double>>>(
       instrument_data.instrument));
   const auto& descriptor =
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor(handle);
@@ -986,7 +987,7 @@ void OpenTelemetryPluginImpl::CallbackGaugeState<ValueType>::Observe(
       grpc_core::GlobalInstrumentsRegistry::GetInstrumentDescriptor({id});
   for (const auto& pair : cache) {
     GRPC_CHECK(pair.first.size() <= (descriptor.label_keys.size() +
-                                descriptor.optional_label_keys.size()));
+                                     descriptor.optional_label_keys.size()));
     if (descriptor.label_keys.empty() &&
         descriptor.optional_label_keys.empty()) {
       opentelemetry::nostd::get<opentelemetry::nostd::shared_ptr<
@@ -1024,7 +1025,8 @@ void OpenTelemetryPluginImpl::CallbackGaugeState<ValueType>::
     auto* registered_metric_callback = elem.first;
     auto iter = callback_gauge_state->ot_plugin->callback_timestamps_.find(
         registered_metric_callback);
-    GRPC_CHECK(iter != callback_gauge_state->ot_plugin->callback_timestamps_.end());
+    GRPC_CHECK(iter !=
+               callback_gauge_state->ot_plugin->callback_timestamps_.end());
     if (now - iter->second < registered_metric_callback->min_interval()) {
       // Use cached value.
       callback_gauge_state->Observe(result, elem.second);

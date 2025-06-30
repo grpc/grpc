@@ -355,7 +355,7 @@ void AddClientCallTracerToContext(Arena* arena, ClientCallTracer* tracer) {
 
 void AddServerCallTracerToContext(Arena* arena, ServerCallTracer* tracer) {
   GRPC_DCHECK_EQ(arena->GetContext<CallTracerInterface>(),
-            arena->GetContext<CallTracerAnnotationInterface>());
+                 arena->GetContext<CallTracerAnnotationInterface>());
   if (arena->GetContext<CallTracerAnnotationInterface>() == nullptr) {
     // This is the first call tracer. Set it directly.
     arena->SetContext<CallTracerAnnotationInterface>(tracer);

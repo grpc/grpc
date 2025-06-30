@@ -164,7 +164,7 @@ class ChannelInit::DependencyTracker {
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
       GRPC_CHECK_NE(next.node->ordering(),
-               ready_dependencies_.top().node->ordering())
+                    ready_dependencies_.top().node->ordering())
           << "Ambiguous ordering between " << next.node->name() << " and "
           << ready_dependencies_.top().node->name();
     }

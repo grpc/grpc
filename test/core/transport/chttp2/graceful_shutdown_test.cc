@@ -102,8 +102,8 @@ class GracefulShutdownTest : public ::testing::Test {
         false);
     grpc_endpoint_add_to_pollset(fds_.server, grpc_cq_pollset(cq_));
     GRPC_CHECK(core_server->SetupTransport(transport, nullptr,
-                                      core_server->channel_args()) ==
-          absl::OkStatus());
+                                           core_server->channel_args()) ==
+               absl::OkStatus());
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr,
                                         nullptr);
     // Start polling on the client
@@ -122,9 +122,9 @@ class GracefulShutdownTest : public ::testing::Test {
           client_poller_thread_started_notification.Notify();
           while (!shutdown_) {
             GRPC_CHECK(grpc_completion_queue_next(
-                      client_cq, grpc_timeout_milliseconds_to_deadline(10),
-                      nullptr)
-                      .type == GRPC_QUEUE_TIMEOUT);
+                           client_cq, grpc_timeout_milliseconds_to_deadline(10),
+                           nullptr)
+                           .type == GRPC_QUEUE_TIMEOUT);
           }
           grpc_completion_queue_destroy(client_cq);
         });

@@ -757,7 +757,7 @@ void PickFirst::SubchannelList::SubchannelData::SubchannelState::
   // if we're connected.
   if (subchannel_data_ != nullptr) {
     GRPC_CHECK_EQ(pick_first_->subchannel_list_.get(),
-             subchannel_data_->subchannel_list_);
+                  subchannel_data_->subchannel_list_);
     // If the subchannel is READY, use it.
     // Otherwise, tell the subchannel list to keep trying.
     if (new_state == GRPC_CHANNEL_READY) {

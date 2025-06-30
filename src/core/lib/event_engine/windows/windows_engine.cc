@@ -287,9 +287,10 @@ WindowsEventEngine::CreateEndpointFromWinSocket(SOCKET socket,
                     ->CreateMemoryAllocator(local_address_string);
   } else {
     auto* rqv = config.GetVoidPointer(GRPC_ARG_RESOURCE_QUOTA);
-    GRPC_CHECK_NE(rqv, nullptr) << "WindowsEventEngine::" << this
-                           << ": config does not contain a resource quota. "
-                              "This should not happen.";
+    GRPC_CHECK_NE(rqv, nullptr)
+        << "WindowsEventEngine::" << this
+        << ": config does not contain a resource quota. "
+           "This should not happen.";
     allocator = static_cast<grpc_core::ResourceQuota*>(rqv)
                     ->memory_quota()
                     ->CreateMemoryAllocator(local_address_string);
@@ -552,10 +553,11 @@ EventEngine::ConnectionHandle WindowsEventEngine::Connect(
     erased_handles =
         known_connection_handles_.erase(connection_state->connection_handle());
   }
-  GRPC_CHECK_EQ(erased_handles, 1) << "Did not find connection handle "
-                              << connection_state->connection_handle()
-                              << " after a synchronous connection failure. "
-                                 "This should not be possible.";
+  GRPC_CHECK_EQ(erased_handles, 1)
+      << "Did not find connection handle "
+      << connection_state->connection_handle()
+      << " after a synchronous connection failure. "
+         "This should not be possible.";
   connection_state->socket()->Shutdown(DEBUG_LOCATION, "ConnectEx");
   if (!Cancel(connection_state->timer_handle())) {
     // The deadline timer will run, or is running.

@@ -289,7 +289,8 @@ void FakeUdpAndTcpServer::RunServerLoop() {
       if (r == FakeUdpAndTcpServer::ProcessReadResult::kCloseSocket) {
         it = peers.erase(it);
       } else {
-        GRPC_CHECK(r == FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
+        GRPC_CHECK(r ==
+                   FakeUdpAndTcpServer::ProcessReadResult::kContinueReading);
         it++;
       }
     }

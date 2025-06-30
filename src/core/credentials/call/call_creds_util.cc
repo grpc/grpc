@@ -56,7 +56,8 @@ ServiceUrlAndMethod MakeServiceUrlAndMethod(
     method_name = service.substr(last_slash + 1);
     service = service.substr(0, last_slash);
   }
-  GRPC_DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) != nullptr);
+  GRPC_DCHECK(initial_metadata->get_pointer(HttpAuthorityMetadata()) !=
+              nullptr);
   auto host_and_port =
       initial_metadata->get_pointer(HttpAuthorityMetadata())->as_string_view();
   absl::string_view url_scheme = args->security_connector->url_scheme();

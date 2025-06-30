@@ -377,7 +377,8 @@ bool PosixEndpointImpl::TcpDoRead(absl::Status& status) {
     }
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     AddToEstimate(static_cast<size_t>(read_bytes));
-    GRPC_DCHECK((size_t)read_bytes <= incoming_buffer_->Length() - total_read_bytes);
+    GRPC_DCHECK((size_t)read_bytes <=
+                incoming_buffer_->Length() - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (inq_capable_) {

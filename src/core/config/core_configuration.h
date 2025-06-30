@@ -167,11 +167,11 @@ class GRPC_DLL CoreConfiguration {
       // Reset and restore.
       Reset();
       GRPC_CHECK(CoreConfiguration::config_.exchange(
-                config_restore_, std::memory_order_acquire) == nullptr);
+                     config_restore_, std::memory_order_acquire) == nullptr);
       GRPC_CHECK(CoreConfiguration::builders_[static_cast<size_t>(
-                                             BuilderScope::kEphemeral)]
-                .exchange(builders_restore_, std::memory_order_acquire) ==
-            nullptr);
+                                                  BuilderScope::kEphemeral)]
+                     .exchange(builders_restore_, std::memory_order_acquire) ==
+                 nullptr);
     }
 
    private:

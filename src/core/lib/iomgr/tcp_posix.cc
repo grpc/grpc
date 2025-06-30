@@ -982,7 +982,7 @@ static bool tcp_do_read(grpc_tcp* tcp, grpc_error_handle* error)
     grpc_core::global_stats().IncrementTcpReadSize(read_bytes);
     add_to_estimate(tcp, static_cast<size_t>(read_bytes));
     GRPC_DCHECK((size_t)read_bytes <=
-           tcp->incoming_buffer->length - total_read_bytes);
+                tcp->incoming_buffer->length - total_read_bytes);
 
 #ifdef GRPC_HAVE_TCP_INQ
     if (tcp->inq_capable) {

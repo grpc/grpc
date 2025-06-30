@@ -47,7 +47,8 @@ void CreateSockpair(SOCKET sockpair[2], DWORD flags) {
 
   GRPC_CHECK(bind(lst_sock, (sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR);
   GRPC_CHECK(listen(lst_sock, SOMAXCONN) != SOCKET_ERROR);
-  GRPC_CHECK(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) != SOCKET_ERROR);
+  GRPC_CHECK(getsockname(lst_sock, (sockaddr*)&addr, &addr_len) !=
+             SOCKET_ERROR);
 
   cli_sock = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, flags);
   GRPC_CHECK(cli_sock != INVALID_SOCKET);

@@ -142,7 +142,7 @@ class TestServer {
     int port = grpc_pick_unused_port_or_die();
     server_addr_ = grpc_core::JoinHostPort("localhost", port);
     GRPC_CHECK(grpc_server_add_http2_port(server_, server_addr_.c_str(),
-                                     server_creds));
+                                          server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
     VLOG(2) << "Start TestServer " << this << ". listen on " << server_addr_;

@@ -52,7 +52,7 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
   GRPC_CHECK(type ==
-        ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
+             ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>

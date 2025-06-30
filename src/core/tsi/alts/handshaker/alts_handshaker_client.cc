@@ -855,7 +855,7 @@ void alts_handshaker_client_check_fields_for_testing(
     GRPC_CHECK_EQ(grpc_slice_cmp(client->recv_bytes, *recv_bytes), 0);
   }
   GRPC_CHECK(alts_tsi_handshaker_get_has_sent_start_message_for_testing(
-            client->handshaker) == has_sent_start_message);
+                 client->handshaker) == has_sent_start_message);
 }
 
 void alts_handshaker_client_set_vtable_for_testing(

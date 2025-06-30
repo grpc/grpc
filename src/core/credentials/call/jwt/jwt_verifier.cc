@@ -833,7 +833,8 @@ static void retrieve_key_and_verify(verifier_cb_ctx* ctx) {
   char* path;
   absl::StatusOr<grpc_core::URI> uri;
 
-  GRPC_CHECK(ctx != nullptr && ctx->header != nullptr && ctx->claims != nullptr);
+  GRPC_CHECK(ctx != nullptr && ctx->header != nullptr &&
+             ctx->claims != nullptr);
   iss = ctx->claims->iss;
   if (ctx->header->kid == nullptr) {
     LOG(ERROR) << "Missing kid in jose header.";
@@ -920,7 +921,7 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
   std::string signature_str;
 
   GRPC_CHECK(verifier != nullptr && jwt != nullptr && audience != nullptr &&
-        cb != nullptr);
+             cb != nullptr);
   dot = strchr(cur, '.');
   if (dot == nullptr) goto error;
   json = parse_json_part_from_jwt(cur, static_cast<size_t>(dot - cur));

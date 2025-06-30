@@ -58,7 +58,8 @@ void TmpFile::RewriteFile(absl::string_view data) {
 std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   char* name = nullptr;
   FILE* file_descriptor = gpr_tmpfile("test", &name);
-  GRPC_CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
+  GRPC_CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) ==
+             data.size());
   GRPC_CHECK_EQ(fclose(file_descriptor), 0);
   GRPC_CHECK_NE(file_descriptor, nullptr);
   GRPC_CHECK_NE(name, nullptr);

@@ -100,9 +100,10 @@ class OpenTelemetryPluginImpl::KeyValueIterable
     }
     // Add per-call optional labels
     if (!optional_labels_.empty()) {
-      GRPC_CHECK(optional_labels_.size() ==
-            static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
-                                    OptionalLabelKey::kSize));
+      GRPC_CHECK(
+          optional_labels_.size() ==
+          static_cast<size_t>(grpc_core::ClientCallTracer::CallAttemptTracer::
+                                  OptionalLabelKey::kSize));
       for (size_t i = 0; i < optional_labels_.size(); ++i) {
         if (!otel_plugin_->per_call_optional_label_bits_.test(i)) {
           continue;

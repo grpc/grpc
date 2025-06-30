@@ -96,7 +96,8 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
 
 void XdsHttpFilterRegistry::RegisterFilter(
     std::unique_ptr<XdsHttpFilterImpl> filter) {
-  GRPC_CHECK(registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
+  GRPC_CHECK(
+      registry_map_.emplace(filter->ConfigProtoName(), filter.get()).second);
   auto override_proto_name = filter->OverrideConfigProtoName();
   if (!override_proto_name.empty()) {
     GRPC_CHECK(registry_map_.emplace(override_proto_name, filter.get()).second);

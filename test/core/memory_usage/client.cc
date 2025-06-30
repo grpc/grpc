@@ -93,9 +93,9 @@ static void init_ping_pong_request(int call_idx) {
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
-                                              metadata_ops,
-                                              (size_t)(op - metadata_ops),
-                                              tag(call_idx), nullptr));
+                                                   metadata_ops,
+                                                   (size_t)(op - metadata_ops),
+                                                   tag(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 }
 
@@ -112,9 +112,10 @@ static void finish_ping_pong_request(int call_idx) {
   op->data.recv_status_on_client.status_details = &calls[call_idx].details;
   op++;
 
-  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call, status_ops,
-                                              (size_t)(op - status_ops),
-                                              tag(call_idx), nullptr));
+  GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
+                                                   status_ops,
+                                                   (size_t)(op - status_ops),
+                                                   tag(call_idx), nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   grpc_metadata_array_destroy(&calls[call_idx].initial_metadata_recv);
   grpc_metadata_array_destroy(&calls[call_idx].trailing_metadata_recv);
@@ -156,9 +157,9 @@ static MemStats send_snapshot_request(int call_idx, grpc_slice call_type) {
       channel, nullptr, GRPC_PROPAGATE_DEFAULTS, cq, call_type, &hostname,
       gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
   GRPC_CHECK(GRPC_CALL_OK == grpc_call_start_batch(calls[call_idx].call,
-                                              snapshot_ops,
-                                              (size_t)(op - snapshot_ops),
-                                              (void*)nullptr, nullptr));
+                                                   snapshot_ops,
+                                                   (size_t)(op - snapshot_ops),
+                                                   (void*)nullptr, nullptr));
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
 
   LOG(INFO) << "Call " << call_idx << " status " << calls[call_idx].status

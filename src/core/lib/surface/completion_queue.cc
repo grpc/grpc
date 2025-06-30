@@ -341,7 +341,8 @@ struct cq_pluck_data {
   }
 
   ~cq_pluck_data() {
-    GRPC_CHECK(completed_head.next == reinterpret_cast<uintptr_t>(&completed_head));
+    GRPC_CHECK(completed_head.next ==
+               reinterpret_cast<uintptr_t>(&completed_head));
 #ifndef NDEBUG
     if (pending_events.load(std::memory_order_acquire) != 0) {
       LOG(ERROR) << "Destroying CQ without draining it fully.";

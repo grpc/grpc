@@ -177,9 +177,9 @@ static void shutdown_server() {
   if (!g_ctx.server) return;
   grpc_server_shutdown_and_notify(g_ctx.server, g_ctx.shutdown_cq, tag(1000));
   GRPC_CHECK(grpc_completion_queue_pluck(g_ctx.shutdown_cq, tag(1000),
-                                    grpc_timeout_seconds_to_deadline(1),
-                                    nullptr)
-            .type == GRPC_OP_COMPLETE);
+                                         grpc_timeout_seconds_to_deadline(1),
+                                         nullptr)
+                 .type == GRPC_OP_COMPLETE);
   grpc_server_destroy(g_ctx.server);
   g_ctx.server = nullptr;
 }

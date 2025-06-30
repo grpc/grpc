@@ -339,7 +339,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
   }
   if (peer_identity_property_name != nullptr) {
     GRPC_CHECK(grpc_auth_context_set_peer_identity_property_name(
-              ctx.get(), peer_identity_property_name) == 1);
+                   ctx.get(), peer_identity_property_name) == 1);
   }
   // A valid SPIFFE certificate can only have exact one URI SAN field.
   if (has_spiffe_id) {

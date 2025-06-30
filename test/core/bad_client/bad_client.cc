@@ -135,7 +135,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
   // Await completion, unless the request is large and write may not finish
   // before the peer shuts down.
   if (!(flags & GRPC_BAD_CLIENT_LARGE_REQUEST)) {
-    GRPC_CHECK(gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
+    GRPC_CHECK(
+        gpr_event_wait(&done_write, grpc_timeout_seconds_to_deadline(5)));
   }
 
   if (flags & GRPC_BAD_CLIENT_DISCONNECT) {
@@ -160,13 +161,14 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
                            /*urgent=*/true, /*min_progress_size=*/1);
         grpc_core::ExecCtx::Get()->Flush();
         do {
-          GRPC_CHECK_GT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)), 0);
+          GRPC_CHECK_GT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)),
+                        0);
           // Perform a cq next just to provide a thread that can read incoming
           // bytes on the client fd
           GRPC_CHECK(grpc_completion_queue_next(
-                    client_cq, grpc_timeout_milliseconds_to_deadline(100),
-                    nullptr)
-                    .type == GRPC_QUEUE_TIMEOUT);
+                         client_cq, grpc_timeout_milliseconds_to_deadline(100),
+                         nullptr)
+                         .type == GRPC_QUEUE_TIMEOUT);
         } while (!gpr_event_get(&read_done_event));
         if (arg->client_validator(&incoming, arg->client_validator_arg)) break;
         LOG(INFO) << "client validator failed; trying additional read "
@@ -185,9 +187,10 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
 
   // Make sure that the client is done writing
   while (!gpr_event_get(&done_write)) {
-    GRPC_CHECK(grpc_completion_queue_next(
-              client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(
+        grpc_completion_queue_next(
+            client_cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+            .type == GRPC_QUEUE_TIMEOUT);
   }
 
   grpc_slice_buffer_destroy(&outgoing);
@@ -256,9 +259,10 @@ void grpc_run_bad_client_test(
   server_validator_thd.Join();
   shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server_shutdown_and_notify(a.server, shutdown_cq, nullptr);
-  GRPC_CHECK(grpc_completion_queue_pluck(
-            shutdown_cq, nullptr, grpc_timeout_seconds_to_deadline(1), nullptr)
-            .type == GRPC_OP_COMPLETE);
+  GRPC_CHECK(grpc_completion_queue_pluck(shutdown_cq, nullptr,
+                                         grpc_timeout_seconds_to_deadline(1),
+                                         nullptr)
+                 .type == GRPC_OP_COMPLETE);
   grpc_completion_queue_destroy(shutdown_cq);
   grpc_server_destroy(a.server);
   grpc_completion_queue_destroy(a.cq);

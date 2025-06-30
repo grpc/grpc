@@ -166,9 +166,9 @@ int main(int argc, char** argv) {
   // Checking that all channels are still open
   for (int i = 0; i < size; ++i) {
     GRPC_CHECK(!std::exchange(channels_list[i], nullptr)
-               ->WaitForStateChange(GRPC_CHANNEL_READY,
-                                    std::chrono::system_clock::now() +
-                                        std::chrono::milliseconds(1)));
+                    ->WaitForStateChange(GRPC_CHANNEL_READY,
+                                         std::chrono::system_clock::now() +
+                                             std::chrono::milliseconds(1)));
   }
 
   std::string prefix;

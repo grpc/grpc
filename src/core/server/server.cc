@@ -865,9 +865,9 @@ class Server::AllocatingRequestMatcherBatch
         absl::MakeCleanup([this] { server()->ShutdownUnrefOnRequest(); });
     if (still_running) {
       BatchCallAllocation call_info = allocator_();
-      GRPC_CHECK(server()->ValidateServerRequest(cq(),
-                                            static_cast<void*>(call_info.tag),
-                                            nullptr, nullptr) == GRPC_CALL_OK);
+      GRPC_CHECK(server()->ValidateServerRequest(
+                     cq(), static_cast<void*>(call_info.tag), nullptr,
+                     nullptr) == GRPC_CALL_OK);
       RequestedCall* rc = new RequestedCall(
           static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
           call_info.initial_metadata, call_info.details);
@@ -881,9 +881,9 @@ class Server::AllocatingRequestMatcherBatch
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
     BatchCallAllocation call_info = allocator_();
-    GRPC_CHECK(server()->ValidateServerRequest(cq(),
-                                          static_cast<void*>(call_info.tag),
-                                          nullptr, nullptr) == GRPC_CALL_OK);
+    GRPC_CHECK(server()->ValidateServerRequest(
+                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
+               GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
         static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
         call_info.initial_metadata, call_info.details);
@@ -912,8 +912,8 @@ class Server::AllocatingRequestMatcherRegistered
     if (server()->ShutdownRefOnRequest()) {
       RegisteredCallAllocation call_info = allocator_();
       GRPC_CHECK(server()->ValidateServerRequest(
-                cq(), call_info.tag, call_info.optional_payload,
-                registered_method_) == GRPC_CALL_OK);
+                     cq(), call_info.tag, call_info.optional_payload,
+                     registered_method_) == GRPC_CALL_OK);
       RequestedCall* rc =
           new RequestedCall(call_info.tag, call_info.cq, call_info.call,
                             call_info.initial_metadata, registered_method_,
@@ -928,9 +928,9 @@ class Server::AllocatingRequestMatcherRegistered
   ArenaPromise<absl::StatusOr<MatchResult>> MatchRequest(
       size_t /*start_request_queue_index*/) override {
     RegisteredCallAllocation call_info = allocator_();
-    GRPC_CHECK(server()->ValidateServerRequest(cq(), call_info.tag,
-                                          call_info.optional_payload,
-                                          registered_method_) == GRPC_CALL_OK);
+    GRPC_CHECK(server()->ValidateServerRequest(
+                   cq(), call_info.tag, call_info.optional_payload,
+                   registered_method_) == GRPC_CALL_OK);
     RequestedCall* rc = new RequestedCall(
         call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
         registered_method_, call_info.deadline, call_info.optional_payload);

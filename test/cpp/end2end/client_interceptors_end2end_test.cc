@@ -759,8 +759,10 @@ class ParameterizedClientInterceptorsEnd2endTest
       GRPC_CHECK_EQ(fcntl(sv_[0], F_SETFL, flags | O_NONBLOCK), 0);
       flags = fcntl(sv_[1], F_GETFL, 0);
       GRPC_CHECK_EQ(fcntl(sv_[1], F_SETFL, flags | O_NONBLOCK), 0);
-      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) == absl::OkStatus());
-      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) == absl::OkStatus());
+      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[0]) ==
+                 absl::OkStatus());
+      GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv_[1]) ==
+                 absl::OkStatus());
       server_ = builder.BuildAndStart();
       AddInsecureChannelFromFd(server_.get(), sv_[1]);
     }

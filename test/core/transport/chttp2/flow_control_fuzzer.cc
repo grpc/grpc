@@ -193,8 +193,8 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
             sent_to_remote.initial_window_size;
         for (const auto& id_stream : streams_) {
           GRPC_CHECK(id_stream.second.window_delta +
-                    *sent_to_remote.initial_window_size <=
-                (1u << 31) - 1);
+                         *sent_to_remote.initial_window_size <=
+                     (1u << 31) - 1);
         }
         remote_initial_window_size_ = *sent_to_remote.initial_window_size;
         send_from_remote_.push_back(send_from_remote);
@@ -468,7 +468,7 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
   }
 
   GRPC_CHECK(value_from_streams ==
-        tfc_->announced_stream_total_over_incoming_window());
+             tfc_->announced_stream_total_over_incoming_window());
 }
 
 void Test(flow_control_fuzzer::Msg msg) {

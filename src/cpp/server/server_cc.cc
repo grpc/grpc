@@ -246,9 +246,10 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
   GRPC_CHECK(grpc_server_request_registered_call(
-            server_->server(), registered_method, &call_, &context_->deadline_,
-            context_->client_metadata_.arr(), payload, call_cq_->cq(),
-            notification_cq->cq(), this) == GRPC_CALL_OK);
+                 server_->server(), registered_method, &call_,
+                 &context_->deadline_, context_->client_metadata_.arr(),
+                 payload, call_cq_->cq(), notification_cq->cq(),
+                 this) == GRPC_CALL_OK);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -295,9 +296,9 @@ void ServerInterface::GenericAsyncRequest::IssueRequest() {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
   GRPC_CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
-                                 context_->client_metadata_.arr(),
-                                 call_cq_->cq(), notification_cq_->cq(),
-                                 this) == GRPC_CALL_OK);
+                                      context_->client_metadata_.arr(),
+                                      call_cq_->cq(), notification_cq_->cq(),
+                                      this) == GRPC_CALL_OK);
 }
 
 namespace {

@@ -122,8 +122,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_credentials* server_creds =
       grpc_insecure_server_credentials_create();
-  GRPC_CHECK((got_port = grpc_server_add_http2_port(server, server_hostport.c_str(),
-                                               server_creds)) > 0);
+  GRPC_CHECK((got_port = grpc_server_add_http2_port(
+                  server, server_hostport.c_str(), server_creds)) > 0);
   grpc_server_credentials_release(server_creds);
   if (port == 0) {
     port = got_port;
@@ -242,7 +242,8 @@ void test_connect(const char* server_host, const char* client_host, int port,
     GRPC_CHECK_EQ(status, GRPC_STATUS_UNIMPLEMENTED);
     GRPC_CHECK_EQ(grpc_slice_str_cmp(details, "xyz"), 0);
     GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.method, "/foo"), 0);
-    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"), 0);
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "foo.test.google.fr"),
+                  0);
     GRPC_CHECK_EQ(was_cancelled, 0);
 
     grpc_call_unref(s);

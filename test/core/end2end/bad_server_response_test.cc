@@ -262,8 +262,8 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   GRPC_CHECK_EQ(status, expected_status);
   if (expected_detail != nullptr) {
-    GRPC_CHECK_NE(-1, grpc_slice_slice(
-                     details, grpc_slice_from_static_string(expected_detail)));
+    GRPC_CHECK_NE(-1, grpc_slice_slice(details, grpc_slice_from_static_string(
+                                                    expected_detail)));
   }
 
   grpc_metadata_array_destroy(&initial_metadata_recv);

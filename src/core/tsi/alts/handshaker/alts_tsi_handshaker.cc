@@ -492,7 +492,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
   if (handshaker->channel == nullptr &&
       handshaker->client_vtable_for_testing == nullptr) {
     GRPC_CHECK(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
-                           handshaker->client));
+                                handshaker->client));
   }
   grpc_slice slice = (received_bytes == nullptr || received_bytes_size == 0)
                          ? grpc_empty_slice()

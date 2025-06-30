@@ -739,8 +739,8 @@ void AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip,
     ValidationErrors* errors) {
-  GRPC_CHECK(static_cast<unsigned int>(filter_chain.filter_chain_match.source_type) <
-        3u);
+  GRPC_CHECK(static_cast<unsigned int>(
+                 filter_chain.filter_chain_match.source_type) < 3u);
   AddFilterChainDataForSourceIpRange(
       filter_chain,
       &destination_ip->source_types_array[static_cast<int>(

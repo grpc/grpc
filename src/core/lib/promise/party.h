@@ -401,8 +401,9 @@ class Party : public Activity, private Wakeable {
 
   // Derived types should be constructed upon `arena`.
   explicit Party(RefCountedPtr<Arena> arena) : arena_(std::move(arena)) {
-    GRPC_CHECK(arena_->GetContext<grpc_event_engine::experimental::EventEngine>() !=
-          nullptr);
+    GRPC_CHECK(
+        arena_->GetContext<grpc_event_engine::experimental::EventEngine>() !=
+        nullptr);
   }
   ~Party() override;
 

@@ -446,8 +446,9 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           RefCountedPtr<Arena> arena,
                           RefCountedPtr<UnstartedCallDestination> destination) {
   GRPC_DCHECK_NE(arena.get(), nullptr);
-  GRPC_DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
-            nullptr);
+  GRPC_DCHECK_NE(
+      arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+      nullptr);
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),
                         std::move(authority), registered_method, deadline,

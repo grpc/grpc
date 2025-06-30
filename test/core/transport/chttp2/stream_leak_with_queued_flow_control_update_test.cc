@@ -51,7 +51,8 @@ class TestServer {
     grpc_server_register_completion_queue(server_, cq_, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GRPC_CHECK(grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
+    GRPC_CHECK(
+        grpc_server_add_http2_port(server_, address_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(server_);
   }
@@ -236,11 +237,11 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
   // Do a quick initial poll to try to exit the test early if things have
   // already cleaned up.
   GRPC_CHECK(grpc_completion_queue_next(
-            cq,
-            gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                         gpr_time_from_millis(1, GPR_TIMESPAN)),
-            nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+                 cq,
+                 gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                              gpr_time_from_millis(1, GPR_TIMESPAN)),
+                 nullptr)
+                 .type == GRPC_QUEUE_TIMEOUT);
   if (g_transport_counter->num_created() < 2) {
     LOG(ERROR) << "g_transport_counter->num_created() == "
                << g_transport_counter->num_created()
@@ -263,11 +264,11 @@ void EnsureConnectionsArentLeaked(grpc_completion_queue* cq) {
     LOG(INFO) << "g_transport_counter->num_live() returned " << live_transports
               << ", keep waiting until it reaches 0";
     GRPC_CHECK(grpc_completion_queue_next(
-              cq,
-              gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(1, GPR_TIMESPAN)),
-              nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+                   cq,
+                   gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                gpr_time_from_seconds(1, GPR_TIMESPAN)),
+                   nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
   }
 }
 
@@ -305,8 +306,8 @@ TEST(
     // The timeout here just needs to be long enough that the client has
     // most likely reads everything the server sent it by the time it's done.
     GRPC_CHECK(grpc_completion_queue_next(
-              cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
-              .type == GRPC_QUEUE_TIMEOUT);
+                   cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
+                   .type == GRPC_QUEUE_TIMEOUT);
     // Perform the receive message and status. Note that the incoming bytes
     // should already be in the client's buffers by the time we start these ops.
     // Thus, the client should *not* need to urgently send a flow control update

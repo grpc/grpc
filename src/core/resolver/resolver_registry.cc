@@ -54,7 +54,8 @@ void ResolverRegistry::Builder::RegisterResolverFactory(
   GRPC_CHECK(IsLowerCase(factory->scheme())) << factory->scheme();
   auto [_, inserted] =
       state_.factories.try_emplace(factory->scheme(), std::move(factory));
-  GRPC_CHECK(inserted) << "scheme " << factory->scheme() << " already registered";
+  GRPC_CHECK(inserted) << "scheme " << factory->scheme()
+                       << " already registered";
 }
 
 bool ResolverRegistry::Builder::HasResolverFactory(

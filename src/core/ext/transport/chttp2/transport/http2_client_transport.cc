@@ -83,7 +83,8 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
     StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
-  GRPC_CHECK(!op->set_accept_stream) << "Set_accept_stream not supported on clients";
+  GRPC_CHECK(!op->set_accept_stream)
+      << "Set_accept_stream not supported on clients";
   GRPC_DCHECK(did_stuff) << "Unimplemented transport perform op ";
 
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());

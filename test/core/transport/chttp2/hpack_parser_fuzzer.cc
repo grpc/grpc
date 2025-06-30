@@ -123,7 +123,7 @@ void HpackParserFuzzer(const hpack_parser_fuzzer::Msg& msg) {
         // we don't accidentally flow to infinity, which would be crossing the
         // streams level bad).
         GRPC_CHECK(static_cast<int>(parser->buffered_bytes() / 4) <
-              std::max(1024, absolute_max_length));
+                   std::max(1024, absolute_max_length));
         if (!err.ok()) {
           intptr_t unused;
           if (grpc_error_get_int(err, StatusIntProperty::kStreamId, &unused)) {

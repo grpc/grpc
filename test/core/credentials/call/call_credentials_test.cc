@@ -343,10 +343,11 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingOk) {
   Duration token_lifetime;
   grpc_http_response response = http_response(200, valid_oauth2_json_response);
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) == GRPC_CREDENTIALS_OK);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_OK);
   GRPC_CHECK(token_lifetime == Duration::Seconds(3599));
   GRPC_CHECK(token_value->as_string_view() ==
-        "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
+             "Bearer ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_");
   grpc_http_response_destroy(&response);
 }
 
@@ -356,8 +357,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingBadHttpStatus) {
   Duration token_lifetime;
   grpc_http_response response = http_response(401, valid_oauth2_json_response);
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -367,8 +368,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingEmptyHttpBody) {
   Duration token_lifetime;
   grpc_http_response response = http_response(200, "");
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -382,8 +383,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingInvalidJson) {
                     " \"expires_in\":3599, "
                     " \"token_type\":\"Bearer\"");
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -396,8 +397,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingToken) {
                                               " \"expires_in\":3599, "
                                               " \"token_type\":\"Bearer\"}");
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -411,8 +412,8 @@ TEST_F(CredentialsTest, TestOauth2TokenFetcherCredsParsingMissingTokenType) {
                     " \"expires_in\":3599, "
                     "}");
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -426,8 +427,8 @@ TEST_F(CredentialsTest,
                     "{\"access_token\":\"ya29.AHES6ZRN3-HlhAPya30GnW_bHSb_\","
                     " \"token_type\":\"Bearer\"}");
   GRPC_CHECK(grpc_oauth2_token_fetcher_credentials_parse_server_response(
-            &response, &token_value, &token_lifetime) ==
-        GRPC_CREDENTIALS_ERROR);
+                 &response, &token_value, &token_lifetime) ==
+             GRPC_CREDENTIALS_ERROR);
   grpc_http_response_destroy(&response);
 }
 
@@ -645,11 +646,13 @@ TEST_F(CredentialsTest, TestOauth2GoogleIamCompositeCreds) {
       grpc_composite_call_credentials_create(oauth2_creds, google_iam_creds,
                                              nullptr);
   // Check security level of composite credentials.
-  GRPC_CHECK_EQ(composite_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
+  GRPC_CHECK_EQ(composite_creds->min_security_level(),
+                GRPC_PRIVACY_AND_INTEGRITY);
 
   oauth2_creds->Unref();
   google_iam_creds->Unref();
-  GRPC_CHECK(composite_creds->type() == grpc_composite_call_credentials::Type());
+  GRPC_CHECK(composite_creds->type() ==
+             grpc_composite_call_credentials::Type());
   const grpc_composite_call_credentials::CallCredentialsList& creds_list =
       static_cast<const grpc_composite_call_credentials*>(composite_creds)
           ->inner();
@@ -805,8 +808,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsSuccess) {
                                 kTestPath);
   ExecCtx::Get()->Flush();
 
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -826,8 +829,8 @@ TEST_F(CredentialsTest, TestComputeEngineCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
 }
@@ -897,8 +900,8 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -919,8 +922,8 @@ TEST_F(CredentialsTest, TestRefreshTokenCredsFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1055,9 +1058,9 @@ void validate_sts_token_http_request(const grpc_http_request* request,
                             test_signed_jwt_token_type2);
   } else {
     GRPC_CHECK(url->query_parameter_map().find("actor_token") ==
-          url->query_parameter_map().end());
+               url->query_parameter_map().end());
     GRPC_CHECK(url->query_parameter_map().find("actor_token_type") ==
-          url->query_parameter_map().end());
+               url->query_parameter_map().end());
   }
 
   // Check the rest of the request.
@@ -1143,8 +1146,8 @@ TEST_F(CredentialsTest, TestStsCredsSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1230,8 +1233,8 @@ TEST_F(CredentialsTest, TestStsCredsNoActorTokenSuccess) {
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
   ExecCtx::Get()->Flush();
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1266,8 +1269,8 @@ TEST_F(CredentialsTest, TestStsCredsLoadTokenFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
 
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
@@ -1301,8 +1304,8 @@ TEST_F(CredentialsTest, TestStsCredsHttpFailure) {
                            httpcli_put_should_not_be_called);
   state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                 kTestPath);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
   HttpRequest::SetOverride(nullptr, nullptr, nullptr);
   gpr_free(test_signed_jwt_path);
@@ -1321,20 +1324,21 @@ void validate_jwt_encode_and_sign_params(const grpc_auth_json_key* json_key,
   EVP_PKEY_CTX_free(ctx);
 #endif
   GRPC_CHECK(json_key->type != nullptr &&
-        strcmp(json_key->type, "service_account") == 0);
+             strcmp(json_key->type, "service_account") == 0);
   GRPC_CHECK(json_key->private_key_id != nullptr &&
-        strcmp(json_key->private_key_id,
-               "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
+             strcmp(json_key->private_key_id,
+                    "e6b5137873db8d2ef81e06a47289e6434ec8a165") == 0);
   GRPC_CHECK(json_key->client_id != nullptr &&
-        strcmp(json_key->client_id,
-               "777-abaslkan11hlb6nmim3bpspl31ud.apps."
-               "googleusercontent.com") == 0);
+             strcmp(json_key->client_id,
+                    "777-abaslkan11hlb6nmim3bpspl31ud.apps."
+                    "googleusercontent.com") == 0);
   GRPC_CHECK(json_key->client_email != nullptr &&
-        strcmp(json_key->client_email,
-               "777-abaslkan11hlb6nmim3bpspl31ud@developer."
-               "gserviceaccount.com") == 0);
+             strcmp(json_key->client_email,
+                    "777-abaslkan11hlb6nmim3bpspl31ud@developer."
+                    "gserviceaccount.com") == 0);
   if (scope != nullptr) GRPC_CHECK_EQ(strcmp(scope, test_scope), 0);
-  GRPC_CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()), 0);
+  GRPC_CHECK_EQ(gpr_time_cmp(token_lifetime, grpc_max_auth_token_lifetime()),
+                0);
 }
 
 char* encode_and_sign_jwt_success(const grpc_auth_json_key* json_key,
@@ -1367,7 +1371,8 @@ char* encode_and_sign_jwt_should_not_be_called(
 grpc_service_account_jwt_access_credentials* creds_as_jwt(
     grpc_call_credentials* creds) {
   GRPC_CHECK(creds != nullptr);
-  GRPC_CHECK(creds->type() == grpc_service_account_jwt_access_credentials::Type());
+  GRPC_CHECK(creds->type() ==
+             grpc_service_account_jwt_access_credentials::Type());
   return reinterpret_cast<grpc_service_account_jwt_access_credentials*>(creds);
 }
 
@@ -1380,27 +1385,28 @@ TEST_F(CredentialsTest, TestJwtCredsLifetime) {
       grpc_service_account_jwt_access_credentials_create(
           json_key_string, grpc_max_auth_token_lifetime(), nullptr);
   GRPC_CHECK_EQ(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
-                        grpc_max_auth_token_lifetime()),
-           0);
+                             grpc_max_auth_token_lifetime()),
+                0);
   // Check security level.
   GRPC_CHECK_EQ(jwt_creds->min_security_level(), GRPC_PRIVACY_AND_INTEGRITY);
   GRPC_CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
-                   jwt_creds->debug_string().c_str(),
-                   strlen(expected_creds_debug_string_prefix)),
-           0);
+                        jwt_creds->debug_string().c_str(),
+                        strlen(expected_creds_debug_string_prefix)),
+                0);
   grpc_call_credentials_release(jwt_creds);
 
   // Shorter lifetime.
   gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
-  GRPC_CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime), 0);
+  GRPC_CHECK_GT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime),
+                0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
   GRPC_CHECK_EQ(
       gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(), token_lifetime), 0);
   GRPC_CHECK_EQ(strncmp(expected_creds_debug_string_prefix,
-                   jwt_creds->debug_string().c_str(),
-                   strlen(expected_creds_debug_string_prefix)),
-           0);
+                        jwt_creds->debug_string().c_str(),
+                        strlen(expected_creds_debug_string_prefix)),
+                0);
   grpc_call_credentials_release(jwt_creds);
 
   // Cropped lifetime.
@@ -1409,10 +1415,10 @@ TEST_F(CredentialsTest, TestJwtCredsLifetime) {
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
       json_key_string, token_lifetime, nullptr);
   GRPC_CHECK(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
-                     grpc_max_auth_token_lifetime()) == 0);
+                          grpc_max_auth_token_lifetime()) == 0);
   GRPC_CHECK(strncmp(expected_creds_debug_string_prefix,
-                jwt_creds->debug_string().c_str(),
-                strlen(expected_creds_debug_string_prefix)) == 0);
+                     jwt_creds->debug_string().c_str(),
+                     strlen(expected_creds_debug_string_prefix)) == 0);
   grpc_call_credentials_release(jwt_creds);
 
   gpr_free(json_key_string);
@@ -1567,8 +1573,8 @@ TEST_F(CredentialsTest, TestGoogleDefaultCredsRefreshToken) {
       reinterpret_cast<const grpc_google_refresh_token_credentials*>(
           creds->call_creds());
   GRPC_CHECK_EQ(strcmp(refresh->refresh_token().client_id,
-                  "32555999999.apps.googleusercontent.com"),
-           0);
+                       "32555999999.apps.googleusercontent.com"),
+                0);
   creds->Unref();
   SetEnv(GRPC_GOOGLE_CREDENTIALS_ENV_VAR, "");  // Reset.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1734,10 +1740,12 @@ TEST_F(CredentialsTest, TestNoGoogleDefaultCreds) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called, httpcli_put_should_not_be_called);
   // Simulate a successful detection of GCE.
-  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
+  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr),
+                nullptr);
   // Try a second one. GCE detection should occur again.
   g_test_gce_tenancy_checker_called = false;
-  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr), nullptr);
+  GRPC_CHECK_EQ(grpc_google_default_credentials_create(nullptr, nullptr),
+                nullptr);
   GRPC_CHECK_EQ(g_test_gce_tenancy_checker_called, true);
   // Cleanup.
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1923,8 +1931,8 @@ TEST_F(CredentialsTest, TestMetadataPluginSuccess) {
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
   GRPC_CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
 
   GRPC_CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);
@@ -1955,8 +1963,8 @@ TEST_F(CredentialsTest, TestMetadataPluginFailure) {
   md_state->RunRequestMetadataTest(creds, kTestUrlScheme, kTestAuthority,
                                    kTestPath);
   GRPC_CHECK_EQ(state, PLUGIN_GET_METADATA_CALLED_STATE);
-  GRPC_CHECK_EQ(strcmp(creds->debug_string().c_str(), expected_creds_debug_string),
-           0);
+  GRPC_CHECK_EQ(
+      strcmp(creds->debug_string().c_str(), expected_creds_debug_string), 0);
   creds->Unref();
 
   GRPC_CHECK_EQ(state, PLUGIN_DESTROY_CALLED_STATE);

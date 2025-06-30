@@ -53,7 +53,8 @@ grpc_server* LocalTestFixture::MakeServer(
     grpc_server_credentials_set_auth_metadata_processor(server_creds,
                                                         processor);
   }
-  GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+  GRPC_CHECK(
+      grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
   grpc_server_credentials_release(server_creds);
   pre_server_start(server);
   grpc_server_start(server);

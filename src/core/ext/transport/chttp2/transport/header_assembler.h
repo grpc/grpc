@@ -241,7 +241,7 @@ class HeaderDisassembler {
                           bool& out_end_headers) {
     if (buffer_.Length() == 0 || is_done_) {
       GRPC_DCHECK(false) << "Calling code must check size using HasMoreData() "
-                       "before GetNextFrame()";
+                            "before GetNextFrame()";
     }
     out_end_headers = buffer_.Length() <= max_frame_length;
     SliceBuffer temp;

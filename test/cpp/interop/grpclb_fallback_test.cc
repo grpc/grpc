@@ -104,9 +104,9 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
     return GrpclbRouteType::GRPCLB_ROUTE_TYPE_UNKNOWN;
   }
   GRPC_CHECK(response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
-        response.grpclb_route_type() ==
-            GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND ||
+             response.grpclb_route_type() ==
+                 GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
   LOG(INFO) << "DoRPCAndGetPath done. grpclb_route_type:"
             << response.grpclb_route_type();
   return response.grpclb_route_type();
@@ -204,7 +204,8 @@ void WaitForFallbackAndDoRPCs(TestService::Stub* stub) {
   }
   for (int i = 0; i < 30; i++) {
     GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub, 20);
-    GRPC_CHECK(grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
+    GRPC_CHECK(grpclb_route_type ==
+               GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK);
     std::this_thread::sleep_for(std::chrono::seconds(1));
   }
 }

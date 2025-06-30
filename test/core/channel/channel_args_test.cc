@@ -260,7 +260,8 @@ TEST(GrpcChannelArgsTest, Create) {
 
   GRPC_CHECK_EQ(strcmp(ch_args->args[1].key, to_add[1].key), 0);
   GRPC_CHECK(ch_args->args[1].type == to_add[1].type);
-  GRPC_CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) == 0);
+  GRPC_CHECK(strcmp(ch_args->args[1].value.string, to_add[1].value.string) ==
+             0);
 
   grpc_channel_args_destroy(ch_args);
 }
@@ -319,9 +320,10 @@ grpc_channel_args* mutate_channel_args(const char* target,
   GRPC_CHECK_NE(old_args, nullptr);
   GRPC_CHECK_EQ(grpc_channel_args_find(old_args, "arg_int")->value.integer, 0);
   GRPC_CHECK(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,
-               "arg_str_val") == 0);
-  GRPC_CHECK(grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
-        &fake_pointer_arg_vtable);
+                    "arg_str_val") == 0);
+  GRPC_CHECK(
+      grpc_channel_args_find(old_args, "arg_pointer")->value.pointer.vtable ==
+      &fake_pointer_arg_vtable);
 
   if (strcmp(target, "no_op_mutator") == 0) {
     return old_args;

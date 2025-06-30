@@ -276,8 +276,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   while (!state.read_done || !state.write_done) {
     grpc_pollset_worker* worker = nullptr;
     GRPC_CHECK(grpc_core::Timestamp::Now() < deadline);
-    GRPC_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
-                            grpc_pollset_work(g_pollset, &worker, deadline)));
+    GRPC_CHECK(GRPC_LOG_IF_ERROR(
+        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
   }
   gpr_mu_unlock(g_mu);
   grpc_core::ExecCtx::Get()->Flush();
@@ -306,8 +306,8 @@ static void wait_for_fail_count(int* fail_count, int want_fail_count) {
   while (grpc_core::Timestamp::Now() < deadline &&
          *fail_count < want_fail_count) {
     grpc_pollset_worker* worker = nullptr;
-    GRPC_CHECK(GRPC_LOG_IF_ERROR("pollset_work",
-                            grpc_pollset_work(g_pollset, &worker, deadline)));
+    GRPC_CHECK(GRPC_LOG_IF_ERROR(
+        "pollset_work", grpc_pollset_work(g_pollset, &worker, deadline)));
     gpr_mu_unlock(g_mu);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_lock(g_mu);

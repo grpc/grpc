@@ -102,12 +102,12 @@ static void check_unused_bytes(tsi_test_fixture* fixture) {
                                          : fixture->server_result;
   const unsigned char* bytes = nullptr;
   size_t bytes_size = 0;
-  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(result_with_unused_bytes, &bytes,
-                                               &bytes_size) == TSI_OK);
+  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(
+                 result_with_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   GRPC_CHECK_EQ(bytes_size, strlen(TSI_TEST_UNUSED_BYTES));
   GRPC_CHECK_EQ(memcmp(bytes, TSI_TEST_UNUSED_BYTES, bytes_size), 0);
-  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(result_without_unused_bytes,
-                                               &bytes, &bytes_size) == TSI_OK);
+  GRPC_CHECK(tsi_handshaker_result_get_unused_bytes(
+                 result_without_unused_bytes, &bytes, &bytes_size) == TSI_OK);
   GRPC_CHECK_EQ(bytes_size, 0u);
   GRPC_CHECK_EQ(bytes, nullptr);
 }
@@ -145,7 +145,7 @@ static void send_bytes_to_peer(tsi_test_channel* test_channel,
                               : &test_channel->bytes_written_to_client_channel;
   GRPC_CHECK_NE(bytes_written, nullptr);
   GRPC_CHECK_LE(*bytes_written + buf_size,
-           static_cast<size_t>(TSI_TEST_DEFAULT_CHANNEL_SIZE));
+                static_cast<size_t>(TSI_TEST_DEFAULT_CHANNEL_SIZE));
   // Write data to channel.
   memcpy(channel + *bytes_written, buf, buf_size);
   *bytes_written += buf_size;
@@ -446,8 +446,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
       &server_received_message_size, false /* is_client */);
   GRPC_CHECK(config->client_message_size == server_received_message_size);
   GRPC_CHECK_EQ(memcmp(config->client_message, server_received_message,
-                  server_received_message_size),
-           0);
+                       server_received_message_size),
+                0);
   // Server sends a message to client.
   tsi_test_frame_protector_send_message_to_peer(
       config, channel, server_frame_protector, false /* is_client */);
@@ -459,8 +459,8 @@ static void tsi_test_do_ping_pong(tsi_test_frame_protector_config* config,
       &client_received_message_size, true /* is_client */);
   GRPC_CHECK_EQ(config->server_message_size, client_received_message_size);
   GRPC_CHECK_EQ(memcmp(config->server_message, client_received_message,
-                  client_received_message_size),
-           0);
+                       client_received_message_size),
+                0);
   gpr_free(server_received_message);
   gpr_free(client_received_message);
 }
@@ -486,19 +486,19 @@ void tsi_test_do_round_trip(tsi_test_fixture* fixture) {
   size_t client_max_output_protected_frame_size =
       config->client_max_output_protected_frame_size;
   GRPC_CHECK(tsi_handshaker_result_create_frame_protector(
-            fixture->client_result,
-            client_max_output_protected_frame_size == 0
-                ? nullptr
-                : &client_max_output_protected_frame_size,
-            &client_frame_protector) == TSI_OK);
+                 fixture->client_result,
+                 client_max_output_protected_frame_size == 0
+                     ? nullptr
+                     : &client_max_output_protected_frame_size,
+                 &client_frame_protector) == TSI_OK);
   size_t server_max_output_protected_frame_size =
       config->server_max_output_protected_frame_size;
   GRPC_CHECK(tsi_handshaker_result_create_frame_protector(
-            fixture->server_result,
-            server_max_output_protected_frame_size == 0
-                ? nullptr
-                : &server_max_output_protected_frame_size,
-            &server_frame_protector) == TSI_OK);
+                 fixture->server_result,
+                 server_max_output_protected_frame_size == 0
+                     ? nullptr
+                     : &server_max_output_protected_frame_size,
+                 &server_frame_protector) == TSI_OK);
   tsi_test_do_ping_pong(config, fixture->channel, client_frame_protector,
                         server_frame_protector);
   // Destroy server and client frame protectors.
@@ -695,7 +695,8 @@ std::string GenerateSelfSignedCertificate(
 
 #if OPENSSL_VERSION_NUMBER < 0x30000000L
   RSA* rsa = RSA_new();
-  GRPC_CHECK(RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
+  GRPC_CHECK(
+      RSA_generate_key_ex(rsa, /*key_size=*/2048, bignum, /*cb=*/nullptr));
   GRPC_CHECK(EVP_PKEY_assign_RSA(key, rsa));
   GRPC_CHECK(X509_set_version(x509, 2));  // TODO(gtcooke94) make a const
 #else
@@ -713,7 +714,8 @@ std::string GenerateSelfSignedCertificate(
 #endif
   ASN1_UTCTIME_free(infinite_past);
   ASN1_GENERALIZEDTIME* infinite_future = ASN1_GENERALIZEDTIME_new();
-  GRPC_CHECK(ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
+  GRPC_CHECK(
+      ASN1_GENERALIZEDTIME_set_string(infinite_future, "99991231235959Z"));
 #if OPENSSL_VERSION_NUMBER < 0x10100000
   GRPC_CHECK(X509_set_notAfter(x509, infinite_future));
 #else
@@ -732,11 +734,12 @@ std::string GenerateSelfSignedCertificate(
       reinterpret_cast<const unsigned char*>(options.organization.c_str()),
       /*len=*/-1, /*loc=*/-1,
       /*set=*/0));
-  GRPC_CHECK(X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
-                                   reinterpret_cast<const unsigned char*>(
-                                       options.organizational_unit.c_str()),
-                                   /*len=*/-1, /*loc=*/-1,
-                                   /*set=*/0));
+  GRPC_CHECK(
+      X509_NAME_add_entry_by_txt(subject_name, /*field=*/"OU", MBSTRING_ASC,
+                                 reinterpret_cast<const unsigned char*>(
+                                     options.organizational_unit.c_str()),
+                                 /*len=*/-1, /*loc=*/-1,
+                                 /*set=*/0));
   GRPC_CHECK(X509_set_subject_name(x509, subject_name));
   X509_NAME_free(subject_name);
   // Set the public key and sign the certificate.

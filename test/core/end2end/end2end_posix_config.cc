@@ -139,8 +139,10 @@ class FdFixture : public CoreTestFixture {
     GRPC_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
     flags = fcntl(sv[1], F_GETFL, 0);
     GRPC_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) ==
+               absl::OkStatus());
+    GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) ==
+               absl::OkStatus());
   }
 
   int fd_pair_[2];

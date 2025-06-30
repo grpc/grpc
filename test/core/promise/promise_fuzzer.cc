@@ -125,7 +125,8 @@ class Fuzzer {
       explicit BoundScheduler(Scheduler scheduler)
           : fuzzer_(scheduler.fuzzer) {}
       void ScheduleWakeup() {
-        GRPC_CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
+        GRPC_CHECK(static_cast<ActivityType*>(this) ==
+                   fuzzer_->activity_.get());
         GRPC_CHECK(fuzzer_->wakeup_ == nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();

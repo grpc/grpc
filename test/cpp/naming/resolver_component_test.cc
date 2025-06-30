@@ -424,7 +424,8 @@ void InjectBrokenNameServerList(ares_channel* channel) {
   dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].udp_port = atoi(local_dns_server_port.c_str());
   dns_server_addrs[1].next = nullptr;
-  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) == ARES_SUCCESS);
+  GRPC_CHECK(ares_set_servers_ports(*channel, dns_server_addrs) ==
+             ARES_SUCCESS);
 }
 
 void StartResolvingLocked(grpc_core::Resolver* r) { r->StartLocked(); }

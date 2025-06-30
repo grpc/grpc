@@ -110,9 +110,9 @@ Poller::WorkResult IOCP::Work(EventEngine::Duration timeout,
 
 void IOCP::Kick() {
   outstanding_kicks_.fetch_add(1);
-  GRPC_CHECK(PostQueuedCompletionStatus(iocp_handle_, 0,
-                                   reinterpret_cast<ULONG_PTR>(&kick_token_),
-                                   &kick_overlap_));
+  GRPC_CHECK(PostQueuedCompletionStatus(
+      iocp_handle_, 0, reinterpret_cast<ULONG_PTR>(&kick_token_),
+      &kick_overlap_));
 }
 
 DWORD IOCP::GetDefaultSocketFlags() {

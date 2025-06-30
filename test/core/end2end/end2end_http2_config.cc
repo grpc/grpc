@@ -130,7 +130,8 @@ class CensusFixture : public CoreTestFixture {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    GRPC_CHECK(
+        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -163,7 +164,8 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    GRPC_CHECK(
+        grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);

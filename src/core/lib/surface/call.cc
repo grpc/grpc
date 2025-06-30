@@ -120,8 +120,9 @@ Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
       send_deadline_(send_deadline),
       is_client_(is_client) {
   GRPC_DCHECK_NE(arena_.get(), nullptr);
-  GRPC_DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
-            nullptr);
+  GRPC_DCHECK_NE(
+      arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+      nullptr);
   arena_->SetContext<Call>(this);
 }
 

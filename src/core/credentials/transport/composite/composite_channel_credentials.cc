@@ -58,7 +58,7 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
     grpc_channel_credentials* channel_creds, grpc_call_credentials* call_creds,
     void* reserved) {
   GRPC_CHECK(channel_creds != nullptr && call_creds != nullptr &&
-        reserved == nullptr);
+             reserved == nullptr);
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_composite_channel_credentials_create(channel_creds="
       << channel_creds << ", call_creds=" << call_creds

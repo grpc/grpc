@@ -102,7 +102,7 @@ OpenCensusClientFilter::MakeCallPromise(
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
   GRPC_DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
-            nullptr);
+                 nullptr);
   grpc_core::SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
   return next_promise_factory(std::move(call_args));
 }

@@ -117,7 +117,8 @@ static grpc_event_engine_vtable make_engine_vtable(const char* name) {
 static void setup() {
   grpc_init();
   GRPC_CHECK(strcmp(grpc_get_poll_strategy_name(), "none") == 0 ||
-        strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") == 0);
+             strcmp(grpc_get_poll_strategy_name(), "bm_cq_multiple_threads") ==
+                 0);
 
   g_cq = grpc_completion_queue_create_for_next(nullptr);
 }
@@ -175,7 +176,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
 
   for (auto _ : state) {
     GRPC_CHECK(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
-          GRPC_OP_COMPLETE);
+               GRPC_OP_COMPLETE);
   }
 
   state.SetItemsProcessed(state.iterations());

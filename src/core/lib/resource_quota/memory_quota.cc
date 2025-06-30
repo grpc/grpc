@@ -271,8 +271,8 @@ GrpcMemoryAllocatorImpl::GrpcMemoryAllocatorImpl(
 
 GrpcMemoryAllocatorImpl::~GrpcMemoryAllocatorImpl() {
   GRPC_CHECK_EQ(free_bytes_.load(std::memory_order_acquire) +
-               sizeof(GrpcMemoryAllocatorImpl),
-           taken_bytes_.load(std::memory_order_relaxed));
+                    sizeof(GrpcMemoryAllocatorImpl),
+                taken_bytes_.load(std::memory_order_relaxed));
   memory_quota_->Return(taken_bytes_.load(std::memory_order_relaxed));
 }
 

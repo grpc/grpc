@@ -154,7 +154,7 @@ class ServerContextBase::CompletionOp final
     }
     // Start a phony op so that we can return the tag
     GRPC_CHECK(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
-                                nullptr) == GRPC_CALL_OK);
+                                     nullptr) == GRPC_CALL_OK);
   }
 
  private:
@@ -195,8 +195,8 @@ void ServerContextBase::CompletionOp::FillOps(internal::Call* call) {
   interceptor_methods_.SetCallOpSetInterface(this);
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  GRPC_CHECK(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_, nullptr) ==
-        GRPC_CALL_OK);
+  GRPC_CHECK(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_,
+                                   nullptr) == GRPC_CALL_OK);
   // No interceptors to run here
 }
 

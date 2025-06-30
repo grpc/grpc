@@ -341,7 +341,8 @@ void Party::RunLockedAndUnref(Party* party, uint64_t prev_state) {
       GRPC_CHECK(arena != nullptr);
       auto* event_engine =
           arena->GetContext<grpc_event_engine::experimental::EventEngine>();
-      GRPC_CHECK(event_engine != nullptr) << "; " << GRPC_DUMP_ARGS(party, arena);
+      GRPC_CHECK(event_engine != nullptr)
+          << "; " << GRPC_DUMP_ARGS(party, arena);
       GRPC_LATENT_SEE_INNER_SCOPE("offload_one_party");
       event_engine->Run([wakeup]() {
         GRPC_LATENT_SEE_PARENT_SCOPE("Party::RunLocked offload");

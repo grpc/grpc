@@ -244,8 +244,8 @@ TEST(H2SessionReuseTest, SingleReuse) {
   grpc_ssl_session_cache_destroy(cache);
 
   GRPC_CHECK(grpc_completion_queue_next(
-            cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
-            .type == GRPC_QUEUE_TIMEOUT);
+                 cq, grpc_timeout_milliseconds_to_deadline(100), nullptr)
+                 .type == GRPC_QUEUE_TIMEOUT);
 
   grpc_server_shutdown_and_notify(server, cq, grpc_core::CqVerifier::tag(1000));
   grpc_event ev;

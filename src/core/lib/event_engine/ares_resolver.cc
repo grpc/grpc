@@ -723,7 +723,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
       return;
     }
     GRPC_CHECK(std::holds_alternative<
-          EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
+               EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
     if (!hostname_qa->result.empty() || hostname_qa->error_status.ok()) {
@@ -751,8 +751,9 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   if (nh.empty()) {
     return;
   }
-  GRPC_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
-      nh.mapped()));
+  GRPC_CHECK(
+      std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+          nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {
@@ -814,8 +815,9 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   if (nh.empty()) {
     return;
   }
-  GRPC_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
-      nh.mapped()));
+  GRPC_CHECK(
+      std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+          nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
   auto fail = [&](absl::string_view prefix) {

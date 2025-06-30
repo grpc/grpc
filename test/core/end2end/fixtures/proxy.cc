@@ -490,8 +490,8 @@ static void on_new_call(void* arg, int success) {
 
 static void request_call(grpc_end2end_proxy* proxy) {
   proxy->new_call = nullptr;
-  GRPC_CHECK(GRPC_CALL_OK ==
-        grpc_server_request_call(proxy->server, &proxy->new_call,
+  GRPC_CHECK(GRPC_CALL_OK == grpc_server_request_call(
+                                 proxy->server, &proxy->new_call,
                                  &proxy->new_call_details,
                                  &proxy->new_call_metadata, proxy->cq,
                                  proxy->cq, new_closure(on_new_call, proxy)));

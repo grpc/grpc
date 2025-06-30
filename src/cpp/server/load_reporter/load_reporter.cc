@@ -168,7 +168,8 @@ double CensusViewProvider::GetRelatedViewDataRowDouble(
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GRPC_CHECK(it_vd != view_data_map.end());
-  GRPC_CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kDouble);
+  GRPC_CHECK(it_vd->second.type() ==
+             ::opencensus::stats::ViewData::Type::kDouble);
   auto it_row = it_vd->second.double_data().find(tag_values);
   GRPC_CHECK(it_row != it_vd->second.double_data().end());
   return it_row->second;
@@ -179,7 +180,8 @@ uint64_t CensusViewProvider::GetRelatedViewDataRowInt(
     size_t view_name_len, const std::vector<std::string>& tag_values) {
   auto it_vd = view_data_map.find(std::string(view_name, view_name_len));
   GRPC_CHECK(it_vd != view_data_map.end());
-  GRPC_CHECK(it_vd->second.type() == ::opencensus::stats::ViewData::Type::kInt64);
+  GRPC_CHECK(it_vd->second.type() ==
+             ::opencensus::stats::ViewData::Type::kInt64);
   auto it_row = it_vd->second.int_data().find(tag_values);
   GRPC_CHECK(it_row != it_vd->second.int_data().end());
   GRPC_CHECK_GE(it_row->second, 0);
