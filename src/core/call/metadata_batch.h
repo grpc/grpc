@@ -107,7 +107,7 @@ struct TeMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType te) { return te; }
   static StaticSlice Encode(ValueType x) {
-    CHECK(x == kTrailers);
+    GRPC_CHECK(x == kTrailers);
     return StaticSlice::FromStaticString("trailers");
   }
   static const char* DisplayValue(ValueType te);
@@ -213,7 +213,7 @@ struct CompressionAlgorithmBasedMetadata {
                                   MetadataParseErrorFn on_error);
   static ValueType MementoToValue(MementoType x) { return x; }
   static Slice Encode(ValueType x) {
-    CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
+    GRPC_CHECK(x != GRPC_COMPRESS_ALGORITHMS_COUNT);
     return Slice::FromStaticString(CompressionAlgorithmAsString(x));
   }
   static const char* DisplayValue(ValueType x) {

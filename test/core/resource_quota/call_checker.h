@@ -33,11 +33,11 @@ class CallChecker {
  public:
   explicit CallChecker(bool optional) : optional_(optional) {}
   ~CallChecker() {
-    if (!optional_) CHECK(called_);
+    if (!optional_) GRPC_CHECK(called_);
   }
 
   void Called() {
-    CHECK(!called_);
+    GRPC_CHECK(!called_);
     called_ = true;
   }
 

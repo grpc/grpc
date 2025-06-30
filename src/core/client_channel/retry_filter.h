@@ -88,8 +88,8 @@ class RetryFilter final {
 
   static grpc_error_handle Init(grpc_channel_element* elem,
                                 grpc_channel_element_args* args) {
-    CHECK(args->is_last);
-    CHECK(elem->filter == &kVtable);
+    GRPC_CHECK(args->is_last);
+    GRPC_CHECK(elem->filter == &kVtable);
     new (elem->channel_data) RetryFilter(*args);
     return absl::OkStatus();
   }

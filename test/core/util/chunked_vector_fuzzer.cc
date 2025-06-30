@@ -45,15 +45,15 @@ struct Comparison {
 
   // Check that both chunked and std are equivalent.
   void AssertOk() const {
-    CHECK(std.size() == chunked.size());
+    GRPC_CHECK(std.size() == chunked.size());
     auto it_chunked = chunked.cbegin();
     auto it_std = std.cbegin();
     while (it_std != std.cend()) {
-      CHECK(**it_std == **it_chunked);
+      GRPC_CHECK(**it_std == **it_chunked);
       ++it_chunked;
       ++it_std;
     }
-    CHECK(it_chunked == chunked.cend());
+    GRPC_CHECK(it_chunked == chunked.cend());
   }
 };
 

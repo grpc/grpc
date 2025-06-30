@@ -51,14 +51,14 @@ ExternalConnectionAcceptorImpl::ExternalConnectionAcceptorImpl(
     ServerBuilder::experimental_type::ExternalConnectionType type,
     std::shared_ptr<ServerCredentials> creds)
     : name_(name), creds_(std::move(creds)) {
-  CHECK(type ==
+  GRPC_CHECK(type ==
         ServerBuilder::experimental_type::ExternalConnectionType::FROM_FD);
 }
 
 std::unique_ptr<experimental::ExternalConnectionAcceptor>
 ExternalConnectionAcceptorImpl::GetAcceptor() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!has_acceptor_);
+  GRPC_CHECK(!has_acceptor_);
   has_acceptor_ = true;
   return std::unique_ptr<experimental::ExternalConnectionAcceptor>(
       new AcceptorWrapper(shared_from_this()));
@@ -85,9 +85,9 @@ void ExternalConnectionAcceptorImpl::Shutdown() {
 
 void ExternalConnectionAcceptorImpl::Start() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(!started_);
-  CHECK(has_acceptor_);
-  CHECK(!shutdown_);
+  GRPC_CHECK(!started_);
+  GRPC_CHECK(has_acceptor_);
+  GRPC_CHECK(!shutdown_);
   started_ = true;
 }
 

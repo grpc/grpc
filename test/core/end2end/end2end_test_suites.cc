@@ -93,7 +93,7 @@ std::vector<CoreTestConfiguration> AllConfigs() {
   std::vector<CoreTestConfiguration> configs = End2endTestConfigs();
   for (const auto& config : configs) {
     // Setting both no gtest && no fuzz == no config -- better to delete it
-    CHECK_NE(config.feature_mask &
+    GRPC_CHECK_NE(config.feature_mask &
                  (FEATURE_MASK_DO_NOT_FUZZ | FEATURE_MASK_DO_NOT_GTEST),
              static_cast<uint32_t>(FEATURE_MASK_DO_NOT_FUZZ |
                                    FEATURE_MASK_DO_NOT_GTEST))

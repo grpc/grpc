@@ -113,7 +113,7 @@ class GrpcPolledFdFactoryPosix final : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set) override {
     auto insert_result = owned_fds_.insert(as);
-    CHECK(insert_result.second);
+    GRPC_CHECK(insert_result.second);
     return new GrpcPolledFdPosix(as, driver_pollset_set);
   }
 

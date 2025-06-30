@@ -272,7 +272,7 @@ class Bar : public DualRefCounted<Bar> {
 
   explicit Bar(int value) : value_(value) {}
 
-  ~Bar() override { CHECK(shutting_down_); }
+  ~Bar() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -428,7 +428,7 @@ class BarWithTracing : public DualRefCounted<BarWithTracing> {
  public:
   BarWithTracing() : DualRefCounted("BarWithTracing") {}
 
-  ~BarWithTracing() override { CHECK(shutting_down_); }
+  ~BarWithTracing() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 
@@ -451,7 +451,7 @@ class WeakBaseClass : public DualRefCounted<WeakBaseClass> {
  public:
   WeakBaseClass() {}
 
-  ~WeakBaseClass() override { CHECK(shutting_down_); }
+  ~WeakBaseClass() override { GRPC_CHECK(shutting_down_); }
 
   void Orphaned() override { shutting_down_ = true; }
 

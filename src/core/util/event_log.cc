@@ -28,7 +28,7 @@ namespace grpc_core {
 std::atomic<EventLog*> EventLog::g_instance_{nullptr};
 
 EventLog::~EventLog() {
-  CHECK_NE(g_instance_.load(std::memory_order_acquire), this);
+  GRPC_CHECK_NE(g_instance_.load(std::memory_order_acquire), this);
 }
 
 void EventLog::BeginCollection() {

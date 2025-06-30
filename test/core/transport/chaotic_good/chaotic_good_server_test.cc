@@ -73,8 +73,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
     if (ev.type == GRPC_QUEUE_TIMEOUT) {
       AsanAssertNoLeaks();
     }
-    CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
-    CHECK_EQ(ev.tag, nullptr);
+    GRPC_CHECK_EQ(ev.type, GRPC_OP_COMPLETE);
+    GRPC_CHECK_EQ(ev.tag, nullptr);
     grpc_completion_queue_destroy(shutdown_cq);
     grpc_server_destroy(server_);
   }
@@ -97,8 +97,8 @@ class ChaoticGoodServerTest : public ::testing::Test {
 
   void ConstructConnector() {
     auto uri = URI::Parse("ipv6:" + addr_);
-    CHECK_OK(uri);
-    CHECK(grpc_parse_uri(*uri, &resolved_addr_));
+    GRPC_CHECK_OK(uri);
+    GRPC_CHECK(grpc_parse_uri(*uri, &resolved_addr_));
     args_.address = &resolved_addr_;
     args_.deadline = Timestamp::Now() + Duration::Seconds(5);
     args_.channel_args = channel_args();

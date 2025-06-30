@@ -70,7 +70,7 @@ uint16_t Read2b(const uint8_t* input) {
 }
 
 void Write3b(uint32_t x, uint8_t* output) {
-  CHECK_LT(x, 16777216u);
+  GRPC_CHECK_LT(x, 16777216u);
   output[0] = static_cast<uint8_t>(x >> 16);
   output[1] = static_cast<uint8_t>(x >> 8);
   output[2] = static_cast<uint8_t>(x);
@@ -602,7 +602,7 @@ void Serialize(absl::Span<Http2Frame> frames, SliceBuffer& out) {
 
 http2::ValueOrHttp2Status<Http2Frame> ParseFramePayload(
     const Http2FrameHeader& hdr, SliceBuffer payload) {
-  CHECK(payload.Length() == hdr.length);
+  GRPC_CHECK(payload.Length() == hdr.length);
 
   switch (static_cast<FrameType>(hdr.type)) {
     case FrameType::kData:
@@ -643,7 +643,7 @@ http2::Http2ErrorCode Http2ErrorCodeFromRstFrameErrorCode(uint32_t error_code) {
 }
 
 GrpcMessageHeader ExtractGrpcHeader(SliceBuffer& payload) {
-  CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
+  GRPC_CHECK_GE(payload.Length(), kGrpcHeaderSizeInBytes);
   uint8_t buffer[kGrpcHeaderSizeInBytes];
   payload.CopyFirstNBytesIntoBuffer(kGrpcHeaderSizeInBytes, buffer);
   GrpcMessageHeader header;

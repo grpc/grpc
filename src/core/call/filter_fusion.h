@@ -913,12 +913,12 @@ struct FilterWrapper<Filter> {
 
   absl::Status status() const { return filter_.status(); }
   bool StartTransportOp(grpc_transport_op* op) {
-    CHECK(filter_.ok());
+    GRPC_CHECK(filter_.ok());
     return (*filter_)->StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
-    CHECK(filter_.ok());
+    GRPC_CHECK(filter_.ok());
     return (*filter_)->GetChannelInfo(info);
   }
 
@@ -940,13 +940,13 @@ struct FilterWrapper<Filter0, Filters...> : public FilterWrapper<Filters...> {
   }
 
   bool StartTransportOp(grpc_transport_op* op) {
-    CHECK(filter0_.ok());
+    GRPC_CHECK(filter0_.ok());
     return (*filter0_)->StartTransportOp(op) ||
            FilterWrapper<Filters...>::StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) {
-    CHECK(filter0_.ok());
+    GRPC_CHECK(filter0_.ok());
     return (*filter0_)->GetChannelInfo(info) ||
            FilterWrapper<Filters...>::GetChannelInfo(info);
   }

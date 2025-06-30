@@ -123,7 +123,7 @@ class SockpairFixture : public CoreTestFixture {
           "lame channel");
       transport->Orphan();
     }
-    CHECK(client);
+    GRPC_CHECK(client);
     return client;
   }
 

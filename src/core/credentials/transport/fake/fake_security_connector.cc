@@ -140,7 +140,7 @@ class grpc_fake_channel_security_connector final
 
  private:
   bool fake_check_target(const char* target, const char* set_str) const {
-    CHECK_NE(target, nullptr);
+    GRPC_CHECK_NE(target, nullptr);
     char** set = nullptr;
     size_t set_size = 0;
     gpr_string_split(set_str, ",", &set, &set_size);

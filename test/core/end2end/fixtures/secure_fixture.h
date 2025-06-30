@@ -60,7 +60,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeServerCreds(args);
     auto* server = grpc_server_create(args.ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), creds));
     grpc_server_credentials_release(creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -72,7 +72,7 @@ class SecureFixture : public grpc_core::CoreTestFixture {
     auto* creds = MakeClientCreds(args);
     auto* client =
         grpc_channel_create(localaddr_.c_str(), creds, args.ToC().get());
-    CHECK_NE(client, nullptr);
+    GRPC_CHECK_NE(client, nullptr);
     grpc_channel_credentials_release(creds);
     return client;
   }
@@ -105,7 +105,7 @@ class PH2Fixure : public InsecureFixture {
   grpc_core::ChannelArgs MutateClientArgs(
       grpc_core::ChannelArgs args) override {
     LOG(INFO) << args.ToString();
-    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
+    GRPC_CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
     return args;
   }
 };

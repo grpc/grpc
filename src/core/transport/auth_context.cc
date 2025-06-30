@@ -98,7 +98,7 @@ const grpc_auth_property* grpc_auth_property_iterator_next(
     while (it->index < it->ctx->properties().count) {
       const grpc_auth_property* prop =
           &it->ctx->properties().array[it->index++];
-      CHECK_NE(prop->name, nullptr);
+      GRPC_CHECK_NE(prop->name, nullptr);
       if (strcmp(it->name, prop->name) == 0) {
         return prop;
       }

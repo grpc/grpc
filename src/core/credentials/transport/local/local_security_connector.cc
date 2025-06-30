@@ -77,12 +77,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> local_auth_context_create(
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_LOCAL_TRANSPORT_SECURITY_TYPE);
-  CHECK(grpc_auth_context_set_peer_identity_property_name(
+  GRPC_CHECK(grpc_auth_context_set_peer_identity_property_name(
             ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) == 1);
-  CHECK_EQ(peer->property_count, 1u);
+  GRPC_CHECK_EQ(peer->property_count, 1u);
   const tsi_peer_property* prop = &peer->properties[0];
-  CHECK_NE(prop, nullptr);
-  CHECK_EQ(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY), 0);
+  GRPC_CHECK_NE(prop, nullptr);
+  GRPC_CHECK_EQ(strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY), 0);
   grpc_auth_context_add_property(ctx.get(),
                                  GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
                                  prop->value.data, prop->value.length);
@@ -186,7 +186,7 @@ class grpc_local_channel_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    GRPC_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -241,7 +241,7 @@ class grpc_local_server_security_connector final
       grpc_pollset_set* /*interested_parties*/,
       grpc_core::HandshakeManager* handshake_manager) override {
     tsi_handshaker* handshaker = nullptr;
-    CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+    GRPC_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }

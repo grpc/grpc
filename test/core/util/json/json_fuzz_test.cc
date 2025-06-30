@@ -38,7 +38,7 @@ void ParseRoundTrips(std::string input) {
   if (json.ok()) {
     auto text2 = JsonDump(*json);
     auto json2 = JsonParse(text2);
-    CHECK_OK(json2);
+    GRPC_CHECK_OK(json2);
     EXPECT_EQ(*json, *json2)
         << GRPC_DUMP_ARGS(absl::CEscape(input), absl::CEscape(text2));
   }

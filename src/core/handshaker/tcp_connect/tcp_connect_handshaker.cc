@@ -123,7 +123,7 @@ void TCPConnectHandshaker::DoHandshake(
     MutexLock lock(&mu_);
     on_handshake_done_ = std::move(on_handshake_done);
   }
-  CHECK_EQ(args->endpoint.get(), nullptr);
+  GRPC_CHECK_EQ(args->endpoint.get(), nullptr);
   args_ = args;
   absl::string_view resolved_address_text =
       args->args.GetString(GRPC_ARG_TCP_HANDSHAKER_RESOLVED_ADDRESS).value();
@@ -179,7 +179,7 @@ void TCPConnectHandshaker::Connected(void* arg, grpc_error_handle error) {
       }
       return;
     }
-    CHECK_NE(self->endpoint_to_destroy_, nullptr);
+    GRPC_CHECK_NE(self->endpoint_to_destroy_, nullptr);
     self->args_->endpoint.reset(self->endpoint_to_destroy_);
     self->endpoint_to_destroy_ = nullptr;
     if (self->bind_endpoint_to_pollset_) {

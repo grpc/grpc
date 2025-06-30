@@ -208,7 +208,7 @@ struct TrySeqTraitsWithSfinae<
   }
   template <typename R>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R ReturnValue(T&& status) {
-    DCHECK(!IsStatusOk(status));
+    GRPC_DCHECK(!IsStatusOk(status));
     return FailureStatusCast<R>(status.status());
   }
   template <typename Result, typename RunNext>

@@ -57,7 +57,7 @@ struct grpc_tls_certificate_verifier
   // If this method returns 0, it means that gRPC can treat the two certificate
   // verifiers as effectively the same.
   int Compare(const grpc_tls_certificate_verifier* other) const {
-    CHECK_NE(other, nullptr);
+    GRPC_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return CompareImpl(other);

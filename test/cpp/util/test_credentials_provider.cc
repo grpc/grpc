@@ -176,7 +176,7 @@ CredentialsProvider* GetCredentialsProvider() {
 
 void SetCredentialsProvider(CredentialsProvider* provider) {
   // For now, forbids overriding provider.
-  CHECK_EQ(g_provider, nullptr);
+  GRPC_CHECK_EQ(g_provider, nullptr);
   g_provider = provider;
 }
 

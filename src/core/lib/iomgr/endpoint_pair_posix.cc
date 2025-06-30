@@ -56,11 +56,11 @@ void create_sockets(int sv[2]) {
   int flags;
   grpc_create_socketpair_if_unix(sv);
   flags = fcntl(sv[0], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
+  GRPC_CHECK_EQ(fcntl(sv[0], F_SETFL, flags | O_NONBLOCK), 0);
   flags = fcntl(sv[1], F_GETFL, 0);
-  CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
-  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
-  CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
+  GRPC_CHECK_EQ(fcntl(sv[1], F_SETFL, flags | O_NONBLOCK), 0);
+  GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[0]) == absl::OkStatus());
+  GRPC_CHECK(grpc_set_socket_no_sigpipe_if_possible(sv[1]) == absl::OkStatus());
 }
 
 }  // namespace

@@ -76,7 +76,7 @@ void LockfreeEvent::DestroyEvent() {
     if (curr & kShutdownBit) {
       grpc_core::internal::StatusFreeHeapPtr(curr & ~kShutdownBit);
     } else {
-      CHECK(curr == kClosureNotReady || curr == kClosureReady);
+      GRPC_CHECK(curr == kClosureNotReady || curr == kClosureReady);
     }
     // we CAS in a shutdown, no error value here. If this event is interacted
     // with post-deletion (see the note in the constructor) we want the bit

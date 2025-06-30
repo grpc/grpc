@@ -219,7 +219,7 @@ std::optional<StringMatcher> RoutePathMatchParse(
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_RouteMatch_safe_regex(match);
-    CHECK_NE(regex_matcher, nullptr);
+    GRPC_CHECK_NE(regex_matcher, nullptr);
     type = StringMatcher::Type::kSafeRegex;
     match_string = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -247,7 +247,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
     ValidationErrors::ScopedField field(errors,
                                         absl::StrCat(".headers[", i, "]"));
     const envoy_config_route_v3_HeaderMatcher* header = headers[i];
-    CHECK_NE(header, nullptr);
+    GRPC_CHECK_NE(header, nullptr);
     const std::string name =
         UpbStringToStdString(envoy_config_route_v3_HeaderMatcher_name(header));
     HeaderMatcher::Type type;
@@ -276,7 +276,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
                    header)) {
       const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
           envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
-      CHECK_NE(regex_matcher, nullptr);
+      GRPC_CHECK_NE(regex_matcher, nullptr);
       type = HeaderMatcher::Type::kSafeRegex;
       match_string = UpbStringToStdString(
           envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
@@ -284,7 +284,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
-      CHECK_NE(range_matcher, nullptr);
+      GRPC_CHECK_NE(range_matcher, nullptr);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
@@ -294,7 +294,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
       ValidationErrors::ScopedField field(errors, ".string_match");
       const auto* matcher =
           envoy_config_route_v3_HeaderMatcher_string_match(header);
-      CHECK_NE(matcher, nullptr);
+      GRPC_CHECK_NE(matcher, nullptr);
       if (envoy_type_matcher_v3_StringMatcher_has_exact(matcher)) {
         type = HeaderMatcher::Type::kExact;
         match_string = UpbStringToStdString(
@@ -315,7 +315,7 @@ void RouteHeaderMatchersParse(const envoy_config_route_v3_RouteMatch* match,
         type = HeaderMatcher::Type::kSafeRegex;
         const auto* regex_matcher =
             envoy_type_matcher_v3_StringMatcher_safe_regex(matcher);
-        CHECK_NE(regex_matcher, nullptr);
+        GRPC_CHECK_NE(regex_matcher, nullptr);
         match_string = UpbStringToStdString(
             envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
       } else {
@@ -637,7 +637,7 @@ std::optional<XdsRouteConfigResource::Route::RouteAction> RouteActionParse(
     ValidationErrors::ScopedField field(errors, ".weighted_clusters");
     const envoy_config_route_v3_WeightedCluster* weighted_clusters_proto =
         envoy_config_route_v3_RouteAction_weighted_clusters(route_action_proto);
-    CHECK_NE(weighted_clusters_proto, nullptr);
+    GRPC_CHECK_NE(weighted_clusters_proto, nullptr);
     std::vector<XdsRouteConfigResource::Route::RouteAction::ClusterWeight>
         action_weighted_clusters;
     uint64_t total_weight = 0;

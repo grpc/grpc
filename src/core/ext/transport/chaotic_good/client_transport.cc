@@ -67,7 +67,7 @@ ChaoticGoodClientTransport::StreamDispatch::LookupStream(uint32_t stream_id) {
 
 auto ChaoticGoodClientTransport::StreamDispatch::PushFrameIntoCall(
     ServerInitialMetadataFrame frame, RefCountedPtr<Stream> stream) {
-  DCHECK(stream->message_reassembly.in_message_boundary());
+  GRPC_DCHECK(stream->message_reassembly.in_message_boundary());
   auto headers = ServerMetadataGrpcFromProto(frame.body);
   if (!headers.ok()) {
     LOG_EVERY_N_SEC(INFO, 10) << "Encode headers failed: " << headers.status();
@@ -229,7 +229,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
                      ->CreateMemoryAllocator("chaotic-good")),
       message_chunker_(message_chunker),
       frame_transport_(std::move(frame_transport)) {
-  CHECK(ctx_ != nullptr);
+  GRPC_CHECK(ctx_ != nullptr);
   auto party_arena = SimpleArenaAllocator(0)->MakeArena();
   party_arena->SetContext<grpc_event_engine::experimental::EventEngine>(
       ctx_->event_engine.get());
@@ -244,7 +244,7 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  DCHECK(party_.get() == nullptr);
+  GRPC_DCHECK(party_.get() == nullptr);
 }
 
 void ChaoticGoodClientTransport::Orphan() {

@@ -129,7 +129,7 @@ class GRPC_MUST_USE_RESULT FlowControlAction {
   static const char* UrgencyString(Urgency u);
   std::string DebugString() const;
 
-  void AssertEmpty() { CHECK(*this == FlowControlAction()); }
+  void AssertEmpty() { GRPC_CHECK(*this == FlowControlAction()); }
 
   bool operator==(const FlowControlAction& other) const {
     return send_stream_update_ == other.send_stream_update_ &&
@@ -192,7 +192,7 @@ class TransportFlowControl final {
   class IncomingUpdateContext {
    public:
     explicit IncomingUpdateContext(TransportFlowControl* tfc) : tfc_(tfc) {}
-    ~IncomingUpdateContext() { CHECK_EQ(tfc_, nullptr); }
+    ~IncomingUpdateContext() { GRPC_CHECK_EQ(tfc_, nullptr); }
 
     IncomingUpdateContext(const IncomingUpdateContext&) = delete;
     IncomingUpdateContext& operator=(const IncomingUpdateContext&) = delete;

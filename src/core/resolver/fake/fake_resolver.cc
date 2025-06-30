@@ -94,7 +94,7 @@ void FakeResolver::StartLocked() {
 
 void FakeResolver::RequestReresolutionLocked() {
   // Re-resolution can't happen until after we return an initial result.
-  CHECK(response_generator_ != nullptr);
+  GRPC_CHECK(response_generator_ != nullptr);
   response_generator_->ReresolutionRequested();
 }
 

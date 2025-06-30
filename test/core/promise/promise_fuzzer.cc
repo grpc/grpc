@@ -62,10 +62,10 @@ class Fuzzer {
         Scheduler{this},
         [this](absl::Status status) {
           // Must only be called once
-          CHECK(!done_);
+          GRPC_CHECK(!done_);
           // If we became certain of the eventual status, verify it.
           if (expected_status_.has_value()) {
-            CHECK(status == *expected_status_);
+            GRPC_CHECK(status == *expected_status_);
           }
           // Mark ourselves done.
           done_ = true;
@@ -112,7 +112,7 @@ class Fuzzer {
     ExpectCancelled();
     activity_.reset();
     if (wakeup_ != nullptr) std::exchange(wakeup_, nullptr)();
-    CHECK(done_);
+    GRPC_CHECK(done_);
   }
 
  private:
@@ -125,8 +125,8 @@ class Fuzzer {
       explicit BoundScheduler(Scheduler scheduler)
           : fuzzer_(scheduler.fuzzer) {}
       void ScheduleWakeup() {
-        CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
-        CHECK(fuzzer_->wakeup_ == nullptr);
+        GRPC_CHECK(static_cast<ActivityType*>(this) == fuzzer_->activity_.get());
+        GRPC_CHECK(fuzzer_->wakeup_ == nullptr);
         fuzzer_->wakeup_ = [this]() {
           static_cast<ActivityType*>(this)->RunScheduledWakeup();
         };

@@ -38,7 +38,7 @@ bool ThreadQuota::Reserve(size_t num_threads) {
 
 void ThreadQuota::Release(size_t num_threads) {
   MutexLock lock(&mu_);
-  CHECK(num_threads <= allocated_);
+  GRPC_CHECK(num_threads <= allocated_);
   allocated_ -= num_threads;
 }
 

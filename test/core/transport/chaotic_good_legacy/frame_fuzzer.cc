@@ -47,15 +47,15 @@ struct DeterministicBitGen : public std::numeric_limits<uint64_t> {
 template <typename T>
 void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   FrameHeader hdr = input.MakeHeader();
-  CHECK_EQ(hdr.type, expected_frame_type);
-  CHECK_EQ(hdr.payload_connection_id, 0);
+  GRPC_CHECK_EQ(hdr.type, expected_frame_type);
+  GRPC_CHECK_EQ(hdr.payload_connection_id, 0);
   SliceBuffer payload;
   input.SerializePayload(payload);
-  CHECK_GE(hdr.payload_length, payload.Length());
+  GRPC_CHECK_GE(hdr.payload_length, payload.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(payload));
-  CHECK_OK(deser);
-  CHECK_EQ(input.ToString(), output.ToString());
+  GRPC_CHECK_OK(deser);
+  GRPC_CHECK_EQ(input.ToString(), output.ToString());
 }
 
 template <typename T>

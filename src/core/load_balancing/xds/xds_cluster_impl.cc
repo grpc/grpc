@@ -333,7 +333,7 @@ class XdsClusterImplLb::Picker::SubchannelCallTracker final
     locality_stats_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
     call_counter_.reset(DEBUG_LOCATION, "SubchannelCallTracker");
 #ifndef NDEBUG
-    DCHECK(!started_);
+    GRPC_DCHECK(!started_);
 #endif
   }
 
@@ -559,7 +559,7 @@ absl::Status XdsClusterImplLb::UpdateLocked(UpdateArgs args) {
   // different priority child name if that happens, which means that this
   // policy instance will get replaced instead of being updated.
   if (config_ != nullptr) {
-    CHECK(config_->cluster_name() == new_config->cluster_name());
+    GRPC_CHECK(config_->cluster_name() == new_config->cluster_name());
   }
   // Get xDS config.
   auto new_xds_config = args.args.GetObjectRef<XdsConfig>();

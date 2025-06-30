@@ -212,7 +212,7 @@ struct TryJoinTraits {
   template <typename R, typename T>
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION static R EarlyReturn(
       const ValueOrFailure<T>& x) {
-    CHECK(!x.ok());
+    GRPC_CHECK(!x.ok());
     return FailureStatusCast<R>(Failure{});
   }
   template <typename... A>

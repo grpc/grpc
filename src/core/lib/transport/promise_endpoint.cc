@@ -37,7 +37,7 @@ PromiseEndpoint::PromiseEndpoint(
         endpoint,
     SliceBuffer already_received)
     : endpoint_(std::move(endpoint)) {
-  CHECK_NE(endpoint_, nullptr);
+  GRPC_CHECK_NE(endpoint_, nullptr);
   read_state_->endpoint = endpoint_;
   // TODO(ladynana): Replace this with `SliceBufferCast<>` when it is
   // available.
@@ -72,7 +72,7 @@ void PromiseEndpoint::ReadState::Complete(absl::Status status,
     // Appends `pending_buffer` to `buffer`.
     pending_buffer.MoveFirstNBytesIntoSliceBuffer(pending_buffer.Length(),
                                                   buffer);
-    DCHECK(pending_buffer.Count() == 0u);
+    GRPC_DCHECK(pending_buffer.Count() == 0u);
     if (buffer.Length() < num_bytes_requested) {
       GRPC_LATENT_SEE_INNER_SCOPE("PromiseEndpoint::ReadState::Continue");
       // A further read is needed.

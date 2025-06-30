@@ -71,7 +71,7 @@ GcpMetadataQuery::GcpMetadataQuery(
   auto uri =
       URI::Create("http", /*user_info=*/"", std::move(metadata_server_name),
                   attribute_, {} /* query params */, "" /* fragment */);
-  CHECK(uri.ok());  // params are hardcoded
+  GRPC_CHECK(uri.ok());  // params are hardcoded
   grpc_http_request request;
   memset(&request, 0, sizeof(grpc_http_request));
   grpc_http_header header = {const_cast<char*>("Metadata-Flavor"),

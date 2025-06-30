@@ -241,7 +241,7 @@ class EnvironmentAutoDetectHelper
 
   void FetchMetadataServerAttributesAsynchronouslyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    CHECK(!attributes_to_fetch_.empty());
+    GRPC_CHECK(!attributes_to_fetch_.empty());
     for (auto& element : attributes_to_fetch_) {
       queries_.push_back(grpc_core::MakeOrphanable<grpc_core::GcpMetadataQuery>(
           element.first, &pollent_,
@@ -319,8 +319,8 @@ EnvironmentAutoDetect* g_autodetect = nullptr;
 }  // namespace
 
 void EnvironmentAutoDetect::Create(std::string project_id) {
-  CHECK_EQ(g_autodetect, nullptr);
-  CHECK(!project_id.empty());
+  GRPC_CHECK_EQ(g_autodetect, nullptr);
+  GRPC_CHECK(!project_id.empty());
 
   g_autodetect = new EnvironmentAutoDetect(project_id);
 }
@@ -329,7 +329,7 @@ EnvironmentAutoDetect& EnvironmentAutoDetect::Get() { return *g_autodetect; }
 
 EnvironmentAutoDetect::EnvironmentAutoDetect(std::string project_id)
     : project_id_(std::move(project_id)) {
-  CHECK(!project_id_.empty());
+  GRPC_CHECK(!project_id_.empty());
 }
 
 void EnvironmentAutoDetect::NotifyOnDone(absl::AnyInvocable<void()> callback) {

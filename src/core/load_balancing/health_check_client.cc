@@ -104,7 +104,7 @@ void HealthProducer::HealthChecker::OnConnectivityStateChangeLocked(
       state_ = GRPC_CHANNEL_CONNECTING;
       status_ = absl::OkStatus();
     } else {
-      CHECK(state_ == GRPC_CHANNEL_CONNECTING);
+      GRPC_CHECK(state_ == GRPC_CHANNEL_CONNECTING);
     }
     // Start the health watch stream.
     StartHealthStreamLocked();

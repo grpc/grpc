@@ -73,7 +73,7 @@ CFEventEngine::~CFEventEngine() {
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
     timer_manager_.Shutdown();
   }
   thread_pool_->Quiesce();

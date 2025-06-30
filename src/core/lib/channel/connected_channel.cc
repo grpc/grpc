@@ -220,7 +220,7 @@ static void connected_channel_destroy_call_elem(
 static grpc_error_handle connected_channel_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* cd = static_cast<channel_data*>(elem->channel_data);
-  CHECK(args->is_last);
+  GRPC_CHECK(args->is_last);
   cd->transport = args->channel_args.GetObject<grpc_core::Transport>();
   return absl::OkStatus();
 }

@@ -23,72 +23,76 @@
 
 bool PostMortemEmitAndReturnTrue();
 
-#undef CHECK
-#define CHECK(a)                                \
+#define GRPC_CHECK(a)                           \
   while (!(a) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK(#a). "
 
-#undef CHECK_EQ
-#define CHECK_EQ(a, b)                                   \
+#define GRPC_CHECK_EQ(a, b)                              \
   while (!((a) == (b)) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_EQ(#a, #b). "
 
-#undef CHECK_NE
-#define CHECK_NE(a, b)                                \
+#define GRPC_CHECK_NE(a, b)                           \
   while ((a) == (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_NE(#a, #b). "
 
-#undef CHECK_GT
-#define CHECK_GT(a, b)                                \
+#define GRPC_CHECK_GT(a, b)                           \
   while ((a) <= (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_GT(#a, #b). "
 
-#undef CHECK_LT
-#define CHECK_LT(a, b)                                \
+#define GRPC_CHECK_LT(a, b)                           \
   while ((a) >= (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_LT(#a,  #b). "
 
-#undef CHECK_GE
-#define CHECK_GE(a, b)                               \
+#define GRPC_CHECK_GE(a, b)                          \
   while ((a) < (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_GE(#a, #b). "
 
-#undef CHECK_LE
-#define CHECK_LE(a, b)                               \
+#define GRPC_CHECK_LE(a, b)                          \
   while ((a) > (b) && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed CHECK_LE: #a vs #b"
 
-#undef CHECK_OK
-#define CHECK_OK(a)                                  \
+#define GRPC_CHECK_OK(a)                             \
   while (!(a).ok() && PostMortemEmitAndReturnTrue()) \
   LOG(FATAL) << "Failed "                            \
                 "CHECK_OK(#a). "
 
-#undef DCHECK
-#undef DCHECK_GE
-#undef DCHECK_LE
-#undef DCHECK_GT
-#undef DCHECK_LT
-#undef DCHECK_NE
 #ifndef NDEBUG
-#define DCHECK(a) CHECK(a)
-#define DCHECK_GE(a, b) CHECK_GE(a, b)
-#define DCHECK_LE(a, b) CHECK_LE(a, b)
-#define DCHECK_GT(a, b) CHECK_GT(a, b)
-#define DCHECK_LT(a, b) CHECK_LT(a, b)
-#define DCHECK_NE(a, b) CHECK_NE(a, b)
+#define GRPC_DCHECK(a) GRPC_CHECK(a)
+#define GRPC_DCHECK_EQ(a, b) GRPC_CHECK_EQ(a, b)
+#define GRPC_DCHECK_GE(a, b) GRPC_CHECK_GE(a, b)
+#define GRPC_DCHECK_LE(a, b) GRPC_CHECK_LE(a, b)
+#define GRPC_DCHECK_GT(a, b) GRPC_CHECK_GT(a, b)
+#define GRPC_DCHECK_LT(a, b) GRPC_CHECK_LT(a, b)
+#define GRPC_DCHECK_NE(a, b) GRPC_CHECK_NE(a, b)
 #else
 // VLOG(INT_MAX) effectively sends logs nowhere
-#define DCHECK(a) VLOG(INT_MAX)
-#define DCHECK_GE(a, b) VLOG(INT_MAX)
-#define DCHECK_LE(a, b) VLOG(INT_MAX)
-#define DCHECK_GT(a, b) VLOG(INT_MAX)
-#define DCHECK_LT(a, b) VLOG(INT_MAX)
-#define DCHECK_NE(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK(a) VLOG(INT_MAX)
+#define GRPC_DCHECK_EQ(a, b) VLOG(INT_MAX))
+#define GRPC_DCHECK_GE(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK_LE(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK_GT(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK_LT(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK_NE(a, b) VLOG(INT_MAX)
 #endif
 
 #else
 #include "absl/log/check.h"
+
+#define GRPC_CHECK(a) CHECK(a)
+#define GRPC_CHECK_EQ(a, b) CHECK_EQ(a, b)
+#define GRPC_CHECK_NE(a, b) CHECK_NE(a, b)
+#define GRPC_CHECK_GT(a, b) CHECK_GT(a, b)
+#define GRPC_CHECK_LT(a, b) CHECK_LT(a, b)
+#define GRPC_CHECK_GE(a, b) CHECK_GE(a, b)
+#define GRPC_CHECK_LE(a, b) CHECK_LE(a, b)
+#define GRPC_CHECK_OK(a) CHECK_OK(a)
+#define GRPC_DCHECK(a) DCHECK(a)
+#define GRPC_DCHECK_EQ(a, b) DCHECK_EQ(a, b)
+#define GRPC_DCHECK_GE(a, b) DCHECK_GE(a, b)
+#define GRPC_DCHECK_LE(a, b) DCHECK_LE(a, b)
+#define GRPC_DCHECK_GT(a, b) DCHECK_GT(a, b)
+#define GRPC_DCHECK_LT(a, b) DCHECK_LT(a, b)
+#define GRPC_DCHECK_NE(a, b) DCHECK_NE(a, b)
 #endif
 
 #endif  // GRPC_SRC_CORE_UTIL_GRPC_CHECK_H

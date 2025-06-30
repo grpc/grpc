@@ -113,12 +113,12 @@ class Poll {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION T& value() {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return value_;
   }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION const T& value() const {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return value_;
   }
 
@@ -175,7 +175,7 @@ class Poll<Empty> {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION bool ready() const { return ready_; }
 
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Empty value() const {
-    DCHECK(ready());
+    GRPC_DCHECK(ready());
     return Empty{};
   }
 

@@ -187,8 +187,8 @@ grpc_call* LegacyChannel::CreateCall(grpc_call* parent_call,
                                      Slice path, std::optional<Slice> authority,
                                      Timestamp deadline,
                                      bool registered_method) {
-  CHECK(is_client_);
-  CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
+  GRPC_CHECK(is_client_);
+  GRPC_CHECK(!(cq != nullptr && pollset_set_alternative != nullptr));
   grpc_call_create_args args;
   args.channel = RefAsSubclass<LegacyChannel>();
   args.server = nullptr;
@@ -233,7 +233,7 @@ class LegacyChannel::StateWatcher final : public DualRefCounted<StateWatcher> {
         cq_(cq),
         tag_(tag),
         state_(last_observed_state) {
-    CHECK(grpc_cq_begin_op(cq, tag));
+    GRPC_CHECK(grpc_cq_begin_op(cq, tag));
     GRPC_CLOSURE_INIT(&on_complete_, WatchComplete, this, nullptr);
     ClientChannelFilter* client_channel = channel_->GetClientChannelFilter();
     if (client_channel == nullptr) {
@@ -362,14 +362,14 @@ void LegacyChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
   auto* client_channel = GetClientChannelFilter();
-  CHECK_NE(client_channel, nullptr);
+  GRPC_CHECK_NE(client_channel, nullptr);
   client_channel->AddConnectivityWatcher(initial_state, std::move(watcher));
 }
 
 void LegacyChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
   auto* client_channel = GetClientChannelFilter();
-  CHECK_NE(client_channel, nullptr);
+  GRPC_CHECK_NE(client_channel, nullptr);
   client_channel->RemoveConnectivityWatcher(watcher);
 }
 
@@ -413,7 +413,7 @@ void LegacyChannel::Ping(grpc_completion_queue* cq, void* tag) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->send_ping.on_ack = &pr->closure;
   op->bind_pollset = grpc_cq_pollset(cq);
-  CHECK(grpc_cq_begin_op(cq, tag));
+  GRPC_CHECK(grpc_cq_begin_op(cq, tag));
   grpc_channel_element* top_elem =
       grpc_channel_stack_element(channel_stack_.get(), 0);
   top_elem->filter->start_transport_op(top_elem, op);

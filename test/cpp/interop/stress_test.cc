@@ -228,14 +228,14 @@ void LogParameterInfo(const std::vector<std::string>& addresses,
 
 void SetLogLevels() {
   absl_vlog_level = absl::GetFlag(FLAGS_absl_vlog_level);
-  CHECK_LE(-1, absl_vlog_level);
-  CHECK_LE(absl_vlog_level, (INT_MAX - 1));
+  GRPC_CHECK_LE(-1, absl_vlog_level);
+  GRPC_CHECK_LE(absl_vlog_level, (INT_MAX - 1));
   absl::SetVLogLevel("*grpc*/*", absl_vlog_level);
 
   absl_min_log_level = static_cast<absl::LogSeverityAtLeast>(
       absl::GetFlag(FLAGS_absl_min_log_level));
-  CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
-  CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
+  GRPC_CHECK_LE(absl::LogSeverityAtLeast::kInfo, absl_min_log_level);
+  GRPC_CHECK_LE(absl_min_log_level, absl::LogSeverityAtLeast::kInfinity);
   absl::SetMinLogLevel(absl_min_log_level);
 }
 
@@ -324,7 +324,7 @@ int main(int argc, char** argv) {
             metrics_service.CreateQpsGauge(buffer, &is_already_created)));
 
         // The QpsGauge should not have been already created
-        CHECK(!is_already_created);
+        GRPC_CHECK(!is_already_created);
       }
     }
   }

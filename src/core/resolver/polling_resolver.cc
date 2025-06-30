@@ -164,7 +164,7 @@ void PollingResolver::OnRequestCompleteLocked(Result result) {
                   : result.service_config.status().ToString())
           << ", resolution_note=" << result.resolution_note;
     }
-    CHECK(result.result_health_callback == nullptr);
+    GRPC_CHECK(result.result_health_callback == nullptr);
     result.result_health_callback =
         [self = RefAsSubclass<PollingResolver>(
              DEBUG_LOCATION, "result_health_callback")](absl::Status status) {
@@ -194,7 +194,7 @@ void PollingResolver::GetResultStatus(absl::Status status) {
   } else {
     // Set up for retry.
     const Duration delay = backoff_.NextAttemptDelay();
-    CHECK(!next_resolution_timer_handle_.has_value());
+    GRPC_CHECK(!next_resolution_timer_handle_.has_value());
     if (GPR_UNLIKELY(tracer_ != nullptr && tracer_->enabled())) {
       LOG(INFO) << "[polling resolver " << this << "] retrying in "
                 << delay.millis() << " ms";

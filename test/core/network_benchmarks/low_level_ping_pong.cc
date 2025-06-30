@@ -120,8 +120,8 @@ static int poll_read_bytes(int fd, char* buf, size_t read_size, int spin) {
       }
     }
     if (err == 0 && spin) continue;
-    CHECK_EQ(err, 1);
-    CHECK(pfd.revents == POLLIN);
+    GRPC_CHECK_EQ(err, 1);
+    GRPC_CHECK(pfd.revents == POLLIN);
     do {
       err2 = read(fd, buf + bytes_read, read_size - bytes_read);
     } while (err2 < 0 && errno == EINTR);
@@ -159,9 +159,9 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       return -1;
     }
     if (err == 0 && spin) continue;
-    CHECK_EQ(err, 1);
-    CHECK(ev.events & EPOLLIN);
-    CHECK(ev.data.fd == args->fds.read_fd);
+    GRPC_CHECK_EQ(err, 1);
+    GRPC_CHECK(ev.events & EPOLLIN);
+    GRPC_CHECK(ev.data.fd == args->fds.read_fd);
     do {
       do {
         err2 =
@@ -173,7 +173,7 @@ static int epoll_read_bytes(struct thread_args* args, char* buf, int spin) {
       // done to ensure we see an EAGAIN
     } while (bytes_read < read_size);
   } while (bytes_read < read_size);
-  CHECK(bytes_read == read_size);
+  GRPC_CHECK(bytes_read == read_size);
   return 0;
 }
 

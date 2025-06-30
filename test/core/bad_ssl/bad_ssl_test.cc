@@ -100,12 +100,12 @@ static void run_test(const char* target, size_t nops) {
   op++;
   error = grpc_call_start_batch(c, ops, nops, grpc_core::CqVerifier::tag(1),
                                 nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), true);
   cqv.Verify();
 
-  CHECK(status != GRPC_STATUS_OK);
+  GRPC_CHECK(status != GRPC_STATUS_OK);
 
   grpc_call_unref(c);
   grpc_slice_unref(details);

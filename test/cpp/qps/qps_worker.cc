@@ -271,7 +271,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
 
   void ReleaseInstance() {
     std::lock_guard<std::mutex> g(mu_);
-    CHECK(acquired_);
+    GRPC_CHECK(acquired_);
     acquired_ = false;
   }
 

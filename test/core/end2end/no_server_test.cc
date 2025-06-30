@@ -84,7 +84,7 @@ void run_test(bool wait_for_ready) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  CHECK_EQ(GRPC_CALL_OK,
+  GRPC_CHECK_EQ(GRPC_CALL_OK,
            grpc_call_start_batch(call, ops, (size_t)(op - ops),
                                  grpc_core::CqVerifier::tag(1), nullptr));
 
@@ -104,9 +104,9 @@ void run_test(bool wait_for_ready) {
 
   LOG(INFO) << "call status: " << status;
   if (wait_for_ready) {
-    CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_DEADLINE_EXCEEDED);
   } else {
-    CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
+    GRPC_CHECK_EQ(status, GRPC_STATUS_UNAVAILABLE);
   }
 
   grpc_slice_unref(details);

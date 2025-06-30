@@ -375,7 +375,7 @@ static void BM_HpackParserParseHeader(benchmark::State& state) {
       auto error =
           p.Parse(slices[i], i == slices.size() - 1, absl::BitGenRef(bitgen),
                   /*call_tracer=*/nullptr);
-      CHECK_OK(error);
+      GRPC_CHECK_OK(error);
     }
   };
   parse_vec(init_slices);
@@ -430,8 +430,8 @@ class FromEncoderFixture {
       i++;
     }
     // Remove the HTTP header.
-    CHECK(!out.empty());
-    CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
+    GRPC_CHECK(!out.empty());
+    GRPC_CHECK_GT(GRPC_SLICE_LENGTH(out[0]), 9);
     out[0] = grpc_slice_sub_no_ref(out[0], 9, GRPC_SLICE_LENGTH(out[0]));
     return out;
   }

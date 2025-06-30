@@ -280,9 +280,9 @@ AresResolver::AresResolver(
 }
 
 AresResolver::~AresResolver() {
-  CHECK(fd_node_list_.empty());
-  CHECK(callback_map_.empty());
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK(fd_node_list_.empty());
+  GRPC_CHECK(callback_map_.empty());
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_destroy(channel_);
 }
 
@@ -367,7 +367,7 @@ void AresResolver::LookupHostname(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new HostnameQueryArg(this, id_, name, port);
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   if (AresIsIpv6LoopbackAvailable()) {
     // Note that using AF_UNSPEC for both IPv6 and IPv4 queries does not work in
     // all cases, e.g. for localhost:<> it only gets back the IPv6 result (i.e.
@@ -415,7 +415,7 @@ void AresResolver::LookupSRV(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_query(channel_, std::string(host).c_str(), ns_c_in, ns_t_srv,
              &AresResolver::OnSRVQueryDoneLocked, resolver_arg);
   CheckSocketsLocked();
@@ -451,7 +451,7 @@ void AresResolver::LookupTXT(
   grpc_core::MutexLock lock(&mutex_);
   callback_map_.emplace(++id_, std::move(callback));
   auto* resolver_arg = new QueryArg(this, id_, host);
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_search(channel_, std::string(host).c_str(), ns_c_in, ns_t_txt,
               &AresResolver::OnTXTDoneLocked, resolver_arg);
   CheckSocketsLocked();
@@ -576,7 +576,7 @@ void AresResolver::MaybeStartTimerLocked() {
 
 void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->readable_registered);
+  GRPC_CHECK(fd_node->readable_registered);
   fd_node->readable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnReadable: fd: " << fd_node->as
@@ -598,7 +598,7 @@ void AresResolver::OnReadable(FdNode* fd_node, absl::Status status) {
 
 void AresResolver::OnWritable(FdNode* fd_node, absl::Status status) {
   grpc_core::MutexLock lock(&mutex_);
-  CHECK(fd_node->writable_registered);
+  GRPC_CHECK(fd_node->writable_registered);
   fd_node->writable_registered = false;
   GRPC_TRACE_LOG(cares_resolver, INFO)
       << "(EventEngine c-ares resolver) OnWritable: fd: " << fd_node->as
@@ -650,7 +650,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
                                           int /*timeouts*/,
                                           struct hostent* hostent) {
   auto* hostname_qa = static_cast<HostnameQueryArg*>(arg);
-  CHECK_GT(hostname_qa->pending_requests--, 0);
+  GRPC_CHECK_GT(hostname_qa->pending_requests--, 0);
   auto* ares_resolver = hostname_qa->ares_resolver;
   if (status != ARES_SUCCESS) {
     std::string error_msg =
@@ -722,7 +722,7 @@ void AresResolver::OnHostbynameDoneLocked(void* arg, int status,
       delete hostname_qa;
       return;
     }
-    CHECK(std::holds_alternative<
+    GRPC_CHECK(std::holds_alternative<
           EventEngine::DNSResolver::LookupHostnameCallback>(nh.mapped()));
     auto callback = std::get<EventEngine::DNSResolver::LookupHostnameCallback>(
         std::move(nh.mapped()));
@@ -751,7 +751,7 @@ void AresResolver::OnSRVQueryDoneLocked(void* arg, int status, int /*timeouts*/,
   if (nh.empty()) {
     return;
   }
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
+  GRPC_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupSRVCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupSRVCallback>(
       std::move(nh.mapped()));
@@ -814,7 +814,7 @@ void AresResolver::OnTXTDoneLocked(void* arg, int status, int /*timeouts*/,
   if (nh.empty()) {
     return;
   }
-  CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
+  GRPC_CHECK(std::holds_alternative<EventEngine::DNSResolver::LookupTXTCallback>(
       nh.mapped()));
   auto callback = std::get<EventEngine::DNSResolver::LookupTXTCallback>(
       std::move(nh.mapped()));
@@ -894,7 +894,7 @@ void AresResolver::Reset(const absl::Status& reason) {
   callback_map_.clear();
   ShutdownLocked(reason, "resolver reset");
   CheckSocketsLocked();
-  CHECK_NE(channel_, nullptr);
+  GRPC_CHECK_NE(channel_, nullptr);
   ares_destroy(channel_);
   channel_ = nullptr;
 }
@@ -903,10 +903,10 @@ void AresResolver::Restart() {
   grpc_core::MutexLock lock(&mutex_);
   polled_fd_factory_ = polled_fd_factory_->NewEmptyInstance();
   polled_fd_factory_->Initialize(&mutex_, event_engine_.get());
-  CHECK_EQ(channel_, nullptr);
+  GRPC_CHECK_EQ(channel_, nullptr);
   absl::Status status =
       InitAresChannel(dns_server_, *polled_fd_factory_, &channel_);
-  CHECK_OK(status);
+  GRPC_CHECK_OK(status);
 }
 
 #endif  // GRPC_ENABLE_FORK_SUPPORT
@@ -922,7 +922,7 @@ void AresResolver::ShutdownLocked(const absl::Status& shutdown_status,
       GRPC_TRACE_LOG(cares_resolver, INFO) << absl::Substitute(
           "(EventEngine c-ares resolver) resolver: $0 shutdown fd: $1 ($2)",
           this, fd_node->polled_fd->GetName(), reason);
-      CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
+      GRPC_CHECK(fd_node->polled_fd->ShutdownLocked(shutdown_status));
       fd_node->already_shutdown = true;
     }
   }

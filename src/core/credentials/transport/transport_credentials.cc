@@ -110,7 +110,7 @@ void grpc_server_credentials::set_auth_metadata_processor(
 
 void grpc_server_credentials_set_auth_metadata_processor(
     grpc_server_credentials* creds, grpc_auth_metadata_processor processor) {
-  DCHECK_NE(creds, nullptr);
+  GRPC_DCHECK_NE(creds, nullptr);
   creds->set_auth_metadata_processor(processor);
 }
 

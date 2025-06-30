@@ -123,9 +123,9 @@ class Observable {
     Observer(const Observer&) = delete;
     Observer& operator=(const Observer&) = delete;
     Observer(Observer&& other) noexcept : state_(std::move(other.state_)) {
-      CHECK(other.waker_.is_unwakeable());
-      DCHECK(waker_.is_unwakeable());
-      CHECK(!other.saw_pending_);
+      GRPC_CHECK(other.waker_.is_unwakeable());
+      GRPC_DCHECK(waker_.is_unwakeable());
+      GRPC_CHECK(!other.saw_pending_);
     }
     Observer& operator=(Observer&& other) noexcept = delete;
 

@@ -594,7 +594,7 @@ void RingHash::RingHashEndpoint::RequestConnectionLocked() {
 }
 
 void RingHash::RingHashEndpoint::CreateChildPolicy() {
-  CHECK(child_policy_ == nullptr);
+  GRPC_CHECK(child_policy_ == nullptr);
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = ring_hash_->work_serializer();
   lb_policy_args.args =
@@ -636,7 +636,7 @@ absl::Status RingHash::RingHashEndpoint::UpdateChildPolicyLocked() {
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  GRPC_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses =

@@ -105,7 +105,7 @@ bool AddressIncluded(const std::optional<grpc_resolved_address>& target_address,
 ///
 std::optional<std::string> GetHttpProxyServer(
     const ChannelArgs& args, std::optional<std::string>* user_cred) {
-  CHECK_NE(user_cred, nullptr);
+  GRPC_CHECK_NE(user_cred, nullptr);
   absl::StatusOr<URI> uri;
   // We check the following places to determine the HTTP proxy to use, stopping
   // at the first one that is set:

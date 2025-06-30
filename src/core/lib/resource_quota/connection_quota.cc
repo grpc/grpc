@@ -27,8 +27,8 @@ ConnectionQuota::ConnectionQuota() = default;
 
 void ConnectionQuota::SetMaxIncomingConnections(int max_incoming_connections) {
   // The maximum can only be configured once.
-  CHECK_LT(max_incoming_connections, INT_MAX);
-  CHECK(max_incoming_connections_.exchange(
+  GRPC_CHECK_LT(max_incoming_connections, INT_MAX);
+  GRPC_CHECK(max_incoming_connections_.exchange(
             max_incoming_connections, std::memory_order_release) == INT_MAX);
 }
 
@@ -62,7 +62,7 @@ void ConnectionQuota::ReleaseConnections(int num_connections) {
   if (max_incoming_connections_.load(std::memory_order_relaxed) == INT_MAX) {
     return;
   }
-  CHECK(active_incoming_connections_.fetch_sub(
+  GRPC_CHECK(active_incoming_connections_.fetch_sub(
             num_connections, std::memory_order_acq_rel) >= num_connections);
 }
 

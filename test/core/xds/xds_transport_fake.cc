@@ -49,7 +49,7 @@ FakeXdsTransportFactory::FakeStreamingCall::~FakeStreamingCall() {
         LOG(ERROR) << "[" << transport_->server()->server_uri() << "] " << this
                    << " From client message left in queue: " << message;
       }
-      CHECK(from_client_messages_.empty());
+      GRPC_CHECK(from_client_messages_.empty());
     }
   }
   // Can't call event_handler_->OnStatusReceived() or unref event_handler_
@@ -76,7 +76,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::Orphan() {
 void FakeXdsTransportFactory::FakeStreamingCall::SendMessage(
     std::string payload) {
   MutexLock lock(&mu_);
-  CHECK(!orphaned_);
+  GRPC_CHECK(!orphaned_);
   from_client_messages_.push_back(std::move(payload));
   if (transport_->auto_complete_messages_from_client()) {
     CompleteSendMessageFromClientLocked(/*ok=*/true);
@@ -118,7 +118,7 @@ void FakeXdsTransportFactory::FakeStreamingCall::
 
 void FakeXdsTransportFactory::FakeStreamingCall::CompleteSendMessageFromClient(
     bool ok) {
-  CHECK(!transport_->auto_complete_messages_from_client());
+  GRPC_CHECK(!transport_->auto_complete_messages_from_client());
   MutexLock lock(&mu_);
   CompleteSendMessageFromClientLocked(ok);
 }

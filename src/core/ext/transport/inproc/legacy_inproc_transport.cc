@@ -1275,7 +1275,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
     auto new_channel = grpc_core::ChannelCreate(
         "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
     if (!new_channel.ok()) {
-      CHECK(!channel);
+      GRPC_CHECK(!channel);
       LOG(ERROR) << "Failed to create client channel: "
                  << grpc_core::StatusToString(error);
       intptr_t integer;
@@ -1293,7 +1293,7 @@ grpc_channel* grpc_legacy_inproc_channel_create(grpc_server* server,
       channel = new_channel->release()->c_ptr();
     }
   } else {
-    CHECK(!channel);
+    GRPC_CHECK(!channel);
     LOG(ERROR) << "Failed to create server channel: "
                << grpc_core::StatusToString(error);
     intptr_t integer;

@@ -181,7 +181,7 @@ class Mpsc {
 
  public:
   auto Send(Node* node) {
-    DCHECK(node->waker_.is_unwakeable());
+    GRPC_DCHECK(node->waker_.is_unwakeable());
     // Enqueue the node immediately; this means that Send() must be called
     // from the same activity that will poll the result.
     Enqueue(node);

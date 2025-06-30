@@ -46,7 +46,7 @@ class FakeCertificateProvider : public grpc_tls_certificate_provider {
  public:
   RefCountedPtr<grpc_tls_certificate_distributor> distributor() const override {
     // never called
-    CHECK(0);
+    GRPC_CHECK(0);
     return nullptr;
   }
 

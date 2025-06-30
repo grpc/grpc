@@ -265,7 +265,7 @@ WeightedTargetLb::PickResult WeightedTargetLb::WeightedPicker::Pick(
     }
   }
   if (index == 0) index = start_index;
-  CHECK(pickers_[index].first > key);
+  GRPC_CHECK(pickers_[index].first > key);
   // Delegate to the child picker.
   return pickers_[index].second->Pick(args);
 }
@@ -394,7 +394,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         << " weight=" << child->weight() << " picker=" << child_picker.get();
     switch (child->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
-        CHECK_GT(child->weight(), 0u);
+        GRPC_CHECK_GT(child->weight(), 0u);
         ready_end += child->weight();
         ready_picker_list.emplace_back(ready_end, std::move(child_picker));
         break;
@@ -408,7 +408,7 @@ void WeightedTargetLb::UpdateStateLocked() {
         break;
       }
       case GRPC_CHANNEL_TRANSIENT_FAILURE: {
-        CHECK_GT(child->weight(), 0u);
+        GRPC_CHECK_GT(child->weight(), 0u);
         tf_end += child->weight();
         tf_picker_list.emplace_back(tf_end, std::move(child_picker));
         break;
@@ -482,7 +482,7 @@ void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::Orphan() {
 }
 
 void WeightedTargetLb::WeightedChild::DelayedRemovalTimer::OnTimerLocked() {
-  CHECK(timer_handle_.has_value());
+  GRPC_CHECK(timer_handle_.has_value());
   timer_handle_.reset();
   weighted_child_->weighted_target_policy_->targets_.erase(
       weighted_child_->name_);

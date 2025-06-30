@@ -186,7 +186,7 @@ class LockBasedMpscSender {
       if (center == nullptr) return Failure{};
       if (batch == 0) {
         batch = center->template Send<kAwaitReceipt>(std::move(t));
-        DCHECK_NE(batch, 0u);
+        GRPC_DCHECK_NE(batch, 0u);
         if (batch == lock_based_mpscpipe_detail::Center<T>::kClosedBatch) {
           return Failure{};
         }
@@ -232,10 +232,10 @@ class LockBasedMpscReceiver {
   // a non-empty buffer during a legal move!
   LockBasedMpscReceiver(LockBasedMpscReceiver&& other) noexcept
       : center_(std::move(other.center_)) {
-    DCHECK(other.buffer_.empty());
+    GRPC_DCHECK(other.buffer_.empty());
   }
   LockBasedMpscReceiver& operator=(LockBasedMpscReceiver&& other) noexcept {
-    DCHECK(other.buffer_.empty());
+    GRPC_DCHECK(other.buffer_.empty());
     center_ = std::move(other.center_);
     return *this;
   }

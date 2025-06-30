@@ -86,7 +86,7 @@
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
                      void* /*registered_method*/) {
   while (grpc_core::Server::FromC(server)->HasOpenConnections()) {
-    CHECK(grpc_completion_queue_next(
+    GRPC_CHECK(grpc_completion_queue_next(
               cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)
               .type == GRPC_QUEUE_TIMEOUT);
   }
@@ -108,7 +108,7 @@ static void single_request_verifier(grpc_server* server,
     error = grpc_server_request_call(server, &s, &call_details,
                                      &request_metadata_recv, cq, cq,
                                      grpc_core::CqVerifier::tag(101));
-    CHECK_EQ(error, GRPC_CALL_OK);
+    GRPC_CHECK_EQ(error, GRPC_CALL_OK);
     cqv.Expect(grpc_core::CqVerifier::tag(101), true);
     cqv.Verify();
 
@@ -119,8 +119,8 @@ static void single_request_verifier(grpc_server* server,
     gpr_free(host);
     gpr_free(method);
 
-    CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
-    CHECK_EQ(grpc_slice_str_cmp(call_details.method,
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.host, "localhost"), 0);
+    GRPC_CHECK_EQ(grpc_slice_str_cmp(call_details.method,
                                 absl::StrCat("/foo/bar", i).c_str()),
              0);
 

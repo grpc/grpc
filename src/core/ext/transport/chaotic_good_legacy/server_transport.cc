@@ -218,7 +218,7 @@ auto ChaoticGoodServerTransport::CallOutboundLoop(
 absl::Status ChaoticGoodServerTransport::NewStream(
     ChaoticGoodTransport& transport, const FrameHeader& header,
     SliceBuffer payload) {
-  CHECK_EQ(header.payload_length, payload.Length());
+  GRPC_CHECK_EQ(header.payload_length, payload.Length());
   auto client_initial_metadata_frame =
       transport.DeserializeFrame<ClientInitialMetadataFrame>(
           header, std::move(payload));
@@ -364,8 +364,8 @@ ChaoticGoodServerTransport::ChaoticGoodServerTransport(
 
 void ChaoticGoodServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   got_acceptor_.Set();
 }

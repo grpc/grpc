@@ -419,7 +419,7 @@ class RlsEnd2endTest : public ::testing::Test {
 
     void Start() {
       LOG(INFO) << "starting " << type_ << " server on port " << port_;
-      CHECK(!running_);
+      GRPC_CHECK(!running_);
       running_ = true;
       service_.Start();
       grpc::internal::Mutex mu;

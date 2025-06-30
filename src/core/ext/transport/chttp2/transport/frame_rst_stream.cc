@@ -113,7 +113,7 @@ grpc_error_handle grpc_chttp2_rst_stream_parser_parse(void* parser,
   s->call_tracer_wrapper.RecordIncomingBytes({framing_bytes, 0, 0});
 
   if (p->byte == 4) {
-    CHECK(is_last);
+    GRPC_CHECK(is_last);
     uint32_t reason = ((static_cast<uint32_t>(p->reason_bytes[0])) << 24) |
                       ((static_cast<uint32_t>(p->reason_bytes[1])) << 16) |
                       ((static_cast<uint32_t>(p->reason_bytes[2])) << 8) |

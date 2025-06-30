@@ -419,7 +419,7 @@ ParseAuditLogger(const Json& json, size_t pos) {
 }
 
 absl::Status ParseAuditLoggingOptions(const Json& json, RbacPolicies* rbacs) {
-  CHECK_NE(rbacs, nullptr);
+  GRPC_CHECK_NE(rbacs, nullptr);
   for (auto it = json.object().begin(); it != json.object().end(); ++it) {
     if (it->first == "audit_condition") {
       if (it->second.type() != Json::Type::kString) {
@@ -473,7 +473,7 @@ absl::Status ParseAuditLoggingOptions(const Json& json, RbacPolicies* rbacs) {
             // Parse again since it returns unique_ptr, but result should be ok
             // this time.
             auto result = ParseAuditLogger(loggers.at(i), i);
-            CHECK(result.ok());
+            GRPC_CHECK(result.ok());
             rbacs->deny_policy->logger_configs.push_back(
                 std::move(result.value()));
           }

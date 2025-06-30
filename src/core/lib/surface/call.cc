@@ -119,8 +119,8 @@ Call::Call(bool is_client, Timestamp send_deadline, RefCountedPtr<Arena> arena)
     : arena_(std::move(arena)),
       send_deadline_(send_deadline),
       is_client_(is_client) {
-  DCHECK_NE(arena_.get(), nullptr);
-  DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
+  GRPC_DCHECK_NE(arena_.get(), nullptr);
+  GRPC_DCHECK_NE(arena_->GetContext<grpc_event_engine::experimental::EventEngine>(),
             nullptr);
   arena_->SetContext<Call>(this);
 }
@@ -148,8 +148,8 @@ absl::Status Call::InitParent(Call* parent, uint32_t propagation_mask) {
   child_ = arena()->New<ChildCall>(parent);
 
   parent->InternalRef("child");
-  CHECK(is_client_);
-  CHECK(!parent->is_client_);
+  GRPC_CHECK(is_client_);
+  GRPC_CHECK(!parent->is_client_);
 
   if (propagation_mask & GRPC_PROPAGATE_DEADLINE) {
     send_deadline_ = std::min(send_deadline_, parent->send_deadline_);
@@ -307,7 +307,7 @@ void Call::ProcessIncomingInitialMetadata(grpc_metadata_batch& md) {
     HandleCompressionAlgorithmDisabled(compression_algorithm);
   }
   // GRPC_COMPRESS_NONE is always set.
-  DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
+  GRPC_DCHECK(encodings_accepted_by_peer_.IsSet(GRPC_COMPRESS_NONE));
   if (GPR_UNLIKELY(!encodings_accepted_by_peer_.IsSet(compression_algorithm))) {
     if (GRPC_TRACE_FLAG_ENABLED(compression)) {
       HandleCompressionAlgorithmNotAccepted(compression_algorithm);
@@ -413,7 +413,7 @@ char* grpc_call_get_peer(grpc_call* call) {
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_call_cancel(call=" << call << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   if (call == nullptr) {
     return GRPC_CALL_ERROR;
   }
@@ -430,7 +430,7 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_call_cancel_with_status(c=" << c << ", status=" << (int)status
       << ", description=" << description << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   if (c == nullptr) {
     return GRPC_CALL_ERROR;
   }

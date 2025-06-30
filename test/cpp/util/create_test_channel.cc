@@ -134,7 +134,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
-  CHECK_NE(channel_creds, nullptr);
+  GRPC_CHECK_NE(channel_creds, nullptr);
   if (creds.get()) {
     channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }
@@ -173,7 +173,7 @@ std::shared_ptr<Channel> CreateTestChannel(
       channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
           testing::kTlsCredentialsType, &channel_args);
     }
-    CHECK_NE(channel_creds, nullptr);
+    GRPC_CHECK_NE(channel_creds, nullptr);
 
     const std::string& connect_to = server.empty() ? override_hostname : server;
     if (creds.get()) {
@@ -189,7 +189,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   } else {
     channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
         cred_type, &channel_args);
-    CHECK_NE(channel_creds, nullptr);
+    GRPC_CHECK_NE(channel_creds, nullptr);
 
     if (interceptor_creators.empty()) {
       return grpc::CreateCustomChannel(server, channel_creds, channel_args);
@@ -251,7 +251,7 @@ std::shared_ptr<Channel> CreateTestChannel(
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
-  CHECK_NE(channel_creds, nullptr);
+  GRPC_CHECK_NE(channel_creds, nullptr);
   if (creds.get()) {
     channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }

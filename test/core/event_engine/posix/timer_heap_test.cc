@@ -167,7 +167,7 @@ TEST(TimerHeapTest, RandomMutations) {
         pq.Pop();
         for (size_t i = 0; i < elems_size; i++) {
           if (top == &elems[i].elem) {
-            CHECK(elems[i].inserted);
+            GRPC_CHECK(elems[i].inserted);
             elems[i].inserted = false;
           }
         }
@@ -189,7 +189,7 @@ TEST(TimerHeapTest, RandomMutations) {
           }
         }
       }
-      CHECK(pq.Top()->deadline == *min_deadline);
+      GRPC_CHECK(pq.Top()->deadline == *min_deadline);
     }
   }
 }

@@ -159,7 +159,7 @@ FanoutParameters GetFanoutParameters(benchmark::State& state) {
         (1 - std::pow(params.fanout, params.depth + 1)) / (1 - params.fanout);
   }
   // sanity checking
-  CHECK(params.limit >= params.fanout * params.depth);
+  GRPC_CHECK(params.limit >= params.fanout * params.depth);
   return params;
 }
 
@@ -179,7 +179,7 @@ void FanOutCallback(std::shared_ptr<EventEngine> engine,
     signal.Notify();
     return;
   }
-  DCHECK_LT(local_cnt, params.limit);
+  GRPC_DCHECK_LT(local_cnt, params.limit);
   if (params.depth == processing_layer) return;
   for (int i = 0; i < params.fanout; i++) {
     engine->Run([engine, params, processing_layer, &count, &signal]() {
@@ -242,7 +242,7 @@ void BM_EventEngine_Closure_FanOut(benchmark::State& state) {
         }));
   }
   for (auto _ : state) {
-    DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
+    GRPC_DCHECK_EQ(count.load(std::memory_order_relaxed), 0);
     engine->Run(closures[params.depth + 1]);
     do {
       signal->WaitForNotification();

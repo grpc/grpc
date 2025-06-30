@@ -137,8 +137,8 @@ CoreEnd2endTest::~CoreEnd2endTest() {
     }
   }
   SilentPostMortemEmit();  // Ensures no crashes in channelz.
-  CHECK_EQ(client_, nullptr);
-  CHECK_EQ(server_, nullptr);
+  GRPC_CHECK_EQ(client_, nullptr);
+  GRPC_CHECK_EQ(server_, nullptr);
   initialized_ = false;
 }
 
@@ -164,7 +164,7 @@ CoreEnd2endTest::Call CoreEnd2endTest::ClientCallBuilder::Create() {
 CoreEnd2endTest::ServerRegisteredMethod::ServerRegisteredMethod(
     CoreEnd2endTest* test, absl::string_view name,
     grpc_server_register_method_payload_handling payload_handling) {
-  CHECK_EQ(test->server_, nullptr);
+  GRPC_CHECK_EQ(test->server_, nullptr);
   test->pre_server_start_ = [old = std::move(test->pre_server_start_),
                              handle = handle_, name = std::string(name),
                              payload_handling](grpc_server* server) mutable {
@@ -212,7 +212,7 @@ void CoreEnd2endTest::ForceInitialized() {
 
 core_end2end_test_fuzzer::Msg ParseTestProto(std::string text) {
   core_end2end_test_fuzzer::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(text, &msg));
   return msg;
 }
 

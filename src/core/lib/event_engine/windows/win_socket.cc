@@ -45,7 +45,7 @@ WinSocket::WinSocket(SOCKET socket, ThreadPool* thread_pool) noexcept
       write_info_(this) {}
 
 WinSocket::~WinSocket() {
-  CHECK(is_shutdown_.load());
+  GRPC_CHECK(is_shutdown_.load());
   GRPC_TRACE_LOG(event_engine_endpoint, INFO)
       << "WinSocket::" << this << " destroyed";
 }
@@ -103,7 +103,7 @@ void WinSocket::NotifyOnReady(OpState& info, EventEngine::Closure* closure) {
     return;
   };
   // It is an error if any notification is already registered for this socket.
-  CHECK_EQ(std::exchange(info.closure_, closure), nullptr);
+  GRPC_CHECK_EQ(std::exchange(info.closure_, closure), nullptr);
 }
 
 void WinSocket::NotifyOnRead(EventEngine::Closure* on_read) {
@@ -115,11 +115,11 @@ void WinSocket::NotifyOnWrite(EventEngine::Closure* on_write) {
 }
 
 void WinSocket::UnregisterReadCallback() {
-  CHECK_NE(std::exchange(read_info_.closure_, nullptr), nullptr);
+  GRPC_CHECK_NE(std::exchange(read_info_.closure_, nullptr), nullptr);
 }
 
 void WinSocket::UnregisterWriteCallback() {
-  CHECK_NE(std::exchange(write_info_.closure_, nullptr), nullptr);
+  GRPC_CHECK_NE(std::exchange(write_info_.closure_, nullptr), nullptr);
 }
 
 // ---- WinSocket::OpState ----
@@ -133,7 +133,7 @@ void WinSocket::OpState::SetReady() {
   auto* closure = std::exchange(closure_, nullptr);
   // If an IOCP event is returned for a socket, and no callback has been
   // registered for notification, this is invalid usage.
-  CHECK_NE(closure, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
   win_socket_->thread_pool_->Run(closure);
 }
 

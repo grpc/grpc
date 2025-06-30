@@ -43,7 +43,7 @@ namespace grpc_core {
 void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
     std::unique_ptr<LoadBalancingPolicyFactory> factory) {
   VLOG(2) << "registering LB policy factory for \"" << factory->name() << "\"";
-  CHECK(factories_.find(factory->name()) == factories_.end());
+  GRPC_CHECK(factories_.find(factory->name()) == factories_.end());
   factories_.emplace(factory->name(), std::move(factory));
 }
 

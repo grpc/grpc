@@ -178,8 +178,8 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   signal(SIGINT, sigint_handler);
 
-  CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
-  CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_control_port), 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_retry_port), 0);
   RunServer();
 
   return 0;

@@ -174,7 +174,7 @@ OrcaService::OrcaService(ServerMetricRecorder* const server_metric_recorder,
                          Options options)
     : server_metric_recorder_(server_metric_recorder),
       min_report_duration_(options.min_report_duration) {
-  CHECK_NE(server_metric_recorder_, nullptr);
+  GRPC_CHECK_NE(server_metric_recorder_, nullptr);
   AddMethod(new internal::RpcServiceMethod(
       "/xds.service.orca.v3.OpenRcaService/StreamCoreMetrics",
       internal::RpcMethod::SERVER_STREAMING, /*handler=*/nullptr));

@@ -64,7 +64,7 @@ class InterceptorList {
     // Update the next pointer stored with this map.
     // This is only valid to call once, and only before the map is used.
     void SetNext(Map* next) {
-      DCHECK_EQ(next_, nullptr);
+      GRPC_DCHECK_EQ(next_, nullptr);
       next_ = next;
     }
 

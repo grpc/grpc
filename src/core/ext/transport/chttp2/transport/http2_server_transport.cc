@@ -68,8 +68,8 @@ constexpr int kMpscSize = 10;
 void Http2ServerTransport::SetCallDestination(
     RefCountedPtr<UnstartedCallDestination> call_destination) {
   // TODO(tjagtap) : [PH2][P2] : Implement this function.
-  CHECK(call_destination_ == nullptr);
-  CHECK(call_destination != nullptr);
+  GRPC_CHECK(call_destination_ == nullptr);
+  GRPC_CHECK(call_destination != nullptr);
   call_destination_ = call_destination;
   // got_acceptor_.Set(); // Copied from CG. Understand and fix.
 }

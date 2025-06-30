@@ -130,7 +130,7 @@ struct grpc_call_credentials
   // If this method returns 0, it means that gRPC can treat the two call
   // credentials as effectively the same..
   int cmp(const grpc_call_credentials* other) const {
-    CHECK_NE(other, nullptr);
+    GRPC_CHECK_NE(other, nullptr);
     int r = type().Compare(other->type());
     if (r != 0) return r;
     return cmp_impl(other);

@@ -204,14 +204,14 @@ class LoadBalancingPolicyTest : public ::testing::Test {
         auto* w =
             static_cast<InternalSubchannelDataWatcherInterface*>(watcher.get());
         if (w->type() == OrcaProducer::Type()) {
-          CHECK(orca_watcher_ == nullptr);
+          GRPC_CHECK(orca_watcher_ == nullptr);
           orca_watcher_.reset(static_cast<OrcaWatcher*>(watcher.release()));
           state_->orca_watchers_.insert(orca_watcher_.get());
         } else if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK_EQ(health_watcher_wrapper_, nullptr);
+          GRPC_CHECK(health_watcher_ == nullptr);
+          GRPC_CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
@@ -534,7 +534,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
       auto it = test_->subchannel_pool_.find(key);
       if (it == test_->subchannel_pool_.end()) {
         auto address_uri = grpc_sockaddr_to_uri(&address);
-        CHECK(address_uri.ok());
+        GRPC_CHECK(address_uri.ok());
         it = test_->subchannel_pool_
                  .emplace(std::piecewise_construct, std::forward_as_tuple(key),
                           std::forward_as_tuple(std::move(*address_uri), test_))
@@ -681,7 +681,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
     lb_policy_ =
         CoreConfiguration::Get().lb_policy_registry().CreateLoadBalancingPolicy(
             lb_policy_name_, std::move(args));
-    CHECK(lb_policy_ != nullptr);
+    GRPC_CHECK(lb_policy_ != nullptr);
   }
 
   void TearDown() override {
@@ -708,7 +708,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   }
 
   LoadBalancingPolicy* lb_policy() const {
-    CHECK(lb_policy_ != nullptr);
+    GRPC_CHECK(lb_policy_ != nullptr);
     return lb_policy_.get();
   }
 
@@ -727,9 +727,9 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   // Converts an address URI into a grpc_resolved_address.
   static grpc_resolved_address MakeAddress(absl::string_view address_uri) {
     auto uri = URI::Parse(address_uri);
-    CHECK(uri.ok());
+    GRPC_CHECK(uri.ok());
     grpc_resolved_address address;
-    CHECK(grpc_parse_uri(*uri, &address));
+    GRPC_CHECK(grpc_parse_uri(*uri, &address));
     return address;
   }
 
@@ -1171,7 +1171,7 @@ class LoadBalancingPolicyTest : public ::testing::Test {
   RefCountedPtr<LoadBalancingPolicy::SubchannelPicker> ExpectRoundRobinStartup(
       absl::Span<const EndpointAddresses> endpoints,
       SourceLocation location = SourceLocation()) {
-    CHECK(!endpoints.empty());
+    GRPC_CHECK(!endpoints.empty());
     // There should be a subchannel for every address.
     // We will wind up connecting to the first address for every endpoint.
     std::vector<std::vector<SubchannelState*>> endpoint_subchannels;

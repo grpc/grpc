@@ -273,7 +273,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_0:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_1;
@@ -281,7 +281,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_1:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_2;
@@ -289,7 +289,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_2:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_size |= *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_3;
@@ -297,7 +297,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_3:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_type = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_4;
@@ -305,7 +305,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_4:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_frame_flags = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_5;
@@ -313,7 +313,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_5:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_6;
@@ -321,7 +321,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_6:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_7;
@@ -329,7 +329,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_7:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_8;
@@ -337,7 +337,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FH_8:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
       GRPC_TRACE_LOG(http, INFO)
           << "INCOMING[" << t << "]: "
@@ -371,7 +371,7 @@ std::variant<size_t, absl::Status> grpc_chttp2_perform_read(
       }
       [[fallthrough]];
     case GRPC_DTS_FRAME:
-      DCHECK_LT(cur, end);
+      GRPC_DCHECK_LT(cur, end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
         err = parse_frame_slice(
             t,
@@ -765,7 +765,7 @@ static grpc_error_handle init_header_frame_parser(grpc_chttp2_transport* t,
   } else {
     t->incoming_stream = s;
   }
-  DCHECK_NE(s, nullptr);
+  GRPC_DCHECK_NE(s, nullptr);
   s->call_tracer_wrapper.RecordIncomingBytes({9, 0, 0});
   if (GPR_UNLIKELY(s->read_closed)) {
     GRPC_CHTTP2_IF_TRACING(ERROR)

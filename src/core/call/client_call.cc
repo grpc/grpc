@@ -376,7 +376,7 @@ void ClientCall::CommitBatch(const grpc_op* ops, size_t nops, void* notify_tag,
             [this, out_status, out_status_details, out_error_string,
              out_trailing_metadata]() {
               auto* status = cancel_status_.Get();
-              CHECK_NE(status, nullptr);
+              GRPC_CHECK_NE(status, nullptr);
               *out_status = static_cast<grpc_status_code>(status->code());
               *out_status_details =
                   Slice::FromCopiedString(status->message()).TakeCSlice();
@@ -445,8 +445,8 @@ grpc_call* MakeClientCall(grpc_call* parent_call, uint32_t propagation_mask,
                           grpc_compression_options compression_options,
                           RefCountedPtr<Arena> arena,
                           RefCountedPtr<UnstartedCallDestination> destination) {
-  DCHECK_NE(arena.get(), nullptr);
-  DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
+  GRPC_DCHECK_NE(arena.get(), nullptr);
+  GRPC_DCHECK_NE(arena->GetContext<grpc_event_engine::experimental::EventEngine>(),
             nullptr);
   return arena
       ->New<ClientCall>(parent_call, propagation_mask, cq, std::move(path),

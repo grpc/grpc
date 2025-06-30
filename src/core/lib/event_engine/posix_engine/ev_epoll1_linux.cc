@@ -247,13 +247,13 @@ Epoll1Poller::Epoll1Poller(Scheduler* scheduler)
     : scheduler_(scheduler), was_kicked_(false), closed_(false) {
   g_epoll_set_.epfd = posix_interface().EpollCreateAndCloexec().value();
   wakeup_fd_ = CreateWakeupFd(&posix_interface()).value();
-  CHECK(wakeup_fd_ != nullptr);
-  CHECK(g_epoll_set_.epfd.ready());
+  GRPC_CHECK(wakeup_fd_ != nullptr);
+  GRPC_CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "grpc epoll fd: " << g_epoll_set_.epfd;
   auto result = posix_interface().EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
-  CHECK(result.ok()) << result.StrError();
+  GRPC_CHECK(result.ok()) << result.StrError();
   g_epoll_set_.num_events = 0;
   g_epoll_set_.cursor = 0;
 }
@@ -330,7 +330,7 @@ bool Epoll1Poller::ProcessEpollEvents(int max_epoll_events_to_handle,
     struct epoll_event* ev = &g_epoll_set_.events[c];
     void* data_ptr = ev->data.ptr;
     if (data_ptr == wakeup_fd_.get()) {
-      CHECK(wakeup_fd_->ConsumeWakeup().ok());
+      GRPC_CHECK(wakeup_fd_->ConsumeWakeup().ok());
       was_kicked = true;
     } else {
       Epoll1EventHandle* handle = reinterpret_cast<Epoll1EventHandle*>(
@@ -453,7 +453,7 @@ void Epoll1Poller::Kick() {
     return;
   }
   was_kicked_ = true;
-  CHECK(wakeup_fd_->Wakeup().ok());
+  GRPC_CHECK(wakeup_fd_->Wakeup().ok());
 }
 
 #ifdef GRPC_ENABLE_FORK_SUPPORT
@@ -472,7 +472,7 @@ void Epoll1Poller::HandleForkInChild() {
   }
   g_epoll_set_ = {};
   g_epoll_set_.epfd = posix_interface().EpollCreateAndCloexec().value();
-  CHECK(g_epoll_set_.epfd.ready());
+  GRPC_CHECK(g_epoll_set_.epfd.ready());
   GRPC_TRACE_LOG(event_engine_poller, INFO)
       << "Post-fork grpc epoll fd: " << g_epoll_set_.epfd;
   g_epoll_set_.num_events = 0;
@@ -488,7 +488,7 @@ void Epoll1Poller::ResetKickState() {
   wakeup_fd_ = *CreateWakeupFd(&posix_interface());
   auto status = posix_interface().EpollCtlAdd(
       g_epoll_set_.epfd, false, wakeup_fd_->ReadFd(), wakeup_fd_.get());
-  CHECK(status.ok()) << status.StrError();
+  GRPC_CHECK(status.ok()) << status.StrError();
   grpc_core::MutexLock lock(&mu_);
   was_kicked_ = false;
 }

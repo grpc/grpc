@@ -416,7 +416,7 @@ grpc_error_handle grpc_set_socket_tcp_user_timeout(
 // set a socket using a grpc_socket_mutator
 grpc_error_handle grpc_set_socket_with_mutator(int fd, grpc_fd_usage usage,
                                                grpc_socket_mutator* mutator) {
-  CHECK(mutator);
+  GRPC_CHECK(mutator);
   if (!grpc_socket_mutator_mutate_fd(mutator, fd, usage)) {
     return GRPC_ERROR_CREATE("grpc_socket_mutator failed.");
   }

@@ -69,7 +69,7 @@ void InsecureChannelSecurityConnector::add_handshakers(
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+  GRPC_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 
@@ -96,7 +96,7 @@ void InsecureServerSecurityConnector::add_handshakers(
     HandshakeManager* handshake_manager) {
   tsi_handshaker* handshaker = nullptr;
   // Re-use local_tsi_handshaker_create as a minimalist handshaker.
-  CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
+  GRPC_CHECK(tsi_local_handshaker_create(&handshaker) == TSI_OK);
   handshake_manager->Add(SecurityHandshakerCreate(handshaker, this, args));
 }
 

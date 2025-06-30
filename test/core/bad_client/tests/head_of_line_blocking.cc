@@ -84,11 +84,11 @@ static void verifier(grpc_server* server, grpc_completion_queue* cq,
   error = grpc_server_request_registered_call(
       server, registered_method, &s, &deadline, &request_metadata_recv,
       &payload, cq, cq, grpc_core::CqVerifier::tag(101));
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
   cqv.Expect(grpc_core::CqVerifier::tag(101), true);
   cqv.Verify();
 
-  CHECK_NE(payload, nullptr);
+  GRPC_CHECK_NE(payload, nullptr);
 
   grpc_metadata_array_destroy(&request_metadata_recv);
   grpc_call_unref(s);

@@ -67,7 +67,7 @@ void SslServerTest(std::vector<uint8_t> buffer) {
     // Create security connector
     grpc_core::RefCountedPtr<grpc_server_security_connector> sc =
         creds->create_security_connector(grpc_core::ChannelArgs());
-    CHECK(sc != nullptr);
+    GRPC_CHECK(sc != nullptr);
     grpc_core::Timestamp deadline =
         grpc_core::Duration::Seconds(1) + grpc_core::Timestamp::Now();
 
@@ -82,7 +82,7 @@ void SslServerTest(std::vector<uint8_t> buffer) {
                                channel_args, deadline, nullptr /* acceptor */,
                                [&](absl::StatusOr<HandshakerArgs*> result) {
                                  // The fuzzer should not pass the handshake.
-                                 CHECK(!result.ok());
+                                 GRPC_CHECK(!result.ok());
                                  handshake_completed.Notify();
                                });
     grpc_core::ExecCtx::Get()->Flush();

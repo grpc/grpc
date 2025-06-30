@@ -421,7 +421,7 @@ void EventEngineClientChannelDNSResolver::EventEngineDNSRequestWrapper::
     // Make sure field destroys before cleanup.
     ValidationErrors::ScopedField field(&errors_, "txt lookup");
     if (orphaned_) return;
-    CHECK(is_txt_inflight_);
+    GRPC_CHECK(is_txt_inflight_);
     is_txt_inflight_ = false;
     if (!service_config.ok()) {
       errors_.AddError(service_config.status().message());

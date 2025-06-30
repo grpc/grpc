@@ -110,7 +110,7 @@ void SubchannelStreamClient::StartCall() {
 
 void SubchannelStreamClient::StartCallLocked() {
   if (event_handler_ == nullptr) return;
-  CHECK(call_state_ == nullptr);
+  GRPC_CHECK(call_state_ == nullptr);
   if (event_handler_ != nullptr) {
     event_handler_->OnCallStartLocked(this);
   }
@@ -222,7 +222,7 @@ void SubchannelStreamClient::CallState::StartCallLocked() {
   send_initial_metadata_.Set(
       HttpPathMetadata(),
       subchannel_stream_client_->event_handler_->GetPathLocked());
-  CHECK(error.ok());
+  GRPC_CHECK(error.ok());
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;
   batch_.send_initial_metadata = true;
@@ -432,7 +432,7 @@ void SubchannelStreamClient::CallState::CallEndedLocked(bool retry) {
   if (this == subchannel_stream_client_->call_state_.get()) {
     subchannel_stream_client_->call_state_.reset();
     if (retry) {
-      CHECK(subchannel_stream_client_->event_handler_ != nullptr);
+      GRPC_CHECK(subchannel_stream_client_->event_handler_ != nullptr);
       if (seen_response_.load(std::memory_order_acquire)) {
         // If the call fails after we've gotten a successful response, reset
         // the backoff and restart the call immediately.

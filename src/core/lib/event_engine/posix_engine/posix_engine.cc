@@ -230,7 +230,7 @@ PosixEventEngine::PollingCycle::~PollingCycle() {
 void PosixEventEngine::PollingCycle::PollerWorkInternal() {
   grpc_core::MutexLock lock(&mu_);
   --is_scheduled_;
-  CHECK_EQ(is_scheduled_, 0);
+  GRPC_CHECK_EQ(is_scheduled_, 0);
   bool again = false;
   // TODO(vigneshbabu): The timeout specified here is arbitrary. For
   // instance, this can be improved by setting the timeout to the next
@@ -285,7 +285,7 @@ void AsyncConnect::OnWritable(absl::Status status)
   absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> ep;
 
   mu_.Lock();
-  CHECK_NE(fd_, nullptr);
+  GRPC_CHECK_NE(fd_, nullptr);
   fd = std::exchange(fd_, nullptr);
   bool connect_cancelled = connect_cancelled_;
   if (fd->IsHandleShutdown() && status.ok()) {
@@ -499,7 +499,7 @@ PosixEnginePollerManager::PosixEnginePollerManager(
       poller_state_(PollerState::kExternal),
       executor_(nullptr),
       trigger_shutdown_called_(false) {
-  DCHECK_NE(poller_, nullptr);
+  GRPC_DCHECK_NE(poller_, nullptr);
 }
 
 void PosixEnginePollerManager::Run(
@@ -516,7 +516,7 @@ void PosixEnginePollerManager::Run(absl::AnyInvocable<void()> cb) {
 }
 
 void PosixEnginePollerManager::TriggerShutdown() {
-  DCHECK(trigger_shutdown_called_ == false);
+  GRPC_DCHECK(trigger_shutdown_called_ == false);
   trigger_shutdown_called_ = true;
   // If the poller is external, dont try to shut it down. Otherwise
   // set poller state to PollerState::kShuttingDown.
@@ -596,7 +596,7 @@ PosixEventEngine::~PosixEventEngine() {
                    << HandleToString(handle);
       }
     }
-    CHECK(GPR_LIKELY(known_handles_.empty()));
+    GRPC_CHECK(GPR_LIKELY(known_handles_.empty()));
   }
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
   polling_cycle_.reset();
@@ -731,7 +731,7 @@ bool PosixEventEngine::CancelConnect(EventEngine::ConnectionHandle handle) {
     auto it = shard->pending_connections.find(connection_handle);
     if (it != shard->pending_connections.end()) {
       ac = it->second;
-      CHECK_NE(ac, nullptr);
+      GRPC_CHECK_NE(ac, nullptr);
       // Trying to acquire ac->mu here would could cause a deadlock because
       // the OnWritable method tries to acquire the two mutexes used
       // here in the reverse order. But we dont need to acquire ac->mu before
@@ -817,9 +817,9 @@ PosixEventEngine::CreatePosixEndpointFromFd(int fd,
                                             const EndpointConfig& config,
                                             MemoryAllocator memory_allocator) {
 #if GRPC_PLATFORM_SUPPORTS_POSIX_POLLING
-  DCHECK_GT(fd, 0);
+  GRPC_DCHECK_GT(fd, 0);
   PosixEventPoller* poller = poller_manager_.Poller();
-  DCHECK_NE(poller, nullptr);
+  GRPC_DCHECK_NE(poller, nullptr);
   EventHandle* handle =
       poller->CreateHandle(poller->posix_interface().Adopt(fd), "tcp-client",
                            poller->CanTrackErrors());
@@ -948,7 +948,7 @@ void PosixEventEngine::AfterForkInChild() {
 void PosixEventEngine::SchedulePoller() {
   if (poller_manager_.Poller() != nullptr) {
     grpc_core::MutexLock lock(&mu_);
-    CHECK(!polling_cycle_.has_value());
+    GRPC_CHECK(!polling_cycle_.has_value());
     polling_cycle_.emplace(&poller_manager_);
   }
 }

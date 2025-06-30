@@ -125,7 +125,7 @@ struct SeqState<Traits, P, F0> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.current_promise, std::move(other.prior.current_promise));
     Construct(&prior.next_factory, std::move(other.prior.next_factory));
   }
@@ -269,7 +269,7 @@ struct SeqState<Traits, P, F0, F1> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.current_promise,
               std::move(other.prior.prior.current_promise));
     Construct(&prior.prior.next_factory,
@@ -470,7 +470,7 @@ struct SeqState<Traits, P, F0, F1, F2> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.next_factory,
@@ -726,7 +726,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.prior.next_factory,
@@ -1047,7 +1047,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.current_promise));
     Construct(&prior.prior.prior.prior.prior.next_factory,
@@ -1428,7 +1428,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.current_promise,
         std::move(other.prior.prior.prior.prior.prior.prior.current_promise));
@@ -1871,7 +1871,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.current_promise,
         std::move(
@@ -2379,7 +2379,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
                             .current_promise));
@@ -2954,7 +2954,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(
         &prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
         std::move(other.prior.prior.prior.prior.prior.prior.prior.prior.prior
@@ -3600,7 +3600,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
@@ -4317,7 +4317,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior
@@ -5108,7 +5108,7 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
   SeqState& operator=(const SeqState& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState(SeqState&& other) noexcept
       : state(other.state), whence(other.whence) {
-    DCHECK(state == State::kState0);
+    GRPC_DCHECK(state == State::kState0);
     Construct(&prior.prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
                    .prior.current_promise,
               std::move(other.prior.prior.prior.prior.prior.prior.prior.prior

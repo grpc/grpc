@@ -211,7 +211,7 @@ class Party : public Activity, private Wakeable {
           party->state_.compare_exchange_weak(prev_state_,
                                               (prev_state_ | kLocked) + kOneRef,
                                               std::memory_order_relaxed)) {
-        DCHECK_EQ(prev_state_ & ~(kRefMask | kAllocatedMask), 0u)
+        GRPC_DCHECK_EQ(prev_state_ & ~(kRefMask | kAllocatedMask), 0u)
             << "Party should have contained no wakeups on lock";
         // If we win, record that fact for the destructor
         party->LogStateChange("WakeupHold", prev_state_,
@@ -349,7 +349,7 @@ class Party : public Activity, private Wakeable {
   // Activity implementation: not allowed to be overridden by derived types.
   void ForceImmediateRepoll(WakeupMask mask) final;
   WakeupMask CurrentParticipant() const final {
-    DCHECK(currently_polling_ != kNotPolling);
+    GRPC_DCHECK(currently_polling_ != kNotPolling);
     return 1u << currently_polling_;
   }
   Waker MakeOwningWaker() final;
@@ -383,7 +383,7 @@ class Party : public Activity, private Wakeable {
   SpawnSerializer* MakeSpawnSerializer() {
     auto* const serializer = arena_->New<SpawnSerializer>(this);
     const size_t slot = AddParticipant(serializer);
-    DCHECK_NE(slot, std::numeric_limits<size_t>::max());
+    GRPC_DCHECK_NE(slot, std::numeric_limits<size_t>::max());
     serializer->wakeup_mask_ = 1ull << slot;
     return serializer;
   }
@@ -401,7 +401,7 @@ class Party : public Activity, private Wakeable {
 
   // Derived types should be constructed upon `arena`.
   explicit Party(RefCountedPtr<Arena> arena) : arena_(std::move(arena)) {
-    CHECK(arena_->GetContext<grpc_event_engine::experimental::EventEngine>() !=
+    GRPC_CHECK(arena_->GetContext<grpc_event_engine::experimental::EventEngine>() !=
           nullptr);
   }
   ~Party() override;
@@ -636,7 +636,7 @@ class Party : public Activity, private Wakeable {
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION void WakeupFromState(
       uint64_t cur_state, WakeupMask wakeup_mask) {
     GRPC_LATENT_SEE_INNER_SCOPE("Party::WakeupFromState");
-    DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
+    GRPC_DCHECK_NE(wakeup_mask & kWakeupMask, 0u)
         << "Wakeup mask must be non-zero: " << wakeup_mask;
     while (true) {
       if (cur_state & kLocked) {
@@ -644,9 +644,9 @@ class Party : public Activity, private Wakeable {
         // we'll immediately unref. Since something is running this should never
         // bring the refcount to zero.
         if constexpr (kReffed) {
-          DCHECK_GT(cur_state & kRefMask, kOneRef);
+          GRPC_DCHECK_GT(cur_state & kRefMask, kOneRef);
         } else {
-          DCHECK_GE(cur_state & kRefMask, kOneRef);
+          GRPC_DCHECK_GE(cur_state & kRefMask, kOneRef);
         }
         const uint64_t new_state =
             (cur_state | wakeup_mask) - (kReffed ? kOneRef : 0);
@@ -657,7 +657,7 @@ class Party : public Activity, private Wakeable {
         }
       } else {
         // If the party is not locked, we need to lock it and run.
-        DCHECK_EQ(cur_state & kWakeupMask, 0u);
+        GRPC_DCHECK_EQ(cur_state & kWakeupMask, 0u);
         const uint64_t new_state =
             (cur_state | kLocked) + (kReffed ? 0 : kOneRef);
         if (state_.compare_exchange_weak(cur_state, new_state,

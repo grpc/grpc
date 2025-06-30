@@ -202,7 +202,7 @@ TEST_P(OutlierDetectionTest, SuccessRateMaxPercent) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -616,7 +616,7 @@ TEST_P(OutlierDetectionTest, FailurePercentageMaxPercentage) {
     } else if (backends_[i]->backend_service()->request_count() == 100) {
       ++regular_load_backend_count;
     } else {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(1, empty_load_backend_count);
@@ -984,7 +984,7 @@ TEST_P(OutlierDetectionTest, SuccessRateAndFailurePercentage) {
       // The extra load could go to 2 remaining backends or just 1 of them.
       ++double_load_backend_count;
     } else if (backends_[i]->backend_service()->request_count() > 300) {
-      CHECK(1);
+      GRPC_CHECK(1);
     }
   }
   EXPECT_EQ(2, empty_load_backend_count);

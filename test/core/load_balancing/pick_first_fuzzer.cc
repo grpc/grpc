@@ -177,7 +177,7 @@ class Fuzzer {
         break;
       }
     }
-    CHECK_NE(subchannel, nullptr);
+    GRPC_CHECK_NE(subchannel, nullptr);
     // Advance the subchannel through the connectivity states until it
     // gets to READY.
     LOG(INFO) << "Found subchannel for " << subchannel->address()
@@ -334,8 +334,8 @@ class Fuzzer {
         if (w->type() == HealthProducer::Type()) {
           // TODO(roth): Support health checking in test framework.
           // For now, we just hard-code this to the raw connectivity state.
-          CHECK(health_watcher_ == nullptr);
-          CHECK_EQ(health_watcher_wrapper_, nullptr);
+          GRPC_CHECK(health_watcher_ == nullptr);
+          GRPC_CHECK_EQ(health_watcher_wrapper_, nullptr);
           health_watcher_.reset(static_cast<HealthWatcher*>(watcher.release()));
           auto connectivity_watcher = health_watcher_->TakeWatcher();
           auto* connectivity_watcher_ptr = connectivity_watcher.get();
@@ -754,7 +754,7 @@ class Fuzzer {
     Match(
         result.result,
         [&](const LoadBalancingPolicy::PickResult::Complete& complete) {
-          CHECK_NE(complete.subchannel.get(), nullptr);
+          GRPC_CHECK_NE(complete.subchannel.get(), nullptr);
           LOG(INFO) << "Pick returned Complete: "
                     << complete.subchannel->address();
           EXPECT_EQ(state_, GRPC_CHANNEL_READY)
@@ -829,7 +829,7 @@ static const char* kBasicCase = R"pb(
 
 auto ParseTestProto(const std::string& proto) {
   pick_first_fuzzer::Msg msg;
-  CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
+  GRPC_CHECK(google::protobuf::TextFormat::ParseFromString(proto, &msg));
   return msg;
 }
 

@@ -54,16 +54,16 @@ int main(int argc, char** argv) {
       std::ostringstream msg;
       msg << "Hello " << i;
       request.set_message(msg.str());
-      CHECK(stream->Write(request));
-      CHECK(stream->Read(&response));
-      CHECK(response.message() == request.message());
+      GRPC_CHECK(stream->Write(request));
+      GRPC_CHECK(stream->Read(&response));
+      GRPC_CHECK(response.message() == request.message());
     }
   } else if (absl::GetFlag(FLAGS_mode) == "response") {
     EchoRequest request;
     request.set_message("Hello");
     auto stream = stub->ResponseStream(&context, request);
     for (;;) {
-      CHECK(stream->Read(&response));
+      GRPC_CHECK(stream->Read(&response));
     }
   } else {
     LOG(ERROR) << "invalid test mode '" << absl::GetFlag(FLAGS_mode) << "'";

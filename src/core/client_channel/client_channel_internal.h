@@ -64,7 +64,7 @@ class ClientChannelServiceConfigCallData final : public ServiceConfigCallData {
       : ServiceConfigCallData(arena) {}
 
   void SetOnCommit(absl::AnyInvocable<void()> on_commit) {
-    CHECK(on_commit_ == nullptr);
+    GRPC_CHECK(on_commit_ == nullptr);
     on_commit_ = std::move(on_commit);
   }
 

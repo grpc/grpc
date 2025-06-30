@@ -145,13 +145,13 @@ class ForEach {
       : reader_(std::move(other.reader_)),
         action_factory_(std::move(other.action_factory_)),
         whence_(other.whence_) {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     Construct(&reader_next_, std::move(other.reader_next_));
   }
   ForEach& operator=(ForEach&& other) noexcept {
-    DCHECK(reading_next_);
-    DCHECK(other.reading_next_);
+    GRPC_DCHECK(reading_next_);
+    GRPC_DCHECK(other.reading_next_);
     reader_ = std::move(other.reader_);
     action_factory_ = std::move(other.action_factory_);
     reader_next_ = std::move(other.reader_next_);

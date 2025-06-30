@@ -196,6 +196,6 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_metadata_credentials_create_from_plugin(reserved=" << reserved
       << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   return new grpc_plugin_credentials(plugin, min_security_level);
 }

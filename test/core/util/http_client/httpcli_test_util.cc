@@ -62,7 +62,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   std::vector<const char*> args;
   std::string python_wrapper_path;
   std::string test_server_path;
-  CHECK_LE(argc, 2);
+  GRPC_CHECK_LE(argc, 2);
   if (argc == 2) {
     args.push_back(argv[1]);
   } else {
@@ -91,7 +91,7 @@ HttpRequestTestServer StartHttpRequestTestServer(int argc, char** argv,
   }
   // Start the server.
   gpr_subprocess* server = gpr_subprocess_create(args.size(), args.data());
-  CHECK(server);
+  GRPC_CHECK(server);
   gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                gpr_time_from_seconds(5, GPR_TIMESPAN)));
   return {server, server_port};

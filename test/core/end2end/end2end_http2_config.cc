@@ -105,7 +105,7 @@ void ProcessAuthFailure(void* state, grpc_auth_context* /*ctx*/,
                         const grpc_metadata* /*md*/, size_t /*md_count*/,
                         grpc_process_auth_metadata_done_cb cb,
                         void* user_data) {
-  CHECK_EQ(state, nullptr);
+  GRPC_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -130,7 +130,7 @@ class CensusFixture : public CoreTestFixture {
     auto* server = grpc_server_create(
         args.Set(GRPC_ARG_ENABLE_CENSUS, true).ToC().get(), nullptr);
     grpc_server_register_completion_queue(server, cq, nullptr);
-    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -163,7 +163,7 @@ class CompressionFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(server, localaddr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
     grpc_server_start(server);
@@ -240,7 +240,7 @@ class HttpProxyFilter : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(
+    GRPC_CHECK(
         grpc_server_add_http2_port(server, server_addr_.c_str(), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -267,7 +267,7 @@ class HttpProxyFilter : public CoreTestFixture {
         server_addr_.c_str(), creds,
         args.Set(GRPC_ARG_HTTP_PROXY, proxy_uri).ToC().get());
     grpc_channel_credentials_release(creds);
-    CHECK(client);
+    GRPC_CHECK(client);
     return client;
   }
 
@@ -289,7 +289,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server* s = grpc_server_create(server_args, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(s, port, server_creds));
+    GRPC_CHECK(grpc_server_add_http2_port(s, port, server_creds));
     grpc_server_credentials_release(server_creds);
     return s;
   }
@@ -309,7 +309,7 @@ class ProxyFixture : public CoreTestFixture {
     grpc_server_register_completion_queue(server, cq, nullptr);
     grpc_server_credentials* server_creds =
         grpc_insecure_server_credentials_create();
-    CHECK(grpc_server_add_http2_port(
+    GRPC_CHECK(grpc_server_add_http2_port(
         server, grpc_end2end_proxy_get_server_port(proxy_), server_creds));
     grpc_server_credentials_release(server_creds);
     pre_server_start(server);
@@ -323,7 +323,7 @@ class ProxyFixture : public CoreTestFixture {
     auto* client = grpc_channel_create(
         grpc_end2end_proxy_get_client_target(proxy_), creds, args.ToC().get());
     grpc_channel_credentials_release(creds);
-    CHECK(client);
+    GRPC_CHECK(client);
     return client;
   }
   const grpc_end2end_proxy_def proxy_def_ = {CreateProxyServer,

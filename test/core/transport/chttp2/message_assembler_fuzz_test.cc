@@ -82,7 +82,7 @@ void AssemblerFuzzer(
       VLOG(3) << "      AssemblerFuzzer AppendNewDataFrame result: " << result;
       EXPECT_EQ(payload.Length(), 0);
     } else {
-      CHECK(std::holds_alternative<uint8_t>(step));
+      GRPC_CHECK(std::holds_alternative<uint8_t>(step));
       const uint8_t num_msgs = std::get<uint8_t>(step);
       LOG(INFO) << "    AssemblerFuzzer Extract : { Step:" << count_steps
                 << ", Number of extracts: " << static_cast<int>(num_msgs)
@@ -136,7 +136,7 @@ void AssemblerFuzzer(
   //    std::vector<uint8_t> bytes,
   //    std::vector<size_t> span_lengths1,
   //    std::vector<size_t> span_lengths2) {
-  //        CHECK_EQ(
+  //        GRPC_CHECK_EQ(
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths1)),
   //            PushSegmentsAndPullMessages(Split(bytes, span_lengths2)));
   //    }

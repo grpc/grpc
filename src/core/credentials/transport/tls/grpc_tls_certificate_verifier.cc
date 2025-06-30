@@ -108,7 +108,7 @@ UniqueTypeName NoOpCertificateVerifier::type() const {
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void(absl::Status)>, absl::Status* sync_status) {
-  CHECK_NE(request, nullptr);
+  GRPC_CHECK_NE(request, nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
   if (target_name == nullptr) {

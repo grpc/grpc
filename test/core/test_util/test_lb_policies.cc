@@ -84,7 +84,7 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
         CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
             Json::FromArray({Json::FromObject(
                 {{std::string(delegate_->name()), Json::FromObject({})}})}));
-    CHECK_OK(config);
+    GRPC_CHECK_OK(config);
     args.config = *config;
     return delegate_->UpdateLocked(std::move(args));
   }
@@ -420,7 +420,7 @@ class FixedAddressLoadBalancingPolicy : public ForwardingLoadBalancingPolicy {
     EndpointAddressesList addresses;
     if (uri.ok()) {
       grpc_resolved_address address;
-      CHECK(grpc_parse_uri(*uri, &address));
+      GRPC_CHECK(grpc_parse_uri(*uri, &address));
       addresses.emplace_back(address, ChannelArgs());
     } else {
       LOG(ERROR) << kFixedAddressLbPolicyName << ": could not parse URI ("

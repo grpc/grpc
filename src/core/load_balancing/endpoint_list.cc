@@ -116,7 +116,7 @@ absl::Status EndpointList::Endpoint::Init(
       CoreConfiguration::Get().lb_policy_registry().ParseLoadBalancingConfig(
           Json::FromArray(
               {Json::FromObject({{"pick_first", Json::FromObject({})}})}));
-  CHECK(config.ok());
+  GRPC_CHECK(config.ok());
   // Update child policy.
   LoadBalancingPolicy::UpdateArgs update_args;
   update_args.addresses = std::make_shared<SingleEndpointIterator>(addresses);

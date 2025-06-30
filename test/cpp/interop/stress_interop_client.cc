@@ -65,7 +65,7 @@ TestCaseType WeightedRandomTestSelector::GetNextTest() const {
   }
 
   // It is a bug in the logic if no test is selected at this point
-  CHECK(selected_test != UNKNOWN_TEST);
+  GRPC_CHECK(selected_test != UNKNOWN_TEST);
   return selected_test;
 }
 

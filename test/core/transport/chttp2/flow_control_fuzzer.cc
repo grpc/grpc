@@ -58,7 +58,7 @@ constexpr uint64_t kMaxAdvanceTimeMillis = 24ull * 365 * 3600 * 1000;
 
 gpr_timespec g_now;
 gpr_timespec now_impl(gpr_clock_type clock_type) {
-  CHECK(clock_type != GPR_TIMESPAN);
+  GRPC_CHECK(clock_type != GPR_TIMESPAN);
   gpr_timespec ts = g_now;
   ts.clock_type = clock_type;
   return ts;
@@ -192,7 +192,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
         send_from_remote.ack_initial_window_size =
             sent_to_remote.initial_window_size;
         for (const auto& id_stream : streams_) {
-          CHECK(id_stream.second.window_delta +
+          GRPC_CHECK(id_stream.second.window_delta +
                     *sent_to_remote.initial_window_size <=
                 (1u << 31) - 1);
         }
@@ -213,7 +213,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
                   stream_update.id, stream_update.size, s->window_delta);
         }
         s->window_delta += stream_update.size;
-        CHECK(s->window_delta <= chttp2::kMaxWindowDelta);
+        GRPC_CHECK(s->window_delta <= chttp2::kMaxWindowDelta);
       }
       remote_transport_window_size_ += sent_to_remote.transport_window_update;
       send_to_remote_.pop_front();
@@ -244,7 +244,7 @@ void FlowControlFuzzer::Perform(const flow_control_fuzzer::Action& action) {
           bdp->AddIncomingBytes(stream_write.size);
         }
         StreamFlowControl::IncomingUpdateContext upd(&stream->fc);
-        CHECK_OK(upd.RecvData(stream_write.size));
+        GRPC_CHECK_OK(upd.RecvData(stream_write.size));
         PerformAction(upd.MakeAction(), stream);
       }
       send_from_remote_.pop_front();
@@ -367,7 +367,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
                [this, stream]() { streams_to_update_.push_back(stream->id); });
   with_urgency(action.send_transport_update(), []() {});
   with_urgency(action.send_initial_window_update(), [this, &action]() {
-    CHECK(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
+    GRPC_CHECK(action.initial_window_size() <= chttp2::kMaxInitialWindowSize);
     queued_initial_window_size_ = action.initial_window_size();
   });
   with_urgency(action.send_max_frame_size_update(), [this, &action]() {
@@ -376,7 +376,7 @@ void FlowControlFuzzer::PerformAction(FlowControlAction action,
 }
 
 void FlowControlFuzzer::AssertNoneStuck() const {
-  CHECK(!scheduled_write_);
+  GRPC_CHECK(!scheduled_write_);
 
   // Reconcile all the values to get the view of the remote that is knowable to
   // the flow control system.
@@ -467,7 +467,7 @@ void FlowControlFuzzer::AssertAnnouncedOverInitialWindowSizeCorrect() const {
     }
   }
 
-  CHECK(value_from_streams ==
+  GRPC_CHECK(value_from_streams ==
         tfc_->announced_stream_total_over_incoming_window());
 }
 

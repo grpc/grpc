@@ -60,7 +60,7 @@ void BM_StaticStrideSchedulerPickNonAtomic(benchmark::State& state) {
       StaticStrideScheduler::Make(
           absl::MakeSpan(Weights()).subspan(0, state.range(0)),
           [&] { return sequence++; });
-  CHECK(scheduler.has_value());
+  GRPC_CHECK(scheduler.has_value());
   for (auto s : state) {
     benchmark::DoNotOptimize(scheduler->Pick());
   }
@@ -75,7 +75,7 @@ void BM_StaticStrideSchedulerPickAtomic(benchmark::State& state) {
       StaticStrideScheduler::Make(
           absl::MakeSpan(Weights()).subspan(0, state.range(0)),
           [&] { return sequence.fetch_add(1, std::memory_order_relaxed); });
-  CHECK(scheduler.has_value());
+  GRPC_CHECK(scheduler.has_value());
   for (auto s : state) {
     benchmark::DoNotOptimize(scheduler->Pick());
   }
@@ -91,7 +91,7 @@ void BM_StaticStrideSchedulerMake(benchmark::State& state) {
         StaticStrideScheduler::Make(
             absl::MakeSpan(Weights()).subspan(0, state.range(0)),
             [&] { return sequence++; });
-    CHECK(scheduler.has_value());
+    GRPC_CHECK(scheduler.has_value());
   }
 }
 BENCHMARK(BM_StaticStrideSchedulerMake)

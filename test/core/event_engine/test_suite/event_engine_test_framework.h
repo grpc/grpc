@@ -67,13 +67,13 @@ class EventEngineTest : public testing::Test {
  protected:
   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewEventEngine() {
-    CHECK_NE(g_ee_factory, nullptr);
+    GRPC_CHECK_NE(g_ee_factory, nullptr);
     return (*g_ee_factory)();
   }
 
   std::shared_ptr<grpc_event_engine::experimental::EventEngine>
   NewOracleEventEngine() {
-    CHECK_NE(g_oracle_ee_factory, nullptr);
+    GRPC_CHECK_NE(g_oracle_ee_factory, nullptr);
     return (*g_oracle_ee_factory)();
   }
 };

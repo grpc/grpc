@@ -25,7 +25,7 @@ namespace grpc_core {
 size_t Chttp2WriteSizePolicy::WriteTargetSize() { return current_target_; }
 
 void Chttp2WriteSizePolicy::BeginWrite(size_t size) {
-  CHECK_EQ(experiment_start_time_, Timestamp::InfFuture());
+  GRPC_CHECK_EQ(experiment_start_time_, Timestamp::InfFuture());
   if (size < current_target_ * 7 / 10) {
     // If we were trending fast but stopped getting enough data to verify, then
     // reset back to the default state.

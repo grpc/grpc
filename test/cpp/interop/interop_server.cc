@@ -75,8 +75,8 @@ const char kEchoUserAgentKey[] = "x-grpc-test-echo-useragent";
 
 void MaybeEchoMetadata(ServerContext* context) {
   const auto& client_metadata = context->client_metadata();
-  CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
-  CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
+  GRPC_CHECK_LE(client_metadata.count(kEchoInitialMetadataKey), 1u);
+  GRPC_CHECK_LE(client_metadata.count(kEchoTrailingBinMetadataKey), 1u);
 
   auto iter = client_metadata.find(kEchoInitialMetadataKey);
   if (iter != client_metadata.end()) {
@@ -419,7 +419,7 @@ void grpc::testing::interop::RunServer(
     ServerStartedCondition* server_started_condition,
     std::unique_ptr<std::vector<std::unique_ptr<ServerBuilderOption>>>
         server_options) {
-  CHECK_NE(port, 0);
+  GRPC_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
   auto server_metric_recorder =

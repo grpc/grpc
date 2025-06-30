@@ -56,15 +56,15 @@ CoreConfiguration::CoreConfiguration(Builder* builder)
 void CoreConfiguration::RegisterBuilder(
     BuilderScope scope, absl::AnyInvocable<void(Builder*)> builder,
     SourceLocation whence) {
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  GRPC_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
   if (scope == BuilderScope::kPersistent) {
-    CHECK(!has_config_ever_been_produced_.load(std::memory_order_relaxed))
+    GRPC_CHECK(!has_config_ever_been_produced_.load(std::memory_order_relaxed))
         << "Persistent builders cannot be registered after the first "
            "CoreConfiguration has been produced";
   }
-  CHECK_NE(scope, BuilderScope::kCount);
+  GRPC_CHECK_NE(scope, BuilderScope::kCount);
   auto& head = builders_[static_cast<size_t>(scope)];
   RegisteredBuilder* n = new RegisteredBuilder();
   VLOG(4) << "Registering " << scope << " builder from " << whence.file() << ":"
@@ -75,7 +75,7 @@ void CoreConfiguration::RegisterBuilder(
   while (!head.compare_exchange_weak(n->next, n, std::memory_order_acq_rel,
                                      std::memory_order_relaxed)) {
   }
-  CHECK(config_.load(std::memory_order_relaxed) == nullptr)
+  GRPC_CHECK(config_.load(std::memory_order_relaxed) == nullptr)
       << "CoreConfiguration was already instantiated before builder "
          "registration was completed";
 }

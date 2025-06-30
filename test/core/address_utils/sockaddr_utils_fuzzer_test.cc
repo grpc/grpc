@@ -40,7 +40,7 @@ void CheckUriIsParseable(std::vector<uint8_t> buffer) {
   if (!uri.ok()) return;
   absl::StatusOr<grpc_core::URI> parsed_uri =
       grpc_core::URI::Parse(uri.value());
-  CHECK_OK(parsed_uri);
+  GRPC_CHECK_OK(parsed_uri);
 }
 FUZZ_TEST(MyTestSuite, CheckUriIsParseable)
     .WithDomains(VectorOf(Arbitrary<uint8_t>())

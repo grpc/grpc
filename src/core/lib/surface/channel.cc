@@ -102,7 +102,7 @@ grpc_call* grpc_channel_create_call(grpc_channel* channel,
                                     grpc_completion_queue* completion_queue,
                                     grpc_slice method, const grpc_slice* host,
                                     gpr_timespec deadline, void* reserved) {
-  CHECK(!reserved);
+  GRPC_CHECK(!reserved);
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->CreateCall(
       parent_call, propagation_mask, completion_queue, nullptr,
@@ -119,7 +119,7 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GRPC_TRACE_LOG(api, INFO) << "grpc_channel_register_call(channel=" << channel
                             << ", method=" << method << ", host=" << host
                             << ", reserved=" << reserved << ")";
-  CHECK(!reserved);
+  GRPC_CHECK(!reserved);
   grpc_core::ExecCtx exec_ctx;
   return grpc_core::Channel::FromC(channel)->RegisterCall(method, host);
 }
@@ -208,6 +208,6 @@ void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_channel_ping(channel=" << channel << ", cq=" << cq
       << ", tag=" << tag << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
   grpc_core::Channel::FromC(channel)->Ping(cq, tag);
 }

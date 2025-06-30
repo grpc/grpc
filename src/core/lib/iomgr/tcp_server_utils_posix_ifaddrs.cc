@@ -165,7 +165,7 @@ grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
       err = grpc_error_add_child(root_err, err);
       break;
     } else {
-      CHECK(requested_port == new_sp->port);
+      GRPC_CHECK(requested_port == new_sp->port);
       ++fd_index;
       if (sp != nullptr) {
         new_sp->is_sibling = 1;

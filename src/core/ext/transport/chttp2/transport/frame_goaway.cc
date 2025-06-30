@@ -134,7 +134,7 @@ grpc_error_handle grpc_chttp2_goaway_parser_parse(void* parser,
         memcpy(p->debug_data + p->debug_pos, cur,
                static_cast<size_t>(end - cur));
       }
-      CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
+      GRPC_CHECK((size_t)(end - cur) < UINT32_MAX - p->debug_pos);
       p->debug_pos += static_cast<uint32_t>(end - cur);
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
@@ -161,7 +161,7 @@ void grpc_chttp2_goaway_append(
   grpc_slice header = GRPC_SLICE_MALLOC(9 + 4 + 4);
   uint8_t* p = GRPC_SLICE_START_PTR(header);
   uint32_t frame_length;
-  CHECK(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
+  GRPC_CHECK(GRPC_SLICE_LENGTH(debug_data) < UINT32_MAX - 4 - 4);
   frame_length = 4 + 4 + static_cast<uint32_t> GRPC_SLICE_LENGTH(debug_data);
 
   ztrace_collector->Append([last_stream_id, error_code, debug_data]() {
@@ -193,7 +193,7 @@ void grpc_chttp2_goaway_append(
   *p++ = static_cast<uint8_t>(error_code >> 16);
   *p++ = static_cast<uint8_t>(error_code >> 8);
   *p++ = static_cast<uint8_t>(error_code);
-  CHECK(p == GRPC_SLICE_END_PTR(header));
+  GRPC_CHECK(p == GRPC_SLICE_END_PTR(header));
   grpc_slice_buffer_add(slice_buffer, header);
   grpc_slice_buffer_add(slice_buffer, debug_data);
 }

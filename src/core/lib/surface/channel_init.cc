@@ -152,7 +152,7 @@ class ChannelInit::DependencyTracker {
 
   FilterRegistration* Next() {
     if (ready_dependencies_.empty()) {
-      CHECK_EQ(nodes_taken_, nodes_.size())
+      GRPC_CHECK_EQ(nodes_taken_, nodes_.size())
           << "Unresolvable graph of channel filters :\n " << GraphString();
       return nullptr;
     }
@@ -163,13 +163,13 @@ class ChannelInit::DependencyTracker {
       // Constraint: if we use ordering other than default, then we must have an
       // unambiguous pick. If there is ambiguity, we must fix it by adding
       // explicit ordering constraints.
-      CHECK_NE(next.node->ordering(),
+      GRPC_CHECK_NE(next.node->ordering(),
                ready_dependencies_.top().node->ordering())
           << "Ambiguous ordering between " << next.node->name() << " and "
           << ready_dependencies_.top().node->name();
     }
     for (Node* dependent : next.node->dependents) {
-      CHECK_GT(dependent->waiting_dependencies, 0u);
+      GRPC_CHECK_GT(dependent->waiting_dependencies, 0u);
       --dependent->waiting_dependencies;
       if (dependent->waiting_dependencies == 0) {
         ready_dependencies_.emplace(dependent);
@@ -194,7 +194,7 @@ class ChannelInit::DependencyTracker {
 
   absl::Span<const UniqueTypeName> DependenciesFor(UniqueTypeName name) const {
     auto it = nodes_.find(name);
-    CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
+    GRPC_CHECK(it != nodes_.end()) << "Filter " << name.name() << " not found";
     return it->second.all_dependencies;
   }
 
@@ -245,10 +245,10 @@ ChannelInit::StackConfig ChannelInit::BuildStackConfig(
   std::vector<Filter> terminal_filters;
   for (const auto& registration : registrations) {
     if (registration->terminal_) {
-      CHECK(registration->after_.empty());
-      CHECK(registration->before_.empty());
-      CHECK(!registration->before_all_);
-      CHECK_EQ(registration->ordering_, Ordering::kDefault);
+      GRPC_CHECK(registration->after_.empty());
+      GRPC_CHECK(registration->before_.empty());
+      GRPC_CHECK(!registration->before_all_);
+      GRPC_CHECK_EQ(registration->ordering_, Ordering::kDefault);
       terminal_filters.emplace_back(
           registration->name_, registration->filter_, nullptr,
           std::move(registration->predicates_), registration->version_,

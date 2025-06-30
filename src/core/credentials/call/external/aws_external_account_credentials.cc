@@ -422,8 +422,8 @@ void AwsExternalAccountCredentials::AwsFetchBody::BuildSubjectToken() {
 void AwsExternalAccountCredentials::AwsFetchBody::AddMetadataRequestHeaders(
     grpc_http_request* request) {
   if (!imdsv2_session_token_.empty()) {
-    CHECK_EQ(request->hdr_count, 0u);
-    CHECK_EQ(request->hdrs, nullptr);
+    GRPC_CHECK_EQ(request->hdr_count, 0u);
+    GRPC_CHECK_EQ(request->hdrs, nullptr);
     grpc_http_header* headers =
         static_cast<grpc_http_header*>(gpr_malloc(sizeof(grpc_http_header)));
     headers[0].key = gpr_strdup("x-aws-ec2-metadata-token");

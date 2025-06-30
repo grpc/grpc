@@ -45,7 +45,7 @@ class DNSServiceResolverImpl
   explicit DNSServiceResolverImpl(std::shared_ptr<CFEventEngine> engine)
       : engine_(std::move((engine))) {}
   ~DNSServiceResolverImpl() override {
-    CHECK(requests_.empty());
+    GRPC_CHECK(requests_.empty());
     dispatch_release(queue_);
   }
 

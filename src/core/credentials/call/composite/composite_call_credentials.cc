@@ -106,9 +106,9 @@ grpc_call_credentials* grpc_composite_call_credentials_create(
   GRPC_TRACE_LOG(api, INFO)
       << "grpc_composite_call_credentials_create(creds1=" << creds1
       << ", creds2=" << creds2 << ", reserved=" << reserved << ")";
-  CHECK_EQ(reserved, nullptr);
-  CHECK_NE(creds1, nullptr);
-  CHECK_NE(creds2, nullptr);
+  GRPC_CHECK_EQ(reserved, nullptr);
+  GRPC_CHECK_NE(creds1, nullptr);
+  GRPC_CHECK_NE(creds2, nullptr);
   return grpc_core::MakeRefCounted<grpc_composite_call_credentials>(
              creds1->Ref(), creds2->Ref())
       .release();

@@ -42,7 +42,7 @@ struct JoinState<Traits, ${",".join(f"P{i}" for i in range(0,n))}> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
 % for i in range(0,n):
     Construct(&promise${i}, std::move(other.promise${i}));
 % endfor

@@ -55,7 +55,7 @@ class VerifyLogNoiseLogSink : public absl::LogSink {
   }
 
   ~VerifyLogNoiseLogSink() override {
-    CHECK(log_noise_absent_)
+    GRPC_CHECK(log_noise_absent_)
         << "Unwanted logs present. This will cause log noise. Either user a "
            "tracer (example GRPC_TRACE_LOG or GRPC_TRACE_VLOG) or convert the "
            "statement to VLOG(2).";

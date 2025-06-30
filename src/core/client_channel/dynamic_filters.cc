@@ -80,8 +80,8 @@ void DynamicFilters::Call::StartTransportStreamOpBatch(
 }
 
 void DynamicFilters::Call::SetAfterCallStackDestroy(grpc_closure* closure) {
-  CHECK_EQ(after_call_stack_destroy_, nullptr);
-  CHECK_NE(closure, nullptr);
+  GRPC_CHECK_EQ(after_call_stack_destroy_, nullptr);
+  GRPC_CHECK_NE(closure, nullptr);
   after_call_stack_destroy_ = closure;
 }
 

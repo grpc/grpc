@@ -59,7 +59,7 @@ class MockCensusViewProvider : public CensusViewProvider {
 
   const ViewDescriptor& FindViewDescriptor(const std::string& view_name) {
     auto it = view_descriptor_map().find(view_name);
-    CHECK(it != view_descriptor_map().end());
+    GRPC_CHECK(it != view_descriptor_map().end());
     return it->second;
   }
 };

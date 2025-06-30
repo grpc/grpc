@@ -360,11 +360,11 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -396,11 +396,11 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -549,11 +549,11 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -585,11 +585,11 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -623,27 +623,27 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a full TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(7, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(7, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_PEM_CERT_PROPERTY, "pem_cert", &peer.properties[2]) ==
         TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_SECURITY_LEVEL_PEER_PROPERTY,
             tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
             &peer.properties[3]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_PEM_CERT_CHAIN_PROPERTY, "pem_cert_chain",
             &peer.properties[4]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[5]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
             &peer.properties[6]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -671,27 +671,27 @@ TEST_F(TlsSecurityConnectorTest,
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
   // Construct a full TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(7, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(7, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.com",
             &peer.properties[1]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_PEM_CERT_PROPERTY, "pem_cert", &peer.properties[2]) ==
         TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_SECURITY_LEVEL_PEER_PROPERTY,
             tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
             &peer.properties[3]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_PEM_CERT_CHAIN_PROPERTY, "pem_cert_chain",
             &peer.properties[4]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "*.com",
             &peer.properties[5]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
             &peer.properties[6]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -980,11 +980,11 @@ TEST_F(TlsSecurityConnectorTest,
   auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -1011,11 +1011,11 @@ TEST_F(TlsSecurityConnectorTest,
   auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -1046,11 +1046,11 @@ TEST_F(TlsSecurityConnectorTest,
   auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;
@@ -1079,11 +1079,11 @@ TEST_F(TlsSecurityConnectorTest,
   auto connector = credentials->create_security_connector(ChannelArgs());
   // Construct a basic TSI Peer.
   tsi_peer peer;
-  CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
+  GRPC_CHECK(tsi_construct_peer(2, &peer) == TSI_OK);
+  GRPC_CHECK(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL, "h2",
                                            strlen("h2"),
                                            &peer.properties[0]) == TSI_OK);
-  CHECK(tsi_construct_string_peer_property_from_cstring(
+  GRPC_CHECK(tsi_construct_string_peer_property_from_cstring(
             TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
             &peer.properties[1]) == TSI_OK);
   RefCountedPtr<grpc_auth_context> auth_context;

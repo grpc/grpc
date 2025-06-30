@@ -32,7 +32,7 @@ void CertificateProviderRegistry::Builder::RegisterCertificateProviderFactory(
     std::unique_ptr<CertificateProviderFactory> factory) {
   absl::string_view name = factory->name();
   VLOG(2) << "registering certificate provider factory for \"" << name << "\"";
-  CHECK(factories_.emplace(name, std::move(factory)).second);
+  GRPC_CHECK(factories_.emplace(name, std::move(factory)).second);
 }
 
 CertificateProviderRegistry CertificateProviderRegistry::Builder::Build() {

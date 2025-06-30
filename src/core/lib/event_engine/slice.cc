@@ -46,7 +46,7 @@ Slice CopyConstructors<Slice>::FromCopiedString(std::string s) {
 
 MutableSlice::MutableSlice(const grpc_slice& slice)
     : slice_detail::BaseSlice(slice) {
-  DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
+  GRPC_DCHECK(slice.refcount == nullptr || slice.refcount->IsUnique());
 }
 
 MutableSlice::~MutableSlice() { grpc_core::CSliceUnref(c_slice()); }

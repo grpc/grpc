@@ -428,7 +428,7 @@ class MessageReceiver {
 
   template <typename Puller>
   auto MakeBatchOp(const grpc_op& op, Puller* puller) {
-    CHECK_EQ(recv_message_, nullptr);
+    GRPC_CHECK_EQ(recv_message_, nullptr);
     recv_message_ = op.data.recv_message.recv_message;
     return [this, puller]() mutable {
       return Map(puller->PullMessage(),

@@ -98,11 +98,11 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   grpc_init();
-  CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
+  GRPC_CHECK(!absl::GetFlag(FLAGS_test_bin_name).empty());
   std::string my_bin = argv[0];
   int result = 0;
   if (absl::GetFlag(FLAGS_running_under_bazel)) {
-    CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
+    GRPC_CHECK(!absl::GetFlag(FLAGS_grpc_test_directory_relative_to_test_srcdir)
                .empty());
     // Use bazel's TEST_SRCDIR environment variable to locate the "test data"
     // binaries.

@@ -41,7 +41,7 @@ void RoundTrips(std::vector<uint8_t> buffer, PercentEncodingType type) {
   auto permissive_decoded_output =
       PermissivePercentDecodeSlice(std::move(output));
   // decoded output must always match the input
-  CHECK(input == permissive_decoded_output);
+  GRPC_CHECK(input == permissive_decoded_output);
 }
 FUZZ_TEST(MyTestSuite, RoundTrips)
     .WithDomains(VectorOf(Arbitrary<uint8_t>()),

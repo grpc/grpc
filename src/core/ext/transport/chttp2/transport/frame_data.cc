@@ -63,7 +63,7 @@ void grpc_chttp2_encode_data(uint32_t id, grpc_slice_buffer* inbuf,
 
   hdr = GRPC_SLICE_MALLOC(header_size);
   p = GRPC_SLICE_START_PTR(hdr);
-  CHECK(write_bytes < (1 << 24));
+  GRPC_CHECK(write_bytes < (1 << 24));
   *p++ = static_cast<uint8_t>(write_bytes >> 16);
   *p++ = static_cast<uint8_t>(write_bytes >> 8);
   *p++ = static_cast<uint8_t>(write_bytes);

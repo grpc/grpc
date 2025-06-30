@@ -92,7 +92,7 @@ grpc_slice grpc_byte_buffer_reader_readall(grpc_byte_buffer_reader* reader) {
     memcpy(&(outbuf[bytes_read]), GRPC_SLICE_START_PTR(in_slice), slice_length);
     bytes_read += slice_length;
     grpc_core::CSliceUnref(in_slice);
-    CHECK(bytes_read <= input_size);
+    GRPC_CHECK(bytes_read <= input_size);
   }
 
   return out_slice;

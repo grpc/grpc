@@ -155,7 +155,7 @@ XdsEnd2endTest::ServerThread::ServerThread(
 
 void XdsEnd2endTest::ServerThread::Start() {
   LOG(INFO) << "starting " << Type() << " server on port " << port_;
-  CHECK(!running_);
+  GRPC_CHECK(!running_);
   running_ = true;
   StartAllServices();
   grpc_core::Mutex mu;

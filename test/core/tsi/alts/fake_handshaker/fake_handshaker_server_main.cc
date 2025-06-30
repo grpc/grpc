@@ -48,7 +48,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
 
-  CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
+  GRPC_CHECK_NE(absl::GetFlag(FLAGS_handshaker_port), 0);
   std::ostringstream server_address;
   server_address << "[::1]:" << absl::GetFlag(FLAGS_handshaker_port);
 

@@ -80,7 +80,7 @@ static void gc_completed_threads(void) {
 }
 
 static void start_timer_thread_and_unlock(void) {
-  CHECK(g_threaded);
+  GRPC_CHECK(g_threaded);
   ++g_waiter_count;
   ++g_thread_count;
   gpr_mu_unlock(&g_mu);

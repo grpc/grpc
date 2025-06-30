@@ -50,7 +50,7 @@ GlobalInstrumentsRegistry::RegisterInstrument(
     }
   }
   InstrumentID index = instruments.size();
-  CHECK_LT(index, std::numeric_limits<uint32_t>::max());
+  GRPC_CHECK_LT(index, std::numeric_limits<uint32_t>::max());
   GlobalInstrumentDescriptor descriptor;
   descriptor.value_type = value_type;
   descriptor.instrument_type = instrument_type;

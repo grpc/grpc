@@ -329,7 +329,7 @@ class OutlierDetectionLb final : public LoadBalancingPolicy {
           --multiplier_;
         }
       } else {
-        CHECK(ejection_time_.has_value());
+        GRPC_CHECK(ejection_time_.has_value());
         auto change_time = ejection_time_.value() +
                            Duration::Milliseconds(std::min(
                                base_ejection_time_in_millis * multiplier_,

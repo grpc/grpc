@@ -58,7 +58,7 @@ static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
                                  size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
-  CHECK_EQ(state, nullptr);
+  GRPC_CHECK_EQ(state, nullptr);
   cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
 }
 
@@ -211,7 +211,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   c = grpc_channel_create_call(client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/foo"), &host,
                                deadline, nullptr);
-  CHECK(c);
+  GRPC_CHECK(c);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -222,7 +222,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   op++;
   error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops),
                                 grpc_core::CqVerifier::tag(1), nullptr);
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(grpc_core::CqVerifier::tag(1), expected_result == SUCCESS);
   cqv.Verify(grpc_core::Duration::Seconds(60));
@@ -234,7 +234,7 @@ static void simple_request_body(grpc_core::CoreTestFixture* f,
   cqv.Verify(grpc_core::Duration::Seconds(60));
   grpc_server_destroy(server);
   grpc_completion_queue_shutdown(cq);
-  CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+  GRPC_CHECK(grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
                                    nullptr)
             .type == GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(cq);
@@ -278,9 +278,9 @@ int main(int argc, char** argv) {
   // Set the SSL roots env var.
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
-  CHECK_NE(roots_filename, nullptr);
-  CHECK_NE(roots_file, nullptr);
-  CHECK(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
+  GRPC_CHECK_NE(roots_filename, nullptr);
+  GRPC_CHECK_NE(roots_file, nullptr);
+  GRPC_CHECK(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
   grpc_core::ConfigVars::Overrides config_overrides;
   config_overrides.default_ssl_roots_file_path = roots_filename;

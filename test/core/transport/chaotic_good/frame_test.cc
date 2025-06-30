@@ -39,8 +39,8 @@ void AssertRoundTrips(const Frame& input) {
   input_interface.SerializePayload(output_buffer);
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   absl::StatusOr<Frame> output = ParseFrame(hdr, std::move(output_buffer));
-  CHECK_OK(output);
-  CHECK_EQ(absl::ConvertVariantTo<const FrameInterface&>(*output).ToString(),
+  GRPC_CHECK_OK(output);
+  GRPC_CHECK_EQ(absl::ConvertVariantTo<const FrameInterface&>(*output).ToString(),
            input_interface.ToString());
 }
 FUZZ_TEST(FrameTest, AssertRoundTrips).WithDomains(AnyFrame());

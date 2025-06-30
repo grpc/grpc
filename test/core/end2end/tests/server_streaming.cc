@@ -87,7 +87,7 @@ void ServerStreaming(CoreEnd2endTest& test, int num_messages) {
     EXPECT_EQ(server_message.payload(), "hello world");
     num_messages_received++;
   }
-  CHECK_EQ(num_messages_received, num_messages);
+  GRPC_CHECK_EQ(num_messages_received, num_messages);
   if (!seen_status) {
     test.Expect(1, true);
     test.Step();

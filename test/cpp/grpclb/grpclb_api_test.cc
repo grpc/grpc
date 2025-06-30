@@ -44,7 +44,7 @@ class GrpclbTest : public ::testing::Test {
 
 std::string Ip4ToPackedString(const char* ip_str) {
   struct in_addr ip4;
-  CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
+  GRPC_CHECK_EQ(inet_pton(AF_INET, ip_str, &ip4), 1);
   return std::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
@@ -58,7 +58,7 @@ std::string PackedStringToIp(const grpc_core::GrpcLbServer& server) {
   } else {
     abort();
   }
-  CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
+  GRPC_CHECK_NE(inet_ntop(af, (void*)server.ip_addr, ip_str, 46), nullptr);
   return ip_str;
 }
 

@@ -74,7 +74,7 @@ CallbackStreamingTestService::BidiStream(CallbackServerContext* context) {
       StartRead(&request_);
     }
     void OnDone() override {
-      CHECK(finished_);
+      GRPC_CHECK(finished_);
       delete this;
     }
     void OnCancel() override {}

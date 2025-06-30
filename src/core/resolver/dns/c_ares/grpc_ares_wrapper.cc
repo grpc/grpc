@@ -215,7 +215,7 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver)
     GRPC_TRACE_VLOG(cares_resolver, 2)
         << "(c-ares resolver) request:" << ev_driver->request
         << " destroy ev_driver " << ev_driver;
-    CHECK_EQ(ev_driver->fds, nullptr);
+    GRPC_CHECK_EQ(ev_driver->fds, nullptr);
     ares_destroy(ev_driver->channel);
     grpc_ares_complete_request_locked(ev_driver->request);
     delete ev_driver;
@@ -227,9 +227,9 @@ static void fd_node_destroy_locked(fd_node* fdn)
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) request:" << fdn->ev_driver->request
       << " delete fd: " << fdn->grpc_polled_fd->GetName();
-  CHECK(!fdn->readable_registered);
-  CHECK(!fdn->writable_registered);
-  CHECK(fdn->already_shutdown);
+  GRPC_CHECK(!fdn->readable_registered);
+  GRPC_CHECK(!fdn->writable_registered);
+  GRPC_CHECK(fdn->already_shutdown);
   delete fdn->grpc_polled_fd;
   delete fdn;
 }
@@ -369,7 +369,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
 static void on_readable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   grpc_core::MutexLock lock(&fdn->ev_driver->request->mu);
-  CHECK(fdn->readable_registered);
+  GRPC_CHECK(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->readable_registered = false;
@@ -394,7 +394,7 @@ static void on_readable(void* arg, grpc_error_handle error) {
 static void on_writable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   grpc_core::MutexLock lock(&fdn->ev_driver->request->mu);
-  CHECK(fdn->writable_registered);
+  GRPC_CHECK(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->writable_registered = false;
@@ -946,7 +946,7 @@ static bool inner_resolve_as_ip_literal_locked(
                                false /* log errors */) ||
       grpc_parse_ipv6_hostport(hostport->c_str(), &addr,
                                false /* log errors */)) {
-    CHECK(*addrs == nullptr);
+    GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<EndpointAddressesList>();
     (*addrs)->emplace_back(addr, grpc_core::ChannelArgs());
     return true;
@@ -1000,7 +1000,7 @@ static bool inner_maybe_resolve_localhost_manually_locked(
     *port = default_port;
   }
   if (gpr_stricmp(host->c_str(), "localhost") == 0) {
-    CHECK(*addrs == nullptr);
+    GRPC_CHECK(*addrs == nullptr);
     *addrs = std::make_unique<grpc_core::EndpointAddressesList>();
     uint16_t numeric_port = grpc_strhtons(port->c_str());
     grpc_resolved_address address;
@@ -1199,7 +1199,7 @@ grpc_ares_request* (*grpc_dns_lookup_txt_ares)(
     int query_timeout_ms) = grpc_dns_lookup_txt_ares_impl;
 
 static void grpc_cancel_ares_request_impl(grpc_ares_request* r) {
-  CHECK_NE(r, nullptr);
+  GRPC_CHECK_NE(r, nullptr);
   grpc_core::MutexLock lock(&r->mu);
   GRPC_TRACE_VLOG(cares_resolver, 2)
       << "(c-ares resolver) request:" << r

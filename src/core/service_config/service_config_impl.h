@@ -87,7 +87,7 @@ class ServiceConfigImpl final : public ServiceConfig {
   /// ServiceConfig object.
   ServiceConfigParser::ParsedConfig* GetGlobalParsedConfig(
       size_t index) const override {
-    DCHECK(index < parsed_global_configs_.size());
+    GRPC_DCHECK(index < parsed_global_configs_.size());
     return parsed_global_configs_[index].get();
   }
 

@@ -360,7 +360,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
       grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
       size_t* num_creds_md, grpc_status_code* status,
       const char** error_details) {
-    CHECK(wrapper);
+    GRPC_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     if (!w->plugin_) {
@@ -391,7 +391,7 @@ class MetadataCredentialsPluginWrapper final : private internal::GrpcLibrary {
   }
 
   static char* DebugString(void* wrapper) {
-    CHECK(wrapper);
+    GRPC_CHECK(wrapper);
     MetadataCredentialsPluginWrapper* w =
         static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
     return gpr_strdup(w->plugin_->DebugString().c_str());

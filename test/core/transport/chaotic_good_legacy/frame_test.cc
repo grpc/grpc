@@ -40,8 +40,8 @@ void AssertRoundTrips(const T& input, FrameType expected_frame_type) {
   EXPECT_EQ(hdr.payload_length, output_buffer.Length());
   T output;
   auto deser = output.Deserialize(hdr, std::move(output_buffer));
-  CHECK_OK(deser);
-  CHECK_EQ(output.ToString(), input.ToString());
+  GRPC_CHECK_OK(deser);
+  GRPC_CHECK_EQ(output.ToString(), input.ToString());
 }
 
 TEST(FrameTest, SettingsFrameRoundTrips) {

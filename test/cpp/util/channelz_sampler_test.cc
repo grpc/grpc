@@ -96,7 +96,7 @@ void RunClient(const std::string& client_id, gpr_event* done_ev) {
     Status status = stub->EmptyCall(&context, request, &response);
     if (!status.ok()) {
       LOG(ERROR) << "Client echo failed.";
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
 }
@@ -147,11 +147,11 @@ TEST(ChannelzSamplerTest, SimpleTest) {
   } else if (WIFSIGNALED(status)) {
     LOG(ERROR) << "Channelz sampler test test-runner ended from signal "
                << WTERMSIG(status);
-    CHECK(0);
+    GRPC_CHECK(0);
   } else {
     LOG(ERROR) << "Channelz sampler test test-runner ended with unknown status "
                << status;
-    CHECK(0);
+    GRPC_CHECK(0);
   }
   delete test_driver;
   gpr_event_set(&done_ev1, reinterpret_cast<void*>(1));

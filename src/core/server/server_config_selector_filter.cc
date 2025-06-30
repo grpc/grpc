@@ -123,7 +123,7 @@ ServerConfigSelectorFilter::ServerConfigSelectorFilter(
     RefCountedPtr<ServerConfigSelectorProvider> server_config_selector_provider)
     : server_config_selector_provider_(
           std::move(server_config_selector_provider)) {
-  CHECK(server_config_selector_provider_ != nullptr);
+  GRPC_CHECK(server_config_selector_provider_ != nullptr);
   auto server_config_selector_watcher =
       std::make_unique<ServerConfigSelectorWatcher>(Ref());
   auto config_selector = server_config_selector_provider_->Watch(

@@ -79,7 +79,7 @@ class ClientFuzzer final : public BasicFuzzer {
                    ->c_ptr();
   }
 
-  ~ClientFuzzer() { CHECK_EQ(channel_, nullptr); }
+  ~ClientFuzzer() { GRPC_CHECK_EQ(channel_, nullptr); }
 
  private:
   Result CreateChannel(const api_fuzzer::CreateChannel&) override {

@@ -36,11 +36,11 @@ static void thread_worker(void* /*arg*/) {
     grpc_event event =
         grpc_completion_queue_next(g_alts_resource_dedicated.cq,
                                    gpr_inf_future(GPR_CLOCK_REALTIME), nullptr);
-    CHECK(event.type != GRPC_QUEUE_TIMEOUT);
+    GRPC_CHECK(event.type != GRPC_QUEUE_TIMEOUT);
     if (event.type == GRPC_QUEUE_SHUTDOWN) {
       break;
     }
-    CHECK(event.type == GRPC_OP_COMPLETE);
+    GRPC_CHECK(event.type == GRPC_OP_COMPLETE);
     alts_handshaker_client* client =
         static_cast<alts_handshaker_client*>(event.tag);
     alts_handshaker_client_handle_response(client, event.success);

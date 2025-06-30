@@ -239,7 +239,7 @@ EventHandle* PollPoller::CreateHandle(FileDescriptor fd,
                                       bool track_err) {
   // Avoid unused-parameter warning for debug-only parameter
   (void)track_err;
-  DCHECK(track_err == false);
+  GRPC_DCHECK(track_err == false);
   PollEventHandle* handle = new PollEventHandle(fd, shared_from_this());
   // We need to send a kick to the thread executing Work(..) so that it can
   // add this new Fd into the list of Fds to poll.
@@ -258,7 +258,7 @@ void PollEventHandle::OrphanHandle(PosixEngineClosure* on_done,
     if (release_fd != nullptr) {
       *release_fd = fd_;
     }
-    CHECK(!is_orphaned_);
+    GRPC_CHECK(!is_orphaned_);
     is_orphaned_ = true;
     // Perform shutdown operations if not already done so.
     if (!is_shutdown_) {
@@ -473,7 +473,7 @@ void PollPoller::KickExternal(bool ext) {
   }
   was_kicked_ = true;
   was_kicked_ext_ = ext;
-  CHECK(wakeup_fd_->Wakeup().ok());
+  GRPC_CHECK(wakeup_fd_->Wakeup().ok());
 }
 
 void PollPoller::Kick() { KickExternal(true); }
@@ -512,14 +512,14 @@ PollPoller::PollPoller(Scheduler* scheduler, bool use_phony_poll)
       poll_handles_list_head_(nullptr),
       closed_(false) {
   wakeup_fd_ = *CreateWakeupFd(&posix_interface());
-  CHECK(wakeup_fd_ != nullptr);
+  GRPC_CHECK(wakeup_fd_ != nullptr);
 }
 
 PollPoller::~PollPoller() {
   // Assert that no active handles are present at the time of destruction.
   // They should have been orphaned before reaching this state.
-  CHECK_EQ(num_poll_handles_, 0);
-  CHECK_EQ(poll_handles_list_head_, nullptr);
+  GRPC_CHECK_EQ(num_poll_handles_, 0);
+  GRPC_CHECK_EQ(poll_handles_list_head_, nullptr);
 }
 
 Poller::WorkResult PollPoller::Work(
@@ -562,7 +562,7 @@ Poller::WorkResult PollPoller::Work(
 
     pfd_count = 1;
     auto wakeup_fd = posix_interface().GetFd(wakeup_fd_->ReadFd());
-    CHECK(wakeup_fd.ok()) << wakeup_fd.StrError();
+    GRPC_CHECK(wakeup_fd.ok()) << wakeup_fd.StrError();
     pfds[0].fd = *wakeup_fd;
     pfds[0].events = POLLIN;
     pfds[0].revents = 0;
@@ -574,7 +574,7 @@ Poller::WorkResult PollPoller::Work(
         // There shouldn't be any orphaned fds at this point. This is because
         // prior to marking a handle as orphaned it is first removed from
         // poll handle list for the poller under the poller lock.
-        CHECK(!head->IsOrphaned());
+        GRPC_CHECK(!head->IsOrphaned());
         if (!head->IsPollhup()) {
           if (auto file_descriptor = posix_interface().GetFd(head->WrappedFd());
               file_descriptor.ok()) {
@@ -655,7 +655,7 @@ Poller::WorkResult PollPoller::Work(
       }
     } else {
       if (pfds[0].revents & kPollinCheck) {
-        CHECK(wakeup_fd_->ConsumeWakeup().ok());
+        GRPC_CHECK(wakeup_fd_->ConsumeWakeup().ok());
       }
       for (i = 1; i < pfd_count; i++) {
         PollEventHandle* head = watchers[i];

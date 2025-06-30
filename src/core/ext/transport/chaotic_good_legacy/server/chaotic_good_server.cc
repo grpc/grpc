@@ -123,7 +123,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
       LOG(ERROR) << "Server accept connection failed: " << status;
     }
   };
-  CHECK_NE(event_engine_, nullptr);
+  GRPC_CHECK_NE(event_engine_, nullptr);
   auto ee_listener = event_engine_->CreateListener(
       std::move(accept_cb), std::move(shutdown_cb),
       grpc_event_engine::experimental::ChannelArgsEndpointConfig(args_),
@@ -141,7 +141,7 @@ absl::StatusOr<int> ChaoticGoodServerListener::Bind(
 }
 
 absl::Status ChaoticGoodServerListener::StartListening() {
-  CHECK(ee_listener_ != nullptr);
+  GRPC_CHECK(ee_listener_ != nullptr);
   auto status = ee_listener_->Start();
   if (!status.ok()) {
     LOG(ERROR) << "Start listening failed: " << status;
@@ -246,7 +246,7 @@ void ChaoticGoodServerListener::DataConnectionListener::Orphaned() {
   absl::flat_hash_map<std::string, PendingConnectionInfo> pending_connections;
   {
     MutexLock lock(&mu_);
-    CHECK(!shutdown_);
+    GRPC_CHECK(!shutdown_);
     pending_connections = std::move(pending_connections_);
     pending_connections_.clear();
     shutdown_ = true;
@@ -417,14 +417,14 @@ void ChaoticGoodServerListener::ActiveConnection::HandshakingState::
     connection_->Done();
     return;
   }
-  CHECK_NE(*result, nullptr);
+  GRPC_CHECK_NE(*result, nullptr);
   if ((*result)->endpoint == nullptr) {
     LOG_EVERY_N_SEC(ERROR, 5)
         << "Server handshake done but has empty endpoint.";
     connection_->Done();
     return;
   }
-  CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
+  GRPC_CHECK(grpc_event_engine::experimental::grpc_is_event_engine_endpoint(
       (*result)->endpoint.get()));
   auto ee_endpoint =
       grpc_event_engine::experimental::grpc_take_wrapped_event_engine_endpoint(
@@ -537,7 +537,7 @@ absl::StatusOr<int> AddLegacyChaoticGoodPort(Server* server, std::string addr,
     if (port_num == 0) {
       port_num = bind_result.value();
     } else {
-      CHECK(port_num == bind_result.value());
+      GRPC_CHECK(port_num == bind_result.value());
     }
     server->AddListener(std::move(listener));
   }

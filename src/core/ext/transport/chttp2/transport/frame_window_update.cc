@@ -43,7 +43,7 @@ grpc_slice grpc_chttp2_window_update_create(
   }
   uint8_t* p = GRPC_SLICE_START_PTR(slice);
 
-  CHECK(window_delta);
+  GRPC_CHECK(window_delta);
 
   *p++ = 0;
   *p++ = 0;
@@ -100,7 +100,7 @@ grpc_error_handle grpc_chttp2_window_update_parser_parse(
       return GRPC_ERROR_CREATE(
           absl::StrCat("invalid window update bytes: ", p->amount));
     }
-    CHECK(is_last);
+    GRPC_CHECK(is_last);
 
     t->http2_ztrace_collector.Append(grpc_core::H2WindowUpdateTrace<true>{
         t->incoming_stream_id, received_update});

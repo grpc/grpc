@@ -65,7 +65,7 @@ void TimerManager::MainLoop() {
   grpc_core::Timestamp next = grpc_core::Timestamp::InfFuture();
   std::optional<std::vector<experimental::EventEngine::Closure*>> check_result =
       timer_list_->TimerCheck(&next);
-  CHECK(check_result.has_value())
+  GRPC_CHECK(check_result.has_value())
       << "ERROR: More than one MainLoop is running.";
   bool timers_found = !check_result->empty();
   if (timers_found) {
@@ -137,7 +137,7 @@ void TimerManager::Kick() {
 
 void TimerManager::RestartPostFork() {
   grpc_core::MutexLock lock(&mu_);
-  CHECK(GPR_LIKELY(shutdown_));
+  GRPC_CHECK(GPR_LIKELY(shutdown_));
   GRPC_TRACE_VLOG(timer, 2)
       << "TimerManager::" << this << " restarting after shutdown";
   shutdown_ = false;

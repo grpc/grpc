@@ -37,9 +37,9 @@ namespace {
 
 grpc_resolved_address MakeAddress(absl::string_view address_uri) {
   auto uri = URI::Parse(address_uri);
-  CHECK(uri.ok());
+  GRPC_CHECK(uri.ok());
   grpc_resolved_address address;
-  CHECK(grpc_parse_uri(*uri, &address));
+  GRPC_CHECK(grpc_parse_uri(*uri, &address));
   return address;
 }
 

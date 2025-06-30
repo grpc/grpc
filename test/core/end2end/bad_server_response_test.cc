@@ -110,13 +110,13 @@ static grpc_closure on_write;
 static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static void done_write(void* /*arg*/, grpc_error_handle error) {
-  CHECK_OK(error);
+  GRPC_CHECK_OK(error);
   gpr_atm_rel_store(&state.done_atm, 1);
 }
 
 static void done_writing_settings_frame(void* /* arg */,
                                         grpc_error_handle error) {
-  CHECK_OK(error);
+  GRPC_CHECK_OK(error);
   grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
                      /*urgent=*/false, /*min_progress_size=*/1);
 }
@@ -255,14 +255,14 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
   error = grpc_call_start_batch(state.call, ops, static_cast<size_t>(op - ops),
                                 tag(1), nullptr);
 
-  CHECK_EQ(error, GRPC_CALL_OK);
+  GRPC_CHECK_EQ(error, GRPC_CALL_OK);
 
   cqv.Expect(tag(1), true);
   cqv.Verify();
 
-  CHECK_EQ(status, expected_status);
+  GRPC_CHECK_EQ(status, expected_status);
   if (expected_detail != nullptr) {
-    CHECK_NE(-1, grpc_slice_slice(
+    GRPC_CHECK_NE(-1, grpc_slice_slice(
                      details, grpc_slice_from_static_string(expected_detail)));
   }
 
@@ -353,7 +353,7 @@ static void run_test(bool http2_response, bool send_settings,
   thdptr->Join();
   state.on_connect_done->WaitForNotification();
   // Proof that the server accepted the TCP connection.
-  CHECK_EQ(state.connection_attempt_made, true);
+  GRPC_CHECK_EQ(state.connection_attempt_made, true);
   // clean up
   grpc_endpoint_destroy(state.tcp);
   cleanup_rpc();

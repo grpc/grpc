@@ -118,7 +118,7 @@ CompressionAlgorithmSet::CompressionAlgorithmForLevel(
     return GRPC_COMPRESS_NONE;
   }
 
-  CHECK_GT(level, 0);
+  GRPC_CHECK_GT(level, 0);
 
   // Establish a "ranking" or compression algorithms in increasing order of
   // compression.

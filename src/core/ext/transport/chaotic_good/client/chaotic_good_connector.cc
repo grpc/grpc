@@ -218,7 +218,7 @@ void ChaoticGoodConnector::Connect(const Args& args, Result* result,
   arena->SetContext(event_engine.get());
   auto resolved_addr = EventEngine::ResolvedAddress(
       reinterpret_cast<const sockaddr*>(args.address->addr), args.address->len);
-  CHECK_NE(resolved_addr.address(), nullptr);
+  GRPC_CHECK_NE(resolved_addr.address(), nullptr);
   auto* result_notifier_ptr = result_notifier.get();
   auto activity = MakeActivity(
       [result_notifier_ptr, resolved_addr]() mutable {

@@ -52,7 +52,7 @@ class MetadataSizeLimitExceededEncoder {
 };
 
 absl::Status MakeStreamError(absl::Status error) {
-  DCHECK(!error.ok());
+  GRPC_DCHECK(!error.ok());
   return grpc_error_set_int(std::move(error), StatusIntProperty::kStreamId, 0);
 }
 }  // namespace

@@ -186,7 +186,7 @@ class EndpointPairFixture : public BaseFixture {
         grpc_endpoint_add_to_pollset(endpoints.server, pollset);
       }
 
-      CHECK(GRPC_LOG_IF_ERROR(
+      GRPC_CHECK(GRPC_LOG_IF_ERROR(
           "SetupTransport", core_server->SetupTransport(server_transport_,
                                                         nullptr, server_args)));
       grpc_chttp2_transport_start_reading(server_transport_, nullptr, nullptr,
@@ -210,7 +210,7 @@ class EndpointPairFixture : public BaseFixture {
       client_transport_ = grpc_create_chttp2_transport(
           c_args, grpc_core::OrphanablePtr<grpc_endpoint>(endpoints.client),
           /*is_client=*/true);
-      CHECK(client_transport_);
+      GRPC_CHECK(client_transport_);
       grpc_channel* channel =
           grpc_core::ChannelCreate("target", c_args, GRPC_CLIENT_DIRECT_CHANNEL,
                                    client_transport_)

@@ -200,7 +200,7 @@ HttpRequest::HttpRequest(
   GRPC_CLOSURE_INIT(&continue_done_write_after_schedule_on_exec_ctx_,
                     ContinueDoneWriteAfterScheduleOnExecCtx, this,
                     grpc_schedule_on_exec_ctx);
-  CHECK(pollent);
+  GRPC_CHECK(pollent);
   grpc_polling_entity_add_to_pollset_set(pollent, pollset_set_);
 }
 
@@ -257,7 +257,7 @@ void HttpRequest::Start() {
 void HttpRequest::Orphan() {
   {
     MutexLock lock(&mu_);
-    CHECK(!cancelled_);
+    GRPC_CHECK(!cancelled_);
     cancelled_ = true;
     // cancel potentially pending DNS resolution.
     if (use_event_engine_dns_resolver_) {

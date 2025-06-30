@@ -245,7 +245,7 @@ void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     ServerCompletionQueue* notification_cq) {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  CHECK(grpc_server_request_registered_call(
+  GRPC_CHECK(grpc_server_request_registered_call(
             server_->server(), registered_method, &call_, &context_->deadline_,
             context_->client_metadata_.arr(), payload, call_cq_->cq(),
             notification_cq->cq(), this) == GRPC_CALL_OK);
@@ -259,8 +259,8 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
     : BaseAsyncRequest(server, context, stream, call_cq, notification_cq, tag,
                        delete_on_finalize) {
   grpc_call_details_init(&call_details_);
-  CHECK(notification_cq);
-  CHECK(call_cq);
+  GRPC_CHECK(notification_cq);
+  GRPC_CHECK(call_cq);
   if (issue_request) {
     IssueRequest();
   }
@@ -294,7 +294,7 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
 void ServerInterface::GenericAsyncRequest::IssueRequest() {
   // The following call_start_batch is internally-generated so no need for an
   // explanatory log on failure.
-  CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
+  GRPC_CHECK(grpc_server_request_call(server_->server(), &call_, &call_details_,
                                  context_->client_metadata_.arr(),
                                  call_cq_->cq(), notification_cq_->cq(),
                                  this) == GRPC_CALL_OK);
@@ -495,7 +495,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
     // Ensure the cq_ is shutdown
     grpc::PhonyTag ignored_tag;
-    CHECK(cq_.Pluck(&ignored_tag) == false);
+    GRPC_CHECK(cq_.Pluck(&ignored_tag) == false);
 
     // Cleanup structures allocated during Run/ContinueRunAfterInterception
     wrapped_call_.Destroy();
@@ -657,8 +657,8 @@ class Server::CallbackRequest final
     void Run(bool ok) {
       void* ignored = req_;
       bool new_ok = ok;
-      CHECK(!req_->FinalizeResult(&ignored, &new_ok));
-      CHECK(ignored == req_);
+      GRPC_CHECK(!req_->FinalizeResult(&ignored, &new_ok));
+      GRPC_CHECK(ignored == req_);
 
       if (!ok) {
         // The call has been shutdown.
@@ -839,8 +839,8 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
     // Under the AllocatingRequestMatcher model we will never see an invalid tag
     // here.
-    DCHECK_NE(sync_req, nullptr);
-    DCHECK(ok);
+    GRPC_DCHECK_NE(sync_req, nullptr);
+    GRPC_DCHECK(ok);
 
     sync_req->Run(global_callbacks_, resources);
   }
@@ -1017,12 +1017,12 @@ Server::~Server() {
 
 void Server::SetGlobalCallbacks(GlobalCallbacks* callbacks) {
   if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
-    CHECK(!g_raw_callbacks);
-    CHECK(callbacks);
+    GRPC_CHECK(!g_raw_callbacks);
+    GRPC_CHECK(callbacks);
     g_raw_callbacks = callbacks;
   } else {
-    CHECK(!g_callbacks);
-    CHECK(callbacks);
+    GRPC_CHECK(!g_callbacks);
+    GRPC_CHECK(callbacks);
     g_callbacks.reset(callbacks);
   }
 }
@@ -1067,7 +1067,7 @@ static grpc_server_register_method_payload_handling PayloadHandlingForMethod(
 bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
   bool has_async_methods = service->has_async_methods();
   if (has_async_methods) {
-    CHECK_EQ(service->server_, nullptr)
+    GRPC_CHECK_EQ(service->server_, nullptr)
         << "Can only register an asynchronous service against one server.";
     service->server_ = this;
   }
@@ -1124,7 +1124,7 @@ bool Server::RegisterService(const std::string* addr, grpc::Service* service) {
 }
 
 void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
-  CHECK_EQ(service->server_, nullptr)
+  GRPC_CHECK_EQ(service->server_, nullptr)
       << "Can only register an async generic service against one server.";
   service->server_ = this;
   has_async_generic_service_ = true;
@@ -1132,7 +1132,7 @@ void Server::RegisterAsyncGenericService(grpc::AsyncGenericService* service) {
 
 void Server::RegisterCallbackGenericService(
     grpc::CallbackGenericService* service) {
-  CHECK_EQ(service->server_, nullptr)
+  GRPC_CHECK_EQ(service->server_, nullptr)
       << "Can only register a callback generic service against one server.";
   service->server_ = this;
   has_callback_generic_service_ = true;
@@ -1149,7 +1149,7 @@ void Server::RegisterCallbackGenericService(
 
 int Server::AddListeningPort(const std::string& addr,
                              grpc::ServerCredentials* creds) {
-  CHECK(!started_);
+  GRPC_CHECK(!started_);
   int port = creds->AddPortToServer(addr, server_);
   if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
     g_raw_callbacks->AddPort(this, addr, creds, port);
@@ -1169,7 +1169,7 @@ void Server::UnrefWithPossibleNotify() {
     // No refs outstanding means that shutdown has been initiated and no more
     // callback requests are outstanding.
     grpc::internal::MutexLock lock(&mu_);
-    CHECK(shutdown_);
+    GRPC_CHECK(shutdown_);
     shutdown_done_ = true;
     shutdown_done_cv_.Signal();
   }
@@ -1187,7 +1187,7 @@ void Server::UnrefAndWaitLocked() {
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
-  CHECK(!started_);
+  GRPC_CHECK(!started_);
   if (grpc_core::IsServerGlobalCallbacksOwnershipEnabled()) {
     g_raw_callbacks->PreServerStart(this);
   } else {

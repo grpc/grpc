@@ -58,9 +58,9 @@ void ChannelCredentialsTest(bool enable_untrusted_alts,
   grpc_channel_credentials* cred = grpc_alts_credentials_create_customized(
       options, StrPtr(handshaker_service_url), enable_untrusted_alts);
   if (!enable_untrusted_alts && !is_on_gcp) {
-    CHECK_EQ(cred, nullptr);
+    GRPC_CHECK_EQ(cred, nullptr);
   } else {
-    CHECK_NE(cred, nullptr);
+    GRPC_CHECK_NE(cred, nullptr);
   }
   grpc_channel_credentials_release(cred);
   grpc_alts_credentials_options_destroy(options);
@@ -78,9 +78,9 @@ void ServerCredentialsTest(bool enable_untrusted_alts,
       grpc_alts_server_credentials_create_customized(
           options, StrPtr(handshaker_service_url), enable_untrusted_alts);
   if (!enable_untrusted_alts && !is_on_gcp) {
-    CHECK_EQ(cred, nullptr);
+    GRPC_CHECK_EQ(cred, nullptr);
   } else {
-    CHECK_NE(cred, nullptr);
+    GRPC_CHECK_NE(cred, nullptr);
   }
   grpc_server_credentials_release(cred);
   grpc_alts_credentials_options_destroy(options);

@@ -116,7 +116,7 @@ static bool is_in_ht(grpc_timer* t) {
 }
 
 static void add_to_ht(grpc_timer* t) {
-  CHECK(!t->hash_table_next);
+  GRPC_CHECK(!t->hash_table_next);
   size_t i = grpc_core::HashPointer(t, NUM_HASH_BUCKETS);
 
   gpr_mu_lock(&g_hash_mu[i]);

@@ -50,12 +50,12 @@ extern grpc_pollset_set_vtable grpc_windows_pollset_set_vtable;
 static void winsock_init(void) {
   WSADATA wsaData;
   int status = WSAStartup(MAKEWORD(2, 0), &wsaData);
-  CHECK_EQ(status, 0);
+  GRPC_CHECK_EQ(status, 0);
 }
 
 static void winsock_shutdown(void) {
   int status = WSACleanup();
-  CHECK_EQ(status, 0);
+  GRPC_CHECK_EQ(status, 0);
 }
 
 static void iomgr_platform_init(void) {

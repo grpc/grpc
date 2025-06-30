@@ -97,7 +97,7 @@ class HeaderAssembler {
   // The payload of the Http2HeaderFrame will be cleared in this function.
   Http2Status AppendHeaderFrame(Http2HeaderFrame&& frame) {
     // Validate input frame
-    DCHECK_GT(frame.stream_id, 0u)
+    GRPC_DCHECK_GT(frame.stream_id, 0u)
         << "RFC9113 : HEADERS frames MUST be associated with a stream.";
 
     // Manage size constraints
@@ -152,7 +152,7 @@ class HeaderAssembler {
     ASSEMBLER_LOG << "ReadMetadata " << buffer_.Length() << " Bytes.";
 
     // Validate
-    DCHECK_EQ(is_ready_, true);
+    GRPC_DCHECK_EQ(is_ready_, true);
 
     // Generate the gRPC Metadata from buffer_
     // RFC9113 :  A receiver MUST terminate the connection with a connection
@@ -232,7 +232,7 @@ class HeaderDisassembler {
   bool PrepareForSending(Arena::PoolPtr<grpc_metadata_batch>&& metadata,
                          HPackCompressor& encoder) {
     // Validate disassembler state
-    DCHECK(!is_done_);
+    GRPC_DCHECK(!is_done_);
     // Prepare metadata for sending
     return encoder.EncodeRawHeaders(*metadata.get(), buffer_);
   }
@@ -240,7 +240,7 @@ class HeaderDisassembler {
   Http2Frame GetNextFrame(const uint32_t max_frame_length,
                           bool& out_end_headers) {
     if (buffer_.Length() == 0 || is_done_) {
-      DCHECK(false) << "Calling code must check size using HasMoreData() "
+      GRPC_DCHECK(false) << "Calling code must check size using HasMoreData() "
                        "before GetNextFrame()";
     }
     out_end_headers = buffer_.Length() <= max_frame_length;

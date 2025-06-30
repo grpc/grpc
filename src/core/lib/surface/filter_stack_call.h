@@ -110,7 +110,7 @@ class FilterStackCall final : public Call {
 
   bool is_trailers_only() const override {
     bool result = is_trailers_only_;
-    DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
+    GRPC_DCHECK(!result || recv_initial_metadata_.TransportSize() == 0);
     return result;
   }
 
@@ -219,7 +219,7 @@ class FilterStackCall final : public Call {
           << "BATCH:" << this << " COMPLETE:" << PendingOpString(mask)
           << " REMAINING:" << PendingOpString(r & ~mask)
           << " (tag:" << completion_data_.notify_tag.tag << ")";
-      CHECK_NE((r & mask), 0);
+      GRPC_CHECK_NE((r & mask), 0);
       return r == mask;
     }
 

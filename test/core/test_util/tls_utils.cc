@@ -35,33 +35,33 @@ namespace testing {
 
 TmpFile::TmpFile(absl::string_view data) {
   name_ = CreateTmpFileAndWriteData(data);
-  CHECK(!name_.empty());
+  GRPC_CHECK(!name_.empty());
 }
 
-TmpFile::~TmpFile() { CHECK_EQ(remove(name_.c_str()), 0); }
+TmpFile::~TmpFile() { GRPC_CHECK_EQ(remove(name_.c_str()), 0); }
 
 void TmpFile::RewriteFile(absl::string_view data) {
   // Create a new file containing new data.
   std::string new_name = CreateTmpFileAndWriteData(data);
-  CHECK(!new_name.empty());
+  GRPC_CHECK(!new_name.empty());
 #ifdef GPR_WINDOWS
   // Remove the old file.
   // On Windows rename requires that the new name not exist, whereas
   // on posix systems rename does an atomic replacement of the new
   // name.
-  CHECK_EQ(remove(name_.c_str()), 0);
+  GRPC_CHECK_EQ(remove(name_.c_str()), 0);
 #endif
   // Rename the new file to the original name.
-  CHECK_EQ(rename(new_name.c_str(), name_.c_str()), 0);
+  GRPC_CHECK_EQ(rename(new_name.c_str(), name_.c_str()), 0);
 }
 
 std::string TmpFile::CreateTmpFileAndWriteData(absl::string_view data) {
   char* name = nullptr;
   FILE* file_descriptor = gpr_tmpfile("test", &name);
-  CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
-  CHECK_EQ(fclose(file_descriptor), 0);
-  CHECK_NE(file_descriptor, nullptr);
-  CHECK_NE(name, nullptr);
+  GRPC_CHECK(fwrite(data.data(), 1, data.size(), file_descriptor) == data.size());
+  GRPC_CHECK_EQ(fclose(file_descriptor), 0);
+  GRPC_CHECK_NE(file_descriptor, nullptr);
+  GRPC_CHECK_NE(name, nullptr);
   std::string name_to_return = name;
   gpr_free(name);
   return name_to_return;

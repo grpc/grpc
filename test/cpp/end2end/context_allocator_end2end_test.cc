@@ -148,7 +148,7 @@ class ContextAllocatorEnd2endTestBase
       stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
-            CHECK(s.ok());
+            GRPC_CHECK(s.ok());
 
             EXPECT_EQ(request.message(), response.message());
             std::lock_guard<std::mutex> l(mu);
@@ -292,7 +292,7 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   if (test_insecure && insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
-  CHECK(!credentials_types.empty());
+  GRPC_CHECK(!credentials_types.empty());
 
   Protocol parr[]{Protocol::INPROC, Protocol::TCP};
   for (Protocol p : parr) {

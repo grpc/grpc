@@ -141,7 +141,7 @@ LoadBalancerStatsResponse XdsStatsWatcher::WaitForRpcStatsResponse(
     } else if (rpc_by_type.first == ClientConfigureRequest::UNARY_CALL) {
       method_name = "UnaryCall";
     } else {
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     // TODO(@donnadionne): When the test runner changes to accept EMPTY_CALL
     // and UNARY_CALL we will just use the name of the enum instead of the

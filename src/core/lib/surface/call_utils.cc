@@ -215,7 +215,7 @@ bool ValidateMetadata(size_t count, grpc_metadata* metadata) {
 void EndOpImmediately(grpc_completion_queue* cq, void* notify_tag,
                       bool is_notify_tag_closure) {
   if (!is_notify_tag_closure) {
-    CHECK(grpc_cq_begin_op(cq, notify_tag));
+    GRPC_CHECK(grpc_cq_begin_op(cq, notify_tag));
     grpc_cq_end_op(
         cq, notify_tag, absl::OkStatus(),
         [](void*, grpc_cq_completion* completion) { gpr_free(completion); },

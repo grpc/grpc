@@ -77,7 +77,7 @@ absl::StatusOr<int> PosixEngineListenerImpl::Bind(
   EventEngine::ResolvedAddress res_addr = addr;
   EventEngine::ResolvedAddress addr6_v4mapped;
   int requested_port = ResolvedAddressGetPort(res_addr);
-  CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
+  GRPC_CHECK(addr.size() <= EventEngine::ResolvedAddress::MAX_SIZE_BYTES);
   UnlinkIfUnixDomainSocket(addr);
 
   EventEnginePosixInterface& posix_interface = poller_->posix_interface();
@@ -307,7 +307,7 @@ void PosixEngineListenerImpl::AsyncConnectionAcceptor::Shutdown() {
 absl::Status PosixEngineListenerImpl::Start() {
   grpc_core::MutexLock lock(&this->mu_);
   // Start each asynchronous acceptor.
-  CHECK(!this->started_);
+  GRPC_CHECK(!this->started_);
   this->started_ = true;
   for (auto it = acceptors_.begin(); it != acceptors_.end(); it++) {
     (*it)->Start();

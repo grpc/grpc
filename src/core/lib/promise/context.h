@@ -113,7 +113,7 @@ GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline bool HasContext() {
 template <typename T>
 GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION inline T* GetContext() {
   auto* p = promise_detail::Context<T>::get();
-  DCHECK_NE(p, nullptr);
+  GRPC_DCHECK_NE(p, nullptr);
   return p;
 }
 

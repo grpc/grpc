@@ -42,7 +42,7 @@ void ParseJson(const std::string& json, const std::string& type,
                << " msg=" << errmsg;
     grpc_core::Crash(absl::StrFormat("JSON: %s", json.c_str()));
   }
-  CHECK(msg->ParseFromString(binary));
+  GRPC_CHECK(msg->ParseFromString(binary));
 }
 
 std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
@@ -55,7 +55,7 @@ std::string SerializeJson(const GRPC_CUSTOM_MESSAGE& msg,
   msg.SerializeToString(&binary);
   auto status =
       BinaryToJsonString(type_resolver.get(), type, binary, &json_string);
-  CHECK_OK(status);
+  GRPC_CHECK_OK(status);
   return json_string;
 }
 

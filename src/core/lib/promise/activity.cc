@@ -55,7 +55,7 @@ class FreestandingActivity::Handle final : public Wakeable {
   // Activity is going away... drop its reference and sever the connection back.
   void DropActivity() ABSL_LOCKS_EXCLUDED(mu_) {
     mu_.Lock();
-    CHECK_NE(activity_, nullptr);
+    GRPC_CHECK_NE(activity_, nullptr);
     activity_ = nullptr;
     mu_.Unlock();
     Unref();

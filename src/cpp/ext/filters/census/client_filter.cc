@@ -101,7 +101,7 @@ OpenCensusClientFilter::MakeCallPromise(
       path != nullptr ? path->Ref() : grpc_core::Slice(),
       grpc_core::GetContext<grpc_core::Arena>(),
       OpenCensusTracingEnabled() && tracing_enabled_);
-  DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
+  GRPC_DCHECK_EQ(arena->GetContext<grpc_core::CallTracerAnnotationInterface>(),
             nullptr);
   grpc_core::SetContext<grpc_core::CallTracerAnnotationInterface>(tracer);
   return next_promise_factory(std::move(call_args));
@@ -411,7 +411,7 @@ void OpenCensusCallTracer::RecordApiLatency(absl::Duration api_latency,
 
 CensusContext OpenCensusCallTracer::CreateCensusContextForCallAttempt() {
   if (!tracing_enabled_) return CensusContext(context_.tags());
-  DCHECK(context_.Context().IsValid());
+  GRPC_DCHECK(context_.Context().IsValid());
   auto context = CensusContext(absl::StrCat("Attempt.", method_),
                                &(context_.Span()), context_.tags());
   grpc::internal::OpenCensusRegistry::Get()

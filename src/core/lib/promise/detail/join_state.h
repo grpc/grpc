@@ -62,7 +62,7 @@ struct JoinState<Traits, P0, P1> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
   }
@@ -165,7 +165,7 @@ struct JoinState<Traits, P0, P1, P2> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -305,7 +305,7 @@ struct JoinState<Traits, P0, P1, P2, P3> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -481,7 +481,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -693,7 +693,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -941,7 +941,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -1225,7 +1225,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));
@@ -1544,7 +1544,7 @@ struct JoinState<Traits, P0, P1, P2, P3, P4, P5, P6, P7, P8> {
   JoinState& operator=(const JoinState& other) = delete;
   JoinState& operator=(JoinState&& other) = delete;
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION JoinState(JoinState&& other) noexcept {
-    DCHECK(other.ready.none());
+    GRPC_DCHECK(other.ready.none());
     Construct(&promise0, std::move(other.promise0));
     Construct(&promise1, std::move(other.promise1));
     Construct(&promise2, std::move(other.promise2));

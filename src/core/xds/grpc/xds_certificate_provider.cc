@@ -186,7 +186,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
     }
   } else if (!root_being_watched && root_cert_watcher_ != nullptr) {
     // Cancel root cert watch.
-    CHECK(root_cert_provider_ != nullptr);
+    GRPC_CHECK(root_cert_provider_ != nullptr);
     root_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         root_cert_watcher_);
     root_cert_watcher_ = nullptr;
@@ -206,7 +206,7 @@ void XdsCertificateProvider::WatchStatusCallback(std::string cert_name,
           std::move(watcher), std::nullopt, identity_cert_name_);
     }
   } else if (!identity_being_watched && identity_cert_watcher_ != nullptr) {
-    CHECK(identity_cert_provider_ != nullptr);
+    GRPC_CHECK(identity_cert_provider_ != nullptr);
     identity_cert_provider_->distributor()->CancelTlsCertificatesWatch(
         identity_cert_watcher_);
     identity_cert_watcher_ = nullptr;

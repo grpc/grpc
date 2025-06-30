@@ -216,7 +216,7 @@ class TestClient {
     bool ok = false;
     while (cq_.Next(&got_tag, &ok)) {
       AsyncClientCall* call = static_cast<AsyncClientCall*>(got_tag);
-      CHECK(ok);
+      GRPC_CHECK(ok);
       if (absl::GetFlag(FLAGS_log_rpc_start_and_end)) {
         LOG(INFO) << "completed async call " << static_cast<void*>(call);
       }
@@ -271,7 +271,7 @@ class TestClient {
   static bool RpcStatusCheckSuccess(AsyncClientCall* call) {
     // Determine RPC success based on expected status.
     grpc_status_code code;
-    CHECK(grpc_status_code_from_string(
+    GRPC_CHECK(grpc_status_code_from_string(
         absl::GetFlag(FLAGS_expect_status).c_str(), &code));
     return code ==
            static_cast<grpc_status_code>(call->result.status.error_code());
@@ -343,8 +343,8 @@ class XdsUpdateClientConfigureServiceImpl
     std::vector<RpcConfig> configs;
     int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
     int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-    CHECK_GE(request_payload_size, 0);
-    CHECK_GE(response_payload_size, 0);
+    GRPC_CHECK_GE(request_payload_size, 0);
+    GRPC_CHECK_GE(response_payload_size, 0);
     for (const auto& rpc : request->types()) {
       RpcConfig config;
       config.timeout_sec = request->timeout_sec();
@@ -417,7 +417,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
         } else if (config.type == ClientConfigureRequest::UNARY_CALL) {
           client.AsyncUnaryCall(config);
         } else {
-          CHECK(0);
+          GRPC_CHECK(0);
         }
       }
     }
@@ -446,7 +446,7 @@ grpc::CsmObservability EnableCsmObservability() {
 
 void RunServer(const int port, StatsWatchers* stats_watchers,
                RpcConfigurationsQueue* rpc_configs_queue) {
-  CHECK_NE(port, 0);
+  GRPC_CHECK_NE(port, 0);
   std::ostringstream server_address;
   server_address << "0.0.0.0:" << port;
 
@@ -478,7 +478,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
   for (auto& data : rpc_metadata) {
     std::vector<std::string> metadata =
         absl::StrSplit(data, ':', absl::SkipEmpty());
-    CHECK_EQ(metadata.size(), 3u);
+    GRPC_CHECK_EQ(metadata.size(), 3u);
     if (metadata[0] == "EmptyCall") {
       metadata_map[ClientConfigureRequest::EMPTY_CALL].push_back(
           {metadata[1], metadata[2]});
@@ -486,7 +486,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       metadata_map[ClientConfigureRequest::UNARY_CALL].push_back(
           {metadata[1], metadata[2]});
     } else {
-      CHECK(0);
+      GRPC_CHECK(0);
     }
   }
   std::vector<RpcConfig> configs;
@@ -494,8 +494,8 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
       absl::StrSplit(absl::GetFlag(FLAGS_rpc), ',', absl::SkipEmpty());
   int request_payload_size = absl::GetFlag(FLAGS_request_payload_size);
   int response_payload_size = absl::GetFlag(FLAGS_response_payload_size);
-  CHECK_GE(request_payload_size, 0);
-  CHECK_GE(response_payload_size, 0);
+  GRPC_CHECK_GE(request_payload_size, 0);
+  GRPC_CHECK_GE(response_payload_size, 0);
   for (const std::string& rpc_method : rpc_methods) {
     RpcConfig config;
     if (rpc_method == "EmptyCall") {
@@ -503,7 +503,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
     } else if (rpc_method == "UnaryCall") {
       config.type = ClientConfigureRequest::UNARY_CALL;
     } else {
-      CHECK(0);
+      GRPC_CHECK(0);
     }
     auto metadata_iter = metadata_map.find(config.type);
     if (metadata_iter != metadata_map.end()) {
@@ -536,7 +536,7 @@ int main(int argc, char** argv) {
   grpc::testing::InitTest(&argc, &argv, true);
   // Validate the expect_status flag.
   grpc_status_code code;
-  CHECK(grpc_status_code_from_string(absl::GetFlag(FLAGS_expect_status).c_str(),
+  GRPC_CHECK(grpc_status_code_from_string(absl::GetFlag(FLAGS_expect_status).c_str(),
                                      &code));
   StatsWatchers stats_watchers;
   RpcConfigurationsQueue rpc_config_queue;
