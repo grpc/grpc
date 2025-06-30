@@ -1176,10 +1176,12 @@ Server::Server(const ChannelArgs& args)
       max_time_in_pending_queue_(Duration::Seconds(
           channel_args_
               .GetInt(GRPC_ARG_SERVER_MAX_UNREQUESTED_TIME_IN_SERVER_SECONDS)
-              .value_or(30))) {}
+              .value_or(30))) {
+  SourceConstructed();
+}
 
 Server::~Server() {
-  ResetDataSource();
+  SourceDestructing();
   // Remove the cq pollsets from the config_fetcher.
   if (started_ && config_fetcher_ != nullptr &&
       config_fetcher_->interested_parties() != nullptr) {
@@ -1195,7 +1197,7 @@ Server::~Server() {
 
 void Server::AddData(channelz::DataSink sink) {
   MutexLock global_lock(&mu_global_);
-  sink.AddAdditionalInfo(
+  sink.AddData(
       "server",
       channelz::PropertyList()
           // TODO(ctiller): config_fetcher?

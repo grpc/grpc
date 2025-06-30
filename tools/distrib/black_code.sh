@@ -34,4 +34,4 @@ python3 -m virtualenv $VIRTUALENV
 source $VIRTUALENV/bin/activate
 
 python3 -m pip install black==25.1.0
-python3 -m black --config=black.toml $ACTION "${DIRS[@]}"
+python3 -m black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"

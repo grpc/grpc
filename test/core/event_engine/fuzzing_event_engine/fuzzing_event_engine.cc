@@ -160,6 +160,8 @@ void FuzzingEventEngine::Tick(Duration max_time) {
       grpc_core::MutexLock now_lock(&*now_mu_);
       if (!tasks_by_time_.empty()) {
         incr = std::min(incr, tasks_by_time_.begin()->first - now_);
+      } else {
+        GRPC_TRACE_LOG(fuzzing_ee_timers, INFO) << "no timers scheduled";
       }
       const auto max_incr =
           std::numeric_limits<
@@ -438,7 +440,9 @@ bool FuzzingEventEngine::FuzzingEndpoint::Write(
           std::make_shared<WriteEventCallback>(m->TakeEventCallback());
       for (const auto& r : it->second) {
         g_fuzzing_event_engine->RunAfterExactlyLocked(
-            std::chrono::microseconds(r.delay_us()),
+            std::min(std::chrono::duration_cast<Duration>(
+                         std::chrono::microseconds(r.delay_us())),
+                     g_fuzzing_event_engine->max_delay_write()),
             [middle = middle_, index = my_index(), r, write_event_callback]() {
               grpc_core::MutexLock lock(&*mu_);
               if (middle->closed[index]) return;

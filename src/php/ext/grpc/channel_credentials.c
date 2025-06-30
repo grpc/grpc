@@ -131,7 +131,7 @@ PHP_METHOD(ChannelCredentials, invalidateDefaultRootsPem) {
  * @return ChannelCredentials The new default channel credentials object
  */
 PHP_METHOD(ChannelCredentials, createDefault) {
-  grpc_channel_credentials *creds = grpc_google_default_credentials_create(NULL);
+  grpc_channel_credentials *creds = grpc_google_default_credentials_create(NULL, NULL);
   zval *creds_object = grpc_php_wrap_channel_credentials(creds, NULL, false
                                                          TSRMLS_CC);
   RETURN_DESTROY_ZVAL(creds_object);
