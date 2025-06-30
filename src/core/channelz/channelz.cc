@@ -30,6 +30,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -79,7 +80,8 @@ void DataSinkImplementation::Finalize(bool timed_out,
   grpc_channelz_v2_Entity_set_timed_out(entity, timed_out);
   for (auto& [name, additional_info] : additional_info_) {
     auto* staple = grpc_channelz_v2_Entity_add_data(entity, arena);
-    grpc_channelz_v2_Data_set_name(staple, StdStringToUpbString(name));
+    grpc_channelz_v2_Data_set_name(staple,
+                                   CopyStdStringToUpbString(name, arena));
     additional_info->FillProto(
         grpc_channelz_v2_Data_mutable_value(staple, arena), arena);
   }
@@ -203,6 +205,16 @@ void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
   sink_impl->Finalize(!completed, entity, arena);
 
   trace_.Render(entity, arena);
+}
+
+std::string BaseNode::SerializeEntityToString() {
+  upb_Arena* arena = upb_Arena_New();
+  auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  SerializeEntity(entity, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
+  return std::string(bytes, length);
 }
 
 //

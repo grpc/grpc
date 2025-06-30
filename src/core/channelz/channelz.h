@@ -208,6 +208,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
   virtual void SerializeEntity(grpc_channelz_v2_Entity* entity,
                                upb_Arena* arena);
 
+  virtual std::string SerializeEntityToString();
+
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
 
