@@ -155,6 +155,34 @@ struct SeqState<Traits, P, F0> {
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
   }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 2, arena);
+    for (int i = 0; i < 2; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
       case State::kState0: {
@@ -307,6 +335,42 @@ struct SeqState<Traits, P, F0, F1> {
     steps.emplace_back(Json::FromObject(step2));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 3, arena);
+    for (int i = 0; i < 3; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -516,6 +580,50 @@ struct SeqState<Traits, P, F0, F1, F2> {
     steps.emplace_back(Json::FromObject(step3));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 4, arena);
+    for (int i = 0; i < 4; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -781,6 +889,58 @@ struct SeqState<Traits, P, F0, F1, F2, F3> {
     steps.emplace_back(Json::FromObject(step4));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 5, arena);
+    for (int i = 0; i < 5; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1111,6 +1271,66 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4> {
     steps.emplace_back(Json::FromObject(step5));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 6, arena);
+    for (int i = 0; i < 6; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1503,6 +1723,74 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5> {
     steps.emplace_back(Json::FromObject(step6));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 7, arena);
+    for (int i = 0; i < 7; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -1958,6 +2246,82 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6> {
     steps.emplace_back(Json::FromObject(step7));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 8, arena);
+    for (int i = 0; i < 8; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -2475,6 +2839,91 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7> {
     steps.emplace_back(Json::FromObject(step8));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 9, arena);
+    for (int i = 0; i < 9; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
+    if (state == State::kState8) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -3063,6 +3512,100 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8> {
     steps.emplace_back(Json::FromObject(step9));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 10, arena);
+    for (int i = 0; i < 10; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[1],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
+    if (state == State::kState8) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
+    if (state == State::kState9) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -3721,6 +4264,109 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9> {
     steps.emplace_back(Json::FromObject(step10));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 11, arena);
+    for (int i = 0; i < 11; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[1],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[2],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[3], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
+    if (state == State::kState8) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
+    if (state == State::kState9) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
+    if (state == State::kState10) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -4450,6 +5096,118 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10> {
     steps.emplace_back(Json::FromObject(step11));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 12, arena);
+    for (int i = 0; i < 12; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[2],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[3],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[4], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
+    if (state == State::kState8) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
+    if (state == State::kState9) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
+    if (state == State::kState10) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[11], StdStringToUpbString(TypeName<F10>()));
+    if (state == State::kState11) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[11], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
@@ -5253,6 +6011,127 @@ struct SeqState<Traits, P, F0, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10, F11> {
     steps.emplace_back(Json::FromObject(step12));
     obj["steps"] = Json::FromArray(steps);
     return Json::FromObject(obj);
+  }
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind,
+               grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* seq_promise =
+        grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps =
+        grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, 13, arena);
+    for (int i = 0; i < 13; i++) {
+      steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[0], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[1], StdStringToUpbString(TypeName<F0>()));
+    if (state == State::kState1) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[1], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[2], StdStringToUpbString(TypeName<F1>()));
+    if (state == State::kState2) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.prior.prior.prior
+                         .current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[2], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[3], StdStringToUpbString(TypeName<F2>()));
+    if (state == State::kState3) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[3],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[4], StdStringToUpbString(TypeName<F3>()));
+    if (state == State::kState4) {
+      PromiseAsProto(
+          prior.prior.prior.prior.prior.prior.prior.prior.current_promise,
+          grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[4],
+                                                                   arena),
+          arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[5], StdStringToUpbString(TypeName<F4>()));
+    if (state == State::kState5) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[5], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[6], StdStringToUpbString(TypeName<F5>()));
+    if (state == State::kState6) {
+      PromiseAsProto(prior.prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[6], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[7], StdStringToUpbString(TypeName<F6>()));
+    if (state == State::kState7) {
+      PromiseAsProto(prior.prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[7], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[8], StdStringToUpbString(TypeName<F7>()));
+    if (state == State::kState8) {
+      PromiseAsProto(prior.prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[8], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[9], StdStringToUpbString(TypeName<F8>()));
+    if (state == State::kState9) {
+      PromiseAsProto(prior.prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[9], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[10], StdStringToUpbString(TypeName<F9>()));
+    if (state == State::kState10) {
+      PromiseAsProto(prior.prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[10], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[11], StdStringToUpbString(TypeName<F10>()));
+    if (state == State::kState11) {
+      PromiseAsProto(prior.current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[11], arena),
+                     arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(
+        steps[12], StdStringToUpbString(TypeName<F11>()));
+    if (state == State::kState12) {
+      PromiseAsProto(current_promise,
+                     grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(
+                         steps[12], arena),
+                     arena);
+    }
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {

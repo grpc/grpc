@@ -69,7 +69,7 @@ class Race<Promise, Promises...> {
         grpc_channelz_v2_Promise_mutable_race_promise(promise_proto, arena);
     auto** children = grpc_channelz_v2_Promise_Race_resize_children(
         race_promise, 1 + sizeof...(Promises), arena);
-    for (int i = 0; i < 1 + sizeof...(Promises); ++i) {
+    for (size_t i = 0; i < 1 + sizeof...(Promises); ++i) {
       children[i] = grpc_channelz_v2_Promise_new(arena);
     }
     SetChildrenProto(children, 0, arena);
