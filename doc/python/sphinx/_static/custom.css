@@ -11,7 +11,7 @@ dl.field-list > dt {
     top: 0;
     bottom: 0;
     width: 35% !important;
-    flex-shrink: 0;
+    flex-shrink: 0 !important;
     min-width: 340px !important;
     position: unset !important;
 }
@@ -20,5 +20,5 @@ dl.field-list > dt {
 }
 .body {
   max-width: 100% !important;
-  min-width: 800px;
+  min-width: 800px !important;
 }
