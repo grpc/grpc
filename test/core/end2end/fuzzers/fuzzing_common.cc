@@ -43,9 +43,9 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/util/crash.h"
 #include "src/core/util/grpc_check.h"
+#include "src/core/util/postmortem_emit.h"
 #include "src/core/util/useful.h"
 #include "test/core/end2end/fuzzers/api_fuzzer.pb.h"
-#include "test/core/test_util/postmortem_emit.h"
 
 namespace grpc_core {
 
