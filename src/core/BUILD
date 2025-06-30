@@ -1371,8 +1371,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "channelz_property_list",
         "dump_args",
-        "json",
         "map",
         "poll",
         "ref_counted",

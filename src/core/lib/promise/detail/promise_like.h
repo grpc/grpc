@@ -83,7 +83,7 @@ Json PromiseAsJson(const Promise& promise) {
   if constexpr (promise_detail::kHasToJsonMethod<Promise>) {
     return promise.ToJson();
   } else if constexpr (promise_detail::kHasChannelzPropertiesMethod<Promise>) {
-    return promise.ChannelzProperties().ToJson();
+    return Json::FromObject(promise.ChannelzProperties().TakeJsonObject());
   } else {
     return Json::FromString(std::string(TypeName<Promise>()));
   }
