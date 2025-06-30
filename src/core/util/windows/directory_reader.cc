@@ -23,7 +23,6 @@
 #include <sys/stat.h>
 #include <windows.h>
 
-#include <memory>
 #include <string>
 #include <vector>
 
