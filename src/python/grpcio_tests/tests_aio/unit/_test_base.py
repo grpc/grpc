@@ -34,14 +34,16 @@ def _async_to_sync_decorator(f: Callable, loop: asyncio.AbstractEventLoop):
 
 
 def _get_default_loop(debug=True):
+    loop = None
     try:
         loop = asyncio.get_event_loop()
     except:
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
     finally:
-        loop.set_debug(debug)
-        return loop
+        if loop:
+            loop.set_debug(debug)
+    return loop
 
 
 # NOTE(gnossen) this test class can also be implemented with metaclass.
