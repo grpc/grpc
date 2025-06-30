@@ -32,7 +32,6 @@ py_library(
         ":common",
         ":compression",
         ":grpcio_metadata",
-        "@grpc_python_dependencies//typing_extensions:pkg",
     ],
 )
 
@@ -85,9 +84,6 @@ py_library(
 py_library(
     name = "aio",
     srcs = glob(["aio/**/*.py"]),
-    deps = [
-        "@grpc_python_dependencies//typing_extensions:pkg",
-    ],
 )
 
 py_library(
