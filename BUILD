@@ -5212,15 +5212,9 @@ grpc_upb_proto_reflection_library(
     deps = ["//src/proto/grpc/channelz/v2:promise_proto"],
 )
 
-grpc_upb_proto_reflection_library(
-    name = "protobuf_descriptor_upbdefs",
-    deps = [
-        "@com_google_protobuf//:descriptor_proto",
-    ],
-)
-
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
+    "descriptor",
     "duration",
     "empty",
     "struct",
