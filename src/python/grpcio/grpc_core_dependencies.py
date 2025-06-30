@@ -467,6 +467,8 @@ CORE_SOURCE_FILES = [
     'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c',
     'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c',
+    'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c',
+    'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c',
     'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c',
     'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c',
     'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c',
