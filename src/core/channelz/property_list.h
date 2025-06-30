@@ -29,6 +29,7 @@
 #include "src/proto/grpc/channelz/v2/channelz.upb.h"
 #include "src/proto/grpc/channelz/v2/property_list.upb.h"
 #include "upb/mem/arena.h"
+#include "upb/text/encode.h"
 
 namespace grpc_core::channelz {
 
