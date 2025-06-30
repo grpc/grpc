@@ -244,11 +244,11 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  SourceDestructing();
-  party_.reset();
+  DCHECK(party_.get() == nullptr);
 }
 
 void ChaoticGoodClientTransport::Orphan() {
+  SourceDestructing();
   stream_dispatch_->OnFrameTransportClosed(
       absl::UnavailableError("Transport closed"));
   party_.reset();

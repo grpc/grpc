@@ -884,8 +884,11 @@ grpc_cc_library(
         "lib/promise/detail/promise_like.h",
     ],
     deps = [
+        "channelz_property_list",
         "poll",
+        "upb_utils",
         "//:gpr_platform",
+        "//:promise_upb",
         "//src/core:function_signature",
         "//src/core:json",
     ],
@@ -960,6 +963,7 @@ grpc_cc_library(
     deps = [
         "json",
         "//:gpr_platform",
+        "//:promise_upb",
     ],
 )
 
@@ -1368,8 +1372,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "channelz_property_list",
         "dump_args",
-        "json",
         "map",
         "poll",
         "ref_counted",
@@ -10194,8 +10198,10 @@ grpc_cc_library(
         "time",
         "upb_utils",
         "//:channelz_property_list_upb",
+        "//:channelz_upb",
         "//:gpr",
         "//:protobuf_any_upb",
+        "//:protobuf_empty_upb",
     ],
 )
 

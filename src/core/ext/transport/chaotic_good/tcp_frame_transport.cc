@@ -242,13 +242,13 @@ void TcpFrameTransport::Orphan() {
 }
 
 void TcpFrameTransport::AddData(channelz::DataSink sink) {
-  sink.AddAdditionalInfo("tcp_options",
-                         channelz::PropertyList()
-                             .Set("encode_alignment", options_.encode_alignment)
-                             .Set("decode_alignment", options_.decode_alignment)
-                             .Set("inlined_payload_size_threshold",
-                                  options_.inlined_payload_size_threshold)
-                             .Set("enable_tracing", options_.enable_tracing));
+  sink.AddData("tcp_options",
+               channelz::PropertyList()
+                   .Set("encode_alignment", options_.encode_alignment)
+                   .Set("decode_alignment", options_.decode_alignment)
+                   .Set("inlined_payload_size_threshold",
+                        options_.inlined_payload_size_threshold)
+                   .Set("enable_tracing", options_.enable_tracing));
 }
 
 RefCountedPtr<channelz::SocketNode> TcpFrameTransport::MakeSocketNode(

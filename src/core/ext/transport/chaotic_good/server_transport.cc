@@ -292,13 +292,12 @@ ChaoticGoodServerTransport::StreamDispatch::StreamDispatch(
 
 void ChaoticGoodServerTransport::StreamDispatch::AddData(
     channelz::DataSink sink) {
-  MutexLock lock(&mu_);
-  sink.AddAdditionalInfo(
-      "transport_state",
-      channelz::PropertyList()
-          .Set("stream_map_size", stream_map_.size())
-          .Set("last_seen_new_stream_id", last_seen_new_stream_id_));
   party_->ExportToChannelz("transport_party", sink);
+  MutexLock lock(&mu_);
+  sink.AddData("transport_state",
+               channelz::PropertyList()
+                   .Set("stream_map_size", stream_map_.size())
+                   .Set("last_seen_new_stream_id", last_seen_new_stream_id_));
 }
 
 void ChaoticGoodServerTransport::SetCallDestination(

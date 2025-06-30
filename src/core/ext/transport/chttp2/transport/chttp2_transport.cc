@@ -570,7 +570,7 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
         grpc_core::NewClosure([t, sink = std::move(sink)](
                                   grpc_error_handle) mutable {
           Json::Object http2_info;
-          sink.AddAdditionalInfo(
+          sink.AddData(
               "http2",
               grpc_core::channelz::PropertyList()
                   .Set("max_requests_per_read", t->max_requests_per_read)
@@ -640,20 +640,6 @@ void grpc_chttp2_transport::ChannelzDataSource::AddData(
                     }
                     return "unknown";
                   }()));
-          std::vector<grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode>>
-              children;
-          children.reserve(t->stream_map.size());
-          for (auto [id, stream] : t->stream_map) {
-            if (stream->channelz_call_node == nullptr) {
-              stream->channelz_call_node =
-                  grpc_core::MakeRefCounted<grpc_core::channelz::CallNode>(
-                      absl::StrCat("chttp2 ",
-                                   t->is_client ? "client" : "server",
-                                   " stream ", stream->id));
-            }
-            children.push_back(stream->channelz_call_node);
-          }
-          sink.AddChildObjects(std::move(children));
         }),
         absl::OkStatus());
   });

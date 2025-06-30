@@ -608,6 +608,8 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -1577,6 +1579,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -2465,6 +2468,8 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -2976,6 +2981,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -4503,6 +4509,8 @@ libs:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -4863,6 +4871,7 @@ libs:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -5236,6 +5245,21 @@ targets:
   run: false
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -5261,13 +5285,26 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -5276,9 +5313,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/activity_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -5493,6 +5533,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -5509,13 +5564,29 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/promise/all_ok_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
@@ -6136,11 +6207,24 @@ targets:
   - src/core/call/metadata_compression_traits.h
   - src/core/call/parsed_metadata.h
   - src/core/call/simple_slice_based_metadata.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/channel/channel_args.h
   - src/core/lib/compression/compression_internal.h
   - src/core/lib/debug/trace.h
@@ -6202,7 +6286,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/packed_table.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
@@ -6215,6 +6301,7 @@ targets:
   - src/core/util/table.h
   - src/core/util/time.h
   - src/core/util/type_list.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
   - third_party/upb/upb/generated_code_support.h
   src:
@@ -6224,8 +6311,15 @@ targets:
   - src/core/call/metadata.cc
   - src/core/call/metadata_batch.cc
   - src/core/call/parsed_metadata.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/channel/channel_args.cc
   - src/core/lib/compression/compression.cc
   - src/core/lib/compression/compression_internal.cc
@@ -6294,6 +6388,21 @@ targets:
   language: c++
   headers:
   - src/core/call/call_state.h
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -6311,14 +6420,27 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/call_state.cc
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -6326,9 +6448,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/call/call_state_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -6397,6 +6522,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -6723,6 +6850,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -6983,11 +7111,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -7034,7 +7175,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -7042,10 +7185,18 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -7620,11 +7771,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -7671,7 +7835,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -7679,10 +7845,18 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -10209,11 +10383,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -10246,7 +10433,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -10254,10 +10443,18 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -10448,6 +10645,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -10774,6 +10973,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -11073,6 +11273,10 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
@@ -11143,6 +11347,8 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
@@ -11189,11 +11395,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -11248,7 +11467,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -11256,11 +11477,19 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -12149,6 +12378,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h
@@ -12490,6 +12721,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -13029,18 +13261,51 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/if.h
   - src/core/lib/promise/poll.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/if_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: init_test
@@ -13117,6 +13382,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13139,13 +13419,26 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -13153,9 +13446,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/inter_activity_pipe_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13182,11 +13478,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13233,7 +13542,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -13241,11 +13552,19 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_context.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -13373,6 +13692,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13388,14 +13722,30 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/promise/join_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
@@ -13474,6 +13824,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13499,13 +13864,26 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -13513,9 +13891,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/latch_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13621,6 +14002,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13641,13 +14037,26 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -13656,9 +14065,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/lock_based_mpsc_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13687,6 +14099,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13708,12 +14135,25 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -13721,9 +14161,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/loop_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -13752,11 +14195,24 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -13811,7 +14267,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -13819,11 +14277,19 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
   - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -13868,6 +14334,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/promise_variant.h
@@ -13876,13 +14357,31 @@ targets:
   - src/core/lib/promise/promise.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
   - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/match_promise_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: match_test
@@ -13976,13 +14475,26 @@ targets:
   language: c++
   headers:
   - src/core/call/message.h
+  - src/core/channelz/property_list.h
   - src/core/ext/transport/chttp2/transport/frame.h
   - src/core/ext/transport/chttp2/transport/http2_status.h
   - src/core/ext/transport/chttp2/transport/message_assembler.h
   - src/core/ext/upb-gen/google/protobuf/any.upb.h
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
   - src/core/ext/upb-gen/google/rpc/status.upb.h
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -14029,7 +14541,9 @@ targets:
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
   - src/core/util/manual_constructor.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
@@ -14037,13 +14551,21 @@ targets:
   - src/core/util/spinlock.h
   - src/core/util/status_helper.h
   - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/transport/chttp2/http2_common_test_inputs.h
   - third_party/upb/upb/generated_code_support.h
   src:
   - src/core/call/message.cc
+  - src/core/channelz/property_list.cc
   - src/core/ext/transport/chttp2/transport/frame.cc
   - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/experiments/config.cc
@@ -14269,6 +14791,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -14292,14 +14829,27 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -14307,9 +14857,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/observable_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -15178,16 +15731,50 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/prioritized_race.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/prioritized_race_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: promise_endpoint_test
@@ -15207,17 +15794,51 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/promise_factory_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/functional:bind_front
   - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: promise_map_test
@@ -15225,19 +15846,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/map.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/map_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: promise_mutex_test
@@ -15245,6 +15899,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -15270,13 +15939,26 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -15284,9 +15966,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/promise_mutex_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
@@ -15300,18 +15985,52 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/promise.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
   - src/core/util/json/json_writer.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/util/json/json_writer.cc
+  - src/core/util/time.cc
   - test/core/promise/promise_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
+  - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: property_list_test
@@ -15328,9 +16047,12 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/util/json/json.h
+  - src/core/util/json/json_writer.h
   - src/core/util/match.h
   - src/core/util/overload.h
   - src/core/util/time.h
@@ -15342,7 +16064,9 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/json/json_writer.cc
   - src/core/util/time.cc
   - test/core/channelz/property_list_test.cc
   - third_party/googletest/googlemock/src/gmock_main.cc
@@ -15661,13 +16385,34 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/poll.h
   - src/core/lib/promise/race.h
   - src/core/util/json/json.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - test/core/promise/race_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - gpr
   uses_polling: false
 - name: random_early_detection_test
@@ -15796,6 +16541,8 @@ targets:
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/address_utils/parse_address.h
@@ -15924,6 +16671,7 @@ targets:
   - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   - src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/address_utils/parse_address.cc
   - src/core/lib/address_utils/sockaddr_utils.cc
@@ -16244,6 +16992,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -16258,14 +17021,30 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/json/json_writer.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/time.cc
   - test/core/promise/seq_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
@@ -16916,6 +17695,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/promise/detail/promise_factory.h
   - src/core/lib/promise/detail/promise_like.h
   - src/core/lib/promise/detail/promise_variant.h
@@ -16924,12 +17718,30 @@ targets:
   - src/core/lib/promise/switch.h
   - src/core/util/function_signature.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  - src/core/util/time.cc
   - test/core/promise/switch_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
+  - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
+  - absl/types:span
   - gpr
   uses_polling: false
 - name: sync_test
@@ -17575,6 +18387,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -17589,13 +18416,29 @@ targets:
   - src/core/util/function_signature.h
   - src/core/util/glob.h
   - src/core/util/json/json.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
+  - src/core/util/time.cc
   - test/core/promise/try_join_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
@@ -17619,6 +18462,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -17635,15 +18493,31 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/json/json_writer.h
+  - src/core/util/match.h
+  - src/core/util/overload.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/poll_matcher.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/util/glob.cc
   - src/core/util/json/json_writer.cc
+  - src/core/util/time.cc
   - test/core/promise/try_seq_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/container:flat_hash_map
   - absl/meta:type_traits
   - absl/status:statusor
@@ -17753,6 +18627,21 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/channelz/property_list.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb.h
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb.h
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb.h
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h
   - src/core/lib/debug/trace.h
   - src/core/lib/debug/trace_flags.h
   - src/core/lib/debug/trace_impl.h
@@ -17771,14 +18660,27 @@ targets:
   - src/core/util/glob.h
   - src/core/util/json/json.h
   - src/core/util/latent_see.h
+  - src/core/util/match.h
   - src/core/util/notification.h
   - src/core/util/orphanable.h
+  - src/core/util/overload.h
   - src/core/util/per_cpu.h
   - src/core/util/ref_counted.h
   - src/core/util/ref_counted_ptr.h
   - src/core/util/ring_buffer.h
+  - src/core/util/time.h
+  - src/core/util/upb_utils.h
   - test/core/promise/test_wakeup_schedulers.h
+  - third_party/upb/upb/generated_code_support.h
   src:
+  - src/core/channelz/property_list.cc
+  - src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  - src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  - src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   - src/core/lib/debug/trace.cc
   - src/core/lib/debug/trace_flags.cc
   - src/core/lib/promise/activity.cc
@@ -17786,9 +18688,12 @@ targets:
   - src/core/util/glob.cc
   - src/core/util/latent_see.cc
   - src/core/util/per_cpu.cc
+  - src/core/util/time.cc
   - test/core/promise/wait_for_callback_test.cc
   deps:
   - gtest
+  - upb_mini_descriptor_lib
+  - upb_wire_lib
   - absl/base:config
   - absl/container:flat_hash_map
   - absl/functional:function_ref
