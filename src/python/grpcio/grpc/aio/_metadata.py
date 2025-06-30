@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Implementation of the metadata abstraction for gRPC Asyncio Python."""
+from __future__ import annotations
+
 from collections import OrderedDict
 from collections import abc
-from typing import Any, Iterator, List, Optional, Tuple, Union
+from typing import Any, Iterator, Optional, Union
 
 MetadataKey = str
 MetadataValue = Union[str, bytes]
@@ -23,7 +25,7 @@ MetadataValue = Union[str, bytes]
 class Metadata(abc.Collection):
     """Metadata abstraction for the asynchronous calls and interceptors.
 
-    The metadata is a mapping from str -> List[str]
+    The metadata is a mapping from str -> list[str]
 
     Traits
         * Multiple entries are allowed for the same key
@@ -33,13 +35,15 @@ class Metadata(abc.Collection):
         * Allows partial mutation on the data without recreating the new object from scratch.
     """
 
-    def __init__(self, *args: Tuple[MetadataKey, MetadataValue]) -> None:
+    __hash__ = None
+
+    def __init__(self, *args: tuple[MetadataKey, MetadataValue]) -> None:
         self._metadata = OrderedDict()
         for md_key, md_value in args:
             self.add(md_key, md_value)
 
     @classmethod
-    def from_tuple(cls, raw_metadata: tuple):
+    def from_tuple(cls, raw_metadata: tuple) -> Metadata:
         if raw_metadata:
             return cls(*raw_metadata)
         return cls()
@@ -61,7 +65,8 @@ class Metadata(abc.Collection):
         try:
             return self._metadata[key][0]
         except (ValueError, IndexError) as e:
-            raise KeyError("{0!r}".format(key)) from e
+            msg = f"{key!r}"
+            raise KeyError(msg) from e
 
     def __setitem__(self, key: MetadataKey, value: MetadataValue) -> None:
         """Calling metadata[<key>] = <value>
@@ -84,7 +89,7 @@ class Metadata(abc.Collection):
         """Delete all mappings for <key>."""
         del self._metadata[key]
 
-    def __iter__(self) -> Iterator[Tuple[MetadataKey, MetadataValue]]:
+    def __iter__(self) -> Iterator[tuple[MetadataKey, MetadataValue]]:
         for key, values in self._metadata.items():
             for value in values:
                 yield (key, value)
@@ -99,33 +104,35 @@ class Metadata(abc.Collection):
         return abc.ItemsView(self)
 
     def get(
-        self, key: MetadataKey, default: MetadataValue = None
+        self,
+        key: MetadataKey,
+        default: MetadataValue = None,
     ) -> Optional[MetadataValue]:
         try:
             return self[key]
         except KeyError:
             return default
 
-    def get_all(self, key: MetadataKey) -> List[MetadataValue]:
+    def get_all(self, key: MetadataKey) -> list[MetadataValue]:
         """For compatibility with other Metadata abstraction objects (like in Java),
         this would return all items under the desired <key>.
         """
         return self._metadata.get(key, [])
 
-    def set_all(self, key: MetadataKey, values: List[MetadataValue]) -> None:
+    def set_all(self, key: MetadataKey, values: list[MetadataValue]) -> None:
         self._metadata[key] = values
 
     def __contains__(self, key: MetadataKey) -> bool:
         return key in self._metadata
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, self.__class__):
             return self._metadata == other._metadata
         if isinstance(other, tuple):
             return tuple(self) == other
         return NotImplemented  # pytype: disable=bad-return-type
 
-    def __add__(self, other: Any) -> "Metadata":
+    def __add__(self, other: Any) -> Metadata:
         if isinstance(other, self.__class__):
             return Metadata(*(tuple(self) + tuple(other)))
         if isinstance(other, tuple):
@@ -134,4 +141,4 @@ class Metadata(abc.Collection):
 
     def __repr__(self) -> str:
         view = tuple(self)
-        return "{0}({1!r})".format(self.__class__.__name__, view)
+        return f"{self.__class__.__name__}({view!r})"
