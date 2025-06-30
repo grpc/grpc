@@ -50,13 +50,7 @@ Json ToJson(const PropertyValue& value) {
             gpr_format_timespec(v.as_timespec(GPR_CLOCK_REALTIME)));
       },
       [](absl::Status v) { return Json::FromString(v.ToString()); },
-      [](std::shared_ptr<PropertyList> v) {
-        return Json::FromObject(v->TakeJsonObject());
-      },
-      [](std::shared_ptr<PropertyGrid> v) {
-        return Json::FromObject(v->TakeJsonObject());
-      },
-      [](std::shared_ptr<PropertyTable> v) {
+      [](std::shared_ptr<OtherPropertyValue> v) {
         return Json::FromObject(v->TakeJsonObject());
       });
 }
@@ -107,47 +101,10 @@ void FillUpbValue(const PropertyValue& value,
         grpc_channelz_v2_PropertyValue_set_string_value(
             proto, CopyStdStringToUpbString(text, arena));
       },
-      [proto, arena](std::shared_ptr<PropertyList> v) {
-        auto* p = grpc_channelz_v2_PropertyList_new(arena);
-        v->FillUpbProto(p, arena);
+      [proto, arena](std::shared_ptr<OtherPropertyValue> v) {
         auto* any =
             grpc_channelz_v2_PropertyValue_mutable_any_value(proto, arena);
-        size_t length;
-        auto* bytes =
-            grpc_channelz_v2_PropertyList_serialize(p, arena, &length);
-        google_protobuf_Any_set_value(
-            any, upb_StringView_FromDataAndSize(bytes, length));
-        google_protobuf_Any_set_type_url(
-            any, StdStringToUpbString(
-                     "type.googleapis.com/grpc.channelz.v2.PropertyList"));
-      },
-      [proto, arena](std::shared_ptr<PropertyGrid> v) {
-        auto* p = grpc_channelz_v2_PropertyGrid_new(arena);
-        v->FillUpbProto(p, arena);
-        auto* any =
-            grpc_channelz_v2_PropertyValue_mutable_any_value(proto, arena);
-        size_t length;
-        auto* bytes =
-            grpc_channelz_v2_PropertyGrid_serialize(p, arena, &length);
-        google_protobuf_Any_set_value(
-            any, upb_StringView_FromDataAndSize(bytes, length));
-        google_protobuf_Any_set_type_url(
-            any, StdStringToUpbString(
-                     "type.googleapis.com/grpc.channelz.v2.PropertyGrid"));
-      },
-      [proto, arena](std::shared_ptr<PropertyTable> v) {
-        auto* p = grpc_channelz_v2_PropertyTable_new(arena);
-        v->FillUpbProto(p, arena);
-        auto* any =
-            grpc_channelz_v2_PropertyValue_mutable_any_value(proto, arena);
-        size_t length;
-        auto* bytes =
-            grpc_channelz_v2_PropertyTable_serialize(p, arena, &length);
-        google_protobuf_Any_set_value(
-            any, upb_StringView_FromDataAndSize(bytes, length));
-        google_protobuf_Any_set_type_url(
-            any, StdStringToUpbString(
-                     "type.googleapis.com/grpc.channelz.v2.PropertyTable"));
+        v->FillAny(any, arena);
       });
 }
 
