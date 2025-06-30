@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "absl/cleanup/cleanup.h"
@@ -29,6 +30,7 @@
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/time/time.h"
+#include "src/core/channelz/property_list.h"
 #include "src/core/ext/transport/chaotic_good/tcp_frame_header.h"
 #include "src/core/ext/transport/chaotic_good/tcp_ztrace_collector.h"
 #include "src/core/ext/transport/chaotic_good/transport_context.h"
@@ -64,7 +66,7 @@ void SendRate::SetNetworkMetrics(const std::optional<NetworkSend>& network_send,
                                  const NetworkMetrics& metrics) {
   bool updated = false;
   if (metrics.rtt_usec.has_value()) {
-    CHECK_GE(*metrics.rtt_usec, 0);
+    CHECK_GE(*metrics.rtt_usec, 0u);
     rtt_usec_ = *metrics.rtt_usec;
     updated = true;
   }
@@ -118,15 +120,15 @@ SendRate::DeliveryData SendRate::GetDeliveryData(uint64_t current_time) const {
   }
 }
 
-void SendRate::AddData(Json::Object& obj) const {
+channelz::PropertyList SendRate::ChannelzProperties() const {
+  channelz::PropertyList obj;
   if (last_send_started_time_ != 0) {
-    obj["send_start_time"] = Json::FromNumber(last_send_started_time_);
-    obj["send_size"] = Json::FromNumber(last_send_bytes_outstanding_);
+    obj.Set("send_start_time", last_send_started_time_)
+        .Set("send_size", last_send_bytes_outstanding_);
   }
-  obj["current_rate"] = Json::FromNumber(current_rate_);
-  obj["rtt"] = Json::FromNumber(rtt_usec_);
-  obj["rate_measurement_age"] =
-      Json::FromNumber((Timestamp::Now() - last_rate_measurement_).millis());
+  return obj.Set("current_rate", current_rate_)
+      .Set("rtt", rtt_usec_)
+      .Set("last_rate_measurement", last_rate_measurement_);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -183,39 +185,38 @@ void OutputBuffers::Reader::SetNetworkMetrics(
   output_buffers_->WakeupScheduler();
 }
 
-Json::Object OutputBuffers::Reader::ToJson() {
+channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
   MutexLock lock(&mu_);
-  Json::Object reader_data;
-  reader_data["reading"] = Json::FromBool(reading_);
-  send_rate_.AddData(reader_data);
-  if (!frames_.empty()) {
-    Json::Array queued_frames;
-    for (auto& frame : frames_) {
-      Json::Object frame_data;
-      frame_data["payload_tag"] = Json::FromNumber(frame.payload_tag);
-      frame_data["header"] = Json::FromString(
-          absl::ConvertVariantTo<FrameInterface&>(frame.frame->payload)
-              .ToString());
-      frame_data["mpsc_tokens"] = Json::FromNumber(frame.frame.tokens());
-      queued_frames.emplace_back(Json::FromObject(std::move(frame_data)));
-    }
-    reader_data["queued_frames"] = Json::FromArray(std::move(queued_frames));
-  }
-  return reader_data;
+  return channelz::PropertyList()
+      .Set("reading", reading_)
+      .Merge(send_rate_.ChannelzProperties())
+      .Set("queued_frames", [this]() -> std::optional<channelz::PropertyTable> {
+        mu_.AssertHeld();
+        if (frames_.empty()) return std::nullopt;
+        channelz::PropertyTable frames;
+        for (auto& frame : frames_) {
+          frames.AppendRow(
+              channelz::PropertyList()
+                  .Set("payload_tag", frame.payload_tag)
+                  .Set("header", absl::ConvertVariantTo<FrameInterface&>(
+                                     frame.frame->payload)
+                                     .ToString())
+                  .Set("mpsc_tokens", frame.frame.tokens()));
+        }
+        return frames;
+      }());
 }
 
 void OutputBuffers::AddData(channelz::DataSink sink) {
-  Json::Object obj;
-  obj["num_readers"] =
-      Json::FromNumber(num_readers_.load(std::memory_order_relaxed));
-  obj["encode_alignment"] = Json::FromNumber(encode_alignment_);
-  obj["scheduling_state"] =
-      Json::FromNumber(scheduling_state_.load(std::memory_order_relaxed));
-  obj["scheduler"] = Json::FromString(scheduler_->Config());
-  sink.AddAdditionalInfo("outputBuffers", std::move(obj));
-  scheduling_party_->ToJson([sink](Json::Object obj) mutable {
-    sink.AddAdditionalInfo("schedulingParty", std::move(obj));
-  });
+  sink.AddData(
+      "output_buffers",
+      channelz::PropertyList()
+          .Set("num_readers", num_readers_.load(std::memory_order_relaxed))
+          .Set("encode_alignment", encode_alignment_)
+          .Set("scheduling_state",
+               scheduling_state_.load(std::memory_order_relaxed))
+          .Set("scheduler", scheduler_->Config()));
+  scheduling_party_->ExportToChannelz("scheduling_party", sink);
 }
 
 RefCountedPtr<OutputBuffers::Reader> OutputBuffers::MakeReader(uint32_t id) {
@@ -246,11 +247,13 @@ void OutputBuffers::DestroyReader(uint32_t id) {
 void OutputBuffers::WakeupScheduler() {
   GRPC_LATENT_SEE_INNER_SCOPE("OutputBuffers::WakeupScheduler");
   auto state = scheduling_state_.load(std::memory_order_acquire);
+  // CAS's here-in need to be acq-rel, so that we get an acquire on failure (at
+  // which point we may be loading a Waker pointer).
   while (true) {
     switch (state) {
       case kSchedulingProcessing:
         if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_release)) {
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
         return;
@@ -260,7 +263,7 @@ void OutputBuffers::WakeupScheduler() {
         // Idle: value is a pointer to a waker.
         Waker* waker = reinterpret_cast<Waker*>(state);
         if (!scheduling_state_.compare_exchange_weak(
-                state, kSchedulingWorkAvailable, std::memory_order_release)) {
+                state, kSchedulingWorkAvailable, std::memory_order_acq_rel)) {
           continue;
         }
         waker->Wakeup();
@@ -280,6 +283,7 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
       case kSchedulingProcessing: {
         // We were processing, now we're done.
         Waker* waker = new Waker(GetContext<Activity>()->MakeNonOwningWaker());
+        // CAS acq rel to make sure we acquire waker pointers on failure.
         if (!scheduling_state_.compare_exchange_weak(
                 state, reinterpret_cast<uintptr_t>(waker),
                 std::memory_order_acq_rel)) {
@@ -289,6 +293,7 @@ Poll<Empty> OutputBuffers::SchedulerPollForWork() {
         return Pending{};
       }
       case kSchedulingWorkAvailable: {
+        // No pointer exchange here, no need for barriers.
         scheduling_state_.store(kSchedulingProcessing,
                                 std::memory_order_relaxed);
         return Empty{};
@@ -423,7 +428,7 @@ void SecureFrameQueue::Write(SliceBuffer buffer) {
            frame_padding);
   }
   all_frames_.Append(Slice(std::move(slice)));
-  all_frames_.Append(std::move(buffer));
+  all_frames_.TakeAndAppend(buffer);
   if (frame_padding != 0) {
     auto padding = MutableSlice::CreateUninitialized(frame_padding);
     memset(padding.data(), 0, frame_padding);
@@ -503,14 +508,11 @@ void InputQueue::Cancel(Completion* completion) {
 
 void InputQueue::AddData(channelz::DataSink sink) {
   MutexLock lock(&mu_);
-  Json::Object obj;
-  obj["read_requested"] = Json::FromString(absl::StrCat(read_requested_));
-  obj["read_completed"] = Json::FromString(absl::StrCat(read_completed_));
-  // TODO(ctiller): log completions_
-  if (!closed_error_.ok()) {
-    obj["closed_error"] = Json::FromString(closed_error_.ToString());
-  }
-  sink.AddAdditionalInfo("inputQueue", std::move(obj));
+  sink.AddData("input_queue",
+               channelz::PropertyList()
+                   .Set("read_requested", absl::StrCat(read_requested_))
+                   .Set("read_completed", absl::StrCat(read_completed_))
+                   .Set("closed_error", closed_error_));
 }
 
 void InputQueue::SetClosed(absl::Status status) {
@@ -736,7 +738,7 @@ auto Endpoint::PullDataPayload(RefCountedPtr<EndpointContext> ctx) {
             buffer.AppendIndexed(padding.RefSubSlice(0, frame_padding));
           }
         }
-        return buffer;
+        return std::move(buffer);
       });
 }
 
@@ -753,7 +755,9 @@ auto Endpoint::WriteLoop(RefCountedPtr<EndpointContext> ctx) {
             "DataEndpointPullPayload",
             Race(PullDataPayload(ctx),
                  Map(ctx->secure_frame_queue->Next(),
-                     [](auto x) -> ValueOrFailure<SliceBuffer> { return x; }))),
+                     [](auto x) -> ValueOrFailure<SliceBuffer> {
+                       return std::move(x);
+                     }))),
         [ctx, metrics_collector](SliceBuffer buffer) {
           ctx->ztrace_collector->Append(
               WriteBytesToEndpointTrace{buffer.Length(), ctx->id});
@@ -861,21 +865,23 @@ void Endpoint::ReceiveSecurityFrame(PromiseEndpoint& endpoint,
   transport_framing_endpoint_extension->ReceiveFrame(std::move(buffer));
 }
 
-void Endpoint::ToJson(absl::AnyInvocable<void(Json::Object)> sink) {
-  Json::Object obj;
-  obj["id"] = Json::FromNumber(ctx_->id);
-  obj["now"] = Json::FromNumber(ctx_->clock->Now());
-  obj["encode_alignment"] = Json::FromNumber(ctx_->encode_alignment);
-  obj["decode_alignment"] = Json::FromNumber(ctx_->decode_alignment);
-  obj["secure_frame_bytes_queued"] =
-      Json::FromNumber(ctx_->secure_frame_queue->InstantaneousQueuedBytes());
-  obj["enable_tracing"] = Json::FromBool(ctx_->enable_tracing);
-  obj["reader"] = Json::FromObject(ctx_->reader->ToJson());
-  party_->ToJson([root = std::move(obj),
-                  sink = std::move(sink)](Json::Object obj) mutable {
-    root["party"] = Json::FromObject(std::move(obj));
-    sink(std::move(root));
-  });
+void Endpoint::AddData(channelz::DataSink sink) {
+  sink.AddData(
+      absl::StrCat("endpoint", ctx_->id),
+      channelz::PropertyList()
+          .Set("now", ctx_->clock->Now())
+          .Set("encode_alignment", ctx_->encode_alignment)
+          .Set("decode_alignment", ctx_->decode_alignment)
+          .Set("secure_frame_bytes_queued",
+               [this]() -> std::optional<uint64_t> {
+                 if (ctx_->secure_frame_queue.Get() == nullptr) {
+                   return std::nullopt;
+                 }
+                 return ctx_->secure_frame_queue->InstantaneousQueuedBytes();
+               }())
+          .Set("enable_tracing", ctx_->enable_tracing)
+          .Merge(ctx_->reader->ChannelzProperties()));
+  party_->ExportToChannelz(absl::StrCat("endpoint_party", ctx_->id), sink);
 }
 
 Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
@@ -942,8 +948,8 @@ Endpoint::Endpoint(uint32_t id, uint32_t encode_alignment,
                       ep_ctx->transport_ctx->stats_plugin_group));
                 }
               }
-              ep_ctx->secure_frame_queue =
-                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment);
+              ep_ctx->secure_frame_queue.Set(
+                  MakeRefCounted<SecureFrameQueue>(ep_ctx->encode_alignment));
               auto* transport_framing_endpoint_extension =
                   GetTransportFramingEndpointExtension(*endpoint);
               if (transport_framing_endpoint_extension != nullptr) {
@@ -988,40 +994,29 @@ DataEndpoints::DataEndpoints(
       output_buffers_(MakeRefCounted<data_endpoints_detail::OutputBuffers>(
           clock, encode_alignment, ztrace_collector,
           std::move(scheduler_config), ctx)),
-      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>(ctx)) {
+      input_queues_(MakeRefCounted<data_endpoints_detail::InputQueue>()) {
   for (size_t i = 0; i < endpoints_vec.size(); ++i) {
     endpoints_.emplace_back(std::make_unique<data_endpoints_detail::Endpoint>(
         i, encode_alignment, decode_alignment, clock, output_buffers_,
         input_queues_, std::move(endpoints_vec[i]), enable_tracing, ctx,
         ztrace_collector));
   }
+  SourceConstructed();
 }
 
 void DataEndpoints::AddData(channelz::DataSink sink) {
   output_buffers_->AddData(sink);
   input_queues_->AddData(sink);
   struct EndpointInfoCollector {
-    EndpointInfoCollector(int remaining)
+    explicit EndpointInfoCollector(int remaining)
         : remaining(remaining), endpoints(remaining) {}
     Mutex mu;
     int remaining ABSL_GUARDED_BY(mu) = 0;
     Json::Array endpoints ABSL_GUARDED_BY(mu);
   };
   MutexLock lock(&mu_);
-  auto endpoint_info_collector =
-      std::make_shared<EndpointInfoCollector>(endpoints_.size());
   for (size_t i = 0; i < endpoints_.size(); ++i) {
-    endpoints_[i]->ToJson([endpoint_info_collector, i,
-                           sink](Json::Object obj) mutable {
-      MutexLock lock(&endpoint_info_collector->mu);
-      endpoint_info_collector->endpoints[i] = Json::FromObject(std::move(obj));
-      if (--endpoint_info_collector->remaining == 0) {
-        sink.AddAdditionalInfo(
-            "chaoticGoodDataEndpoints",
-            {{"endpoints",
-              Json::FromArray(std::move(endpoint_info_collector->endpoints))}});
-      }
-    });
+    endpoints_[i]->AddData(sink);
   }
 }
 

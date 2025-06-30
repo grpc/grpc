@@ -84,6 +84,8 @@ const JsonLoaderInterface* GrpcXdsBootstrap::GrpcAuthority::JsonLoader(
               "client_listener_resource_name_template",
               &GrpcAuthority::client_listener_resource_name_template_)
           .OptionalField("xds_servers", &GrpcAuthority::servers_)
+          .OptionalField("fallback_on_reachability_only",
+                         &GrpcAuthority::fallback_on_reachability_only_)
           .Finish();
   return loader;
 }

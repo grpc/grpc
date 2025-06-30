@@ -32,26 +32,33 @@ package grpc.channelz.v2;
 import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
+message Data {
+  string name = 1;
+  google.protobuf.Any value = 2;
+}
+
 message Entity {
-    // The identifier for this entity.
-    int64 id = 1;
-    // The kind of this entity.
-    string kind = 2;
-    // Parents for this entity.
-    repeated int64 parents = 3;
-    // Has this entity been orphaned?
-    bool orphaned = 4;
-    // Instantaneous data for this entity.
-    repeated google.protobuf.Any data = 5;
-    // Historical trace information for the entity.
-    repeated TraceEvent trace = 6;
+  // The identifier for this entity.
+  int64 id = 1;
+  // The kind of this entity.
+  string kind = 2;
+  // Parents for this entity.
+  repeated int64 parents = 3;
+  // Has this entity been orphaned?
+  bool orphaned = 4;
+  // Did the underlying system time out while collecting data?
+  bool timed_out = 5;
+  // Instantaneous data for this entity.
+  repeated Data data = 6;
+  // Historical trace information for the entity.
+  repeated TraceEvent trace = 7;
 }
 
 message TraceEvent {
-    // High level description of the event.
-    string description = 1;
-    // When this event occurred.
-    google.protobuf.Timestamp timestamp = 2;
-    // Any additional supporting data.
-    repeated google.protobuf.Any data = 3;
+  // High level description of the event.
+  string description = 1;
+  // When this event occurred.
+  google.protobuf.Timestamp timestamp = 2;
+  // Any additional supporting data.
+  repeated Data data = 3;
 }

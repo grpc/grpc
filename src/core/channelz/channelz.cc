@@ -30,6 +30,7 @@
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -45,8 +46,10 @@
 #include "src/core/util/notification.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -55,67 +58,33 @@ namespace channelz {
 // DataSink
 //
 
-void DataSinkImplementation::AddAdditionalInfo(absl::string_view name,
-                                               Json::Object additional_info) {
+void DataSinkImplementation::AddData(absl::string_view name,
+                                     std::unique_ptr<Data> data) {
   MutexLock lock(&mu_);
-  additional_info_.emplace(std::string(name), std::move(additional_info));
+  additional_info_.emplace(name, std::move(data));
 }
 
-void DataSinkImplementation::AddChildObjects(
-    std::vector<RefCountedPtr<BaseNode>> child_objects) {
+Json::Object DataSinkImplementation::Finalize(bool) {
   MutexLock lock(&mu_);
-  for (auto& node : child_objects) {
-    child_objects_.push_back(std::move(node));
-  }
-}
-
-Json::Object DataSinkImplementation::Finalize(bool timed_out) {
-  if (timed_out) {
-    AddAdditionalInfo("channelzState", {{"timedOut", Json::FromBool(true)}});
-  }
-  MutexLock lock(&mu_);
-  MergeChildObjectsIntoAdditionalInfo();
   Json::Object out;
   for (auto& [name, additional_info] : additional_info_) {
-    out[name] = Json::FromObject(std::move(additional_info));
+    out[name] = Json::FromObject(additional_info->ToJson());
   }
   return out;
 }
 
-void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
-  if (child_objects_.empty()) return;
-  Json::Object subobjects;
-  std::map<BaseNode::EntityType, std::set<int64_t>> child_objects_by_type;
-  for (auto& node : child_objects_) {
-    child_objects_by_type[node->type()].insert(node->uuid());
+void DataSinkImplementation::Finalize(bool timed_out,
+                                      grpc_channelz_v2_Entity* entity,
+                                      upb_Arena* arena) {
+  MutexLock lock(&mu_);
+  grpc_channelz_v2_Entity_set_timed_out(entity, timed_out);
+  for (auto& [name, additional_info] : additional_info_) {
+    auto* staple = grpc_channelz_v2_Entity_add_data(entity, arena);
+    grpc_channelz_v2_Data_set_name(staple,
+                                   CopyStdStringToUpbString(name, arena));
+    additional_info->FillProto(
+        grpc_channelz_v2_Data_mutable_value(staple, arena), arena);
   }
-  for (const auto& [type, child_objects] : child_objects_by_type) {
-    std::string key;
-    switch (type) {
-      case BaseNode::EntityType::kTopLevelChannel:
-      case BaseNode::EntityType::kSubchannel:
-      case BaseNode::EntityType::kListenSocket:
-      case BaseNode::EntityType::kServer:
-      case BaseNode::EntityType::kInternalChannel: {
-        LOG(ERROR) << "Nodes of type " << BaseNode::EntityTypeString(type)
-                   << " not supported for child object collection in DataSink";
-        continue;
-      }
-      case BaseNode::EntityType::kSocket:
-        key = "subSockets";
-        break;
-      case BaseNode::EntityType::kCall:
-        key = "calls";
-        break;
-    }
-    Json::Array uuids;
-    uuids.reserve(child_objects.size());
-    for (int64_t uuid : child_objects) {
-      uuids.push_back(Json::FromNumber(uuid));
-    }
-    subobjects[key] = Json::FromArray(std::move(uuids));
-  }
-  additional_info_.emplace("childObjects", std::move(subobjects));
 }
 
 //
@@ -123,12 +92,20 @@ void DataSinkImplementation::MergeChildObjectsIntoAdditionalInfo() {
 //
 
 BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)), trace_(max_trace_memory) {
-  // The registry will set uuid_ under its lock.
+    : type_(type),
+      uuid_(-1),
+      name_(std::move(name)),
+      trace_(max_trace_memory) {}
+
+void BaseNode::NodeConstructed() {
+  node_constructed_called_ = true;
   ChannelzRegistry::Register(this);
 }
 
-void BaseNode::Orphaned() { ChannelzRegistry::Unregister(this); }
+void BaseNode::Orphaned() {
+  DCHECK(node_constructed_called_);
+  ChannelzRegistry::Unregister(this);
+}
 
 intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
@@ -198,28 +175,78 @@ void BaseNode::RunZTrace(
   ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
 }
 
+void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
+                               upb_Arena* arena) {
+  grpc_channelz_v2_Entity_set_id(entity, uuid());
+  grpc_channelz_v2_Entity_set_kind(
+      entity, StdStringToUpbString(EntityTypeToKind(type_)));
+  {
+    MutexLock lock(&parent_mu_);
+    auto* parents =
+        grpc_channelz_v2_Entity_resize_parents(entity, parents_.size(), arena);
+    for (const auto& parent : parents_) {
+      *parents++ = parent->uuid();
+    }
+  }
+  grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
+
+  auto done = std::make_shared<Notification>();
+  auto sink_impl = std::make_shared<DataSinkImplementation>();
+  {
+    MutexLock lock(&data_sources_mu_);
+    auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
+        [done]() { done->Notify(); });
+    for (DataSource* data_source : data_sources_) {
+      data_source->AddData(DataSink(sink_impl, done_notifier));
+    }
+  }
+  bool completed =
+      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  sink_impl->Finalize(!completed, entity, arena);
+
+  trace_.Render(entity, arena);
+}
+
+std::string BaseNode::SerializeEntityToString() {
+  upb_Arena* arena = upb_Arena_New();
+  auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  SerializeEntity(entity, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
+  return std::string(bytes, length);
+}
+
 //
 // DataSource
 //
 
-DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
-  if (node_ == nullptr) return;
-  MutexLock lock(&node_->data_sources_mu_);
-  node_->data_sources_.push_back(this);
-}
+DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {}
 
 DataSource::~DataSource() {
   DCHECK(node_ == nullptr) << "DataSource must be ResetDataSource()'d in the "
                               "most derived class before destruction";
 }
 
-void DataSource::ResetDataSource() {
+void DataSource::SourceConstructed() {
+  if (node_ == nullptr) return;
+  MutexLock lock(&node_->data_sources_mu_);
+  node_->data_sources_.push_back(this);
+}
+
+void DataSource::SourceDestructing() {
   RefCountedPtr<BaseNode> node = std::move(node_);
   if (node == nullptr) return;
   MutexLock lock(&node->data_sources_mu_);
-  node->data_sources_.erase(
-      std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),
-      node->data_sources_.end());
+  for (size_t i = 0; i < node->data_sources_.size(); ++i) {
+    if (node->data_sources_[i] == this) {
+      std::swap(node->data_sources_[i], node->data_sources_.back());
+      node->data_sources_.pop_back();
+      return;
+    }
+  }
+  LOG(DFATAL) << "DataSource not found in node's data sources -- probably "
+                 "SourceConstructed was not called";
 }
 
 //
@@ -303,7 +330,9 @@ ChannelNode::ChannelNode(std::string target, size_t max_trace_memory,
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
                max_trace_memory, target),
-      target_(std::move(target)) {}
+      target_(std::move(target)) {
+  NodeConstructed();
+}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
@@ -423,7 +452,9 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 SubchannelNode::SubchannelNode(std::string target_address,
                                size_t max_trace_memory)
     : BaseNode(EntityType::kSubchannel, max_trace_memory, target_address),
-      target_(std::move(target_address)) {}
+      target_(std::move(target_address)) {
+  NodeConstructed();
+}
 
 SubchannelNode::~SubchannelNode() {}
 
@@ -488,7 +519,9 @@ Json SubchannelNode::RenderJson() {
 //
 
 ServerNode::ServerNode(size_t max_trace_memory)
-    : BaseNode(EntityType::kServer, max_trace_memory, "") {}
+    : BaseNode(EntityType::kServer, max_trace_memory, "") {
+  NodeConstructed();
+}
 
 ServerNode::~ServerNode() {}
 
@@ -701,7 +734,9 @@ SocketNode::SocketNode(std::string local, std::string remote, std::string name,
     : BaseNode(EntityType::kSocket, 0, std::move(name)),
       local_(std::move(local)),
       remote_(std::move(remote)),
-      security_(std::move(security)) {}
+      security_(std::move(security)) {
+  NodeConstructed();
+}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   streams_started_.fetch_add(1, std::memory_order_relaxed);
@@ -813,7 +848,9 @@ Json SocketNode::RenderJson() {
 
 ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
     : BaseNode(EntityType::kListenSocket, 0, std::move(name)),
-      local_addr_(std::move(local_addr)) {}
+      local_addr_(std::move(local_addr)) {
+  NodeConstructed();
+}
 
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {
