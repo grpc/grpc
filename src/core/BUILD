@@ -884,8 +884,11 @@ grpc_cc_library(
         "lib/promise/detail/promise_like.h",
     ],
     deps = [
+        "channelz_property_list",
         "poll",
+        "upb_utils",
         "//:gpr_platform",
+        "//:promise_upb",
         "//src/core:function_signature",
         "//src/core:json",
     ],

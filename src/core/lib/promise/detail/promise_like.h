@@ -17,13 +17,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstddef>
 #include <utility>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/meta/type_traits.h"
 #include "src/core/lib/promise/poll.h"
 #include "src/core/util/function_signature.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
 
 // A Promise is a callable object that returns Poll<T> for some T.
 // Often when we're writing code that uses promises, we end up wanting to also
@@ -56,14 +58,54 @@ constexpr bool kHasToJsonMethod = false;
 template <typename Promise>
 constexpr bool kHasToJsonMethod<
     Promise, std::void_t<decltype(std::declval<Promise>().ToJson())>> = true;
+
+template <typename Promise, typename = void>
+constexpr bool kHasToProtoMethod = false;
+
+template <typename Promise>
+constexpr bool kHasToProtoMethod<
+    Promise, std::void_t<decltype(std::declval<Promise>().ToProto(
+                 static_cast<grpc_channelz_v2_Promise*>(nullptr),
+                 static_cast<upb_Arena*>(nullptr)))>> = true;
+
+template <typename Promise, typename = void>
+constexpr bool kHasChannelzPropertiesMethod = false;
+
+template <typename Promise>
+constexpr bool kHasChannelzPropertiesMethod<
+    Promise,
+    std::void_t<decltype(std::declval<Promise>().ChannelzProperties())>> = true;
+
 }  // namespace promise_detail
 
 template <typename Promise>
 Json PromiseAsJson(const Promise& promise) {
   if constexpr (promise_detail::kHasToJsonMethod<Promise>) {
     return promise.ToJson();
+  } else if constexpr (promise_detail::kHasChannelzPropertiesMethod<Promise>) {
+    return promise.ChannelzProperties().ToJson();
   } else {
     return Json::FromString(std::string(TypeName<Promise>()));
+  }
+}
+
+template <typename Promise>
+void PromiseAsProto(const Promise& promise,
+                    grpc_channelz_v2_Promise* promise_proto, upb_Arena* arena) {
+  if constexpr (promise_detail::kHasToProtoMethod<Promise>) {
+    promise.ToProto(promise_proto, arena);
+  } else if constexpr (promise_detail::kHasChannelzPropertiesMethod<Promise>) {
+    auto* custom_promise =
+        grpc_channelz_v2_Promise_mutable_custom_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Custom_set_type(
+        custom_promise, StdStringToUpbString(TypeName<Promise>()));
+    promise.ChannelzProperties().FillUpbProto(
+        grpc_channelz_v2_Promise_Custom_mutable_properties(custom_promise,
+                                                           arena),
+        arena);
+  } else {
+    grpc_channelz_v2_Promise_set_unknown_promise(
+        promise_proto, StdStringToUpbString(TypeName<Promise>()));
   }
 }
 
@@ -115,6 +157,10 @@ class PromiseLike<
     return WrapInPoll(f_());
   }
   Json ToJson() const { return PromiseAsJson(f_); }
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    PromiseAsProto(f_, promise_proto, arena);
+  }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
@@ -137,6 +183,10 @@ class PromiseLike<
     return Empty{};
   }
   Json ToJson() const { return PromiseAsJson(f_); }
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    PromiseAsProto(f_, promise_proto, arena);
+  }
   PromiseLike(const PromiseLike&) = default;
   PromiseLike& operator=(const PromiseLike&) = default;
   PromiseLike(PromiseLike&&) = default;
