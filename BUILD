@@ -5123,6 +5123,16 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "envoy_extensions_http_rate_limit_quota_upb",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "envoy_extensions_http_rate_limit_quota_upbdefs",
+    deps = ["@envoy_api//envoy/extensions/filters/http/rate_limit_quota/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
