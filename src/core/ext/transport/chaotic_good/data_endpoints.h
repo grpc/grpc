@@ -472,7 +472,7 @@ class Endpoint final {
     // TODO(ctiller): Inline members into EndpointContext.
     RefCountedPtr<OutputBuffers> output_buffers;
     RefCountedPtr<InputQueue> input_queues;
-    RefCountedPtr<SecureFrameQueue> secure_frame_queue;
+    SingleSetRefCountedPtr<SecureFrameQueue> secure_frame_queue;
     std::shared_ptr<PromiseEndpoint> endpoint;
     std::shared_ptr<TcpZTraceCollector> ztrace_collector;
     TransportContextPtr transport_ctx;
@@ -504,7 +504,7 @@ class DataEndpoints final : public channelz::DataSource {
                          std::shared_ptr<TcpZTraceCollector> ztrace_collector,
                          bool enable_tracing, std::string scheduler_config,
                          data_endpoints_detail::Clock* clock = DefaultClock());
-  ~DataEndpoints() { ResetDataSource(); }
+  ~DataEndpoints() { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override;
 

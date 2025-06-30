@@ -21,106 +21,76 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "google/protobuf/any.upb.h"
 #include "src/core/util/json/json.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
+#include "src/proto/grpc/channelz/v2/property_list.upb.h"
+#include "upb/mem/arena.h"
 
 namespace grpc_core::channelz {
+
+class PropertyList;
+class PropertyGrid;
+class PropertyTable;
+
+using PropertyValue =
+    std::variant<absl::string_view, std::string, int64_t, uint64_t, double,
+                 bool, Duration, Timestamp, absl::Status,
+                 std::shared_ptr<PropertyList>, std::shared_ptr<PropertyGrid>,
+                 std::shared_ptr<PropertyTable>>;
 
 namespace property_list_detail {
 
 template <typename T, typename = void>
-struct JsonFromValueHelper;
-
-template <>
-struct JsonFromValueHelper<absl::string_view> {
-  static std::optional<Json> JsonFromValue(absl::string_view value) {
-    return Json::FromString(std::string(value));
-  }
-};
-
-template <>
-struct JsonFromValueHelper<const char*> {
-  static std::optional<Json> JsonFromValue(const char* value) {
-    if (value != nullptr) {
-      return Json::FromString(std::string(value));
-    } else {
-      return std::nullopt;
-    }
-  }
-};
-
-template <>
-struct JsonFromValueHelper<std::string> {
-  static std::optional<Json> JsonFromValue(std::string value) {
-    return Json::FromString(std::move(value));
+struct Wrapper {
+  static std::optional<PropertyValue> Wrap(T value) {
+    return PropertyValue(std::move(value));
   }
 };
 
 template <typename T>
-struct JsonFromValueHelper<T, std::enable_if_t<std::is_arithmetic_v<T>>> {
-  static std::optional<Json> JsonFromValue(T value) {
-    return Json::FromNumber(value);
-  }
-};
-
-template <>
-struct JsonFromValueHelper<Json::Object> {
-  static std::optional<Json> JsonFromValue(Json::Object value) {
-    return Json::FromObject(std::move(value));
-  }
-};
-
-template <>
-struct JsonFromValueHelper<Json::Array> {
-  static std::optional<Json> JsonFromValue(Json::Array value) {
-    return Json::FromArray(std::move(value));
-  }
-};
-
-template <>
-struct JsonFromValueHelper<Json> {
-  static std::optional<Json> JsonFromValue(Json value) {
-    return std::move(value);
-  }
-};
-
-template <>
-struct JsonFromValueHelper<Duration> {
-  static std::optional<Json> JsonFromValue(Duration dur) {
-    return Json::FromString(dur.ToJsonString());
-  }
-};
-
-template <>
-struct JsonFromValueHelper<Timestamp> {
-  static std::optional<Json> JsonFromValue(Timestamp ts) {
-    return Json::FromString(
-        gpr_format_timespec(ts.as_timespec(GPR_CLOCK_REALTIME)));
-  }
-};
-
-template <>
-struct JsonFromValueHelper<absl::Status> {
-  static std::optional<Json> JsonFromValue(absl::Status status) {
-    return Json::FromString(status.ToString());
+struct Wrapper<
+    T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>>> {
+  static std::optional<PropertyValue> Wrap(T value) {
+    return PropertyValue(static_cast<uint64_t>(value));
   }
 };
 
 template <typename T>
-struct JsonFromValueHelper<std::optional<T>> {
-  static std::optional<Json> JsonFromValue(std::optional<T> value) {
-    if (value.has_value()) {
-      return JsonFromValueHelper<T>::JsonFromValue(*std::move(value));
-    } else {
-      return std::nullopt;
-    }
+struct Wrapper<T,
+               std::enable_if_t<std::is_integral_v<T> && std::is_signed_v<T>>> {
+  static std::optional<PropertyValue> Wrap(T value) {
+    return PropertyValue(static_cast<int64_t>(value));
+  }
+};
+
+template <typename T>
+struct Wrapper<std::optional<T>> {
+  static std::optional<PropertyValue> Wrap(std::optional<T> value) {
+    if (value.has_value()) return Wrapper<T>::Wrap(*std::move(value));
+    return std::nullopt;
+  }
+};
+
+template <>
+struct Wrapper<const char*> {
+  static std::optional<PropertyValue> Wrap(const char* value) {
+    if (value == nullptr) return std::nullopt;
+    return absl::string_view(value);
+  }
+};
+
+template <>
+struct Wrapper<bool> {
+  static std::optional<PropertyValue> Wrap(bool value) {
+    return PropertyValue(value);
   }
 };
 
 }  // namespace property_list_detail
-
-class PropertyGrid;
 
 // PropertyList contains a bag of key->value (for mostly arbitrary value
 // types) for reporting out state from channelz - the big idea is that you
@@ -132,47 +102,36 @@ class PropertyList {
  public:
   template <typename T>
   PropertyList& Set(absl::string_view key, T value) {
-    SetInternal(
-        key,
-        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    SetInternal(key, property_list_detail::Wrapper<T>::Wrap(value));
     return *this;
   }
 
   PropertyList& Merge(PropertyList other);
 
-  // TODO(ctiller): remove soon, switch to something returning a protobuf.
-  Json::Object TakeJsonObject() { return std::move(property_list_); }
+  // TODO(ctiller): remove soon, switch to just FillUpbProto.
+  Json::Object TakeJsonObject();
+  void FillUpbProto(grpc_channelz_v2_PropertyList* proto, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
 
  private:
-  void SetInternal(absl::string_view key, std::optional<Json> value);
+  void SetInternal(absl::string_view key, std::optional<PropertyValue> value);
 
   friend class PropertyGrid;
+  friend class PropertyTable;
 
-  // TODO(ctiller): switch to a protobuf representation
-  Json::Object property_list_;
+  absl::flat_hash_map<std::string, PropertyValue> property_list_;
 };
 
 namespace property_list_detail {
 
 template <>
-struct JsonFromValueHelper<PropertyList> {
-  static std::optional<Json> JsonFromValue(PropertyList value) {
-    return Json::FromObject(value.TakeJsonObject());
+struct Wrapper<PropertyList> {
+  static std::optional<PropertyValue> Wrap(PropertyList value) {
+    return PropertyValue(std::make_shared<PropertyList>(std::move(value)));
   }
 };
 
-template <>
-struct JsonFromValueHelper<std::vector<PropertyList>> {
-  static std::optional<Json> JsonFromValue(std::vector<PropertyList> values) {
-    Json::Array array;
-    for (auto& v : values) {
-      array.emplace_back(Json::FromObject(v.TakeJsonObject()));
-    }
-    return Json::FromArray(std::move(array));
-  }
-};
-
-}  // namespace property_list_detail
+};  // namespace property_list_detail
 
 // PropertyGrid is much the same as PropertyList, but it is two dimensional.
 // Each row and column can be set independently.
@@ -181,9 +140,7 @@ class PropertyGrid {
  public:
   template <typename T>
   PropertyGrid& Set(absl::string_view column, absl::string_view row, T value) {
-    SetInternal(
-        column, row,
-        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    SetInternal(column, row, property_list_detail::Wrapper<T>::Wrap(value));
     return *this;
   }
 
@@ -191,26 +148,28 @@ class PropertyGrid {
   PropertyGrid& SetRow(absl::string_view row, PropertyList values);
 
   Json::Object TakeJsonObject();
+  void FillUpbProto(grpc_channelz_v2_PropertyGrid* proto, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
 
  private:
   void SetInternal(absl::string_view column, absl::string_view row,
-                   std::optional<Json> value);
+                   std::optional<PropertyValue> value);
 
   std::vector<std::string> columns_;
   std::vector<std::string> rows_;
-  absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
+  absl::flat_hash_map<std::pair<size_t, size_t>, PropertyValue> grid_;
 };
 
 namespace property_list_detail {
 
 template <>
-struct JsonFromValueHelper<PropertyGrid> {
-  static std::optional<Json> JsonFromValue(PropertyGrid value) {
-    return Json::FromObject(value.TakeJsonObject());
+struct Wrapper<PropertyGrid> {
+  static std::optional<PropertyValue> Wrap(PropertyGrid value) {
+    return PropertyValue(std::make_shared<PropertyGrid>(std::move(value)));
   }
 };
 
-}  // namespace property_list_detail
+};  // namespace property_list_detail
 
 // PropertyTable is much the same as PropertyGrid, but has numbered rows
 // instead of named rows.
@@ -218,9 +177,7 @@ class PropertyTable {
  public:
   template <typename T>
   PropertyTable& Set(absl::string_view column, size_t row, T value) {
-    SetInternal(
-        column, row,
-        property_list_detail::JsonFromValueHelper<T>::JsonFromValue(value));
+    SetInternal(column, row, property_list_detail::Wrapper<T>::Wrap(value));
     return *this;
   }
 
@@ -230,26 +187,28 @@ class PropertyTable {
   }
 
   Json::Object TakeJsonObject();
+  void FillUpbProto(grpc_channelz_v2_PropertyTable* proto, upb_Arena* arena);
+  void FillAny(google_protobuf_Any* any, upb_Arena* arena);
 
  private:
   void SetInternal(absl::string_view column, size_t row,
-                   std::optional<Json> value);
+                   std::optional<PropertyValue> value);
 
   std::vector<std::string> columns_;
   size_t num_rows_ = 0;
-  absl::flat_hash_map<std::pair<size_t, size_t>, Json> grid_;
+  absl::flat_hash_map<std::pair<size_t, size_t>, PropertyValue> grid_;
 };
 
 namespace property_list_detail {
 
 template <>
-struct JsonFromValueHelper<PropertyTable> {
-  static std::optional<Json> JsonFromValue(PropertyTable value) {
-    return Json::FromObject(value.TakeJsonObject());
+struct Wrapper<PropertyTable> {
+  static std::optional<PropertyValue> Wrap(PropertyTable value) {
+    return PropertyValue(std::make_shared<PropertyTable>(std::move(value)));
   }
 };
 
-}  // namespace property_list_detail
+};  // namespace property_list_detail
 
 }  // namespace grpc_core::channelz
 

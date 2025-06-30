@@ -2127,6 +2127,8 @@ tsi_result tsi_ssl_client_handshaker_factory_create_handshaker(
     size_t ssl_bio_buf_size,
     std::optional<std::string> alpn_preferred_protocol_list,
     tsi_handshaker** handshaker) {
+  GRPC_TRACE_LOG(tsi, INFO)
+      << "Creating SSL handshaker with SNI " << server_name_indication;
   return create_tsi_ssl_handshaker(
       factory->ssl_context, 1, server_name_indication, network_bio_buf_size,
       ssl_bio_buf_size, alpn_preferred_protocol_list, &factory->base,

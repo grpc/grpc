@@ -240,14 +240,15 @@ ChaoticGoodClientTransport::ChaoticGoodClientTransport(
       MakeRefCounted<StreamDispatch>(outgoing_frames.MakeSender());
   frame_transport_->Start(party_.get(), std::move(outgoing_frames),
                           stream_dispatch_);
+  SourceConstructed();
 }
 
 ChaoticGoodClientTransport::~ChaoticGoodClientTransport() {
-  ResetDataSource();
-  party_.reset();
+  DCHECK(party_.get() == nullptr);
 }
 
 void ChaoticGoodClientTransport::Orphan() {
+  SourceDestructing();
   stream_dispatch_->OnFrameTransportClosed(
       absl::UnavailableError("Transport closed"));
   party_.reset();

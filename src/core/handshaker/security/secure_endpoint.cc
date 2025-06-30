@@ -186,6 +186,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   absl::Status Unprotect(absl::Status read_status)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(read_mu_) {
+    if (shutdown_) {
+      return absl::CancelledError("secure endpoint shutdown");
+    }
+
     GRPC_LATENT_SEE_INNER_SCOPE("unprotect");
     bool keep_looping = false;
     tsi_result result = TSI_OK;
@@ -315,6 +319,8 @@ class FrameProtector : public RefCounted<FrameProtector> {
 
   tsi_result Protect(grpc_slice_buffer* slices, int max_frame_size)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(write_mu_) {
+    if (shutdown_) return TSI_FAILED_PRECONDITION;
+
     GRPC_LATENT_SEE_INNER_SCOPE("protect");
     uint8_t* cur = GRPC_SLICE_START_PTR(write_staging_buffer_);
     uint8_t* end = GRPC_SLICE_END_PTR(write_staging_buffer_);
@@ -417,7 +423,10 @@ class FrameProtector : public RefCounted<FrameProtector> {
     return &output_buffer_;
   }
 
-  void Shutdown() { memory_owner_.Reset(); }
+  void Shutdown() {
+    shutdown_ = true;
+    memory_owner_.Reset();
+  }
 
  private:
   struct tsi_frame_protector* const protector_;
@@ -439,6 +448,7 @@ class FrameProtector : public RefCounted<FrameProtector> {
   std::atomic<bool> has_posted_reclaimer_{false};
   int min_progress_size_ = 1;
   SliceBuffer protector_staging_buffer_;
+  bool shutdown_ = false;
 };
 }  // namespace
 }  // namespace grpc_core

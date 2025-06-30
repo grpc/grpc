@@ -42,6 +42,22 @@ namespace grpc_core {
 class GcpAuthenticationFilter
     : public ImplementChannelFilter<GcpAuthenticationFilter> {
  public:
+  class CallCredentialsCache : public Blackboard::Entry {
+   public:
+    explicit CallCredentialsCache(size_t max_size) : cache_(max_size) {}
+
+    static UniqueTypeName Type();
+
+    void SetMaxSize(size_t max_size);
+
+    RefCountedPtr<grpc_call_credentials> Get(const std::string& audience);
+
+   private:
+    Mutex mu_;
+    LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
+        cache_ ABSL_GUARDED_BY(&mu_);
+  };
+
   static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() { return "gcp_authentication_filter"; }
@@ -62,22 +78,6 @@ class GcpAuthenticationFilter
   };
 
  private:
-  class CallCredentialsCache : public Blackboard::Entry {
-   public:
-    explicit CallCredentialsCache(size_t max_size) : cache_(max_size) {}
-
-    static UniqueTypeName Type();
-
-    void SetMaxSize(size_t max_size);
-
-    RefCountedPtr<grpc_call_credentials> Get(const std::string& audience);
-
-   private:
-    Mutex mu_;
-    LruCache<std::string /*audience*/, RefCountedPtr<grpc_call_credentials>>
-        cache_ ABSL_GUARDED_BY(&mu_);
-  };
-
   GcpAuthenticationFilter(
       RefCountedPtr<ServiceConfig> service_config,
       const GcpAuthenticationParsedConfig::Config* filter_config,

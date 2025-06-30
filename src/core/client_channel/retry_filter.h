@@ -45,6 +45,10 @@ class RetryFilter final {
  public:
   static const grpc_channel_filter kVtable;
 
+  static void UpdateBlackboard(const ServiceConfig& service_config,
+                               const Blackboard* old_blackboard,
+                               Blackboard* blackboard);
+
  private:
   // Old filter-stack style call implementation, in
   // retry_filter_legacy_call_data.{h,cc}

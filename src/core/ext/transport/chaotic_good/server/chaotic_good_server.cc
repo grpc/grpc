@@ -80,7 +80,7 @@ namespace chaotic_good {
 namespace {
 const Duration kConnectionDeadline = Duration::Seconds(120);
 
-void LogInitFailure(Server* server, absl::string_view what,
+void LogInitFailure(Server* server, std::string what,
                     std::optional<absl::Status> status) {
   LOG(ERROR) << "ChaoticGoodServerListener Init failed: " << what
              << " with status: "
@@ -88,18 +88,18 @@ void LogInitFailure(Server* server, absl::string_view what,
   auto* server_node = server->channelz_node();
   if (server_node != nullptr) {
     if (status.has_value()) {
-      server_node->NewTraceNode(what, ": ", *status).Commit();
+      server_node->NewTraceNode(std::move(what), ": ", *status).Commit();
     } else {
-      server_node->NewTraceNode(what).Commit();
+      server_node->NewTraceNode(std::move(what)).Commit();
     }
   }
 }
 
-void LogInformational(Server* server, absl::string_view what) {
+void LogInformational(Server* server, std::string what) {
   VLOG(2) << "ChaoticGoodServerListener: " << what;
   auto* server_node = server->channelz_node();
   if (server_node != nullptr) {
-    server_node->NewTraceNode(what).Commit();
+    server_node->NewTraceNode(std::move(what)).Commit();
   }
 }
 

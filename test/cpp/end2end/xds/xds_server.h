@@ -185,6 +185,13 @@ class AdsServiceImpl
     forced_ads_failure_ = std::nullopt;
   }
 
+  using ClientMetadataType = std::multimap<grpc::string_ref, grpc::string_ref>;
+  void SetCallCredsCallback(
+      absl::AnyInvocable<void(const ClientMetadataType&)> cb) {
+    grpc_core::MutexLock lock(&ads_mu_);
+    call_creds_cb_ = std::move(cb);
+  }
+
  private:
   class Reactor
       : public ServerBidiReactor<DiscoveryRequest, DiscoveryResponse> {
@@ -292,6 +299,9 @@ class AdsServiceImpl
   std::optional<Status> forced_ads_failure_ ABSL_GUARDED_BY(ads_mu_);
   // Wrap resources in a Resource proto wrapper, as configured by tests.
   bool wrap_resources_ ABSL_GUARDED_BY(ads_mu_) = false;
+
+  absl::AnyInvocable<void(const ClientMetadataType&)> call_creds_cb_
+      ABSL_GUARDED_BY(ads_mu_);
 
   grpc_core::Mutex clients_mu_;
   std::set<std::string> clients_ ABSL_GUARDED_BY(clients_mu_);

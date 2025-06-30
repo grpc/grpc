@@ -157,6 +157,23 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "posix_write_event_sink_test",
+    srcs = ["posix_write_event_sink_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = [
+        "no_windows",
+    ],
+    uses_event_engine = False,
+    uses_polling = False,
+    deps = [
+        "//src/core:posix_write_event_sink",
+        "//test/core/test_util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_posix_socket_utils_test",
     srcs = ["tcp_posix_socket_utils_test.cc"],
     external_deps = ["gtest"],
