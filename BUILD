@@ -2816,8 +2816,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/base:endian",
         "absl/log:check",
+        "absl/numeric:bits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
