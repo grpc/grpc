@@ -963,6 +963,7 @@ grpc_cc_library(
     deps = [
         "json",
         "//:gpr_platform",
+        "//:promise_upb",
     ],
 )
 

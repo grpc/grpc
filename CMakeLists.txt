@@ -25946,6 +25946,12 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   test/core/promise/race_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25979,6 +25985,8 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_mini_descriptor_lib
+  upb_wire_lib
   gpr
 )
 
