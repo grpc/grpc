@@ -42,7 +42,7 @@ namespace grpc_core {
 //
 // Running of the Loop combinator:
 //
-// 1. The input promise is guranteed to run at least once when the combinator
+// 1. The input promise is guaranteed to run at least once when the combinator
 //    is invoked.
 // 2. The Loop combinators execution will keep running input promise for
 //    as long as the input promise returns the Continue() object.
@@ -206,6 +206,21 @@ class Loop {
       obj["promise"] = PromiseAsJson(promise_);
     }
     return Json::FromObject(std::move(obj));
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* loop_promise =
+        grpc_channelz_v2_Promise_mutable_loop_promise(promise_proto, arena);
+    if constexpr (kYield) {
+      grpc_channelz_v2_Promise_Loop_set_yield(loop_promise, true);
+    }
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Loop_mutable_promise(loop_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Loop_set_loop_factory(
+        loop_promise, StdStringToUpbString(TypeName<Factory>()));
   }
 
  private:
