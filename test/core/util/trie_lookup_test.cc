@@ -14,76 +14,136 @@
 
 #include "src/core/util/trie_lookup.h"
 
+#include <memory>
 #include <optional>
+#include <string>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/optional.h"
 #include "gtest/gtest.h"
+#include "src/core/util/trie_lookup.h"  // Adjust this path to where you saved the header
 
 namespace grpc_core {
+namespace testing {
 
-TEST(TrieLookupTest, Empty) {
-  TrieLookupTree<int> tree;
-  EXPECT_EQ(tree.lookup("Hello"), absl::nullopt);
+class TrieLookupTreeTest : public ::testing::Test {
+ protected:
+  TrieLookupTree<std::string> trie_;
+};
+
+TEST_F(TrieLookupTreeTest, AddAndExactLookup) {
+  auto value = std::make_shared<std::string>("value1");
+  ASSERT_TRUE(trie_.addNode("key1", value));
+  auto result = trie_.lookup("key1");
+  ASSERT_TRUE(result != nullptr);
+  EXPECT_EQ(*result, "value1");
 }
 
-TEST(TrieLookupTest, Add) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  EXPECT_EQ(tree.lookup("Hello"), 1);
+TEST_F(TrieLookupTreeTest, AddMultipleNodes) {
+  auto value1 = std::make_shared<std::string>("value1");
+  auto value2 = std::make_shared<std::string>("value2");
+  ASSERT_TRUE(trie_.addNode("key1", value1));
+  ASSERT_TRUE(trie_.addNode("key2", value2));
+  auto result1 = trie_.lookup("key1");
+  ASSERT_TRUE(result1 != nullptr);
+  EXPECT_EQ(*result1, "value1");
+  auto result2 = trie_.lookup("key2");
+  ASSERT_TRUE(result2 != nullptr);
+  EXPECT_EQ(*result2, "value2");
 }
 
-TEST(TrieLookupTest, Overwrite) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  EXPECT_EQ(tree.lookup("Hello"), 1);
-  tree.addNode("Hello", 2);
-  EXPECT_EQ(tree.lookup("Hello"), 2);
+TEST_F(TrieLookupTreeTest, AddPrefixKey) {
+  auto apple_value = std::make_shared<std::string>("fruit");
+  auto app_value = std::make_shared<std::string>("software");
+  ASSERT_TRUE(trie_.addNode("apple", apple_value));
+  ASSERT_TRUE(trie_.addNode("app", app_value));
+  auto result1 = trie_.lookup("apple");
+  ASSERT_TRUE(result1 != nullptr);
+  EXPECT_EQ(*result1, "fruit");
+  auto result2 = trie_.lookup("app");
+  ASSERT_TRUE(result2 != nullptr);
+  EXPECT_EQ(*result2, "software");
 }
 
-TEST(TrieLookupTest, OverwriteFalse) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  EXPECT_EQ(tree.lookup("Hello"), 1);
-  EXPECT_FALSE(tree.addNode("Hello", 2, false));
-  EXPECT_EQ(tree.lookup("Hello"), 1);
+TEST_F(TrieLookupTreeTest, OverwriteValue) {
+  auto old_value = std::make_shared<std::string>("old");
+  auto new_value = std::make_shared<std::string>("new");
+  ASSERT_TRUE(trie_.addNode("key", old_value));
+  auto result_old = trie_.lookup("key");
+  ASSERT_TRUE(result_old != nullptr);
+  EXPECT_EQ(*result_old, "old");
+  ASSERT_TRUE(trie_.addNode("key", new_value, /*allow_overwrite=*/true));
+  auto result_new = trie_.lookup("key");
+  ASSERT_TRUE(result_new != nullptr);
+  EXPECT_EQ(*result_new, "new");
 }
 
-TEST(TrieLookupTest, Lookup) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  tree.addNode("World", 2);
-  EXPECT_EQ(tree.lookup("Hello"), 1);
-  EXPECT_EQ(tree.lookup("World"), 2);
+TEST_F(TrieLookupTreeTest, PreventOverwrite) {
+  auto value1 = std::make_shared<std::string>("value1");
+  auto value2 = std::make_shared<std::string>("value2");
+  ASSERT_TRUE(trie_.addNode("key", value1));
+  ASSERT_FALSE(trie_.addNode("key", value2, /*allow_overwrite=*/false));
+  // Verify the original value is still there.
+  auto result = trie_.lookup("key");
+  ASSERT_TRUE(result != nullptr);
+  EXPECT_EQ(*result, "value1");
 }
 
-TEST(TrieLookupTest, LookupPrefix) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  tree.addNode("World", 2);
-  tree.addNode("Hello/World", 3);
-  EXPECT_EQ(tree.lookup("Hello"), 1);
-  EXPECT_EQ(tree.lookup("Hello/World"), 3);
-  EXPECT_EQ(tree.lookup("Hel"), absl::nullopt);
-  EXPECT_EQ(tree.lookup("Wor"), absl::nullopt);
-  EXPECT_EQ(tree.lookup(""), absl::nullopt);
-  EXPECT_EQ(tree.lookup("Foo"), absl::nullopt);
+TEST_F(TrieLookupTreeTest, LookupNonExistent) {
+  auto value = std::make_shared<std::string>("value");
+  trie_.addNode("key", value);
+  EXPECT_EQ(trie_.lookup("non-existent-key"), nullptr);
 }
 
-TEST(TrieLookupTest, LookupLongestPrefix) {
-  TrieLookupTree<int> tree;
-  tree.addNode("Hello", 1);
-  tree.addNode("Hello/World", 2);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hello"), 1);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hello/Boq"), 1);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hello/Wor"), 1);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hello/World"), 2);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hello/World/Foo"), 2);
-  EXPECT_EQ(tree.lookupLongestPrefix("Hel"), std::nullopt);
-  EXPECT_EQ(tree.lookupLongestPrefix("Foo"), absl::nullopt);
-  EXPECT_EQ(tree.lookupLongestPrefix(""), absl::nullopt);
+TEST_F(TrieLookupTreeTest, LookupPrefixWithoutValue) {
+  auto value = std::make_shared<std::string>("value");
+  trie_.addNode("apple", value);
+  EXPECT_EQ(trie_.lookup("app"), nullptr);
 }
 
+// === Tests for lookupLongestPrefix ===
+
+TEST_F(TrieLookupTreeTest, LongestPrefixExactMatch) {
+  auto value = std::make_shared<std::string>("exact_match");
+  trie_.addNode("a/b/c", value);
+  auto result = trie_.lookupLongestPrefix("a/b/c");
+  ASSERT_TRUE(result != nullptr);
+  EXPECT_EQ(*result, "exact_match");
+}
+
+TEST_F(TrieLookupTreeTest, LongestPrefixPartialMatch) {
+  auto value = std::make_shared<std::string>("prefix_match");
+  trie_.addNode("a/b", value);
+  auto result = trie_.lookupLongestPrefix("a/b/c/d");
+  ASSERT_TRUE(result != nullptr);
+  EXPECT_EQ(*result, "prefix_match");
+}
+
+TEST_F(TrieLookupTreeTest, LongestPrefixMultipleMatches) {
+  auto value1 = std::make_shared<std::string>("first");
+  auto value2 = std::make_shared<std::string>("second_longest");
+  auto value3 = std::make_shared<std::string>("third");
+  trie_.addNode("a", value1);
+  trie_.addNode("a/b/c", value2);
+  trie_.addNode("a/b", value3);
+  auto result = trie_.lookupLongestPrefix("a/b/c/d");
+  ASSERT_TRUE(result != nullptr);
+  EXPECT_EQ(*result, "second_longest");
+}
+
+TEST_F(TrieLookupTreeTest, LongestPrefixNoMatch) {
+  trie_.addNode("x/y", std::make_shared<std::string>("some_value"));
+  auto result = trie_.lookupLongestPrefix("a/b/c");
+  EXPECT_EQ(result, nullptr);
+}
+
+TEST_F(TrieLookupTreeTest, LongestPrefixPathExistsButNoValue) {
+  trie_.addNode("a/b/c", std::make_shared<std::string>("value"));
+  auto result = trie_.lookupLongestPrefix("a/b");
+  EXPECT_EQ(result, nullptr);
+}
+
+}  // namespace testing
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

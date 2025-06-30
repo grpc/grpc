@@ -58,7 +58,7 @@ class TrieLookupTree {
     const auto* node = root_.get();
     for (auto c : key) {
       auto it = node->child_.find(c);
-      if (it == node->child_.end()) return absl::nullopt;
+      if (it == node->child_.end()) return nullptr;
       node = it->second.get();
     }
     return node->value;
