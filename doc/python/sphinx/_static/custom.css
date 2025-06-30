@@ -12,7 +12,7 @@ dl.field-list > dt {
     bottom: 0;
     width: 35% !important;
     flex-shrink: 0;
-    min-width: 360px !important;
+    min-width: 340px !important;
     position: unset !important;
 }
 .bodywrapper {
