@@ -31,9 +31,18 @@
 namespace grpc_generator {
 
 inline bool StripSuffix(std::string* filename, const std::string& suffix) {
+  if (filename == nullptr) {
+    return false;  // Handle null pointer for safety
+  }
+
   if (filename->length() >= suffix.length()) {
     size_t suffix_pos = filename->length() - suffix.length();
-    if (filename->compare(suffix_pos, std::string::npos, suffix) == 0) {
+
+    // Extract the potential suffix from the filename
+    std::string filename_suffix = filename->substr(suffix_pos);
+
+    // Perform a case-insensitive comparison
+    if (ToLower(filename_suffix) == ToLower(suffix)) {
       filename->resize(filename->size() - suffix.size());
       return true;
     }
@@ -123,6 +132,14 @@ inline std::string LowerUnderscoreToUpperCamel(std::string str) {
     result += CapitalizeFirstLetter(tokens[i]);
   }
   return result;
+}
+
+// Helper function to convert a string to lowercase for comparison.
+// This is a common pattern to achieve case-insensitivity.
+inline std::string ToLower(std::string s) {
+  std::transform(s.begin(), s.end(), s.begin(),
+                 [](unsigned char c) { return std::tolower(c); });
+  return s;
 }
 
 inline std::string FileNameInUpperCamel(
