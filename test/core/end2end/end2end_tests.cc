@@ -22,16 +22,16 @@
 #include <memory>
 #include <optional>
 
-#include "src/core/util/grpc_check.h"
 #include "absl/log/log.h"
 #include "absl/memory/memory.h"
 #include "absl/random/random.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
+#include "src/core/util/grpc_check.h"
+#include "src/core/util/postmortem_emit.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/event_engine/fuzzing_event_engine/fuzzing_event_engine.h"
-#include "test/core/test_util/postmortem_emit.h"
 
 using grpc_event_engine::experimental::EventEngine;
 using grpc_event_engine::experimental::FuzzingEventEngine;

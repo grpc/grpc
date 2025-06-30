@@ -191,6 +191,7 @@ grpc_cc_library(
             "//src/core:default_event_engine",
             "//src/core:no_destruct",
             "//src/core:postmortem",
+            "//test/core/test_util:postmortem",
             "//src/core:slice",
             "//src/core:time",
             "//test/core/call:batch_builder",
