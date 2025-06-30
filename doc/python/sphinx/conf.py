@@ -77,7 +77,7 @@ autodoc_typehints = 'description'
 html_theme = 'alabaster'
 html_theme_options = {
     'fixed_sidebar': True,
-    'page_width': '1140px',
+    'page_width': 'auto',
     'show_related': True,
     'analytics_id': 'UA-60127042-1',
     'description': grpc_version.VERSION,

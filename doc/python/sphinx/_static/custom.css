@@ -1,8 +1,24 @@
 dl.field-list > dt {
     word-break: keep-all !important;
 }
+.document {
+  width: 90% !important;
+  margin: 0 auto;
+  display: flex;
+}
 .sphinxsidebar {
     overflow-y: scroll;
     top: 0;
     bottom: 0;
+    width: 35% !important;
+    flex-shrink: 0;
+    min-width: 360px !important;
+    position: unset !important;
+}
+.bodywrapper {
+  margin: auto !important;
+}
+.body {
+  max-width: 100% !important;
+  min-width: 800px;
 }
