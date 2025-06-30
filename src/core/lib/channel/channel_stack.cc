@@ -180,7 +180,7 @@ void grpc_channel_stack::ChannelStackDataSource::AddData(
   grpc_channel_stack* channel_stack = reinterpret_cast<grpc_channel_stack*>(
       reinterpret_cast<char*>(this) -
       offsetof(grpc_channel_stack, channelz_data_source));
-  sink.AddAdditionalInfo(
+  sink.AddData(
       "channel_stack",
       grpc_core::channelz::PropertyList()
           .Set("type", "v1")

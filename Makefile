@@ -954,6 +954,7 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
