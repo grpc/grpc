@@ -67,7 +67,7 @@ bool PostMortemEmitAndReturnTrue();
 #else
 // VLOG(INT_MAX) effectively sends logs nowhere
 #define GRPC_DCHECK(a) VLOG(INT_MAX)
-#define GRPC_DCHECK_EQ(a, b) VLOG(INT_MAX))
+#define GRPC_DCHECK_EQ(a, b) VLOG(INT_MAX)
 #define GRPC_DCHECK_GE(a, b) VLOG(INT_MAX)
 #define GRPC_DCHECK_LE(a, b) VLOG(INT_MAX)
 #define GRPC_DCHECK_GT(a, b) VLOG(INT_MAX)
