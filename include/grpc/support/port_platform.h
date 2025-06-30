@@ -106,7 +106,6 @@
 
 #include <windows.h>
 
-#include <memory>
 
 #ifndef _WIN32_WINNT
 #error \
