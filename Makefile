@@ -194,7 +194,7 @@ CXX_ubsan = clang++
 LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 
