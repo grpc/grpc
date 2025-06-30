@@ -39,8 +39,9 @@ third_party/opentelemetry-cpp ced79860f8c8a091a2eabfee6d47783f828a9b59
 third_party/protobuf 3d4adad5c4c4e6a6f9f038769b8c90716065b0e4
 third_party/protoc-gen-validate 32c2415389a3538082507ae537e7edd9578c64ed
 third_party/re2 0c5616df9c0aaa44c9440d87422012423d91c7d1
-third_party/xds 3a472e524827f72d1ad621c4983dd5af54c46776
+third_party/xds 2ac532fd44436293585084f8d94c6bdb17835af0
 third_party/zlib f1f503da85d52e56aae11557b4d79a42bcaa2b86
+third_party/cel-spec 9f069b3ee58b02d6f6736c5ebd6587075c1a1b22
 EOF
 
 if ! diff -u "$submodules" "$want_submodules"; then
