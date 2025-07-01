@@ -33,7 +33,7 @@ using SendPingArgs = ::grpc_core::http2::PingInterface::SendPingArgs;
 using Callback = absl::AnyInvocable<void()>;
 using grpc_event_engine::experimental::EventEngine;
 
-#define GRPC_GRPC_HTTP2_PING_LOG                           \
+#define GRPC_HTTP2_PING_LOG                                \
   LOG_IF(INFO, (GRPC_TRACE_FLAG_ENABLED(http) ||           \
                 GRPC_TRACE_FLAG_ENABLED(bdp_estimator) ||  \
                 GRPC_TRACE_FLAG_ENABLED(http_keepalive) || \
