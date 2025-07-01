@@ -358,7 +358,7 @@ class AdaptMethod<T, R (Call::*)(), method,
                   absl::enable_if_t<StatusOrType<R, T>::value, void>> {
  public:
   explicit AdaptMethod(Call* call, void* /*filter*/ = nullptr) : call_(call) {}
-  auto operator()(Hdl<T> x) {
+  auto operator()(Hdl<T> /*x*/) {
     R result = (call_->*method)();
     if (IsStatusOk(result)) {
       return Immediate(
@@ -596,7 +596,7 @@ class AdaptOnServerTrailingMetadataMethod<T, const NoInterceptor*, method> {
  public:
   explicit AdaptOnServerTrailingMetadataMethod(void* /*call*/,
                                                void* /*filter*/ = nullptr) {}
-  auto operator()(T& x) {}
+  auto operator()(T& /*x*/) {}
   void operator()(T* /*x*/) {}
 };
 
@@ -1040,8 +1040,8 @@ template <typename Filter0, typename... Filters>
 struct FilterWrapper<Typelist<Filter0, Filters...>>
     : public FilterWrapper<Typelist<Filters...>> {
   FilterWrapper(const ChannelArgs& args, ChannelFilter::Args filter_args)
-      : filter0_(Filter0::Create(args, filter_args)),
-        FilterWrapper<Typelist<Filters...>>(args, filter_args) {}
+      : FilterWrapper<Typelist<Filters...>>(args, filter_args),
+        filter0_(Filter0::Create(args, filter_args)) {}
 
   absl::Status status() const {
     if (filter0_.ok()) {
