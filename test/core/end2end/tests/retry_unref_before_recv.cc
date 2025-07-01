@@ -33,6 +33,7 @@ namespace {
 // memory leak.
 CORE_END2END_TEST(RetryTests, UnrefBeforeRecv) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

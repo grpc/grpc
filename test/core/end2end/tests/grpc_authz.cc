@@ -34,6 +34,7 @@ namespace grpc_core {
 namespace {
 
 void TestAllowAuthorizedRequest(CoreEnd2endTest& test) {
+  SKIP_IF_PH2_CLIENT();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;

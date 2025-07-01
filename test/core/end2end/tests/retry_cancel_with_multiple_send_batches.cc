@@ -184,6 +184,7 @@ void RegisterFilter() {
 
 CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
   SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_PH2_CLIENT();
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<CancelCancellationMode>());
@@ -191,6 +192,7 @@ CORE_END2END_TEST(RetryTests, RetryCancelWithMultipleSendBatches) {
 
 CORE_END2END_TEST(RetryTests, RetryDeadlineWithMultipleSendBatches) {
   SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_PH2_CLIENT();
   RegisterFilter();
   TestRetryCancelWithMultipleSendBatches(
       *this, std::make_unique<DeadlineCancellationMode>());

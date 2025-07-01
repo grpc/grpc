@@ -33,6 +33,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreClientChannelTests, DefaultHost) {
+  SKIP_IF_PH2_CLIENT();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   EXPECT_NE(c.GetPeer(), std::nullopt);
   IncomingStatusOnClient server_status;

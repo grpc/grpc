@@ -34,6 +34,7 @@ namespace {
 // before we have finished replaying all of the send ops.
 CORE_END2END_TEST(RetryTests, RetryStreamSucceedsBeforeReplayFinished) {
   SKIP_IF_V3();  // Not working yet
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

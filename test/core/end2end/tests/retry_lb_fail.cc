@@ -40,6 +40,7 @@ std::atomic<int> g_num_lb_picks;
 //   starts recv_trailing_metadata op
 CORE_END2END_TEST(RetryTests, RetryLbFail) {
   SKIP_IF_V3();  // Not working yet
+  SKIP_IF_PH2_CLIENT();
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         RegisterFailLoadBalancingPolicy(

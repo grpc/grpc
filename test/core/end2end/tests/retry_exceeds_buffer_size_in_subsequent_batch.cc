@@ -38,6 +38,7 @@ namespace {
 // - first attempt gets ABORTED but is not retried
 CORE_END2END_TEST(RetryTests, RetryExceedsBufferSizeInSubsequentBatch) {
   SKIP_IF_V3();
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

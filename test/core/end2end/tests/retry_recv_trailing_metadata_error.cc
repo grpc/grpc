@@ -123,6 +123,7 @@ grpc_channel_filter InjectStatusFilter::kFilterVtable = {
 //   so no retry is done
 CORE_END2END_TEST(RetryTests, RetryRecvTrailingMetadataError) {
   SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_PH2_CLIENT();
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()

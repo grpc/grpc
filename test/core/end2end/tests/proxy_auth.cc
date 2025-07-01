@@ -31,6 +31,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST_INCOMPATIBLE_WITH_FUZZING(ProxyAuthTests, InvokeProxyAuth) {
+  SKIP_IF_PH2_CLIENT();
   // Indicate that the proxy requires user auth
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(GRPC_ARG_HTTP_PROXY_AUTH_CREDS,

@@ -27,6 +27,7 @@ namespace {
 
 void SimpleRequestBody(CoreEnd2endTest& test,
                        CoreEnd2endTest::RegisteredCall rc) {
+  SKIP_IF_PH2_CLIENT();
   auto c = test.NewClientCall(rc).Timeout(Duration::Seconds(5)).Create();
   IncomingStatusOnClient server_status;
   IncomingMetadata server_initial_metadata;

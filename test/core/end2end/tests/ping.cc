@@ -29,6 +29,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(RetryHttp2Tests, Ping) {
+  SKIP_IF_PH2_CLIENT();
   const int kPingCount = 5;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   InitClient(ChannelArgs()

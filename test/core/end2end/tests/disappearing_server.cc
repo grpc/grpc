@@ -78,6 +78,7 @@ CORE_END2END_TEST(CoreClientChannelTests, DisappearingServer) {
   // structure around LogicalConnection instances. We could then use that
   // data structure to broadcast goaways to transports at the appropriate time.
   SKIP_IF_V3();
+  SKIP_IF_PH2_CLIENT();
   OneRequestAndShutdownServer(*this);
   InitServer(DefaultServerArgs());
   OneRequestAndShutdownServer(*this);

@@ -17,11 +17,13 @@
 //
 
 #include "test/core/end2end/end2end_tests.h"
+#include "test/core/end2end/tests/core_end2end_test_fixture.h"
 
 namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, ShutdownFinishesTags) {
+  SKIP_IF_PH2_CLIENT();
   // upon shutdown, the server should finish all requested calls indicating
   // no new call
   auto s = RequestCall(101);

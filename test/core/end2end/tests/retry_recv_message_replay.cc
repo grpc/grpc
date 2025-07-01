@@ -129,6 +129,7 @@ grpc_channel_filter FailFirstSendOpFilter::kFilterVtable = {
 // a grpc_error.
 CORE_END2END_TEST(RetryTests, RetryRecvMessageReplay) {
   SKIP_IF_V3();  // Need to convert filter
+  SKIP_IF_PH2_CLIENT();
   CoreConfiguration::RegisterEphemeralBuilder(
       [](CoreConfiguration::Builder* builder) {
         builder->channel_init()

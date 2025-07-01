@@ -69,17 +69,20 @@ void CancelAfterRoundTrip(CoreEnd2endTest& test,
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterRoundTrip) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterRoundTrip(*this, std::make_unique<CancelCancellationMode>(),
                        Duration::Seconds(5));
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterRoundTrip) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterRoundTrip(*this, std::make_unique<DeadlineCancellationMode>(),
                        Duration::Seconds(5));
 }
 
 CORE_END2END_TEST(CoreClientChannelTests,
                   DeadlineAfterRoundTripWithServiceConfig) {
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

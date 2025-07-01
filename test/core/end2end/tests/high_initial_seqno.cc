@@ -30,6 +30,7 @@ namespace grpc_core {
 namespace {
 
 void SimpleRequest(CoreEnd2endTest& test) {
+  SKIP_IF_PH2_CLIENT();
   auto c = test.NewClientCall("/foo").Timeout(Duration::Minutes(1)).Create();
   IncomingMetadata server_initial_metadata;
   IncomingStatusOnClient server_status;

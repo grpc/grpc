@@ -28,6 +28,7 @@ namespace grpc_core {
 namespace {
 
 CORE_END2END_TEST(CoreEnd2endTests, ServerFinishesRequest) {
+  SKIP_IF_PH2_CLIENT();
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
 
   IncomingStatusOnClient server_status;

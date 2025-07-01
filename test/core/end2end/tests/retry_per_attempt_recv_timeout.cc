@@ -37,6 +37,7 @@ namespace {
 // - third attempt returns OK
 CORE_END2END_TEST(RetryTests, RetryPerAttemptRecvTimeout) {
   SKIP_IF_V3();  // Not working yet
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

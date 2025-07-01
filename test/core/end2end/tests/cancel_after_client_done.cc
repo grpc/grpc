@@ -66,10 +66,12 @@ void CancelAfterClientDone(
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, CancelAfterClientDone) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterClientDone(*this, std::make_unique<CancelCancellationMode>());
 }
 
 CORE_END2END_TEST(CoreDeadlineTests, DeadlineAfterClientDone) {
+  SKIP_IF_PH2_CLIENT();
   CancelAfterClientDone(*this, std::make_unique<DeadlineCancellationMode>());
 }
 

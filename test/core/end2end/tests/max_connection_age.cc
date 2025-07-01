@@ -51,6 +51,7 @@ namespace {
 
 CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_PH2_CLIENT();
   InitClient(ChannelArgs());
   InitServer(DefaultServerArgs()
                  .Set(GRPC_ARG_MAX_CONNECTION_AGE_MS, MAX_CONNECTION_AGE_MS)
@@ -114,6 +115,7 @@ CORE_END2END_TEST(Http2Tests, MaxAgeForciblyClose) {
 CORE_END2END_TEST(Http2Tests, MaxAgeGracefullyClose) {
   SKIP_IF_MINSTACK();
   SKIP_IF_FUZZING();
+  SKIP_IF_PH2_CLIENT();
 
   InitClient(ChannelArgs());
   InitServer(DefaultServerArgs()

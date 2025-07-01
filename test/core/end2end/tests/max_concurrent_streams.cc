@@ -58,6 +58,7 @@ void SimpleRequestBody(CoreEnd2endTest& test) {
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_PH2_CLIENT();
   InitServer(
       DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
@@ -155,6 +156,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreams) {
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_PH2_CLIENT();
   InitServer(
       DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
@@ -203,6 +205,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnFirst) {
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_PH2_CLIENT();
   InitServer(
       DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)
@@ -252,6 +255,7 @@ CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsTimeoutOnSecond) {
 
 CORE_END2END_TEST(Http2SingleHopTests, MaxConcurrentStreamsRejectOnClient) {
   SKIP_IF_MINSTACK();
+  SKIP_IF_PH2_CLIENT();
   InitServer(
       DefaultServerArgs()
           .Set(GRPC_ARG_MAX_CONCURRENT_STREAMS, 1)

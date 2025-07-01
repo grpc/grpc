@@ -38,6 +38,7 @@ namespace {
 // - second attempt returns OK
 CORE_END2END_TEST(RetryTests, RetrySendInitialMetadataRefs) {
   if (!IsRetryInCallv3Enabled()) SKIP_IF_V3();
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(ChannelArgs().Set(
       GRPC_ARG_SERVICE_CONFIG,

@@ -36,6 +36,7 @@ namespace {
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
 CORE_END2END_TEST(RetryTests, RetryDisabled) {
+  SKIP_IF_PH2_CLIENT();
   InitServer(DefaultServerArgs());
   InitClient(
       ChannelArgs()

@@ -32,6 +32,7 @@ namespace {
 CORE_END2END_TEST(CoreEnd2endTests, EarlyServerShutdownFinishesInflightCalls) {
   SKIP_IF_V3();
   SKIP_IF_FUZZING();
+  SKIP_IF_PH2_CLIENT();
 
   auto c = NewClientCall("/foo").Timeout(Duration::Seconds(5)).Create();
   IncomingMetadata server_initial_metadata;

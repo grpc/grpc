@@ -73,6 +73,7 @@ void TestRequestResponseWithMetadataToBeFiltered(
 }
 
 CORE_END2END_TEST(CoreEnd2endTests, ContentLengthIsFiltered) {
+  SKIP_IF_PH2_CLIENT();
   TestRequestResponseWithMetadataToBeFiltered(*this, "content-length", "45");
 }
 

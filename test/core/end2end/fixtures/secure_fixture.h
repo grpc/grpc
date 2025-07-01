@@ -96,18 +96,4 @@ class InsecureFixture : public SecureFixture {
   }
 };
 
-// Fixture for PH2 that uses insecure credentials
-class PH2Fixure : public InsecureFixture {
- public:
-  using InsecureFixture::InsecureFixture;
-
- private:
-  grpc_core::ChannelArgs MutateClientArgs(
-      grpc_core::ChannelArgs args) override {
-    LOG(INFO) << args.ToString();
-    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
-    return args;
-  }
-};
-
 #endif  // GRPC_TEST_CORE_END2END_FIXTURES_SECURE_FIXTURE_H
