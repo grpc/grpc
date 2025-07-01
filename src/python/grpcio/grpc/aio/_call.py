@@ -28,8 +28,8 @@ from typing import (
     Generic,
     Optional,
     Tuple,
-    Union,
     Type,
+    Union,
 )
 
 import grpc
@@ -72,15 +72,16 @@ _NON_OK_CALL_REPRESENTATION = (
 _LOGGER = logging.getLogger(__name__)
 
 AioRpcErrorReduceReturnType = Tuple[
-  Type['AioRpcError'],  # Type object of the class AioRpcError
-  Tuple[
-    grpc.StatusCode,  # self._code
-    Optional[Metadata],  # self._initial_metadata
-    Optional[Metadata],  # self._trailing_metadata
-    Optional[str],  # self._details
-    Optional[str],  # self._debug_error_string
-  ],
+    Type["AioRpcError"],  # Type object of the class AioRpcError
+    Tuple[
+        grpc.StatusCode,  # self._code
+        Optional[Metadata],  # self._initial_metadata
+        Optional[Metadata],  # self._trailing_metadata
+        Optional[str],  # self._details
+        Optional[str],  # self._debug_error_string
+    ],
 ]
+
 
 class AioRpcError(grpc.RpcError):
     """An implementation of RpcError to be used by the asynchronous API.
