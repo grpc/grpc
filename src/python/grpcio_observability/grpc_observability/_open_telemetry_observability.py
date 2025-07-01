@@ -368,7 +368,7 @@ class OpenTelemetryObservability(grpc._observability.ObservabilityPlugin):
         *,
         plugins: Iterable[_OpenTelemetryPlugin],
     ):
-        self._exporter = _OpenTelemetryExporterDelegator(plugins or list())
+        self._exporter = _OpenTelemetryExporterDelegator(plugins)
         self._registered_methods = set()
         self._plugins = list(plugins)
         self._client_option_activated = False
