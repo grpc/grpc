@@ -1158,7 +1158,7 @@ class FusedFilter
     GRPC_RETURN_IF_ERROR(filters_wrapper->status());
     auto res = absl::WrapUnique<FusedFilter<ep, kFlags, Filters...>>(
         new FusedFilter<ep, kFlags, Filters...>(std::move(filters_wrapper)));
-    return res;
+    return std::move(res);
   }
 
   static constexpr bool IsFused = true;
