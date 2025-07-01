@@ -174,7 +174,6 @@ class PythonArtifact:
             environ["PIP"] = "/opt/python/{}/bin/pip".format(self.py_version)
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             if self.arch == "aarch64":
-                environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
                 # As we won't strip the binary with auditwheel (see below), strip
                 # it at link time.
                 environ["LDFLAGS"] = "-s"
@@ -202,7 +201,7 @@ class PythonArtifact:
             environ["GRPC_SKIP_PIP_CYTHON_UPGRADE"] = "TRUE"
             environ["GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX"] = "TRUE"
 
-            if self.arch in ("x86", "aarch64"):
+            if self.arch in ("x86"):
                 environ["GRPC_SKIP_TWINE_CHECK"] = "TRUE"
 
             if self.arch == "aarch64":
@@ -479,7 +478,6 @@ def targets():
             PythonArtifact("windows", "x64", "Python312"),
             PythonArtifact("windows", "x64", "Python313", presubmit=True),
             RubyArtifact("linux", "x86-mingw32", presubmit=True),
-            RubyArtifact("linux", "x64-mingw32"),
             RubyArtifact("linux", "x64-mingw-ucrt", presubmit=True),
             RubyArtifact("linux", "x86_64-linux", presubmit=True),
             RubyArtifact("linux", "x86-linux"),

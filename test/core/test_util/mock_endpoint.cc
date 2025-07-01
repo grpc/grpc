@@ -111,13 +111,13 @@ grpc_endpoint* MockEndpointController::TakeCEndpoint() {
 }
 
 bool MockEndpoint::Read(absl::AnyInvocable<void(absl::Status)> on_read,
-                        SliceBuffer* buffer, const ReadArgs* /* args */) {
+                        SliceBuffer* buffer, ReadArgs /* args */) {
   endpoint_control_->Read(std::move(on_read), buffer);
   return false;
 }
 
 bool MockEndpoint::Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-                         SliceBuffer* data, const WriteArgs* /* args */) {
+                         SliceBuffer* data, WriteArgs /* args */) {
   // No-op implementation. Nothing was using it.
   data->Clear();
   endpoint_control_->engine()->Run(

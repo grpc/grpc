@@ -25,9 +25,12 @@
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
+#include <initializer_list>
+#include <limits>
 #include <string>
 #include <tuple>
 
+#include "absl/cleanup/cleanup.h"
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/escaping.h"
@@ -40,25 +43,71 @@
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/util/json/json_writer.h"
+#include "src/core/util/notification.h"
 #include "src/core/util/string.h"
 #include "src/core/util/time.h"
+#include "src/core/util/upb_utils.h"
 #include "src/core/util/uri.h"
 #include "src/core/util/useful.h"
+#include "src/proto/grpc/channelz/v2/channelz.upb.h"
 
 namespace grpc_core {
 namespace channelz {
 
 //
+// DataSink
+//
+
+void DataSinkImplementation::AddData(absl::string_view name,
+                                     std::unique_ptr<Data> data) {
+  MutexLock lock(&mu_);
+  additional_info_.emplace(name, std::move(data));
+}
+
+Json::Object DataSinkImplementation::Finalize(bool) {
+  MutexLock lock(&mu_);
+  Json::Object out;
+  for (auto& [name, additional_info] : additional_info_) {
+    out[name] = Json::FromObject(additional_info->ToJson());
+  }
+  return out;
+}
+
+void DataSinkImplementation::Finalize(bool timed_out,
+                                      grpc_channelz_v2_Entity* entity,
+                                      upb_Arena* arena) {
+  MutexLock lock(&mu_);
+  grpc_channelz_v2_Entity_set_timed_out(entity, timed_out);
+  for (auto& [name, additional_info] : additional_info_) {
+    auto* staple = grpc_channelz_v2_Entity_add_data(entity, arena);
+    grpc_channelz_v2_Data_set_name(staple,
+                                   CopyStdStringToUpbString(name, arena));
+    additional_info->FillProto(
+        grpc_channelz_v2_Data_mutable_value(staple, arena), arena);
+  }
+}
+
+//
 // BaseNode
 //
 
-BaseNode::BaseNode(EntityType type, std::string name)
-    : type_(type), uuid_(-1), name_(std::move(name)) {
-  // The registry will set uuid_ under its lock.
+BaseNode::BaseNode(EntityType type, size_t max_trace_memory, std::string name)
+    : type_(type),
+      uuid_(-1),
+      name_(std::move(name)),
+      trace_(max_trace_memory) {}
+
+void BaseNode::NodeConstructed() {
+  node_constructed_called_ = true;
   ChannelzRegistry::Register(this);
 }
 
-BaseNode::~BaseNode() { ChannelzRegistry::Unregister(uuid_); }
+void BaseNode::Orphaned() {
+  DCHECK(node_constructed_called_);
+  ChannelzRegistry::Unregister(this);
+}
+
+intptr_t BaseNode::UuidSlow() { return ChannelzRegistry::NumberNode(this); }
 
 std::string BaseNode::RenderJsonString() {
   Json json = RenderJson();
@@ -66,11 +115,25 @@ std::string BaseNode::RenderJsonString() {
 }
 
 void BaseNode::PopulateJsonFromDataSources(Json::Object& json) {
-  DataSink sink(json);
-  MutexLock lock(&data_sources_mu_);
-  for (DataSource* data_source : data_sources_) {
-    data_source->AddData(sink);
+  auto info = AdditionalInfo();
+  if (info.empty()) return;
+  json["additionalInfo"] = Json::FromObject(std::move(info));
+}
+
+Json::Object BaseNode::AdditionalInfo() {
+  auto done = std::make_shared<Notification>();
+  auto sink_impl = std::make_shared<DataSinkImplementation>();
+  {
+    MutexLock lock(&data_sources_mu_);
+    auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
+        [done]() { done->Notify(); });
+    for (DataSource* data_source : data_sources_) {
+      data_source->AddData(DataSink(sink_impl, done_notifier));
+    }
   }
+  bool completed =
+      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  return sink_impl->Finalize(!completed);
 }
 
 void BaseNode::RunZTrace(
@@ -78,6 +141,9 @@ void BaseNode::RunZTrace(
     std::map<std::string, std::string> args,
     std::shared_ptr<grpc_event_engine::experimental::EventEngine> event_engine,
     absl::AnyInvocable<void(Json)> callback) {
+  // Limit deadline to help contain potential resource exhaustion due to
+  // tracing.
+  deadline = std::min(deadline, Timestamp::Now() + Duration::Minutes(10));
   auto fail = [&callback, event_engine](absl::Status status) {
     event_engine->Run(
         [callback = std::move(callback), status = std::move(status)]() mutable {
@@ -109,44 +175,78 @@ void BaseNode::RunZTrace(
   ztrace->Run(deadline, std::move(args), event_engine, std::move(callback));
 }
 
-//
-// DataSink
-//
-
-DataSink::~DataSink() {
-  if (additional_info_ != nullptr) {
-    output_["additionalInfo"] = Json::FromObject(std::move(*additional_info_));
+void BaseNode::SerializeEntity(grpc_channelz_v2_Entity* entity,
+                               upb_Arena* arena) {
+  grpc_channelz_v2_Entity_set_id(entity, uuid());
+  grpc_channelz_v2_Entity_set_kind(
+      entity, StdStringToUpbString(EntityTypeToKind(type_)));
+  {
+    MutexLock lock(&parent_mu_);
+    auto* parents =
+        grpc_channelz_v2_Entity_resize_parents(entity, parents_.size(), arena);
+    for (const auto& parent : parents_) {
+      *parents++ = parent->uuid();
+    }
   }
+  grpc_channelz_v2_Entity_set_orphaned(entity, orphaned_index_ != 0);
+
+  auto done = std::make_shared<Notification>();
+  auto sink_impl = std::make_shared<DataSinkImplementation>();
+  {
+    MutexLock lock(&data_sources_mu_);
+    auto done_notifier = std::make_shared<DataSinkCompletionNotification>(
+        [done]() { done->Notify(); });
+    for (DataSource* data_source : data_sources_) {
+      data_source->AddData(DataSink(sink_impl, done_notifier));
+    }
+  }
+  bool completed =
+      done->WaitForNotificationWithTimeout(absl::Milliseconds(100));
+  sink_impl->Finalize(!completed, entity, arena);
+
+  trace_.Render(entity, arena);
 }
 
-void DataSink::AddAdditionalInfo(absl::string_view name,
-                                 Json::Object additional_info) {
-  if (additional_info_ == nullptr) {
-    additional_info_ = std::make_unique<Json::Object>();
-  }
-  additional_info_->emplace(name, Json::FromObject(std::move(additional_info)));
+std::string BaseNode::SerializeEntityToString() {
+  upb_Arena* arena = upb_Arena_New();
+  auto cleanup = absl::MakeCleanup([arena]() { upb_Arena_Free(arena); });
+  grpc_channelz_v2_Entity* entity = grpc_channelz_v2_Entity_new(arena);
+  SerializeEntity(entity, arena);
+  size_t length;
+  auto* bytes = grpc_channelz_v2_Entity_serialize(entity, arena, &length);
+  return std::string(bytes, length);
 }
 
 //
 // DataSource
 //
 
-DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {
+DataSource::DataSource(RefCountedPtr<BaseNode> node) : node_(std::move(node)) {}
+
+DataSource::~DataSource() {
+  DCHECK(node_ == nullptr) << "DataSource must be ResetDataSource()'d in the "
+                              "most derived class before destruction";
+}
+
+void DataSource::SourceConstructed() {
+  if (node_ == nullptr) return;
   MutexLock lock(&node_->data_sources_mu_);
   node_->data_sources_.push_back(this);
 }
 
-DataSource::~DataSource() {
-  if (node_ != nullptr) ResetDataSource();
-}
-
-void DataSource::ResetDataSource() {
-  auto node = std::move(node_);
-  DCHECK(node != nullptr);
+void DataSource::SourceDestructing() {
+  RefCountedPtr<BaseNode> node = std::move(node_);
+  if (node == nullptr) return;
   MutexLock lock(&node->data_sources_mu_);
-  node->data_sources_.erase(
-      std::remove(node->data_sources_.begin(), node->data_sources_.end(), this),
-      node->data_sources_.end());
+  for (size_t i = 0; i < node->data_sources_.size(); ++i) {
+    if (node->data_sources_[i] == this) {
+      std::swap(node->data_sources_[i], node->data_sources_.back());
+      node->data_sources_.pop_back();
+      return;
+    }
+  }
+  LOG(DFATAL) << "DataSource not found in node's data sources -- probably "
+                 "SourceConstructed was not called";
 }
 
 //
@@ -225,13 +325,14 @@ CallCounts PerCpuCallCountingHelper::GetCallCounts() const {
 // ChannelNode
 //
 
-ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
+ChannelNode::ChannelNode(std::string target, size_t max_trace_memory,
                          bool is_internal_channel)
     : BaseNode(is_internal_channel ? EntityType::kInternalChannel
                                    : EntityType::kTopLevelChannel,
-               target),
-      target_(std::move(target)),
-      trace_(channel_tracer_max_nodes) {}
+               max_trace_memory, target),
+      target_(std::move(target)) {
+  NodeConstructed();
+}
 
 const char* ChannelNode::GetChannelConnectivityStateChangeString(
     grpc_connectivity_state state) {
@@ -248,6 +349,29 @@ const char* ChannelNode::GetChannelConnectivityStateChangeString(
       return "Channel state change to SHUTDOWN";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
+namespace {
+
+std::set<intptr_t> ChildIdSet(const BaseNode* parent,
+                              BaseNode::EntityType type) {
+  std::set<intptr_t> ids;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, parent, type, std::numeric_limits<size_t>::max());
+  for (const auto& node : children) {
+    ids.insert(node->uuid());
+  }
+  return ids;
+}
+
+}  // namespace
+
+std::set<intptr_t> ChannelNode::child_channels() const {
+  return ChildIdSet(this, BaseNode::EntityType::kInternalChannel);
+}
+
+std::set<intptr_t> ChannelNode::child_subchannels() const {
+  return ChildIdSet(this, BaseNode::EntityType::kSubchannel);
 }
 
 std::optional<std::string> ChannelNode::connectivity_state() {
@@ -272,7 +396,7 @@ Json ChannelNode::RenderJson() {
     });
   }
   // Fill in the channel trace if applicable.
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -293,19 +417,20 @@ Json ChannelNode::RenderJson() {
 }
 
 void ChannelNode::PopulateChildRefs(Json::Object* json) {
-  MutexLock lock(&child_mu_);
-  if (!child_subchannels_.empty()) {
+  auto child_subchannels = this->child_subchannels();
+  auto child_channels = this->child_channels();
+  if (!child_subchannels.empty()) {
     Json::Array array;
-    for (intptr_t subchannel_uuid : child_subchannels_) {
+    for (intptr_t subchannel_uuid : child_subchannels) {
       array.emplace_back(Json::FromObject({
           {"subchannelId", Json::FromString(absl::StrCat(subchannel_uuid))},
       }));
     }
     (*json)["subchannelRef"] = Json::FromArray(std::move(array));
   }
-  if (!child_channels_.empty()) {
+  if (!child_channels.empty()) {
     Json::Array array;
-    for (intptr_t channel_uuid : child_channels_) {
+    for (intptr_t channel_uuid : child_channels) {
       array.emplace_back(Json::FromObject({
           {"channelId", Json::FromString(absl::StrCat(channel_uuid))},
       }));
@@ -320,35 +445,16 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
   connectivity_state_.store(state_field, std::memory_order_relaxed);
 }
 
-void ChannelNode::AddChildChannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_channels_.insert(child_uuid);
-}
-
-void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_channels_.erase(child_uuid);
-}
-
-void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_subchannels_.insert(child_uuid);
-}
-
-void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_subchannels_.erase(child_uuid);
-}
-
 //
 // SubchannelNode
 //
 
 SubchannelNode::SubchannelNode(std::string target_address,
-                               size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel, target_address),
-      target_(std::move(target_address)),
-      trace_(channel_tracer_max_nodes) {}
+                               size_t max_trace_memory)
+    : BaseNode(EntityType::kSubchannel, max_trace_memory, target_address),
+      target_(std::move(target_address)) {
+  NodeConstructed();
+}
 
 SubchannelNode::~SubchannelNode() {}
 
@@ -358,7 +464,8 @@ void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
 
 void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
   MutexLock lock(&socket_mu_);
-  child_socket_ = std::move(socket);
+  child_socket_ =
+      socket == nullptr ? nullptr : socket->WeakRefAsSubclass<SocketNode>();
 }
 
 std::string SubchannelNode::connectivity_state() const {
@@ -376,7 +483,7 @@ Json SubchannelNode::RenderJson() {
       {"target", Json::FromString(target_)},
   };
   // Fill in the channel trace if applicable
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -390,7 +497,7 @@ Json SubchannelNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Populate the child socket.
-  RefCountedPtr<SocketNode> child_socket;
+  WeakRefCountedPtr<SocketNode> child_socket;
   {
     MutexLock lock(&socket_mu_);
     child_socket = child_socket_;
@@ -411,63 +518,39 @@ Json SubchannelNode::RenderJson() {
 // ServerNode
 //
 
-ServerNode::ServerNode(size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer, ""), trace_(channel_tracer_max_nodes) {}
+ServerNode::ServerNode(size_t max_trace_memory)
+    : BaseNode(EntityType::kServer, max_trace_memory, "") {
+  NodeConstructed();
+}
 
 ServerNode::~ServerNode() {}
-
-void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
-  MutexLock lock(&child_mu_);
-  child_sockets_.insert(std::pair(node->uuid(), std::move(node)));
-}
-
-void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_sockets_.erase(child_uuid);
-}
-
-void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
-  MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(std::pair(node->uuid(), std::move(node)));
-}
-
-void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
-  MutexLock lock(&child_mu_);
-  child_listen_sockets_.erase(child_uuid);
-}
 
 std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                             intptr_t max_results) {
   CHECK_GE(start_socket_id, 0);
   CHECK_GE(max_results, 0);
   // If user does not set max_results, we choose 500.
-  size_t pagination_limit = max_results == 0 ? 500 : max_results;
+  if (max_results == 0) max_results = 500;
   Json::Object object;
-  {
-    MutexLock lock(&child_mu_);
-    size_t sockets_rendered = 0;
-    // Create list of socket refs.
-    Json::Array array;
-    auto it = child_sockets_.lower_bound(start_socket_id);
-    for (; it != child_sockets_.end() && sockets_rendered < pagination_limit;
-         ++it, ++sockets_rendered) {
-      array.emplace_back(Json::FromObject({
-          {"socketId", Json::FromString(absl::StrCat(it->first))},
-          {"name", Json::FromString(it->second->name())},
-      }));
-    }
-    object["socketRef"] = Json::FromArray(std::move(array));
-    if (it == child_sockets_.end()) {
-      object["end"] = Json::FromBool(true);
-    }
+  auto [children, end] = ChannelzRegistry::GetChildrenOfType(
+      start_socket_id, this, BaseNode::EntityType::kSocket, max_results);
+  // Create list of socket refs.
+  Json::Array array;
+  for (const auto& child : children) {
+    array.emplace_back(Json::FromObject({
+        {"socketId", Json::FromString(absl::StrCat(child->uuid()))},
+        {"name", Json::FromString(child->name())},
+    }));
   }
+  object["socketRef"] = Json::FromArray(std::move(array));
+  if (end) object["end"] = Json::FromBool(true);
   return JsonDump(Json::FromObject(std::move(object)));
 }
 
 Json ServerNode::RenderJson() {
   Json::Object data;
   // Fill in the channel trace if applicable.
-  Json trace_json = trace_.RenderJson();
+  Json trace_json = trace().RenderJson();
   if (trace_json.type() != Json::Type::kNull) {
     data["trace"] = std::move(trace_json);
   }
@@ -481,21 +564,45 @@ Json ServerNode::RenderJson() {
       {"data", Json::FromObject(std::move(data))},
   };
   // Render listen sockets.
-  {
-    MutexLock lock(&child_mu_);
-    if (!child_listen_sockets_.empty()) {
-      Json::Array array;
-      for (const auto& it : child_listen_sockets_) {
-        array.emplace_back(Json::FromObject({
-            {"socketId", Json::FromString(absl::StrCat(it.first))},
-            {"name", Json::FromString(it.second->name())},
-        }));
-      }
-      object["listenSocket"] = Json::FromArray(std::move(array));
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kListenSocket,
+      std::numeric_limits<size_t>::max());
+  if (!children.empty()) {
+    Json::Array array;
+    for (const auto& child : children) {
+      array.emplace_back(Json::FromObject({
+          {"socketId", Json::FromString(absl::StrCat(child->uuid()))},
+          {"name", Json::FromString(child->name())},
+      }));
     }
+    object["listenSocket"] = Json::FromArray(std::move(array));
   }
   PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
+}
+
+std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>>
+ServerNode::child_listen_sockets() const {
+  std::map<intptr_t, WeakRefCountedPtr<ListenSocketNode>> result;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kListenSocket,
+      std::numeric_limits<size_t>::max());
+  for (const auto& child : children) {
+    result[child->uuid()] = child->WeakRefAsSubclass<ListenSocketNode>();
+  }
+  return result;
+}
+
+std::map<intptr_t, WeakRefCountedPtr<SocketNode>> ServerNode::child_sockets()
+    const {
+  std::map<intptr_t, WeakRefCountedPtr<SocketNode>> result;
+  auto [children, _] = ChannelzRegistry::GetChildrenOfType(
+      0, this, BaseNode::EntityType::kSocket,
+      std::numeric_limits<size_t>::max());
+  for (const auto& child : children) {
+    result[child->uuid()] = child->WeakRefAsSubclass<SocketNode>();
+  }
+  return result;
 }
 
 //
@@ -624,10 +731,12 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
 
 SocketNode::SocketNode(std::string local, std::string remote, std::string name,
                        RefCountedPtr<Security> security)
-    : BaseNode(EntityType::kSocket, std::move(name)),
+    : BaseNode(EntityType::kSocket, 0, std::move(name)),
       local_(std::move(local)),
       remote_(std::move(remote)),
-      security_(std::move(security)) {}
+      security_(std::move(security)) {
+  NodeConstructed();
+}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   streams_started_.fetch_add(1, std::memory_order_relaxed);
@@ -738,8 +847,10 @@ Json SocketNode::RenderJson() {
 //
 
 ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
-    : BaseNode(EntityType::kListenSocket, std::move(name)),
-      local_addr_(std::move(local_addr)) {}
+    : BaseNode(EntityType::kListenSocket, 0, std::move(name)),
+      local_addr_(std::move(local_addr)) {
+  NodeConstructed();
+}
 
 Json ListenSocketNode::RenderJson() {
   Json::Object object = {
@@ -749,6 +860,20 @@ Json ListenSocketNode::RenderJson() {
               })},
   };
   PopulateSocketAddressJson(&object, "local", local_addr_.c_str());
+  PopulateJsonFromDataSources(object);
+  return Json::FromObject(std::move(object));
+}
+
+//
+// CallNode
+//
+
+Json CallNode::RenderJson() {
+  Json::Object object = {
+      {"ref", Json::FromObject({
+                  {"callId", Json::FromString(absl::StrCat(uuid()))},
+              })},
+  };
   PopulateJsonFromDataSources(object);
   return Json::FromObject(std::move(object));
 }

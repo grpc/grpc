@@ -73,6 +73,21 @@ TEST(DualRefCounted, RefIfNonZero) {
   foo->WeakUnref();
 }
 
+TEST(DualRefCounted, WeakRefIfNonZero) {
+  Foo* foo = new Foo();
+  foo->WeakRef().release();
+  {
+    WeakRefCountedPtr<Foo> foop = foo->WeakRefIfNonZero();
+    EXPECT_NE(foop.get(), nullptr);
+  }
+  foo->Unref();
+  {
+    WeakRefCountedPtr<Foo> foop = foo->WeakRefIfNonZero();
+    EXPECT_NE(foop.get(), nullptr);
+  }
+  foo->WeakUnref();
+}
+
 TEST(DualRefCounted, RefAndWeakRefAsSubclass) {
   class Bar : public Foo {};
   Foo* foo = new Bar();

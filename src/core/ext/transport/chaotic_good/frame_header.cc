@@ -49,6 +49,8 @@ std::string FrameTypeString(FrameType type) {
       return "BeginMessage";
     case FrameType::kMessageChunk:
       return "MessageChunk";
+    case FrameType::kTcpSecurityFrame:
+      return "TcpSecurityFrame";
   }
   return absl::StrCat("Unknown[0x", absl::Hex(static_cast<int>(type)), "]");
 }

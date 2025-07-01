@@ -156,6 +156,18 @@ class Map {
     return Pending();
   }
 
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<Fn>()));
+  }
+
  private:
   template <typename SomeOtherPromise, typename SomeOtherFn>
   friend class Map;
@@ -193,6 +205,18 @@ class Map<Map<Promise, Fn0>, Fn1> {
       return fn_(std::move(*p));
     }
     return Pending();
+  }
+
+  void ToProto(grpc_channelz_v2_Promise* promise_proto,
+               upb_Arena* arena) const {
+    auto* map_promise =
+        grpc_channelz_v2_Promise_mutable_map_promise(promise_proto, arena);
+    PromiseAsProto(
+        promise_,
+        grpc_channelz_v2_Promise_Map_mutable_promise(map_promise, arena),
+        arena);
+    grpc_channelz_v2_Promise_Map_set_map_fn(
+        map_promise, StdStringToUpbString(TypeName<FusedFn>()));
   }
 
  private:
@@ -269,6 +293,18 @@ template <typename Promise>
 auto AddErrorPrefix(absl::string_view prefix, Promise promise) {
   return MapErrors(std::move(promise), [prefix](absl::Status status) {
     absl::Status out(status.code(), absl::StrCat(prefix, status.message()));
+    status.ForEachPayload(
+        [&out](absl::string_view name, const absl::Cord& value) {
+          out.SetPayload(name, value);
+        });
+    return out;
+  });
+}
+
+template <typename Gen, typename Promise>
+auto AddGeneratedErrorPrefix(Gen prefix, Promise promise) {
+  return MapErrors(std::move(promise), [prefix](absl::Status status) {
+    absl::Status out(status.code(), absl::StrCat(prefix(), status.message()));
     status.ForEachPayload(
         [&out](absl::string_view name, const absl::Cord& value) {
           out.SetPayload(name, value);

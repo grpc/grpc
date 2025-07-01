@@ -95,6 +95,7 @@ grpc_fuzz_test(
         "//src/core:inter_activity_latch",
         "//test/core/event_engine/fuzzing_event_engine",
         "//test/core/event_engine/fuzzing_event_engine:fuzzing_event_engine_cc_proto",
+        "//test/core/test_util:postmortem_emit",
     ],
 )
 
@@ -223,6 +224,7 @@ grpc_cc_test(
         "//:parse_address",
         "//:uri",
         "//src/core:channel_args",
+        "//src/core:chaotic_good",
         "//src/core:chaotic_good_connector",
         "//src/core:chaotic_good_server",
         "//src/core:notification",

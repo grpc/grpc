@@ -169,7 +169,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   }
 
   bool Read(absl::AnyInvocable<void(absl::Status)> on_read, SliceBuffer* buffer,
-            const ReadArgs* /* args */) override {
+            ReadArgs /* args */) override {
     buffer->Clear();
     CleanupThread(state_->read);
     state_->read = new std::thread([cb = std::move(on_read)]() mutable {
@@ -179,7 +179,7 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
   }
 
   bool Write(absl::AnyInvocable<void(absl::Status)> on_writable,
-             SliceBuffer* data, const WriteArgs* /* args */) override {
+             SliceBuffer* data, WriteArgs /* args */) override {
     data->Clear();
     CleanupThread(state_->write);
     state_->write = new std::thread([cb = std::move(on_writable)]() mutable {
@@ -194,6 +194,10 @@ class ThreadedNoopEndpoint : public EventEngine::Endpoint {
 
   const EventEngine::ResolvedAddress& GetLocalAddress() const override {
     return local_;
+  }
+
+  std::shared_ptr<TelemetryInfo> GetTelemetryInfo() const override {
+    return nullptr;
   }
 
  private:

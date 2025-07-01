@@ -50,6 +50,7 @@ grpc_cc_library(
         "//src/core:match",
         "//src/core:time",
         "//test/core/test_util:grpc_test_util",
+        "//test/core/test_util:postmortem_emit",
     ],
 )
 
@@ -67,6 +68,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "http_proxy",
+    testonly = 1,
     srcs = ["fixtures/http_proxy_fixture.cc"],
     hdrs = ["fixtures/http_proxy_fixture.h"],
     external_deps = [
@@ -102,6 +104,7 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "proxy",
+    testonly = 1,
     srcs = ["fixtures/proxy.cc"],
     hdrs = ["fixtures/proxy.h"],
     external_deps = [
@@ -194,6 +197,7 @@ grpc_cc_library(
             "//test/core/event_engine/fuzzing_event_engine",
             "//test/core/test_util:fuzz_config_vars",
             "//test/core/test_util:grpc_test_util",
+            "//test/core/test_util:postmortem",
             "//test/core/test_util:test_call_creds",
         ] + (["//test/core/test_util:fuzz_config_vars_helpers"] if fuzz else []),
         alwayslink = 1,

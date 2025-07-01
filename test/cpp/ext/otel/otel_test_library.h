@@ -43,6 +43,8 @@ OPENTELEMETRY_BEGIN_NAMESPACE
 namespace sdk {
 namespace metrics {
 
+// GTest uses `PrintTo` functions to print values. OTel's PointDataAttributes
+// doesn't include one of these, so we add one ourselves in their namespace.
 void PrintTo(const PointDataAttributes& point_data_attributes,
              std::ostream* os);
 

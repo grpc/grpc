@@ -479,7 +479,8 @@ void ReadForever(std::shared_ptr<EventEngine::Endpoint> ep) {
           if (!status.ok()) return;
           ReadForever(std::move(ep));
         },
-        buffer_ptr, nullptr);
+        buffer_ptr,
+        grpc_event_engine::experimental::EventEngine::Endpoint::ReadArgs());
   } while (finished);
 }
 
@@ -520,7 +521,9 @@ void ScheduleWritesForReads(
                       ExecCtx exec_ctx;
                       FinishWrite(std::move(status));
                     },
-                    &writing_, nullptr)) {
+                    &writing_,
+                    grpc_event_engine::experimental::EventEngine::Endpoint::
+                        WriteArgs())) {
               FinishWrite(absl::OkStatus());
             }
           });

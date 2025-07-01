@@ -286,6 +286,15 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
       address_list_ = std::move(address_list);
     }
 
+    const ChannelArgs& per_endpoint_args() const
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      return per_endpoint_args_;
+    }
+    void set_per_endpoint_args(ChannelArgs per_endpoint_args)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
+      per_endpoint_args_ = std::move(per_endpoint_args);
+    }
+
     Timestamp last_used_time() const
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsOverrideHostLb::mu_) {
       return last_used_time_;
@@ -304,6 +313,7 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
         &XdsOverrideHostLb::mu_) = XdsHealthStatus(XdsHealthStatus::kUnknown);
     RefCountedStringValue address_list_
         ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
+    ChannelArgs per_endpoint_args_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_);
     Timestamp last_used_time_ ABSL_GUARDED_BY(&XdsOverrideHostLb::mu_) =
         Timestamp::InfPast();
   };
@@ -319,30 +329,6 @@ class XdsOverrideHostLb final : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    class SubchannelConnectionRequester final {
-     public:
-      explicit SubchannelConnectionRequester(
-          RefCountedPtr<SubchannelWrapper> subchannel)
-          : subchannel_(std::move(subchannel)) {
-        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
-        // Hop into ExecCtx, so that we don't get stuck running
-        // arbitrary WorkSerializer callbacks while doing a pick.
-        ExecCtx::Run(DEBUG_LOCATION, &closure_, absl::OkStatus());
-      }
-
-     private:
-      static void RunInExecCtx(void* arg, grpc_error_handle /*error*/) {
-        auto* self = static_cast<SubchannelConnectionRequester*>(arg);
-        self->subchannel_->policy()->work_serializer()->Run([self]() {
-          self->subchannel_->RequestConnection();
-          delete self;
-        });
-      }
-
-      RefCountedPtr<SubchannelWrapper> subchannel_;
-      grpc_closure closure_;
-    };
-
     std::optional<LoadBalancingPolicy::PickResult> PickOverriddenHost(
         XdsOverrideHostAttribute* override_host_attr) const;
 
@@ -493,7 +479,10 @@ XdsOverrideHostLb::Picker::PickOverriddenHost(
     GRPC_TRACE_LOG(xds_override_host_lb, INFO)
         << "Picker override found IDLE subchannel";
     // Deletes itself after the connection is requested.
-    new SubchannelConnectionRequester(std::move(idle_subchannel));
+    policy_->work_serializer()->Run(
+        [subchannel = std::move(idle_subchannel)]() {
+          subchannel->RequestConnection();
+        });
     return PickResult::Queue();
   }
   // No READY or IDLE subchannels.  If we found a CONNECTING subchannel,
@@ -793,8 +782,12 @@ void XdsOverrideHostLb::UpdateAddressMap(
   struct AddressInfo {
     XdsHealthStatus eds_health_status;
     RefCountedStringValue address_list;
-    AddressInfo(XdsHealthStatus status, RefCountedStringValue addresses)
-        : eds_health_status(status), address_list(std::move(addresses)) {}
+    ChannelArgs per_endpoint_args;
+    AddressInfo(XdsHealthStatus status, RefCountedStringValue addresses,
+                ChannelArgs args)
+        : eds_health_status(status),
+          address_list(std::move(addresses)),
+          per_endpoint_args(std::move(args)) {}
   };
   std::map<const std::string, AddressInfo> addresses_for_map;
   endpoints.ForEach([&](const EndpointAddresses& endpoint) {
@@ -830,7 +823,8 @@ void XdsOverrideHostLb::UpdateAddressMap(
                        (end.empty() ? "" : ","), end));
       addresses_for_map.emplace(
           std::piecewise_construct, std::forward_as_tuple(addresses[i]),
-          std::forward_as_tuple(status, std::move(address_list)));
+          std::forward_as_tuple(status, std::move(address_list),
+                                endpoint.args()));
     }
   });
   // Now grab the lock and update subchannel_map_ from addresses_for_map.
@@ -865,9 +859,12 @@ void XdsOverrideHostLb::UpdateAddressMap(
           << "[xds_override_host_lb " << this << "] map key " << address
           << ": setting "
           << "eds_health_status=" << address_info.eds_health_status.ToString()
-          << " address_list=" << address_info.address_list.c_str();
+          << " address_list=" << address_info.address_list.c_str()
+          << " per_endpoint_args=" << address_info.per_endpoint_args.ToString();
       it->second->set_eds_health_status(address_info.eds_health_status);
       it->second->set_address_list(std::move(address_info.address_list));
+      it->second->set_per_endpoint_args(
+          std::move(address_info.per_endpoint_args));
       // Check the entry's last_used_time to determine the next time at
       // which the timer needs to run.
       if (it->second->last_used_time() > idle_threshold) {
@@ -908,14 +905,38 @@ void XdsOverrideHostLb::CreateSubchannelForAddress(absl::string_view address) {
       << address;
   auto addr = StringToSockaddr(address);
   CHECK(addr.ok());
-  // Note: We don't currently have any cases where per_address_args need to
-  // be passed through.  If we encounter any such cases in the future, we
-  // will need to change this to store those attributes from the resolver
-  // update in the map entry.
+  // We need to do 3 things here:
+  // 1. Get the per-endpoint args from the entry in subchannel_map_.
+  // 2. Create the subchannel using those per-endpoint args.
+  // 3. Wrap the subchannel and store the wrapper in subchannel_map_.
+  //
+  // Steps 1 and 3 require holding the lock, but we don't want to hold
+  // the lock in step 2, since we're calling into arbitrary code in the
+  // channel.  Unfortunately, this means we need to grab and release the
+  // lock twice -- and each time, we need to check if some other thread
+  // has preempted us.
+  //
+  // Step 1.
+  ChannelArgs per_endpoint_args;
+  {
+    MutexLock lock(&mu_);
+    auto it = subchannel_map_.find(address);
+    // This can happen if the map entry was removed between the time that
+    // the picker requested the subchannel creation and the time that we got
+    // here.  In that case, we can just make it a no-op, since the update
+    // that removed the entry will have generated a new picker already.
+    if (it == subchannel_map_.end()) return;
+    // This can happen if the picker requests subchannel creation for
+    // the same address multiple times.
+    if (it->second->HasOwnedSubchannel()) return;
+    per_endpoint_args = it->second->per_endpoint_args();
+  }
+  // Step 2.
   auto subchannel = channel_control_helper()->CreateSubchannel(
-      *addr, /*per_address_args=*/ChannelArgs(), args_);
+      *addr, per_endpoint_args, args_);
   auto wrapper = MakeRefCounted<SubchannelWrapper>(
       std::move(subchannel), RefAsSubclass<XdsOverrideHostLb>());
+  // Step 3.
   {
     MutexLock lock(&mu_);
     auto it = subchannel_map_.find(address);

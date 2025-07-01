@@ -47,6 +47,7 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
@@ -56,6 +57,7 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/event_engine/channel_args_endpoint_config.h"
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/event_engine_shims/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolved_address.h"
 #include "src/core/lib/surface/channel.h"
@@ -64,6 +66,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/transport.h"
 #include "src/core/resolver/resolver_registry.h"
+#include "src/core/transport/endpoint_transport_client_channel_factory.h"
 #include "src/core/util/debug_location.h"
 #include "src/core/util/orphanable.h"
 #include "src/core/util/status_helper.h"
@@ -82,6 +85,7 @@
 namespace grpc_core {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using http2::Http2ClientTransport;
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
@@ -142,26 +146,63 @@ void Chttp2Connector::OnHandshakeDone(absl::StatusOr<HandshakerArgs*> result) {
     result_->Reset();
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, result.status());
   } else if ((*result)->endpoint != nullptr) {
-    result_->transport = grpc_create_chttp2_transport(
-        (*result)->args, std::move((*result)->endpoint), true);
-    CHECK_NE(result_->transport, nullptr);
-    result_->socket_node =
-        grpc_chttp2_transport_get_socket_node(result_->transport);
-    result_->channel_args = std::move((*result)->args);
-    Ref().release();  // Ref held by OnReceiveSettings()
-    GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
-                      grpc_schedule_on_exec_ctx);
-    grpc_chttp2_transport_start_reading(
-        result_->transport, (*result)->read_buffer.c_slice_buffer(),
-        &on_receive_settings_, args_.interested_parties, nullptr);
-    timer_handle_ = event_engine_->RunAfter(
-        args_.deadline - Timestamp::Now(),
-        [self = RefAsSubclass<Chttp2Connector>()]() mutable {
-          ExecCtx exec_ctx;
-          self->OnTimeout();
-          // Ensure the Chttp2Connector is deleted under an ExecCtx.
-          self.reset();
-        });
+    const bool is_callv1 =
+        !((*result)->args.GetBool(GRPC_ARG_USE_V3_STACK).value_or(false));
+    if (is_callv1) {
+      result_->transport = grpc_create_chttp2_transport(
+          (*result)->args, std::move((*result)->endpoint), true);
+      CHECK_NE(result_->transport, nullptr);
+      result_->channel_args = std::move((*result)->args);
+      Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                        grpc_schedule_on_exec_ctx);
+      grpc_chttp2_transport_start_reading(
+          result_->transport, (*result)->read_buffer.c_slice_buffer(),
+          &on_receive_settings_, args_.interested_parties, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    } else {
+      // TODO(tjagtap) : [PH2][P1] : Validate this code block thoroughly once
+      // the ping pong test is in place.
+      std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+          event_engine_endpoint = grpc_event_engine::experimental::
+              grpc_take_wrapped_event_engine_endpoint(
+                  (*result)->endpoint.release());
+      if (event_engine_endpoint == nullptr) {
+        LOG(ERROR) << "Failed to take endpoint.";
+        result = GRPC_ERROR_CREATE("Failed to take endpoint.");
+      }
+      // Create the PromiseEndpoint
+      PromiseEndpoint promise_endpoint(std::move(event_engine_endpoint),
+                                       std::move((*result)->read_buffer));
+      std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+          event_engine_ptr =
+              (*result)
+                  ->args
+                  .GetObjectRef<grpc_event_engine::experimental::EventEngine>();
+      Ref().release();  // Ref held by OnReceiveSettings()
+      GRPC_CLOSURE_INIT(&on_receive_settings_, OnReceiveSettings, this,
+                        grpc_schedule_on_exec_ctx);
+      result_->channel_args = std::move((*result)->args);
+      result_->transport =
+          new Http2ClientTransport(std::move(promise_endpoint), (*result)->args,
+                                   event_engine_ptr, &on_receive_settings_);
+      DCHECK_NE(result_->transport, nullptr);
+      timer_handle_ = event_engine_->RunAfter(
+          args_.deadline - Timestamp::Now(),
+          [self = RefAsSubclass<Chttp2Connector>()]() mutable {
+            ExecCtx exec_ctx;
+            self->OnTimeout();
+            // Ensure the Chttp2Connector is deleted under an ExecCtx.
+            self.reset();
+          });
+    }
   } else {
     // If the handshaking succeeded but there is no endpoint, then the
     // handshaker may have handed off the connection to some external
@@ -225,120 +266,22 @@ void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
   }
 }
 
-namespace {
-
-class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
- public:
-  RefCountedPtr<Subchannel> CreateSubchannel(
-      const grpc_resolved_address& address, const ChannelArgs& args) override {
-    absl::StatusOr<ChannelArgs> new_args = GetSecureNamingChannelArgs(args);
-    if (!new_args.ok()) {
-      LOG(ERROR) << "Failed to create channel args during subchannel creation: "
-                 << new_args.status() << "; Got args: " << args.ToString();
-      return nullptr;
-    }
-    RefCountedPtr<Subchannel> s = Subchannel::Create(
-        MakeOrphanable<Chttp2Connector>(), address, *new_args);
-    return s;
+absl::StatusOr<grpc_channel*> CreateHttp2Channel(std::string target,
+                                                 const ChannelArgs& args) {
+  auto r = ChannelCreate(
+      target,
+      args.SetObject(EndpointTransportClientChannelFactory<Chttp2Connector>())
+          .Set(GRPC_ARG_USE_V3_STACK,
+               IsPromiseBasedHttp2ClientTransportEnabled()),
+      GRPC_CLIENT_CHANNEL, nullptr);
+  if (r.ok()) {
+    return r->release()->c_ptr();
+  } else {
+    return r.status();
   }
-
- private:
-  static absl::StatusOr<ChannelArgs> GetSecureNamingChannelArgs(
-      ChannelArgs args) {
-    auto* channel_credentials = args.GetObject<grpc_channel_credentials>();
-    if (channel_credentials == nullptr) {
-      return absl::InternalError("channel credentials missing for channel");
-    }
-    // Make sure security connector does not already exist in args.
-    if (args.Contains(GRPC_ARG_SECURITY_CONNECTOR)) {
-      return absl::InternalError(
-          "security connector already present in channel args.");
-    }
-    // Find the authority to use in the security connector.
-    std::optional<std::string> authority =
-        args.GetOwnedString(GRPC_ARG_DEFAULT_AUTHORITY);
-    if (!authority.has_value()) {
-      return absl::InternalError("authority not present in channel args");
-    }
-    // Create the security connector using the credentials and target name.
-    RefCountedPtr<grpc_channel_security_connector>
-        subchannel_security_connector =
-            channel_credentials->create_security_connector(
-                /*call_creds=*/nullptr, authority->c_str(), &args);
-    if (subchannel_security_connector == nullptr) {
-      return absl::InternalError(absl::StrFormat(
-          "Failed to create subchannel for secure name '%s'", *authority));
-    }
-    return args.SetObject(std::move(subchannel_security_connector));
-  }
-};
-
-absl::StatusOr<RefCountedPtr<Channel>> CreateChannel(const char* target,
-                                                     const ChannelArgs& args) {
-  if (target == nullptr) {
-    LOG(ERROR) << "cannot create channel with NULL target name";
-    return absl::InvalidArgumentError("channel target is NULL");
-  }
-  return ChannelCreate(target, args, GRPC_CLIENT_CHANNEL, nullptr);
 }
 
-}  // namespace
 }  // namespace grpc_core
-
-namespace {
-
-grpc_core::Chttp2SecureClientChannelFactory* g_factory;
-gpr_once g_factory_once = GPR_ONCE_INIT;
-
-void FactoryInit() {
-  g_factory = new grpc_core::Chttp2SecureClientChannelFactory();
-}
-
-}  // namespace
-
-// Create a client channel:
-//   Asynchronously: - resolve target
-//                   - connect to it (trying alternatives as presented)
-//                   - perform handshakes
-grpc_channel* grpc_channel_create(const char* target,
-                                  grpc_channel_credentials* creds,
-                                  const grpc_channel_args* c_args) {
-  grpc_core::ExecCtx exec_ctx;
-  GRPC_TRACE_LOG(api, INFO)
-      << "grpc_channel_create(target=" << target << ", creds=" << (void*)creds
-      << ", args=" << (void*)c_args << ")";
-  grpc_channel* channel = nullptr;
-  grpc_error_handle error;
-  if (creds != nullptr) {
-    // Add channel args containing the client channel factory and channel
-    // credentials.
-    gpr_once_init(&g_factory_once, FactoryInit);
-    grpc_core::ChannelArgs args =
-        creds->update_arguments(grpc_core::CoreConfiguration::Get()
-                                    .channel_args_preconditioning()
-                                    .PreconditionChannelArgs(c_args)
-                                    .SetObject(creds->Ref())
-                                    .SetObject(g_factory));
-    // Create channel.
-    auto r = grpc_core::CreateChannel(target, args);
-    if (r.ok()) {
-      channel = r->release()->c_ptr();
-    } else {
-      error = absl_status_to_grpc_error(r.status());
-    }
-  }
-  if (channel == nullptr) {
-    intptr_t integer;
-    grpc_status_code status = GRPC_STATUS_INTERNAL;
-    if (grpc_error_get_int(error, grpc_core::StatusIntProperty::kRpcStatus,
-                           &integer)) {
-      status = static_cast<grpc_status_code>(integer);
-    }
-    channel = grpc_lame_client_channel_create(
-        target, status, "Failed to create client channel");
-  }
-  return channel;
-}
 
 #ifdef GPR_SUPPORT_CHANNELS_FROM_FD
 grpc_channel* grpc_channel_create_from_fd(const char* target, int fd,

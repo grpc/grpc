@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
       []() {
         return std::make_unique<
             grpc_event_engine::experimental::ThreadyEventEngine>(
-            std::make_unique<
-                grpc_event_engine::experimental::PosixEventEngine>());
+            grpc_event_engine::experimental::PosixEventEngine::
+                MakePosixEventEngine());
       },
       []() {
         return std::make_unique<

@@ -195,7 +195,8 @@ auto Endpoint::WriteLoop(uint32_t id,
           GRPC_TRACE_LOG(chaotic_good, INFO)
               << "CHAOTIC_GOOD: Write " << buffer.Length()
               << "b to data endpoint #" << id;
-          return endpoint->Write(std::move(buffer));
+          return endpoint->Write(std::move(buffer),
+                                 PromiseEndpoint::WriteArgs{});
         },
         []() -> LoopCtl<absl::Status> { return Continue{}; });
   });

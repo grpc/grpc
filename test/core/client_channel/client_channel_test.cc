@@ -233,7 +233,7 @@ class ClientChannelTest : public YodelTest {
   }
 
   void InitCoreConfiguration() override {
-    CoreConfiguration::RegisterBuilder(
+    CoreConfiguration::RegisterEphemeralBuilder(
         [this](CoreConfiguration::Builder* builder) {
           builder->resolver_registry()->RegisterResolverFactory(
               std::make_unique<TestResolverFactory>(this));
@@ -319,7 +319,9 @@ class TestConfigSelector : public ConfigSelector {
     return kFactory.Create();
   }
 
-  void AddFilters(InterceptionChainBuilder& builder) override {
+  void AddFilters(InterceptionChainBuilder& builder,
+                  const Blackboard* /*old_blackboard*/,
+                  Blackboard* /*new_blackboard*/) override {
     builder.Add<TestFilter>();
   }
 

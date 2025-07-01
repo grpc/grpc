@@ -121,6 +121,24 @@ tail${i}:
 % endfor
   }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION SeqState& operator=(SeqState&& other) = delete;
+  void ToProto(grpc_channelz_v2_Promise_CompositionKind kind, grpc_channelz_v2_Promise* promise_proto, upb_Arena* arena) const {
+    auto* seq_promise = grpc_channelz_v2_Promise_mutable_seq_promise(promise_proto, arena);
+    grpc_channelz_v2_Promise_Seq_set_kind(seq_promise, kind);
+    auto** steps = grpc_channelz_v2_Promise_Seq_resize_steps(seq_promise, ${n}, arena);
+    for (int i = 0; i < ${n}; i++) {
+        steps[i] = grpc_channelz_v2_Promise_SeqStep_new(arena);
+    }
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[0], StdStringToUpbString(TypeName<P>()));
+    if (state == State::kState0) {
+        PromiseAsProto(${"prior."*(n-1)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[0], arena), arena);
+    }
+% for i in range(1,n):
+    grpc_channelz_v2_Promise_SeqStep_set_factory(steps[${i}], StdStringToUpbString(TypeName<F${i-1}>()));
+    if (state == State::kState${i}) {
+      PromiseAsProto(${"prior."*(n-1-i)}current_promise, grpc_channelz_v2_Promise_SeqStep_mutable_polling_promise(steps[${i}], arena), arena);
+    }
+% endfor
+  }
   GPR_ATTRIBUTE_ALWAYS_INLINE_FUNCTION Poll<Result> PollOnce() {
     switch (state) {
 % for i in range(0,n-1):
@@ -188,6 +206,7 @@ front_matter = """
 #include "src/core/lib/promise/detail/promise_factory.h"
 #include "src/core/lib/promise/detail/promise_like.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/promise.h"
 
 // A sequence under some traits for some set of callables P, Fs.
 // P should be a promise-like object that yields a value.
@@ -266,7 +285,13 @@ with open(sys.argv[0]) as my_source:
 
 copyright = [line[2:].rstrip() for line in copyright]
 
-with open("src/core/lib/promise/detail/seq_state.h", "w") as f:
+output_file = (
+    "/".join(sys.argv[0].split("/")[:-4])
+    + "/src/core/lib/promise/detail/seq_state.h"
+)
+print(output_file)
+
+with open(output_file, "w") as f:
     put_banner([f], copyright)
     print(front_matter, file=f)
     for n in range(2, 14):

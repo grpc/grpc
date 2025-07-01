@@ -25,6 +25,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"
@@ -40,17 +41,18 @@ class SecureFixture : public grpc_core::CoreTestFixture {
  protected:
   const std::string& localaddr() const { return localaddr_; }
 
- private:
-  virtual grpc_channel_credentials* MakeClientCreds(
-      const grpc_core::ChannelArgs& args) = 0;
-  virtual grpc_server_credentials* MakeServerCreds(
-      const grpc_core::ChannelArgs& args) = 0;
   virtual grpc_core::ChannelArgs MutateClientArgs(grpc_core::ChannelArgs args) {
     return args;
   }
   virtual grpc_core::ChannelArgs MutateServerArgs(grpc_core::ChannelArgs args) {
     return args;
   }
+
+ private:
+  virtual grpc_channel_credentials* MakeClientCreds(
+      const grpc_core::ChannelArgs& args) = 0;
+  virtual grpc_server_credentials* MakeServerCreds(
+      const grpc_core::ChannelArgs& args) = 0;
   grpc_server* MakeServer(
       const grpc_core::ChannelArgs& in_args, grpc_completion_queue* cq,
       absl::AnyInvocable<void(grpc_server*)>& pre_server_start) override {
@@ -91,6 +93,20 @@ class InsecureFixture : public SecureFixture {
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs&) override {
     return grpc_insecure_server_credentials_create();
+  }
+};
+
+// Fixture for PH2 that uses insecure credentials
+class PH2Fixure : public InsecureFixture {
+ public:
+  using InsecureFixture::InsecureFixture;
+
+ private:
+  grpc_core::ChannelArgs MutateClientArgs(
+      grpc_core::ChannelArgs args) override {
+    LOG(INFO) << args.ToString();
+    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
+    return args;
   }
 };
 

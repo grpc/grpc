@@ -532,8 +532,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
   LOG(INFO) << "Initiating";
   ServerArgs server_mark;
   server_mark.mutable_mark()->set_reset(true);
+  server_mark.mutable_mark()->set_name("warmup");
   ClientArgs client_mark;
   client_mark.mutable_mark()->set_reset(true);
+  client_mark.mutable_mark()->set_name("warmup");
   ServerStatus server_status;
   ClientStatus client_status;
   for (size_t i = 0; i < num_clients; i++) {
@@ -560,6 +562,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   LOG(INFO) << "Starting";
 
   auto start_time = time(nullptr);
+
+  client_mark.mutable_mark()->set_name("benchmark");
+  server_mark.mutable_mark()->set_name("benchmark");
 
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
@@ -595,6 +600,9 @@ std::unique_ptr<ScenarioResult> RunScenario(
   gpr_sleep_until(gpr_time_add(
       start,
       gpr_time_from_seconds(warmup_seconds + benchmark_seconds, GPR_TIMESPAN)));
+
+  client_mark.mutable_mark()->set_name("done");
+  server_mark.mutable_mark()->set_name("done");
 
   // Finish a run
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);

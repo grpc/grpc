@@ -58,7 +58,6 @@ grpc_ssl_credentials::grpc_ssl_credentials(
       root_store_ = grpc_core::DefaultSslRootStore::GetRootStore();
     }
   } else {
-    config_.pem_root_certs = config_.pem_root_certs;
     root_store_ = nullptr;
   }
 
@@ -278,8 +277,8 @@ grpc_ssl_server_credentials::~grpc_ssl_server_credentials() {
 }
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_ssl_server_credentials::create_security_connector(
-    const grpc_core::ChannelArgs& /* args */) {
-  return grpc_ssl_server_security_connector_create(this->Ref());
+    const grpc_core::ChannelArgs& args) {
+  return grpc_ssl_server_security_connector_create(this->Ref(), args);
 }
 
 grpc_core::UniqueTypeName grpc_ssl_server_credentials::Type() {

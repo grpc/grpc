@@ -43,6 +43,7 @@
 #include "src/core/lib/slice/slice.h"
 #include "src/core/lib/transport/promise_endpoint.h"
 #include "src/core/server/server.h"
+#include "src/core/util/shared_bit_gen.h"
 #include "src/core/util/sync.h"
 #include "src/core/util/time.h"
 
@@ -56,8 +57,9 @@ namespace chaotic_good_legacy {
 class ChaoticGoodServerListener final : public Server::ListenerInterface {
  public:
   static absl::AnyInvocable<std::string()> DefaultConnectionIDGenerator() {
-    return [bitgen = absl::BitGen()]() mutable {
-      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(bitgen)));
+    return []() mutable {
+      SharedBitGen g;
+      return absl::StrCat(absl::Hex(absl::Uniform<uint64_t>(g)));
     };
   }
 
@@ -81,6 +83,9 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
             endpoint);
     ~ActiveConnection() override;
     const ChannelArgs& args() const { return listener_->args(); }
+    const ChannelArgs& handshake_result_args() const {
+      return handshake_result_args_.value();
+    }
 
     void Orphan() override;
 
@@ -131,7 +136,7 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
     ActivityPtr receive_settings_activity_ ABSL_GUARDED_BY(mu_);
     bool orphaned_ ABSL_GUARDED_BY(mu_) = false;
     PromiseEndpoint endpoint_;
-    absl::BitGen bitgen_;
+    std::optional<ChannelArgs> handshake_result_args_;
   };
 
   class DataConnectionListener final : public ServerConnectionFactory {
@@ -205,10 +210,10 @@ class ChaoticGoodServerListener final : public Server::ListenerInterface {
   const RefCountedPtr<DataConnectionListener> data_connection_listener_;
 };
 
+absl::StatusOr<int> AddLegacyChaoticGoodPort(Server* server, std::string addr,
+                                             const ChannelArgs& args);
+
 }  // namespace chaotic_good_legacy
 }  // namespace grpc_core
-
-int grpc_server_add_chaotic_good_legacy_port(grpc_server* server,
-                                             const char* addr);
 
 #endif  // GRPC_SRC_CORE_EXT_TRANSPORT_CHAOTIC_GOOD_LEGACY_SERVER_CHAOTIC_GOOD_SERVER_H

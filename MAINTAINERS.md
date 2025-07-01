@@ -14,6 +14,7 @@ for general contribution guidelines.
 - [ac-patel](https://github.com/ac-patel), Google LLC
 - [apolcyn](https://github.com/apolcyn), Google LLC
 - [arjunroy](https://github.com/arjunroy), Google LLC
+- [asheshvidyut](https://github.com/asheshvidyut), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
 - [daniel-j-born](https://github.com/daniel-j-born), Google LLC
 - [dfawley](https://github.com/dfawley), Google LLC

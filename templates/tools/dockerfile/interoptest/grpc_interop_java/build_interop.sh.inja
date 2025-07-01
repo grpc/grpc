@@ -1,0 +1,1 @@
+{% include "../../java_build_interop.sh.include" %}

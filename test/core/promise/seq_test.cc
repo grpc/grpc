@@ -20,6 +20,8 @@
 
 #include "absl/strings/str_cat.h"
 #include "gtest/gtest.h"
+#include "src/proto/grpc/channelz/v2/promise.upb.h"
+#include "upb/mem/arena.hpp"
 
 namespace grpc_core {
 
@@ -225,6 +227,51 @@ TEST(SeqTest, ThreeThens) {
             return [i, y = std::make_unique<int>(4)]() { return i + "d"; };
           })(),
       Poll<std::string>("abcd"));
+}
+
+TEST(SeqTest, ToProto) {
+  auto x = Seq([]() { return 42; },
+               [polled = false](int i) mutable -> Poll<int> {
+                 if (!polled) {
+                   polled = true;
+                   return Pending{};
+                 }
+                 return i + 1;
+               },
+               [](int i) { return i; });
+  EXPECT_TRUE(promise_detail::kHasToProtoMethod<decltype(x)>)
+      << TypeName<decltype(x)>();
+  auto validate_proto = [](grpc_channelz_v2_Promise* promise_proto,
+                           int current_step) {
+    ASSERT_TRUE(grpc_channelz_v2_Promise_has_seq_promise(promise_proto));
+    const auto* seq_promise =
+        grpc_channelz_v2_Promise_seq_promise(promise_proto);
+    size_t num_steps;
+    const auto* const* steps =
+        grpc_channelz_v2_Promise_Seq_steps(seq_promise, &num_steps);
+    EXPECT_EQ(num_steps, 3);
+    for (size_t i = 0; i < num_steps; i++) {
+      if (i == static_cast<size_t>(current_step)) {
+        EXPECT_TRUE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
+      } else {
+        EXPECT_FALSE(
+            grpc_channelz_v2_Promise_SeqStep_has_polling_promise(steps[i]));
+      }
+    }
+  };
+  upb::Arena arena;
+  auto* promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 0);
+  x();
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 1);
+  x();
+  promise_proto = grpc_channelz_v2_Promise_new(arena.ptr());
+  PromiseAsProto(x, promise_proto, arena.ptr());
+  validate_proto(promise_proto, 2);
 }
 
 struct Big {

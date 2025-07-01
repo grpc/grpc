@@ -31,23 +31,19 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto v30.0.
 std::map<absl::string_view, double> ParseMap(
     xds_data_orca_v3_OrcaLoadReport* msg,
-    const upb_Map* (*upb_map_func)(xds_data_orca_v3_OrcaLoadReport*),
+    bool (*upb_next_func)(const xds_data_orca_v3_OrcaLoadReport* msg,
+                          upb_StringView* key, double* val, size_t* iter),
     BackendMetricAllocatorInterface* allocator) {
-  const upb_Map* map = upb_map_func(msg);
   std::map<absl::string_view, double> result;
-  if (map) {
-    size_t i = kUpb_Map_Begin;
-    upb_MessageValue k, v;
-    while (upb_Map_Next(map, &k, &v, &i)) {
-      upb_StringView key_view = k.str_val;
-      double value = v.double_val;
-      char* key = allocator->AllocateString(key_view.size);
-      memcpy(key, key_view.data, key_view.size);
-      result[absl::string_view(key, key_view.size)] = value;
-    }
+  size_t i = kUpb_Map_Begin;
+  upb_StringView key_view;
+  double value;
+  while (upb_next_func(msg, &key_view, &value, &i)) {
+    char* key = allocator->AllocateString(key_view.size);
+    memcpy(key, key_view.data, key_view.size);
+    result[absl::string_view(key, key_view.size)] = value;
   }
   return result;
 }
@@ -73,14 +69,12 @@ const BackendMetricData* ParseBackendMetricData(
   backend_metric_data->qps =
       xds_data_orca_v3_OrcaLoadReport_rps_fractional(msg);
   backend_metric_data->eps = xds_data_orca_v3_OrcaLoadReport_eps(msg);
-  // TODO(b/397931390): Clean up the code after gRPC OSS migrates to proto
-  // v30.0.
   backend_metric_data->request_cost = ParseMap(
-      msg, _xds_data_orca_v3_OrcaLoadReport_request_cost_upb_map, allocator);
+      msg, xds_data_orca_v3_OrcaLoadReport_request_cost_next, allocator);
   backend_metric_data->utilization = ParseMap(
-      msg, _xds_data_orca_v3_OrcaLoadReport_utilization_upb_map, allocator);
+      msg, xds_data_orca_v3_OrcaLoadReport_utilization_next, allocator);
   backend_metric_data->named_metrics = ParseMap(
-      msg, _xds_data_orca_v3_OrcaLoadReport_named_metrics_upb_map, allocator);
+      msg, xds_data_orca_v3_OrcaLoadReport_named_metrics_next, allocator);
   return backend_metric_data;
 }
 

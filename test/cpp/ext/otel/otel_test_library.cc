@@ -43,27 +43,21 @@ namespace {
 
 template <typename T>
 std::string ToString(T value) {
-  return std::to_string(value);
+  return absl::StrCat("\"", std::to_string(value), "\"");
 }
 
-template <>
-std::string ToString(bool value) {
-  return value ? "true" : "false";
-}
+std::string ToString(bool value) { return value ? "true" : "false"; }
 
-template <>
-std::string ToString(std::string value) {
-  return value;
-}
+std::string ToString(std::string value) { return value; }
 
 template <typename T>
 std::string ToString(const std::vector<T>& value) {
-  std::vector<std::string> parts;
-  parts.reserve(value.size());
-  for (const auto& item : value) {
-    parts.push_back(ToString(item));
-  }
-  return absl::StrCat("[", absl::StrJoin(parts, ", "), "]");
+  return absl::StrCat("[",
+                      absl::StrJoin(value, ", ",
+                                    [](std::string* out, T item) {
+                                      absl::StrAppend(out, ToString(item));
+                                    }),
+                      "]");
 }
 
 std::string ToString(
@@ -73,16 +67,18 @@ std::string ToString(
 
 std::string ToString(
     const opentelemetry::sdk::metrics::PointAttributes& point_attributes) {
-  std::vector<std::string> parts;
-  for (const auto& [key, value] : point_attributes.GetAttributes()) {
-    parts.push_back(absl::StrCat("{\"", key, "\", ", ToString(value), "}"));
-  }
-  return absl::StrJoin(parts, ", ");
+  return absl::StrCat(
+      "{",
+      absl::StrJoin(point_attributes.GetAttributes(), ", ",
+                    [](std::string* out, const auto& attribute) {
+                      absl::StrAppend(out, "{", ToString(attribute.first), ",",
+                                      ToString(attribute.second), "}");
+                    }),
+      "}");
 }
 
 std::string ToString(const opentelemetry::sdk::metrics::ValueType& value) {
-  return std::visit([](const auto& value) { return std::to_string(value); },
-                    value);
+  return std::visit([](const auto& value) { return ToString(value); }, value);
 }
 
 struct PointTypeVisitor {
@@ -112,7 +108,7 @@ struct PointTypeVisitor {
   }
 
   std::string operator()(
-      const opentelemetry::sdk::metrics::DropPointData& point) {
+      const opentelemetry::sdk::metrics::DropPointData& /*point*/) {
     return "<DropPointData>";
   }
 };
@@ -129,9 +125,8 @@ namespace metrics {
 
 void PrintTo(const PointDataAttributes& point_data_attributes,
              std::ostream* os) {
-  *os << "{attributes = {" << ToString(point_data_attributes.attributes)
-      << "}, point_data = {" << ToString(point_data_attributes.point_data)
-      << "}}";
+  *os << "{attributes = " << ToString(point_data_attributes.attributes)
+      << ", point_data = " << ToString(point_data_attributes.point_data) << "}";
 }
 
 }  // namespace metrics
@@ -235,10 +230,12 @@ OpenTelemetryPluginEnd2EndTest::MetricsCollectorThread::Stop() {
 }
 
 void OpenTelemetryPluginEnd2EndTest::Init(Options config) {
+  grpc_core::CoreConfiguration::
+      ResetEverythingIncludingPersistentBuildersAbsolutelyNotRecommended();
   ChannelArguments channel_args;
   if (!config.labels_to_inject.empty()) {
     labels_to_inject_ = std::move(config.labels_to_inject);
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) mutable {
           builder->channel_init()->RegisterFilter(GRPC_CLIENT_SUBCHANNEL,
                                                   &AddLabelsFilter::kFilter);
@@ -327,6 +324,8 @@ OpenTelemetryPluginEnd2EndTest::ReadCurrentMetricsData(
       data;
   auto deadline = absl::Now() + absl::Seconds(5);
   do {
+    // Give other threads a chance to run and potentially report metrics.
+    std::this_thread::yield();
     reader->Collect([&](opentelemetry::sdk::metrics::ResourceMetrics& rm) {
       for (const opentelemetry::sdk::metrics::ScopeMetrics& smd :
            rm.scope_metric_data_) {

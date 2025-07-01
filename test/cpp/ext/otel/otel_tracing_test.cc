@@ -28,6 +28,10 @@
 #include "opentelemetry/sdk/trace/tracer_provider.h"
 #include "src/core/config/core_configuration.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/lib/event_engine/posix_engine/event_poller.h"
+#ifdef GRPC_POSIX_SOCKET_TCP
+#include "src/core/lib/event_engine/posix_engine/event_poller_posix_default.h"
+#endif  // GRPC_POSIX_SOCKET_TCP
 #include "src/core/telemetry/call_tracer.h"
 #include "src/core/util/host_port.h"
 #include "src/cpp/ext/otel/otel_plugin.h"
@@ -47,6 +51,7 @@ using ::testing::FieldsAre;
 using ::testing::Lt;
 using ::testing::MatchesRegex;
 using ::testing::Pair;
+using ::testing::StrEq;
 using ::testing::UnorderedElementsAre;
 using ::testing::VariantWith;
 
@@ -673,10 +678,111 @@ TEST_F(OTelTracingTest, PropagationParentToChild) {
   EXPECT_EQ((*server_span)->GetTraceId(), (*test_span)->GetTraceId());
 }
 
+#ifdef GRPC_LINUX_ERRQUEUE
+// Test presence of TCP write annotations
+TEST_F(OTelTracingTest, TcpWriteAnnotations) {
+  if (!grpc_event_engine::experimental::MakeDefaultPoller(/*scheduler=*/nullptr)
+           ->CanTrackErrors()) {
+    GTEST_SKIP() << "Test disabled if poller doesn't support errqueue";
+  }
+
+  SendRPC(stub_.get());
+  auto spans = GetSpans(3);
+  SpanData* attempt_span;
+  SpanData* server_span;
+  EXPECT_EQ(spans.size(), 3);
+  for (const auto& span : spans) {
+    EXPECT_TRUE(span->GetSpanContext().IsValid());
+    if (span->GetName() == "Attempt.grpc.testing.EchoTestService/Echo") {
+      attempt_span = span.get();
+      // Verify TCP sendmsg event
+      const auto sendmsg_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SENDMSG");
+          });
+      EXPECT_NE(sendmsg_event, span->GetEvents().end());
+      // Verify TCP scheduled event
+      const auto scheduled_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SCHEDULED");
+          });
+      EXPECT_NE(scheduled_event, span->GetEvents().end());
+      // Verify TCP sent event
+      const auto sent_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return absl::StrContains(event.GetName(), "TCP: SENT");
+                       });
+      EXPECT_NE(sent_event, span->GetEvents().end());
+      // Verify TCP acked event
+      const auto acked_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: ACKED");
+          });
+      EXPECT_NE(acked_event, span->GetEvents().end());
+    } else if (span->GetName() == "Recv.grpc.testing.EchoTestService/Echo") {
+      server_span = span.get();
+      // Verify TCP sendmsg event
+      const auto sendmsg_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SENDMSG");
+          });
+      EXPECT_NE(sendmsg_event, span->GetEvents().end());
+      // Verify TCP scheduled event
+      const auto scheduled_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: SCHEDULED");
+          });
+      EXPECT_NE(scheduled_event, span->GetEvents().end());
+      // Verify TCP sent event
+      const auto sent_event =
+          std::find_if(span->GetEvents().begin(), span->GetEvents().end(),
+                       [](const SpanDataEvent& event) {
+                         return absl::StrContains(event.GetName(), "TCP: SENT");
+                       });
+      EXPECT_NE(sent_event, span->GetEvents().end());
+      // Verify TCP acked event
+      const auto acked_event = std::find_if(
+          span->GetEvents().begin(), span->GetEvents().end(),
+          [](const SpanDataEvent& event) {
+            return absl::StrContains(event.GetName(), "TCP: ACKED");
+          });
+      EXPECT_NE(acked_event, span->GetEvents().end());
+    }
+  }
+  EXPECT_NE(attempt_span, nullptr);
+  EXPECT_NE(server_span, nullptr);
+}
+#endif  // GRPC_LINUX_ERRQUEUE
+
+TEST(OTelTracingPluginTest, OTelSpanIdAndTraceIdToStringTest) {
+  char trace_id[] = "0123456789ABCDEF";
+  char span_id[] = "01234567";
+  auto span = std::shared_ptr<opentelemetry::trace::Span>(
+      new (std::nothrow)
+          opentelemetry::trace::DefaultSpan(opentelemetry::trace::SpanContext(
+              opentelemetry::trace::TraceId(
+                  opentelemetry::nostd::span<const uint8_t, 16>(
+                      reinterpret_cast<const uint8_t*>(trace_id), 16)),
+              opentelemetry::trace::SpanId(
+                  opentelemetry::nostd::span<const uint8_t, 8>(
+                      reinterpret_cast<const uint8_t*>(span_id), 8)),
+              opentelemetry::trace::TraceFlags(1), /*is_remote=*/true)));
+  EXPECT_THAT(grpc::internal::OTelSpanTraceIdToString(span.get()),
+              StrEq("30313233343536373839414243444546"));
+  EXPECT_THAT(grpc::internal::OTelSpanSpanIdToString(span.get()),
+              StrEq("3031323334353637"));
+}
+
 class OTelTracingTestForTransparentRetries : public OTelTracingTest {
  protected:
   void SetUp() override {
-    grpc_core::CoreConfiguration::RegisterBuilder(
+    grpc_core::CoreConfiguration::RegisterEphemeralBuilder(
         [](grpc_core::CoreConfiguration::Builder* builder) {
           // Register FailFirstCallFilter to simulate transparent retries.
           builder->channel_init()->RegisterFilter(

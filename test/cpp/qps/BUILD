@@ -56,6 +56,8 @@ grpc_cc_library(
         ":usage_timer",
         "//:grpc",
         "//:grpc++",
+        "//src/core:chaotic_good",
+        "//src/core:endpoint_transport",
         "//src/proto/grpc/testing:benchmark_service_cc_grpc",
         "//src/proto/grpc/testing:control_cc_proto",
         "//src/proto/grpc/testing:payloads_cc_proto",

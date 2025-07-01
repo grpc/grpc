@@ -415,6 +415,26 @@ TEST_F(EventEngineDNSTest, TestCancelActiveDNSQuery) {
   dns_resolver.reset();
   dns_resolver_signal_.WaitForNotification();
 }
+
+TEST_F(EventEngineDNSTest, StressTestQueryARecordWithNameDeletion) {
+  // The Lookup APIs take a string_view name to resolve. This regression test
+  // attempts to catch bad implementations that rely on that string_view's
+  // source string to be alive after the function returns.
+  constexpr size_t kIterations = 100;
+  std::atomic<size_t> resolved_count{0};
+  auto dns_resolver = CreateDefaultDNSResolver();
+  for (size_t i = 0; i < kIterations; i++) {
+    auto* target = new std::string("arst");
+    dns_resolver->LookupHostname([&resolved_count](auto) { ++resolved_count; },
+                                 *target,
+                                 /*default_port=*/"443");
+    delete target;
+  }
+  while (resolved_count.load() < kIterations) {
+    absl::SleepFor(absl::Milliseconds(100));
+  }
+}
+
 #endif  // GRPC_IOS_EVENT_ENGINE_CLIENT
 
 #define EXPECT_SUCCESS()           \

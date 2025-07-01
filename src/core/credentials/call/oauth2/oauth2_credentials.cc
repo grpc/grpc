@@ -314,7 +314,8 @@ class grpc_compute_engine_token_fetcher_credentials
     // TODO(ctiller): Carry the memory quota in ctx and share it with the host
     // channel. This would allow us to cancel an authentication query when under
     // extreme memory pressure.
-    auto uri = grpc_core::URI::Create("http", GRPC_COMPUTE_ENGINE_METADATA_HOST,
+    auto uri = grpc_core::URI::Create("http", /*user_info=*/"",
+                                      GRPC_COMPUTE_ENGINE_METADATA_HOST,
                                       GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH,
                                       {} /* query params */, "" /* fragment */);
     CHECK(uri.ok());  // params are hardcoded
@@ -372,7 +373,8 @@ grpc_google_refresh_token_credentials::StartHttpRequest(
   // TODO(ctiller): Carry the memory quota in ctx and share it with the host
   // channel. This would allow us to cancel an authentication query when under
   // extreme memory pressure.
-  auto uri = grpc_core::URI::Create("https", GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
+  auto uri = grpc_core::URI::Create("https", /*user_info=*/"",
+                                    GRPC_GOOGLE_OAUTH2_SERVICE_HOST,
                                     GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH,
                                     {} /* query params */, "" /* fragment */);
   CHECK(uri.ok());  // params are hardcoded

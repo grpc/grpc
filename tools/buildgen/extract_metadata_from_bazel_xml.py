@@ -107,6 +107,7 @@ EXTERNAL_SOURCE_PREFIXES = {
     "@utf8_range//": "third_party/utf8_range",
     "@com_googlesource_code_re2//": "third_party/re2",
     "@com_google_googletest//": "third_party/googletest",
+    "@@googletest//": "third_party/googletest",
     "@com_google_protobuf//upb": "third_party/upb/upb",
     "@com_google_protobuf//third_party/utf8_range": "third_party/utf8_range",
     "@zlib//": "third_party/zlib",
@@ -123,9 +124,10 @@ def _bazel_query_xml_tree(query: str) -> ET.Element:
 
 def _rule_dict_from_xml_node(rule_xml_node):
     """Converts XML node representing a rule (obtained from "bazel query --output xml") to a dictionary that contains all the metadata we will need."""
+    rule_name = rule_xml_node.attrib.get("name")
     result = {
         "class": rule_xml_node.attrib.get("class"),
-        "name": rule_xml_node.attrib.get("name"),
+        "name": rule_name,
         "srcs": [],
         "hdrs": [],
         "textual_hdrs": [],
@@ -171,6 +173,13 @@ def _rule_dict_from_xml_node(rule_xml_node):
                     # make it seem that the actual name is a dependency of the alias or bind rule
                     # (aliases don't have dependencies themselves)
                     result["deps"].append(actual_name)
+                elif rule_name == "//third_party:libssl":
+                    # //third_party:libssl is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:ssl")
+                elif rule_name == "//third_party:libcrypto":
+                    # //third_party:libcrypto is a conditional alias so let's handle it manually.
+                    result["deps"].append("@boringssl//:crypto")
+
     return result
 
 
@@ -203,7 +212,11 @@ def _extract_rules_from_bazel_xml(xml_tree):
 
 def _get_bazel_label(target_name: str) -> str:
     if target_name.startswith("@"):
-        return target_name
+        if ":" in target_name:
+            return target_name
+        else:
+            # @foo//bar/baz -> @foo//bar/baz:baz
+            return target_name + ":" + target_name.split("/")[-1]
     if ":" in target_name:
         return "//%s" % target_name
     else:
@@ -616,9 +629,18 @@ def _expand_upb_proto_library_rules(bazel_rules):
             # deps is not properly fetched from bazel query for upb_c_proto_library target
             # so add the upb dependency manually
             bazel_rule["deps"] = [
-                "@com_google_protobuf//upb:descriptor_upb_proto",
-                "@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me",
+                "@com_google_protobuf//upb/reflection:descriptor_upb_proto",
+                "@com_google_protobuf//upb/reflection:descriptor_upb_proto_upb_proto",
+                "@com_google_protobuf//upb:generated_code_support",
             ]
+            if (
+                name != "//:hack_protobuf_descriptor_upbdefs"
+                and name != "//:hack_protobuf_descriptor_upb_proto"
+            ):
+                bazel_rule["deps"] += [
+                    "//:hack_protobuf_descriptor_upbdefs",
+                    "//:hack_protobuf_descriptor_upb_proto",
+                ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
             protos = _get_transitive_protos(bazel_rules, deps[0])
@@ -1096,7 +1118,7 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "address_sorting",
     },
-    "@com_google_protobuf//upb:base": {
+    "@com_google_protobuf//upb/base": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_base_lib",
@@ -1106,12 +1128,17 @@ _BUILD_EXTRA_METADATA = {
         "build": "all",
         "_RENAME": "upb_hash_lib",
     },
-    "@com_google_protobuf//upb:mem": {
+    "@com_google_protobuf//upb/mem": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_mem_lib",
     },
-    "@com_google_protobuf//upb:message": {
+    "@com_google_protobuf//upb/lex:lex": {
+        "language": "c",
+        "build": "all",
+        "_RENAME": "upb_lex_lib",
+    },
+    "@com_google_protobuf//upb/message": {
         "language": "c",
         "build": "all",
         "_RENAME": "upb_message_lib",
@@ -1368,7 +1395,7 @@ _BAZEL_DEPS_QUERIES = [
     'deps(kind("^proto_library", @envoy_api//envoy/...))',
     # Make sure we have source info for all the targets that _expand_upb_proto_library_rules artificially adds
     # as upb_c_proto_library dependencies.
-    'deps("@com_google_protobuf//upb:generated_code_support__only_for_generated_code_do_not_use__i_give_permission_to_break_me")',
+    'deps("@com_google_protobuf//upb:generated_code_support")',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
@@ -1523,9 +1550,9 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # to download these libraries if not existed. Even if the download failed, it
 # will be a soft error that doesn't block existing target from successfully
 # built.
-build_yaml_like[
-    "external_proto_libraries"
-] = _generate_external_proto_libraries()
+build_yaml_like["external_proto_libraries"] = (
+    _generate_external_proto_libraries()
+)
 
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)

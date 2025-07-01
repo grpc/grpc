@@ -66,7 +66,7 @@ TEST_F(Http2ServerTransportTest, TestHttp2ServerTransportObjectCreation) {
 
   mock_endpoint.ExpectRead(
       {helper_.EventEngineSliceFromHttp2DataFrame(
-           /*payload=*/"Hello!", /*stream_id=*/10, /*end_stream=*/false),
+           /*payload=*/"Hello!", /*stream_id=*/9, /*end_stream=*/false),
        helper_.EventEngineSliceFromHttp2DataFrame(
            /*payload=*/"Bye!", /*stream_id=*/11, /*end_stream=*/true)},
       event_engine().get());

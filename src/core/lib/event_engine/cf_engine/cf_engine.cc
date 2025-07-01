@@ -31,6 +31,11 @@
 #include "src/core/lib/event_engine/thread_pool/thread_pool.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/util/crash.h"
+#include "src/core/util/useful.h"
+
+#ifndef GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
+#define GRPC_CFSTREAM_MAX_THREADPOOL_SIZE 16u
+#endif  // GRPC_CFSTREAM_MAX_THREADPOOL_SIZE
 
 namespace grpc_event_engine::experimental {
 
@@ -53,8 +58,9 @@ struct CFEventEngine::Closure final : public EventEngine::Closure {
 };
 
 CFEventEngine::CFEventEngine()
-    : thread_pool_(
-          MakeThreadPool(grpc_core::Clamp(gpr_cpu_num_cores(), 2u, 16u))),
+    : thread_pool_(MakeThreadPool(grpc_core::Clamp(
+          gpr_cpu_num_cores(), 2u,
+          static_cast<unsigned int>(GRPC_CFSTREAM_MAX_THREADPOOL_SIZE)))),
       timer_manager_(thread_pool_) {}
 
 CFEventEngine::~CFEventEngine() {

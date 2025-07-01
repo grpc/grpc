@@ -398,13 +398,6 @@ const absl::string_view
         "syscall_read",
         "tcp_read_alloc_8k",
         "tcp_read_alloc_64k",
-        "http2_settings_writes",
-        "http2_pings_sent",
-        "http2_writes_begun",
-        "http2_transport_stalls",
-        "http2_stream_stalls",
-        "http2_hpack_hits",
-        "http2_hpack_misses",
         "cq_pluck_creates",
         "cq_next_creates",
         "cq_callback_creates",
@@ -439,15 +432,6 @@ const absl::string_view GlobalStats::counter_doc[static_cast<int>(
     "Number of read syscalls (or equivalent - eg recvmsg) made by this process",
     "Number of 8k allocations by the TCP subsystem for reading",
     "Number of 64k allocations by the TCP subsystem for reading",
-    "Number of settings frames sent",
-    "Number of HTTP2 pings sent by process",
-    "Number of HTTP2 writes initiated",
-    "Number of times sending was completely stalled by the transport flow "
-    "control window",
-    "Number of times sending was completely stalled by the stream flow control "
-    "window",
-    "Number of HPACK cache hits",
-    "Number of HPACK cache misses (entries added but never used)",
     "Number of completion queues created for cq_pluck (indicates sync api "
     "usage)",
     "Number of completion queues created for cq_next (indicates cq async api "
@@ -477,22 +461,6 @@ const absl::string_view
         "tcp_read_size",
         "tcp_read_offer",
         "tcp_read_offer_iov_size",
-        "http2_send_message_size",
-        "http2_metadata_size",
-        "http2_hpack_entry_lifetime",
-        "http2_header_table_size",
-        "http2_initial_window_size",
-        "http2_max_concurrent_streams",
-        "http2_max_frame_size",
-        "http2_max_header_list_size",
-        "http2_preferred_receive_crypto_message_size",
-        "http2_stream_remote_window_update",
-        "http2_transport_remote_window_update",
-        "http2_transport_window_update_period",
-        "http2_stream_window_update_period",
-        "http2_write_target_size",
-        "http2_write_data_frame_size",
-        "http2_read_data_frame_size",
         "wrr_subchannel_list_size",
         "wrr_subchannel_ready_size",
         "work_serializer_run_time_ms",
@@ -522,23 +490,6 @@ const absl::string_view GlobalStats::histogram_doc[static_cast<int>(
     "Number of bytes received by each syscall_read",
     "Number of bytes offered to each syscall_read",
     "Number of byte segments offered to each syscall_read",
-    "Size of messages received by HTTP2 transport",
-    "Number of bytes consumed by metadata, according to HPACK accounting rules",
-    "Lifetime of HPACK entries in the cache (in milliseconds)",
-    "Http2 header table size received through SETTINGS frame",
-    "Http2 initial window size received through SETTINGS frame",
-    "Http2 max concurrent streams received through SETTINGS frame",
-    "Http2 max frame size received through SETTINGS frame",
-    "Http2 max header list size received through SETTINGS frame",
-    "Http2 preferred receive crypto message size received through SETTINGS "
-    "frame",
-    "Stream window update sent by peer",
-    "Transport window update sent by peer",
-    "Period in milliseconds at which peer sends transport window update",
-    "Period in milliseconds at which peer sends stream window update",
-    "Number of bytes targetted for http2 writes",
-    "Number of bytes for each data frame written",
-    "Number of bytes for each data frame read",
     "Number of subchannels in a subchannel list at picker creation time",
     "Number of READY subchannels in a subchannel list at picker creation time",
     "Number of milliseconds work serializers run for",
@@ -575,13 +526,6 @@ GlobalStats::GlobalStats()
       syscall_read{0},
       tcp_read_alloc_8k{0},
       tcp_read_alloc_64k{0},
-      http2_settings_writes{0},
-      http2_pings_sent{0},
-      http2_writes_begun{0},
-      http2_transport_stalls{0},
-      http2_stream_stalls{0},
-      http2_hpack_hits{0},
-      http2_hpack_misses{0},
       cq_pluck_creates{0},
       cq_next_creates{0},
       cq_callback_creates{0},
@@ -621,55 +565,6 @@ HistogramView GlobalStats::histogram(Histogram which) const {
     case Histogram::kTcpReadOfferIovSize:
       return HistogramView{&Histogram_80_10_64::BucketFor, kStatsTable14, 10,
                            tcp_read_offer_iov_size.buckets()};
-    case Histogram::kHttp2SendMessageSize:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_send_message_size.buckets()};
-    case Histogram::kHttp2MetadataSize:
-      return HistogramView{&Histogram_65536_26_64::BucketFor, kStatsTable6, 26,
-                           http2_metadata_size.buckets()};
-    case Histogram::kHttp2HpackEntryLifetime:
-      return HistogramView{&Histogram_1800000_40_64::BucketFor, kStatsTable16,
-                           40, http2_hpack_entry_lifetime.buckets()};
-    case Histogram::kHttp2HeaderTableSize:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_header_table_size.buckets()};
-    case Histogram::kHttp2InitialWindowSize:
-      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
-                           50, http2_initial_window_size.buckets()};
-    case Histogram::kHttp2MaxConcurrentStreams:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_max_concurrent_streams.buckets()};
-    case Histogram::kHttp2MaxFrameSize:
-      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
-                           50, http2_max_frame_size.buckets()};
-    case Histogram::kHttp2MaxHeaderListSize:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_max_header_list_size.buckets()};
-    case Histogram::kHttp2PreferredReceiveCryptoMessageSize:
-      return HistogramView{
-          &Histogram_16777216_20_64::BucketFor, kStatsTable0, 20,
-          http2_preferred_receive_crypto_message_size.buckets()};
-    case Histogram::kHttp2StreamRemoteWindowUpdate:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_stream_remote_window_update.buckets()};
-    case Histogram::kHttp2TransportRemoteWindowUpdate:
-      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
-                           20, http2_transport_remote_window_update.buckets()};
-    case Histogram::kHttp2TransportWindowUpdatePeriod:
-      return HistogramView{&Histogram_100000_20_64::BucketFor, kStatsTable2, 20,
-                           http2_transport_window_update_period.buckets()};
-    case Histogram::kHttp2StreamWindowUpdatePeriod:
-      return HistogramView{&Histogram_100000_20_64::BucketFor, kStatsTable2, 20,
-                           http2_stream_window_update_period.buckets()};
-    case Histogram::kHttp2WriteTargetSize:
-      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
-                           50, http2_write_target_size.buckets()};
-    case Histogram::kHttp2WriteDataFrameSize:
-      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
-                           50, http2_write_data_frame_size.buckets()};
-    case Histogram::kHttp2ReadDataFrameSize:
-      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
-                           50, http2_read_data_frame_size.buckets()};
     case Histogram::kWrrSubchannelListSize:
       return HistogramView{&Histogram_10000_20_64::BucketFor, kStatsTable4, 20,
                            wrr_subchannel_list_size.buckets()};
@@ -733,23 +628,6 @@ HistogramView GlobalStats::histogram(Histogram which) const {
                            20, chaotic_good_tcp_write_size_control.buckets()};
   }
 }
-const absl::string_view
-    Http2Stats::counter_name[static_cast<int>(Counter::COUNT)] = {
-        "http2_writes_begun",
-};
-const absl::string_view
-    Http2Stats::counter_doc[static_cast<int>(Counter::COUNT)] = {
-        "Number of HTTP2 writes initiated",
-};
-const absl::string_view
-    Http2Stats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
-        "http2_write_target_size",
-};
-const absl::string_view
-    Http2Stats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {
-        "Number of bytes targetted for http2 writes",
-};
-Http2Stats::Http2Stats() : http2_writes_begun{0} {}
 std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
   auto result = std::make_unique<GlobalStats>();
   for (const auto& data : data_) {
@@ -777,20 +655,6 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
         data.tcp_read_alloc_8k.load(std::memory_order_relaxed);
     result->tcp_read_alloc_64k +=
         data.tcp_read_alloc_64k.load(std::memory_order_relaxed);
-    result->http2_settings_writes +=
-        data.http2_settings_writes.load(std::memory_order_relaxed);
-    result->http2_pings_sent +=
-        data.http2_pings_sent.load(std::memory_order_relaxed);
-    result->http2_writes_begun +=
-        data.http2_writes_begun.load(std::memory_order_relaxed);
-    result->http2_transport_stalls +=
-        data.http2_transport_stalls.load(std::memory_order_relaxed);
-    result->http2_stream_stalls +=
-        data.http2_stream_stalls.load(std::memory_order_relaxed);
-    result->http2_hpack_hits +=
-        data.http2_hpack_hits.load(std::memory_order_relaxed);
-    result->http2_hpack_misses +=
-        data.http2_hpack_misses.load(std::memory_order_relaxed);
     result->cq_pluck_creates +=
         data.cq_pluck_creates.load(std::memory_order_relaxed);
     result->cq_next_creates +=
@@ -827,32 +691,6 @@ std::unique_ptr<GlobalStats> GlobalStatsCollector::Collect() const {
     data.tcp_read_size.Collect(&result->tcp_read_size);
     data.tcp_read_offer.Collect(&result->tcp_read_offer);
     data.tcp_read_offer_iov_size.Collect(&result->tcp_read_offer_iov_size);
-    data.http2_send_message_size.Collect(&result->http2_send_message_size);
-    data.http2_metadata_size.Collect(&result->http2_metadata_size);
-    data.http2_hpack_entry_lifetime.Collect(
-        &result->http2_hpack_entry_lifetime);
-    data.http2_header_table_size.Collect(&result->http2_header_table_size);
-    data.http2_initial_window_size.Collect(&result->http2_initial_window_size);
-    data.http2_max_concurrent_streams.Collect(
-        &result->http2_max_concurrent_streams);
-    data.http2_max_frame_size.Collect(&result->http2_max_frame_size);
-    data.http2_max_header_list_size.Collect(
-        &result->http2_max_header_list_size);
-    data.http2_preferred_receive_crypto_message_size.Collect(
-        &result->http2_preferred_receive_crypto_message_size);
-    data.http2_stream_remote_window_update.Collect(
-        &result->http2_stream_remote_window_update);
-    data.http2_transport_remote_window_update.Collect(
-        &result->http2_transport_remote_window_update);
-    data.http2_transport_window_update_period.Collect(
-        &result->http2_transport_window_update_period);
-    data.http2_stream_window_update_period.Collect(
-        &result->http2_stream_window_update_period);
-    data.http2_write_target_size.Collect(&result->http2_write_target_size);
-    data.http2_write_data_frame_size.Collect(
-        &result->http2_write_data_frame_size);
-    data.http2_read_data_frame_size.Collect(
-        &result->http2_read_data_frame_size);
     data.wrr_subchannel_list_size.Collect(&result->wrr_subchannel_list_size);
     data.wrr_subchannel_ready_size.Collect(&result->wrr_subchannel_ready_size);
     data.work_serializer_run_time_ms.Collect(
@@ -916,15 +754,6 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->syscall_read = syscall_read - other.syscall_read;
   result->tcp_read_alloc_8k = tcp_read_alloc_8k - other.tcp_read_alloc_8k;
   result->tcp_read_alloc_64k = tcp_read_alloc_64k - other.tcp_read_alloc_64k;
-  result->http2_settings_writes =
-      http2_settings_writes - other.http2_settings_writes;
-  result->http2_pings_sent = http2_pings_sent - other.http2_pings_sent;
-  result->http2_writes_begun = http2_writes_begun - other.http2_writes_begun;
-  result->http2_transport_stalls =
-      http2_transport_stalls - other.http2_transport_stalls;
-  result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
-  result->http2_hpack_hits = http2_hpack_hits - other.http2_hpack_hits;
-  result->http2_hpack_misses = http2_hpack_misses - other.http2_hpack_misses;
   result->cq_pluck_creates = cq_pluck_creates - other.cq_pluck_creates;
   result->cq_next_creates = cq_next_creates - other.cq_next_creates;
   result->cq_callback_creates = cq_callback_creates - other.cq_callback_creates;
@@ -953,42 +782,6 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
   result->tcp_read_offer = tcp_read_offer - other.tcp_read_offer;
   result->tcp_read_offer_iov_size =
       tcp_read_offer_iov_size - other.tcp_read_offer_iov_size;
-  result->http2_send_message_size =
-      http2_send_message_size - other.http2_send_message_size;
-  result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
-  result->http2_hpack_entry_lifetime =
-      http2_hpack_entry_lifetime - other.http2_hpack_entry_lifetime;
-  result->http2_header_table_size =
-      http2_header_table_size - other.http2_header_table_size;
-  result->http2_initial_window_size =
-      http2_initial_window_size - other.http2_initial_window_size;
-  result->http2_max_concurrent_streams =
-      http2_max_concurrent_streams - other.http2_max_concurrent_streams;
-  result->http2_max_frame_size =
-      http2_max_frame_size - other.http2_max_frame_size;
-  result->http2_max_header_list_size =
-      http2_max_header_list_size - other.http2_max_header_list_size;
-  result->http2_preferred_receive_crypto_message_size =
-      http2_preferred_receive_crypto_message_size -
-      other.http2_preferred_receive_crypto_message_size;
-  result->http2_stream_remote_window_update =
-      http2_stream_remote_window_update -
-      other.http2_stream_remote_window_update;
-  result->http2_transport_remote_window_update =
-      http2_transport_remote_window_update -
-      other.http2_transport_remote_window_update;
-  result->http2_transport_window_update_period =
-      http2_transport_window_update_period -
-      other.http2_transport_window_update_period;
-  result->http2_stream_window_update_period =
-      http2_stream_window_update_period -
-      other.http2_stream_window_update_period;
-  result->http2_write_target_size =
-      http2_write_target_size - other.http2_write_target_size;
-  result->http2_write_data_frame_size =
-      http2_write_data_frame_size - other.http2_write_data_frame_size;
-  result->http2_read_data_frame_size =
-      http2_read_data_frame_size - other.http2_read_data_frame_size;
   result->wrr_subchannel_list_size =
       wrr_subchannel_list_size - other.wrr_subchannel_list_size;
   result->wrr_subchannel_ready_size =
@@ -1043,4 +836,237 @@ std::unique_ptr<GlobalStats> GlobalStats::Diff(const GlobalStats& other) const {
       other.chaotic_good_tcp_write_size_control;
   return result;
 }
+const absl::string_view
+    Http2GlobalStats::counter_name[static_cast<int>(Counter::COUNT)] = {
+        "http2_settings_writes", "http2_pings_sent", "http2_transport_stalls",
+        "http2_stream_stalls",   "http2_hpack_hits", "http2_hpack_misses",
+        "http2_writes_begun",
+};
+const absl::string_view
+    Http2GlobalStats::counter_doc[static_cast<int>(Counter::COUNT)] = {
+        "Number of settings frames sent",
+        "Number of HTTP2 pings sent by process",
+        "Number of times sending was completely stalled by the transport flow "
+        "control window",
+        "Number of times sending was completely stalled by the stream flow "
+        "control window",
+        "Number of HPACK cache hits",
+        "Number of HPACK cache misses (entries added but never used)",
+        "Number of HTTP2 writes initiated",
+};
+const absl::string_view
+    Http2GlobalStats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
+        "http2_send_message_size",
+        "http2_metadata_size",
+        "http2_hpack_entry_lifetime",
+        "http2_header_table_size",
+        "http2_initial_window_size",
+        "http2_max_concurrent_streams",
+        "http2_max_frame_size",
+        "http2_max_header_list_size",
+        "http2_preferred_receive_crypto_message_size",
+        "http2_stream_remote_window_update",
+        "http2_transport_remote_window_update",
+        "http2_transport_window_update_period",
+        "http2_stream_window_update_period",
+        "http2_write_data_frame_size",
+        "http2_read_data_frame_size",
+        "http2_write_target_size",
+};
+const absl::string_view Http2GlobalStats::histogram_doc[static_cast<int>(
+    Histogram::COUNT)] = {
+    "Size of messages received by HTTP2 transport",
+    "Number of bytes consumed by metadata, according to HPACK accounting rules",
+    "Lifetime of HPACK entries in the cache (in milliseconds)",
+    "Http2 header table size received through SETTINGS frame",
+    "Http2 initial window size received through SETTINGS frame",
+    "Http2 max concurrent streams received through SETTINGS frame",
+    "Http2 max frame size received through SETTINGS frame",
+    "Http2 max header list size received through SETTINGS frame",
+    "Http2 preferred receive crypto message size received through SETTINGS "
+    "frame",
+    "Stream window update sent by peer",
+    "Transport window update sent by peer",
+    "Period in milliseconds at which peer sends transport window update",
+    "Period in milliseconds at which peer sends stream window update",
+    "Number of bytes for each data frame written",
+    "Number of bytes for each data frame read",
+    "Number of bytes targeted for http2 writes",
+};
+Http2GlobalStats::Http2GlobalStats()
+    : http2_settings_writes{0},
+      http2_pings_sent{0},
+      http2_transport_stalls{0},
+      http2_stream_stalls{0},
+      http2_hpack_hits{0},
+      http2_hpack_misses{0},
+      http2_writes_begun{0} {}
+HistogramView Http2GlobalStats::histogram(Histogram which) const {
+  switch (which) {
+    default:
+      GPR_UNREACHABLE_CODE(return HistogramView());
+    case Histogram::kHttp2SendMessageSize:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_send_message_size.buckets()};
+    case Histogram::kHttp2MetadataSize:
+      return HistogramView{&Histogram_65536_26_64::BucketFor, kStatsTable6, 26,
+                           http2_metadata_size.buckets()};
+    case Histogram::kHttp2HpackEntryLifetime:
+      return HistogramView{&Histogram_1800000_40_64::BucketFor, kStatsTable16,
+                           40, http2_hpack_entry_lifetime.buckets()};
+    case Histogram::kHttp2HeaderTableSize:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_header_table_size.buckets()};
+    case Histogram::kHttp2InitialWindowSize:
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_initial_window_size.buckets()};
+    case Histogram::kHttp2MaxConcurrentStreams:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_max_concurrent_streams.buckets()};
+    case Histogram::kHttp2MaxFrameSize:
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_max_frame_size.buckets()};
+    case Histogram::kHttp2MaxHeaderListSize:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_max_header_list_size.buckets()};
+    case Histogram::kHttp2PreferredReceiveCryptoMessageSize:
+      return HistogramView{
+          &Histogram_16777216_20_64::BucketFor, kStatsTable0, 20,
+          http2_preferred_receive_crypto_message_size.buckets()};
+    case Histogram::kHttp2StreamRemoteWindowUpdate:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_stream_remote_window_update.buckets()};
+    case Histogram::kHttp2TransportRemoteWindowUpdate:
+      return HistogramView{&Histogram_16777216_20_64::BucketFor, kStatsTable0,
+                           20, http2_transport_remote_window_update.buckets()};
+    case Histogram::kHttp2TransportWindowUpdatePeriod:
+      return HistogramView{&Histogram_100000_20_64::BucketFor, kStatsTable2, 20,
+                           http2_transport_window_update_period.buckets()};
+    case Histogram::kHttp2StreamWindowUpdatePeriod:
+      return HistogramView{&Histogram_100000_20_64::BucketFor, kStatsTable2, 20,
+                           http2_stream_window_update_period.buckets()};
+    case Histogram::kHttp2WriteDataFrameSize:
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_write_data_frame_size.buckets()};
+    case Histogram::kHttp2ReadDataFrameSize:
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_read_data_frame_size.buckets()};
+    case Histogram::kHttp2WriteTargetSize:
+      return HistogramView{&Histogram_16777216_50_64::BucketFor, kStatsTable12,
+                           50, http2_write_target_size.buckets()};
+  }
+}
+std::unique_ptr<Http2GlobalStats> Http2GlobalStatsCollector::Collect() const {
+  auto result = std::make_unique<Http2GlobalStats>();
+  for (const auto& data : data_) {
+    result->http2_settings_writes +=
+        data.http2_settings_writes.load(std::memory_order_relaxed);
+    result->http2_pings_sent +=
+        data.http2_pings_sent.load(std::memory_order_relaxed);
+    result->http2_transport_stalls +=
+        data.http2_transport_stalls.load(std::memory_order_relaxed);
+    result->http2_stream_stalls +=
+        data.http2_stream_stalls.load(std::memory_order_relaxed);
+    result->http2_hpack_hits +=
+        data.http2_hpack_hits.load(std::memory_order_relaxed);
+    result->http2_hpack_misses +=
+        data.http2_hpack_misses.load(std::memory_order_relaxed);
+    result->http2_writes_begun +=
+        data.http2_writes_begun.load(std::memory_order_relaxed);
+    data.http2_send_message_size.Collect(&result->http2_send_message_size);
+    data.http2_metadata_size.Collect(&result->http2_metadata_size);
+    data.http2_hpack_entry_lifetime.Collect(
+        &result->http2_hpack_entry_lifetime);
+    data.http2_header_table_size.Collect(&result->http2_header_table_size);
+    data.http2_initial_window_size.Collect(&result->http2_initial_window_size);
+    data.http2_max_concurrent_streams.Collect(
+        &result->http2_max_concurrent_streams);
+    data.http2_max_frame_size.Collect(&result->http2_max_frame_size);
+    data.http2_max_header_list_size.Collect(
+        &result->http2_max_header_list_size);
+    data.http2_preferred_receive_crypto_message_size.Collect(
+        &result->http2_preferred_receive_crypto_message_size);
+    data.http2_stream_remote_window_update.Collect(
+        &result->http2_stream_remote_window_update);
+    data.http2_transport_remote_window_update.Collect(
+        &result->http2_transport_remote_window_update);
+    data.http2_transport_window_update_period.Collect(
+        &result->http2_transport_window_update_period);
+    data.http2_stream_window_update_period.Collect(
+        &result->http2_stream_window_update_period);
+    data.http2_write_data_frame_size.Collect(
+        &result->http2_write_data_frame_size);
+    data.http2_read_data_frame_size.Collect(
+        &result->http2_read_data_frame_size);
+    data.http2_write_target_size.Collect(&result->http2_write_target_size);
+  }
+  return result;
+}
+std::unique_ptr<Http2GlobalStats> Http2GlobalStats::Diff(
+    const Http2GlobalStats& other) const {
+  auto result = std::make_unique<Http2GlobalStats>();
+  result->http2_settings_writes =
+      http2_settings_writes - other.http2_settings_writes;
+  result->http2_pings_sent = http2_pings_sent - other.http2_pings_sent;
+  result->http2_transport_stalls =
+      http2_transport_stalls - other.http2_transport_stalls;
+  result->http2_stream_stalls = http2_stream_stalls - other.http2_stream_stalls;
+  result->http2_hpack_hits = http2_hpack_hits - other.http2_hpack_hits;
+  result->http2_hpack_misses = http2_hpack_misses - other.http2_hpack_misses;
+  result->http2_writes_begun = http2_writes_begun - other.http2_writes_begun;
+  result->http2_send_message_size =
+      http2_send_message_size - other.http2_send_message_size;
+  result->http2_metadata_size = http2_metadata_size - other.http2_metadata_size;
+  result->http2_hpack_entry_lifetime =
+      http2_hpack_entry_lifetime - other.http2_hpack_entry_lifetime;
+  result->http2_header_table_size =
+      http2_header_table_size - other.http2_header_table_size;
+  result->http2_initial_window_size =
+      http2_initial_window_size - other.http2_initial_window_size;
+  result->http2_max_concurrent_streams =
+      http2_max_concurrent_streams - other.http2_max_concurrent_streams;
+  result->http2_max_frame_size =
+      http2_max_frame_size - other.http2_max_frame_size;
+  result->http2_max_header_list_size =
+      http2_max_header_list_size - other.http2_max_header_list_size;
+  result->http2_preferred_receive_crypto_message_size =
+      http2_preferred_receive_crypto_message_size -
+      other.http2_preferred_receive_crypto_message_size;
+  result->http2_stream_remote_window_update =
+      http2_stream_remote_window_update -
+      other.http2_stream_remote_window_update;
+  result->http2_transport_remote_window_update =
+      http2_transport_remote_window_update -
+      other.http2_transport_remote_window_update;
+  result->http2_transport_window_update_period =
+      http2_transport_window_update_period -
+      other.http2_transport_window_update_period;
+  result->http2_stream_window_update_period =
+      http2_stream_window_update_period -
+      other.http2_stream_window_update_period;
+  result->http2_write_data_frame_size =
+      http2_write_data_frame_size - other.http2_write_data_frame_size;
+  result->http2_read_data_frame_size =
+      http2_read_data_frame_size - other.http2_read_data_frame_size;
+  result->http2_write_target_size =
+      http2_write_target_size - other.http2_write_target_size;
+  return result;
+}
+const absl::string_view
+    Http2Stats::counter_name[static_cast<int>(Counter::COUNT)] = {
+        "http2_writes_begun",
+};
+const absl::string_view
+    Http2Stats::counter_doc[static_cast<int>(Counter::COUNT)] = {
+        "Number of HTTP2 writes initiated",
+};
+const absl::string_view
+    Http2Stats::histogram_name[static_cast<int>(Histogram::COUNT)] = {
+        "http2_write_target_size",
+};
+const absl::string_view
+    Http2Stats::histogram_doc[static_cast<int>(Histogram::COUNT)] = {
+        "Number of bytes targeted for http2 writes",
+};
+Http2Stats::Http2Stats() : http2_writes_begun{0} {}
 }  // namespace grpc_core

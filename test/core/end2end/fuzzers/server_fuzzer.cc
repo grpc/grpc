@@ -320,5 +320,21 @@ TEST(ServerFuzzers, ChaoticGoodRegression2) {
       )pb"));
 }
 
+TEST(ServerFuzzers, ChaoticGoodRegression3) {
+  ChaoticGood(ParseTestProto(
+      R"pb(network_input {
+             connect_timeout_ms: 2147483647
+             endpoint_config { args { resource_quota {} } }
+           }
+           api_actions { post_mortem_emit {} }
+           event_engine_actions {
+             run_delay: 18446744073709551615
+             assign_ports: 4294967295
+             endpoint_metrics { key: 2147483647 name: "\362\241\213\224" }
+           }
+           shutdown_connector { delay_ms: 1 }
+      )pb"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core

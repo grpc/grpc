@@ -16,15 +16,25 @@
 #define GRPC_SRC_CORE_CALL_FILTER_FUSION_H
 #include <grpc/impl/grpc_types.h>
 
+#include <cstddef>
+#include <memory>
+#include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
+#include "absl/log/check.h"
 #include "absl/log/log.h"
+#include "absl/memory/memory.h"
 #include "absl/status/status.h"
+#include "absl/strings/str_join.h"
 #include "src/core/call/call_filters.h"
 #include "src/core/call/metadata.h"
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/promise_based_filter.h"
 #include "src/core/lib/transport/call_final_info.h"
+#include "src/core/lib/transport/transport.h"
+#include "src/core/util/status_helper.h"
 #include "src/core/util/type_list.h"
 
 struct grpc_transport_op;
@@ -893,6 +903,58 @@ GRPC_FUSE_METHOD(OnClientToServerMessage, MessageHandle, true);
 GRPC_FUSE_METHOD(OnServerToClientMessage, MessageHandle, false);
 GRPC_FUSE_METHOD(OnFinalize, const grpc_call_final_info*, true);
 
+template <typename... Filters>
+struct FilterWrapper;
+
+template <typename Filter>
+struct FilterWrapper<Filter> {
+  FilterWrapper(const ChannelArgs& args, ChannelFilter::Args filter_args)
+      : filter_(Filter::Create(args, filter_args)) {}
+
+  absl::Status status() const { return filter_.status(); }
+  bool StartTransportOp(grpc_transport_op* op) {
+    CHECK(filter_.ok());
+    return (*filter_)->StartTransportOp(op);
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    CHECK(filter_.ok());
+    return (*filter_)->GetChannelInfo(info);
+  }
+
+ private:
+  absl::StatusOr<std::unique_ptr<Filter>> filter_;
+};
+
+template <typename Filter0, typename... Filters>
+struct FilterWrapper<Filter0, Filters...> : public FilterWrapper<Filters...> {
+  FilterWrapper(const ChannelArgs& args, ChannelFilter::Args filter_args)
+      : filter0_(Filter0::Create(args, filter_args)),
+        FilterWrapper<Filters...>(args, filter_args) {}
+
+  absl::Status status() const {
+    if (filter0_.ok()) {
+      return FilterWrapper<Filters...>::status();
+    }
+    return filter0_.status();
+  }
+
+  bool StartTransportOp(grpc_transport_op* op) {
+    CHECK(filter0_.ok());
+    return (*filter0_)->StartTransportOp(op) ||
+           FilterWrapper<Filters...>::StartTransportOp(op);
+  }
+
+  bool GetChannelInfo(const grpc_channel_info* info) {
+    CHECK(filter0_.ok());
+    return (*filter0_)->GetChannelInfo(info) ||
+           FilterWrapper<Filters...>::GetChannelInfo(info);
+  }
+
+ private:
+  absl::StatusOr<std::unique_ptr<Filter0>> filter0_;
+};
+
 #undef GRPC_FUSE_METHOD
 
 template <typename... Filters>
@@ -902,18 +964,28 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
   static const grpc_channel_filter kFilter;
 
   static absl::string_view TypeName() {
-    // TODO(vigneshbabu): - Concatenate the names of the constituent filters.
-    return "fused_filter";
+    static const std::string kName = absl::StrCat(
+        "Fused_Filter_",
+        absl::StrJoin(std::make_tuple(Filters::TypeName()...), "_"));
+    return kName;
   }
 
   static absl::StatusOr<std::unique_ptr<FusedFilter<Filters...>>> Create(
-      const ChannelArgs& args, ChannelFilter::Args) {
-    // TODO(vigneshbabu): - Implement this.
-    LOG(FATAL) << "Not implemented";
-    return nullptr;
+      const ChannelArgs& args, ChannelFilter::Args filter_args) {
+    auto filters_wrapper =
+        std::make_unique<FilterWrapper<Filters...>>(args, filter_args);
+    GRPC_RETURN_IF_ERROR(filters_wrapper->status());
+    return absl::WrapUnique<FusedFilter<Filters...>>(
+        new FusedFilter<Filters...>(std::move(filters_wrapper)));
   }
 
   static constexpr bool IsFused = true;
+
+  static constexpr bool FusedFilterHasAsyncErrorInterceptor() {
+    return (
+        promise_filter_detail::CallHasAsyncErrorInterceptor<Filters>::value ||
+        ...);
+  }
 
   class Call : public FuseOnClientInitialMetadata<FusedFilter, Filters...>,
                public FuseOnServerInitialMetadata<FusedFilter, Filters...>,
@@ -947,27 +1019,18 @@ class FusedFilter : public ImplementChannelFilter<FusedFilter<Filters...>>,
   };
 
   bool StartTransportOp(grpc_transport_op* op) override {
-    return StartTransportOpInternal(op, Typelist<Filters...>());
+    return filters_->StartTransportOp(op);
   }
 
   bool GetChannelInfo(const grpc_channel_info* info) override {
-    return GetChannelInfoInternal(info, Typelist<Filters...>());
+    return filters_->GetChannelInfo(info);
   }
 
  private:
-  template <typename... FilterTypes>
-  bool StartTransportOpInternal(grpc_transport_op* op,
-                                Typelist<FilterTypes...>) {
-    return (std::get<FilterTypes>(filters_).StartTransportOp(op) || ...);
-  }
+  explicit FusedFilter(std::unique_ptr<FilterWrapper<Filters...>> filters)
+      : filters_(std::move(filters)) {};
 
-  template <typename... FilterTypes>
-  bool GetChannelInfoInternal(const grpc_channel_info* info,
-                              Typelist<FilterTypes...>) {
-    return (std::get<FilterTypes>(filters_).GetChannelInfo(info) || ...);
-  }
-
-  std::tuple<Filters...> filters_;
+  std::unique_ptr<FilterWrapper<Filters...>> filters_;
 };
 
 }  // namespace filters_detail

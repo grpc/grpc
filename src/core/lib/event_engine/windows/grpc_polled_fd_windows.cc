@@ -267,6 +267,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     }
   }
 
+  bool IsCurrent() const override { return true; }
+
  private:
   enum WriteState {
     WRITE_IDLE,
@@ -808,6 +810,8 @@ class GrpcPolledFdWrapper : public GrpcPolledFd {
   }
 
   const char* GetName() const override { return polled_fd_->GetName(); }
+
+  bool IsCurrent() const override { return true; }
 
  private:
   GrpcPolledFdWindows* polled_fd_;

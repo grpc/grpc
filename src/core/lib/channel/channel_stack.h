@@ -75,8 +75,7 @@ struct grpc_channel_element_args {
   grpc_core::ChannelArgs channel_args;
   int is_first;
   int is_last;
-  const grpc_core::Blackboard* old_blackboard;
-  grpc_core::Blackboard* new_blackboard;
+  const grpc_core::Blackboard* blackboard;
 };
 struct grpc_call_element_args {
   grpc_call_stack* call_stack;
@@ -188,6 +187,19 @@ struct grpc_channel_stack {
   // should look like and this can go.
   grpc_core::ManualConstructor<std::function<void()>> on_destroy;
 
+  class ChannelStackDataSource final : public grpc_core::channelz::DataSource {
+   public:
+    explicit ChannelStackDataSource(
+        grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> node)
+        : DataSource(std::move(node)) {
+      SourceConstructed();
+    }
+    ~ChannelStackDataSource() { SourceDestructing(); }
+    void AddData(grpc_core::channelz::DataSink sink) override;
+  };
+
+  grpc_core::ManualConstructor<ChannelStackDataSource> channelz_data_source;
+
   grpc_core::ManualConstructor<
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>>
       event_engine;
@@ -260,8 +272,7 @@ grpc_error_handle grpc_channel_stack_init(
     const grpc_channel_filter** filters, size_t filter_count,
     const grpc_core::ChannelArgs& args, const char* name,
     grpc_channel_stack* stack,
-    const grpc_core::Blackboard* old_blackboard = nullptr,
-    grpc_core::Blackboard* new_blackboard = nullptr);
+    const grpc_core::Blackboard* blackboard = nullptr);
 // Destroy a channel stack
 void grpc_channel_stack_destroy(grpc_channel_stack* stack);
 

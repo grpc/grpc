@@ -30,7 +30,6 @@ extern "C" {
 #endif
 
 typedef struct envoy_config_route_v3_RouteConfiguration { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RouteConfiguration;
-typedef struct envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry;
 typedef struct envoy_config_route_v3_Vhds { upb_Message UPB_PRIVATE(base); } envoy_config_route_v3_Vhds;
 struct envoy_config_core_v3_ConfigSource;
 struct envoy_config_core_v3_HeaderValueOption;
@@ -38,7 +37,6 @@ struct envoy_config_core_v3_Metadata;
 struct envoy_config_route_v3_ClusterSpecifierPlugin;
 struct envoy_config_route_v3_RouteAction_RequestMirrorPolicy;
 struct envoy_config_route_v3_VirtualHost;
-struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
 struct google_protobuf_UInt32Value;
 
@@ -843,27 +841,6 @@ UPB_INLINE struct envoy_config_core_v3_Metadata* envoy_config_route_v3_RouteConf
     if (sub) envoy_config_route_v3_RouteConfiguration_set_metadata(msg, sub);
   }
   return sub;
-}
-
-/* envoy.config.route.v3.RouteConfiguration.TypedPerFilterConfigEntry */
-
-UPB_INLINE upb_StringView envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_key(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
-  upb_StringView ret;
-  _upb_msg_map_key(msg, &ret, 0);
-  return ret;
-}
-UPB_INLINE const struct google_protobuf_Any* envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_value(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
-  struct google_protobuf_Any* ret;
-  _upb_msg_map_value(msg, &ret, sizeof(ret));
-  return ret;
-}
-UPB_INLINE bool envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_has_value(const envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry* msg) {
-  const upb_MiniTableField field = {2, 32, 64, 0, 11, (int)kUpb_FieldMode_Scalar | ((int)UPB_SIZE(kUpb_FieldRep_4Byte, kUpb_FieldRep_8Byte) << kUpb_FieldRep_Shift)};
-  return upb_Message_HasBaseField(UPB_UPCAST(msg), &field);
-}
-
-UPB_INLINE void envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry_set_value(envoy_config_route_v3_RouteConfiguration_TypedPerFilterConfigEntry *msg, struct google_protobuf_Any* value) {
-  _upb_msg_map_set_value(msg, &value, sizeof(struct google_protobuf_Any*));
 }
 
 /* envoy.config.route.v3.Vhds */

@@ -293,7 +293,8 @@ grpc_cc_benchmark(
     ],
     deps = [
         ":fullstack_unary_ping_pong_h",
-        "//:grpcpp_chaotic_good",
+        "//src/core:chaotic_good",
+        "//src/core:endpoint_transport",
     ],
 )
 

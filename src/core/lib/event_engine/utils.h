@@ -42,6 +42,9 @@ absl::StatusOr<std::vector<EventEngine::ResolvedAddress>>
 LookupHostnameBlocking(EventEngine::DNSResolver* dns_resolver,
                        absl::string_view name, absl::string_view default_port);
 
+absl::string_view WriteEventToString(
+    grpc_event_engine::experimental::internal::WriteEvent event);
+
 }  // namespace grpc_event_engine::experimental
 
 #endif  // GRPC_SRC_CORE_LIB_EVENT_ENGINE_UTILS_H

@@ -37,6 +37,7 @@ RUBY_PHP_ALLOW_LIST = [
     "./src/ruby/ext/grpc/rb_call.c",
     "./src/ruby/ext/grpc/rb_call_credentials.c",
     "./src/ruby/ext/grpc/rb_channel.c",
+    "./src/ruby/ext/grpc/rb_completion_queue.c",
     "./src/ruby/ext/grpc/rb_event_thread.c",
     "./src/ruby/ext/grpc/rb_grpc.c",
     "./src/ruby/ext/grpc/rb_server.c",

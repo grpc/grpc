@@ -26,6 +26,7 @@
 #include "absl/log/check.h"
 #include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
+#include "src/core/lib/event_engine/shim.h"
 #include "src/core/lib/event_engine/utils.h"
 #include "src/core/lib/experiments/experiments.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -40,7 +41,9 @@ bool localhost_to_ipv6 = false;
 gpr_once g_resolve_localhost_ipv46 = GPR_ONCE_INIT;
 
 void InitResolveLocalhost() {
-  if (IsEventEngineDnsNonClientChannelEnabled()) {
+  if (IsEventEngineDnsNonClientChannelEnabled() &&
+      !grpc_event_engine::experimental::
+          EventEngineExperimentDisabledForPython()) {
     auto resolver =
         grpc_event_engine::experimental::GetDefaultEventEngine()
             ->GetDNSResolver(grpc_event_engine::experimental::EventEngine::
