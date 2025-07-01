@@ -328,6 +328,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
@@ -491,6 +492,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
@@ -997,13 +1000,12 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
-    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
     third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
-    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/entropy_pool.cc \
     third_party/abseil-cpp/absl/random/internal/randen.cc \
     third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
     third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
@@ -1020,7 +1022,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/cord_analysis.cc \
-    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -1081,8 +1082,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
-    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
-    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -1591,6 +1590,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/api/expr/v1alpha1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/google/rpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/udpa/annotations)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upbdefs-gen/validate)
@@ -1693,7 +1693,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization/internal)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto/aes)

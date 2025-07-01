@@ -104,8 +104,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_algorithm_container
   absl_any_invocable
   absl_atomic_hook
-  absl_bad_optional_access
-  absl_bad_variant_access
   absl_base
   absl_base_internal
   absl_bind_front
@@ -167,11 +165,13 @@ set(gRPC_ABSL_USED_TARGETS
   absl_hash_container_defaults
   absl_hash_function_defaults
   absl_hash_policy_traits
+  absl_hashtable_control_bytes
   absl_hashtable_debug_hooks
   absl_hashtablez_sampler
   absl_inlined_vector
   absl_inlined_vector_internal
   absl_int128
+  absl_iterator_traits_internal
   absl_kernel_timeout_internal
   absl_layout
   absl_leak_check
@@ -211,6 +211,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_bit_gen_ref
   absl_random_distributions
   absl_random_internal_distribution_caller
+  absl_random_internal_entropy_pool
   absl_random_internal_fast_uniform_bits
   absl_random_internal_fastmath
   absl_random_internal_generate_real
@@ -218,7 +219,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_internal_nonsecure_base
   absl_random_internal_pcg_engine
   absl_random_internal_platform
-  absl_random_internal_pool_urbg
   absl_random_internal_randen
   absl_random_internal_randen_engine
   absl_random_internal_randen_hwaes
@@ -234,6 +234,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_random_seed_sequences
   absl_raw_hash_map
   absl_raw_hash_set
+  absl_raw_hash_set_resize_impl
   absl_raw_logging_internal
   absl_sample_recorder
   absl_span
@@ -259,6 +260,7 @@ set(gRPC_ABSL_USED_TARGETS
   absl_variant
   absl_vlog_config_internal
   absl_vlog_is_on
+  absl_weakly_mixed_integer
   absl_meta
 )
 
@@ -2453,6 +2455,7 @@ add_library(grpc
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -2616,6 +2619,8 @@ add_library(grpc
   src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
   src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c
   src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c
   src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c
@@ -3431,6 +3436,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
@@ -3441,6 +3447,13 @@ add_library(grpc_unsecure
   src/core/ext/upb-gen/validate/validate.upb_minitable.c
   src/core/ext/upb-gen/xds/data/orca/v3/orca_load_report.upb_minitable.c
   src/core/ext/upb-gen/xds/service/orca/v3/orca.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
@@ -3773,8 +3786,7 @@ target_include_directories(grpc_unsecure
 )
 target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::algorithm_container
   absl::config
@@ -5810,10 +5822,18 @@ add_library(grpc_authorization_provider
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/filter/auth/client_auth_filter.cc
   src/core/filter/auth/server_auth_filter.cc
   src/core/filter/blackboard.cc
@@ -6091,8 +6111,7 @@ target_include_directories(grpc_authorization_provider
 )
 target_link_libraries(grpc_authorization_provider
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   ${_gRPC_RE2_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
@@ -6520,6 +6539,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(activity_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -6528,6 +6562,7 @@ add_executable(activity_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/activity_test.cc
 )
 if(WIN32 AND MSVC)
@@ -6561,6 +6596,7 @@ target_include_directories(activity_test
 target_link_libraries(activity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -7283,9 +7319,25 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(all_ok_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
+  src/core/util/time.cc
   test/core/promise/all_ok_test.cc
 )
 if(WIN32 AND MSVC)
@@ -7319,6 +7371,7 @@ target_include_directories(all_ok_test
 target_link_libraries(all_ok_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
@@ -9273,8 +9326,22 @@ add_executable(call_filters_test
   src/core/call/metadata.cc
   src/core/call/metadata_batch.cc
   src/core/call/parsed_metadata.cc
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/channel/channel_args.cc
   src/core/lib/compression/compression.cc
   src/core/lib/compression/compression_internal.cc
@@ -9342,8 +9409,7 @@ target_include_directories(call_filters_test
 target_link_libraries(call_filters_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::no_destructor
   absl::flat_hash_map
@@ -9405,6 +9471,21 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(call_state_test
   src/core/call/call_state.cc
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -9412,6 +9493,7 @@ add_executable(call_state_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/call/call_state_test.cc
 )
 if(WIN32 AND MSVC)
@@ -9445,6 +9527,7 @@ target_include_directories(call_state_test
 target_link_libraries(call_state_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -9534,10 +9617,18 @@ add_executable(call_utils_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
@@ -9784,8 +9875,7 @@ target_include_directories(call_utils_test
 target_link_libraries(call_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
@@ -9856,8 +9946,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cancel_callback_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -9916,8 +10020,7 @@ target_include_directories(cancel_callback_test
 target_link_libraries(cancel_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -10921,8 +11024,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(chunked_vector_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -10981,8 +11098,7 @@ target_include_directories(chunked_vector_test
 target_link_libraries(chunked_vector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -15214,8 +15330,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(exec_ctx_wakeup_scheduler_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -15269,8 +15399,7 @@ target_include_directories(exec_ctx_wakeup_scheduler_test
 target_link_libraries(exec_ctx_wakeup_scheduler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -15663,10 +15792,18 @@ add_executable(filter_fusion_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
@@ -15913,8 +16050,7 @@ target_include_directories(filter_fusion_test
 target_link_libraries(filter_fusion_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
@@ -16074,7 +16210,16 @@ add_executable(flow_control_test
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -16134,8 +16279,7 @@ target_include_directories(flow_control_test
 target_link_libraries(flow_control_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -16151,8 +16295,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(for_each_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -16211,8 +16369,7 @@ target_include_directories(for_each_test
 target_link_libraries(for_each_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -18565,10 +18722,18 @@ add_executable(header_assembler_test
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/filter/blackboard.cc
   src/core/handshaker/handshaker_registry.cc
   src/core/handshaker/proxy_mapper_registry.cc
@@ -18816,8 +18981,7 @@ target_include_directories(header_assembler_test
 target_link_libraries(header_assembler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   ${_gRPC_ZLIB_LIBRARIES}
   absl::config
   absl::no_destructor
@@ -19712,6 +19876,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(if_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/if_test.cc
 )
 if(WIN32 AND MSVC)
@@ -19745,8 +19925,11 @@ target_include_directories(if_test
 target_link_libraries(if_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -20010,6 +20193,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(inter_activity_pipe_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -20017,6 +20215,7 @@ add_executable(inter_activity_pipe_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/inter_activity_pipe_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20050,6 +20249,7 @@ target_include_directories(inter_activity_pipe_test
 target_link_libraries(inter_activity_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -20107,8 +20307,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(interceptor_list_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -20167,8 +20381,7 @@ target_include_directories(interceptor_list_test
 target_link_libraries(interceptor_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -20431,9 +20644,25 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(join_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
+  src/core/util/time.cc
   test/core/promise/join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20467,6 +20696,7 @@ target_include_directories(join_test
 target_link_libraries(join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
@@ -20732,6 +20962,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(latch_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -20739,6 +20984,7 @@ add_executable(latch_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/latch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -20772,6 +21018,7 @@ target_include_directories(latch_test
 target_link_libraries(latch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -21088,6 +21335,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(lock_based_mpsc_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -21096,6 +21358,7 @@ add_executable(lock_based_mpsc_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/lock_based_mpsc_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21129,6 +21392,7 @@ target_include_directories(lock_based_mpsc_test
 target_link_libraries(lock_based_mpsc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -21188,6 +21452,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(loop_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -21195,6 +21474,7 @@ add_executable(loop_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/loop_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21228,6 +21508,7 @@ target_include_directories(loop_test
 target_link_libraries(loop_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -21278,8 +21559,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(map_pipe_test
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -21338,8 +21633,7 @@ target_include_directories(map_pipe_test
 target_link_libraries(map_pipe_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -21355,6 +21649,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(match_promise_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/match_promise_test.cc
 )
 if(WIN32 AND MSVC)
@@ -21388,7 +21698,11 @@ target_include_directories(match_promise_test
 target_link_libraries(match_promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
+  absl::statusor
+  absl::span
   gpr
 )
 
@@ -21680,9 +21994,23 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(message_assembler_test
   src/core/call/message.cc
+  src/core/channelz/property_list.cc
   src/core/ext/transport/chttp2/transport/frame.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -21742,8 +22070,7 @@ target_include_directories(message_assembler_test
 target_link_libraries(message_assembler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -22433,6 +22760,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(observable_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -22440,6 +22782,7 @@ add_executable(observable_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/observable_test.cc
 )
 if(WIN32 AND MSVC)
@@ -22473,6 +22816,7 @@ target_include_directories(observable_test
 target_link_libraries(observable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -23530,6 +23874,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(periodic_update_test
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/experiments/config.cc
@@ -24893,6 +25238,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(prioritized_race_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/prioritized_race_test.cc
 )
 if(WIN32 AND MSVC)
@@ -24926,7 +25287,11 @@ target_include_directories(prioritized_race_test
 target_link_libraries(prioritized_race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
+  absl::statusor
+  absl::span
   gpr
 )
 
@@ -24977,6 +25342,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_factory_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/promise_factory_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25010,8 +25391,12 @@ target_include_directories(promise_factory_test
 target_link_libraries(promise_factory_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::bind_front
   absl::type_traits
+  absl::statusor
+  absl::span
   gpr
 )
 
@@ -25020,6 +25405,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_map_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/map_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25053,8 +25454,11 @@ target_include_directories(promise_map_test
 target_link_libraries(promise_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -25063,6 +25467,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_mutex_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -25070,6 +25489,7 @@ add_executable(promise_mutex_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/promise_mutex_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25103,6 +25523,7 @@ target_include_directories(promise_mutex_test
 target_link_libraries(promise_mutex_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -25118,7 +25539,23 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(promise_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/util/json/json_writer.cc
+  src/core/util/time.cc
   test/core/promise/promise_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25152,7 +25589,11 @@ target_include_directories(promise_test
 target_link_libraries(promise_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
+  absl::statusor
+  absl::span
   gpr
 )
 
@@ -25166,7 +25607,10 @@ add_executable(property_list_test
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/util/json/json_writer.cc
   src/core/util/time.cc
   test/core/channelz/property_list_test.cc
   third_party/googletest/googlemock/src/gmock_main.cc
@@ -25202,8 +25646,7 @@ target_include_directories(property_list_test
 target_link_libraries(property_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::flat_hash_map
   absl::statusor
   absl::span
@@ -25688,6 +26131,13 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(race_test
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
   test/core/promise/race_test.cc
 )
 if(WIN32 AND MSVC)
@@ -25721,6 +26171,8 @@ target_include_directories(race_test
 target_link_libraries(race_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_mini_descriptor_lib
+  upb_wire_lib
   gpr
 )
 
@@ -26070,11 +26522,22 @@ add_executable(request_buffer_test
   src/core/channelz/channel_trace.cc
   src/core/channelz/channelz.cc
   src/core/channelz/channelz_registry.cc
+  src/core/channelz/property_list.cc
   src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
   src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
   src/core/ext/upb-gen/google/rpc/status.upb_minitable.c
   src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/address_utils/parse_address.cc
   src/core/lib/address_utils/sockaddr_utils.cc
   src/core/lib/channel/channel_args.cc
@@ -26158,8 +26621,7 @@ target_include_directories(request_buffer_test
 target_link_libraries(request_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
-  upb_mini_descriptor_lib
-  upb_wire_lib
+  upb_textformat_lib
   absl::config
   absl::no_destructor
   absl::btree
@@ -26989,10 +27451,26 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(seq_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
   src/core/util/json/json_writer.cc
+  src/core/util/time.cc
   test/core/promise/seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -27026,6 +27504,7 @@ target_include_directories(seq_test
 target_link_libraries(seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
@@ -29222,6 +29701,22 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(switch_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
+  src/core/util/time.cc
   test/core/promise/switch_test.cc
 )
 if(WIN32 AND MSVC)
@@ -29255,8 +29750,11 @@ target_include_directories(switch_test
 target_link_libraries(switch_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
+  absl::flat_hash_map
   absl::type_traits
   absl::statusor
+  absl::span
   gpr
 )
 
@@ -31276,9 +31774,25 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_join_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
+  src/core/util/time.cc
   test/core/promise/try_join_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31312,6 +31826,7 @@ target_include_directories(try_join_test
 target_link_libraries(try_join_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
@@ -31367,10 +31882,26 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(try_seq_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/util/glob.cc
   src/core/util/json/json_writer.cc
+  src/core/util/time.cc
   test/core/promise/try_seq_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31404,6 +31935,7 @@ target_include_directories(try_seq_test
 target_link_libraries(try_seq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::flat_hash_map
   absl::type_traits
   absl::statusor
@@ -31732,6 +32264,21 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(wait_for_callback_test
+  src/core/channelz/property_list.cc
+  src/core/ext/upb-gen/google/protobuf/any.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/duration.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/empty.upb_minitable.c
+  src/core/ext/upb-gen/google/protobuf/timestamp.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c
+  src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c
+  src/core/ext/upbdefs-gen/google/protobuf/any.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/descriptor.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/duration.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/empty.upbdefs.c
+  src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c
+  src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c
   src/core/lib/debug/trace.cc
   src/core/lib/debug/trace_flags.cc
   src/core/lib/promise/activity.cc
@@ -31739,6 +32286,7 @@ add_executable(wait_for_callback_test
   src/core/util/glob.cc
   src/core/util/latent_see.cc
   src/core/util/per_cpu.cc
+  src/core/util/time.cc
   test/core/promise/wait_for_callback_test.cc
 )
 if(WIN32 AND MSVC)
@@ -31772,6 +32320,7 @@ target_include_directories(wait_for_callback_test
 target_link_libraries(wait_for_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gtest
+  upb_textformat_lib
   absl::config
   absl::flat_hash_map
   absl::function_ref
@@ -46707,7 +47256,7 @@ generate_pkgconfig(
   "absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr"
   "libcares zlib"
   "-lgrpc_unsecure"
-  "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc_unsecure.pc")
 
 # grpc++ .pc file
@@ -46729,7 +47278,7 @@ generate_pkgconfig(
   "absl_absl_check absl_absl_log absl_algorithm_container absl_any_invocable absl_base absl_bind_front absl_bits absl_btree absl_check absl_cleanup absl_config absl_cord absl_core_headers absl_flags absl_flags_marshalling absl_flat_hash_map absl_flat_hash_set absl_function_ref absl_hash absl_inlined_vector absl_log absl_log_globals absl_log_severity absl_memory absl_no_destructor absl_optional absl_random_bit_gen_ref absl_random_distributions absl_random_random absl_span absl_status absl_statusor absl_str_format absl_string_view absl_strings absl_synchronization absl_time absl_type_traits absl_utility gpr grpc_unsecure"
   "libcares zlib"
   "-lgrpc++_unsecure"
-  "-laddress_sorting -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib"
+  "-laddress_sorting -lupb_textformat_lib -lupb_reflection_lib -lupb_wire_lib -lupb_message_lib -lutf8_range_lib -lupb_mini_descriptor_lib -lupb_mini_table_lib -lupb_hash_lib -lupb_mem_lib -lupb_base_lib -lupb_lex_lib"
   "grpc++_unsecure.pc")
 
 # grpcpp_otel_plugin .pc file

@@ -1197,7 +1197,7 @@ Server::~Server() {
 
 void Server::AddData(channelz::DataSink sink) {
   MutexLock global_lock(&mu_global_);
-  sink.AddAdditionalInfo(
+  sink.AddData(
       "server",
       channelz::PropertyList()
           // TODO(ctiller): config_fetcher?

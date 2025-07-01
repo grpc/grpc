@@ -232,7 +232,7 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Privacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
-    abseil_version = '~> 1.20250127.1'
+    abseil_version = '~> 1.20250512.0'
     ss.dependency 'abseil/algorithm/container', abseil_version
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/base/config', abseil_version
@@ -697,6 +697,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
+                      'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h',
                       'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                       'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
@@ -900,6 +902,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                       'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
+                      'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                       'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                       'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',
@@ -2040,6 +2044,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-gen/google/rpc/status.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb.h',
+                              'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb.h',
                               'src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.h',
                               'src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb.h',
@@ -2243,6 +2249,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.h',
                               'src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.h',
+                              'src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.h',
                               'src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.h',
                               'src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.h',

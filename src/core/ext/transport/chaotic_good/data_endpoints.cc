@@ -208,7 +208,7 @@ channelz::PropertyList OutputBuffers::Reader::ChannelzProperties() {
 }
 
 void OutputBuffers::AddData(channelz::DataSink sink) {
-  sink.AddAdditionalInfo(
+  sink.AddData(
       "output_buffers",
       channelz::PropertyList()
           .Set("num_readers", num_readers_.load(std::memory_order_relaxed))
@@ -508,11 +508,11 @@ void InputQueue::Cancel(Completion* completion) {
 
 void InputQueue::AddData(channelz::DataSink sink) {
   MutexLock lock(&mu_);
-  sink.AddAdditionalInfo(
-      "input_queue", channelz::PropertyList()
-                         .Set("read_requested", absl::StrCat(read_requested_))
-                         .Set("read_completed", absl::StrCat(read_completed_))
-                         .Set("closed_error", closed_error_));
+  sink.AddData("input_queue",
+               channelz::PropertyList()
+                   .Set("read_requested", absl::StrCat(read_requested_))
+                   .Set("read_completed", absl::StrCat(read_completed_))
+                   .Set("closed_error", closed_error_));
 }
 
 void InputQueue::SetClosed(absl::Status status) {
@@ -866,7 +866,7 @@ void Endpoint::ReceiveSecurityFrame(PromiseEndpoint& endpoint,
 }
 
 void Endpoint::AddData(channelz::DataSink sink) {
-  sink.AddAdditionalInfo(
+  sink.AddData(
       absl::StrCat("endpoint", ctx_->id),
       channelz::PropertyList()
           .Set("now", ctx_->clock->Now())

@@ -137,8 +137,8 @@ class ClientCompressionFilter final
   ~ClientCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("clientCompressionFilter",
-                           compression_engine_.ChannelzProperties());
+    sink.AddData("clientCompressionFilter",
+                 compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.
@@ -189,8 +189,8 @@ class ServerCompressionFilter final
   ~ServerCompressionFilter() override { SourceDestructing(); }
 
   void AddData(channelz::DataSink sink) override {
-    sink.AddAdditionalInfo("serverCompressionFilter",
-                           compression_engine_.ChannelzProperties());
+    sink.AddData("serverCompressionFilter",
+                 compression_engine_.ChannelzProperties());
   }
 
   // Construct a promise for one call.
