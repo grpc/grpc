@@ -180,7 +180,6 @@ class StringMatcherProtoAccessor {
   };
 
 StringMatcher StringMatcherParseInternal(
-    const XdsResourceType::DecodeContext& context,
     const StringMatcherProtoAccessor& proto, ValidationErrors* errors) {
   if (!proto.IsPresent()) {
     errors->AddError("field not present");
@@ -225,21 +224,21 @@ StringMatcher StringMatcherParseInternal(
 }  // namespace
 
 StringMatcher StringMatcherParse(
-    const XdsResourceType::DecodeContext& context,
+    const XdsResourceType::DecodeContext& /*context*/,
     const envoy_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors) {
   GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(envoy);
   ProtoAccessor proto_accessor(matcher_proto);
-  return StringMatcherParseInternal(context, proto_accessor, errors);
+  return StringMatcherParseInternal(proto_accessor, errors);
 }
 
 StringMatcher StringMatcherParse(
-    const XdsResourceType::DecodeContext& context,
+    const XdsResourceType::DecodeContext& /*context*/,
     const xds_type_matcher_v3_StringMatcher* matcher_proto,
     ValidationErrors* errors) {
   GRPC_STRING_MATCHER_PROTO_ACCESSOR_CLASS(xds);
   ProtoAccessor proto_accessor(matcher_proto);
-  return StringMatcherParseInternal(context, proto_accessor, errors);
+  return StringMatcherParseInternal(proto_accessor, errors);
 }
 
 //
