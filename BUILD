@@ -1263,6 +1263,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
     ],
     deps = [
         "channelz_upb",
@@ -1273,7 +1274,6 @@ grpc_cc_library(
         "grpc_trace",
         "parse_address",
         "protobuf_any_upb",
-        "protobuf_descriptor_upbdefs",
         "ref_counted_ptr",
         "sockaddr_utils",
         "uri",
@@ -5214,7 +5214,6 @@ grpc_upb_proto_reflection_library(
 
 WELL_KNOWN_PROTO_TARGETS = [
     "any",
-    "descriptor",
     "duration",
     "empty",
     "struct",

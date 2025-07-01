@@ -10206,7 +10206,6 @@ grpc_cc_library(
         "//:channelz_upb",
         "//:gpr",
         "//:protobuf_any_upb",
-        "//:protobuf_descriptor_upb",
         "//:protobuf_empty_upb",
     ],
 )
