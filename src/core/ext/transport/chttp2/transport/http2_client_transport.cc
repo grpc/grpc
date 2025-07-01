@@ -322,6 +322,10 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
   GRPC_HTTP2_CLIENT_DLOG
       << "Http2Transport ProcessHttp2SettingsFrame Promise { ack=" << frame.ack
       << ", settings length=" << frame.settings.size() << "}";
+  if (on_receive_settings_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_receive_settings_, absl::OkStatus());
+    on_receive_settings_ = nullptr;
+  }
   return Http2Status::Ok();
 }
 
@@ -650,7 +654,8 @@ auto Http2ClientTransport::OnWriteLoopEnded() {
 
 Http2ClientTransport::Http2ClientTransport(
     PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
-    std::shared_ptr<EventEngine> event_engine)
+    std::shared_ptr<EventEngine> event_engine,
+    grpc_closure* on_receive_settings)
     : endpoint_(std::move(endpoint)),
       outgoing_frames_(kMpscSize),
       stream_id_mutex_(/*Initial Stream Id*/ 1),
@@ -659,6 +664,7 @@ Http2ClientTransport::Http2ClientTransport(
       incoming_header_end_stream_(false),
       is_first_write_(true),
       incoming_header_stream_id_(0),
+      on_receive_settings_(on_receive_settings),
       keepalive_time_(std::max(
           Duration::Seconds(10),
           channel_args.GetDurationFromIntMillis(GRPC_ARG_KEEPALIVE_TIME_MS)
