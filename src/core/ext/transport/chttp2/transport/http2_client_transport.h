@@ -88,7 +88,8 @@ class Http2ClientTransport final : public ClientTransport {
   Http2ClientTransport(
       PromiseEndpoint endpoint, GRPC_UNUSED const ChannelArgs& channel_args,
       std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-          event_engine);
+          event_engine,
+      grpc_closure* on_receive_settings);
 
   Http2ClientTransport(const Http2ClientTransport&) = delete;
   Http2ClientTransport& operator=(const Http2ClientTransport&) = delete;
@@ -427,6 +428,7 @@ class Http2ClientTransport final : public ClientTransport {
   bool incoming_header_end_stream_;
   bool is_first_write_;
   uint32_t incoming_header_stream_id_;
+  grpc_closure* on_receive_settings_;
 
   // Ping related members
   // TODO(akshitpatel) : [PH2][P2] : Consider removing the timeout related
