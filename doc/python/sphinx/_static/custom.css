@@ -22,3 +22,15 @@ dl.field-list > dt {
   max-width: 100% !important;
   min-width: 800px !important;
 }
+.footer {
+  margin: 20px 50px auto !important;
+}
+
+@media (max-width: 768px) {
+  .document {
+    flex-direction: column;
+  }
+  .sphinxsidebar {
+    width: 100% !important;
+  }
+}
