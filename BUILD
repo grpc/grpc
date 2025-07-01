@@ -5233,8 +5233,9 @@ WELL_KNOWN_PROTO_TARGETS = [
 
 grpc_generate_one_off_targets()
 
-grpc_upb_proto_reflection_library(
-    name = "hack_protobuf_descriptor_upbdefs",
+# This rule exists only to force some files into our CMakeLists.txt
+grpc_upb_proto_library(
+    name = "hack_protobuf_descriptor_upb",
     deps = ["@com_google_protobuf//:descriptor_proto"],
 )
 
