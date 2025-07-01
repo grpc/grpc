@@ -26,11 +26,12 @@ dl.field-list > dt {
   margin: 20px 50px 30px auto !important;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 875px) {
   .document {
     flex-direction: column;
   }
   .sphinxsidebar {
     width: 100% !important;
+    background: white !important;
   }
 }
