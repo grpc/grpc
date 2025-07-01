@@ -48,7 +48,7 @@
 namespace grpc_core {
 namespace http2 {
 
-#define GRPC_GRPC_HTTP2_SERVER_DLOG \
+#define GRPC_HTTP2_SERVER_DLOG \
   DLOG_IF(INFO, GRPC_TRACE_FLAG_ENABLED(http2_ph2_transport))
 
 using grpc_event_engine::experimental::EventEngine;
