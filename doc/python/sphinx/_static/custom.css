@@ -34,4 +34,10 @@ dl.field-list > dt {
     width: 100% !important;
     background: white !important;
   }
+  .sphinxsidebar a {
+    color: #444 !important;
+  }
+  .sphinxsidebar h3, .sphinxsidebar h4, .sphinxsidebar p, .sphinxsidebar h3 a {
+    color: #444 !important;
+  }
 }
