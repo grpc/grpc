@@ -14,6 +14,7 @@
 """Objects for use in testing gRPC Python-using application code."""
 
 import abc
+from typing import Iterable, Dict
 
 from google.protobuf import descriptor
 import grpc
@@ -632,7 +633,7 @@ class Time(abc.ABC):
         raise NotImplementedError()
 
 
-def strict_real_time():
+def strict_real_time() -> "Time":
     """Creates a Time backed by the Python interpreter's time.
 
     The returned instance will be "strict" with respect to callbacks
@@ -648,7 +649,7 @@ def strict_real_time():
     return _time.StrictRealTime()
 
 
-def strict_fake_time(now):
+def strict_fake_time(now: float) -> "Time":
     """Creates a Time that can be manipulated by test code.
 
     The returned instance maintains an internal representation of time
@@ -668,7 +669,7 @@ def strict_fake_time(now):
     return _time.StrictFakeTime(now)
 
 
-def channel(service_descriptors, time):
+def channel(service_descriptors: Iterable, time: "Time") -> "Channel":
     """Creates a Channel for use in tests of a gRPC Python-using system.
 
     Args:
@@ -685,7 +686,7 @@ def channel(service_descriptors, time):
     return _channel.testing_channel(service_descriptors, time)
 
 
-def server_from_dictionary(descriptors_to_servicers, time):
+def server_from_dictionary(descriptors_to_servicers: Dict, time: "Time") -> "Server":
     """Creates a Server for use in tests of a gRPC Python-using system.
 
     Args:

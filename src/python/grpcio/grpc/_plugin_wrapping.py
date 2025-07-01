@@ -55,7 +55,7 @@ class _AuthMetadataPluginCallback(grpc.AuthMetadataPluginCallback):
 
     def __call__(
         self, metadata: MetadataType, error: Optional[Type[BaseException]]
-    ):
+    ) -> None:
         with self._state.lock:
             if self._state.exception is None:
                 if self._state.called:
@@ -96,7 +96,7 @@ class _Plugin(object):
             # Support versions predating contextvars.
             pass
 
-    def __call__(self, service_url: str, method_name: str, callback: Callable):
+    def __call__(self, service_url: str, method_name: str, callback: Callable) -> None:
         context = _AuthMetadataContext(
             _common.decode(service_url), _common.decode(method_name)
         )

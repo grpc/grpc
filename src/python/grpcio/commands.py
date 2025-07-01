@@ -25,6 +25,7 @@ import subprocess
 import sys
 import sysconfig
 import traceback
+from typing import List
 
 from setuptools.command import build_ext
 from setuptools.command import build_py
@@ -43,7 +44,7 @@ class CommandError(Exception):
 
 # TODO(atash): Remove this once PyPI has better Linux bdist support. See
 # https://bitbucket.org/pypa/pypi/issues/120/binary-wheels-for-linux-are-not-supported
-def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
+def _get_grpc_custom_bdist(decorated_basename: str, target_bdist_basename: str) -> str:
     """Returns a string path to a bdist file for Linux to install.
 
     If we can retrieve a pre-compiled bdist from online, uses it. Else, emits a
@@ -140,7 +141,7 @@ class BuildPy(build_py.build_py):
         build_py.build_py.run(self)
 
 
-def _poison_extensions(extensions, message):
+def _poison_extensions(extensions: List, message: str) -> None:
     """Includes a file that will always fail to compile in all extensions."""
     poison_filename = os.path.join(PYTHON_STEM, "poison.c")
     with open(poison_filename, "w") as poison:
@@ -149,7 +150,7 @@ def _poison_extensions(extensions, message):
         extension.sources = [poison_filename]
 
 
-def check_and_update_cythonization(extensions):
+def check_and_update_cythonization(extensions: List) -> bool:
     """Replace .pyx files with their generated counterparts and return whether or
     not cythonization still needs to occur."""
     for extension in extensions:
@@ -181,7 +182,7 @@ def check_and_update_cythonization(extensions):
     return True
 
 
-def try_cythonize(extensions, linetracing=False, mandatory=True):
+def try_cythonize(extensions: List, linetracing: bool = False, mandatory: bool = True) -> List:
     """Attempt to cythonize the extensions.
 
     Args:

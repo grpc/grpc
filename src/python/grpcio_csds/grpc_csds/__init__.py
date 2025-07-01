@@ -13,10 +13,13 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+from typing import Union
+
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
 from grpc._cython import cygrpc
+import grpc
 
 
 class ClientStatusDiscoveryServiceServicer(
@@ -38,7 +41,7 @@ class ClientStatusDiscoveryServiceServicer(
             )
 
 
-def add_csds_servicer(server):
+def add_csds_servicer(server: Union[grpc.Server, "grpc.experimental.aio.Server"]) -> None:
     """Register CSDS servicer to a server.
 
     CSDS is part of xDS protocol used to expose in-effective traffic

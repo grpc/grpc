@@ -16,6 +16,7 @@
 import collections
 import sys
 import threading
+from typing import Callable
 
 import grpc
 from grpc_health.v1 import health_pb2 as _health_pb2
@@ -66,7 +67,7 @@ class _Watcher:
             self._condition.notify()
 
 
-def _watcher_to_send_response_callback_adapter(watcher):
+def _watcher_to_send_response_callback_adapter(watcher: "_Watcher") -> Callable:
     def send_response_callback(response):
         if response is None:
             watcher.close()
@@ -139,7 +140,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
             )
         return blocking_watcher
 
-    def set(self, service, status):
+    def set(self, service: str, status: int) -> None:
         """Sets the status of a service.
 
         Args:
@@ -160,7 +161,7 @@ class HealthServicer(_health_pb2_grpc.HealthServicer):
                             _health_pb2.HealthCheckResponse(status=status)
                         )
 
-    def enter_graceful_shutdown(self):
+    def enter_graceful_shutdown(self) -> None:
         """Permanently sets the status of all services to NOT_SERVING.
 
         This should be invoked when the server is entering a graceful shutdown
