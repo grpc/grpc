@@ -47,7 +47,14 @@
 #include "src/core/credentials/transport/security_connector.h"
 #include "src/core/credentials/transport/transport_credentials.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
+#ifndef GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2
+// GRPC_EXPERIMENTAL_TEMPORARILY_DISABLE_PH2 is a temporary fix to help
+// some customers who are having severe memory constraints. This macro
+// will not always be available and we strongly recommend anyone to avoid
+// the usage of this MACRO for any other purpose. We expect to delete this
+// MACRO within 8-15 months.
 #include "src/core/ext/transport/chttp2/transport/http2_client_transport.h"
+#endif
 #include "src/core/handshaker/handshaker.h"
 #include "src/core/handshaker/handshaker_registry.h"
 #include "src/core/handshaker/tcp_connect/tcp_connect_handshaker.h"
