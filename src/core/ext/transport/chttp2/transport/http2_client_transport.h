@@ -128,7 +128,7 @@ class Http2ClientTransport final : public ClientTransport {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [](StatusFlag status) {
-          HTTP2_CLIENT_DLOG
+          GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::TestOnlyEnqueueOutgoingFrame status="
               << status;
           return (status.ok()) ? absl::OkStatus()
@@ -201,7 +201,7 @@ class Http2ClientTransport final : public ClientTransport {
     return AssertResultType<absl::Status>(Map(
         outgoing_frames_.MakeSender().Send(std::move(frame), 1),
         [self = RefAsSubclass<Http2ClientTransport>()](StatusFlag status) {
-          HTTP2_CLIENT_DLOG
+          GRPC_HTTP2_CLIENT_DLOG
               << "Http2ClientTransport::EnqueueOutgoingFrame status=" << status;
           return (status.ok())
                      ? absl::OkStatus()
