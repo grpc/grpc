@@ -147,6 +147,10 @@ class BaseNode : public DualRefCounted<BaseNode> {
  protected:
   BaseNode(EntityType type, size_t max_trace_memory, std::string name);
 
+  // Leaf derived types should call NodeConstructed() in their constructors
+  // to complete the initialization.
+  void NodeConstructed();
+
  public:
   void Orphaned() override;
 
@@ -204,6 +208,8 @@ class BaseNode : public DualRefCounted<BaseNode> {
   virtual void SerializeEntity(grpc_channelz_v2_Entity* entity,
                                upb_Arena* arena);
 
+  virtual std::string SerializeEntityToString();
+
  protected:
   void PopulateJsonFromDataSources(Json::Object& json);
 
@@ -219,6 +225,7 @@ class BaseNode : public DualRefCounted<BaseNode> {
   intptr_t UuidSlow();
 
   const EntityType type_;
+  bool node_constructed_called_ = false;
   uint64_t orphaned_index_ = 0;  // updated by registry
   std::atomic<intptr_t> uuid_;
   std::string name_;
@@ -262,16 +269,22 @@ class ZTrace {
 // the collection is complete (or has timed out).
 class DataSinkImplementation {
  public:
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info);
-  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> child_objects);
+  class Data {
+   public:
+    virtual ~Data() = default;
+    virtual Json::Object ToJson() = 0;
+    virtual void FillProto(google_protobuf_Any* any, upb_Arena* arena) = 0;
+  };
+
+  void AddData(absl::string_view name, std::unique_ptr<Data> data);
   Json::Object Finalize(bool timed_out);
+  void Finalize(bool timed_out, grpc_channelz_v2_Entity* entity,
+                upb_Arena* arena);
 
  private:
-  void MergeChildObjectsIntoAdditionalInfo() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   Mutex mu_;
-  std::map<std::string, Json::Object> additional_info_ ABSL_GUARDED_BY(mu_);
-  std::vector<RefCountedPtr<BaseNode>> child_objects_ ABSL_GUARDED_BY(mu_);
+  std::map<std::string, std::unique_ptr<Data>> additional_info_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // Wrapper around absl::AnyInvocable<void()> that is used to notify when the
@@ -294,25 +307,31 @@ class DataSink {
            std::shared_ptr<DataSinkCompletionNotification> notification)
       : impl_(impl), notification_(std::move(notification)) {}
 
-  void AddAdditionalInfo(absl::string_view name, Json::Object additional_info) {
-    auto impl = impl_.lock();
-    if (impl == nullptr) return;
-    impl->AddAdditionalInfo(name, std::move(additional_info));
-  }
-
   template <typename T>
-  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddAdditionalInfo(
+  std::void_t<decltype(std::declval<T>().TakeJsonObject())> AddData(
       absl::string_view name, T value) {
-    AddAdditionalInfo(name, value.TakeJsonObject());
-  }
+    class DataImpl final : public DataSinkImplementation::Data {
+     public:
+      explicit DataImpl(T value) : value_(std::move(value)) {}
+      Json::Object ToJson() override { return value_.TakeJsonObject(); }
+      void FillProto(google_protobuf_Any* any, upb_Arena* arena) override {
+        value_.FillAny(any, arena);
+      }
 
-  void AddChildObjects(std::vector<RefCountedPtr<BaseNode>> children) {
-    auto impl = impl_.lock();
-    if (impl == nullptr) return;
-    impl->AddChildObjects(std::move(children));
+     private:
+      T value_;
+    };
+    AddData(name, std::make_unique<DataImpl>(std::move(value)));
   }
 
  private:
+  void AddData(absl::string_view name,
+               std::unique_ptr<DataSinkImplementation::Data> data) {
+    auto impl = impl_.lock();
+    if (impl == nullptr) return;
+    impl->AddData(name, std::move(data));
+  }
+
   std::weak_ptr<DataSinkImplementation> impl_;
   std::shared_ptr<DataSinkCompletionNotification> notification_;
 };
@@ -335,11 +354,15 @@ class DataSource {
   ~DataSource();
   RefCountedPtr<BaseNode> channelz_node() { return node_; }
 
+  // This method must be called in the most derived class's constructor.
+  // It adds this data source to the node's list of data sources.
+  void SourceConstructed();
+
   // This method must be called in the most derived class's destructor.
   // It removes this data source from the node's list of data sources.
   // If it is not called, then the AddData() function pointer may be invalid
   // when the node is queried.
-  void ResetDataSource();
+  void SourceDestructing();
 
  private:
   RefCountedPtr<BaseNode> node_;
@@ -697,7 +720,9 @@ class ListenSocketNode final : public BaseNode {
 class CallNode final : public BaseNode {
  public:
   explicit CallNode(std::string name)
-      : BaseNode(EntityType::kCall, 0, std::move(name)) {}
+      : BaseNode(EntityType::kCall, 0, std::move(name)) {
+    NodeConstructed();
+  }
 
   Json RenderJson() override;
 };

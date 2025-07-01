@@ -34,9 +34,11 @@
 #include "src/core/call/metadata_batch.h"
 #include "src/core/ext/transport/chttp2/transport/frame.h"
 #include "src/core/ext/transport/chttp2/transport/header_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/ext/transport/chttp2/transport/http2_status.h"
 #include "src/core/ext/transport/chttp2/transport/internal_channel_arg_names.h"
 #include "src/core/ext/transport/chttp2/transport/message_assembler.h"
+#include "src/core/ext/transport/chttp2/transport/transport_common.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/promise/for_each.h"
@@ -81,7 +83,7 @@ void Http2ClientTransport::PerformOp(grpc_transport_op* op) {
     StopConnectivityWatch(op->stop_connectivity_watch);
     did_stuff = true;
   }
-  CHECK(op->set_accept_stream) << "Set_accept_stream not supported on clients";
+  CHECK(!op->set_accept_stream) << "Set_accept_stream not supported on clients";
   DCHECK(did_stuff) << "Unimplemented transport perform op ";
 
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, absl::OkStatus());
@@ -290,13 +292,11 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
   HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
-
-  // TODO(akshitpatel) : [PH2][P2] : This would fail in case of a rst frame
-  // with NoError. Handle this case.
-  Http2Status status = Http2Status::Http2StreamError(
-      Http2ErrorCodeFromRstFrameErrorCode(frame.error_code),
-      "Reset stream frame received.");
-  CloseStream(frame.stream_id, status.GetAbslStreamError(),
+  Http2ErrorCode error_code =
+      Http2ErrorCodeFromRstFrameErrorCode(frame.error_code);
+  CloseStream(frame.stream_id,
+              absl::Status((ErrorCodeToAbslStatusCode(error_code)),
+                           "Reset stream frame received."),
               CloseStreamArgs{
                   /*close_reads=*/true,
                   /*close_writes=*/true,
@@ -573,6 +573,13 @@ auto Http2ClientTransport::WriteFromQueue() {
       [self = RefAsSubclass<Http2ClientTransport>()](
           std::vector<Http2Frame> frames) {
         SliceBuffer output_buf;
+        if (self->is_first_write_) {
+          HTTP2_CLIENT_DLOG
+              << "Http2ClientTransport Write GRPC_CHTTP2_CLIENT_CONNECT_STRING";
+          output_buf.Append(Slice(grpc_slice_from_copied_string(
+              GRPC_CHTTP2_CLIENT_CONNECT_STRING)));
+          self->is_first_write_ = false;
+        }
         Serialize(absl::Span<Http2Frame>(frames), output_buf);
         uint64_t buffer_length = output_buf.Length();
         HTTP2_CLIENT_DLOG << "Http2ClientTransport WriteFromQueue Promise";
@@ -640,6 +647,7 @@ Http2ClientTransport::Http2ClientTransport(
       bytes_sent_in_last_write_(false),
       incoming_header_in_progress_(false),
       incoming_header_end_stream_(false),
+      is_first_write_(true),
       incoming_header_stream_id_(0),
       keepalive_time_(std::max(
           Duration::Seconds(10),
@@ -689,7 +697,7 @@ Http2ClientTransport::Http2ClientTransport(
   // TODO(tjagtap) : [PH2][P2] Fix Settings workflow.
   Http2ErrorCode code = settings_.mutable_local().Apply(
       Http2Settings::kInitialWindowSizeWireId,
-      Http2Settings::max_initial_window_size() - 1);
+      (Http2Settings::max_initial_window_size() - 1));
   DCHECK(code == Http2ErrorCode::kNoError);
   std::optional<Http2SettingsFrame> settings_frame =
       settings_.MaybeSendUpdate();
