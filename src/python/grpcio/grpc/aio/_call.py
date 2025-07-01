@@ -29,6 +29,7 @@ from typing import (
     Optional,
     Tuple,
     Union,
+    Type,
 )
 
 import grpc
@@ -71,8 +72,8 @@ _NON_OK_CALL_REPRESENTATION = (
 _LOGGER = logging.getLogger(__name__)
 
 AioRpcErrorReduceReturnType = Tuple[
-  type['AioRpcError'],  # Type object of the class AioRpcError
-  tuple[
+  Type['AioRpcError'],  # Type object of the class AioRpcError
+  Tuple[
     grpc.StatusCode,  # self._code
     Optional[Metadata],  # self._initial_metadata
     Optional[Metadata],  # self._trailing_metadata
