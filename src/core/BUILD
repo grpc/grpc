@@ -579,6 +579,7 @@ grpc_cc_library(
     name = "unique_type_name",
     hdrs = ["util/unique_type_name.h"],
     external_deps = ["absl/strings"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "useful",
         "//:gpr_platform",
@@ -754,6 +755,7 @@ grpc_cc_library(
     deps = [
         "activity",
         "arena",
+        "channelz_property_list",
         "check_class_size",
         "construct_destruct",
         "context",
@@ -782,6 +784,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/context.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "down_cast",
         "//:gpr",
@@ -796,6 +799,7 @@ grpc_cc_library(
         "absl/strings",
     ],
     public_hdrs = ["lib/promise/map.h"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "poll",
         "promise_like",
@@ -860,6 +864,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/arena_promise.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "arena",
         "construct_destruct",
@@ -874,13 +879,19 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/meta:type_traits",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
     ],
     public_hdrs = [
         "lib/promise/detail/promise_like.h",
     ],
     deps = [
+        "channelz_property_list",
         "poll",
+        "upb_utils",
         "//:gpr_platform",
+        "//:promise_upb",
+        "//:promise_upbdefs",
         "//src/core:function_signature",
         "//src/core:json",
     ],
@@ -955,6 +966,7 @@ grpc_cc_library(
     deps = [
         "json",
         "//:gpr_platform",
+        "//:promise_upb",
     ],
 )
 
@@ -1102,6 +1114,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/seq.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "basic_seq",
         "poll",
@@ -1149,6 +1162,7 @@ grpc_cc_library(
     public_hdrs = [
         "lib/promise/activity.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "atomic_utils",
         "construct_destruct",
@@ -1172,6 +1186,7 @@ grpc_cc_library(
         "lib/promise/exec_ctx_wakeup_scheduler.h",
     ],
     external_deps = ["absl/status"],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "closure",
         "error",
@@ -1360,8 +1375,8 @@ grpc_cc_library(
     ],
     deps = [
         "activity",
+        "channelz_property_list",
         "dump_args",
-        "json",
         "map",
         "poll",
         "ref_counted",
@@ -1441,6 +1456,7 @@ grpc_cc_library(
         "absl/log:check",
     ],
     public_hdrs = ["util/ref_counted.h"],
+    visibility = ["//bazel:ref_counted_ptr"],
     deps = [
         "atomic_utils",
         "down_cast",
@@ -1592,6 +1608,22 @@ grpc_cc_library(
     name = "channel_creds_registry",
     hdrs = [
         "credentials/transport/channel_creds_registry.h",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "json",
+        "json_args",
+        "ref_counted",
+        "validation_errors",
+        "//:gpr_platform",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "call_creds_registry",
+    hdrs = [
+        "credentials/call/call_creds_registry.h",
     ],
     external_deps = ["absl/strings"],
     deps = [
@@ -3281,6 +3313,7 @@ grpc_cc_library(
     hdrs = [
         "lib/iomgr/pollset_set.h",
     ],
+    visibility = ["//bazel:alt_grpc_base_legacy"],
     deps = [
         "iomgr_fwd",
         "//:gpr",
@@ -5891,6 +5924,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
     deps = [
+        "call_creds_registry",
         "channel_creds_registry",
         "//:ref_counted_ptr",
         "//:xds_client",
@@ -5910,8 +5944,10 @@ grpc_cc_library(
     ],
     tags = ["nofixdeps"],
     deps = [
+        "call_creds_registry",
         "channel_creds_registry",
         "down_cast",
+        "env",
         "json",
         "json_args",
         "json_object_loader",
@@ -6085,6 +6121,7 @@ grpc_cc_library(
         "@com_google_protobuf//upb/message",
     ],
     tags = ["nofixdeps"],
+    visibility = ["//bazel:xds_client_grpc"],
     deps = [
         "certificate_provider_factory",
         "certificate_provider_registry",
@@ -6262,6 +6299,7 @@ grpc_cc_library(
     tags = ["nofixdeps"],
     visibility = ["//bazel:xds_client_core"],
     deps = [
+        "call_creds_registry",
         "channel_args",
         "channel_creds_registry",
         "channel_fwd",
@@ -6411,6 +6449,30 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "call_creds_registry_init",
+    srcs = [
+        "credentials/call/call_creds_registry_init.cc",
+    ],
+    external_deps = ["absl/strings"],
+    deps = [
+        "call_creds_registry",
+        "down_cast",
+        "json",
+        "json_args",
+        "json_object_loader",
+        "jwt_token_file_call_credentials",
+        "time",
+        "validation_errors",
+        "//:config",
+        "//:gpr",
+        "//:gpr_platform",
+        "//:grpc_core_credentials_header",
+        "//:grpc_security_base",
+        "//:ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_cds",
     srcs = [
         "load_balancing/xds/cds.cc",
@@ -6468,12 +6530,28 @@ grpc_cc_library(
     ],
 )
 
+config_setting(
+    name = "grpc_cpu_intensive_bitgen_setting",
+    values = {"define": "grpc_bitgen_implementation=cpu_intensive"},
+)
+
+config_setting(
+    name = "grpc_mem_intensive_bitgen_setting",
+    values = {"define": "grpc_bitgen_implementation=mem_intensive"},
+)
+
 grpc_cc_library(
     name = "shared_bit_gen",
     srcs = ["util/shared_bit_gen.cc"],
     hdrs = [
         "util/shared_bit_gen.h",
     ],
+    # Select the appropriate SharedBitGen implementation based on the build flag.
+    defines = select({
+        ":grpc_cpu_intensive_bitgen_setting": ["GRPC_CPU_INTENSIVE_BITGEN"],
+        ":grpc_mem_intensive_bitgen_setting": ["GRPC_MEM_INTENSIVE_BITGEN"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/random",
     ],
@@ -8029,6 +8107,7 @@ grpc_cc_library(
         "mpsc",
         "ping_promise",
         "sync",
+        "transport_common",
         ":match_promise",
         ":poll",
         ":slice",
@@ -8106,6 +8185,20 @@ grpc_cc_library(
         "stats_data",
         "//:grpc_core_credentials_header",
         "//:grpc_public_hdrs",
+    ],
+)
+
+grpc_cc_library(
+    name = "transport_common",
+    srcs = [
+        "ext/transport/chttp2/transport/transport_common.cc",
+    ],
+    hdrs = [
+        "ext/transport/chttp2/transport/transport_common.h",
+    ],
+    external_deps = [
+    ],
+    deps = [
     ],
 )
 
@@ -8785,6 +8878,7 @@ grpc_cc_library(
         "1999",
         "activity",
         "arena",
+        "channelz_property_list",
         "chaotic_good_config",
         "chaotic_good_frame",
         "chaotic_good_frame_header",
@@ -9719,6 +9813,7 @@ grpc_cc_library(
     hdrs = [
         "call/metadata.h",
     ],
+    visibility = ["//bazel:core_credentials"],
     deps = [
         "error_utils",
         "metadata_batch",
@@ -10099,11 +10194,21 @@ grpc_cc_library(
         "absl/strings",
         "absl/status",
         "absl/container:flat_hash_map",
+        "@com_google_protobuf//upb/base",
+        "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/text",
     ],
     deps = [
         "json",
+        "match",
         "time",
+        "upb_utils",
+        "//:channelz_property_list_upb",
+        "//:channelz_upb",
         "//:gpr",
+        "//:protobuf_any_upb",
+        "//:protobuf_empty_upb",
     ],
 )
 
@@ -10255,6 +10360,81 @@ grpc_cc_library(
         "zviz_layout",
         "//src/proto/grpc/channelz/v2:channelz_cc_proto",
         "//src/proto/grpc/channelz/v2:property_list_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_trace",
+    srcs = [
+        "channelz/zviz/trace.cc",
+    ],
+    hdrs = ["channelz/zviz/trace.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "zviz_data",
+        "zviz_environment",
+        "zviz_layout",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_entity",
+    srcs = [
+        "channelz/zviz/entity.cc",
+    ],
+    hdrs = ["channelz/zviz/entity.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/types:span",
+    ],
+    deps = [
+        "zviz_data",
+        "zviz_environment",
+        "zviz_layout",
+        "zviz_strings",
+        "zviz_trace",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_html",
+    srcs = [
+        "channelz/zviz/html.cc",
+    ],
+    hdrs = ["channelz/zviz/html.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/strings:string_view",
+        "absl/types:span",
+        "absl/functional:function_ref",
+    ],
+)
+
+grpc_cc_library(
+    name = "zviz_layout_html",
+    srcs = [
+        "channelz/zviz/layout_html.cc",
+    ],
+    hdrs = ["channelz/zviz/layout_html.h"],
+    external_deps = [
+        "absl/container:flat_hash_map",
+        "absl/strings",
+        "absl/strings:string_view",
+        "absl/types:span",
+        "absl/functional:function_ref",
+    ],
+    deps = [
+        "zviz_environment",
+        "zviz_html",
+        "zviz_layout",
     ],
 )
 

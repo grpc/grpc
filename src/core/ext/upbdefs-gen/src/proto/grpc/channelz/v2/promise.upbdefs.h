@@ -32,11 +32,6 @@ UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Custom_getmsgdef(upb_D
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Custom");
 }
 
-UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Unknown_getmsgdef(upb_DefPool *s) {
-  _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
-  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Unknown");
-}
-
 UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_If_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.If");
@@ -70,6 +65,11 @@ UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_JoinBranch_getmsgdef(u
 UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Join_getmsgdef(upb_DefPool *s) {
   _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
   return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Join");
+}
+
+UPB_INLINE const upb_MessageDef *grpc_channelz_v2_Promise_Map_getmsgdef(upb_DefPool *s) {
+  _upb_DefPool_LoadDefInit(s, &src_proto_grpc_channelz_v2_promise_proto_upbdefinit);
+  return upb_DefPool_FindMessageByName(s, "grpc.channelz.v2.Promise.Map");
 }
 
 

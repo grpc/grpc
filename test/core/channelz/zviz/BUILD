@@ -93,3 +93,79 @@ grpc_fuzz_test(
         "//src/core:zviz_data",
     ],
 )
+
+grpc_fuzz_test(
+    name = "trace_test",
+    srcs = ["trace_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "absl/container:flat_hash_map",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_trace",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "entity_test",
+    srcs = ["entity_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "layout_log",
+        "//src/core:zviz_entity",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "html_test",
+    srcs = ["html_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//src/core:zviz_html",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "layout_html_test",
+    srcs = ["layout_html_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "//src/core:zviz_html",
+        "//src/core:zviz_layout_html",
+    ],
+)
+
+grpc_fuzz_test(
+    name = "html_integration_test",
+    srcs = ["html_integration_test.cc"],
+    external_deps = [
+        "absl/log:check",
+        "fuzztest",
+        "fuzztest_main",
+    ],
+    deps = [
+        "environment_fake",
+        "//src/core:zviz_entity",
+        "//src/core:zviz_html",
+        "//src/core:zviz_layout",
+        "//src/core:zviz_layout_html",
+        "//src/proto/grpc/channelz/v2:channelz_cc_proto",
+    ],
+)

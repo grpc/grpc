@@ -46,10 +46,12 @@ message Entity {
   repeated int64 parents = 3;
   // Has this entity been orphaned?
   bool orphaned = 4;
+  // Did the underlying system time out while collecting data?
+  bool timed_out = 5;
   // Instantaneous data for this entity.
-  repeated Data data = 5;
+  repeated Data data = 6;
   // Historical trace information for the entity.
-  repeated TraceEvent trace = 6;
+  repeated TraceEvent trace = 7;
 }
 
 message TraceEvent {

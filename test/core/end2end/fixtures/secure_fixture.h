@@ -25,6 +25,7 @@
 #include "absl/functional/any_invocable.h"
 #include "absl/log/check.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/experiments/experiments.h"
 #include "src/core/util/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/test_util/port.h"
@@ -92,6 +93,20 @@ class InsecureFixture : public SecureFixture {
   grpc_server_credentials* MakeServerCreds(
       const grpc_core::ChannelArgs&) override {
     return grpc_insecure_server_credentials_create();
+  }
+};
+
+// Fixture for PH2 that uses insecure credentials
+class PH2Fixure : public InsecureFixture {
+ public:
+  using InsecureFixture::InsecureFixture;
+
+ private:
+  grpc_core::ChannelArgs MutateClientArgs(
+      grpc_core::ChannelArgs args) override {
+    LOG(INFO) << args.ToString();
+    CHECK(grpc_core::IsPromiseBasedHttp2ClientTransportEnabled());
+    return args;
   }
 };
 
