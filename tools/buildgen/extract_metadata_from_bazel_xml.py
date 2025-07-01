@@ -633,8 +633,14 @@ def _expand_upb_proto_library_rules(bazel_rules):
                 "@com_google_protobuf//upb/reflection:descriptor_upb_proto_upb_proto",
                 "@com_google_protobuf//upb:generated_code_support",
             ]
-            if name != "//:hack_protobuf_descriptor_upbdefs":
-                bazel_rule["deps"].append("//:hack_protobuf_descriptor_upbdefs")
+            if (
+                name != "//:hack_protobuf_descriptor_upbdefs"
+                and name != "//:hack_protobuf_descriptor_upb_proto"
+            ):
+                bazel_rule["deps"] += [
+                    "//:hack_protobuf_descriptor_upbdefs",
+                    "//:hack_protobuf_descriptor_upb_proto",
+                ]
             # populate the upb_c_proto_library rule with pre-generated upb headers
             # and sources using proto_rule
             protos = _get_transitive_protos(bazel_rules, deps[0])
