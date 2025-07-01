@@ -879,6 +879,8 @@ grpc_cc_library(
     external_deps = [
         "absl/functional:any_invocable",
         "absl/meta:type_traits",
+        "absl/strings",
+        "@com_google_protobuf//upb/reflection",
     ],
     public_hdrs = [
         "lib/promise/detail/promise_like.h",
@@ -889,6 +891,7 @@ grpc_cc_library(
         "upb_utils",
         "//:gpr_platform",
         "//:promise_upb",
+        "//:promise_upbdefs",
         "//src/core:function_signature",
         "//src/core:json",
     ],
@@ -10190,7 +10193,10 @@ grpc_cc_library(
         "absl/strings",
         "absl/status",
         "absl/container:flat_hash_map",
+        "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
+        "@com_google_protobuf//upb/text",
     ],
     deps = [
         "json",

@@ -69,13 +69,16 @@ class Race<Promise, Promises...> {
         grpc_channelz_v2_Promise_mutable_race_promise(promise_proto, arena);
     auto** children = grpc_channelz_v2_Promise_Race_resize_children(
         race_promise, 1 + sizeof...(Promises), arena);
-    SetChildrenProto(*children, arena);
+    for (size_t i = 0; i < 1 + sizeof...(Promises); ++i) {
+      children[i] = grpc_channelz_v2_Promise_new(arena);
+    }
+    SetChildrenProto(children, 0, arena);
   }
 
-  void SetChildrenProto(grpc_channelz_v2_Promise* promise_proto,
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
                         upb_Arena* arena) const {
-    PromiseAsProto(promise_, promise_proto, arena);
-    next_.SetChildrenProto(promise_proto + 1, arena);
+    PromiseAsProto(promise_, promise_protos[index], arena);
+    next_.SetChildrenProto(promise_protos, index + 1, arena);
   }
 
  private:
@@ -106,9 +109,9 @@ class Race<Promise> {
     PromiseAsProto(promise_, promise_proto, arena);
   }
 
-  void SetChildrenProto(grpc_channelz_v2_Promise* promise_proto,
+  void SetChildrenProto(grpc_channelz_v2_Promise** promise_protos, int index,
                         upb_Arena* arena) const {
-    PromiseAsProto(promise_, promise_proto, arena);
+    PromiseAsProto(promise_, promise_protos[index], arena);
   }
 
  private:
