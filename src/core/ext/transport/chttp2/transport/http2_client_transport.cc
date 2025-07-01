@@ -335,7 +335,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
         // Received a ping ack.
         if (!self->ping_manager_.AckPing(opaque)) {
           GRPC_HTTP2_CLIENT_DLOG
-              << "Unknown ping resoponse received for ping id=" << opaque;
+              << "Unknown ping response received for ping id=" << opaque;
         }
         return Immediate(Http2Status::Ok());
       },
@@ -967,8 +967,8 @@ auto Http2ClientTransport::CallOutboundLoop(
           [call_handler]() mutable {
             return Map(call_handler.WasCancelled(), [](bool cancelled) {
               GRPC_HTTP2_CLIENT_DLOG
-                  << "Http2ClientTransport PH2CallOutboundLoop"
-                     " End with cancelled="
+                  << "Http2ClientTransport PH2CallOutboundLoop End with "
+                     "cancelled="
                   << cancelled;
               return (cancelled) ? absl::CancelledError() : absl::OkStatus();
             });
