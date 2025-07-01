@@ -127,7 +127,7 @@ configs:
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+    LDFLAGS: -stdlib=libc++ -fsanitize=undefined
     LDXX: clang++
     compile_the_world: true
     test_environ:
