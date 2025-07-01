@@ -39,12 +39,13 @@ auto KeepaliveManager::WaitForKeepAliveTimeout() {
         return If(
             data_received_in_last_cycle_,
             [] {
-              GRPC_KEEPALIVE_LOG << "Keepalive timeout triggered but "
-                                 << "received data. Resolving with ok status";
+              GRPC_HTTP2_KEEPALIVE_LOG
+                  << "Keepalive timeout triggered but "
+                  << "received data. Resolving with ok status";
               return Immediate(absl::OkStatus());
             },
             [this] {
-              GRPC_KEEPALIVE_LOG
+              GRPC_HTTP2_KEEPALIVE_LOG
                   << "Keepalive timeout triggered and no "
                      "data received. Triggering keepalive timeout.";
               // Once the keepalive timeout is triggered, ensure that
@@ -65,7 +66,7 @@ auto KeepaliveManager::TimeoutAndSendPing() {
                              SendPingAndWaitForAck());
 }
 auto KeepaliveManager::MaybeSendKeepAlivePing() {
-  GRPC_KEEPALIVE_LOG << "KeepaliveManager::MaybeSendKeepAlivePing";
+  GRPC_HTTP2_KEEPALIVE_LOG << "KeepaliveManager::MaybeSendKeepAlivePing";
   return AssertResultType<absl::Status>(
       TrySeq(If(
                  NeedToSendKeepAlivePing(),
@@ -84,7 +85,7 @@ auto KeepaliveManager::MaybeSendKeepAlivePing() {
 
 void KeepaliveManager::Spawn(Party* party) {
   if (!IsKeepAliveNeeded()) {
-    GRPC_KEEPALIVE_LOG << "Not spawning keepalive loop.";
+    GRPC_HTTP2_KEEPALIVE_LOG << "Not spawning keepalive loop.";
     return;
   }
   keep_alive_spawned_ = true;
@@ -96,7 +97,8 @@ void KeepaliveManager::Spawn(Party* party) {
                      []() -> LoopCtl<absl::Status> { return Continue(); });
                }),
                [](auto status) {
-                 GRPC_KEEPALIVE_LOG << "KeepAlive end with status: " << status;
+                 GRPC_HTTP2_KEEPALIVE_LOG << "KeepAlive end with status: "
+                                          << status;
                });
 }
 }  // namespace http2
