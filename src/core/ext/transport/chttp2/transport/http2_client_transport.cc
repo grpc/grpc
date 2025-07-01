@@ -131,7 +131,7 @@ void Http2ClientTransport::AbortWithError() {
 
 Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-data
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2DataFrame { stream_id=" << frame.stream_id
       << ", end_stream=" << frame.end_stream
       << ", payload=" << frame.payload.JoinIntoString() << "}";
@@ -141,7 +141,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
   ping_manager_.ReceivedDataFrame();
 
   // Lookup stream
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2DataFrame LookupStream";
   RefCountedPtr<Stream> stream = LookupStream(frame.stream_id);
   if (stream == nullptr) {
@@ -149,43 +149,43 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
     // RFC9113 : If a DATA frame is received whose stream is not in the "open"
     // or "half-closed (local)" state, the recipient MUST respond with a stream
     // error (Section 5.4.2) of type STREAM_CLOSED.
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+    GRPC_HTTP2_TRANSPORT_DLOG
         << "Http2Transport ProcessHttp2DataFrame { stream_id="
         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
   }
 
   // Add frame to assembler
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame";
   GrpcMessageAssembler& assembler = stream->assembler;
   Http2Status status =
       assembler.AppendNewDataFrame(frame.payload, frame.end_stream);
   if (!status.IsOk()) {
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+    GRPC_HTTP2_TRANSPORT_DLOG
         << "Http2Transport ProcessHttp2DataFrame AppendNewDataFrame Failed";
     return status;
   }
 
   // Pass the messages up the stack if it is ready.
   while (true) {
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+    GRPC_HTTP2_TRANSPORT_DLOG
         << "Http2Transport ProcessHttp2DataFrame ExtractMessage";
     ValueOrHttp2Status<MessageHandle> result = assembler.ExtractMessage();
     if (!result.IsOk()) {
-      GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+      GRPC_HTTP2_TRANSPORT_DLOG
           << "Http2Transport ProcessHttp2DataFrame ExtractMessage Failed";
       return ValueOrHttp2Status<MessageHandle>::TakeStatus(std::move(result));
     }
     MessageHandle message = TakeValue(std::move(result));
     if (message != nullptr) {
-      GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+      GRPC_HTTP2_TRANSPORT_DLOG
           << "Http2Transport ProcessHttp2DataFrame SpawnPushMessage "
           << message->DebugString();
       stream->call.SpawnPushMessage(std::move(message));
       continue;
     }
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+    GRPC_HTTP2_TRANSPORT_DLOG
         << "Http2Transport ProcessHttp2DataFrame While Break";
     break;
   }
@@ -205,7 +205,7 @@ Http2Status Http2ClientTransport::ProcessHttp2DataFrame(Http2DataFrame frame) {
 Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
     Http2HeaderFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-headers
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
       << ", end_stream=" << frame.end_stream
@@ -222,7 +222,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
     // frame and streams that are reserved using PUSH_PROMISE. An endpoint that
     // receives an unexpected stream identifier MUST respond with a connection
     // error (Section 5.4.1) of type PROTOCOL_ERROR.
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+    GRPC_HTTP2_TRANSPORT_DLOG
         << "Http2Transport ProcessHttp2HeaderFrame Promise { stream_id="
         << frame.stream_id << "} Lookup Failed";
     return Http2Status::Ok();
@@ -252,7 +252,7 @@ Http2Status Http2ClientTransport::ProcessHttp2HeaderFrame(
 Http2Status Http2ClientTransport::ProcessMetadata(
     uint32_t stream_id, HeaderAssembler& assembler, CallHandler& call,
     bool& did_push_initial_metadata, bool& did_push_trailing_metadata) {
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
+  GRPC_HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata";
   if (assembler.IsReady()) {
     ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>> read_result =
         assembler.ReadMetadata(parser_, !incoming_header_end_stream_,
@@ -263,7 +263,7 @@ Http2Status Http2ClientTransport::ProcessMetadata(
       if (incoming_header_end_stream_) {
         // TODO(tjagtap) : [PH2][P1] : Is this the right way to differentiate
         // between initial and trailing metadata?
-        GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+        GRPC_HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerTrailingMetadata";
         did_push_trailing_metadata = true;
         call.SpawnPushServerTrailingMetadata(std::move(metadata));
@@ -276,14 +276,14 @@ Http2Status Http2ClientTransport::ProcessMetadata(
                     });
 
       } else {
-        GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+        GRPC_HTTP2_TRANSPORT_DLOG
             << "Http2Transport ProcessMetadata SpawnPushServerInitialMetadata";
         did_push_initial_metadata = true;
         call.SpawnPushServerInitialMetadata(std::move(metadata));
       }
       return Http2Status::Ok();
     }
-    GRPC_GRPC_HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata Failed";
+    GRPC_HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessMetadata Failed";
     return ValueOrHttp2Status<Arena::PoolPtr<grpc_metadata_batch>>::TakeStatus(
         std::move(read_result));
   }
@@ -293,7 +293,7 @@ Http2Status Http2ClientTransport::ProcessMetadata(
 Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
     Http2RstStreamFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-rst_stream
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2RstStreamFrame { stream_id="
       << frame.stream_id << ", error_code=" << frame.error_code << " }";
   Http2ErrorCode error_code =
@@ -315,12 +315,12 @@ Http2Status Http2ClientTransport::ProcessHttp2RstStreamFrame(
 Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
     Http2SettingsFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-settings
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2SettingsFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
   // Load into this.settings_
   // Take necessary actions as per settings that have changed.
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2SettingsFrame Promise { ack=" << frame.ack
       << ", settings length=" << frame.settings.size() << "}";
   return Http2Status::Ok();
@@ -328,7 +328,7 @@ Http2Status Http2ClientTransport::ProcessHttp2SettingsFrame(
 
 auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-ping
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2PingFrame { ack=" << frame.ack
       << ", opaque=" << frame.opaque << " }";
   return AssertResultType<Http2Status>(If(
@@ -336,7 +336,7 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
       [self = RefAsSubclass<Http2ClientTransport>(), opaque = frame.opaque]() {
         // Received a ping ack.
         if (!self->ping_manager_.AckPing(opaque)) {
-          GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+          GRPC_HTTP2_TRANSPORT_DLOG
               << "Unknown ping resoponse received for ping id=" << opaque;
         }
         return Immediate(Http2Status::Ok());
@@ -365,10 +365,9 @@ auto Http2ClientTransport::ProcessHttp2PingFrame(Http2PingFrame frame) {
 Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
     Http2GoawayFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-goaway
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
-      << "Http2Transport ProcessHttp2GoawayFrame Factory";
+  GRPC_HTTP2_TRANSPORT_DLOG << "Http2Transport ProcessHttp2GoawayFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2GoawayFrame Promise { "
          "last_stream_id="
       << frame.last_stream_id << ", error_code=" << frame.error_code
@@ -379,10 +378,10 @@ Http2Status Http2ClientTransport::ProcessHttp2GoawayFrame(
 Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
     Http2WindowUpdateFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-window_update
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2WindowUpdateFrame Promise { "
          " stream_id="
       << frame.stream_id << ", increment=" << frame.increment << "}";
@@ -392,7 +391,7 @@ Http2Status Http2ClientTransport::ProcessHttp2WindowUpdateFrame(
 Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
     Http2ContinuationFrame frame) {
   // https://www.rfc-editor.org/rfc/rfc9113.html#name-continuation
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2ContinuationFrame Promise { "
          "stream_id="
       << frame.stream_id << ", end_headers=" << frame.end_headers
@@ -422,10 +421,10 @@ Http2Status Http2ClientTransport::ProcessHttp2ContinuationFrame(
 
 Http2Status Http2ClientTransport::ProcessHttp2SecurityFrame(
     Http2SecurityFrame frame) {
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2SecurityFrame Factory";
   // TODO(tjagtap) : [PH2][P2] : Implement this.
-  GRPC_GRPC_HTTP2_TRANSPORT_DLOG
+  GRPC_HTTP2_TRANSPORT_DLOG
       << "Http2Transport ProcessHttp2SecurityFrame Promise { payload="
       << frame.payload.JoinIntoString() << " }";
   return Http2Status::Ok();
