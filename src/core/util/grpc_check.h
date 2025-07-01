@@ -65,14 +65,13 @@ bool PostMortemEmitAndReturnTrue();
 #define GRPC_DCHECK_LT(a, b) GRPC_CHECK_LT(a, b)
 #define GRPC_DCHECK_NE(a, b) GRPC_CHECK_NE(a, b)
 #else
-// VLOG(INT_MAX) effectively sends logs nowhere
-#define GRPC_DCHECK(a) VLOG(INT_MAX)
-#define GRPC_DCHECK_EQ(a, b) VLOG(INT_MAX)
-#define GRPC_DCHECK_GE(a, b) VLOG(INT_MAX)
-#define GRPC_DCHECK_LE(a, b) VLOG(INT_MAX)
-#define GRPC_DCHECK_GT(a, b) VLOG(INT_MAX)
-#define GRPC_DCHECK_LT(a, b) VLOG(INT_MAX)
-#define GRPC_DCHECK_NE(a, b) VLOG(INT_MAX)
+#define GRPC_DCHECK(a) while(false) LOG(INFO)
+#define GRPC_DCHECK_EQ(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK_GE(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK_LE(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK_GT(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK_LT(a, b) while(false) LOG(INFO)
+#define GRPC_DCHECK_NE(a, b) while(false) LOG(INFO)
 #endif
 
 #else
