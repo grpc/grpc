@@ -367,7 +367,7 @@ ChannelInit::SortFilterRegistrationsByDependencies(
     PrintChannelStackTrace(type, filter_registrations, dependencies, filters,
                            terminal_filters);
   }
-  return std::make_tuple(std::move(filters), std::move(terminal_filters));
+  return std::tuple(std::move(filters), std::move(terminal_filters));
 }
 
 std::vector<ChannelInit::Filter> ChannelInit::SortFusedFilterRegistrations(
