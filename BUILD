@@ -622,6 +622,7 @@ GRPC_XDS_TARGETS = [
 
     # Not xDS-specific but currently only used by xDS.
     "//src/core:channel_creds_registry_init",
+    "//src/core:call_creds_registry_init",
 ]
 
 grpc_cc_library(
@@ -1251,6 +1252,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
+        "absl/cleanup",
         "absl/container:btree",
         "absl/log",
         "absl/log:check",
@@ -1261,6 +1263,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
     ],
     deps = [
         "channelz_upb",
@@ -2817,8 +2820,8 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/base:core_headers",
-        "absl/base:endian",
         "absl/log:check",
+        "absl/numeric:bits",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -3084,6 +3087,7 @@ grpc_cc_library(
         "debug_location",
         "gpr",
         "grpc_resolver",
+        "//src/core:call_creds_registry",
         "//src/core:certificate_provider_registry",
         "//src/core:channel_args_preconditioning",
         "//src/core:channel_creds_registry",
@@ -4810,6 +4814,7 @@ grpc_cc_library(
         "//src/core:status_helper",
         "//src/core:tcp_tracer",
         "//src/core:time",
+        "//src/core:transport_common",
         "//src/core:transport_framing_endpoint_extension",
         "//src/core:useful",
         "//src/core:write_size_policy",
@@ -5126,6 +5131,11 @@ grpc_upb_proto_reflection_library(
 )
 
 grpc_upb_proto_library(
+    name = "xds_type_matcher_upb",
+    deps = ["@com_github_cncf_xds//xds/type/matcher/v3:pkg"],
+)
+
+grpc_upb_proto_library(
     name = "xds_orca_upb",
     deps = ["@com_github_cncf_xds//xds/data/orca/v3:pkg"],
 )
@@ -5230,6 +5240,16 @@ WELL_KNOWN_PROTO_TARGETS = [
 ) for target in WELL_KNOWN_PROTO_TARGETS]
 
 grpc_generate_one_off_targets()
+
+grpc_upb_proto_library(
+    name = "hack_protobuf_descriptor_upb_proto",
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
+
+grpc_upb_proto_reflection_library(
+    name = "hack_protobuf_descriptor_upbdefs",
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
 
 filegroup(
     name = "root_certificates",

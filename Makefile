@@ -194,7 +194,7 @@ CXX_ubsan = clang++
 LD_ubsan = clang++
 LDXX_ubsan = clang++
 CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined
 DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 
@@ -709,6 +709,7 @@ LIBGRPC_SRC = \
     src/core/config/config_vars_non_generated.cc \
     src/core/config/core_configuration.cc \
     src/core/config/load_config.cc \
+    src/core/credentials/call/call_creds_registry_init.cc \
     src/core/credentials/call/call_creds_util.cc \
     src/core/credentials/call/composite/composite_call_credentials.cc \
     src/core/credentials/call/external/aws_external_account_credentials.cc \
@@ -722,6 +723,7 @@ LIBGRPC_SRC = \
     src/core/credentials/call/jwt/json_token.cc \
     src/core/credentials/call/jwt/jwt_credentials.cc \
     src/core/credentials/call/jwt/jwt_verifier.cc \
+    src/core/credentials/call/jwt_token_file/jwt_token_file_call_credentials.cc \
     src/core/credentials/call/jwt_util.cc \
     src/core/credentials/call/oauth2/oauth2_credentials.cc \
     src/core/credentials/call/plugin/plugin_credentials.cc \
@@ -817,6 +819,7 @@ LIBGRPC_SRC = \
     src/core/ext/transport/chttp2/transport/ping_promise.cc \
     src/core/ext/transport/chttp2/transport/ping_rate_policy.cc \
     src/core/ext/transport/chttp2/transport/stream_lists.cc \
+    src/core/ext/transport/chttp2/transport/transport_common.cc \
     src/core/ext/transport/chttp2/transport/varint.cc \
     src/core/ext/transport/chttp2/transport/write_size_policy.cc \
     src/core/ext/transport/chttp2/transport/writing.cc \
@@ -951,6 +954,8 @@ LIBGRPC_SRC = \
     src/core/ext/upb-gen/google/protobuf/wrappers.upb_minitable.c \
     src/core/ext/upb-gen/google/rpc/status.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/channelz/v2/channelz.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/promise.upb_minitable.c \
+    src/core/ext/upb-gen/src/proto/grpc/channelz/v2/property_list.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/altscontext.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/handshaker.upb_minitable.c \
     src/core/ext/upb-gen/src/proto/grpc/gcp/transport_security_common.upb_minitable.c \
@@ -1113,6 +1118,8 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-gen/google/protobuf/timestamp.upbdefs.c \
     src/core/ext/upbdefs-gen/google/protobuf/wrappers.upbdefs.c \
     src/core/ext/upbdefs-gen/google/rpc/status.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/promise.upbdefs.c \
+    src/core/ext/upbdefs-gen/src/proto/grpc/channelz/v2/property_list.upbdefs.c \
     src/core/ext/upbdefs-gen/src/proto/grpc/lookup/v1/rls_config.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/migrate.upbdefs.c \
     src/core/ext/upbdefs-gen/udpa/annotations/security.upbdefs.c \
@@ -1609,13 +1616,12 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/log/internal/proto.cc \
     third_party/abseil-cpp/absl/log/internal/structured_proto.cc \
     third_party/abseil-cpp/absl/log/internal/vlog_config.cc \
-    third_party/abseil-cpp/absl/log/log_entry.cc \
     third_party/abseil-cpp/absl/log/log_sink.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/profiling/internal/exponential_biased.cc \
     third_party/abseil-cpp/absl/random/discrete_distribution.cc \
     third_party/abseil-cpp/absl/random/gaussian_distribution.cc \
-    third_party/abseil-cpp/absl/random/internal/pool_urbg.cc \
+    third_party/abseil-cpp/absl/random/internal/entropy_pool.cc \
     third_party/abseil-cpp/absl/random/internal/randen.cc \
     third_party/abseil-cpp/absl/random/internal/randen_detect.cc \
     third_party/abseil-cpp/absl/random/internal/randen_hwaes.cc \
@@ -1632,7 +1638,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/strings/charconv.cc \
     third_party/abseil-cpp/absl/strings/cord.cc \
     third_party/abseil-cpp/absl/strings/cord_analysis.cc \
-    third_party/abseil-cpp/absl/strings/cord_buffer.cc \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
@@ -1693,8 +1698,6 @@ LIBGRPC_SRC = \
     third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
     third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
     third_party/abseil-cpp/absl/time/time.cc \
-    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
-    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \

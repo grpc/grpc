@@ -14,25 +14,39 @@
 
 #include "test/core/test_util/postmortem_emit.h"
 
+#include <iostream>
+#include <sstream>
+
 #include "src/core/channelz/channelz_registry.h"
 #include "src/core/telemetry/stats.h"
 
 namespace grpc_core {
 
-void PostMortemEmit() {
-  std::cerr << "===========================================================\n";
-  std::cerr << "🛑 gRPC Test Postmortem Analysis 🛑\n";
-  std::cerr << "===========================================================\n";
+namespace {
 
-  std::cerr << "❗ gRPC Statistics:\n"
-            << StatsAsJson(global_stats().Collect().get()) << "\n";
+void RunPostMortem(std::ostream& out) {
+  out << "===========================================================\n";
+  out << "🛑 gRPC Test Postmortem Analysis 🛑\n";
+  out << "===========================================================\n";
 
-  std::cerr << "❗ channelz entities:\n";
+  out << "❗ gRPC Statistics:\n"
+      << StatsAsJson(global_stats().Collect().get()) << "\n";
+
+  out << "❗ channelz entities:\n";
   for (const auto& node : channelz::ChannelzRegistry::GetAllEntities()) {
-    std::cerr << "  🔴 [" << node->uuid() << ":"
-              << channelz::BaseNode::EntityTypeString(node->type())
-              << "]: " << node->RenderJsonString() << "\n";
+    out << "  🔴 [" << node->uuid() << ":"
+        << channelz::BaseNode::EntityTypeString(node->type())
+        << "]: " << node->RenderJsonString() << "\n";
   }
+}
+
+}  // namespace
+
+void PostMortemEmit() { RunPostMortem(std::cerr); }
+
+void SilentPostMortemEmit() {
+  std::ostringstream out;
+  RunPostMortem(out);
 }
 
 }  // namespace grpc_core

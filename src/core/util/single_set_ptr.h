@@ -105,12 +105,12 @@ class SingleSetRefCountedPtr {
 
   T& operator*() const { return *Get(); }
 
+  T* Set(RefCountedPtr<T> p) { return p_.Set(p.release()); }
+
  private:
   struct UnrefDeleter {
     void operator()(T* p) { p->Unref(); }
   };
-
-  T* Set(RefCountedPtr<T> p) { return p_.Set(p.release()); }
 
   SingleSetPtr<T, UnrefDeleter> p_;
 };
