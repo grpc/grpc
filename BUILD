@@ -1263,6 +1263,7 @@ grpc_cc_library(
         "absl/functional:function_ref",
         "@com_google_protobuf//upb/base",
         "@com_google_protobuf//upb/mem",
+        "@com_google_protobuf//upb/reflection",
     ],
     deps = [
         "channelz_upb",
@@ -5231,6 +5232,11 @@ WELL_KNOWN_PROTO_TARGETS = [
 ) for target in WELL_KNOWN_PROTO_TARGETS]
 
 grpc_generate_one_off_targets()
+
+grpc_upb_proto_reflection_library(
+    name = "hack_protobuf_descriptor_upbdefs",
+    deps = ["@com_google_protobuf//:descriptor_proto"],
+)
 
 filegroup(
     name = "root_certificates",
