@@ -23,7 +23,7 @@ dl.field-list > dt {
   min-width: 800px !important;
 }
 .footer {
-  margin: 20px 50px auto !important;
+  margin: 20px 50px 30px auto !important;
 }
 
 @media (max-width: 768px) {
