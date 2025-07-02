@@ -19,7 +19,7 @@
 #   $ docker run -it --rm -v $(pwd):/grpc python:3.8 /bin/bash
 #   # cd grpc
 #   # pip install pip-tools
-#   # pip-compile --allow-unsafe requirements.bazel.txt > requirements.bazel.lock
+#   # pip-compile --allow-unsafe requirements.bazel.txt -o requirements.bazel.lock
 #   # exit
 #   $ sudo chown $USER requirements.bazel.lock
 
