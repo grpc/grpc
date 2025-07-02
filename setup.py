@@ -540,9 +540,7 @@ PACKAGE_DIRECTORIES = {
     "": PYTHON_STEM,
 }
 
-INSTALL_REQUIRES = (
-    "typing-extensions>=4.0.0",
-)
+INSTALL_REQUIRES = ("typing-extensions>=4.0.0",)
 
 EXTRAS_REQUIRES = {
     "protobuf": "grpcio-tools>={version}".format(version=grpc_version.VERSION),
