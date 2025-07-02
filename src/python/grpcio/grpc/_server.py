@@ -38,6 +38,7 @@ from typing import (
     Tuple,
     Union,
 )
+from typing_extensions import override
 
 import grpc  # pytype: disable=pyi-error
 from grpc import _common  # pytype: disable=pyi-error
@@ -145,9 +146,11 @@ class _RegisteredMethod(_Method):
         self._name = name
         self._registered_handler = registered_handler
 
+    @override
     def name(self) -> Optional[str]:
         return self._name
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
@@ -161,9 +164,11 @@ class _GenericMethod(_Method):
     ):
         self._generic_handlers = generic_handlers
 
+    @override
     def name(self) -> Optional[str]:
         return None
 
+    @override
     def handler(
         self, handler_call_details: _HandlerCallDetails
     ) -> Optional[grpc.RpcMethodHandler]:
