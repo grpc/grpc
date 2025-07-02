@@ -742,8 +742,8 @@ inline auto MaybeAddNullConfig(
     const bool is_ph2_experiment =                                 \
         grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();    \
     if (is_ph2_test ^ is_ph2_experiment) {                         \
-    // PH2 test MUST only be run when PH2 experiment is enabled. \
-      // Non-PH2 tests MUST only be run when PH2 experiment is disabled \
+    // PH2 test MUST only be run when PH2 experiment is enabled.             \
+      // Non-PH2 tests MUST only be run when PH2 experiment is disabled        \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
     }                                                                          \
     CoreEnd2endTest_##suite##_##name(GetParam(), nullptr, #suite).RunTest();   \
@@ -780,8 +780,8 @@ inline auto MaybeAddNullConfig(
     const bool is_ph2_experiment =                                             \
         grpc_core::IsPromiseBasedHttp2ClientTransportEnabled();                \
     if (is_ph2_test ^ is_ph2_experiment) {                                     \
-    // PH2 test MUST only be run when PH2 experiment is enabled. \
-      // Non-PH2 tests MUST only be run when PH2 experiment is disabled \
+    // PH2 test MUST only be run when PH2 experiment is enabled.             \
+      // Non-PH2 tests MUST only be run when PH2 experiment is disabled        \
       GTEST_SKIP() << "Test PH2 only if PH2 experiment is enabled";            \
     }                                                                          \
     if (IsEventEngineDnsNonClientChannelEnabled() &&                           \
