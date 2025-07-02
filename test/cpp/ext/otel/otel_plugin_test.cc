@@ -338,7 +338,7 @@ TEST_F(OpenTelemetryPluginEnd2EndTest, RetryStatsWithoutRetries) {
         // been collected for the call.
         return !data.contains(kClientAttemptDurationMetricName);
       });
-  // TODO
+  EXPECT_TRUE(data.contains(kClientAttemptDurationMetricName));
   EXPECT_FALSE(data.contains(kRetryMetricName));
   EXPECT_FALSE(data.contains(kTransparentRetryMetricName));
   EXPECT_FALSE(data.contains(kRetryDelayMetricName));
